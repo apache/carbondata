@@ -42,10 +42,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import org.apache.carbondata.common.factory.CarbonCommonFactory;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
@@ -57,6 +60,7 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSche
 import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastorage.store.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
@@ -67,6 +71,7 @@ import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.reader.ThriftReader.TBaseCreator;
+import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.scan.model.QueryDimension;
 
@@ -887,6 +892,31 @@ public final class CarbonUtil {
   }
 
   /**
+   * The method calculate the B-Tree metadata size.
+   * @param filePath
+   * @param blockOffset
+   * @param blockLength
+   * @return
+   */
+  public static long calculateMetaSize(String filePath, long blockOffset, long blockLength) {
+    FileHolder fileReader = null;
+    try {
+      long completeBlockLength = blockOffset + blockLength;
+      long footerPointer = completeBlockLength - 8;
+      fileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath));
+      long actualFooterOffset = fileReader.readLong(filePath, footerPointer);
+      long size = footerPointer - actualFooterOffset;
+      return size;
+    }
+    finally {
+      if(null != fileReader) {
+        fileReader.finish();
+      }
+    }
+  }
+
+
+  /**
    * Below method will be used to get the surrogate key
    *
    * @param data   actual data
@@ -905,6 +935,44 @@ public final class CarbonUtil {
     return surrogate;
   }
 
+  /**
+   * The method returns the B-Tree for a particular taskId
+   *
+   * @param taskId
+   * @param tableBlockInfoList
+   * @param absoluteTableIdentifier
+   */
+  public static long calculateDriverBTreeSize(String taskId, String bucketNumber,
+      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier absoluteTableIdentifier) {
+    // need to sort the  block info list based for task in ascending  order so
+    // it will be sinkup with block index read from file
+    Collections.sort(tableBlockInfoList);
+    CarbonTablePath carbonTablePath = CarbonStorePath
+        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+            absoluteTableIdentifier.getCarbonTableIdentifier());
+    // geting the index file path
+    //TODO need to pass proper partition number when partiton will be supported
+    String carbonIndexFilePath = carbonTablePath
+        .getCarbonIndexFilePath(taskId, "0", tableBlockInfoList.get(0).getSegmentId(),
+            bucketNumber);
+    CarbonFile carbonFile = FileFactory
+        .getCarbonFile(carbonIndexFilePath, FileFactory.getFileType(carbonIndexFilePath));
+    // in case of carbonIndex file whole file is meta only so reading complete file.
+    return carbonFile.getSize();
+  }
+
+  /**
+   * This method will clear the B-Tree Cache in executors for the given list of blocks
+   *
+   * @param dataBlocks
+   */
+  public static void clearBlockCache(List<AbstractIndex> dataBlocks) {
+    if (null != dataBlocks) {
+      for (AbstractIndex blocks : dataBlocks) {
+        blocks.clear();
+      }
+    }
+  }
   /**
    * Thread to delete the tables
    *
@@ -1093,7 +1161,7 @@ public final class CarbonUtil {
    * @return list of block info
    * @throws CarbonUtilException if any problem while reading
    */
-  public static List<DataFileFooter> readCarbonIndexFile(String taskId,
+  public static List<DataFileFooter> readCarbonIndexFile(String taskId, String bucketNumber,
       List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier absoluteTableIdentifier)
       throws CarbonUtilException {
     // need to sort the  block info list based for task in ascending  order so
@@ -1105,7 +1173,8 @@ public final class CarbonUtil {
     // geting the index file path
     //TODO need to pass proper partition number when partiton will be supported
     String carbonIndexFilePath = carbonTablePath
-        .getCarbonIndexFilePath(taskId, "0", tableBlockInfoList.get(0).getSegmentId());
+        .getCarbonIndexFilePath(taskId, "0", tableBlockInfoList.get(0).getSegmentId(),
+            bucketNumber);
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
     try {
       // read the index info and return
@@ -1353,6 +1422,30 @@ public final class CarbonUtil {
       }
     }
     return outputArray;
+  }
+
+
+  /**
+   * This method will check if dictionary and its metadata file exists for a given column
+   *
+   * @param dictionaryColumnUniqueIdentifier unique identifier which contains dbName,
+   *                                         tableName and columnIdentifier
+   * @return
+   */
+  public static boolean isFileExistsForGivenColumn(String carbonStorePath,
+          DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+    PathService pathService = CarbonCommonFactory.getPathService();
+    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
+            dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
+
+    String dictionaryFilePath =
+            carbonTablePath.getDictionaryFilePath(dictionaryColumnUniqueIdentifier
+                    .getColumnIdentifier().getColumnId());
+    String dictionaryMetadataFilePath =
+            carbonTablePath.getDictionaryMetaFilePath(dictionaryColumnUniqueIdentifier
+                    .getColumnIdentifier().getColumnId());
+    // check if both dictionary and its metadata file exists for a given column
+    return isFileExists(dictionaryFilePath) && isFileExists(dictionaryMetadataFilePath);
   }
 }
 

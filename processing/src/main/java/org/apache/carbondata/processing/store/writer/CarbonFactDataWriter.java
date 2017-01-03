@@ -70,18 +70,6 @@ public interface CarbonFactDataWriter<T> {
   void closeWriter() throws CarbonDataWriterException;
 
   /**
-   * Below method will be used to get the leaf meta data size
-   */
-  int getLeafMetadataSize();
-
-  /**
-   * For getting TempLocation
-   *
-   * @return
-   */
-  String getTempStoreLocation();
-
-  /**
    * @param isNoDictionary
    */
   void setIsNoDictionary(boolean[] isNoDictionary);

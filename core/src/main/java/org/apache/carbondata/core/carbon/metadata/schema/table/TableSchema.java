@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.carbon.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.carbon.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -61,6 +62,11 @@ public class TableSchema implements Serializable {
    * contains all key value pairs for table properties set by user in craete DDL
    */
   private Map<String, String> tableProperties;
+
+  /**
+   * Information about bucketing of fields and number of buckets
+   */
+  private BucketingInfo bucketingInfo;
 
   public TableSchema() {
     this.listOfColumns = new ArrayList<ColumnSchema>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -201,5 +207,13 @@ public class TableSchema implements Serializable {
    */
   public void setTableProperties(Map<String, String> tableProperties) {
     this.tableProperties = tableProperties;
+  }
+
+  public BucketingInfo getBucketingInfo() {
+    return bucketingInfo;
+  }
+
+  public void setBucketingInfo(BucketingInfo bucketingInfo) {
+    this.bucketingInfo = bucketingInfo;
   }
 }

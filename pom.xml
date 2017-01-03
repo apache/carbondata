@@ -336,21 +336,15 @@
       </modules>
     </profile>
     <profile>
-      <id>spark-2.0</id>
+      <id>spark-2.1</id>
       <properties>
-        <spark.version>2.0.2</spark.version>
+        <spark.version>2.1.0</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.8</scala.version>
       </properties>
       <modules>
         <module>integration/spark2</module>
         <module>examples/spark2</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>integration-test</id>
-      <modules>
-        <module>integration-testcases</module>
       </modules>
     </profile>
     <profile>

@@ -117,7 +117,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
   private val nextId = new AtomicLong(0)
 
   def nextQueryId: String = {
-    s"query_${nextId.getAndIncrement()}"
+    System.nanoTime() + ""
   }
 
   val metadata = loadMetadata(storePath, nextQueryId)
@@ -157,7 +157,6 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
         CarbonRelation(database, tableIdentifier.table,
           CarbonSparkUtil.createSparkMeta(tables.head.carbonTable), tables.head, alias)
       case None =>
-        LOGGER.audit(s"Table Not Found: ${tableIdentifier.table}")
         throw new NoSuchTableException(database, tableIdentifier.table)
     }
   }
@@ -184,6 +183,15 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
     val tables = metadata.tablesMeta.filter(
       c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
            c.carbonTableIdentifier.getTableName.equalsIgnoreCase(table))
+    tables.nonEmpty
+  }
+
+  def tableExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
+    checkSchemasModifiedTimeAndReloadTables()
+    val database = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
+    val tables = metadata.tablesMeta.filter(
+      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
+           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableIdentifier.table))
     tables.nonEmpty
   }
 

@@ -22,6 +22,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.errors.attachTree
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.plans.physical.Partitioning
 import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
 import org.apache.spark.sql.hive.{CarbonMetastoreTypes, CarbonRelation}
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
@@ -73,6 +74,10 @@ case class CarbonDictionaryDecoder(
     }
   }
 
+
+  override def outputPartitioning: Partitioning = {
+    child.outputPartitioning
+  }
 
   def canBeDecoded(attr: Attribute): Boolean = {
     profile match {
@@ -159,10 +164,10 @@ case class CarbonDictionaryDecoder(
           // add a task completion listener to clear dictionary that is a decisive factor for
           // LRU eviction policy
           val dictionaryTaskCleaner = TaskContext.get
-          dictionaryTaskCleaner.addTaskCompletionListener(context =>
+          dictionaryTaskCleaner.addTaskCompletionListener(_ =>
             dicts.foreach { dictionary =>
               if (null != dictionary) {
-                dictionary.clear
+                dictionary.clear()
               }
             }
           )
@@ -312,10 +317,10 @@ class CarbonDecoderRDD(
     // add a task completion listener to clear dictionary that is a decisive factor for
     // LRU eviction policy
     val dictionaryTaskCleaner = TaskContext.get
-    dictionaryTaskCleaner.addTaskCompletionListener(context =>
+    dictionaryTaskCleaner.addTaskCompletionListener(_ =>
       dicts.foreach { dictionary =>
         if (null != dictionary) {
-          dictionary.clear
+          dictionary.clear()
         }
       }
     )
@@ -327,7 +332,6 @@ class CarbonDecoderRDD(
       override final def hasNext: Boolean = iter.hasNext
 
       override final def next(): InternalRow = {
-        val startTime = System.currentTimeMillis()
         val row: InternalRow = iter.next()
         val data = row.toSeq(dataTypes).toArray
         dictIndex.foreach { index =>
@@ -337,15 +341,8 @@ class CarbonDecoderRDD(
               getDictionaryColumnIds(index)._3)
           }
         }
-        new GenericMutableRow(data)
+        new GenericInternalRow(data)
       }
-    }
-  }
-
-  private def isRequiredToDecode = {
-    getDictionaryColumnIds.find(p => p._1 != null) match {
-      case Some(value) => true
-      case _ => false
     }
   }
 

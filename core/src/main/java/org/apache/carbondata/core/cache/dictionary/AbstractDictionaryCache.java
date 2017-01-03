@@ -35,7 +35,6 @@ import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReader;
 import org.apache.carbondata.core.service.DictionaryService;
 import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.CarbonUtilException;
 
 /**
@@ -82,30 +81,6 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
     } catch (NumberFormatException e) {
       thread_pool_size = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
     }
-  }
-
-  /**
-   * This method will check if dictionary and its metadata file exists for a given column
-   *
-   * @param dictionaryColumnUniqueIdentifier unique identifier which contains dbName,
-   *                                         tableName and columnIdentifier
-   * @return
-   */
-  protected boolean isFileExistsForGivenColumn(
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
-    PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
-            dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
-
-    String dictionaryFilePath =
-        carbonTablePath.getDictionaryFilePath(dictionaryColumnUniqueIdentifier
-            .getColumnIdentifier().getColumnId());
-    String dictionaryMetadataFilePath =
-        carbonTablePath.getDictionaryMetaFilePath(dictionaryColumnUniqueIdentifier
-            .getColumnIdentifier().getColumnId());
-    // check if both dictionary and its metadata file exists for a given column
-    return CarbonUtil.isFileExists(dictionaryFilePath) && CarbonUtil
-        .isFileExists(dictionaryMetadataFilePath);
   }
 
   /**

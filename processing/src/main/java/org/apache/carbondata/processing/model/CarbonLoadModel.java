@@ -134,6 +134,21 @@ public class CarbonLoadModel implements Serializable {
   private String rddIteratorKey;
 
   /**
+   *  Use one pass to generate dictionary
+   */
+  private boolean useOnePass;
+
+  /**
+   * dictionary server host
+   */
+  private String dictionaryServerHost;
+
+  /**
+   * dictionary sever port
+   */
+  private int dictionaryServerPort;
+
+  /**
    * get escape char
    * @return
    */
@@ -209,10 +224,6 @@ public class CarbonLoadModel implements Serializable {
 
   public List<String> getFactFilesToProcess() {
     return factFilesToProcess;
-  }
-
-  public void setFactFilesToProcess(List<String> factFilesToProcess) {
-    this.factFilesToProcess = factFilesToProcess;
   }
 
   public String getCsvHeader() {
@@ -307,21 +318,6 @@ public class CarbonLoadModel implements Serializable {
     this.colDictFilePath = colDictFilePath;
   }
 
-  /**
-   * @return the dimFolderPath
-   */
-  public String getDimFolderPath() {
-    return dimFolderPath;
-  }
-
-  //TODO SIMIAN
-
-  /**
-   * @param dimFolderPath the dimFolderPath to set
-   */
-  public void setDimFolderPath(String dimFolderPath) {
-    this.dimFolderPath = dimFolderPath;
-  }
 
   /**
    * get copy with parition
@@ -332,7 +328,6 @@ public class CarbonLoadModel implements Serializable {
   public CarbonLoadModel getCopyWithPartition(String uniqueId) {
     CarbonLoadModel copy = new CarbonLoadModel();
     copy.tableName = tableName;
-    copy.dimFolderPath = dimFolderPath;
     copy.factFilePath = factFilePath + '/' + uniqueId;
     copy.databaseName = databaseName;
     copy.partitionId = uniqueId;
@@ -356,6 +351,9 @@ public class CarbonLoadModel implements Serializable {
     copy.commentChar = commentChar;
     copy.maxColumns = maxColumns;
     copy.storePath = storePath;
+    copy.useOnePass = useOnePass;
+    copy.dictionaryServerHost = dictionaryServerHost;
+    copy.dictionaryServerPort = dictionaryServerPort;
     return copy;
   }
 
@@ -372,7 +370,6 @@ public class CarbonLoadModel implements Serializable {
       String header, String delimiter) {
     CarbonLoadModel copyObj = new CarbonLoadModel();
     copyObj.tableName = tableName;
-    copyObj.dimFolderPath = dimFolderPath;
     copyObj.factFilePath = null;
     copyObj.databaseName = databaseName;
     copyObj.partitionId = uniqueId;
@@ -401,6 +398,9 @@ public class CarbonLoadModel implements Serializable {
     copyObj.dateFormat = dateFormat;
     copyObj.maxColumns = maxColumns;
     copyObj.storePath = storePath;
+    copyObj.useOnePass = useOnePass;
+    copyObj.dictionaryServerHost = dictionaryServerHost;
+    copyObj.dictionaryServerPort = dictionaryServerPort;
     return copyObj;
   }
 
@@ -416,13 +416,6 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setPartitionId(String partitionId) {
     this.partitionId = partitionId;
-  }
-
-  /**
-   * @return the aggTables
-   */
-  public String[] getAggTables() {
-    return aggTables;
   }
 
   /**
@@ -481,13 +474,6 @@ public class CarbonLoadModel implements Serializable {
    */
   public boolean isRetentionRequest() {
     return isRetentionRequest;
-  }
-
-  /**
-   * @param isRetentionRequest
-   */
-  public void setRetentionRequest(boolean isRetentionRequest) {
-    this.isRetentionRequest = isRetentionRequest;
   }
 
   /**
@@ -643,5 +629,29 @@ public class CarbonLoadModel implements Serializable {
   public void setRddIteratorKey(String rddIteratorKey) {
     this.rddIteratorKey = rddIteratorKey;
 
+  }
+
+  public boolean getUseOnePass() {
+    return useOnePass;
+  }
+
+  public void setUseOnePass(boolean useOnePass) {
+    this.useOnePass = useOnePass;
+  }
+
+  public int getDictionaryServerPort() {
+    return dictionaryServerPort;
+  }
+
+  public void setDictionaryServerPort(int dictionaryServerPort) {
+    this.dictionaryServerPort = dictionaryServerPort;
+  }
+
+  public String getDictionaryServerHost() {
+    return dictionaryServerHost;
+  }
+
+  public void setDictionaryServerHost(String dictionaryServerHost) {
+    this.dictionaryServerHost = dictionaryServerHost;
   }
 }

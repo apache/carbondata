@@ -167,7 +167,6 @@ public class DataGraphExecuter {
             model.getCsvFilePath() != null && model.getCsvFilePath().startsWith("hdfs:");
         trans.setVariable("modifiedDimNames", model.getDimTables());
         trans.setVariable("csvInputFilePath", model.getCsvFilePath());
-        trans.setVariable("dimFileLocDir", model.getDimCSVDirLoc());
         if (hdfsReadMode) {
           trans.addParameterDefinition("vfs.hdfs.dfs.client.read.shortcircuit", "true", "");
           trans.addParameterDefinition("vfs.hdfs.dfs.domain.socket.path",
@@ -261,7 +260,7 @@ public class DataGraphExecuter {
 
           CarbonFile csvFileToRead = GraphExecutionUtil.getCsvFileToRead(model.getCsvFilePath());
           TextFileInputField[] inputFields = GraphExecutionUtil
-              .getTextInputFiles(csvFileToRead, measureColumns, builder, measuresInCSVFile, ",");
+              .getTextInputFiles(csvFileToRead, builder, measuresInCSVFile, ",");
           stepMetaInterface.setInputFields(inputFields);
         } else if (model.isDirectLoad()) {
           String[] files = new String[model.getFilesToProcess().size()];
@@ -294,7 +293,7 @@ public class DataGraphExecuter {
             CarbonFile csvFile =
                 GraphExecutionUtil.getCsvFileToRead(model.getFilesToProcess().get(0));
             TextFileInputField[] inputFields = GraphExecutionUtil
-                .getTextInputFiles(csvFile, measureColumns, builder, measuresInCSVFile,
+                .getTextInputFiles(csvFile, builder, measuresInCSVFile,
                     model.getCsvDelimiter());
             ((CsvInputMeta) step.getStepMetaInterface()).setInputFields(inputFields);
             ((CsvInputMeta) step.getStepMetaInterface()).setDelimiter(model.getCsvDelimiter());
@@ -370,7 +369,7 @@ public class DataGraphExecuter {
         if (null != model.getCsvFilePath() && model.getRddIteratorKey() == null) {
           CarbonFile csvFileToRead = GraphExecutionUtil.getCsvFileToRead(model.getCsvFilePath());
           TextFileInputField[] inputFields = GraphExecutionUtil
-              .getTextInputFiles(csvFileToRead, measureColumns, builder, measuresInCSVFile, ",");
+              .getTextInputFiles(csvFileToRead, builder, measuresInCSVFile, ",");
           ((CsvInputMeta) step.getStepMetaInterface()).setInputFields(inputFields);
         } else if (model.isDirectLoad()) {
           if (null != model.getCsvHeader() && !model.getCsvHeader().isEmpty()) {
@@ -386,7 +385,7 @@ public class DataGraphExecuter {
             CarbonFile csvFileToRead =
                 GraphExecutionUtil.getCsvFileToRead(model.getFilesToProcess().get(0));
             TextFileInputField[] inputFields = GraphExecutionUtil
-                .getTextInputFiles(csvFileToRead, measureColumns, builder, measuresInCSVFile,
+                .getTextInputFiles(csvFileToRead, builder, measuresInCSVFile,
                     model.getCsvDelimiter());
             ((CsvInputMeta) step.getStepMetaInterface()).setInputFields(inputFields);
             ((CsvInputMeta) step.getStepMetaInterface()).setDelimiter(model.getCsvDelimiter());
@@ -499,64 +498,6 @@ public class DataGraphExecuter {
         }
       }
     }
-
-    // Validate the Dimension CSV Files.
-    String dimFilesStr = model.getDimCSVDirLoc();
-
-    if (null != dimFilesStr && dimFilesStr.length() > 0) {
-      String[] dimMapList = model.getDimCSVDirLoc().split(",");
-
-      for (String dimFileMap : dimMapList) {
-        String tableName = dimFileMap.split(":")[0];
-        String dimCSVFileLoc = dimFileMap.substring(tableName.length() + 1);
-
-        try {
-          if (dimCSVFileLoc != null) {
-            FileType fileType = FileFactory.getFileType(dimCSVFileLoc);
-            boolean exists = FileFactory.isFileExist(dimCSVFileLoc, fileType);
-
-            if (exists) {
-              CarbonFile dimCsvFile = FileFactory.getCarbonFile(dimCSVFileLoc, fileType);
-
-              String dimFileName = dimCsvFile.getName();
-
-              if (dimFileName.endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION)) {
-                String dimTableName = dimFileMap.split(":")[0];
-
-                validateDimensionCSV(schemaInfo, model.getTableName(), dimTableName, dimCsvFile,
-                    partitionId, schema, ",");
-              } else {
-                LOGGER.error(
-                    "Dimension table file provided to load Dimension tables is not a CSV file : "
-                        + dimCSVFileLoc);
-                throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
-                    "Dimension table file provided to load Dimension tables is not a CSV file : "
-                        + dimCSVFileLoc);
-              }
-            } else {
-              LOGGER.error(
-                  "Dimension table csv file not present in the path provided to load Dimension "
-                      + "tables : "
-                      + dimCSVFileLoc);
-              throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
-                  "Dimension table csv file not present in the path provided to load Dimension "
-                      + "tables : "
-                      + dimCSVFileLoc);
-            }
-          }
-        } catch (IOException e) {
-          LOGGER.error(
-              "Dimension table csv file not present in the path provided to load Dimension tables"
-                  + " : "
-                  + dimCSVFileLoc);
-
-          throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
-              "Dimension table csv file not present in the path provided to load Dimension tables"
-                  + " : "
-                  + dimCSVFileLoc);
-        }
-      }
-    }
   }
 
   /**
@@ -598,17 +539,6 @@ public class DataGraphExecuter {
   private boolean checkAllColumnsPresent(String[] columnNames, String dimFilePath,
       String delimiter) {
     return GraphExecutionUtil.checkCSVAndRequestedTableColumns(dimFilePath, columnNames, delimiter);
-  }
-
-  /**
-   * Interrupts all child threads run by kettle to execute the graph
-   */
-  public void interruptGraphExecution() {
-    LOGGER.error("Graph Execution is interrupted");
-    if (null != trans) {
-      trans.killAll();
-      LOGGER.info("Graph execution steps are killed.");
-    }
   }
 
 }

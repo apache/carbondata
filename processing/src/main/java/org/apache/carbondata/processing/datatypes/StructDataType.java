@@ -100,14 +100,6 @@ public class StructDataType implements GenericDataType<StructObject> {
   }
 
   /*
-   * set column name
-   */
-  @Override
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  /*
    * get parent column name
    */
   @Override

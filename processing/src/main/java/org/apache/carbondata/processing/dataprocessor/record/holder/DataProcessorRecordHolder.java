@@ -24,32 +24,10 @@ package org.apache.carbondata.processing.dataprocessor.record.holder;
  */
 public class DataProcessorRecordHolder {
 
-  private Object[][] processedRecords;
-
-  private Object[][] originalRecords;
-
   private int seqNumber;
 
-  private int counter;
-
-  private int processCounter;
-
   public DataProcessorRecordHolder(int size, int seqNumber) {
-    this.originalRecords = new Object[size][];
-    this.processedRecords = new Object[size][];
     this.seqNumber = seqNumber;
-  }
-
-  public Object[][] getOriginalRow() {
-    return originalRecords;
-  }
-
-  public void addRow(Object[] oriRow) {
-    originalRecords[counter++] = oriRow;
-  }
-
-  public void addProcessedRows(Object[] processedRows) {
-    processedRecords[processCounter++] = processedRows;
   }
 
   /**
@@ -59,7 +37,4 @@ public class DataProcessorRecordHolder {
     return seqNumber;
   }
 
-  public Object[][] getProcessedRow() {
-    return processedRecords;
-  }
 }

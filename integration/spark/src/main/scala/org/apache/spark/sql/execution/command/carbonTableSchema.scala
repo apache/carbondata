@@ -18,10 +18,15 @@
 package org.apache.spark.sql.execution.command
 
 import java.io.File
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Future
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Cast, Literal}
@@ -41,6 +46,7 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDime
 import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
@@ -139,7 +145,7 @@ case class CreateTable(cm: TableModel) extends RunnableCommand {
     val dbName = cm.databaseName
     LOGGER.audit(s"Creating Table with Database name [$dbName] and Table name [$tbName]")
 
-    val tableInfo: TableInfo = TableNewProcessor(cm, sqlContext)
+    val tableInfo: TableInfo = TableNewProcessor(cm)
 
     if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
       sys.error("No Dimensions found. Table should have at least one dimesnion !")
@@ -304,12 +310,6 @@ case class LoadTable(
       carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
       carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
       carbonLoadModel.setStorePath(relation.tableMeta.storePath)
-      if (dimFilesPath.isEmpty) {
-        carbonLoadModel.setDimFolderPath(null)
-      } else {
-        val x = dimFilesPath.map(f => f.table + ":" + CarbonUtil.checkAndAppendHDFSUrl(f.loadPath))
-        carbonLoadModel.setDimFolderPath(x.mkString(","))
-      }
 
       val table = relation.tableMeta.carbonTable
       carbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.toArray)
@@ -377,6 +377,24 @@ case class LoadTable(
       carbonLoadModel
         .setBadRecordsAction(
           TableOptionConstant.BAD_RECORDS_ACTION.getName + "," + badRecordsLoggerRedirect)
+      // when single_pass=true, and use_kettle=false, and not use all dict
+      val useOnePass = options.getOrElse("single_pass", "false").trim.toLowerCase match {
+        case "true" =>
+          if (!useKettle && StringUtils.isEmpty(allDictionaryPath)) {
+            true
+          } else {
+            LOGGER.error("Can't use single_pass, because SINGLE_PASS and ALL_DICTIONARY_PATH" +
+              "can not be used together, and USE_KETTLE must be set as false")
+            false
+          }
+        case "false" =>
+          false
+        case illegal =>
+          LOGGER.error(s"Can't use single_pass, because illegal syntax found: [" + illegal + "] " +
+            "Please set it as 'true' or 'false'")
+          false
+      }
+      carbonLoadModel.setUseOnePass(useOnePass)
 
       if (delimiter.equalsIgnoreCase(complex_delimiter_level_1) ||
           complex_delimiter_level_1.equalsIgnoreCase(complex_delimiter_level_2) ||
@@ -393,6 +411,10 @@ case class LoadTable(
       carbonLoadModel.setAllDictPath(allDictionaryPath)
 
       val partitionStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
+
+      var result: Future[DictionaryServer] = null
+      var executorService: ExecutorService = null
+
       try {
         // First system has to partition the data first and then call the load data
         LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
@@ -402,9 +424,49 @@ case class LoadTable(
         carbonLoadModel.setColDictFilePath(columnDict)
         carbonLoadModel.setDirectLoad(true)
         GlobalDictionaryUtil.updateTableMetadataFunc = updateTableMetadata
-        GlobalDictionaryUtil
-          .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.tableMeta.storePath,
-            dataFrame)
+
+        if (carbonLoadModel.getUseOnePass) {
+          val colDictFilePath = carbonLoadModel.getColDictFilePath
+          if (colDictFilePath != null) {
+            val storePath = relation.tableMeta.storePath
+            val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+            val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
+              .getCarbonTableIdentifier
+            val carbonTablePath = CarbonStorePath
+              .getCarbonTablePath(storePath, carbonTableIdentifier)
+            val dictFolderPath = carbonTablePath.getMetadataDirectoryPath
+            val dimensions = carbonTable.getDimensionByTableName(
+              carbonTable.getFactTableName).asScala.toArray
+            carbonLoadModel.initPredefDictMap()
+            // generate predefined dictionary
+            GlobalDictionaryUtil
+              .generatePredefinedColDictionary(colDictFilePath, carbonTableIdentifier,
+                dimensions, carbonLoadModel, sqlContext, storePath, dictFolderPath)
+          }
+          // dictionaryServerClient dictionary generator
+          val dictionaryServerPort = CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.DICTIONARY_SERVER_PORT,
+              CarbonCommonConstants.DICTIONARY_SERVER_PORT_DEFAULT)
+          carbonLoadModel.setDictionaryServerPort(Integer.parseInt(dictionaryServerPort))
+          val sparkDriverHost = sqlContext.sparkContext.getConf.get("spark.driver.host")
+          carbonLoadModel.setDictionaryServerHost(sparkDriverHost)
+          // start dictionary server when use one pass load.
+          executorService = Executors.newFixedThreadPool(1)
+          result = executorService.submit(new Callable[DictionaryServer]() {
+            @throws[Exception]
+            def call: DictionaryServer = {
+              Thread.currentThread().setName("Dictionary server")
+              val server: DictionaryServer = new DictionaryServer
+              server.startServer(dictionaryServerPort.toInt)
+              server
+            }
+          })
+        } else {
+          GlobalDictionaryUtil
+            .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.tableMeta.storePath,
+              dataFrame)
+        }
+
         CarbonDataRDDFactory.loadCarbonData(sqlContext,
             carbonLoadModel,
             relation.tableMeta.storePath,
@@ -412,6 +474,7 @@ case class LoadTable(
             columinar,
             partitionStatus,
             useKettle,
+            result,
             dataFrame)
       } catch {
         case ex: Exception =>
@@ -421,6 +484,10 @@ case class LoadTable(
       } finally {
         // Once the data load is successful delete the unwanted partition files
         try {
+          // shutdown dictionary server thread
+          if (carbonLoadModel.getUseOnePass) {
+            executorService.shutdownNow()
+          }
           val fileType = FileFactory.getFileType(partitionLocation)
           if (FileFactory.isFileExist(partitionLocation, fileType)) {
             val file = FileFactory

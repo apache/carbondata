@@ -18,6 +18,9 @@
  */
 package org.apache.carbondata.scan.scanner;
 
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
@@ -38,6 +41,8 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
    */
   protected BlockExecutionInfo blockExecutionInfo;
 
+  public QueryStatisticsModel queryStatisticsModel;
+
   public AbstractBlockletScanner(BlockExecutionInfo tableBlockExecutionInfos) {
     this.blockExecutionInfo = tableBlockExecutionInfos;
   }
@@ -49,6 +54,18 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
   }
 
   protected void fillKeyValue(BlocksChunkHolder blocksChunkHolder) {
+
+    QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
+            .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);
+    totalBlockletStatistic.addCountStatistic(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM,
+            totalBlockletStatistic.getCount() + 1);
+    queryStatisticsModel.getRecorder().recordStatistics(totalBlockletStatistic);
+    QueryStatistic validScannedBlockletStatistic = queryStatisticsModel
+            .getStatisticsTypeAndObjMap().get(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM);
+    validScannedBlockletStatistic
+            .addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM,
+                    validScannedBlockletStatistic.getCount() + 1);
+    queryStatisticsModel.getRecorder().recordStatistics(validScannedBlockletStatistic);
     scannedResult.reset();
     scannedResult.setNumberOfRows(blocksChunkHolder.getDataBlock().nodeSize());
     scannedResult.setDimensionChunks(blocksChunkHolder.getDataBlock()

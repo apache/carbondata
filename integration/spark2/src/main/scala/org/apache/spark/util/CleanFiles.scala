@@ -36,14 +36,14 @@ object CleanFiles {
   def main(args: Array[String]): Unit = {
 
     if (args.length < 2) {
-      System.err.println("Usage: CleanFiles <store path> <table name>");
+      System.err.println("Usage: CleanFiles <store path> <table name>")
       System.exit(1)
     }
 
     val storePath = TableAPIUtil.escape(args(0))
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
     val spark = TableAPIUtil.spark(storePath, s"CleanFiles: $dbName.$tableName")
-    CarbonEnv.init(spark.sqlContext)
+    CarbonEnv.init(spark)
     cleanFiles(spark, dbName, tableName, storePath)
   }
 }

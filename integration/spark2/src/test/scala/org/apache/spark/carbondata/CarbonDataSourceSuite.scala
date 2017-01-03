@@ -26,6 +26,7 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
     // Drop table
     spark.sql("DROP TABLE IF EXISTS carbon_testtable")
     spark.sql("DROP TABLE IF EXISTS csv_table")
+
     // Create table
     spark.sql(
       s"""

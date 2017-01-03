@@ -557,13 +557,18 @@ public final class CarbonCommonConstants {
   public static final String SCHEMAS_MODIFIED_TIME_FILE = "modifiedTime.mdt";
   public static final String DEFAULT_INVISIBLE_DUMMY_MEASURE = "default_dummy_measure";
   /**
-   * max level cache size upto which level cache will be loaded in memory
+   * max driver lru cache size upto which lru cache will be loaded in memory
    */
-  public static final String CARBON_MAX_LEVEL_CACHE_SIZE = "carbon.max.level.cache.size";
+  public static final String CARBON_MAX_DRIVER_LRU_CACHE_SIZE = "carbon.max.driver.lru.cache.size";
   /**
-   * max level cache size default value in GB
+   * max executor lru cache size upto which lru cache will be loaded in memory
    */
-  public static final String CARBON_MAX_LEVEL_CACHE_SIZE_DEFAULT = "-1";
+  public static final String CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE =
+      "carbon.max.executor.lru.cache.size";
+  /**
+   * max lru cache size default value in MB
+   */
+  public static final String CARBON_MAX_LRU_CACHE_SIZE_DEFAULT = "-1";
   /**
    * DOUBLE_VALUE_MEASURE
    */
@@ -981,6 +986,20 @@ public final class CarbonCommonConstants {
 
   public static final String ENABLE_VECTOR_READER_DEFAULT = "false";
 
+  /*
+   * carbon dictionary server port
+   */
+  public static final String DICTIONARY_SERVER_PORT = "carbon.dictionary.server.port";
+
+  /**
+   * Default carbon dictionary server port
+   */
+  public static final String DICTIONARY_SERVER_PORT_DEFAULT = "2030";
+
+  /**
+   * property to set is IS_DRIVER_INSTANCE
+   */
+  public static final String IS_DRIVER_INSTANCE = "is.driver.instance";
   private CarbonCommonConstants() {
   }
 }

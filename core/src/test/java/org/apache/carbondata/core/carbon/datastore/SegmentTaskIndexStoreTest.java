@@ -24,19 +24,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.cache.CacheProvider;
+import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentTaskIndex;
+import org.apache.carbondata.core.carbon.datastore.block.SegmentTaskIndexWrapper;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.carbon.metadata.blocklet.SegmentInfo;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.CarbonUtilException;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -56,7 +59,10 @@ public class SegmentTaskIndexStoreTest {
   private static AbsoluteTableIdentifier absoluteTableIdentifier;
 
   @BeforeClass public static void setUp() {
-    taskIndexStore = SegmentTaskIndexStore.getInstance();
+    CacheProvider cacheProvider = CacheProvider.getInstance();
+    taskIndexStore = (SegmentTaskIndexStore) cacheProvider.
+        <TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
+            createCache(CacheType.DRIVER_BTREE, "");
     tableBlockInfo = new TableBlockInfo("file", 0L, "SG100", locations, 10L,
         ColumnarFormatVersion.valueOf(version));
     absoluteTableIdentifier = new AbsoluteTableIdentifier("/tmp",
@@ -81,7 +87,7 @@ public class SegmentTaskIndexStoreTest {
     return footerList;
   }
 
-  @Test public void loadAndGetTaskIdToSegmentsMap() throws IndexBuilderException {
+  @Test public void loadAndGetTaskIdToSegmentsMap() throws CarbonUtilException {
     new MockUp<CarbonTablePath.DataFileUtil>() {
       @Mock String getTaskNo(String carbonDataFileName) {
         return "100";
@@ -90,9 +96,17 @@ public class SegmentTaskIndexStoreTest {
 
     new MockUp<CarbonUtil>() {
       @Mock List<DataFileFooter> readCarbonIndexFile(String taskId,
+          String bucketNumber,
           List<TableBlockInfo> tableBlockInfoList,
           AbsoluteTableIdentifier absoluteTableIdentifier) {
         return getDataFileFooters();
+      }
+    };
+
+    new MockUp<CarbonTablePath>() {
+      @Mock public String getCarbonIndexFilePath(final String taskId, final String partitionId,
+          final String segmentId, final String bucketNumber) {
+        return "/src/test/resources";
       }
     };
 
@@ -100,20 +114,29 @@ public class SegmentTaskIndexStoreTest {
       @Mock void buildIndex(List<DataFileFooter> footerList) {
       }
     };
+    TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier =
+        new TableSegmentUniqueIdentifier(absoluteTableIdentifier, "SG100");
 
-    Map<String, AbstractIndex> result =
-        taskIndexStore.loadAndGetTaskIdToSegmentsMap(new HashMap<String, List<TableBlockInfo>>() {{
+    HashMap<String, List<TableBlockInfo>> segmentToTableBlocksInfos =
+        new HashMap<String, List<TableBlockInfo>>() {{
           put("SG100", Arrays.asList(tableBlockInfo));
-        }}, absoluteTableIdentifier);
+        }};
+    tableSegmentUniqueIdentifier.setSegmentToTableBlocksInfos(segmentToTableBlocksInfos);
+    Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> result =
+        taskIndexStore.get(tableSegmentUniqueIdentifier).getTaskIdToTableSegmentMap();
 
     assertEquals(result.size(), 1);
-    assertTrue(result.containsKey(new String("100")));
-
+    assertTrue(result.containsKey(new SegmentTaskIndexStore.TaskBucketHolder("100", "0")));
   }
 
   @Test public void checkExistenceOfSegmentBTree() {
-    Map<String, AbstractIndex> result =
-        taskIndexStore.getSegmentBTreeIfExists(absoluteTableIdentifier, "SG100");
+    TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier =
+        new TableSegmentUniqueIdentifier(absoluteTableIdentifier, "SG100");
+    SegmentTaskIndexWrapper segmentTaskIndexWrapper =
+        taskIndexStore.getIfPresent(tableSegmentUniqueIdentifier);
+    Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> result = segmentTaskIndexWrapper != null ?
+        segmentTaskIndexWrapper.getTaskIdToTableSegmentMap() :
+        null;
     assertNull(result);
   }
 

@@ -122,6 +122,14 @@ struct SchemaEvolution{
 }
 
 /**
+* Bucketing information of fields on table
+**/
+struct BucketingInfo{
+  1: required list<ColumnSchema> table_columns;
+  2: required i32 number_of_buckets;
+}
+
+/**
 * The description of table schema
 */
 struct TableSchema{
@@ -129,6 +137,7 @@ struct TableSchema{
 	2: required list<ColumnSchema> table_columns; // Columns in the table
 	3: required SchemaEvolution schema_evolution; // History of schema evolution of this table
   4: optional map<string,string> tableProperties; // table properties configured bu the user
+  5: optional BucketingInfo bucketingInfo; // bucketing information
 }
 
 struct TableInfo{

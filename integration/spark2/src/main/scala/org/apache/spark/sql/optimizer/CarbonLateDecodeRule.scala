@@ -163,7 +163,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
             Sort(sort.order, sort.global, child)
           }
         case union: Union
-          if !(union.children(0).isInstanceOf[CarbonDictionaryTempDecoder] ||
+          if !(union.children.head.isInstanceOf[CarbonDictionaryTempDecoder] ||
             union.children(1).isInstanceOf[CarbonDictionaryTempDecoder]) =>
           val children = union.children.map { child =>
             val condAttrs = new util.HashSet[AttributeReferenceWrapper]
@@ -173,7 +173,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
               !child.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
               CarbonDictionaryTempDecoder(condAttrs,
                 new util.HashSet[AttributeReferenceWrapper](),
-                union.children(0))
+                union.children.head)
             } else {
               child
             }
@@ -557,24 +557,6 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     }
   }
 
-  private def updateRelation(relation: CarbonDatasourceHadoopRelation):
-  CarbonDatasourceHadoopRelation = {
-    val fields = relation.schema.fields
-    val numberOfFields = relation.schema.fields.length
-    val newFields = new Array[StructField](numberOfFields)
-    val dictionaryMap = relation.carbonRelation.metaData.dictionaryMap
-    for (i <- 0 until numberOfFields ) {
-      dictionaryMap.get(fields(i).name) match {
-        case Some(true) =>
-          val field = fields(i)
-          newFields(i) = StructField(field.name, IntegerType, field.nullable, field.metadata)
-        case _ => newFields(i) = fields(i)
-      }
-    }
-    CarbonDatasourceHadoopRelation(relation.sparkSession,
-      relation.paths, relation.parameters, Option(StructType(newFields)))
-  }
-
   private def updateProjection(plan: LogicalPlan): LogicalPlan = {
     val transFormedPlan = plan transform {
       case p@Project(projectList: Seq[NamedExpression], cd: CarbonDictionaryCatalystDecoder) =>
@@ -605,7 +587,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
       case a@Alias(exp, name) =>
         exp match {
           case attr: Attribute => aliasMap.put(a.toAttribute, attr)
-          case _ => aliasMap.put(a.toAttribute, new AttributeReference("", StringType)())
+          case _ => aliasMap.put(a.toAttribute, AttributeReference("", StringType)())
         }
         a
     }

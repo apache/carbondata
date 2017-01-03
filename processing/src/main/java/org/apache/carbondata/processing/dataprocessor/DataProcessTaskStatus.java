@@ -67,11 +67,6 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
 
   private String csvFilePath;
 
-  /**
-   * dimCSVDirLoc
-   */
-  private String dimCSVDirLoc;
-
   private String dimTables;
 
   private boolean isDirectLoad;
@@ -266,14 +261,6 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
     copy.setDatabaseName(databaseName);
     copy.setStatus(status);
     return copy;
-  }
-
-  public String getDimCSVDirLoc() {
-    return dimCSVDirLoc;
-  }
-
-  public void setDimCSVDirLoc(String dimCSVDirLoc) {
-    this.dimCSVDirLoc = dimCSVDirLoc;
   }
 
   public String getBlocksID() {

@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.carbon.metadata.schema.BucketingInfo;
 
 public class CarbonDataLoadConfiguration {
 
@@ -36,7 +37,27 @@ public class CarbonDataLoadConfiguration {
 
   private String taskNo;
 
+  private BucketingInfo bucketingInfo;
+
   private Map<String, Object> dataLoadProperties = new HashMap<>();
+
+  /**
+   *  Use one pass to generate dictionary
+   */
+  private boolean useOnePass;
+
+  /**
+   * dictionary server host
+   */
+  private String dictionaryServerHost;
+
+  /**
+   * dictionary sever port
+   */
+  private int dictionaryServerPort;
+
+  public CarbonDataLoadConfiguration() {
+  }
 
   public int getDimensionCount() {
     int dimCount = 0;
@@ -130,15 +151,39 @@ public class CarbonDataLoadConfiguration {
     dataLoadProperties.put(key, value);
   }
 
-  public Object getDataLoadProperty(String key, Object defaultValue) {
-    Object value = dataLoadProperties.get(key);
-    if (value == null) {
-      value = defaultValue;
-    }
-    return value;
-  }
-
   public Object getDataLoadProperty(String key) {
     return dataLoadProperties.get(key);
+  }
+
+  public BucketingInfo getBucketingInfo() {
+    return bucketingInfo;
+  }
+
+  public void setBucketingInfo(BucketingInfo bucketingInfo) {
+    this.bucketingInfo = bucketingInfo;
+  }
+
+  public boolean getUseOnePass() {
+    return useOnePass;
+  }
+
+  public void setUseOnePass(boolean useOnePass) {
+    this.useOnePass = useOnePass;
+  }
+
+  public String getDictionaryServerHost() {
+    return dictionaryServerHost;
+  }
+
+  public void setDictionaryServerHost(String dictionaryServerHost) {
+    this.dictionaryServerHost = dictionaryServerHost;
+  }
+
+  public int getDictionaryServerPort() {
+    return dictionaryServerPort;
+  }
+
+  public void setDictionaryServerPort(int dictionaryServerPort) {
+    this.dictionaryServerPort = dictionaryServerPort;
   }
 }

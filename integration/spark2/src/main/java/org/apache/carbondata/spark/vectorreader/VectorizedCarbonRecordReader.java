@@ -55,7 +55,7 @@ import org.apache.spark.sql.types.StructType;
  * A specialized RecordReader that reads into InternalRows or ColumnarBatches directly using the
  * carbondata column APIs and fills the data directly into columns.
  */
-public class VectorizedCarbonRecordReader extends RecordReader<Void, Object> {
+class VectorizedCarbonRecordReader extends RecordReader<Void, Object> {
 
   private int batchIdx = 0;
 
@@ -166,7 +166,7 @@ public class VectorizedCarbonRecordReader extends RecordReader<Void, Object> {
    * before any calls to nextKeyValue/nextBatch.
    */
 
-  public void initBatch(MemoryMode memMode) {
+  private void initBatch(MemoryMode memMode) {
     List<QueryDimension> queryDimension = queryModel.getQueryDimension();
     List<QueryMeasure> queryMeasures = queryModel.getQueryMeasures();
     StructField[] fields = new StructField[queryDimension.size() + queryMeasures.size()];
@@ -232,14 +232,14 @@ public class VectorizedCarbonRecordReader extends RecordReader<Void, Object> {
   /*
    * Can be called before any rows are returned to enable returning columnar batches directly.
    */
-  public void enableReturningBatches() {
+  private void enableReturningBatches() {
     returnColumnarBatch = true;
   }
 
   /**
    * Advances to the next batch of rows. Returns false if there are no more.
    */
-  public boolean nextBatch() throws IOException {
+  private boolean nextBatch() {
     columnarBatch.reset();
     carbonColumnarBatch.reset();
     if (iterator.hasNext()) {

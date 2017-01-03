@@ -62,7 +62,7 @@ object ShowSegments {
   def main(args: Array[String]): Unit = {
 
     if (args.length < 2) {
-      System.err.println("Usage: ShowSegments <store path> <table name> [limit]");
+      System.err.println("Usage: ShowSegments <store path> <table name> [limit]")
       System.exit(1)
     }
 
@@ -75,7 +75,7 @@ object ShowSegments {
       None
     }
     val spark = TableAPIUtil.spark(storePath, s"ShowSegments: $dbName.$tableName")
-    CarbonEnv.init(spark.sqlContext)
+    CarbonEnv.init(spark)
     val rows = showSegments(spark, dbName, tableName, limit)
     System.out.println(showString(rows))
   }

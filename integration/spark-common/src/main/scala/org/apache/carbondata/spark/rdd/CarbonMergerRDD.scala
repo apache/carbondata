@@ -134,9 +134,6 @@ class CarbonMergerRDD[K, V](
           result2 = exec.processTableBlocks()
         } catch {
           case e: Throwable =>
-            if (null != exec) {
-              exec.finish()
-            }
             LOGGER.error(e)
             if (null != e.getMessage) {
               sys.error(s"Exception occurred in query execution :: ${ e.getMessage }")
@@ -302,7 +299,7 @@ class CarbonMergerRDD[K, V](
       }
       if (blockletCount != 0) {
         val multiBlockSplit = new CarbonMultiBlockSplit(absoluteTableIdentifier,
-          carbonInputSplits.asJava, nodeName)
+          carbonInputSplits.asJava, Array(nodeName))
         result.add(new CarbonSparkPartition(id, i, multiBlockSplit))
         i += 1
       }

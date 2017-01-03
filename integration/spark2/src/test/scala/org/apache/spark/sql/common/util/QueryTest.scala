@@ -41,19 +41,17 @@ class QueryTest extends PlanTest {
 
 
   val rootPath = new File(this.getClass.getResource("/").getPath + "../../../..").getCanonicalPath
-  val storeLocation = s"$rootPath/examples/spark2/target/store"
-  val warehouse = s"$rootPath/examples/spark2/target/warehouse"
-  val metastoredb = s"$rootPath/examples/spark2/target/metastore_db"
+  val storeLocation = s"$rootPath/integration/spark2/target/store"
+  val warehouse = s"$rootPath/integration/spark2/target/warehouse"
+  val metastoredb = s"$rootPath/integration/spark2/target/metastore_db"
 
   val spark = {
-    // clean data folder
-    if (true) {
-      val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
-      clean(storeLocation)
-      clean(warehouse)
-      clean(metastoredb)
-    }
 
+    CarbonProperties.getInstance()
+      .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")
+      .addProperty("carbon.storelocation", storeLocation)
+
+    import org.apache.spark.sql.CarbonSession._
     val spark = SparkSession
         .builder()
         .master("local")
@@ -62,23 +60,19 @@ class QueryTest extends PlanTest {
         .config("spark.sql.warehouse.dir", warehouse)
         .config("javax.jdo.option.ConnectionURL",
           s"jdbc:derby:;databaseName=$metastoredb;create=true")
-        .getOrCreate()
-
-    CarbonProperties.getInstance()
-        .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")
-        .addProperty("carbon.storelocation", storeLocation)
+        .getOrCreateCarbonSession()
 
     spark.sparkContext.setLogLevel("WARN")
     spark
   }
 
-  val sc = spark.sparkContext
+  val Dsc = spark.sparkContext
 
   lazy val implicits = spark.implicits
 
   def sql(sqlText: String): DataFrame  = spark.sql(sqlText)
 
-  def clean: Unit = {
+  def clean(): Unit = {
     val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
     clean(storeLocation)
   }
@@ -248,7 +242,7 @@ object QueryTest {
       return Some(errorMessage)
     }
 
-    return None
+    None
   }
 
 }

@@ -20,19 +20,20 @@ package org.apache.carbondata.spark.testsuite.datacompaction
 
 import java.io.File
 
-import org.apache.carbondata.core.carbon.path.CarbonStorePath
-import org.apache.spark.sql.Row
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
-import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.load.LoadMetadataDetails
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.lcm.status
-import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.scalatest.BeforeAndAfterAll
 
-import scala.collection.JavaConverters._
+import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.carbon.datastore.TableSegmentUniqueIdentifier
+import org.apache.carbondata.core.carbon.datastore.block.SegmentTaskIndexWrapper
+import org.apache.carbondata.core.carbon.path.CarbonStorePath
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.hadoop.CacheClient
+import org.apache.carbondata.lcm.status.SegmentStatusManager
 
 /**
   * FT for compaction scenario where major segment should not be included in minor.
@@ -127,7 +128,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
   test("delete merged folder and check segments") {
     // delete merged segments
     sql("clean files for table ignoremajor")
-
+    sql("select * from ignoremajor").show()
     val identifier = new AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
           new CarbonTableIdentifier(
@@ -140,6 +141,12 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     assert(segments.contains("2.1"))
     assert(!segments.contains("2"))
     assert(!segments.contains("3"))
+    val cacheClient = new CacheClient(CarbonProperties.getInstance.
+      getProperty(CarbonCommonConstants.STORE_LOCATION));
+    val segmentIdentifier = new TableSegmentUniqueIdentifier(identifier, "2")
+    val wrapper: SegmentTaskIndexWrapper = cacheClient.getSegmentAccessClient.
+      getIfPresent(segmentIdentifier)
+    assert(null == wrapper)
 
   }
 

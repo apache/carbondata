@@ -23,7 +23,7 @@ import org.apache.carbondata.examples.util.{AllDictionaryUtil, ExampleUtils}
 object AllDictionaryExample {
 
   def main(args: Array[String]) {
-    val cc = ExampleUtils.createCarbonContext("CarbonExample")
+    val cc = ExampleUtils.createCarbonContext("AllDictionaryExample")
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
     val csvHeader = "ID,date,country,name,phonetype,serialname,salary"
     val dictCol = "|date|country|name|phonetype|serialname|"

@@ -25,15 +25,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.common.logging.impl.StandardLogService;
+import org.apache.carbondata.core.cache.CacheProvider;
+import org.apache.carbondata.core.cache.CacheType;
+import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.BlockIndexStore;
 import org.apache.carbondata.core.carbon.datastore.IndexKey;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
+import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.carbon.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
@@ -46,6 +51,7 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.scan.executor.QueryExecutor;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.AggregatorInfo;
@@ -105,15 +111,19 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // query execution
     Collections.sort(queryModel.getTableBlockInfos());
     // get the table blocks
-    BlockIndexStore blockLoaderInstance = BlockIndexStore.getInstance();
+    CacheProvider cacheProvider = CacheProvider.getInstance();
+    BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex> cache =
+        (BlockIndexStore) cacheProvider
+            .createCache(CacheType.EXECUTOR_BTREE, queryModel.getTable().getStorePath());
     // remove the invalid table blocks, block which is deleted or compacted
-    blockLoaderInstance.removeTableBlocks(queryModel.getInvalidSegmentIds(),
+    cache.removeTableBlocks(queryModel.getInvalidSegmentIds(),
         queryModel.getAbsoluteTableIdentifier());
     try {
-      queryProperties.dataBlocks = blockLoaderInstance
-          .loadAndGetBlocks(queryModel.getTableBlockInfos(),
+      List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
+          prepareTableBlockUniqueIdentifier(queryModel.getTableBlockInfos(),
               queryModel.getAbsoluteTableIdentifier());
-    } catch (IndexBuilderException e) {
+      queryProperties.dataBlocks = cache.getAll(tableBlockUniqueIdentifiers);
+    } catch (CarbonUtilException e) {
       throw new QueryExecutionException(e);
     }
     queryStatistic
@@ -167,6 +177,17 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // setting the sort dimension index. as it will be updated while getting the sort info
     // so currently setting it to default 0 means sort is not present in any dimension
     queryProperties.sortDimIndexes = new byte[queryModel.getQueryDimension().size()];
+  }
+
+  private List<TableBlockUniqueIdentifier> prepareTableBlockUniqueIdentifier(
+      List<TableBlockInfo> tableBlockInfos, AbsoluteTableIdentifier absoluteTableIdentifier) {
+    List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
+        new ArrayList<>(tableBlockInfos.size());
+    for (TableBlockInfo blockInfo : tableBlockInfos) {
+      tableBlockUniqueIdentifiers
+          .add(new TableBlockUniqueIdentifier(absoluteTableIdentifier, blockInfo));
+    }
+    return tableBlockUniqueIdentifiers;
   }
 
   /**
@@ -469,8 +490,14 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @throws QueryExecutionException
    */
   @Override public void finish() throws QueryExecutionException {
+    CarbonUtil.clearBlockCache(queryProperties.dataBlocks);
     if (null != queryProperties.executorService) {
-      queryProperties.executorService.shutdownNow();
+      queryProperties.executorService.shutdown();
+      try {
+        queryProperties.executorService.awaitTermination(1, TimeUnit.HOURS);
+      } catch (InterruptedException e) {
+        throw new QueryExecutionException(e);
+      }
     }
   }
 

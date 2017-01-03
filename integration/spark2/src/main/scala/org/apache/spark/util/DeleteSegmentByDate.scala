@@ -35,7 +35,7 @@ object DeleteSegmentByDate {
   def main(args: Array[String]): Unit = {
     if (args.length < 3) {
       System.err.println(
-        "Usage: DeleteSegmentByDate <store path> <table name> <before date value>");
+        "Usage: DeleteSegmentByDate <store path> <table name> <before date value>")
       System.exit(1)
     }
 
@@ -43,7 +43,7 @@ object DeleteSegmentByDate {
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
     val dateValue = TableAPIUtil.escape(args(2))
     val spark = TableAPIUtil.spark(storePath, s"DeleteSegmentByDate: $dbName.$tableName")
-    CarbonEnv.init(spark.sqlContext)
+    CarbonEnv.init(spark)
     deleteSegmentByDate(spark, dbName, tableName, dateValue)
   }
 }

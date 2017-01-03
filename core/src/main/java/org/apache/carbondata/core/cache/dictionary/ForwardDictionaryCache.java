@@ -167,7 +167,7 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
       throws CarbonUtilException {
     Dictionary forwardDictionary = null;
     // dictionary is only for primitive data type
-    assert(!dictionaryColumnUniqueIdentifier.getDataType().isComplexType());
+    assert (!dictionaryColumnUniqueIdentifier.getDataType().isComplexType());
     String columnIdentifier = dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId();
     ColumnDictionaryInfo columnDictionaryInfo =
         getColumnDictionaryInfo(dictionaryColumnUniqueIdentifier, columnIdentifier);
@@ -201,5 +201,14 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
       }
     }
     return columnDictionaryInfo;
+  }
+
+  @Override public void clearAccessCount(List<DictionaryColumnUniqueIdentifier> keys) {
+    for (DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier : keys) {
+      Dictionary cacheable = (Dictionary) carbonLRUCache.get(
+          getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
+              CacheType.FORWARD_DICTIONARY));
+      cacheable.clear();
+    }
   }
 }

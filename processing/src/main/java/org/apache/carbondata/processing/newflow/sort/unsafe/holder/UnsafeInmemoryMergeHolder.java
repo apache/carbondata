@@ -76,10 +76,6 @@ public class UnsafeInmemoryMergeHolder implements Comparable<UnsafeInmemoryMerge
     return comparator.compare(currentRow, baseObject, o.getRow(), o.getBaseObject());
   }
 
-  public int numberOfRows() {
-    return actualSize;
-  }
-
   public Object getBaseObject() {
     return baseObject;
   }

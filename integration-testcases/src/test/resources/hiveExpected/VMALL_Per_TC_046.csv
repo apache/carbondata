@@ -1,3 +1,0 @@
-check_day IntegerType,check_hour IntegerType,imei_number LongType
-15,-1,1000
-null,null,1

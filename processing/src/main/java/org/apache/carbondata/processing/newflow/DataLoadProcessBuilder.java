@@ -37,10 +37,13 @@ import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.steps.DataConverterProcessorStepImpl;
+import org.apache.carbondata.processing.newflow.steps.DataConverterProcessorWithBucketingStepImpl;
 import org.apache.carbondata.processing.newflow.steps.DataWriterProcessorStepImpl;
 import org.apache.carbondata.processing.newflow.steps.InputProcessorStepImpl;
 import org.apache.carbondata.processing.newflow.steps.SortProcessorStepImpl;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * It builds the pipe line of steps for loading data to carbon.
@@ -54,6 +57,15 @@ public final class DataLoadProcessBuilder {
       CarbonIterator[] inputIterators) throws Exception {
     CarbonDataLoadConfiguration configuration =
         createConfiguration(loadModel, storeLocation);
+    if (configuration.getBucketingInfo() != null) {
+      return buildInternalForBucketing(inputIterators, configuration);
+    } else {
+      return buildInternal(inputIterators, configuration);
+    }
+  }
+
+  private AbstractDataLoadProcessorStep buildInternal(CarbonIterator[] inputIterators,
+      CarbonDataLoadConfiguration configuration) {
     // 1. Reads the data input iterators and parses the data.
     AbstractDataLoadProcessorStep inputProcessorStep =
         new InputProcessorStepImpl(configuration, inputIterators);
@@ -61,6 +73,24 @@ public final class DataLoadProcessBuilder {
     // data types and configurations.
     AbstractDataLoadProcessorStep converterProcessorStep =
         new DataConverterProcessorStepImpl(configuration, inputProcessorStep);
+    // 3. Sorts the data which are part of key (all dimensions except complex types)
+    AbstractDataLoadProcessorStep sortProcessorStep =
+        new SortProcessorStepImpl(configuration, converterProcessorStep);
+    // 4. Writes the sorted data in carbondata format.
+    AbstractDataLoadProcessorStep writerProcessorStep =
+        new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
+    return writerProcessorStep;
+  }
+
+  private AbstractDataLoadProcessorStep buildInternalForBucketing(CarbonIterator[] inputIterators,
+      CarbonDataLoadConfiguration configuration) throws Exception {
+    // 1. Reads the data input iterators and parses the data.
+    AbstractDataLoadProcessorStep inputProcessorStep =
+        new InputProcessorStepImpl(configuration, inputIterators);
+    // 2. Converts the data like dictionary or non dictionary or complex objects depends on
+    // data types and configurations.
+    AbstractDataLoadProcessorStep converterProcessorStep =
+        new DataConverterProcessorWithBucketingStepImpl(configuration, inputProcessorStep);
     // 3. Sorts the data which are part of key (all dimensions except complex types)
     AbstractDataLoadProcessorStep sortProcessorStep =
         new SortProcessorStepImpl(configuration, converterProcessorStep);
@@ -96,6 +126,10 @@ public final class DataLoadProcessBuilder {
           CarbonDataProcessorUtil.getCsvFileToRead(loadModel.getFactFilesToProcess().get(0));
       csvFileName = csvFile.getName();
       csvHeader = CarbonDataProcessorUtil.getFileHeader(csvFile);
+      // if firstRow = " ", then throw exception
+      if (StringUtils.isNotEmpty(csvHeader) && StringUtils.isBlank(csvHeader)) {
+        throw new CarbonDataLoadingException("First line of the csv is not valid.");
+      }
       configuration.setHeader(
           CarbonDataProcessorUtil.getColumnFields(csvHeader, loadModel.getCsvDelimiter()));
     }
@@ -165,6 +199,12 @@ public final class DataLoadProcessBuilder {
       }
     }
     configuration.setDataFields(dataFields.toArray(new DataField[dataFields.size()]));
+    configuration.setBucketingInfo(carbonTable.getBucketingInfo(carbonTable.getFactTableName()));
+    // configuration for one pass load: dictionary server info
+    configuration.setUseOnePass(loadModel.getUseOnePass());
+    configuration.setDictionaryServerHost(loadModel.getDictionaryServerHost());
+    configuration.setDictionaryServerPort(loadModel.getDictionaryServerPort());
+
     return configuration;
   }
 
