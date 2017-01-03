@@ -41,10 +41,9 @@ import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderExcepti
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath.DataFileUtil;
+import org.apache.carbondata.core.update.UpdateVO;
+import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.scan.model.QueryModel;
-
-
 
 /**
  * Class to handle loading, unloading,clearing,storing of the table
@@ -97,7 +96,7 @@ public class SegmentTaskIndexStore
     } catch (Throwable e) {
       throw new CarbonUtilException("Problem in loading segment block.", e);
     }
-	
+
     if (null != segmentTaskIndexWrapper) {
       segmentTaskIndexWrapper.incrementAccessCount();
     }
@@ -117,30 +116,6 @@ public class SegmentTaskIndexStore
         segmentTaskIndexWrapper.clear();
       }
       throw new CarbonUtilException("Problem in loading segment blocks.", e);
-    }
-    return segmentTaskIndexWrappers;
-  }
-
-  /**
-   * returns all the segments taskid_to_Blcoks map wrapper.
-   *
-   * @param tableSegmentUniqueIdentifiers
-   * @return
-   * @throws IOException
-   */
-  @Override public List<SegmentTaskIndexWrapper> getAll(
-      List<TableSegmentUniqueIdentifier> tableSegmentUniqueIdentifiers) throws IOException {
-    List<SegmentTaskIndexWrapper> segmentTaskIndexWrappers =
-        new ArrayList<>(tableSegmentUniqueIdentifiers.size());
-    try {
-      for (TableSegmentUniqueIdentifier segmentUniqueIdentifier : tableSegmentUniqueIdentifiers) {
-        segmentTaskIndexWrappers.add(get(segmentUniqueIdentifier));
-      }
-    } catch (IOException e) {
-      for (SegmentTaskIndexWrapper segmentTaskIndexWrapper : segmentTaskIndexWrappers) {
-        segmentTaskIndexWrapper.clear();
-      }
-      throw e;
     }
     return segmentTaskIndexWrappers;
   }
@@ -171,6 +146,22 @@ public class SegmentTaskIndexStore
   }
 
   /**
+   *
+   * @param taskKey
+   * @param listOfUpdatedFactFiles
+   * @return
+   */
+  private String getTimeStampValueFromBlock(String taskKey, List<String> listOfUpdatedFactFiles) {
+    for (String blockName : listOfUpdatedFactFiles) {
+      if (taskKey.equals(CarbonTablePath.DataFileUtil.getTaskNo(blockName))) {
+        blockName = blockName.substring(blockName.lastIndexOf('-') + 1, blockName.lastIndexOf('.'));
+        return blockName;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Below method will be used to load the segment of segments
    * One segment may have multiple task , so  table segment will be loaded
    * based on task id and will return the map of taksId to table segment
@@ -190,21 +181,25 @@ public class SegmentTaskIndexStore
         segmentToTableBlocksInfos.entrySet().iterator();
     Map<TaskBucketHolder, AbstractIndex> taskIdToSegmentIndexMap = null;
     SegmentTaskIndexWrapper segmentTaskIndexWrapper = null;
+    SegmentUpdateStatusManager updateStatusManager =
+        new SegmentUpdateStatusManager(absoluteTableIdentifier);
+    String segmentId = null;
     TaskBucketHolder taskBucketHolder = null;
     try {
       while (iteratorOverSegmentBlocksInfos.hasNext()) {
         // segment id to table block mapping
-        iteratorOverSegmentBlocksInfos.next();
+        Map.Entry<String, List<TableBlockInfo>> next = iteratorOverSegmentBlocksInfos.next();
         // group task id to table block info mapping for the segment
         Map<TaskBucketHolder, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
             mappedAndGetTaskIdToTableBlockInfo(segmentToTableBlocksInfos);
+        segmentId = next.getKey();
         // get the existing map of task id to table segment map
         UpdateVO updateVO = updateStatusManager.getInvalidTimestampRange(segmentId);
         // check if segment is already loaded, if segment is already loaded
         //no need to load the segment block
         String lruCacheKey = tableSegmentUniqueIdentifier.getUniqueTableSegmentIdentifier();
         segmentTaskIndexWrapper = (SegmentTaskIndexWrapper) lruCache.get(lruCacheKey);
-        if (segmentTaskIndexWrapper == null) {
+        if (segmentTaskIndexWrapper == null || tableSegmentUniqueIdentifier.isSegmentUpdated()) {
           // get the segment loader lock object this is to avoid
           // same segment is getting loaded multiple times
           // in case of concurrent query
@@ -215,15 +210,25 @@ public class SegmentTaskIndexStore
           // acquire lock to lod the segment
           synchronized (segmentLoderLockObject) {
             segmentTaskIndexWrapper = (SegmentTaskIndexWrapper) lruCache.get(lruCacheKey);
-            if (null == segmentTaskIndexWrapper) {
-              // creating a map of take if to table segment
-              taskIdToSegmentIndexMap = new HashMap<TaskBucketHolder, AbstractIndex>();
-              segmentTaskIndexWrapper = new SegmentTaskIndexWrapper(taskIdToSegmentIndexMap);
+            if (null == segmentTaskIndexWrapper || tableSegmentUniqueIdentifier
+                .isSegmentUpdated()) {
+              // if the segment is updated then get the existing block task id map details
+              // so that the same can be updated after loading the btree.
+              if (tableSegmentUniqueIdentifier.isSegmentUpdated()
+                  && null != segmentTaskIndexWrapper) {
+                taskIdToSegmentIndexMap = segmentTaskIndexWrapper.getTaskIdToTableSegmentMap();
+              } else {
+                // creating a map of take if to table segment
+                taskIdToSegmentIndexMap = new HashMap<TaskBucketHolder, AbstractIndex>();
+                segmentTaskIndexWrapper = new SegmentTaskIndexWrapper(taskIdToSegmentIndexMap);
+                segmentTaskIndexWrapper.incrementAccessCount();
+              }
               Iterator<Map.Entry<TaskBucketHolder, List<TableBlockInfo>>> iterator =
                   taskIdToTableBlockInfoMap.entrySet().iterator();
               long requiredSize =
                   calculateRequiredSize(taskIdToTableBlockInfoMap, absoluteTableIdentifier);
-              segmentTaskIndexWrapper.setMemorySize(requiredSize);
+              segmentTaskIndexWrapper
+                  .setMemorySize(requiredSize + segmentTaskIndexWrapper.getMemorySize());
               boolean isAddedToLruCache =
                   lruCache.put(lruCacheKey, segmentTaskIndexWrapper, requiredSize);
               if (isAddedToLruCache) {
@@ -239,15 +244,23 @@ public class SegmentTaskIndexStore
                 throw new IndexBuilderException(
                     "Can not load the segment. No Enough space available.");
               }
-              //tableSegmentMapTemp.put(next.getKey(), taskIdToSegmentIndexMap);
+
+              // set the latest timestamp.
+              segmentTaskIndexWrapper
+                  .setRefreshedTimeStamp(updateVO.getCreatedOrUpdatedTimeStamp());
+              // tableSegmentMapTemp.put(next.getKey(), taskIdToSegmentIndexMap);
               // removing from segment lock map as once segment is loaded
-              //if concurrent query is coming for same segment
+              // if concurrent query is coming for same segment
               // it will wait on the lock so after this segment will be already
-              //loaded so lock is not required, that is why removing the
+              // loaded so lock is not required, that is why removing the
               // the lock object as it wont be useful
               segmentLockMap.remove(lruCacheKey);
+            } else {
+              segmentTaskIndexWrapper.incrementAccessCount();
             }
           }
+        } else {
+          segmentTaskIndexWrapper.incrementAccessCount();
         }
       }
     } catch (IndexBuilderException e) {

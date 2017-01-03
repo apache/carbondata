@@ -117,7 +117,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val TYPE = carbonKeyWord("TYPE")
   protected val UPDATE = carbonKeyWord("UPDATE")
   protected val USE = carbonKeyWord("USE")
-  protected val WHERE = carbonKeyWord("WHERE")
+  protected val WHERE = Keyword("WHERE")
   protected val WITH = carbonKeyWord("WITH")
   protected val AGGREGATETABLE = carbonKeyWord("AGGREGATETABLE")
   protected val ABS = carbonKeyWord("abs")

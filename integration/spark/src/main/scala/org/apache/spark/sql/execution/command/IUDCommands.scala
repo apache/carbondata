@@ -68,8 +68,6 @@ private[sql] case class ProjectForDeleteCommand(
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
 
-   // DataFrame(sqlContext, plan).show(truncate= false)
-   // return Seq.empty
     val dataFrame = DataFrame(sqlContext, plan)
     val dataRdd = dataFrame.rdd
 

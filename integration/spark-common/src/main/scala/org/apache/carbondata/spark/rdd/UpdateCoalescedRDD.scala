@@ -27,7 +27,7 @@ import org.apache.spark.rdd.{CoalescedRDDPartition, DataLoadPartitionCoalescer, 
 class UpdateCoalescedRDD[T: ClassTag](
     @transient var prev: RDD[T],
     nodeList: Array[String])
-  extends RDD[T](prev.context, Nil) with Logging {
+  extends RDD[T](prev.context, Nil) {
 
   override def getPartitions: Array[Partition] = {
     new DataLoadPartitionCoalescer(prev, nodeList).run

@@ -358,22 +358,6 @@ public class CarbonTablePath extends Path {
   }
 
   /**
-   * Gets absolute path of data file of given aggregate table
-   *
-   * @param aggTableID          unique aggregate table identifier
-   * @param partitionId         unique partition identifier
-   * @param segmentId           unique partition identifier
-   * @param filePartNo          data file part number
-   * @param factUpdateTimeStamp unique identifier to identify an update
-   * @return absolute path of data file stored in carbon data format
-   */
-  public String getCarbonAggDataFilePath(String aggTableID, String partitionId, String segmentId,
-      Integer filePartNo, Integer taskNo, String factUpdateTimeStamp) {
-    return getAggSegmentDir(aggTableID, partitionId, segmentId) + File.separator
-        + getCarbonDataFileName(filePartNo, taskNo, factUpdateTimeStamp);
-  }
-
-  /**
    * Gets data file name only with out path
    *
    * @param filePartNo          data file part number
@@ -383,7 +367,7 @@ public class CarbonTablePath extends Path {
    */
   public String getCarbonDataFileName(Integer filePartNo, Integer taskNo, int bucketNumber,
       String factUpdateTimeStamp) {
-    return DATA_PART_PREFIX + "-" + filePartNo + "-" + taskNo + "-" + bucketNumber + "-"
+    return DATA_PART_PREFIX + filePartNo + "-" + taskNo + "-" + bucketNumber + "-"
         + factUpdateTimeStamp + CARBON_DATA_EXT;
   }
 
@@ -499,6 +483,24 @@ public class CarbonTablePath extends Path {
     public static String getBlockNameFromDeleteDeltaFile(String fileName) {
       return fileName.substring(0,
           fileName.lastIndexOf(CarbonCommonConstants.HYPHEN));
+    }
+
+    /**
+     * gets updated timestamp information from given carbon data file name
+     */
+    public static String getBucketNo(String carbonFilePath) {
+      // Get the file name from path
+      String fileName = getFileName(carbonFilePath);
+      // + 1 for size of "-"
+      int firstDashPos = fileName.indexOf("-");
+      int secondDash = fileName.indexOf("-", firstDashPos + 1);
+      int startIndex = fileName.indexOf("-", secondDash + 1) + 1;
+      int endIndex = fileName.indexOf("-", startIndex);
+      // to support backward compatibility
+      if (startIndex == -1 || endIndex == -1) {
+        return "0";
+      }
+      return fileName.substring(startIndex, endIndex);
     }
 
     /**

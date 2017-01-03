@@ -59,7 +59,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val alterTable: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (COMPACT ~ stringLit) <~ opt(";")  ^^ {
       case dbName ~ table ~ (compact ~ compactType) =>
-        val altertablemodel = AlterTableModel(dbName, table, compactType, null)
+        val altertablemodel = AlterTableModel(dbName, table, None, compactType,
+          Some(System.currentTimeMillis()), null)
         AlterTableCompaction(altertablemodel)
     }
 

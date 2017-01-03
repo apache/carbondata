@@ -1088,6 +1088,12 @@ public final class CarbonCommonConstants {
    * property to set is IS_DRIVER_INSTANCE
    */
   public static final String IS_DRIVER_INSTANCE = "is.driver.instance";
+
+  /**
+   * maximum length of column
+   */
+  public static final int DEFAULT_COLUMN_LENGTH = 100000;
+
   private CarbonCommonConstants() {
   }
 }
