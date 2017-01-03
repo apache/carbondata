@@ -211,7 +211,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    */
   @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
-    CacheClient cacheClient = new CacheClient(identifier);
+    CacheClient cacheClient = new CacheClient(identifier.getStorePath());
     List<String> invalidSegments = new ArrayList<>();
 
     // get all valid segments and set them into the configuration
@@ -226,7 +226,12 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       // remove entry in the segment index if there are invalid segments
       invalidSegments.addAll(segments.getInvalidSegments());
       if (invalidSegments.size() > 0) {
-        cacheClient.removeInvalidSegments(invalidSegments);
+        List<TableSegmentUniqueIdentifier> invalidSegmentsIds
+            = new ArrayList<>(invalidSegments.size());
+        for(String segId: invalidSegments) {
+          invalidSegmentsIds.add(new TableSegmentUniqueIdentifier(identifier, segId));
+        }
+        cacheClient.getSegmentAccessClient().invalidateAll(invalidSegmentsIds);
       }
     }
 
@@ -404,8 +409,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap = null;
     TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier =
         new TableSegmentUniqueIdentifier(absoluteTableIdentifier, segmentId);
-    SegmentTaskIndexWrapper segmentTaskIndexWrapper =
-        cacheClient.getSegmentTaskIndexWrapper(tableSegmentUniqueIdentifier);
+    SegmentTaskIndexWrapper segmentTaskIndexWrapper = (SegmentTaskIndexWrapper)
+        cacheClient.getSegmentAccessClient().getIfPresent(tableSegmentUniqueIdentifier);
     if (null != segmentTaskIndexWrapper) {
       segmentIndexMap = segmentTaskIndexWrapper.getTaskIdToTableSegmentMap();
     }
@@ -422,7 +427,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       // get Btree blocks for given segment
       tableSegmentUniqueIdentifier.setSegmentToTableBlocksInfos(segmentToTableBlocksInfos);
       segmentTaskIndexWrapper =
-          cacheClient.getSegmentTaskIndexWrapper(tableSegmentUniqueIdentifier);
+          cacheClient.getSegmentAccessClient().get(tableSegmentUniqueIdentifier);
       segmentIndexMap = segmentTaskIndexWrapper.getTaskIdToTableSegmentMap();
     }
     return segmentIndexMap;

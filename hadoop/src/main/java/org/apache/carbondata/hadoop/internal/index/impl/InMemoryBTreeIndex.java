@@ -108,12 +108,12 @@ class InMemoryBTreeIndex implements Index {
       JobContext job, AbsoluteTableIdentifier identifier)
       throws IOException, IndexBuilderException {
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap = null;
-    CacheClient cacheClient = new CacheClient(identifier);
+    CacheClient cacheClient = new CacheClient(identifier.getStorePath());
     TableSegmentUniqueIdentifier segmentUniqueIdentifier =
         new TableSegmentUniqueIdentifier(identifier, segment.getId());
     try {
       SegmentTaskIndexWrapper segmentTaskIndexWrapper =
-          cacheClient.getSegmentTaskIndexWrapper(segmentUniqueIdentifier);
+          cacheClient.getSegmentAccessClient().getIfPresent(segmentUniqueIdentifier);
       if (null != segmentTaskIndexWrapper) {
         segmentIndexMap = segmentTaskIndexWrapper.getTaskIdToTableSegmentMap();
       }
@@ -125,7 +125,7 @@ class InMemoryBTreeIndex implements Index {
         segmentUniqueIdentifier.setSegmentToTableBlocksInfos(segmentToTableBlocksInfos);
         // TODO: loadAndGetTaskIdToSegmentsMap can be optimized, use tableBlockInfoList as input
         // get Btree blocks for given segment
-        segmentTaskIndexWrapper = cacheClient.getSegmentTaskIndexWrapper(segmentUniqueIdentifier);
+        segmentTaskIndexWrapper = cacheClient.getSegmentAccessClient().get(segmentUniqueIdentifier);
         segmentIndexMap = segmentTaskIndexWrapper.getTaskIdToTableSegmentMap();
       }
     }

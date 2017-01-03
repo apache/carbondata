@@ -203,4 +203,13 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
     }
     return columnReverseDictionaryInfo;
   }
+
+  @Override public void clearAccessCount(List<DictionaryColumnUniqueIdentifier> keys) {
+    for (DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier : keys) {
+      Dictionary cacheable = (Dictionary) carbonLRUCache.get(
+          getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
+              CacheType.REVERSE_DICTIONARY));
+      cacheable.clear();
+    }
+  }
 }

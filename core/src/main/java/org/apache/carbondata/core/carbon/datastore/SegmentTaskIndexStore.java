@@ -46,7 +46,7 @@ import org.apache.carbondata.core.util.CarbonUtilException;
  * Class to handle loading, unloading,clearing,storing of the table
  * blocks
  */
-public class SegmentTaskIndexStore<K, V>
+public class SegmentTaskIndexStore
     implements Cache<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper> {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(SegmentTaskIndexStore.class.getName());
@@ -322,27 +322,12 @@ public class SegmentTaskIndexStore<K, V>
   }
 
   /**
-   * Below method will be used to remove the segment based on
-   * segment id is passed
-   *
-   * @param segmentToBeRemoved      segment to be removed
-   * @param absoluteTableIdentifier absoluteTableIdentifier
-   */
-  public void removeSegments(List<String> segmentToBeRemoved,
-      AbsoluteTableIdentifier absoluteTableIdentifier) {
-    for (String segmentId : segmentToBeRemoved) {
-      TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier =
-          new TableSegmentUniqueIdentifier(absoluteTableIdentifier, segmentId);
-      lruCache.remove(tableSegmentUniqueIdentifier.getUniqueTableSegmentIdentifier());
-    }
-  }
-
-  /**
    * The method clears the access count of table segments
    *
    * @param tableSegmentUniqueIdentifiers
    */
-  public void clear(List<TableSegmentUniqueIdentifier> tableSegmentUniqueIdentifiers) {
+  @Override
+  public void clearAccessCount(List<TableSegmentUniqueIdentifier> tableSegmentUniqueIdentifiers) {
     for (TableSegmentUniqueIdentifier segmentUniqueIdentifier : tableSegmentUniqueIdentifiers) {
       SegmentTaskIndexWrapper cacheable = (SegmentTaskIndexWrapper) lruCache
           .get(segmentUniqueIdentifier.getUniqueTableSegmentIdentifier());
