@@ -32,9 +32,11 @@ import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.apache.carbondata.core.carbon.datastore.IndexKey;
 import org.apache.carbondata.core.carbon.datastore.SegmentTaskIndexStore;
+import org.apache.carbondata.core.carbon.datastore.TableSegmentUniqueIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.carbon.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.carbon.datastore.block.SegmentTaskIndexWrapper;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
@@ -49,6 +51,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodedReadSupportImpl;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
@@ -208,6 +211,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    */
   @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
+    CacheClient cacheClient = new CacheClient(identifier.getStorePath());
     List<String> invalidSegments = new ArrayList<>();
 
     // get all valid segments and set them into the configuration
@@ -222,7 +226,12 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       // remove entry in the segment index if there are invalid segments
       invalidSegments.addAll(segments.getInvalidSegments());
       if (invalidSegments.size() > 0) {
-        SegmentTaskIndexStore.getInstance().removeTableBlocks(invalidSegments, identifier);
+        List<TableSegmentUniqueIdentifier> invalidSegmentsIds
+            = new ArrayList<>(invalidSegments.size());
+        for(String segId: invalidSegments) {
+          invalidSegmentsIds.add(new TableSegmentUniqueIdentifier(identifier, segId));
+        }
+        cacheClient.getSegmentAccessClient().invalidateAll(invalidSegmentsIds);
       }
     }
 
@@ -234,9 +243,13 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     List<InputSplit> splits;
     try {
       // do block filtering and get split
-      splits = getSplits(job, filterInterface);
-    } catch (IndexBuilderException e) {
+      splits = getSplits(job, filterInterface, cacheClient);
+    } catch (IndexBuilderException | CarbonUtilException e) {
       throw new IOException(e);
+    }
+    finally {
+      cacheClient.close();
+      cacheClient = null;
     }
     // pass the invalid segment to task side in order to remove index entry in task side
     if (invalidSegments.size() > 0) {
@@ -272,8 +285,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @return
    * @throws IOException
    */
-  private List<InputSplit> getSplits(JobContext job, FilterResolverIntf filterResolver)
-      throws IOException, IndexBuilderException {
+  private List<InputSplit> getSplits(JobContext job, FilterResolverIntf filterResolver,
+      CacheClient cacheClient) throws IOException, IndexBuilderException, CarbonUtilException {
 
     List<InputSplit> result = new LinkedList<InputSplit>();
 
@@ -281,12 +294,11 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
     AbsoluteTableIdentifier absoluteTableIdentifier =
         getAbsoluteTableIdentifier(job.getConfiguration());
-
     //for each segment fetch blocks matching filter in Driver BTree
     for (String segmentNo : getSegmentsToAccess(job)) {
       List<DataRefNode> dataRefNodes =
           getDataBlocksOfSegment(job, filterExpressionProcessor, absoluteTableIdentifier,
-              filterResolver, segmentNo);
+              filterResolver, segmentNo, cacheClient);
       for (DataRefNode dataRefNode : dataRefNodes) {
         BlockBTreeLeafNode leafNode = (BlockBTreeLeafNode) dataRefNode;
         TableBlockInfo tableBlockInfo = leafNode.getTableBlockInfo();
@@ -318,11 +330,12 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private List<DataRefNode> getDataBlocksOfSegment(JobContext job,
       FilterExpressionProcessor filterExpressionProcessor,
       AbsoluteTableIdentifier absoluteTableIdentifier, FilterResolverIntf resolver,
-      String segmentId) throws IndexBuilderException, IOException {
+      String segmentId, CacheClient cacheClient)
+      throws IndexBuilderException, IOException, CarbonUtilException {
     QueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.createDriverRecorder();
     QueryStatistic statistic = new QueryStatistic();
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap =
-        getSegmentAbstractIndexs(job, absoluteTableIdentifier, segmentId);
+        getSegmentAbstractIndexs(job, absoluteTableIdentifier, segmentId, cacheClient);
 
     List<DataRefNode> resultFilterredBlocks = new LinkedList<DataRefNode>();
 
@@ -391,23 +404,31 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @throws IndexBuilderException
    */
   private Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> getSegmentAbstractIndexs(
-      JobContext job, AbsoluteTableIdentifier absoluteTableIdentifier, String segmentId)
-      throws IOException, IndexBuilderException {
-    Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap =
-        SegmentTaskIndexStore.getInstance()
-        .getSegmentBTreeIfExists(absoluteTableIdentifier, segmentId);
+      JobContext job, AbsoluteTableIdentifier absoluteTableIdentifier, String segmentId,
+      CacheClient cacheClient) throws IOException, IndexBuilderException, CarbonUtilException {
+    Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap = null;
+    TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier =
+        new TableSegmentUniqueIdentifier(absoluteTableIdentifier, segmentId);
+    SegmentTaskIndexWrapper segmentTaskIndexWrapper = (SegmentTaskIndexWrapper)
+        cacheClient.getSegmentAccessClient().getIfPresent(tableSegmentUniqueIdentifier);
+    if (null != segmentTaskIndexWrapper) {
+      segmentIndexMap = segmentTaskIndexWrapper.getTaskIdToTableSegmentMap();
+    }
 
     // if segment tree is not loaded, load the segment tree
     if (segmentIndexMap == null) {
+      // List<FileStatus> fileStatusList = new LinkedList<FileStatus>();
       List<TableBlockInfo> tableBlockInfoList = getTableBlockInfo(job, segmentId);
+      // getFileStatusOfSegments(job, new int[]{ segmentId }, fileStatusList);
 
       Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos = new HashMap<>();
       segmentToTableBlocksInfos.put(segmentId, tableBlockInfoList);
 
       // get Btree blocks for given segment
-      segmentIndexMap = SegmentTaskIndexStore.getInstance()
-          .loadAndGetTaskIdToSegmentsMap(segmentToTableBlocksInfos, absoluteTableIdentifier);
-
+      tableSegmentUniqueIdentifier.setSegmentToTableBlocksInfos(segmentToTableBlocksInfos);
+      segmentTaskIndexWrapper =
+          cacheClient.getSegmentAccessClient().get(tableSegmentUniqueIdentifier);
+      segmentIndexMap = segmentTaskIndexWrapper.getTaskIdToTableSegmentMap();
     }
     return segmentIndexMap;
   }

@@ -29,12 +29,15 @@ import org.apache.carbondata.core.util.CarbonUtilException;
  * either evicted or manually invalidated.
  * Implementations of this interface are expected to be thread-safe, and can be safely accessed
  * by multiple concurrent threads.
+ * This class also responsible for incrementing and decrementing access count during get operation
  */
 public interface Cache<K, V> {
 
   /**
    * This method will get the value for the given key. If value does not exist
    * for the given key, it will check and load the value.
+   *
+   * Access count of Cacheable entry will be incremented
    *
    * @param key
    * @return
@@ -45,7 +48,7 @@ public interface Cache<K, V> {
   /**
    * This method will return a list of values for the given list of keys.
    * For each key, this method will check and load the data if required.
-   *
+   * Access count of Cacheable entry will be incremented
    * @param keys
    * @return
    * @throws CarbonUtilException in case memory is not sufficient to load data into memory
@@ -55,7 +58,7 @@ public interface Cache<K, V> {
   /**
    * This method will return the value for the given key. It will not check and load
    * the data for the given key
-   *
+   * Access count of Cacheable entry will be incremented
    * @param key
    * @return
    */
@@ -67,5 +70,12 @@ public interface Cache<K, V> {
    * @param key
    */
   void invalidate(K key);
+
+  /**
+   * Access count of Cacheable entry will be decremented
+   *
+   * @param keys
+   */
+  void clearAccessCount(List<K> keys);
 }
 
