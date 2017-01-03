@@ -60,7 +60,9 @@ public class SegmentTaskIndexStoreTest {
 
   @BeforeClass public static void setUp() {
     CacheProvider cacheProvider = CacheProvider.getInstance();
-    taskIndexStore = (SegmentTaskIndexStore) cacheProvider.createCache(CacheType.DRIVER_BTREE, "");
+    taskIndexStore = (SegmentTaskIndexStore) cacheProvider.
+        <TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
+            createCache(CacheType.DRIVER_BTREE, "");
     tableBlockInfo = new TableBlockInfo("file", 0L, "SG100", locations, 10L,
         ColumnarFormatVersion.valueOf(version));
     absoluteTableIdentifier = new AbsoluteTableIdentifier("/tmp",

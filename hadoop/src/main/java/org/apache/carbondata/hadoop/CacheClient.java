@@ -18,79 +18,34 @@
  */
 package org.apache.carbondata.hadoop;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
-import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.carbon.datastore.SegmentTaskIndexStore;
 import org.apache.carbondata.core.carbon.datastore.TableSegmentUniqueIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentTaskIndexWrapper;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.CarbonUtilException;
 
 /**
- * CacheClient : Class used to request the segments cache
+ * CacheClient : Holds all the Cache access clients for Btree, Dictionary
  */
 public class CacheClient {
-  /**
-   * List of segments
-   */
-  private List<TableSegmentUniqueIdentifier> segmentList =
-      new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-  /**
-   * absolute table identifier
-   */
-  private AbsoluteTableIdentifier absoluteTableIdentifier;
+  // segment access client for driver LRU cache
+  private CacheAccessClient<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
+      segmentAccessClient;
 
-  private SegmentTaskIndexStore segmentCache;
-
-  /**
-   * @param absoluteTableIdentifier
-   */
-  public CacheClient(AbsoluteTableIdentifier absoluteTableIdentifier) {
-    this.absoluteTableIdentifier = absoluteTableIdentifier;
-    segmentCache = (SegmentTaskIndexStore) CacheProvider.getInstance()
-        .createCache(CacheType.DRIVER_BTREE, absoluteTableIdentifier.getStorePath());
+  public CacheClient(String storePath) {
+    Cache segmentCache = CacheProvider
+        .getInstance().<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>createCache(
+            CacheType.DRIVER_BTREE, storePath);
+    segmentAccessClient = new CacheAccessClient<>(segmentCache);
   }
 
-  /**
-   * The method returns the SegmentTaskIndexWrapper from the segments cache
-   *
-   * @param tableSegmentUniqueIdentifier
-   * @return
-   * @throws CarbonUtilException
-   */
-  public SegmentTaskIndexWrapper getSegmentTaskIndexWrapper(
-      TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier) throws CarbonUtilException {
-    SegmentTaskIndexWrapper segmentTaskIndexWrapper;
-    if (null == tableSegmentUniqueIdentifier.getSegmentToTableBlocksInfos()) {
-      segmentTaskIndexWrapper = segmentCache.getIfPresent(tableSegmentUniqueIdentifier);
-    } else {
-      segmentTaskIndexWrapper = segmentCache.get(tableSegmentUniqueIdentifier);
-    }
-    if (null != segmentTaskIndexWrapper) {
-      segmentList.add(tableSegmentUniqueIdentifier);
-    }
-    return segmentTaskIndexWrapper;
+  public CacheAccessClient<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
+      getSegmentAccessClient() {
+    return segmentAccessClient;
   }
 
-  /**
-   * the method is used to clear access count of the unused segments cacheable object
-   */
   public void close() {
-    segmentCache.clear(segmentList);
-    segmentCache =null;
-  }
-
-  /**
-   * The method removes invalid segments from the segment level cache
-   *
-   * @param invalidSegments
-   */
-  public void removeInvalidSegments(List<String> invalidSegments) {
-    segmentCache.removeSegments(invalidSegments, absoluteTableIdentifier);
+    segmentAccessClient.close();
   }
 }

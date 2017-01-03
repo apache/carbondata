@@ -37,6 +37,7 @@ import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.carbon.datastore.block.BlockIndex;
 import org.apache.carbondata.core.carbon.datastore.block.BlockInfo;
+import org.apache.carbondata.core.carbon.datastore.block.SegmentTaskIndexWrapper;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
@@ -224,6 +225,14 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
     BlockInfo blockInfo = new BlockInfo(tableBlockUniqueIdentifier.getTableBlockInfo());
     lruCache
         .remove(getLruCacheKey(tableBlockUniqueIdentifier.getAbsoluteTableIdentifier(), blockInfo));
+  }
+
+  @Override public void clearAccessCount(List<TableBlockUniqueIdentifier> keys) {
+    for (TableBlockUniqueIdentifier tableBlockUniqueIdentifier : keys) {
+      SegmentTaskIndexWrapper cacheable = (SegmentTaskIndexWrapper) lruCache
+          .get(tableBlockUniqueIdentifier.getUniqueTableBlockName());
+      cacheable.clear();
+    }
   }
 
   /**
