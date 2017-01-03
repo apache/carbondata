@@ -78,14 +78,16 @@ public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorde
    *
    * @param statistic
    */
-  public synchronized void recordStatisticsForDriver(QueryStatistic statistic, String queryId) {
-    // refresh query Statistics Map
-    if (queryStatisticsMap.get(queryId) != null) {
-      queryStatisticsMap.get(queryId).add(statistic);
-    } else {
-      List<QueryStatistic> newQueryStatistics = new ArrayList<QueryStatistic>();
-      newQueryStatistics.add(statistic);
-      queryStatisticsMap.put(queryId, newQueryStatistics);
+  public void recordStatisticsForDriver(QueryStatistic statistic, String queryId) {
+    synchronized (lock) {
+      // refresh query Statistics Map
+      if (queryStatisticsMap.get(queryId) != null) {
+        queryStatisticsMap.get(queryId).add(statistic);
+      } else {
+        List<QueryStatistic> newQueryStatistics = new ArrayList<QueryStatistic>();
+        newQueryStatistics.add(statistic);
+        queryStatisticsMap.put(queryId, newQueryStatistics);
+      }
     }
   }
 
