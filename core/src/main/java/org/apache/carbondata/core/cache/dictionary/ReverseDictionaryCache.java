@@ -175,7 +175,7 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
     // do not load sort index file for reverse dictionary
     checkAndLoadDictionaryData(dictionaryColumnUniqueIdentifier, columnReverseDictionaryInfo,
         getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
-            CacheType.REVERSE_DICTIONARY), false);
+            CacheType.REVERSE_DICTIONARY), false, true);
     reverseDictionary = new ReverseDictionary(columnReverseDictionaryInfo);
     return reverseDictionary;
   }

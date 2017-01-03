@@ -174,7 +174,8 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
     // load sort index file in case of forward dictionary
     checkAndLoadDictionaryData(dictionaryColumnUniqueIdentifier, columnDictionaryInfo,
         getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
-            CacheType.FORWARD_DICTIONARY), true);
+            CacheType.FORWARD_DICTIONARY), true, isTableUpdated(
+                dictionaryColumnUniqueIdentifier, columnDictionaryInfo));
     forwardDictionary = new ForwardDictionary(columnDictionaryInfo);
     return forwardDictionary;
   }

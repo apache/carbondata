@@ -328,7 +328,10 @@ object GlobalDictionaryUtil {
     if (null == carbonLoadModel.getLoadMetadataDetails) {
       CommonUtil.readLoadMetadataDetails(carbonLoadModel, hdfsLocation)
     }
-    new DictionaryLoadModel(table,
+    val copyTable = new CarbonTableIdentifier(table.getDatabaseName,
+        table.getTableName,
+        table.getTableId)
+    new DictionaryLoadModel(copyTable,
       dimensions,
       hdfsLocation,
       dictfolderPath,

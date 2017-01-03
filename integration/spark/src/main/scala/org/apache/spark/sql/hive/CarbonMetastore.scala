@@ -48,6 +48,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFa
 import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.lcm.locks.ZookeeperInit
+import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.spark.merger.TableMeta
 
 case class MetaData(var tablesMeta: ArrayBuffer[TableMeta])
@@ -238,6 +239,10 @@ class CarbonMetastore(hiveContext: HiveContext, val storePath: String,
                   val carbonTable =
                     org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
                       .getCarbonTable(tableUniqueName)
+                  val tableLastUpdatedTime = SegmentStatusManager.getTableStatusLastModifiedTime(
+                      carbonTable.getAbsoluteTableIdentifier)
+                  carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.
+                  setLastUpdatedTime(tableLastUpdatedTime)
                   metaDataBuffer += new TableMeta(carbonTable.getCarbonTableIdentifier, storePath,
                     carbonTable)
                 }

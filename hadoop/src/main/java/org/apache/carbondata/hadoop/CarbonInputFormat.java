@@ -124,6 +124,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       // read it from schema file in the store
       AbsoluteTableIdentifier absIdentifier = getAbsoluteTableIdentifier(configuration);
       CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absIdentifier);
+      carbonTable.getAbsoluteTableIdentifier().getCarbonTableIdentifier().setLastUpdatedTime(
+          absIdentifier.getCarbonTableIdentifier().getLastUpdatedTime());
       setCarbonTable(configuration, carbonTable);
       return carbonTable;
     }
@@ -191,13 +193,19 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         .set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, CarbonUtil.getSegmentString(validSegments));
   }
 
-  private static AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration) {
+  private static AbsoluteTableIdentifier getAbsoluteTableIdentifier(
+      Configuration configuration) throws IOException {
     String dirs = configuration.get(INPUT_DIR, "");
     String[] inputPaths = StringUtils.split(dirs);
     if (inputPaths.length == 0) {
       throw new InvalidPathException("No input paths specified in job");
     }
-    return AbsoluteTableIdentifier.fromTablePath(inputPaths[0]);
+    AbsoluteTableIdentifier absTableIdentifier =
+        AbsoluteTableIdentifier.fromTablePath(inputPaths[0]);
+    long lastModifiedTime =
+        SegmentStatusManager.getTableStatusLastModifiedTime(absTableIdentifier);
+    absTableIdentifier.getCarbonTableIdentifier().setLastUpdatedTime(lastModifiedTime);
+    return absTableIdentifier;
   }
 
   /**
