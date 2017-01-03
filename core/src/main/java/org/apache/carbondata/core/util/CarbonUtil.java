@@ -1393,9 +1393,12 @@ public final class CarbonUtil {
     return isFileExists(dictionaryFilePath) && isFileExists(dictionaryMetadataFilePath);
   }
 
-   /**
+  /**
+   *
    * @param tableInfo
    * @param invalidBlockVOForSegmentId
+   * @param updateStatusMngr
+   * @return
    */
   public static boolean isInvalidTableBlock(TableBlockInfo tableInfo,
       UpdateVO invalidBlockVOForSegmentId,

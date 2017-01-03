@@ -26,7 +26,7 @@ import java.util.UUID
 import scala.collection.JavaConverters._
 import scala.util.Random
 
-import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, SparkEnv, TaskContext}
+import org.apache.spark.{Partition, SerializableWritable, SparkContext, SparkEnv, TaskContext}
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionWrap, RDD}
 import org.apache.spark.sql.Row
@@ -644,7 +644,7 @@ class RddIteratorForUpdate(rddIter: Iterator[Row],
   }
 }
 
-object CarbonDataLoadForUpdate extends Logging{
+object CarbonDataLoadForUpdate {
   def initialize(model: CarbonLoadModel,
       splitIndex: Int): String = {
     val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
@@ -690,6 +690,7 @@ object CarbonDataLoadForUpdate extends Logging{
       loadCount: String,
       loadMetadataDetails: LoadMetadataDetails,
       executorErrors: ExecutionErrors): Unit = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     try {
       var storeLocation = ""
       val carbonUseLocalDir = CarbonProperties.getInstance()
@@ -715,7 +716,7 @@ object CarbonDataLoadForUpdate extends Logging{
       case e: DataLoadingException => if (e.getErrorCode ==
                                           DataProcessorConstants.BAD_REC_FOUND) {
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
-        logInfo("Bad Record Found")
+        LOGGER.info("Bad Record Found")
       } else if (e.getErrorCode == DataProcessorConstants.BAD_REC_FAILURE_ERROR_CODE) {
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
         executorErrors.failureCauses = FailureCauses.BAD_RECORDS
@@ -734,7 +735,7 @@ object CarbonDataLoadForUpdate extends Logging{
         CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, isCompaction)
       } catch {
         case e: Exception =>
-          logError("Failed to delete local data", e)
+          LOGGER.error("Failed to delete local data" + e)
       }
       if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(
         loadMetadataDetails.getLoadStatus)) {

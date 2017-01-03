@@ -101,7 +101,7 @@ class CarbonIUDMergerRDD[K, V](
       if (!validSplits.isEmpty) {
         val locations = validSplits(0).getLocations
         new CarbonSparkPartition(id, i,
-          new CarbonMultiBlockSplit(absoluteTableIdentifier, validSplits.asJava, locations(0)))
+          new CarbonMultiBlockSplit(absoluteTableIdentifier, validSplits.asJava, locations))
       }
       else {
         null

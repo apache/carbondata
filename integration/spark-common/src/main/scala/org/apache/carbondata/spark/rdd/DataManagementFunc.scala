@@ -20,18 +20,14 @@ package org.apache.carbondata.spark.rdd
 import java.util
 import java.util.concurrent._
 
-import org.apache.carbondata.core.update.CarbonUpdateUtil
-import org.apache.carbondata.core.updatestatus.SegmentStatusManager
-import org.apache.carbondata.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.execution.command.{CompactionCallableModel, CompactionModel}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -130,7 +126,7 @@ object DataManagementFunc {
 
           // write
           CarbonLoaderUtil.writeLoadMetadata(
-            schema,
+            storePath,
             databaseName,
             table.getDatabaseName,
             updatedloadMetadataDetails.asJava

@@ -28,7 +28,12 @@ object Compaction {
   def compaction(spark: SparkSession, dbName: String, tableName: String,
       compactionType: String): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
-    AlterTableCompaction(AlterTableModel(Some(dbName), tableName, compactionType, "")).run(spark)
+    AlterTableCompaction(AlterTableModel(Some(dbName),
+      tableName,
+      None,
+      compactionType,
+      Some(System.currentTimeMillis()),
+      "")).run(spark)
   }
 
   def main(args: Array[String]): Unit = {
