@@ -25,7 +25,6 @@ import scala.collection.mutable.ListBuffer
 import scala.util.Random
 import scala.util.control.Breaks._
 
-import com.databricks.spark.csv.newapi.CarbonTextFile
 import org.apache.hadoop.conf.{Configurable, Configuration}
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.Job
@@ -552,7 +551,7 @@ object CarbonDataRDDFactory {
                org.apache.hadoop.io.compress.DefaultCodec,
                org.apache.hadoop.io.compress.BZip2Codec""".stripMargin)
 
-          CarbonTextFile.configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConfiguration)
+          CommonUtil.configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConfiguration)
 
           val inputFormat = new org.apache.hadoop.mapreduce.lib.input.TextInputFormat
           inputFormat match {
