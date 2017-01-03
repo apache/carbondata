@@ -19,12 +19,6 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
-import org.apache.commons.io.FileUtils
-import org.apache.spark.sql.SparkSession
-
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-
 object CarbonSessionExample {
 
   def main(args: Array[String]) {
@@ -47,8 +41,6 @@ object CarbonSessionExample {
       .addProperty("carbon.storelocation", storeLocation)
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
-    import org.apache.spark.sql.CarbonSession._
-
     val spark = SparkSession
       .builder()
       .master("local")
@@ -56,7 +48,7 @@ object CarbonSessionExample {
       .enableHiveSupport()
       .config("spark.sql.warehouse.dir", warehouse)
       .config("javax.jdo.option.ConnectionURL",
-    s"jdbc:derby:;databaseName=$metastoredb;create=true")
+        s"jdbc:derby:;databaseName=$metastoredb;create=true")
       .getOrCreateCarbonSession()
 
     spark.sparkContext.setLogLevel("WARN")
@@ -88,35 +80,41 @@ object CarbonSessionExample {
       s"""
          | LOAD DATA LOCAL INPATH '$path'
          | INTO TABLE carbon_table
-         | options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField')
+         | options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,
+         | timestampField,decimalField,dateField,charField')
        """.stripMargin)
     // scalastyle:on
 
-    spark.sql("""
+    spark.sql(
+      """
              SELECT *
              FROM carbon_table
              where stringfield = 'spark' and decimalField > 40
-              """).show
+      """).show
 
-    spark.sql("""
+    spark.sql(
+      """
              SELECT *
              FROM carbon_table where length(stringField) = 5
-              """).show
+      """).show
 
-    spark.sql("""
+    spark.sql(
+      """
              SELECT *
              FROM carbon_table where date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
-              """).show
+      """).show
 
-    spark.sql("""
+    spark.sql(
+      """
              select count(stringField) from carbon_table
-              """.stripMargin).show
+      """.stripMargin).show
 
-    spark.sql("""
+    spark.sql(
+      """
            SELECT sum(intField), stringField
            FROM carbon_table
            GROUP BY stringField
-              """).show
+      """).show
 
     spark.sql(
       """
@@ -136,6 +134,9 @@ object CarbonSessionExample {
         |from t1, carbon_table t2
         |where t1.stringField = t2.stringField
       """.stripMargin).show
+
+    spark.sql(
+      """select replace(stringField,'s','S') as stringField from carbon_table""".stripMargin).show
 
     // Drop table
     spark.sql("DROP TABLE IF EXISTS carbon_table")

@@ -16,16 +16,6 @@
  */
 package org.apache.spark.sql
 
-import scala.reflect.ClassTag
-import scala.util.control.NonFatal
-
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
-import org.apache.spark.sql.SparkSession.Builder
-import org.apache.spark.sql.hive.CarbonSessionState
-import org.apache.spark.sql.internal.{SessionState, SharedState}
-import org.apache.spark.util.Utils
-
 /**
  * Session implementation for {org.apache.spark.sql.SparkSession}
  * Implemented this class only to use our own SQL DDL commands.
@@ -48,7 +38,7 @@ class CarbonSession(@transient val sc: SparkContext,
    * and a catalog that interacts with external systems.
    */
   @transient
- override private[sql] lazy val sharedState: SharedState = {
+  override private[sql] lazy val sharedState: SharedState = {
     existingSharedState.getOrElse(new SharedState(sparkContext))
   }
 
@@ -63,32 +53,17 @@ object CarbonSession {
   implicit class CarbonBuilder(builder: Builder) {
 
 
-    def getOrCreateCarbonSession(): SparkSession = synchronized {
+    def getOrCreateCarbonSession(): SparkSession = {
+      synchronized {
 
-      val options =
-        getValue("options", builder).asInstanceOf[scala.collection.mutable.HashMap[String, String]]
-      val userSuppliedContext: Option[SparkContext] =
-        getValue("userSuppliedContext", builder).asInstanceOf[Option[SparkContext]]
+        val options =
+          getValue("options", builder)
+            .asInstanceOf[scala.collection.mutable.HashMap[String, String]]
+        val userSuppliedContext: Option[SparkContext] =
+          getValue("userSuppliedContext", builder).asInstanceOf[Option[SparkContext]]
 
-      // Get the session from current thread's active session.
-      var session: SparkSession = SparkSession.getActiveSession match {
-        case Some(sparkSession: CarbonSession) =>
-          if ((sparkSession ne null) && !sparkSession.sparkContext.isStopped) {
-            options.foreach { case (k, v) => sparkSession.sessionState.conf.setConfString(k, v) }
-            sparkSession
-          } else {
-            null
-          }
-        case _ => null
-      }
-      if (session ne null) {
-        return session
-      }
-
-      // Global synchronization so we will only set the default session once.
-      SparkSession.synchronized {
-        // If the current thread does not have an active session, get it from the global session.
-        session = SparkSession.getDefaultSession match {
+        // Get the session from current thread's active session.
+        var session: SparkSession = SparkSession.getActiveSession match {
           case Some(sparkSession: CarbonSession) =>
             if ((sparkSession ne null) && !sparkSession.sparkContext.isStopped) {
               options.foreach { case (k, v) => sparkSession.sessionState.conf.setConfString(k, v) }
@@ -102,40 +77,60 @@ object CarbonSession {
           return session
         }
 
-        // No active nor global default session. Create a new one.
-        val sparkContext = userSuppliedContext.getOrElse {
-          // set app name if not given
-          val randomAppName = java.util.UUID.randomUUID().toString
-          val sparkConf = new SparkConf()
-          options.foreach { case (k, v) => sparkConf.set(k, v) }
-          if (!sparkConf.contains("spark.app.name")) {
-            sparkConf.setAppName(randomAppName)
+        // Global synchronization so we will only set the default session once.
+        SparkSession.synchronized {
+          // If the current thread does not have an active session, get it from the global session.
+          session = SparkSession.getDefaultSession match {
+            case Some(sparkSession: CarbonSession) =>
+              if ((sparkSession ne null) && !sparkSession.sparkContext.isStopped) {
+                options
+                  .foreach { case (k, v) => sparkSession.sessionState.conf.setConfString(k, v) }
+                sparkSession
+              } else {
+                null
+              }
+            case _ => null
           }
-          val sc = SparkContext.getOrCreate(sparkConf)
-          // maybe this is an existing SparkContext, update its SparkConf which maybe used
-          // by SparkSession
-          options.foreach { case (k, v) => sc.conf.set(k, v) }
-          if (!sc.conf.contains("spark.app.name")) {
-            sc.conf.setAppName(randomAppName)
+          if (session ne null) {
+            return session
           }
-          sc
+
+          // No active nor global default session. Create a new one.
+          val sparkContext = userSuppliedContext.getOrElse {
+            // set app name if not given
+            val randomAppName = java.util.UUID.randomUUID().toString
+            val sparkConf = new SparkConf()
+            options.foreach { case (k, v) => sparkConf.set(k, v) }
+            if (!sparkConf.contains("spark.app.name")) {
+              sparkConf.setAppName(randomAppName)
+            }
+            val sc = SparkContext.getOrCreate(sparkConf)
+            // maybe this is an existing SparkContext, update its SparkConf which maybe used
+            // by SparkSession
+            options.foreach { case (k, v) => sc.conf.set(k, v) }
+            if (!sc.conf.contains("spark.app.name")) {
+              sc.conf.setAppName(randomAppName)
+            }
+            sc
+          }
+          session = new CarbonSession(sparkContext)
+          options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
+          SparkSession.setDefaultSession(session)
+
+          // Register a successfully instantiated context to the singleton. This should be at the
+          // end of the class definition so that the singleton is updated only if there is no
+          // exception in the construction of the instance.
+          sparkContext.addSparkListener(new SparkListener {
+            override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
+              SparkSession.setDefaultSession(null)
+              SparkSession.sqlListener.set(null)
+            }
+          })
         }
-        session = new CarbonSession(sparkContext)
-        options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
-        SparkSession.setDefaultSession(session)
 
-        // Register a successfully instantiated context to the singleton. This should be at the
-        // end of the class definition so that the singleton is updated only if there is no
-        // exception in the construction of the instance.
-        sparkContext.addSparkListener(new SparkListener {
-          override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd): Unit = {
-            SparkSession.setDefaultSession(null)
-            SparkSession.sqlListener.set(null)
-          }
-        })
+        session.udf.register("replace", FunctionRegistory.replace)
+        return session
       }
-
-      return session
     }
 
     /**
