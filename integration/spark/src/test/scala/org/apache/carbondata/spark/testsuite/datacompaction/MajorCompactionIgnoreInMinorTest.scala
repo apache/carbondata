@@ -141,9 +141,11 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     assert(segments.contains("2.1"))
     assert(!segments.contains("2"))
     assert(!segments.contains("3"))
-    val cacheClient = new CacheClient(identifier);
+    val cacheClient = new CacheClient(CarbonProperties.getInstance.
+      getProperty(CarbonCommonConstants.STORE_LOCATION));
     val segmentIdentifier = new TableSegmentUniqueIdentifier(identifier, "2")
-    val wrapper: SegmentTaskIndexWrapper = cacheClient.getSegmentTaskIndexWrapper(segmentIdentifier)
+    val wrapper: SegmentTaskIndexWrapper = cacheClient.getSegmentAccessClient.
+      getIfPresent(segmentIdentifier)
     assert(null == wrapper)
 
   }
