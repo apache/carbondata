@@ -229,6 +229,36 @@ class CarbonAllDictionaryCombineRDD(
   }
 }
 
+class StringArrayRow(var values: Array[String]) extends Row {
+
+  override def length: Int = values.length
+
+  override def get(i: Int): Any = values(i)
+
+  override def getString(i: Int): String = values(i)
+
+  private def reset(): Unit = {
+    for (i <- 0 until values.length) {
+      values(i) = null
+    }
+  }
+
+  override def copy(): Row = {
+    val tmpValues = new Array[String](values.length)
+    System.arraycopy(values, 0, tmpValues, 0, values.length)
+    new StringArrayRow(tmpValues)
+  }
+
+  def setValues(values: Array[String]): StringArrayRow = {
+    reset()
+    if (values != null) {
+      val minLength = Math.min(this.values.length, values.length)
+      System.arraycopy(values, 0, this.values, 0, minLength)
+    }
+    this
+  }
+}
+
 /**
  * A RDD to combine distinct values in block.
  *

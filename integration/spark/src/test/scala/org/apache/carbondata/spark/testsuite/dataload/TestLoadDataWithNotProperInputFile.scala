@@ -56,6 +56,7 @@ class TestLoadDataWithNotProperInputFile extends QueryTest {
       GlobalDictionaryUtil.loadDataFrame(CarbonHiveContext, carbonLoadModel)
     } catch {
       case e: Throwable =>
+        e.printStackTrace()
         assert(e.getMessage.contains("Please check your input path and make sure " +
           "that files end with '.csv' and content is not empty"))
     }

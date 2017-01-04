@@ -50,7 +50,7 @@ import org.apache.carbondata.processing.newflow.DataLoadExecutor
 import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException
 import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.splits.TableSplit
-import org.apache.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil}
+import org.apache.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil, CommonUtil}
 
 class SerializableConfiguration(@transient var value: Configuration) extends Serializable {
 
@@ -180,7 +180,7 @@ class NewCarbonDataLoadRDD[K, V](
         if (configuration == null) {
           configuration = new Configuration()
         }
-        configureCSVInputFormat(configuration)
+        CommonUtil.configureCSVInputFormat(configuration, carbonLoadModel)
         val hadoopAttemptContext = new TaskAttemptContextImpl(configuration, attemptId)
         val format = new CSVInputFormat
         if (isTableSplitPartition) {
@@ -234,18 +234,6 @@ class NewCarbonDataLoadRDD[K, V](
             new RecordReaderIterator(reader, split.nodeBlocksDetail(index), hadoopAttemptContext)
           }
         }
-      }
-
-      def configureCSVInputFormat(configuration: Configuration): Unit = {
-        CSVInputFormat.setCommentCharacter(configuration, carbonLoadModel.getCommentChar)
-        CSVInputFormat.setCSVDelimiter(configuration, carbonLoadModel.getCsvDelimiter)
-        CSVInputFormat.setEscapeCharacter(configuration, carbonLoadModel.getEscapeChar)
-        CSVInputFormat.setHeaderExtractionEnabled(configuration,
-          carbonLoadModel.getCsvHeader == null || carbonLoadModel.getCsvHeader.isEmpty)
-        CSVInputFormat.setQuoteCharacter(configuration, carbonLoadModel.getQuoteChar)
-        CSVInputFormat.setReadBufferSize(configuration, CarbonProperties.getInstance
-          .getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
-            CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT))
       }
 
       /**

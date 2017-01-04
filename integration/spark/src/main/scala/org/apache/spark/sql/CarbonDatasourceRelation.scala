@@ -21,11 +21,9 @@ import java.util
 import java.util.LinkedHashSet
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.hadoop.fs.Path
-import org.apache.spark.sql.SchemaRDD
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
