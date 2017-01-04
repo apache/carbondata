@@ -26,6 +26,7 @@
  * Description   : for physical deletion of load folders.
  * Class Version  : 1.0
  */
+
 package org.apache.carbondata.spark.load;
 
 import java.io.IOException;
@@ -156,59 +157,6 @@ public final class DeleteLoadFolders {
     }
 
     return false;
-  }
-
-  private static void factFileRenaming(String loadFolderPath) {
-
-    FileFactory.FileType fileType = FileFactory.getFileType(loadFolderPath);
-    try {
-      if (FileFactory.isFileExist(loadFolderPath, fileType)) {
-        CarbonFile loadFolder = FileFactory.getCarbonFile(loadFolderPath, fileType);
-
-        CarbonFile[] listFiles = loadFolder.listFiles(new CarbonFileFilter() {
-
-          @Override public boolean accept(CarbonFile file) {
-            return (file.getName().endsWith('_' + CarbonCommonConstants.FACT_FILE_UPDATED));
-          }
-        });
-
-        for (CarbonFile file : listFiles) {
-          if (!file.renameTo(file.getName().substring(0,
-              file.getName().length() - CarbonCommonConstants.FACT_FILE_UPDATED.length()))) {
-            LOGGER.warn("could not rename the updated fact file.");
-          }
-        }
-
-      }
-    } catch (IOException e) {
-      LOGGER.error("exception" + e.getMessage());
-    }
-
-  }
-
-  private static void cleanDeletedFactFile(String loadFolderPath) {
-    FileFactory.FileType fileType = FileFactory.getFileType(loadFolderPath);
-    try {
-      if (FileFactory.isFileExist(loadFolderPath, fileType)) {
-        CarbonFile loadFolder = FileFactory.getCarbonFile(loadFolderPath, fileType);
-
-        CarbonFile[] listFiles = loadFolder.listFiles(new CarbonFileFilter() {
-
-          @Override public boolean accept(CarbonFile file) {
-            return (file.getName().endsWith(CarbonCommonConstants.FACT_DELETE_EXTENSION));
-          }
-        });
-
-        for (CarbonFile file : listFiles) {
-          if (!file.delete()) {
-            LOGGER.warn("could not delete the marked fact file.");
-          }
-        }
-
-      }
-    } catch (IOException e) {
-      LOGGER.error("exception" + e.getMessage());
-    }
   }
 
   public static boolean deleteLoadFoldersFromFileSystem(String dbName, String tableName,

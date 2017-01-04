@@ -95,6 +95,7 @@ class DataCompactionBoundaryConditionsTest extends QueryTest with BeforeAndAfter
 
 
   override def afterAll {
+    sql("drop table if exists  boundarytest")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }

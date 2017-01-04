@@ -46,7 +46,7 @@ import org.apache.carbondata.scan.result.vector.CarbonColumnarBatch;
  * executing that query are returning a iterator over block and every time next
  * call will come it will execute the block and return the result
  */
-public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
+public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterator<E> {
 
   /**
    * LOGGER.

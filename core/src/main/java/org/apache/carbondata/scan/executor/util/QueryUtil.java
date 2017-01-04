@@ -336,9 +336,9 @@ public class QueryUtil {
         getDictionaryColumnUniqueIdentifierList(dictionaryColumnIdList,
             absoluteTableIdentifier.getCarbonTableIdentifier());
     CacheProvider cacheProvider = CacheProvider.getInstance();
-    Cache forwardDictionaryCache = cacheProvider
+    Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
         .createCache(CacheType.FORWARD_DICTIONARY, absoluteTableIdentifier.getStorePath());
-    List<Dictionary> columnDictionaryList = null;
+    List<Dictionary> columnDictionaryList;
     try {
       columnDictionaryList = forwardDictionaryCache.getAll(dictionaryColumnUniqueIdentifiers);
     } catch (CarbonUtilException e) {

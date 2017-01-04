@@ -219,7 +219,6 @@ object CarbonDataRDDFactory {
     val executor: ExecutorService = Executors.newFixedThreadPool(1)
     // update the updated table status.
     CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
-    var segList: util.List[LoadMetadataDetails] = carbonLoadModel.getLoadMetadataDetails
 
     // clean up of the stale segments.
     try {

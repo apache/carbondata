@@ -399,13 +399,12 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
                   attrsOnProjects.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
               }
           }
-          wd.windowExpressions.map {
-            case others =>
-              others.collect {
-                case attr: AttributeReference
-                  if isDictionaryEncoded(attr, attrMap, aliasMap) =>
-                  attrsOnProjects.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
-              }
+          wd.windowExpressions.map { others =>
+            others.collect {
+              case attr: AttributeReference
+                if isDictionaryEncoded(attr, attrMap, aliasMap) =>
+                attrsOnProjects.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
+            }
           }
           wd.partitionSpec.map{
             case attr: AttributeReference =>
@@ -617,7 +616,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
       case a@Alias(exp, name) =>
         exp match {
           case attr: Attribute => aliasMap.put(a.toAttribute, attr)
-          case _ => aliasMap.put(a.toAttribute, new AttributeReference("", StringType)())
+          case _ => aliasMap.put(a.toAttribute, AttributeReference("", StringType)())
         }
         a
     }

@@ -19,8 +19,8 @@
 
 package org.apache.carbondata.spark.util;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +49,7 @@ public class CarbonQueryUtil {
    * It creates the one split for each region server.
    */
   public static synchronized TableSplit[] getTableSplits(String databaseName, String tableName,
-      CarbonQueryPlan queryPlan) throws IOException {
+      CarbonQueryPlan queryPlan) {
 
     //Just create splits depends on locations of region servers
     List<Partition> allPartitions = null;
@@ -78,7 +78,7 @@ public class CarbonQueryUtil {
   /**
    * It creates the one split for each region server.
    */
-  public static TableSplit[] getTableSplitsForDirectLoad(String sourcePath) throws Exception {
+  public static TableSplit[] getTableSplitsForDirectLoad(String sourcePath) {
 
     //Just create splits depends on locations of region servers
     DefaultLoadBalancer loadBalancer = null;
@@ -104,13 +104,11 @@ public class CarbonQueryUtil {
       String separator) {
     if (StringUtils.isNotEmpty(sourcePath)) {
       String[] files = sourcePath.split(separator);
-      for (String file : files) {
-        partitionsFiles.add(file);
-      }
+      Collections.addAll(partitionsFiles, files);
     }
   }
 
-  private static List<Partition> getAllFilesForDataLoad(String sourcePath) throws Exception {
+  private static List<Partition> getAllFilesForDataLoad(String sourcePath) {
     List<String> files = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     splitFilePath(sourcePath, files, CarbonCommonConstants.COMMA);
     List<Partition> partitionList =
@@ -121,7 +119,7 @@ public class CarbonQueryUtil {
     partitionList.add(new PartitionMultiFileImpl(0 + "", partitionFiles.get(0)));
 
     for (int i = 0; i < files.size(); i++) {
-      partitionFiles.get(i % 1).add(files.get(i));
+      partitionFiles.get(0).add(files.get(i));
     }
     return partitionList;
   }

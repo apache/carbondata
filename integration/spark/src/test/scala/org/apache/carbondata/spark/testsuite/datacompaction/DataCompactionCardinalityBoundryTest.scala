@@ -37,7 +37,7 @@ import scala.collection.JavaConverters._
 class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
     sql("drop table if exists  cardinalityTest")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
@@ -62,15 +62,9 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE cardinalityTest OPTIONS" +
       "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
-    CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "true")
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE cardinalityTest  OPTIONS" +
       "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
-    CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "true")
-    System.out
-      .println("load merge status is " + CarbonProperties.getInstance()
-        .getProperty("carbon.enable.load.merge")
-      )
     // compaction will happen here.
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath3 + "' INTO TABLE cardinalityTest  OPTIONS" +
       "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
@@ -125,10 +119,10 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
   }
 
   override def afterAll {
-    /* sql("drop table cardinalityTest") */
+    sql("drop table if exists  cardinalityTest")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-    CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "false")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
   }
 
 }
