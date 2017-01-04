@@ -23,10 +23,6 @@ import org.apache.carbondata.core.util.CompressionFinder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 
 public class WriterCompressModel {
-  /**
-   * COMPRESSION_TYPE[] variable.
-   */
-  private ValueCompressionUtil.COMPRESSION_TYPE[] compType;
 
   /**
    * DataType[]  variable.
