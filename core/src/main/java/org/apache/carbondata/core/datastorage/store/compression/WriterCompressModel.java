@@ -72,20 +72,6 @@ public class WriterCompressModel {
   private CompressionFinder[] compressionFinders;
 
   /**
-   * @return the compType
-   */
-  public ValueCompressionUtil.COMPRESSION_TYPE[] getCompType() {
-    return compType;
-  }
-
-  /**
-   * @param compType the compType to set
-   */
-  public void setCompType(ValueCompressionUtil.COMPRESSION_TYPE[] compType) {
-    this.compType = compType;
-  }
-
-  /**
    * @return the convertedDataType
    */
   public ValueCompressionUtil.DataType[] getConvertedDataType() {
