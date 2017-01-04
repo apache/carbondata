@@ -19,21 +19,20 @@
 
 package org.apache.carbondata.scan.filter.resolver.resolverinfo;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.carbon.datastore.IndexKey;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.scan.filter.DimColumnFilterInfo;
 import org.apache.carbondata.scan.filter.resolver.metadata.FilterResolverMetadata;
-import org.apache.carbondata.scan.filter.resolver.resolverinfo.visitable.ResolvedFilterInfoVisitable;
 import org.apache.carbondata.scan.filter.resolver.resolverinfo.visitor.ResolvedFilterInfoVisitorIntf;
 
-public class DimColumnResolvedFilterInfo implements Serializable, ResolvedFilterInfoVisitable {
+public class DimColumnResolvedFilterInfo implements Serializable {
   /**
    *
    */
@@ -45,33 +44,15 @@ public class DimColumnResolvedFilterInfo implements Serializable, ResolvedFilter
   private int columnIndex = -1;
 
   /**
-   * need compressed data from file
-   */
-  private boolean needCompressedData;
-
-  /**
    * rowIndex
    */
   private int rowIndex = -1;
 
   private boolean isDimensionExistsInCurrentSilce = true;
 
-  private int rsSurrogates;
-
   private String defaultValue;
 
   private CarbonDimension dimension;
-
-  /**
-   * start index key of the block based on the keygenerator
-   */
-  private transient IndexKey starIndexKey;
-
-  /**
-   * end index key  which is been formed considering the max surrogate values
-   * from dictionary cache
-   */
-  private transient IndexKey endIndexKey;
 
   /**
    * reolved filter object of a particlar filter Expression.
@@ -82,22 +63,6 @@ public class DimColumnResolvedFilterInfo implements Serializable, ResolvedFilter
 
   public DimColumnResolvedFilterInfo() {
     dimensionResolvedFilter = new HashMap<CarbonDimension, List<DimColumnFilterInfo>>(20);
-  }
-
-  public IndexKey getStarIndexKey() {
-    return starIndexKey;
-  }
-
-  public void setStarIndexKey(IndexKey starIndexKey) {
-    this.starIndexKey = starIndexKey;
-  }
-
-  public IndexKey getEndIndexKey() {
-    return endIndexKey;
-  }
-
-  public void setEndIndexKey(IndexKey endIndexKey) {
-    this.endIndexKey = endIndexKey;
   }
 
   public void addDimensionResolvedFilterInstance(CarbonDimension dimension,
@@ -132,14 +97,6 @@ public class DimColumnResolvedFilterInfo implements Serializable, ResolvedFilter
     this.columnIndex = columnIndex;
   }
 
-  public boolean isNeedCompressedData() {
-    return needCompressedData;
-  }
-
-  public void setNeedCompressedData(boolean needCompressedData) {
-    this.needCompressedData = needCompressedData;
-  }
-
   public DimColumnFilterInfo getFilterValues() {
     return resolvedFilterValueObj;
   }
@@ -164,14 +121,6 @@ public class DimColumnResolvedFilterInfo implements Serializable, ResolvedFilter
     this.isDimensionExistsInCurrentSilce = isDimensionExistsInCurrentSilce;
   }
 
-  public int getRsSurrogates() {
-    return rsSurrogates;
-  }
-
-  public void setRsSurrogates(int rsSurrogates) {
-    this.rsSurrogates = rsSurrogates;
-  }
-
   public String getDefaultValue() {
     return defaultValue;
   }
@@ -180,8 +129,8 @@ public class DimColumnResolvedFilterInfo implements Serializable, ResolvedFilter
     this.defaultValue = defaultValue;
   }
 
-  @Override public void populateFilterInfoBasedOnColumnType(ResolvedFilterInfoVisitorIntf visitor,
-      FilterResolverMetadata metadata) throws FilterUnsupportedException {
+  public void populateFilterInfoBasedOnColumnType(ResolvedFilterInfoVisitorIntf visitor,
+      FilterResolverMetadata metadata) throws FilterUnsupportedException, IOException {
     if (null != visitor) {
       visitor.populateFilterResolvedInfo(this, metadata);
       this.addDimensionResolvedFilterInstance(metadata.getColumnExpression().getDimension(),

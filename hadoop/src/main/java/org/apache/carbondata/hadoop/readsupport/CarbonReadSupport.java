@@ -18,6 +18,8 @@
  */
 package org.apache.carbondata.hadoop.readsupport;
 
+import java.io.IOException;
+
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 
@@ -31,10 +33,10 @@ public interface CarbonReadSupport<T> {
    *
    * @param carbonColumns
    */
-  public void initialize(CarbonColumn[] carbonColumns,
-      AbsoluteTableIdentifier absoluteTableIdentifier);
+  void initialize(CarbonColumn[] carbonColumns,
+      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException;
 
-  public T readRow(Object[] data);
+  T readRow(Object[] data);
 
   /**
    * This method will be used to clear the dictionary cache and update access count for each

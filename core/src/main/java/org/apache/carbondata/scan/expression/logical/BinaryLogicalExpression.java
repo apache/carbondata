@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.scan.expression.BinaryExpression;
 import org.apache.carbondata.scan.expression.ColumnExpression;
@@ -107,21 +106,4 @@ public abstract class BinaryLogicalExpression extends BinaryExpression {
 
   }
 
-  /**
-   * the method will return flag (true or false) depending on the existence of the
-   * direct dictionary columns in conditional expression
-   *
-   * @return the method will return flag (true or false)
-   */
-  public boolean isDirectDictionaryColumns() {
-    List<ColumnExpression> listOfExp =
-        new ArrayList<ColumnExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    getColumnList(this, listOfExp);
-    for (ColumnExpression ce : listOfExp) {
-      if (!ce.getCarbonColumn().hasEncoding(Encoding.DICTIONARY)) {
-        return true;
-      }
-    }
-    return false;
-  }
 }

@@ -36,7 +36,6 @@ public class FilterUnsupportedException extends Exception {
   /**
    * Constructor
    *
-   * @param errorCode The error code for this exception.
    * @param msg       The error message for this exception.
    */
   public FilterUnsupportedException(String msg) {
@@ -47,7 +46,6 @@ public class FilterUnsupportedException extends Exception {
   /**
    * Constructor
    *
-   * @param errorCode The error code for this exception.
    * @param msg       The error message for this exception.
    */
   public FilterUnsupportedException(String msg, Throwable t) {
@@ -58,8 +56,6 @@ public class FilterUnsupportedException extends Exception {
   /**
    * Constructor
    *
-   * @param errorCode The error code for this exception.
-   * @param msg       The error message for this exception.
    */
   public FilterUnsupportedException(Throwable t) {
     super(t);

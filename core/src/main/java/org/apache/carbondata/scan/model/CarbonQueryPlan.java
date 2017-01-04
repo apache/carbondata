@@ -68,16 +68,6 @@ public class CarbonQueryPlan implements Serializable {
       new ArrayList<QueryMeasure>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
   /**
-   * Limit
-   */
-  private int limit = -1;
-
-  /**
-   * If it is detail query, no need to aggregate in backend
-   */
-  private boolean detailQuery;
-
-  /**
    * expression
    */
   private Expression expression;
@@ -88,31 +78,10 @@ public class CarbonQueryPlan implements Serializable {
   private String queryId;
 
   /**
-   * outLocationPath
-   */
-  private String outLocationPath;
-
-  /**
-   * isCountStarQuery
-   */
-  private boolean isCountStartQuery;
-
-  private List<QueryDimension> sortedDimensions;
-
-  /**
    * If it is raw detail query, no need to aggregate in backend. And it returns with dictionary data
    * with out decoding.
    */
   private boolean rawDetailQuery;
-
-  /**
-   * Constructor created with table name.
-   *
-   * @param tableName
-   */
-  public CarbonQueryPlan(String tableName) {
-    this.tableName = tableName;
-  }
 
   /**
    * Constructor created with database name and table name.
@@ -169,64 +138,12 @@ public class CarbonQueryPlan implements Serializable {
     return tableName;
   }
 
-  /**
-   * @return the limit
-   */
-  public int getLimit() {
-    return limit;
-  }
-
-  /**
-   * @param limit the limit to set
-   */
-  public void setLimit(int limit) {
-    this.limit = limit;
-  }
-
-  /**
-   * @return the detailQuery
-   */
-  public boolean isDetailQuery() {
-    return detailQuery;
-  }
-
-  /**
-   * @param detailQuery the detailQuery to set
-   */
-  public void setDetailQuery(boolean detailQuery) {
-    this.detailQuery = detailQuery;
-  }
-
   public String getQueryId() {
     return queryId;
   }
 
   public void setQueryId(String queryId) {
     this.queryId = queryId;
-  }
-
-  public String getOutLocationPath() {
-    return outLocationPath;
-  }
-
-  public void setOutLocationPath(String outLocationPath) {
-    this.outLocationPath = outLocationPath;
-  }
-
-  public boolean isCountStarQuery() {
-    return isCountStartQuery;
-  }
-
-  public void setCountStartQuery(boolean isCountStartQuery) {
-    this.isCountStartQuery = isCountStartQuery;
-  }
-
-  public List<QueryDimension> getSortedDimemsions() {
-    return sortedDimensions;
-  }
-
-  public void setSortedDimemsions(List<QueryDimension> dims) {
-    this.sortedDimensions = dims;
   }
 
   public boolean isRawDetailQuery() {

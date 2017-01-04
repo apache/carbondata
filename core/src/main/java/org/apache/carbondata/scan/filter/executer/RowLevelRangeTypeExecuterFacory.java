@@ -35,7 +35,6 @@ public class RowLevelRangeTypeExecuterFacory {
    *
    * @param filterExpressionResolverTree
    * @param segmentProperties
-   * @param dataType                     DataType
    * @return the generator instance
    */
   public static RowLevelFilterExecuterImpl getRowLevelRangeTypeExecuter(
@@ -49,7 +48,7 @@ public class RowLevelRangeTypeExecuterFacory {
                 .getDimColEvaluatorInfoList(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getMsrColEvalutorInfoList(),
-            ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getFilterExpression(),
+            filterExpressionResolverTree.getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getFilterRangeValues(segmentProperties), segmentProperties);
@@ -59,7 +58,7 @@ public class RowLevelRangeTypeExecuterFacory {
                 .getDimColEvaluatorInfoList(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getMsrColEvalutorInfoList(),
-            ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getFilterExpression(),
+            filterExpressionResolverTree.getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getFilterRangeValues(segmentProperties), segmentProperties);
@@ -69,7 +68,7 @@ public class RowLevelRangeTypeExecuterFacory {
                 .getDimColEvaluatorInfoList(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getMsrColEvalutorInfoList(),
-            ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getFilterExpression(),
+            filterExpressionResolverTree.getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getFilterRangeValues(segmentProperties), segmentProperties);
@@ -79,7 +78,7 @@ public class RowLevelRangeTypeExecuterFacory {
                 .getDimColEvaluatorInfoList(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getMsrColEvalutorInfoList(),
-            ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getFilterExpression(),
+            filterExpressionResolverTree.getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getFilterRangeValues(segmentProperties), segmentProperties);

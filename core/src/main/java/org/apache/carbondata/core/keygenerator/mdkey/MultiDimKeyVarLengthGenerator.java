@@ -29,7 +29,6 @@ public class MultiDimKeyVarLengthGenerator extends AbstractKeyGenerator {
    */
   protected int[][] byteRangesForKeys;
   private Bits bits;
-  private int startAndEndKeySizeWithPrimitives;
 
   public MultiDimKeyVarLengthGenerator(int[] lens) {
     bits = new Bits(lens);
@@ -103,15 +102,6 @@ public class MultiDimKeyVarLengthGenerator extends AbstractKeyGenerator {
 
   @Override public long[] getKeyArray(byte[] key, int[] maskedByteRanges) {
     return bits.getKeyArray(key, maskedByteRanges);
-  }
-
-  @Override public int getStartAndEndKeySizeWithOnlyPrimitives() {
-    return startAndEndKeySizeWithPrimitives;
-  }
-
-  @Override
-  public void setStartAndEndKeySizeWithOnlyPrimitives(int startAndEndKeySizeWithPrimitives) {
-    this.startAndEndKeySizeWithPrimitives = startAndEndKeySizeWithPrimitives;
   }
 
 }

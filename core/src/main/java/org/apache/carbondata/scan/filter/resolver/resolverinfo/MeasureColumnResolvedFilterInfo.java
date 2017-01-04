@@ -31,12 +31,6 @@ public class MeasureColumnResolvedFilterInfo implements Serializable {
 
   private int rowIndex = -1;
 
-  private Object uniqueValue;
-
-  private String aggregator;
-
-  private boolean isMeasureExistsInCurrentSlice = true;
-
   private Object defaultValue;
 
   private org.apache.carbondata.core.carbon.metadata.datatype.DataType type;
@@ -57,14 +51,6 @@ public class MeasureColumnResolvedFilterInfo implements Serializable {
     this.rowIndex = rowIndex;
   }
 
-  public Object getUniqueValue() {
-    return uniqueValue;
-  }
-
-  public void setUniqueValue(Object uniqueValue) {
-    this.uniqueValue = uniqueValue;
-  }
-
   public org.apache.carbondata.core.carbon.metadata.datatype.DataType getType() {
     return type;
   }
@@ -73,33 +59,12 @@ public class MeasureColumnResolvedFilterInfo implements Serializable {
     this.type = dataType;
   }
 
-  /**
-   * @return Returns the aggregator.
-   */
-  public String getAggregator() {
-    return aggregator;
-  }
-
-  /**
-   * @param aggregator The aggregator to set.
-   */
-  public void setAggregator(String aggregator) {
-    this.aggregator = aggregator;
-  }
-
   public boolean isMeasureExistsInCurrentSlice() {
-    return isMeasureExistsInCurrentSlice;
-  }
-
-  public void setMeasureExistsInCurrentSlice(boolean isMeasureExistsInCurrentSlice) {
-    this.isMeasureExistsInCurrentSlice = isMeasureExistsInCurrentSlice;
+    return true;
   }
 
   public Object getDefaultValue() {
     return defaultValue;
   }
 
-  public void setDefaultValue(double defaultValue) {
-    this.defaultValue = defaultValue;
-  }
 }

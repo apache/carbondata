@@ -52,10 +52,8 @@ import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType;
-import org.apache.carbondata.core.load.LoadMetadataDetails;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
@@ -63,7 +61,6 @@ import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
 import org.apache.carbondata.processing.datatypes.StructDataType;
 import org.apache.carbondata.processing.etl.DataLoadingException;
 import org.apache.carbondata.processing.newflow.DataField;
-import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.pentaho.di.core.CheckResult;
@@ -225,11 +222,8 @@ public final class CarbonDataProcessorUtil {
 
   /**
    * This method will be used to delete sort temp location is it is exites
-   *
-   * @throws CarbonSortKeyAndGroupByException
    */
-  public static void deleteSortLocationIfExists(String tempFileLocation)
-      throws CarbonSortKeyAndGroupByException {
+  public static void deleteSortLocationIfExists(String tempFileLocation) {
     // create new temp file location where this class
     //will write all the temp files
     File file = new File(tempFileLocation);
@@ -237,40 +231,10 @@ public final class CarbonDataProcessorUtil {
     if (file.exists()) {
       try {
         CarbonUtil.deleteFoldersAndFiles(file);
-      } catch (CarbonUtilException e) {
+      } catch (IOException | InterruptedException e ) {
         LOGGER.error(e);
       }
     }
-  }
-
-  /**
-   * return the modification TimeStamp Separated by HASH_SPC_CHARACTER
-   */
-  public static String getLoadNameFromLoadMetaDataDetails(
-      List<LoadMetadataDetails> loadMetadataDetails) {
-    StringBuilder builder = new StringBuilder();
-    for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
-      builder.append(CarbonCommonConstants.LOAD_FOLDER).append(loadMetadataDetail.getLoadName())
-          .append(CarbonCommonConstants.HASH_SPC_CHARACTER);
-    }
-    String loadNames =
-        builder.substring(0, builder.lastIndexOf(CarbonCommonConstants.HASH_SPC_CHARACTER));
-    return loadNames;
-  }
-
-  /**
-   * return the modOrDelTimesStamp TimeStamp Separated by HASH_SPC_CHARACTER
-   */
-  public static String getModificationOrDeletionTimesFromLoadMetadataDetails(
-      List<LoadMetadataDetails> loadMetadataDetails) {
-    StringBuilder builder = new StringBuilder();
-    for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
-      builder.append(loadMetadataDetail.getModificationOrdeletionTimesStamp())
-          .append(CarbonCommonConstants.HASH_SPC_CHARACTER);
-    }
-    String modOrDelTimesStamp =
-        builder.substring(0, builder.indexOf(CarbonCommonConstants.HASH_SPC_CHARACTER));
-    return modOrDelTimesStamp;
   }
 
   /**

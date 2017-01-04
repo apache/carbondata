@@ -129,7 +129,7 @@ public class UnCompressByteArray implements ValueCompressonHolder.UnCompressValu
     return holder;
   }
 
-  public static enum ByteArrayType {
+  public enum ByteArrayType {
     BYTE_ARRAY,
     BIG_DECIMAL
   }

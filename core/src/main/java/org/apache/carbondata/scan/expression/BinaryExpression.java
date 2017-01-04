@@ -21,17 +21,9 @@ package org.apache.carbondata.scan.expression;
 
 public abstract class BinaryExpression extends Expression {
 
-  /**
-   *
-   */
   private static final long serialVersionUID = 1L;
-  /**
-   *
-   */
-
   protected Expression left;
   protected Expression right;
-  protected boolean isRangeExpression;
 
   public BinaryExpression(Expression left, Expression right) {
     this.left = left;
@@ -46,14 +38,6 @@ public abstract class BinaryExpression extends Expression {
 
   public Expression getRight() {
     return right;
-  }
-
-  public boolean isRangeExpression() {
-    return isRangeExpression;
-  }
-
-  public void setRangeExpression(boolean isRangeExpression) {
-    this.isRangeExpression = isRangeExpression;
   }
 
 }

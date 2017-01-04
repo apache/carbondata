@@ -19,6 +19,7 @@
 
 package org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,7 +58,7 @@ public class CompressedDimensionChunkFileBasedReaderTest {
         new CompressedDimensionChunkFileBasedReaderV1(info, eachColumnBlockSize, "filePath");
   }
 
-  @Test public void readDimensionChunksTest() {
+  @Test public void readDimensionChunksTest() throws IOException {
     FileHolder fileHolder = new MockUp<FileHolder>() {
       @Mock public byte[] readByteArray(String filePath, long offset, int length) {
         byte mockedValue[] = { 1, 5, 4, 8, 7 };
@@ -101,7 +102,7 @@ public class CompressedDimensionChunkFileBasedReaderTest {
     }
   }
 
-  @Test public void readDimensionChunksTestForIfStatement() {
+  @Test public void readDimensionChunksTestForIfStatement() throws IOException {
     FileHolder fileHolder = new MockUp<FileHolder>() {
       @Mock public byte[] readByteArray(String filePath, long offset, int length) {
         byte mockedValue[] = { 1, 5, 4, 8, 7 };

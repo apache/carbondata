@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.scan.filter.executer;
 
+import java.io.IOException;
 import java.util.BitSet;
 import java.util.List;
 
@@ -42,13 +43,12 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     this.dimColumnEvaluatorInfo = dimColumnEvaluatorInfo;
     this.segmentProperties = segmentProperties;
     dimColumnExecuterInfo = new DimColumnExecuterFilterInfo();
-    FilterUtil
-        .prepareKeysFromSurrogates(dimColumnEvaluatorInfo.getFilterValues(), segmentProperties,
-            dimColumnEvaluatorInfo.getDimension(), dimColumnExecuterInfo);
+    FilterUtil.prepareKeysFromSurrogates(dimColumnEvaluatorInfo.getFilterValues(),
+        segmentProperties, dimColumnEvaluatorInfo.getDimension(), dimColumnExecuterInfo);
 
   }
 
-  @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder) {
+  @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder) throws IOException {
     int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
         .get(dimColumnEvaluatorInfo.getColumnIndex());
     if (null == blockChunkHolder.getDimensionDataChunk()[blockIndex]) {

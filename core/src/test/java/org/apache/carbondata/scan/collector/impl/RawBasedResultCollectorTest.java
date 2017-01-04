@@ -69,7 +69,6 @@ public class RawBasedResultCollectorTest {
     KeyStructureInfo keyStructureInfo = new KeyStructureInfo();
     keyStructureInfo.setKeyGenerator(keyGenerator);
     keyStructureInfo.setMaxKey(new byte[] { 1, 2 });
-    keyStructureInfo.setMaskedBytes(new int[] { 1, 2 });
     keyStructureInfo.setMaskByteRanges(new int[] { 1, 2 });
     blockExecutionInfo.setKeyStructureInfo(keyStructureInfo);
     AggregatorInfo aggregatorInfo = new AggregatorInfo();

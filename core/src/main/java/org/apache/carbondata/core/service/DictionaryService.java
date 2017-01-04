@@ -39,7 +39,7 @@ public interface DictionaryService {
    * @param carbonStorePath
    * @return
    */
-  public CarbonDictionaryWriter getDictionaryWriter(CarbonTableIdentifier carbonTableIdentifier,
+  CarbonDictionaryWriter getDictionaryWriter(CarbonTableIdentifier carbonTableIdentifier,
       ColumnIdentifier columnIdentifier, String carbonStorePath);
 
   /**
@@ -50,7 +50,7 @@ public interface DictionaryService {
    * @param carbonStorePath
    * @return
    */
-  public CarbonDictionarySortIndexWriter getDictionarySortIndexWriter(
+  CarbonDictionarySortIndexWriter getDictionarySortIndexWriter(
       CarbonTableIdentifier carbonTableIdentifier, ColumnIdentifier columnIdentifier,
       String carbonStorePath);
 
@@ -62,7 +62,7 @@ public interface DictionaryService {
    * @param carbonStorePath
    * @return
    */
-  public CarbonDictionaryMetadataReader getDictionaryMetadataReader(
+  CarbonDictionaryMetadataReader getDictionaryMetadataReader(
       CarbonTableIdentifier carbonTableIdentifier, ColumnIdentifier columnIdentifier,
       String carbonStorePath);
 
@@ -74,7 +74,7 @@ public interface DictionaryService {
    * @param carbonStorePath
    * @return
    */
-  public CarbonDictionaryReader getDictionaryReader(CarbonTableIdentifier carbonTableIdentifier,
+  CarbonDictionaryReader getDictionaryReader(CarbonTableIdentifier carbonTableIdentifier,
       ColumnIdentifier columnIdentifier, String carbonStorePath);
 
   /**
@@ -85,7 +85,7 @@ public interface DictionaryService {
    * @param carbonStorePath
    * @return
    */
-  public CarbonDictionarySortIndexReader getDictionarySortIndexReader(
+  CarbonDictionarySortIndexReader getDictionarySortIndexReader(
       CarbonTableIdentifier carbonTableIdentifier, ColumnIdentifier columnIdentifier,
       String carbonStorePath);
 

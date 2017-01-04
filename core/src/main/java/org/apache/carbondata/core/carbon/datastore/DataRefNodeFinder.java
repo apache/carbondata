@@ -28,7 +28,6 @@ public interface DataRefNodeFinder {
    * the search key
    *
    * @param dataBlocks complete data blocks present
-   * @param serachKey  key to be search
    * @return data block
    */
   DataRefNode findFirstDataBlock(DataRefNode dataBlocks, IndexKey searchKey);
@@ -38,7 +37,6 @@ public interface DataRefNodeFinder {
    * the search key
    *
    * @param dataBlocks complete data blocks present
-   * @param serachKey  key to be search
    * @return data block
    */
   DataRefNode findLastDataBlock(DataRefNode dataBlocks, IndexKey searchKey);

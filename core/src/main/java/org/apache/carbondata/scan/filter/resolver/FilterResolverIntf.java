@@ -18,13 +18,13 @@
  */
 package org.apache.carbondata.scan.filter.resolver;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.SortedMap;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.expression.Expression;
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.scan.filter.intf.FilterExecuterType;
@@ -37,10 +37,11 @@ public interface FilterResolverIntf extends Serializable {
    * dictionaries for executing/evaluating the filter expressions in the
    * executer layer.
    *
-   * @throws QueryExecutionException
+   * @throws IOException
    * @throws FilterUnsupportedException
    */
-  void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) throws FilterUnsupportedException;
+  void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
+      throws IOException, FilterUnsupportedException;
 
   /**
    * This API will provide the left column filter expression
@@ -69,25 +70,22 @@ public interface FilterResolverIntf extends Serializable {
   /**
    * API will get the start key based on the filter applied based on the key generator
    *
-   * @param segmentProperties
    * @param startKey
    * @param setOfStartKeyByteArray
    */
   void getStartKey(long[] startKey, SortedMap<Integer, byte[]> setOfStartKeyByteArray,
-      List<long[]> startKeyList) throws QueryExecutionException;
+      List<long[]> startKeyList);
 
   /**
    * API will read the end key based on the max surrogate of
    * particular dimension column
    *
-   * @param setOfEndKeyByteArray
    * @param endKeys
+   * @param setOfEndKeyByteArray
    * @return
-   * @throws QueryExecutionException
    */
-  void getEndKey(SegmentProperties segmentProperties, AbsoluteTableIdentifier tableIdentifier,
-      long[] endKeys, SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> endKeyList)
-      throws QueryExecutionException;
+  void getEndKey(SegmentProperties segmentProperties, long[] endKeys,
+      SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> endKeyList);
 
   /**
    * API will return the filter executer type which will be used to evaluate

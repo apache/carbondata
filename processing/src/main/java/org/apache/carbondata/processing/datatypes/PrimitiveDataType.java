@@ -42,7 +42,6 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.dictionary.DictionaryServerClientDictionary;
 import org.apache.carbondata.processing.newflow.dictionary.DirectDictionary;
@@ -141,11 +140,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
         Dictionary dictionary = null;
         if (useOnePass) {
           if (CarbonUtil.isFileExistsForGivenColumn(storePath, identifier)) {
-            try {
-              dictionary = cache.get(identifier);
-            } catch (CarbonUtilException e) {
-              throw new RuntimeException(e);
-            }
+            dictionary = cache.get(identifier);
           }
           String threadNo = "initial";
           DictionaryKey dictionaryKey = new DictionaryKey();
@@ -166,7 +161,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
           dictionaryGenerator = new PreCreatedDictionary(dictionary);
         }
       }
-    } catch (CarbonUtilException e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }

@@ -383,22 +383,6 @@ public final class CarbonProperties {
   }
 
   /**
-   * Validate the restrictions
-   *
-   * @param actual
-   * @param max
-   * @param min
-   * @param defaultVal
-   * @return
-   */
-  public long validate(long actual, long max, long min, long defaultVal) {
-    if (actual <= max && actual >= min) {
-      return actual;
-    }
-    return defaultVal;
-  }
-
-  /**
    * returns major compaction size value from carbon properties or default value if it is not valid
    *
    * @return

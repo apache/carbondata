@@ -88,7 +88,6 @@ public class CarbonTableTest extends TestCase {
 
   private ColumnSchema getColumnarMeasureColumn() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setAggregateFunction("SUM");
     dimColumn.setColumnName("IMEI_COUNT");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataType.STRING);

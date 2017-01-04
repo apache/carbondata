@@ -17,54 +17,47 @@
  * under the License.
  */
 
-package org.apache.carbondata.scan.result;
+package org.apache.carbondata.core.cache.dictionary;
 
-import org.apache.carbondata.scan.wrappers.ByteArrayWrapper;
+import java.io.IOException;
 
-/**
- * Result interface for storing the result
- */
-public interface Result<K, V> {
+public class DictionaryBuilderException extends IOException {
   /**
-   * Below method will be used to
-   * add the sccaed result
+   * default serial version ID.
+   */
+  private static final long serialVersionUID = 21312121L;
+
+  /**
+   * The Error message.
+   */
+  private String msg = "";
+
+  /**
+   * Constructor
    *
-   * @param result
+   * @param msg       The error message for this exception.
    */
-  void addScannedResult(K result);
+  public DictionaryBuilderException(String msg) {
+    super(msg);
+    this.msg = msg;
+  }
 
   /**
-   * Returns {@code true} if the iteration has more elements.
-   *
-   * @return {@code true} if the iteration has more elements
+   * getLocalizedMessage
    */
-  boolean hasNext();
+  @Override public String getLocalizedMessage() {
+    return super.getLocalizedMessage();
+  }
 
   /**
-   * Below method will return the result key
-   *
-   * @return key
+   * getMessage
    */
-  ByteArrayWrapper getKey();
+  public String getMessage() {
+    return this.msg;
+  }
 
-  /**
-   * Below code will return the result value
-   *
-   * @return value
-   */
-  V[] getValue();
-
-  void merge(Result<K, V> otherResult);
-
-  /**
-   * Below method will be used to get the result
-   *
-   * @return
-   */
-  K getResult();
-
-  /**
-   * @return size of the result
-   */
-  int size();
+  @Override public String toString() {
+    return "DictionaryBuilderException: " + msg;
+  }
 }
+

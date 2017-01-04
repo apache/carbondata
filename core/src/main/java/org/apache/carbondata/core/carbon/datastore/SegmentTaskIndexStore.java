@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.core.carbon.datastore;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,7 +41,6 @@ import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderExcepti
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath.DataFileUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CarbonUtilException;
 
 /**
  * Class to handle loading, unloading,clearing,storing of the table
@@ -81,16 +81,11 @@ public class SegmentTaskIndexStore
 
   @Override
   public SegmentTaskIndexWrapper get(TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier)
-      throws CarbonUtilException {
-    SegmentTaskIndexWrapper segmentTaskIndexWrapper = null;
-    try {
-      segmentTaskIndexWrapper =
-          loadAndGetTaskIdToSegmentsMap(tableSegmentUniqueIdentifier.getSegmentToTableBlocksInfos(),
-              tableSegmentUniqueIdentifier.getAbsoluteTableIdentifier(),
-              tableSegmentUniqueIdentifier);
-    } catch (IndexBuilderException e) {
-      throw new CarbonUtilException(e.getMessage(), e);
-    }
+      throws IOException {
+    SegmentTaskIndexWrapper segmentTaskIndexWrapper =
+        loadAndGetTaskIdToSegmentsMap(tableSegmentUniqueIdentifier.getSegmentToTableBlocksInfos(),
+            tableSegmentUniqueIdentifier.getAbsoluteTableIdentifier(),
+            tableSegmentUniqueIdentifier);
     if (null != segmentTaskIndexWrapper) {
       segmentTaskIndexWrapper.incrementAccessCount();
     }
@@ -102,21 +97,21 @@ public class SegmentTaskIndexStore
    *
    * @param tableSegmentUniqueIdentifiers
    * @return
-   * @throws CarbonUtilException
+   * @throws IOException
    */
   @Override public List<SegmentTaskIndexWrapper> getAll(
-      List<TableSegmentUniqueIdentifier> tableSegmentUniqueIdentifiers) throws CarbonUtilException {
+      List<TableSegmentUniqueIdentifier> tableSegmentUniqueIdentifiers) throws IOException {
     List<SegmentTaskIndexWrapper> segmentTaskIndexWrappers =
         new ArrayList<>(tableSegmentUniqueIdentifiers.size());
     try {
       for (TableSegmentUniqueIdentifier segmentUniqueIdentifier : tableSegmentUniqueIdentifiers) {
         segmentTaskIndexWrappers.add(get(segmentUniqueIdentifier));
       }
-    } catch (CarbonUtilException e) {
+    } catch (IOException e) {
       for (SegmentTaskIndexWrapper segmentTaskIndexWrapper : segmentTaskIndexWrappers) {
         segmentTaskIndexWrapper.clear();
       }
-      throw new CarbonUtilException("Problem in loading segment blocks.", e);
+      throw e;
     }
     return segmentTaskIndexWrappers;
   }
@@ -155,13 +150,12 @@ public class SegmentTaskIndexStore
    * @param segmentToTableBlocksInfos segment id to block info
    * @param absoluteTableIdentifier   absolute table identifier
    * @return map of taks id to segment mapping
-   * @throws IndexBuilderException
+   * @throws IOException
    */
   private SegmentTaskIndexWrapper loadAndGetTaskIdToSegmentsMap(
       Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos,
       AbsoluteTableIdentifier absoluteTableIdentifier,
-      TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier)
-      throws IndexBuilderException, CarbonUtilException {
+      TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier) throws IOException {
     // task id to segment map
     Iterator<Map.Entry<String, List<TableBlockInfo>>> iteratorOverSegmentBlocksInfos =
         segmentToTableBlocksInfos.entrySet().iterator();
@@ -228,7 +222,7 @@ public class SegmentTaskIndexStore
       }
     } catch (IndexBuilderException e) {
       LOGGER.error("Problem while loading the segment");
-      throw new IndexBuilderException(e);
+      throw e;
     }
     return segmentTaskIndexWrapper;
   }
@@ -304,11 +298,11 @@ public class SegmentTaskIndexStore
    *
    * @param tableBlockInfoList
    * @return loaded segment
-   * @throws CarbonUtilException
+   * @throws IOException
    */
   private AbstractIndex loadBlocks(TaskBucketHolder taskBucketHolder,
       List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier tableIdentifier)
-      throws CarbonUtilException {
+      throws IOException {
     // all the block of one task id will be loaded together
     // so creating a list which will have all the data file meta data to of one task
     List<DataFileFooter> footerList = CarbonUtil

@@ -19,6 +19,7 @@
 
 package org.apache.carbondata.core.carbon.datastore;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -43,7 +44,6 @@ import org.apache.carbondata.core.carbon.datastore.block.TableBlockUniqueIdentif
 import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.CarbonUtilException;
 
 /**
  * This class is used to load the B-Tree in Executor LRU Cache
@@ -64,10 +64,9 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
    *
    * @param tableBlockUniqueIdentifier Uniquely identifies the block
    * @return returns the blocks B-Tree meta
-   * @throws CarbonUtilException
    */
   @Override public AbstractIndex get(TableBlockUniqueIdentifier tableBlockUniqueIdentifier)
-      throws CarbonUtilException {
+      throws IOException {
     TableBlockInfo tableBlockInfo = tableBlockUniqueIdentifier.getTableBlockInfo();
     BlockInfo blockInfo = new BlockInfo(tableBlockInfo);
     String lruCacheKey =
@@ -158,10 +157,10 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
    *
    * @param tableBlocksInfos List of unique table blocks
    * @return List<AbstractIndex>
-   * @throws CarbonUtilException
+   * @throws IndexBuilderException
    */
   @Override public List<AbstractIndex> getAll(List<TableBlockUniqueIdentifier> tableBlocksInfos)
-      throws CarbonUtilException {
+      throws IndexBuilderException {
     AbstractIndex[] loadedBlock = new AbstractIndex[tableBlocksInfos.size()];
     int numberOfCores = 1;
     try {
@@ -181,8 +180,7 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
     try {
       executor.awaitTermination(1, TimeUnit.HOURS);
     } catch (InterruptedException e) {
-      IndexBuilderException indexBuilderException = new IndexBuilderException(e);
-      throw new CarbonUtilException(indexBuilderException.getMessage(), indexBuilderException);
+      throw new IndexBuilderException(e);
     }
     // fill the block which were not loaded before to loaded blocks array
     fillLoadedBlocks(loadedBlock, blocksList);
@@ -241,10 +239,10 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
    *
    * @param loadedBlockArray array of blocks which will be filled
    * @param blocksList       blocks loaded in thread
-   * @throws CarbonUtilException in case of any failure
+   * @throws IndexBuilderException in case of any failure
    */
   private void fillLoadedBlocks(AbstractIndex[] loadedBlockArray,
-      List<Future<AbstractIndex>> blocksList) throws CarbonUtilException {
+      List<Future<AbstractIndex>> blocksList) throws IndexBuilderException {
     int blockCounter = 0;
     boolean exceptionOccurred = false;
     Throwable exceptionRef = null;
@@ -260,7 +258,7 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
       LOGGER.error("Block B-Tree loading failed. Clearing the access count of the loaded blocks.");
       // in case of any failure clear the access count for the valid loaded blocks
       clearAccessCountForLoadedBlocks(loadedBlockArray);
-      throw new CarbonUtilException("Block B-tree loading failed", exceptionRef);
+      throw new IndexBuilderException("Block B-tree loading failed", exceptionRef);
     }
   }
 
@@ -295,7 +293,7 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
   }
 
   private AbstractIndex loadBlock(TableBlockUniqueIdentifier tableBlockUniqueIdentifier)
-      throws CarbonUtilException {
+      throws IOException {
     AbstractIndex tableBlock = new BlockIndex();
     BlockInfo blockInfo = new BlockInfo(tableBlockUniqueIdentifier.getTableBlockInfo());
     String lruCacheKey =

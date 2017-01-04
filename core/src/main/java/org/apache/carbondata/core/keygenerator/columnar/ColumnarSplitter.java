@@ -68,24 +68,6 @@ public interface ColumnarSplitter {
   byte[] getKeyByteArray(byte[][] key);
 
   /**
-   * Takes the split keys and generates the surrogate key array in bytes
-   *
-   * @param key
-   * @param columnIndexes, takes columnIndexes to consider which columns are present in the key
-   * @return
-   */
-  byte[] getKeyByteArray(byte[][] key, int[] columnIndexes);
-
-  /**
-   * Takes the split keys and generates the surrogate key array
-   *
-   * @param key
-   * @param columnIndexes, takes columnIndexes to consider which columns are present in the key
-   * @return
-   */
-  long[] getKeyArray(byte[][] key, int[] columnIndexes);
-
-  /**
    * Below method will be used to get the block size
    *
    * @return

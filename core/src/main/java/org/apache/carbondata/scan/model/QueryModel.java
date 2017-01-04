@@ -56,17 +56,9 @@ public class QueryModel implements Serializable {
    */
   public transient Map<String, Dictionary> columnToDictionaryMapping;
   /**
-   * Number of records to keep in memory.
-   */
-  public int inMemoryRecordSize;
-  /**
    * list of dimension selected for in query
    */
   private List<QueryDimension> queryDimension;
-  /**
-   * list of dimension in which sorting is applied
-   */
-  private List<QueryDimension> sortDimension;
   /**
    * list of measure selected in query
    */
@@ -76,53 +68,23 @@ public class QueryModel implements Serializable {
    */
   private String queryId;
   /**
-   * to check if it a aggregate table
-   */
-  private boolean isAggTable;
-  /**
    * filter tree
    */
   private FilterResolverIntf filterExpressionResolverTree;
-  /**
-   * in case of limit query we need to know how many
-   * records will passed from executor
-   */
-  private int limit;
 
-  /**
-   * to check if it is a count star query , so processing will be different
-   */
-  private boolean isCountStarQuery;
-  /**
-   * to check whether aggregation is required during query execution
-   */
-  private boolean detailQuery;
   /**
    * table block information in which query will be executed
    */
   private List<TableBlockInfo> tableBlockInfos;
   /**
-   * sort in which dimension will be get sorted
-   */
-  private byte[] sortOrder;
-  /**
    * absolute table identifier
    */
   private AbsoluteTableIdentifier absoluteTableIdentifier;
-  /**
-   * in case of detail query with sort we are spilling to disk
-   * to this location will be used to write the temp file in this location
-   */
-  private String queryTempLocation;
   /**
    * To handle most of the computation in query engines like spark and hive, carbon should give
    * raw detailed records to it.
    */
   private boolean forcedDetailRawQuery;
-  /**
-   * partition column list
-   */
-  private List<String> partitionColumns;
   /**
    * table on which query will be executed
    * TODO need to remove this ad pass only the path
@@ -145,9 +107,6 @@ public class QueryModel implements Serializable {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
     queryDimension = new ArrayList<QueryDimension>();
     queryMeasures = new ArrayList<QueryMeasure>();
-    sortDimension = new ArrayList<QueryDimension>();
-    sortOrder = new byte[0];
-    partitionColumns = new ArrayList<String>();
     invalidSegmentIds = new ArrayList<>();
   }
 
@@ -159,11 +118,8 @@ public class QueryModel implements Serializable {
 
     fillQueryModel(queryPlan, carbonTable, queryModel, factTableName);
 
-    queryModel.setLimit(queryPlan.getLimit());
-    queryModel.setDetailQuery(queryPlan.isDetailQuery());
     queryModel.setForcedDetailRawQuery(queryPlan.isRawDetailQuery());
     queryModel.setQueryId(queryPlan.getQueryId());
-    queryModel.setQueryTempLocation(queryPlan.getOutLocationPath());
     return queryModel;
   }
 
@@ -171,34 +127,15 @@ public class QueryModel implements Serializable {
       QueryModel queryModel, String factTableName) {
     queryModel.setAbsoluteTableIdentifier(carbonTable.getAbsoluteTableIdentifier());
     queryModel.setQueryDimension(queryPlan.getDimensions());
-    fillSortInfoInModel(queryModel, queryPlan.getSortedDimemsions());
     queryModel.setQueryMeasures(queryPlan.getMeasures());
     if (null != queryPlan.getFilterExpression()) {
       processFilterExpression(queryPlan.getFilterExpression(),
           carbonTable.getDimensionByTableName(factTableName),
           carbonTable.getMeasureByTableName(factTableName));
     }
-    queryModel.setCountStarQuery(queryPlan.isCountStarQuery());
     //TODO need to remove this code, and executor will load the table
     // from file metadata
     queryModel.setTable(carbonTable);
-  }
-
-  private static void fillSortInfoInModel(QueryModel executorModel,
-      List<QueryDimension> sortedDims) {
-    if (null != sortedDims) {
-      byte[] sortOrderByteArray = new byte[sortedDims.size()];
-      int i = 0;
-      for (QueryColumn mdim : sortedDims) {
-        sortOrderByteArray[i++] = (byte) mdim.getSortOrder().ordinal();
-      }
-      executorModel.setSortOrder(sortOrderByteArray);
-      executorModel.setSortDimension(sortedDims);
-    } else {
-      executorModel.setSortOrder(new byte[0]);
-      executorModel.setSortDimension(new ArrayList<QueryDimension>(0));
-    }
-
   }
 
   public static void processFilterExpression(Expression filterExpression,
@@ -209,13 +146,11 @@ public class QueryModel implements Serializable {
           List<ColumnExpression> listOfCol =
               ((ConditionalExpression) filterExpression).getColumnList();
           for (ColumnExpression expression : listOfCol) {
-            setDimAndMsrColumnNode(dimensions, measures, (ColumnExpression) expression);
+            setDimAndMsrColumnNode(dimensions, measures, expression);
           }
-
         }
       }
       for (Expression expression : filterExpression.getChildren()) {
-
         if (expression instanceof ColumnExpression) {
           setDimAndMsrColumnNode(dimensions, measures, (ColumnExpression) expression);
         } else if (expression instanceof UnknownExpression) {
@@ -316,59 +251,6 @@ public class QueryModel implements Serializable {
   }
 
   /**
-   * @return the isAggTable
-   */
-  public boolean isAggTable() {
-    return isAggTable;
-  }
-
-  /**
-   * @param isAggTable the isAggTable to set
-   */
-  public void setAggTable(boolean isAggTable) {
-    this.isAggTable = isAggTable;
-  }
-
-  /**
-   * @return the limit
-   */
-  public int getLimit() {
-    return limit;
-  }
-
-  /**
-   * @param limit the limit to set
-   */
-  public void setLimit(int limit) {
-    this.limit = limit;
-  }
-
-  /**
-   * @return the isCountStarQuery
-   */
-  public boolean isCountStarQuery() {
-    return isCountStarQuery;
-  }
-
-  /**
-   * @param isCountStarQuery the isCountStarQuery to set
-   */
-  public void setCountStarQuery(boolean isCountStarQuery) {
-    this.isCountStarQuery = isCountStarQuery;
-  }
-
-  /**
-   * @return the isdetailQuery
-   */
-  public boolean isDetailQuery() {
-    return detailQuery;
-  }
-
-  public void setDetailQuery(boolean detailQuery) {
-    this.detailQuery = detailQuery;
-  }
-
-  /**
    * @return the tableBlockInfos
    */
   public List<TableBlockInfo> getTableBlockInfos() {
@@ -380,48 +262,6 @@ public class QueryModel implements Serializable {
    */
   public void setTableBlockInfos(List<TableBlockInfo> tableBlockInfos) {
     this.tableBlockInfos = tableBlockInfos;
-  }
-
-  /**
-   * @return the queryTempLocation
-   */
-  public String getQueryTempLocation() {
-    return queryTempLocation;
-  }
-
-  /**
-   * @param queryTempLocation the queryTempLocation to set
-   */
-  public void setQueryTempLocation(String queryTempLocation) {
-    this.queryTempLocation = queryTempLocation;
-  }
-
-  /**
-   * @return the sortOrder
-   */
-  public byte[] getSortOrder() {
-    return sortOrder;
-  }
-
-  /**
-   * @param sortOrder the sortOrder to set
-   */
-  public void setSortOrder(byte[] sortOrder) {
-    this.sortOrder = sortOrder;
-  }
-
-  /**
-   * @return the sortDimension
-   */
-  public List<QueryDimension> getSortDimension() {
-    return sortDimension;
-  }
-
-  /**
-   * @param sortDimension the sortDimension to set
-   */
-  public void setSortDimension(List<QueryDimension> sortDimension) {
-    this.sortDimension = sortDimension;
   }
 
   /**
@@ -447,20 +287,6 @@ public class QueryModel implements Serializable {
    */
   public void setAbsoluteTableIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier) {
     this.absoluteTableIdentifier = absoluteTableIdentifier;
-  }
-
-  /**
-   * @return the partitionColumns
-   */
-  public List<String> getPartitionColumns() {
-    return partitionColumns;
-  }
-
-  /**
-   * @param partitionColumns the partitionColumns to set
-   */
-  public void setPartitionColumns(List<String> partitionColumns) {
-    this.partitionColumns = partitionColumns;
   }
 
   /**
@@ -497,14 +323,6 @@ public class QueryModel implements Serializable {
    */
   public void setColumnToDictionaryMapping(Map<String, Dictionary> columnToDictionaryMapping) {
     this.columnToDictionaryMapping = columnToDictionaryMapping;
-  }
-
-  public int getInMemoryRecordSize() {
-    return inMemoryRecordSize;
-  }
-
-  public void setInMemoryRecordSize(int inMemoryRecordSize) {
-    this.inMemoryRecordSize = inMemoryRecordSize;
   }
 
   public QueryStatisticsRecorder getStatisticsRecorder() {

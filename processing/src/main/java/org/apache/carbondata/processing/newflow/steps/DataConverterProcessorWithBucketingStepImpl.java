@@ -20,6 +20,7 @@
 package org.apache.carbondata.processing.newflow.steps;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -39,7 +40,6 @@ import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.newflow.converter.RowConverter;
 import org.apache.carbondata.processing.newflow.converter.impl.RowConverterImpl;
-import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordsLogger;
@@ -65,7 +65,7 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
   }
 
   @Override
-  public void initialize() throws CarbonDataLoadingException {
+  public void initialize() throws IOException {
     child.initialize();
     BadRecordsLogger badRecordLogger = createBadRecordLogger();
     converter = new RowConverterImpl(child.getOutput(), configuration, badRecordLogger);

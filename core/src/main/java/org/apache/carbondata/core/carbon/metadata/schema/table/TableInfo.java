@@ -116,34 +116,6 @@ public class TableInfo implements Serializable {
     this.databaseName = databaseName;
   }
 
-  public TableSchema getTableSchemaByName(String tableName) {
-    if (factTable.getTableName().equalsIgnoreCase(tableName)) {
-      return factTable;
-    }
-    for (TableSchema aggregatTableSchema : aggregateTableList) {
-      if (aggregatTableSchema.getTableName().equals(tableName)) {
-        return aggregatTableSchema;
-      }
-    }
-    return null;
-  }
-
-  public TableSchema getTableSchemaByTableId(String tableId) {
-    if (factTable.getTableId().equals(tableId)) {
-      return factTable;
-    }
-    for (TableSchema aggregatTableSchema : aggregateTableList) {
-      if (aggregatTableSchema.getTableId().equals(tableId)) {
-        return aggregatTableSchema;
-      }
-    }
-    return null;
-  }
-
-  public int getNumberOfAggregateTables() {
-    return aggregateTableList.size();
-  }
-
   /**
    * @return the tableUniqueName
    */

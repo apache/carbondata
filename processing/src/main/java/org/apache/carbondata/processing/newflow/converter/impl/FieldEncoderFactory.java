@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.processing.newflow.converter.impl;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.cache.Cache;
@@ -62,7 +63,8 @@ public class FieldEncoderFactory {
   public FieldConverter createFieldEncoder(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, int index, String nullFormat,
-      DictionaryClient client, Boolean useOnePass, String storePath) {
+      DictionaryClient client, Boolean useOnePass, String storePath)
+      throws IOException {
     // Converters are only needed for dimensions and measures it return null.
     if (dataField.getColumn().isDimesion()) {
       if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY) &&

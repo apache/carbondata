@@ -152,7 +152,7 @@ public final class DataTypeUtil {
   public static byte[] bigDecimalToByte(BigDecimal num) {
     BigInteger sig = new BigInteger(num.unscaledValue().toString());
     int scale = num.scale();
-    byte[] bscale = new byte[] { (byte) (scale) };
+    byte[] bscale = { (byte) (scale) };
     byte[] buff = sig.toByteArray();
     byte[] completeArr = new byte[buff.length + bscale.length];
     System.arraycopy(bscale, 0, completeArr, 0, bscale.length);

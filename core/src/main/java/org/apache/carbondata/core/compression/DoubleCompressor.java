@@ -67,7 +67,7 @@ public class DoubleCompressor extends ValueCompressor {
         for (int j = 0; j < value.length; j++) {
           BigDecimal val = BigDecimal.valueOf(value[j]);
           double diff = max.subtract(val).doubleValue();
-          longResult[i] = (long) (Math.round(diff * Math.pow(10, decimal)));
+          longResult[i] = Math.round(diff * Math.pow(10, decimal));
           i++;
         }
         return longResult;
@@ -122,7 +122,7 @@ public class DoubleCompressor extends ValueCompressor {
       case DATA_LONG:
         long[] longResult = new long[value.length];
         for (int j = 0; j < value.length; j++) {
-          longResult[i] = (long) (Math.round(Math.pow(10, decimal) * value[j]));
+          longResult[i] = Math.round(Math.pow(10, decimal) * value[j]);
           i++;
         }
         return longResult;
@@ -188,7 +188,7 @@ public class DoubleCompressor extends ValueCompressor {
       default:
         double[] defaultResult = new double[value.length];
         for (int j = 0; j < value.length; j++) {
-          defaultResult[i] = (double) (maxValue - value[j]);
+          defaultResult[i] = maxValue - value[j];
           i++;
         }
         return defaultResult;

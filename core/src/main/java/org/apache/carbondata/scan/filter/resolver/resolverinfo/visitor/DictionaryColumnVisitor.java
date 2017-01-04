@@ -18,13 +18,11 @@
  */
 package org.apache.carbondata.scan.filter.resolver.resolverinfo.visitor;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.scan.filter.DimColumnFilterInfo;
@@ -33,8 +31,6 @@ import org.apache.carbondata.scan.filter.resolver.metadata.FilterResolverMetadat
 import org.apache.carbondata.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
 public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DictionaryColumnVisitor.class.getName());
 
   /**
    * This Visitor method is used to populate the visitableObj with direct dictionary filter details
@@ -44,10 +40,11 @@ public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
    * @param metadata
    * @throws FilterUnsupportedException,if exception occurs while evaluating
    * filter models.
-   * @throws QueryExecutionException
+   * @throws IOException
+   * @throws FilterUnsupportedException
    */
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
-      FilterResolverMetadata metadata) throws FilterUnsupportedException {
+      FilterResolverMetadata metadata) throws FilterUnsupportedException, IOException {
     DimColumnFilterInfo resolvedFilterObject = null;
     List<String> evaluateResultListFinal;
     try {
@@ -55,19 +52,15 @@ public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
     } catch (FilterIllegalMemberException e) {
       throw new FilterUnsupportedException(e);
     }
-    try {
-      resolvedFilterObject = FilterUtil
-          .getFilterValues(metadata.getTableIdentifier(), metadata.getColumnExpression(),
-              evaluateResultListFinal, metadata.isIncludeFilter());
-      if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
-        // Adding default surrogate key of null member inorder to not display the same while
-        // displaying the report as per hive compatibility.
-        resolvedFilterObject.getFilterList()
-            .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
-        Collections.sort(resolvedFilterObject.getFilterList());
-      }
-    } catch (QueryExecutionException e) {
-      throw new FilterUnsupportedException(e);
+    resolvedFilterObject = FilterUtil
+        .getFilterValues(metadata.getTableIdentifier(), metadata.getColumnExpression(),
+            evaluateResultListFinal, metadata.isIncludeFilter());
+    if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
+      // Adding default surrogate key of null member inorder to not display the same while
+      // displaying the report as per hive compatibility.
+      resolvedFilterObject.getFilterList()
+          .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
+      Collections.sort(resolvedFilterObject.getFilterList());
     }
     visitableObj.setFilterValues(resolvedFilterObject);
   }

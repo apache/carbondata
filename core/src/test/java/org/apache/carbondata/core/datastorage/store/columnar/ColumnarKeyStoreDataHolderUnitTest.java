@@ -83,7 +83,7 @@ public class ColumnarKeyStoreDataHolderUnitTest {
     byte[] keyBlockData = new byte[] { 32, 64, 32, 40, 64, 8, 8 };
     List<byte[]> noDictionaryValBasedKeyBlockData = new java.util.ArrayList<>();
     noDictionaryValBasedKeyBlockData.add(keyBlockData);
-    new ColumnarKeyStoreDataHolder(noDictionaryValBasedKeyBlockData, columnarKeyStoreMetadata);
+    new ColumnarKeyStoreDataHolder(columnarKeyStoreMetadata);
     int columnIndex = 0;
     int expected_result = 8232;
     int result = columnarKeyStoreDataHolder.getSurrogateKey(columnIndex);

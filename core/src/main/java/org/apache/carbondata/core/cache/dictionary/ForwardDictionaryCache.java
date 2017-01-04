@@ -19,6 +19,7 @@
 
 package org.apache.carbondata.core.cache.dictionary;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -31,7 +32,6 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
-import org.apache.carbondata.core.util.CarbonUtilException;
 
 /**
  * This class implements methods to create dictionary cache which will hold
@@ -62,10 +62,10 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
    * @param dictionaryColumnUniqueIdentifier unique identifier which contains dbName,
    *                                         tableName and columnIdentifier
    * @return dictionary
-   * @throws CarbonUtilException in case memory is not sufficient to load dictionary into memory
+   * @throws IOException in case memory is not sufficient to load dictionary into memory
    */
   @Override public Dictionary get(DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier)
-      throws CarbonUtilException {
+      throws IOException {
     return getDictionary(dictionaryColumnUniqueIdentifier);
   }
 
@@ -76,11 +76,11 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
    * @param dictionaryColumnUniqueIdentifiers unique identifier which contains dbName,
    *                                          tableName and columnIdentifier
    * @return list of dictionary
-   * @throws CarbonUtilException in case memory is not sufficient to load dictionary into memory
+   * @throws IOException in case memory is not sufficient to load dictionary into memory
    */
   @Override public List<Dictionary> getAll(
       List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers)
-      throws CarbonUtilException {
+      throws IOException {
     boolean exceptionOccurredInDictionaryLoading = false;
     String exceptionMessage = "";
     List<Dictionary> forwardDictionaryObjectList =
@@ -90,7 +90,7 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
     ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
     for (final DictionaryColumnUniqueIdentifier uniqueIdent : dictionaryColumnUniqueIdentifiers) {
       taskSubmitList.add(executorService.submit(new Callable<Dictionary>() {
-        @Override public Dictionary call() throws CarbonUtilException {
+        @Override public Dictionary call() throws IOException {
           Dictionary dictionary = getDictionary(uniqueIdent);
           return dictionary;
         }
@@ -114,7 +114,7 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
     if (exceptionOccurredInDictionaryLoading) {
       clearDictionary(forwardDictionaryObjectList);
       LOGGER.error(exceptionMessage);
-      throw new CarbonUtilException(exceptionMessage);
+      throw new IOException(exceptionMessage);
     }
     return forwardDictionaryObjectList;
   }
@@ -160,11 +160,11 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
    * @param dictionaryColumnUniqueIdentifier unique identifier which contains dbName,
    *                                         tableName and columnIdentifier
    * @return dictionary
-   * @throws CarbonUtilException in case memory is not sufficient to load dictionary into memory
+   * @throws IOException in case memory is not sufficient to load dictionary into memory
    */
   private Dictionary getDictionary(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier)
-      throws CarbonUtilException {
+      throws IOException {
     Dictionary forwardDictionary = null;
     // dictionary is only for primitive data type
     assert (!dictionaryColumnUniqueIdentifier.getDataType().isComplexType());

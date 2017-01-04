@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.scanner.impl;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -41,7 +42,6 @@ import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorderImpl;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.impl.DFSFileHolderImpl;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
@@ -103,7 +103,8 @@ public class FilterScannerTest {
     bTreeBuilderInfo = new BTreeBuilderInfo(Arrays.asList(dataFileFooter), new int[] { 1 });
   }
 
-  @Test public void testToScanBlockletWithEmptyBitSet() throws QueryExecutionException {
+  @Test public void testToScanBlockletWithEmptyBitSet()
+      throws IOException, FilterUnsupportedException {
     new MockUp<AndFilterExecuterImpl>() {
       @SuppressWarnings("unused") @Mock
       public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
@@ -117,7 +118,8 @@ public class FilterScannerTest {
     assertEquals(0, abstractScannedResult.numberOfOutputRows());
   }
 
-  @Test public void testToScanBlockletWithNonEmptyBitSet() throws QueryExecutionException {
+  @Test public void testToScanBlockletWithNonEmptyBitSet()
+      throws IOException, FilterUnsupportedException {
     new MockUp<AndFilterExecuterImpl>() {
       @SuppressWarnings("unused") @Mock
       public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
@@ -173,8 +175,8 @@ public class FilterScannerTest {
     assertEquals(2, abstractScannedResult.numberOfOutputRows());
   }
 
-  @Test(expected = QueryExecutionException.class) public void testToScanBlockletWithException()
-      throws QueryExecutionException {
+  @Test(expected = FilterUnsupportedException.class) public void testToScanBlockletWithException()
+      throws IOException, FilterUnsupportedException {
     new MockUp<AndFilterExecuterImpl>() {
       @SuppressWarnings("unused") @Mock
       public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {

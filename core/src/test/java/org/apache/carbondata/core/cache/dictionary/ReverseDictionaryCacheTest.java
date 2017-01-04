@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -39,7 +40,7 @@ import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.CarbonUtilException;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -182,7 +183,7 @@ public class ReverseDictionaryCacheTest extends AbstractDictionaryCacheTest {
       reverseDictionary = (Dictionary) reverseDictionaryCache.get(dictionaryColumnUniqueIdentifier);
       fail("not throwing exception");
     } catch (Exception e) {
-      assertTrue(e instanceof CarbonUtilException);
+      assertTrue(e instanceof IOException);
     }
     assertEquals(null, reverseDictionary);
   }
