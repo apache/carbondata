@@ -18,6 +18,8 @@
  */
 package org.apache.carbondata.processing.newflow.converter;
 
+import java.io.IOException;
+
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
@@ -26,7 +28,7 @@ import org.apache.carbondata.processing.newflow.row.CarbonRow;
  */
 public interface RowConverter {
 
-  void initialize();
+  void initialize() throws IOException;
 
   CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException;
 

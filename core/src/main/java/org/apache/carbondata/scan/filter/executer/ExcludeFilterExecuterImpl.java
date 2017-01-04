@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.scan.filter.executer;
 
+import java.io.IOException;
 import java.util.BitSet;
 import java.util.List;
 
@@ -46,7 +47,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
         dimColEvaluatorInfo.getDimension(), dimColumnExecuterInfo);
   }
 
-  @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder) {
+  @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder) throws IOException {
     int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
         .get(dimColEvaluatorInfo.getColumnIndex());
     if (null == blockChunkHolder.getDimensionDataChunk()[blockIndex]) {

@@ -32,10 +32,4 @@ public interface NodeMeasureDataStore {
    */
   byte[][] getWritableMeasureDataArray(CarbonWriteDataHolder[] dataHolderArray);
 
-  MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder);
-
-  MeasureDataWrapper getBackData(int cols, FileHolder fileHolder);
-
-  short getLength();
-
 }

@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.spark.merger;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -81,7 +82,7 @@ public class CarbonCompactionExecutor {
    *
    * @return List of Carbon iterators
    */
-  public List<RawResultIterator> processTableBlocks() throws QueryExecutionException {
+  public List<RawResultIterator> processTableBlocks() throws QueryExecutionException, IOException {
 
     List<RawResultIterator> resultList =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -124,7 +125,7 @@ public class CarbonCompactionExecutor {
    * @return
    */
   private CarbonIterator<BatchResult> executeBlockList(List<TableBlockInfo> blockList)
-      throws QueryExecutionException {
+      throws QueryExecutionException, IOException {
     queryModel.setTableBlockInfos(blockList);
     this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
     return queryExecutor.execute(queryModel);
@@ -165,12 +166,8 @@ public class CarbonCompactionExecutor {
    * @return
    */
   private QueryModel prepareQueryModel(List<TableBlockInfo> blockList) {
-
     QueryModel model = new QueryModel();
-
     model.setTableBlockInfos(blockList);
-    model.setCountStarQuery(false);
-    model.setDetailQuery(true);
     model.setForcedDetailRawQuery(true);
     model.setFilterExpressionResolverTree(null);
 
@@ -188,18 +185,9 @@ public class CarbonCompactionExecutor {
       msrs.add(queryMeasure);
     }
     model.setQueryMeasures(msrs);
-
     model.setQueryId(System.nanoTime() + "");
-
     model.setAbsoluteTableIdentifier(carbonTable.getAbsoluteTableIdentifier());
-
-    model.setAggTable(false);
-    model.setLimit(-1);
-
     model.setTable(carbonTable);
-
-    model.setInMemoryRecordSize(CarbonCommonConstants.COMPACTION_INMEMORY_RECORD_SIZE);
-
     return model;
   }
 

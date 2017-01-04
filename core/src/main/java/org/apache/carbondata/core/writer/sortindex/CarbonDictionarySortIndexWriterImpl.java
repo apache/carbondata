@@ -97,7 +97,7 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
    * @param sortIndexList list of sortIndex
    * @throws IOException In Case of any I/O errors occurs.
    */
-  @Override public void writeSortIndex(List<Integer> sortIndexList) throws IOException {
+  @Override public void writeSortIndex(List<Integer> sortIndexList) {
     columnSortInfo.setSort_index(sortIndexList);
   }
 
@@ -108,8 +108,7 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
    * @param invertedSortIndexList list of  sortIndexInverted
    * @throws IOException In Case of any I/O errors occurs.
    */
-  @Override public void writeInvertedSortIndex(List<Integer> invertedSortIndexList)
-      throws IOException {
+  @Override public void writeInvertedSortIndex(List<Integer> invertedSortIndexList) {
     columnSortInfo.setSort_index_inverted(invertedSortIndexList);
   }
 

@@ -23,8 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 
@@ -34,9 +32,6 @@ import org.apache.hadoop.fs.Path;
 
 
 public class DFSFileHolderImpl implements FileHolder {
-
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DFSFileHolderImpl.class.getName());
   /**
    * cache to hold filename and its stream
    */
@@ -47,10 +42,10 @@ public class DFSFileHolderImpl implements FileHolder {
         new HashMap<String, FSDataInputStream>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   }
 
-  @Override public byte[] readByteArray(String filePath, long offset, int length) {
+  @Override public byte[] readByteArray(String filePath, long offset, int length)
+      throws IOException {
     FSDataInputStream fileChannel = updateCache(filePath);
-    byte[] byteBffer = read(fileChannel, length, offset);
-    return byteBffer;
+    return read(fileChannel, length, offset);
   }
 
   /**
@@ -61,17 +56,13 @@ public class DFSFileHolderImpl implements FileHolder {
    * @param filePath fully qualified file path
    * @return channel
    */
-  private FSDataInputStream updateCache(String filePath) {
+  private FSDataInputStream updateCache(String filePath) throws IOException {
     FSDataInputStream fileChannel = fileNameAndStreamCache.get(filePath);
-    try {
-      if (null == fileChannel) {
-        Path pt = new Path(filePath);
-        FileSystem fs = FileSystem.get(FileFactory.getConfiguration());
-        fileChannel = fs.open(pt);
-        fileNameAndStreamCache.put(filePath, fileChannel);
-      }
-    } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+    if (null == fileChannel) {
+      Path pt = new Path(filePath);
+      FileSystem fs = FileSystem.get(FileFactory.getConfiguration());
+      fileChannel = fs.open(pt);
+      fileNameAndStreamCache.put(filePath, fileChannel);
     }
     return fileChannel;
   }
@@ -84,14 +75,10 @@ public class DFSFileHolderImpl implements FileHolder {
    * @param offset  position
    * @return byte buffer
    */
-  private byte[] read(FSDataInputStream channel, int size, long offset) {
+  private byte[] read(FSDataInputStream channel, int size, long offset) throws IOException {
     byte[] byteBffer = new byte[size];
-    try {
-      channel.seek(offset);
-      channel.readFully(byteBffer);
-    } catch (Exception e) {
-      LOGGER.error(e, e.getMessage());
-    }
+    channel.seek(offset);
+    channel.readFully(byteBffer);
     return byteBffer;
   }
 
@@ -102,82 +89,46 @@ public class DFSFileHolderImpl implements FileHolder {
    * @param size    number of bytes
    * @return byte buffer
    */
-  private byte[] read(FSDataInputStream channel, int size) {
+  private byte[] read(FSDataInputStream channel, int size) throws IOException {
     byte[] byteBffer = new byte[size];
-    try {
-      channel.readFully(byteBffer);
-    } catch (Exception e) {
-      LOGGER.error(e, e.getMessage());
-    }
+    channel.readFully(byteBffer);
     return byteBffer;
   }
 
-  @Override public int readInt(String filePath, long offset) {
+  @Override public int readInt(String filePath, long offset) throws IOException {
     FSDataInputStream fileChannel = updateCache(filePath);
-    int i = -1;
-    try {
-      fileChannel.seek(offset);
-      i = fileChannel.readInt();
-    } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
-    }
-
-    return i;
+    fileChannel.seek(offset);
+    return fileChannel.readInt();
   }
 
-  @Override public long readDouble(String filePath, long offset) {
+  @Override public long readDouble(String filePath, long offset) throws IOException {
     FSDataInputStream fileChannel = updateCache(filePath);
-    long i = -1;
-    try {
-      fileChannel.seek(offset);
-      i = fileChannel.readLong();
-    } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
-    }
-
-    return i;
+    fileChannel.seek(offset);
+    return fileChannel.readLong();
   }
 
-  @Override public void finish() {
+  @Override public void finish() throws IOException {
     for (Entry<String, FSDataInputStream> entry : fileNameAndStreamCache.entrySet()) {
-      try {
-        FSDataInputStream channel = entry.getValue();
-        if (null != channel) {
-          channel.close();
-        }
-      } catch (IOException exception) {
-        LOGGER.error(exception, exception.getMessage());
+      FSDataInputStream channel = entry.getValue();
+      if (null != channel) {
+        channel.close();
       }
     }
-
   }
 
-  @Override public byte[] readByteArray(String filePath, int length) {
+  @Override public byte[] readByteArray(String filePath, int length) throws IOException {
     FSDataInputStream fileChannel = updateCache(filePath);
-    byte[] byteBffer = read(fileChannel, length);
-    return byteBffer;
+    return read(fileChannel, length);
   }
 
-  @Override public long readLong(String filePath, long offset) {
+  @Override public long readLong(String filePath, long offset) throws IOException {
     FSDataInputStream fileChannel = updateCache(filePath);
-    long i = -1;
-    try {
-      fileChannel.seek(offset);
-      i = fileChannel.readLong();
-    } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
-    }
-    return i;
+    fileChannel.seek(offset);
+    return fileChannel.readLong();
   }
 
-  @Override public int readInt(String filePath) {
+  @Override public int readInt(String filePath) throws IOException {
     FSDataInputStream fileChannel = updateCache(filePath);
-    int i = -1;
-    try {
-      i = fileChannel.readInt();
-    } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
-    }
-    return i;
+    return fileChannel.readInt();
   }
 }

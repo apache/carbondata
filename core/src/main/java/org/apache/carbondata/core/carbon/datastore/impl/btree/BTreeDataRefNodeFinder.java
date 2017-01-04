@@ -69,8 +69,6 @@ public class BTreeDataRefNodeFinder implements DataRefNodeFinder {
    * Below method will be used to get the first tentative data block based on
    * search key
    *
-   * @param dataBlocks complete data blocks present
-   * @param serachKey  key to be search
    * @return data block
    */
   @Override public DataRefNode findFirstDataBlock(DataRefNode dataRefBlock, IndexKey searchKey) {
@@ -86,8 +84,6 @@ public class BTreeDataRefNodeFinder implements DataRefNodeFinder {
    * Below method will be used to get the last data tentative block based on
    * search key
    *
-   * @param dataBlocks complete data blocks present
-   * @param serachKey  key to be search
    * @return data block
    */
   @Override public DataRefNode findLastDataBlock(DataRefNode dataRefBlock, IndexKey searchKey) {

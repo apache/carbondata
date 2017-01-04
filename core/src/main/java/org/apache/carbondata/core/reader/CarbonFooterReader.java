@@ -65,14 +65,13 @@ public class CarbonFooterReader {
    * @return
    * @throws IOException
    */
-  private ThriftReader openThriftReader(String filePath) throws IOException {
+  private ThriftReader openThriftReader(String filePath) {
 
-    ThriftReader thriftReader = new ThriftReader(filePath, new ThriftReader.TBaseCreator() {
+    return new ThriftReader(filePath, new ThriftReader.TBaseCreator() {
       @Override public TBase create() {
         return new FileFooter();
       }
     });
-    return thriftReader;
   }
 
 }

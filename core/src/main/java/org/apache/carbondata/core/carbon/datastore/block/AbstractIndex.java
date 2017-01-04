@@ -53,13 +53,6 @@ public abstract class AbstractIndex implements Cacheable {
   protected long memorySize;
 
   /**
-   * @return the totalNumberOfRows
-   */
-  public long getTotalNumberOfRows() {
-    return totalNumberOfRows;
-  }
-
-  /**
    * @return the segmentProperties
    */
   public SegmentProperties getSegmentProperties() {

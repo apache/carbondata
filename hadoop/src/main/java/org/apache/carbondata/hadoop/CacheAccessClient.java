@@ -18,13 +18,12 @@
  */
 package org.apache.carbondata.hadoop;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.cache.Cache;
-import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.CarbonUtilException;
 
 /**
  * CacheClient : Class used to request the segments cache
@@ -34,11 +33,6 @@ public class CacheAccessClient<K, V> {
    * List of segments
    */
   private List<K> segmentList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
-  /**
-   * absolute table identifier
-   */
-  private AbsoluteTableIdentifier absoluteTableIdentifier;
 
   private Cache<K, V> cache;
 
@@ -67,9 +61,9 @@ public class CacheAccessClient<K, V> {
    *
    * @param key
    * @return
-   * @throws CarbonUtilException in case memory is not sufficient to load data into memory
+   * @throws IOException in case memory is not sufficient to load data into memory
    */
-  public V get(K key) throws CarbonUtilException {
+  public V get(K key) throws IOException {
     V value = cache.get(key);
     if (value != null) {
       segmentList.add(key);

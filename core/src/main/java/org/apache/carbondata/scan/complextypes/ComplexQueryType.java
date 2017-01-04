@@ -19,6 +19,8 @@
  */
 package org.apache.carbondata.scan.complextypes;
 
+import java.io.IOException;
+
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.scan.filter.GenericQueryType;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
@@ -36,14 +38,6 @@ public class ComplexQueryType {
     this.name = name;
     this.parentname = parentname;
     this.blockIndex = blockIndex;
-  }
-
-  public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder) {
-    if (null == blockChunkHolder.getDimensionDataChunk()[blockIndex]) {
-      blockChunkHolder.getDimensionDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
-          .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
-    }
-    children.fillRequiredBlockData(blockChunkHolder);
   }
 
   /**
@@ -71,7 +65,7 @@ public class ComplexQueryType {
   /*
    * This method will read the block data chunk from the respective block
    */
-  protected void readBlockDataChunk(BlocksChunkHolder blockChunkHolder) {
+  protected void readBlockDataChunk(BlocksChunkHolder blockChunkHolder) throws IOException {
     if (null == blockChunkHolder.getDimensionDataChunk()[blockIndex]) {
       blockChunkHolder.getDimensionDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
           .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);

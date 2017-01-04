@@ -163,7 +163,7 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
           .recordDictionaryValuesTotalTime(parameters.getPartitionID(), System.currentTimeMillis());
       return false;
-    } catch (CarbonSortKeyAndGroupByException e) {
+    } catch (InterruptedException e) {
       throw new CarbonDataLoadingException(e);
     }
   }

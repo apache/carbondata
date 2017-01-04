@@ -40,13 +40,9 @@ import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.CarbonUtilException;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.test.util.StoreCreator;
 
 import junit.framework.TestCase;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -77,7 +73,7 @@ public class BlockIndexStoreTest extends TestCase {
 	  }
 
   @Test public void testLoadAndGetTaskIdToSegmentsMapForSingleSegment()
-      throws IOException, CarbonUtilException {
+      throws IOException {
     String canonicalPath =
         new File(this.getClass().getResource("/").getPath() + "/../../").getCanonicalPath();
     File file = getPartFile();
@@ -94,7 +90,7 @@ public class BlockIndexStoreTest extends TestCase {
           getTableBlockUniqueIdentifierList(Arrays.asList(new TableBlockInfo[] { info }), absoluteTableIdentifier);
       List<AbstractIndex> loadAndGetBlocks = cache.getAll(tableBlockInfoList);
       assertTrue(loadAndGetBlocks.size() == 1);
-    } catch (CarbonUtilException e) {
+    } catch (Exception e) {
       assertTrue(false);
     }
     List<String> segmentIds = new ArrayList<>();
@@ -161,7 +157,7 @@ public class BlockIndexStoreTest extends TestCase {
           getTableBlockUniqueIdentifierList(tableBlockInfos, absoluteTableIdentifier);
       List<AbstractIndex> loadAndGetBlocks = cache.getAll(tableBlockUniqueIdentifiers);
       assertTrue(loadAndGetBlocks.size() == 5);
-    } catch (CarbonUtilException e) {
+    } catch (Exception e) {
       assertTrue(false);
     }
     List<String> segmentIds = new ArrayList<>();
@@ -233,7 +229,7 @@ public class BlockIndexStoreTest extends TestCase {
           getTableBlockUniqueIdentifierList(tableBlockInfos, absoluteTableIdentifier);
       List<AbstractIndex> loadAndGetBlocks = cache.getAll(blockUniqueIdentifierList);
       assertTrue(loadAndGetBlocks.size() == 8);
-    } catch (CarbonUtilException e) {
+    } catch (Exception e) {
       assertTrue(false);
     }
     List<String> segmentIds = new ArrayList<>();

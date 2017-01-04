@@ -67,7 +67,6 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
    * Constructor to get minimum parameter to create
    * instance of this class
    *
-   * @param dimensionColumnChunk dimension chunk metadata
    * @param eachColumnValueSize  size of the each column value
    * @param filePath             file from which data will be read
    */

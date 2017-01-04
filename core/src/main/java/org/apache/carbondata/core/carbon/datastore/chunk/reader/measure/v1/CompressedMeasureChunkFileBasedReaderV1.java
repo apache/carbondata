@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.v1;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
@@ -27,8 +28,6 @@ import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.compression.ReaderCompressModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
-
-
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
@@ -63,7 +62,7 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
    * @return measure data chunks
    */
   @Override public MeasureColumnDataChunk[] readMeasureChunks(final FileHolder fileReader,
-      final int[][] blockIndexes) {
+      final int[][] blockIndexes) throws IOException {
     MeasureColumnDataChunk[] datChunk = new MeasureColumnDataChunk[measureColumnChunks.size()];
     for (int i = 0; i < blockIndexes.length; i++) {
       for (int j = blockIndexes[i][0]; j <= blockIndexes[i][1]; j++) {
@@ -81,7 +80,7 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
    * @return measure data chunk
    */
   @Override public MeasureColumnDataChunk readMeasureChunk(final FileHolder fileReader,
-      final int blockIndex) {
+      final int blockIndex) throws IOException {
     ValueEncoderMeta meta = measureColumnChunks.get(blockIndex).getValueEncoderMeta().get(0);
     ReaderCompressModel compressModel = ValueCompressionUtil.getReaderCompressModel(meta);
     UnCompressValue values = compressModel.getUnCompressValues().getNew().getCompressorObject();

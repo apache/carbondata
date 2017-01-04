@@ -76,68 +76,70 @@ public class DFSFileHolderImplUnitTest {
     fileNameWithEmptyContent = fileWithEmptyContent.getAbsolutePath();
   }
 
-  @AfterClass public static void tearDown() {
+  @AfterClass public static void tearDown() throws IOException  {
     file.delete();
     fileWithEmptyContent.delete();
     dfsFileHolder.finish();
   }
 
-  @Test public void testReadByteArray() {
+  @Test public void testReadByteArray() throws IOException  {
     byte[] result = dfsFileHolder.readByteArray(fileName, 1);
     byte[] expected_result = new byte[] { 72 };
     assertThat(result, is(equalTo(expected_result)));
   }
 
-  @Test public void testReadByteArrayWithFilePath() {
+  @Test public void testReadByteArrayWithFilePath() throws IOException  {
     byte[] result = dfsFileHolder.readByteArray(fileName, 2L, 2);
     byte[] expected_result = { 108, 108 };
     assertThat(result, is(equalTo(expected_result)));
   }
 
-  @Test public void testReadLong() {
+  @Test public void testReadLong() throws IOException  {
     long actualResult = dfsFileHolder.readLong(fileName, 1L);
     long expectedResult = 7308335519855243122L;
     assertThat(actualResult, is(equalTo(expectedResult)));
   }
 
-  @Test public void testReadLongForIoException() throws IOException {
+  @Test(expected = IOException.class)
+  public void testReadLongForIoException() throws IOException {
     dfsFileHolder.readLong(fileNameWithEmptyContent, 1L);
-
   }
 
-  @Test public void testReadIntForIoException() throws IOException {
+  @Test(expected = IOException.class)
+  public void testReadIntForIoException() throws IOException{
     dfsFileHolder.readInt(fileNameWithEmptyContent, 1L);
   }
 
-  @Test public void testReadInt() {
+  @Test public void testReadInt() throws IOException  {
     int actualResult = dfsFileHolder.readInt(fileName, 1L);
     int expectedResult = 1701604463;
     assertThat(actualResult, is(equalTo(expectedResult)));
   }
 
-  @Test public void testReadIntWithFileName() {
+  @Test public void testReadIntWithFileName() throws IOException {
     int actualResult = dfsFileHolder.readInt(fileName);
     int expectedResult = 1701604463;
     assertThat(actualResult, is(equalTo(expectedResult)));
   }
 
-  @Test public void testReadIntWithFileNameForIOException() {
+  @Test(expected = IOException.class)
+  public void testReadIntWithFileNameForIOException() throws IOException {
     dfsFileHolder.readInt(fileNameWithEmptyContent);
-
   }
 
-  @Test public void testDouble() {
+  @Test public void testDouble() throws IOException  {
     double actualResult = dfsFileHolder.readDouble(fileName, 1L);
     double expectedResult = 7.3083355198552433E18;
     assertThat(actualResult, is(equalTo(expectedResult)));
   }
 
-  @Test public void testDoubleForIoException() throws IOException {
+  @Test(expected = IOException.class)
+  public void testDoubleForIoException() throws IOException {
     dfsFileHolder.readDouble(fileNameWithEmptyContent, 1L);
-
   }
 
-  @Test public void testDoubleForIoExceptionwithUpdateCache() throws Exception {
+  @Test
+  public void testDoubleForIoExceptionwithUpdateCache() throws IOException {
     new MockUp<FileSystem>() {
       @SuppressWarnings("unused") @Mock public FSDataInputStream open(Path file)
           throws IOException {
@@ -145,13 +147,7 @@ public class DFSFileHolderImplUnitTest {
       }
 
     };
-    String expected = null;
-    try {
-      dfsFileHolder.readDouble(fileName, 1L);
-    } catch (Exception e) {
-      assertNull(e.getMessage());
-    }
-
+    dfsFileHolder.readDouble(fileName, 1L);
   }
 
 }

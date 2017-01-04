@@ -19,14 +19,14 @@
 
 package org.apache.carbondata.processing.newflow.converter.impl;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
-import org.apache.carbondata.core.cache.dictionary.*;
+import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -35,7 +35,6 @@ import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.converter.BadRecordLogHolder;
@@ -45,9 +44,6 @@ import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingExcep
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
 public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConverterImpl {
-
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DictionaryFieldConverterImpl.class.getName());
 
   private BiDictionary<Integer, Object> dictionaryGenerator;
 
@@ -60,7 +56,8 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
   public DictionaryFieldConverterImpl(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, String nullFormat, int index,
-      DictionaryClient client, Boolean useOnePass, String storePath) {
+      DictionaryClient client, Boolean useOnePass, String storePath)
+      throws IOException {
     this.index = index;
     this.carbonDimension = (CarbonDimension) dataField.getColumn();
     this.nullFormat = nullFormat;
@@ -72,12 +69,7 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
     // if use one pass, use DictionaryServerClientDictionary
     if (useOnePass) {
       if (CarbonUtil.isFileExistsForGivenColumn(storePath, identifier)) {
-        try{
-          dictionary = cache.get(identifier);
-        } catch (CarbonUtilException e) {
-          LOGGER.error(e);
-          throw new RuntimeException(e);
-        }
+        dictionary = cache.get(identifier);
       }
       String threadNo = "initial";
       DictionaryKey dictionaryKey = new DictionaryKey();
@@ -94,13 +86,8 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
       dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,
               dictionaryKey, localCache);
     } else {
-      try {
-        dictionary = cache.get(identifier);
-        dictionaryGenerator = new PreCreatedDictionary(dictionary);
-      } catch (CarbonUtilException e) {
-        LOGGER.error(e);
-        throw new RuntimeException(e);
-      }
+      dictionary = cache.get(identifier);
+      dictionaryGenerator = new PreCreatedDictionary(dictionary);
     }
   }
 

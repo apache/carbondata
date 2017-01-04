@@ -24,7 +24,6 @@ import java.util.List;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryChunksWrapper;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.CarbonUtilException;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -47,10 +46,8 @@ public class CarbonDictionarySortInfoPreparatorTest {
 
   /**
    * Tests the getDictionarySortInfo method
-   *
-   * @throws CarbonUtilException
    */
-  @Test public void testGetDictionarySortInfo() throws CarbonUtilException {
+  @Test public void testGetDictionarySortInfo() {
 
     List<String> newDistinctValues = new ArrayList<>();
     newDistinctValues.add("abc");
@@ -83,10 +80,8 @@ public class CarbonDictionarySortInfoPreparatorTest {
 
   /**
    * Tests getDictionarySortInfo when dictionary is null
-   *
-   * @throws CarbonUtilException
    */
-  @Test public void testGetDictionarySortInfoDictionaryNullCase() throws CarbonUtilException {
+  @Test public void testGetDictionarySortInfoDictionaryNullCase() {
 
     List<String> newDistinctValues = new ArrayList<>();
     newDistinctValues.add("abc");

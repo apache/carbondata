@@ -95,12 +95,10 @@ public class IncludeColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl
     mdKeyOrdinal.add(getMdkeyOrdinal(dimColumnEvaluatorInfo.getColumnIndex(), colGrpId));
     int[] maskByteRanges = QueryUtil.getMaskedByteRangeBasedOrdinal(mdKeyOrdinal, keyGenerator);
     byte[] maxKey = QueryUtil.getMaxKeyBasedOnOrinal(mdKeyOrdinal, keyGenerator);
-    int[] maksedByte = QueryUtil.getMaskedByte(keyGenerator.getKeySizeInBytes(), maskByteRanges);
     KeyStructureInfo restructureInfos = new KeyStructureInfo();
     restructureInfos.setKeyGenerator(keyGenerator);
     restructureInfos.setMaskByteRanges(maskByteRanges);
     restructureInfos.setMaxKey(maxKey);
-    restructureInfos.setMaskedBytes(maksedByte);
     return restructureInfos;
   }
 

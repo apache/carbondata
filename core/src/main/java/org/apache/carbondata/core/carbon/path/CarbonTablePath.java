@@ -42,7 +42,6 @@ public class CarbonTablePath extends Path {
   protected static final String SCHEMA_FILE = "schema";
   protected static final String TABLE_STATUS_FILE = "tablestatus";
   protected static final String FACT_DIR = "Fact";
-  protected static final String AGGREGATE_TABLE_PREFIX = "Agg";
   protected static final String SEGMENT_PREFIX = "Segment_";
   protected static final String PARTITION_PREFIX = "Part";
   protected static final String CARBON_DATA_EXT = ".carbondata";

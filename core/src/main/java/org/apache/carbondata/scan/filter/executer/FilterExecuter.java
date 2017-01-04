@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.scan.filter.executer;
 
+import java.io.IOException;
 import java.util.BitSet;
 
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
@@ -31,7 +32,8 @@ public interface FilterExecuter {
    * @return
    * @throws FilterUnsupportedException
    */
-  BitSet applyFilter(BlocksChunkHolder blocksChunkHolder) throws FilterUnsupportedException;
+  BitSet applyFilter(BlocksChunkHolder blocksChunkHolder)
+      throws FilterUnsupportedException, IOException;
 
   /**
    * API will verify whether the block can be shortlisted based on block

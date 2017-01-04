@@ -121,15 +121,15 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToDeleteFolderForValidPath()
-      throws CarbonUtilException, InterruptedException {
+      throws InterruptedException, IOException {
     File testDir = new File("../core/src/test/resources/testDir");
     testDir.mkdirs();
     CarbonUtil.deleteFoldersAndFiles(testDir);
     assertTrue(!testDir.isDirectory());
   }
 
-  @Test(expected = CarbonUtilException.class) public void testToDeleteFolderWithIOException()
-      throws CarbonUtilException, InterruptedException {
+  @Test(expected = IOException.class) public void testToDeleteFolderWithIOException()
+      throws InterruptedException, IOException {
     File testDir = new File("../core/src/test/resources/testDir");
     new MockUp<UserGroupInformation>() {
       @SuppressWarnings("unused") @Mock public UserGroupInformation getLoginUser()
@@ -140,9 +140,9 @@ public class CarbonUtilTest {
     CarbonUtil.deleteFoldersAndFiles(testDir);
   }
 
-  @Test(expected = CarbonUtilException.class)
+  @Test(expected = InterruptedException.class)
   public void testToDeleteFolderWithInterruptedException()
-      throws CarbonUtilException, InterruptedException {
+      throws InterruptedException, IOException {
     File testDir = new File("../core/src/test/resources/testDir");
     new MockUp<UserGroupInformation>() {
       @SuppressWarnings("unused") @Mock public UserGroupInformation getLoginUser()
@@ -154,7 +154,7 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToDeleteFileForValidPath()
-      throws CarbonUtilException, InterruptedException {
+      throws InterruptedException, IOException {
     File testDir = new File("../core/src/test/resources/testDir/testFile.csv");
     testDir.mkdirs();
     CarbonUtil.deleteFoldersAndFiles(testDir);
@@ -162,7 +162,7 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToDeleteFoldersAndFilesForValidFolder()
-      throws CarbonUtilException, InterruptedException {
+      throws InterruptedException, IOException {
     String folderPath = "../core/src/test/resources/testDir/carbonDir";
     new File(folderPath).mkdirs();
     LocalCarbonFile testDir = new LocalCarbonFile(folderPath);
@@ -170,8 +170,8 @@ public class CarbonUtilTest {
     assertTrue(!testDir.exists());
   }
 
-  @Test(expected = CarbonUtilException.class) public void testToDeleteFoldersAndFilesWithIOException()
-      throws CarbonUtilException, InterruptedException {
+  @Test(expected = IOException.class) public void testToDeleteFoldersAndFilesWithIOException()
+      throws InterruptedException, IOException {
     LocalCarbonFile testDir = new LocalCarbonFile("../core/src/test/resources/testDir/carbonDir");
     new MockUp<UserGroupInformation>() {
       @SuppressWarnings("unused") @Mock public UserGroupInformation getLoginUser()
@@ -182,8 +182,8 @@ public class CarbonUtilTest {
     CarbonUtil.deleteFoldersAndFiles(testDir);
   }
 
-  @Test(expected = CarbonUtilException.class) public void testToDeleteFoldersAndFilesWithInterruptedException()
-      throws CarbonUtilException, InterruptedException {
+  @Test(expected = InterruptedException.class) public void testToDeleteFoldersAndFilesWithInterruptedException()
+      throws InterruptedException, IOException {
     LocalCarbonFile testDir = new LocalCarbonFile("../core/src/test/resources/testDir/carbonDir");
     new MockUp<UserGroupInformation>() {
       @SuppressWarnings("unused") @Mock public UserGroupInformation getLoginUser()
@@ -195,7 +195,7 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToDeleteFoldersAndFilesForValidCarbonFile()
-      throws CarbonUtilException, InterruptedException {
+      throws InterruptedException, IOException {
     LocalCarbonFile testDir =
         new LocalCarbonFile("../core/src/test/resources/testDir/testCarbonFile");
     testDir.createNewFile();
@@ -203,7 +203,7 @@ public class CarbonUtilTest {
     assertTrue(!testDir.exists());
   }
 
-  @Test public void testToGetBadLogPath() throws CarbonUtilException, InterruptedException {
+  @Test public void testToGetBadLogPath() throws InterruptedException {
     new MockUp<CarbonProperties>() {
       @SuppressWarnings("unused") @Mock public String getProperty(String key) {
         return "../unibi-solutions/system/carbon/badRecords";
@@ -214,16 +214,16 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToDeleteFoldersAndFilesForCarbonFileSilently()
-      throws CarbonUtilException, InterruptedException {
+      throws IOException, InterruptedException {
     LocalCarbonFile testDir = new LocalCarbonFile("../core/src/test/resources/testDir");
     testDir.createNewFile();
     CarbonUtil.deleteFoldersAndFilesSilent(testDir);
     assertTrue(!testDir.exists());
   }
 
-  @Test(expected = CarbonUtilException.class)
+  @Test(expected = IOException.class)
   public void testToDeleteFoldersAndFilesSintlyWithIOException()
-      throws CarbonUtilException, IOException {
+      throws IOException, InterruptedException {
     new MockUp<UserGroupInformation>() {
       @SuppressWarnings("unused") @Mock public UserGroupInformation getLoginUser()
           throws IOException {
@@ -235,9 +235,9 @@ public class CarbonUtilTest {
     CarbonUtil.deleteFoldersAndFilesSilent(testDir);
   }
 
-  @Test(expected = CarbonUtilException.class)
+  @Test(expected = InterruptedException.class)
   public void testToDeleteFoldersAndFilesSintlyWithInterruptedException()
-      throws CarbonUtilException, IOException {
+      throws IOException, InterruptedException {
     new MockUp<UserGroupInformation>() {
       @SuppressWarnings("unused") @Mock public UserGroupInformation getLoginUser()
           throws InterruptedException {
@@ -249,7 +249,7 @@ public class CarbonUtilTest {
     CarbonUtil.deleteFoldersAndFilesSilent(testDir);
   }
 
-  @Test public void testToDeleteFiles() throws IOException, CarbonUtilException {
+  @Test public void testToDeleteFiles() throws IOException {
     String baseDirectory = "../core/src/test/resources/";
     File file1 = new File(baseDirectory + "File1.txt");
     File file2 = new File(baseDirectory + "File2.txt");
@@ -341,7 +341,8 @@ public class CarbonUtilTest {
         .exists());
   }
 
-  @Test public void testToGetCardinalityFromLevelMetadataFile() throws CarbonUtilException {
+  @Test public void testToGetCardinalityFromLevelMetadataFile()
+      throws IOException, InterruptedException {
     int[] cardinality = CarbonUtil.getCardinalityFromLevelMetadataFile(
         "../core/src/test/resources/testDatabase/levelmetadata_testTable.metadata");
     int[] expectedCardinality = { 10, 20, 30, 40 };
@@ -351,7 +352,7 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToGetCardinalityFromLevelMetadataFileForInvalidPath()
-      throws CarbonUtilException {
+      throws IOException, InterruptedException {
     int[] cardinality = CarbonUtil.getCardinalityFromLevelMetadataFile("");
     assertEquals(cardinality, null);
   }
@@ -550,7 +551,7 @@ public class CarbonUtilTest {
     }
   }
 
-  @Test public void testToReadMetadatFile() throws CarbonUtilException {
+  @Test public void testToReadMetadatFile() throws IOException {
     new MockUp<DataFileFooterConverter>() {
       @SuppressWarnings("unused") @Mock
       public DataFileFooter readDataFileFooter(TableBlockInfo info) {
@@ -564,7 +565,8 @@ public class CarbonUtilTest {
     assertEquals(CarbonUtil.readMetadatFile(info).getVersionId().number(), 1);
   }
 
-  @Test(expected = CarbonUtilException.class) public void testToReadMetadatFileWithException()
+  @Test(expected = IOException.class)
+  public void testToReadMetadatFileWithException()
       throws Exception {
 	TableBlockInfo info = new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1);
     CarbonUtil.readMetadatFile(info);
@@ -632,7 +634,8 @@ public class CarbonUtilTest {
     file.deleteOnExit();
   }
 
-  @Test public void testToReadHeaderWithFileNotFoundException() throws IOException {
+  @Test(expected = IOException.class)
+  public void testToReadHeaderWithFileNotFoundException() throws IOException {
     new MockUp<FileFactory>() {
       @SuppressWarnings("unused") @Mock
       public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType)
@@ -644,7 +647,8 @@ public class CarbonUtilTest {
     assertEquals(null, result);
   }
 
-  @Test public void testToReadHeaderWithIOException() throws IOException {
+  @Test(expected = IOException.class)
+  public void testToReadHeaderWithIOException() throws IOException {
     new MockUp<FileFactory>() {
       @SuppressWarnings("unused") @Mock
       public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType)
@@ -688,7 +692,7 @@ public class CarbonUtilTest {
 
     List<Encoding> encodingList = new ArrayList<>();
     encodingList.add(Encoding.DELTA);
-    dataChunk.setEncoderList(encodingList);
+    dataChunk.setEncodingList(encodingList);
 
     List<ValueEncoderMeta> valueEncoderMetas = new ArrayList<>();
     ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();

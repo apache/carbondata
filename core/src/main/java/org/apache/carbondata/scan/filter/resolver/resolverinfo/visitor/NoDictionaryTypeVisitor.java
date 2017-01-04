@@ -20,8 +20,6 @@ package org.apache.carbondata.scan.filter.resolver.resolverinfo.visitor;
 
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
@@ -31,8 +29,6 @@ import org.apache.carbondata.scan.filter.resolver.metadata.FilterResolverMetadat
 import org.apache.carbondata.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
 public class NoDictionaryTypeVisitor implements ResolvedFilterInfoVisitorIntf {
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(NoDictionaryTypeVisitor.class.getName());
 
   /**
    * Visitor Method will update the filter related details in visitableObj, For no dictionary
@@ -62,8 +58,7 @@ public class NoDictionaryTypeVisitor implements ResolvedFilterInfoVisitorIntf {
       throw new FilterUnsupportedException(e);
     }
     resolvedFilterObject = FilterUtil
-        .getNoDictionaryValKeyMemberForFilter(metadata.getTableIdentifier(),
-            metadata.getColumnExpression(), evaluateResultListFinal, metadata.isIncludeFilter());
+        .getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal, metadata.isIncludeFilter());
     visitableObj.setFilterValues(resolvedFilterObject);
   }
 }

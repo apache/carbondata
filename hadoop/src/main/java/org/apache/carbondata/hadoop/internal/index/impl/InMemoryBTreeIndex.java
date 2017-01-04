@@ -37,7 +37,6 @@ import org.apache.carbondata.core.carbon.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentTaskIndexWrapper;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.apache.carbondata.core.carbon.datastore.impl.btree.BlockBTreeLeafNode;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
@@ -45,13 +44,11 @@ import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstant
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
-import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.hadoop.CacheClient;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.internal.index.Block;
 import org.apache.carbondata.hadoop.internal.index.Index;
 import org.apache.carbondata.hadoop.internal.segment.Segment;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.scan.filter.FilterUtil;
 import org.apache.carbondata.scan.filter.resolver.FilterResolverIntf;
@@ -87,12 +84,8 @@ class InMemoryBTreeIndex implements Index {
     AbsoluteTableIdentifier identifier = null;
 
     //for this segment fetch blocks matching filter in BTree
-    List<DataRefNode> dataRefNodes = null;
-    try {
-      dataRefNodes = getDataBlocksOfSegment(job, filterExpressionProcessor, identifier, filter);
-    } catch (IndexBuilderException e) {
-      throw new IOException(e.getMessage());
-    }
+    List<DataRefNode> dataRefNodes =
+        getDataBlocksOfSegment(job, filterExpressionProcessor, identifier, filter);
     for (DataRefNode dataRefNode : dataRefNodes) {
       BlockBTreeLeafNode leafNode = (BlockBTreeLeafNode) dataRefNode;
       TableBlockInfo tableBlockInfo = leafNode.getTableBlockInfo();
@@ -105,8 +98,7 @@ class InMemoryBTreeIndex implements Index {
   }
 
   private Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> getSegmentAbstractIndexs(
-      JobContext job, AbsoluteTableIdentifier identifier)
-      throws IOException, IndexBuilderException {
+      JobContext job, AbsoluteTableIdentifier identifier) throws IOException {
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap = null;
     CacheClient cacheClient = new CacheClient(identifier.getStorePath());
     TableSegmentUniqueIdentifier segmentUniqueIdentifier =
@@ -128,11 +120,7 @@ class InMemoryBTreeIndex implements Index {
         segmentTaskIndexWrapper = cacheClient.getSegmentAccessClient().get(segmentUniqueIdentifier);
         segmentIndexMap = segmentTaskIndexWrapper.getTaskIdToTableSegmentMap();
       }
-    }
-    catch (CarbonUtilException e) {
-      throw new IndexBuilderException(e.getMessage(), e);
-    }
-    finally {
+    } finally {
       cacheClient.close();
     }
     return segmentIndexMap;
@@ -166,7 +154,7 @@ class InMemoryBTreeIndex implements Index {
    */
   private List<DataRefNode> getDataBlocksOfSegment(JobContext job,
       FilterExpressionProcessor filterExpressionProcessor, AbsoluteTableIdentifier identifier,
-      FilterResolverIntf resolver) throws IndexBuilderException, IOException {
+      FilterResolverIntf resolver) throws IOException {
 
     QueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.createDriverRecorder();
     QueryStatistic statistic = new QueryStatistic();
@@ -184,13 +172,12 @@ class InMemoryBTreeIndex implements Index {
         filterredBlocks = getDataBlocksOfIndex(abstractIndex);
       } else {
         // apply filter and get matching blocks
-        try {
-          filterredBlocks =
-              filterExpressionProcessor.getFilterredBlocks(abstractIndex.getDataRefNode(),
-                  resolver, abstractIndex, identifier);
-        } catch (QueryExecutionException e) {
-          throw new IndexBuilderException(e.getMessage());
-        }
+        filterredBlocks = filterExpressionProcessor.getFilterredBlocks(
+            abstractIndex.getDataRefNode(),
+            resolver,
+            abstractIndex,
+            identifier
+        );
       }
       resultFilterredBlocks.addAll(filterredBlocks);
     }

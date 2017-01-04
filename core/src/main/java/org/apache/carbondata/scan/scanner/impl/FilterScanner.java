@@ -16,8 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.carbondata.scan.scanner.impl;
 
+import java.io.IOException;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
@@ -28,7 +30,6 @@ import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.scan.filter.executer.FilterExecuter;
@@ -81,16 +82,11 @@ public class FilterScanner extends AbstractBlockletScanner {
    * Below method will be used to process the block
    *
    * @param blocksChunkHolder block chunk holder which holds the data
-   * @throws QueryExecutionException
    * @throws FilterUnsupportedException
    */
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
-      throws QueryExecutionException {
-    try {
-      fillScannedResult(blocksChunkHolder);
-    } catch (FilterUnsupportedException e) {
-      throw new QueryExecutionException(e.getMessage());
-    }
+      throws IOException, FilterUnsupportedException {
+    fillScannedResult(blocksChunkHolder);
     return scannedResult;
   }
 
@@ -111,8 +107,7 @@ public class FilterScanner extends AbstractBlockletScanner {
    * @throws FilterUnsupportedException
    */
   private void fillScannedResult(BlocksChunkHolder blocksChunkHolder)
-      throws FilterUnsupportedException {
-
+      throws FilterUnsupportedException, IOException {
     scannedResult.reset();
     QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);
@@ -167,10 +162,9 @@ public class FilterScanner extends AbstractBlockletScanner {
       }
     }
     for (int i = 0; i < allSelectedDimensionBlocksIndexes.length; i++) {
-      for (int j = allSelectedDimensionBlocksIndexes[i][0];
-           j <= allSelectedDimensionBlocksIndexes[i][1]; j++) {
-        dimensionColumnDataChunk[j] = projectionListDimensionChunk[j];
-      }
+      System.arraycopy(projectionListDimensionChunk, allSelectedDimensionBlocksIndexes[i][0],
+          dimensionColumnDataChunk, allSelectedDimensionBlocksIndexes[i][0],
+          allSelectedDimensionBlocksIndexes[i][1] + 1 - allSelectedDimensionBlocksIndexes[i][0]);
     }
     MeasureColumnDataChunk[] measureColumnDataChunk =
         new MeasureColumnDataChunk[blockExecutionInfo.getTotalNumberOfMeasureBlock()];
@@ -185,10 +179,9 @@ public class FilterScanner extends AbstractBlockletScanner {
       }
     }
     for (int i = 0; i < allSelectedMeasureBlocksIndexes.length; i++) {
-      for (int j = allSelectedMeasureBlocksIndexes[i][0];
-           j <= allSelectedMeasureBlocksIndexes[i][1]; j++) {
-        measureColumnDataChunk[j] = projectionListMeasureChunk[j];
-      }
+      System.arraycopy(projectionListMeasureChunk, allSelectedMeasureBlocksIndexes[i][0],
+          measureColumnDataChunk, allSelectedMeasureBlocksIndexes[i][0],
+          allSelectedMeasureBlocksIndexes[i][1] + 1 - allSelectedMeasureBlocksIndexes[i][0]);
     }
     scannedResult.setDimensionChunks(dimensionColumnDataChunk);
     scannedResult.setIndexes(indexes);

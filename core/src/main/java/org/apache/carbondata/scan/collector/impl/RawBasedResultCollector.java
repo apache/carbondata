@@ -21,8 +21,6 @@ package org.apache.carbondata.scan.collector.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.model.QueryMeasure;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
@@ -32,9 +30,6 @@ import org.apache.carbondata.scan.wrappers.ByteArrayWrapper;
  * It is not a collector it is just a scanned result holder.
  */
 public class RawBasedResultCollector extends AbstractScannedResultCollector {
-
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(RawBasedResultCollector.class.getName());
 
   public RawBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);

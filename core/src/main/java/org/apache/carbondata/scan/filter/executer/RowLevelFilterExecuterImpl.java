@@ -42,7 +42,6 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.scan.executor.util.QueryUtil;
 import org.apache.carbondata.scan.expression.Expression;
@@ -94,7 +93,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   }
 
   @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder)
-      throws FilterUnsupportedException {
+      throws FilterUnsupportedException, IOException {
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = dimColEvaluatorInfoList.get(i);
       if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.ARRAY
@@ -112,8 +111,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_001
     if (null != msrColEvalutorInfoList) {
       for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
-        if (msrColumnEvalutorInfo.isMeasureExistsInCurrentSlice() && null == blockChunkHolder
-            .getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]) {
+        if (null == blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()])
+        {
           blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()] =
               blockChunkHolder.getDataBlock().getMeasureChunk(blockChunkHolder.getFileReader(),
                   msrColumnEvalutorInfo.getColumnIndex());
@@ -127,11 +126,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     RowIntf row = new RowImpl();
     boolean invalidRowsPresent = false;
     for (int index = 0; index < numberOfRows; index++) {
-      try {
-        createRow(blockChunkHolder, row, index);
-      } catch (QueryExecutionException e) {
-        FilterUtil.logError(e, invalidRowsPresent);
-      }
+      createRow(blockChunkHolder, row, index);
       Boolean rslt = false;
       try {
         rslt = exp.evaluate(row).getBoolean();
@@ -156,12 +151,12 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    * @param blockChunkHolder
    * @param row
    * @param index
-   * @throws QueryExecutionException
+   * @throws IOException
    */
   private void createRow(BlocksChunkHolder blockChunkHolder, RowIntf row, int index)
-      throws QueryExecutionException {
+      throws IOException {
     Object[] record = new Object[dimColEvaluatorInfoList.size() + msrColEvalutorInfoList.size()];
-    String memberString = null;
+    String memberString;
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = dimColEvaluatorInfoList.get(i);
       if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.ARRAY
@@ -178,7 +173,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
                   .getDimensionDataChunk()[blocksIndex[i]];
           if (null != dimensionColumnDataChunk.getCompleteDataChunk()) {
             memberString =
-                readMemberBasedOnNoDictionaryVal(dimColumnEvaluatorInfo, dimensionColumnDataChunk,
+                readMemberBasedOnNoDictionaryVal(dimensionColumnDataChunk,
                     index);
             if (null != memberString) {
               if (memberString.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
@@ -195,12 +190,10 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           int dictionaryValue =
               readSurrogatesFromColumnBlock(blockChunkHolder, index, dimColumnEvaluatorInfo,
                   blocksIndex[i]);
-          Dictionary forwardDictionary = null;
           if (dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)
               && !dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
             memberString =
-                getFilterActualValueFromDictionaryValue(dimColumnEvaluatorInfo, dictionaryValue,
-                    forwardDictionary);
+                getFilterActualValueFromDictionaryValue(dimColumnEvaluatorInfo, dictionaryValue);
             record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
                 .getDataBasedOnDataType(memberString,
                     dimColumnEvaluatorInfo.getDimension().getDataType());
@@ -244,32 +237,27 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           msrType = DataType.DOUBLE;
       }
       // if measure doesnt exist then set the default value.
-      if (!msrColumnEvalutorInfo.isMeasureExistsInCurrentSlice()) {
-        record[msrColumnEvalutorInfo.getRowIndex()] = msrColumnEvalutorInfo.getDefaultValue();
-      } else {
-        Object msrValue;
-        switch (msrType) {
-          case INT:
-          case LONG:
-            msrValue =
-                blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
-                    .getMeasureDataHolder().getReadableLongValueByIndex(index);
-            break;
-          case DECIMAL:
-            msrValue =
-                blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
-                    .getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
-            break;
-          default:
-            msrValue =
-                blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
-                    .getMeasureDataHolder().getReadableDoubleValueByIndex(index);
-        }
-        record[msrColumnEvalutorInfo.getRowIndex()] =
-            blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
-                .getNullValueIndexHolder().getBitSet().get(index) ? null : msrValue;
-
+      Object msrValue;
+      switch (msrType) {
+        case INT:
+        case LONG:
+          msrValue =
+              blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
+                  .getMeasureDataHolder().getReadableLongValueByIndex(index);
+          break;
+        case DECIMAL:
+          msrValue =
+              blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
+                  .getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
+          break;
+        default:
+          msrValue =
+              blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
+                  .getMeasureDataHolder().getReadableDoubleValueByIndex(index);
       }
+      record[msrColumnEvalutorInfo.getRowIndex()] =
+          blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
+              .getNullValueIndexHolder().getBitSet().get(index) ? null : msrValue;
     }
     row.setValues(record);
   }
@@ -299,20 +287,14 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    *
    * @param dimColumnEvaluatorInfo
    * @param dictionaryValue
-   * @param forwardDictionary
    * @return
-   * @throws QueryExecutionException
+   * @throws IOException
    */
   private String getFilterActualValueFromDictionaryValue(
-      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo, int dictionaryValue,
-      Dictionary forwardDictionary) throws QueryExecutionException {
+      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo, int dictionaryValue) throws IOException {
     String memberString;
-    try {
-      forwardDictionary = FilterUtil
-          .getForwardDictionaryCache(tableIdentifier, dimColumnEvaluatorInfo.getDimension());
-    } catch (QueryExecutionException e) {
-      throw new QueryExecutionException(e);
-    }
+    Dictionary forwardDictionary = FilterUtil.getForwardDictionaryCache(
+        tableIdentifier, dimColumnEvaluatorInfo.getDimension());
 
     memberString = forwardDictionary.getDictionaryValueForKey(dictionaryValue);
     if (null != memberString) {
@@ -375,13 +357,11 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    * directly the filter data will read, no need to scan the dictionary
    * or read the dictionary value.
    *
-   * @param dimColumnEvaluatorInfo
    * @param dimensionColumnDataChunk
    * @param index
    * @return
    */
   private String readMemberBasedOnNoDictionaryVal(
-      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo,
       VariableLengthDimensionDataChunk dimensionColumnDataChunk, int index) {
     byte[] noDictionaryVals;
     if (null != dimensionColumnDataChunk.getAttributes().getInvertedIndexesReverse()) {

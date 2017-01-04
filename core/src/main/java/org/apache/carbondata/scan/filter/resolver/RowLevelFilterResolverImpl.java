@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.scan.expression.ColumnExpression;
 import org.apache.carbondata.scan.expression.Expression;
@@ -35,8 +34,6 @@ import org.apache.carbondata.scan.filter.resolver.resolverinfo.MeasureColumnReso
 public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
 
   private static final long serialVersionUID = 176122729713729929L;
-  protected boolean isExpressionResolve;
-  protected boolean isIncludeFilter;
 
   private List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList;
   private List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList;
@@ -74,10 +71,8 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
         } else {
           msrColumnEvalutorInfo = new MeasureColumnResolvedFilterInfo();
           msrColumnEvalutorInfo.setRowIndex(index++);
-          msrColumnEvalutorInfo.setAggregator(
-              ((CarbonMeasure) columnExpression.getCarbonColumn()).getAggregateFunction());
           msrColumnEvalutorInfo
-              .setColumnIndex(((CarbonMeasure) columnExpression.getCarbonColumn()).getOrdinal());
+              .setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
           msrColumnEvalutorInfo.setType(columnExpression.getCarbonColumn().getDataType());
           msrColEvalutorInfoList.add(msrColumnEvalutorInfo);
         }

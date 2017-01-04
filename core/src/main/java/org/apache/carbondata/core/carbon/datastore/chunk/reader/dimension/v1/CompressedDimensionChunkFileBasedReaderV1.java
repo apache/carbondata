@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension.v1;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
@@ -65,7 +66,7 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
    * @return dimension column chunks
    */
   @Override public DimensionColumnDataChunk[] readDimensionChunks(FileHolder fileReader,
-      int[][] blockIndexes) {
+      int[][] blockIndexes) throws IOException {
     // read the column chunk based on block index and add
     DimensionColumnDataChunk[] dataChunks =
         new DimensionColumnDataChunk[dimensionColumnChunk.size()];
@@ -85,7 +86,7 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
    * @return dimension column chunk
    */
   @Override public DimensionColumnDataChunk readDimensionChunk(FileHolder fileReader,
-      int blockIndex) {
+      int blockIndex) throws IOException {
     byte[] dataPage = null;
     int[] invertedIndexes = null;
     int[] invertedIndexesReverse = null;

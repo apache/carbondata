@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.scan.executor.impl;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
@@ -36,7 +37,7 @@ public class DetailQueryExecutor extends AbstractQueryExecutor<BatchResult> {
 
   @Override
   public CarbonIterator<BatchResult> execute(QueryModel queryModel)
-      throws QueryExecutionException {
+      throws QueryExecutionException, IOException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
     return new DetailQueryResultIterator(
         blockExecutionInfoList,

@@ -17,15 +17,11 @@
 
 package org.apache.spark.sql
 
-import java.util
-
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression}
-import org.apache.spark.sql.catalyst.expressions.GenericMutableRow
+import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericMutableRow}
 
-import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
 import org.apache.carbondata.scan.expression.{ColumnExpression, ExpressionResult, UnknownExpression}
 import org.apache.carbondata.scan.expression.conditional.ConditionalExpression
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException
@@ -121,7 +117,7 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
 
 
   def getAllColumnListFromExpressionTree(sparkCurrentExp: SparkExpression,
-      list: util.List[ColumnExpression]): util.List[ColumnExpression] = {
+      list: java.util.List[ColumnExpression]): java.util.List[ColumnExpression] = {
     sparkCurrentExp match {
       case carbonBoundRef: CarbonBoundReference => list.add(carbonBoundRef.colExp)
       case _ => sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, list))
@@ -129,13 +125,4 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
     list
   }
 
-  def isDirectDictionaryColumns: Boolean = {
-    val lst = new util.ArrayList[ColumnExpression]()
-    getAllColumnListFromExpressionTree(sparkExp, lst)
-    if (lst.get(0).getCarbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-      true
-    } else {
-      false
-    }
-  }
 }

@@ -38,7 +38,6 @@ public class BlockBTreeLeafNode extends AbstractBTreeLeafNode {
    *
    * @param builderInfos  builder infos which have required metadata to create a leaf
    *                      node
-   * @param leafIndex     leaf node index
    * @param metadataIndex metadata index
    */
   public BlockBTreeLeafNode(BTreeBuilderInfo builderInfos, int metadataIndex, long nodeNumber) {

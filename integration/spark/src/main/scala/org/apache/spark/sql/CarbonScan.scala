@@ -17,9 +17,6 @@
 
 package org.apache.spark.sql
 
-import java.util
-import java.util.ArrayList
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
@@ -29,8 +26,6 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.LeafNode
 import org.apache.spark.sql.hive.CarbonMetastore
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.scan.model._
 import org.apache.carbondata.spark.CarbonFilters
@@ -51,11 +46,6 @@ case class CarbonScan(
 
   val buildCarbonPlan: CarbonQueryPlan = {
     val plan: CarbonQueryPlan = new CarbonQueryPlan(relationRaw.databaseName, relationRaw.tableName)
-
-    plan.setSortedDimemsions(new util.ArrayList[QueryDimension])
-
-    plan.setOutLocationPath(
-      CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS))
     plan.setQueryId(ocRaw.getConf("queryId", System.nanoTime() + ""))
     processFilterExpressions(plan)
     plan

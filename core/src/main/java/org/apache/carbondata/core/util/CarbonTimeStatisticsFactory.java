@@ -17,7 +17,11 @@
 
 package org.apache.carbondata.core.util;
 
-import org.apache.carbondata.core.carbon.querystatistics.*;
+import org.apache.carbondata.core.carbon.querystatistics.DriverQueryStatisticsRecorderDummy;
+import org.apache.carbondata.core.carbon.querystatistics.DriverQueryStatisticsRecorderImpl;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorderDummy;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorderImpl;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 public class CarbonTimeStatisticsFactory {
@@ -72,7 +76,7 @@ public class CarbonTimeStatisticsFactory {
     if (queryStatisticsRecorderType.equalsIgnoreCase("true")) {
       return new QueryStatisticsRecorderImpl(queryId);
     } else {
-      return new QueryStatisticsRecorderDummy(queryId);
+      return new QueryStatisticsRecorderDummy();
     }
   }
 

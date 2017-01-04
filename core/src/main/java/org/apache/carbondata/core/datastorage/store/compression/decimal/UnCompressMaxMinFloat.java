@@ -53,7 +53,7 @@ public class UnCompressMaxMinFloat implements UnCompressValue<float[]> {
   }
 
   @Override public void setValue(float[] value) {
-    this.value = (float[]) value;
+    this.value = value;
 
   }
 

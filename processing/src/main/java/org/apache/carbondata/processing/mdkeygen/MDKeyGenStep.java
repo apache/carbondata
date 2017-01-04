@@ -20,6 +20,7 @@
 package org.apache.carbondata.processing.mdkeygen;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -257,8 +258,6 @@ public class MDKeyGenStep extends BaseStep {
   /**
    * This method will be used to get and update the step properties which will
    * required to run this step
-   *
-   * @throws CarbonUtilException
    */
   private boolean setStepConfiguration() {
     this.tableName = meta.getTableName();
@@ -287,7 +286,7 @@ public class MDKeyGenStep extends BaseStep {
     int[] dimLensWithComplex = null;
     try {
       dimLensWithComplex = CarbonUtil.getCardinalityFromLevelMetadataFile(levelCardinalityFilePath);
-    } catch (CarbonUtilException e) {
+    } catch (IOException e) {
       LOGGER.error("Level cardinality file :: " + e.getMessage());
       return false;
     }
