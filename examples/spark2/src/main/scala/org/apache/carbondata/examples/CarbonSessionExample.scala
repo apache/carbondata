@@ -19,6 +19,12 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
+import org.apache.commons.io.FileUtils
+import org.apache.spark.sql.SparkSession
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 object CarbonSessionExample {
 
   def main(args: Array[String]) {
@@ -40,6 +46,8 @@ object CarbonSessionExample {
       .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")
       .addProperty("carbon.storelocation", storeLocation)
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+
+    import org.apache.spark.sql.CarbonSession._
 
     val spark = SparkSession
       .builder()
