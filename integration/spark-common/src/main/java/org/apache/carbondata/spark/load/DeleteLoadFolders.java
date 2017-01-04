@@ -61,11 +61,11 @@ public final class DeleteLoadFolders {
    * returns segment path
    */
   private static String getSegmentPath(String dbName, String tableName, String storeLocation,
-      LoadMetadataDetails oneLoad) {
+      int partitionId, LoadMetadataDetails oneLoad) {
     CarbonTablePath carbon = new CarbonStorePath(storeLocation).getCarbonTablePath(
         new CarbonTableIdentifier(dbName, tableName, ""));
     String segmentId = oneLoad.getLoadName();
-    return carbon.getCarbonDataDirectoryPath("" + 0, segmentId);
+    return carbon.getCarbonDataDirectoryPath("" + partitionId, segmentId);
   }
 
   private static boolean physicalFactAndMeasureMetadataDeletion(String path) {
@@ -167,7 +167,7 @@ public final class DeleteLoadFolders {
     if (details != null && details.length != 0) {
       for (LoadMetadataDetails oneLoad : details) {
         if (checkIfLoadCanBeDeleted(oneLoad, isForceDelete)) {
-          String path = getSegmentPath(dbName, tableName, storeLocation, oneLoad);
+          String path = getSegmentPath(dbName, tableName, storeLocation, 0, oneLoad);
           boolean deletionStatus = physicalFactAndMeasureMetadataDeletion(path);
           if (deletionStatus) {
             isDeleted = true;
