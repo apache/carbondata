@@ -59,7 +59,6 @@ public class CarbonCompactionUtil {
     Map<String, TaskBlockInfo> segmentBlockInfoMapping =
         new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-
     for (TableBlockInfo info : tableBlockInfoList) {
       String segId = info.getSegmentId();
       // check if segId is already present in map
@@ -72,8 +71,7 @@ public class CarbonCompactionUtil {
         groupCorrespodingInfoBasedOnTask(info, taskBlockInfoMapping, taskNo);
         // put the taskBlockInfo with respective segment id
         segmentBlockInfoMapping.put(segId, taskBlockInfoMapping);
-      } else
-      {
+      } else {
         groupCorrespodingInfoBasedOnTask(info, taskBlockInfoMapping, taskNo);
       }
     }
@@ -83,6 +81,7 @@ public class CarbonCompactionUtil {
 
   /**
    * Grouping the taskNumber and list of TableBlockInfo.
+   *
    * @param info
    * @param taskBlockMapping
    * @param taskNo
@@ -117,8 +116,7 @@ public class CarbonCompactionUtil {
       // check if segId is already present in map
       List<DataFileFooter> metadataList = segmentBlockInfoMapping.get(segId);
       try {
-        dataFileMatadata = CarbonUtil
-            .readMetadatFile(blockInfo);
+        dataFileMatadata = CarbonUtil.readMetadatFile(blockInfo);
       } catch (CarbonUtilException e) {
         throw new IndexBuilderException(e);
       }
@@ -138,71 +136,59 @@ public class CarbonCompactionUtil {
 
   /**
    * Check whether the file to indicate the compaction is present or not.
+   *
    * @param metaFolderPath
    * @return
    */
   public static boolean isCompactionRequiredForTable(String metaFolderPath) {
-    String minorCompactionStatusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-        + CarbonCommonConstants.minorCompactionRequiredFile;
-
-    String majorCompactionStatusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-        + CarbonCommonConstants.majorCompactionRequiredFile;
+    String statusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR;
     try {
-      if (FileFactory.isFileExist(minorCompactionStatusFile,
-          FileFactory.getFileType(minorCompactionStatusFile)) || FileFactory
-          .isFileExist(majorCompactionStatusFile,
-              FileFactory.getFileType(majorCompactionStatusFile))) {
+      if (FileFactory.isFileExist(statusFile + CarbonCommonConstants.minorCompactionRequiredFile,
+          FileFactory.getFileType(statusFile + CarbonCommonConstants.minorCompactionRequiredFile))
+          || FileFactory.isFileExist(statusFile + CarbonCommonConstants.majorCompactionRequiredFile,
+          FileFactory
+              .getFileType(statusFile + CarbonCommonConstants.majorCompactionRequiredFile))) {
         return true;
       }
     } catch (IOException e) {
-      LOGGER.error("Exception in isFileExist compaction request file " + e.getMessage() );
+      LOGGER.error("Exception in isFileExist compaction request file " + e.getMessage());
     }
     return false;
   }
 
   /**
    * Determine the type of the compaction received.
+   *
    * @param metaFolderPath
    * @return
    */
   public static CompactionType determineCompactionType(String metaFolderPath) {
-    String minorCompactionStatusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-        + CarbonCommonConstants.minorCompactionRequiredFile;
-
     String majorCompactionStatusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonCommonConstants.majorCompactionRequiredFile;
     try {
-      if (FileFactory.isFileExist(minorCompactionStatusFile,
-          FileFactory.getFileType(minorCompactionStatusFile))) {
-        return CompactionType.MINOR_COMPACTION;
-      }
       if (FileFactory.isFileExist(majorCompactionStatusFile,
           FileFactory.getFileType(majorCompactionStatusFile))) {
         return CompactionType.MAJOR_COMPACTION;
       }
-
     } catch (IOException e) {
-      LOGGER.error("Exception in determining the compaction request file " + e.getMessage() );
+      LOGGER.error("Exception in determining the compaction request file " + e.getMessage());
     }
     return CompactionType.MINOR_COMPACTION;
   }
 
   /**
    * Delete the compation request file once the compaction is done.
+   *
    * @param metaFolderPath
    * @param compactionType
    * @return
    */
   public static boolean deleteCompactionRequiredFile(String metaFolderPath,
       CompactionType compactionType) {
-    String compactionRequiredFile;
-    if (compactionType.equals(CompactionType.MINOR_COMPACTION)) {
-      compactionRequiredFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-          + CarbonCommonConstants.minorCompactionRequiredFile;
-    } else {
-      compactionRequiredFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-          + CarbonCommonConstants.majorCompactionRequiredFile;
-    }
+    String file = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR;
+    String compactionRequiredFile = compactionType == CompactionType.MINOR_COMPACTION ?
+        file + CarbonCommonConstants.minorCompactionRequiredFile :
+        file + CarbonCommonConstants.majorCompactionRequiredFile;
     try {
       if (FileFactory
           .isFileExist(compactionRequiredFile, FileFactory.getFileType(compactionRequiredFile))) {
@@ -225,20 +211,17 @@ public class CarbonCompactionUtil {
 
   /**
    * Creation of the compaction request if someother compaction is in progress.
+   *
    * @param metaFolderPath
    * @param compactionType
    * @return
    */
   public static boolean createCompactionRequiredFile(String metaFolderPath,
       CompactionType compactionType) {
-    String statusFile;
-    if (compactionType.equals(CompactionType.MINOR_COMPACTION)) {
-      statusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-          + CarbonCommonConstants.minorCompactionRequiredFile;
-    } else {
-      statusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-          + CarbonCommonConstants.majorCompactionRequiredFile;
-    }
+    String file = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR;
+    String statusFile = compactionType.equals(CompactionType.MINOR_COMPACTION) ?
+        file + CarbonCommonConstants.minorCompactionRequiredFile :
+        file + CarbonCommonConstants.majorCompactionRequiredFile;
     try {
       if (!FileFactory.isFileExist(statusFile, FileFactory.getFileType(statusFile))) {
         if (FileFactory.createNewFile(statusFile, FileFactory.getFileType(statusFile))) {
@@ -252,7 +235,7 @@ public class CarbonCompactionUtil {
         LOGGER.info("Compaction request file : " + statusFile + " already exist.");
       }
     } catch (IOException e) {
-      LOGGER.error("Exception in creating the compaction request file " + e.getMessage() );
+      LOGGER.error("Exception in creating the compaction request file " + e.getMessage());
     }
     return false;
   }
