@@ -1383,6 +1383,18 @@ public final class FilterUtil {
   }
 
   /**
+   * This method will print the error log.
+   *
+   * @param e
+   */
+  public static void logFilterError(Throwable e, boolean invalidFilterPresent) {
+    if (!invalidFilterPresent) {
+      invalidFilterPresent = true;
+      LOGGER.error(e, CarbonCommonConstants.FILTER_INVALID_FILTER_EXPRESSION + e.getMessage());
+    }
+  }
+
+  /**
    * This method will return list of all the unknown expressions
    *
    * @param expression
