@@ -1,1 +1,0 @@
-mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.2 clean package
