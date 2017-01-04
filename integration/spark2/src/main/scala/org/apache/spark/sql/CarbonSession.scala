@@ -24,8 +24,10 @@ import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
 import org.apache.spark.sql.hive.CarbonSessionState
 import org.apache.spark.sql.internal.{SessionState, SharedState}
-import org.apache.spark.util.Utils
+
 import org.apache.spark.util.FunctionRegistory
+import org.apache.spark.util.Utils
+
 
 /**
  * Session implementation for {org.apache.spark.sql.SparkSession}
