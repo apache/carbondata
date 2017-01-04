@@ -1555,7 +1555,6 @@ long time =1112745600000L;
     wrapperColumnSchema.setColumnGroup(1);
     wrapperColumnSchema.setScale(1);
     wrapperColumnSchema.setDefaultValue(new byte[] { 1, 2 });
-    wrapperColumnSchema.setAggregateFunction("");
     wrapperColumnSchema.setColumnProperties(columnPropertyMap);
     wrapperColumnSchema.setInvisible(true);
     wrapperColumnSchema.setColumnReferenceId("1");

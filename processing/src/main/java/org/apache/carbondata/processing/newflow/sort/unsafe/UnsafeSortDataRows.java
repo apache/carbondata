@@ -177,9 +177,9 @@ public class UnsafeSortDataRows {
    * record holder heap and then it will read first record from each file and
    * initialize the heap
    *
-   * @throws CarbonSortKeyAndGroupByException
+   * @throws InterruptedException
    */
-  public void startSorting() throws CarbonSortKeyAndGroupByException {
+  public void startSorting() throws InterruptedException {
     LOGGER.info("Unsafe based sorting will be used");
     if (this.rowPage.getUsedSize() > 0) {
       TimSort<UnsafeCarbonRow, IntPointerBuffer> timSort = new TimSort<>(
@@ -223,25 +223,19 @@ public class UnsafeSortDataRows {
 
   /**
    * This method will be used to delete sort temp location is it is exites
-   *
-   * @throws CarbonSortKeyAndGroupByException
    */
-  public void deleteSortLocationIfExists() throws CarbonSortKeyAndGroupByException {
+  public void deleteSortLocationIfExists() {
     CarbonDataProcessorUtil.deleteSortLocationIfExists(parameters.getTempFileLocation());
   }
 
   /**
    * Below method will be used to start file based merge
    *
-   * @throws CarbonSortKeyAndGroupByException
+   * @throws InterruptedException
    */
-  private void startFileBasedMerge() throws CarbonSortKeyAndGroupByException {
-    try {
-      dataSorterAndWriterExecutorService.shutdown();
-      dataSorterAndWriterExecutorService.awaitTermination(2, TimeUnit.DAYS);
-    } catch (InterruptedException e) {
-      throw new CarbonSortKeyAndGroupByException("Problem while shutdown the server ", e);
-    }
+  private void startFileBasedMerge() throws InterruptedException {
+    dataSorterAndWriterExecutorService.shutdown();
+    dataSorterAndWriterExecutorService.awaitTermination(2, TimeUnit.DAYS);
   }
 
   /**

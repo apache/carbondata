@@ -151,8 +151,7 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    * @return
    */
   @Override public DictionaryChunksWrapper getDictionaryChunks() {
-    DictionaryChunksWrapper chunksWrapper = new DictionaryChunksWrapper(dictionaryChunks);
-    return chunksWrapper;
+    return new DictionaryChunksWrapper(dictionaryChunks);
   }
 
   /**

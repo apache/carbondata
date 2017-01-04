@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.scan.filter.executer;
 
+import java.io.IOException;
 import java.util.BitSet;
 import java.util.List;
 
@@ -73,7 +74,7 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
   }
 
   @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder)
-      throws FilterUnsupportedException {
+      throws FilterUnsupportedException, IOException {
     if (!dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
       return super.applyFilter(blockChunkHolder);
     }
@@ -120,8 +121,8 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
           .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
               filterValues[i], true);
       if (start >= 0) {
-        start = CarbonUtil.nextGreaterValueToTarget(start,
-            (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, filterValues[i], numerOfRows);
+        start = CarbonUtil.nextGreaterValueToTarget(start, dimensionColumnDataChunk,
+            filterValues[i], numerOfRows);
       }
       // Logic will handle the case where the range filter member is not present in block
       // in this case the binary search will return the index from where the bit sets will be

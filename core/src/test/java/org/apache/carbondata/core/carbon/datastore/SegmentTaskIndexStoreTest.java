@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.core.carbon.datastore;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,7 +40,6 @@ import org.apache.carbondata.core.carbon.metadata.blocklet.SegmentInfo;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CarbonUtilException;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -87,7 +87,7 @@ public class SegmentTaskIndexStoreTest {
     return footerList;
   }
 
-  @Test public void loadAndGetTaskIdToSegmentsMap() throws CarbonUtilException {
+  @Test public void loadAndGetTaskIdToSegmentsMap() throws IOException {
     new MockUp<CarbonTablePath.DataFileUtil>() {
       @Mock String getTaskNo(String carbonDataFileName) {
         return "100";

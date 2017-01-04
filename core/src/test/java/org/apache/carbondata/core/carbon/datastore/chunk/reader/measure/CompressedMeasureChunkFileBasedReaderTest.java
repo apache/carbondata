@@ -2,6 +2,7 @@ package org.apache.carbondata.core.carbon.datastore.chunk.reader.measure;
 
 import static junit.framework.TestCase.assertEquals;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +59,7 @@ public class CompressedMeasureChunkFileBasedReaderTest {
         new CompressedMeasureChunkFileBasedReaderV1(info, "filePath");
   }
 
-  @Test public void readMeasureChunkTest() {
+  @Test public void readMeasureChunkTest() throws IOException {
     FileHolder fileHolder = new MockUp<FileHolder>() {
       @Mock public byte[] readByteArray(String filePath, long offset, int length) {
         dataHolder[0] = new CarbonWriteDataHolder();
@@ -80,7 +81,7 @@ public class CompressedMeasureChunkFileBasedReaderTest {
       
   }
 
-  @Test public void readMeasureChunksTest() {
+  @Test public void readMeasureChunksTest() throws IOException {
     FileHolder fileHolder = new MockUp<FileHolder>() {
       @Mock public byte[] readByteArray(String filePath, long offset, int length) {
         dataHolder[0] = new CarbonWriteDataHolder();

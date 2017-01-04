@@ -27,7 +27,6 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryChunksWrapper;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.CarbonUtilException;
 
 import org.apache.commons.lang.ArrayUtils;
 
@@ -44,10 +43,9 @@ public class CarbonDictionarySortInfoPreparator {
    * @param dictionary        old distinct values
    * @param dataType          DataType of columns
    * @return CarbonDictionarySortInfo returns the column Sort Info
-   * @throws CarbonUtilException
    */
   public CarbonDictionarySortInfo getDictionarySortInfo(List<String> newDistinctValues,
-      Dictionary dictionary, DataType dataType) throws CarbonUtilException {
+      Dictionary dictionary, DataType dataType) {
     CarbonDictionarySortModel[] dictionarySortModels =
         prepareDictionarySortModels(newDistinctValues, dictionary, dataType);
     return createColumnSortInfo(dictionarySortModels);

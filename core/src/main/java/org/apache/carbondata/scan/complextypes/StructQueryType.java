@@ -40,14 +40,11 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
   private List<GenericQueryType> children = new ArrayList<GenericQueryType>();
   private String name;
   private String parentname;
-  private int blockIndex;
-  private int keyOrdinalForQuery;
 
   public StructQueryType(String name, String parentname, int blockIndex) {
     super(name, parentname, blockIndex);
     this.name = name;
     this.parentname = parentname;
-    this.blockIndex = blockIndex;
   }
 
   @Override public void addChildren(GenericQueryType newChild) {
@@ -78,33 +75,6 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
 
   }
 
-  @Override public void getAllPrimitiveChildren(List<GenericQueryType> primitiveChild) {
-    for (int i = 0; i < children.size(); i++) {
-      GenericQueryType child = children.get(i);
-      if (child instanceof PrimitiveQueryType) {
-        primitiveChild.add(child);
-      } else {
-        child.getAllPrimitiveChildren(primitiveChild);
-      }
-    }
-  }
-
-  @Override public int getSurrogateIndex() {
-    return 0;
-  }
-
-  @Override public void setSurrogateIndex(int surrIndex) {
-
-  }
-
-  @Override public int getBlockIndex() {
-    return blockIndex;
-  }
-
-  @Override public void setBlockIndex(int blockIndex) {
-    this.blockIndex = blockIndex;
-  }
-
   @Override public int getColsCount() {
     int colsCount = 1;
     for (int i = 0; i < children.size(); i++) {
@@ -121,29 +91,12 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     ByteBuffer byteArray = ByteBuffer.wrap(input);
     int childElement = byteArray.getInt();
     dataOutputStream.writeInt(childElement);
-    if (childElement == 0) {
-      // b.putInt(0);
-    } else {
+    if (childElement > 0){
       for (int i = 0; i < childElement; i++) {
         children.get(i)
             .parseBlocksAndReturnComplexColumnByteArray(dimensionColumnDataChunks, rowNumber,
                 dataOutputStream);
       }
-    }
-  }
-
-  @Override public void parseAndGetResultBytes(ByteBuffer complexData, DataOutputStream dataOutput)
-      throws IOException {
-    int childElement = complexData.getInt();
-    dataOutput.writeInt(childElement);
-    for (int i = 0; i < childElement; i++) {
-      children.get(i).parseAndGetResultBytes(complexData, dataOutput);
-    }
-  }
-
-  @Override public void setKeySize(int[] keyBlockSize) {
-    for (int i = 0; i < children.size(); i++) {
-      children.get(i).setKeySize(keyBlockSize);
     }
   }
 
@@ -156,15 +109,8 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     return new StructType(fields);
   }
 
-  @Override public int getKeyOrdinalForQuery() {
-    return keyOrdinalForQuery;
-  }
-
-  @Override public void setKeyOrdinalForQuery(int keyOrdinalForQuery) {
-    this.keyOrdinalForQuery = keyOrdinalForQuery;
-  }
-
-  @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder) {
+  @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder)
+      throws IOException {
     readBlockDataChunk(blockChunkHolder);
 
     for (int i = 0; i < children.size(); i++) {

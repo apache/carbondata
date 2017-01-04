@@ -18,6 +18,8 @@
  */
 package org.apache.carbondata.spark.readsupport;
 
+import java.io.IOException;
+
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
@@ -29,7 +31,7 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSupport<InternalRow> {
 
   @Override public void initialize(CarbonColumn[] carbonColumns,
-      AbsoluteTableIdentifier absoluteTableIdentifier) {
+      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException {
     super.initialize(carbonColumns, absoluteTableIdentifier);
     //can initialize and generate schema here.
   }

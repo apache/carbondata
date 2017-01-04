@@ -43,7 +43,6 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.logging.LoggingObjectInterface;
 import org.pentaho.di.core.logging.LoggingRegistry;
@@ -83,44 +82,25 @@ public class DataGraphExecuter {
    * @return true if same, false otherwise.
    */
   private boolean checkCSVAndRequestedTableColumns(String[] columnNames, String csvFilePath,
-      String delimiter) {
+      String delimiter) throws IOException {
     return GraphExecutionUtil.checkCSVAndRequestedTableColumns(csvFilePath, columnNames, delimiter);
   }
 
   /**
    * This method returns the Columns names from the schema.
    *
-   * @param schemaInfo
    * @param tableName
    * @return column names array.
    */
-  private String[] getColumnNames(SchemaInfo schemaInfo, String tableName, String partitionId,
-      CarbonDataLoadSchema schema) {
-
+  private String[] getColumnNames(String tableName, CarbonDataLoadSchema schema) {
     Set<String> columnNames = CarbonDataProcessorUtil.getSchemaColumnNames(schema, tableName);
-
     return columnNames.toArray(new String[columnNames.size()]);
   }
 
-  /**
-   * This method returns the Columns names for the dimension only from the schema.
-   *
-   * @param schema
-   * @param schemaInfo
-   * @return column names array.
-   */
-  private String[] getDimColumnNames(SchemaInfo schemaInfo, String factTableName,
-      String dimTableName, String partitionId, CarbonDataLoadSchema schema) {
+  private void validateCSV(String tableName, CarbonFile f, CarbonDataLoadSchema schema,
+      String delimiter) throws DataLoadingException, IOException {
 
-    Set<String> columnNames = GraphExecutionUtil.getDimensionColumnNames(dimTableName, schema);
-    return columnNames.toArray(new String[columnNames.size()]);
-  }
-
-  private void validateCSV(SchemaInfo schemaInfo, String tableName, CarbonFile f,
-      String partitionId, CarbonDataLoadSchema schema, String delimiter)
-      throws DataLoadingException {
-
-    String[] columnNames = getColumnNames(schemaInfo, tableName, partitionId, schema);
+    String[] columnNames = getColumnNames(tableName, schema);
 
     if (!checkCSVAndRequestedTableColumns(columnNames, f.getAbsolutePath(), delimiter)) {
       LOGGER.error(
@@ -134,14 +114,14 @@ public class DataGraphExecuter {
     }
   }
 
-  public void executeGraph(String graphFilePath, List<String> measureColumns, SchemaInfo schemaInfo,
-      String partitionId, CarbonDataLoadSchema schema) throws DataLoadingException {
+  public void executeGraph(String graphFilePath, SchemaInfo schemaInfo, CarbonDataLoadSchema schema)
+      throws DataLoadingException {
 
     //This Method will validate the both fact and dimension csv files.
     if (!schemaInfo.isAutoAggregateRequest() && model.getRddIteratorKey() == null ) {
-      validateCSVFiles(schemaInfo, partitionId, schema);
+      validateCSVFiles(schema);
     }
-    execute(graphFilePath, measureColumns, schemaInfo);
+    execute(graphFilePath, schemaInfo);
   }
 
   /**
@@ -150,7 +130,7 @@ public class DataGraphExecuter {
    * @throws DataLoadingException
    */
 
-  private void execute(String graphFilePath, List<String> measureColumns, SchemaInfo schemaInfo)
+  private void execute(String graphFilePath, SchemaInfo schemaInfo)
       throws DataLoadingException {
 
     //This Method will validate the both fact and dimension csv files.
@@ -178,28 +158,18 @@ public class DataGraphExecuter {
         List<StepMeta> stepsMeta = trans.getTransMeta().getSteps();
         StringBuilder builder = new StringBuilder();
         StringBuilder measuresInCSVFile = new StringBuilder();
-        processCsvInputMeta(measureColumns, stepsMeta, builder, measuresInCSVFile);
+        processCsvInputMeta(stepsMeta, builder, measuresInCSVFile);
         processGetFileNamesMeta(stepsMeta);
 
-        processHadoopFileInputMeta(measureColumns, stepsMeta, builder, measuresInCSVFile);
+        processHadoopFileInputMeta(stepsMeta, builder, measuresInCSVFile);
       }
       setGraphLogLevel();
       trans.execute(null);
       LOGGER.info("Graph execution is started " + graphFilePath);
       trans.waitUntilFinished();
       LOGGER.info("Graph execution is finished.");
-    } catch (KettleXMLException e) {
-      LOGGER.error(e,
-          "Unable to start execution of graph " + e.getMessage());
-      throw new DataLoadingException("Unable to start execution of graph ", e);
-
-    } catch (KettleException e) {
-      LOGGER.error(e,
-          "Unable to start execution of graph " + e.getMessage());
-      throw new DataLoadingException("Unable to start execution of graph ", e);
-    } catch (Throwable e) {
-      LOGGER.error(e,
-          "Unable to start execution of graph " + e.getMessage());
+    } catch (KettleException | IOException e) {
+      LOGGER.error(e, "Unable to start execution of graph " + e.getMessage());
       throw new DataLoadingException("Unable to start execution of graph ", e);
     }
 
@@ -233,14 +203,13 @@ public class DataGraphExecuter {
   }
 
   /**
-   * @param measureColumns
    * @param stepsMeta
    * @param builder
    * @param measuresInCSVFile
    * @throws DataLoadingException
    */
-  private void processHadoopFileInputMeta(List<String> measureColumns, List<StepMeta> stepsMeta,
-      StringBuilder builder, StringBuilder measuresInCSVFile) throws DataLoadingException {
+  private void processHadoopFileInputMeta(List<StepMeta> stepsMeta, StringBuilder builder,
+      StringBuilder measuresInCSVFile) throws DataLoadingException {
     for (StepMeta step : stepsMeta) {
       if (step.getStepMetaInterface() instanceof HadoopFileInputMeta) {
 
@@ -356,14 +325,13 @@ public class DataGraphExecuter {
   }
 
   /**
-   * @param measureColumns
    * @param stepsMeta
    * @param builder
    * @param measuresInCSVFile
    * @throws DataLoadingException
    */
-  private void processCsvInputMeta(List<String> measureColumns, List<StepMeta> stepsMeta,
-      StringBuilder builder, StringBuilder measuresInCSVFile) throws DataLoadingException {
+  private void processCsvInputMeta(List<StepMeta> stepsMeta, StringBuilder builder,
+      StringBuilder measuresInCSVFile) throws DataLoadingException {
     for (StepMeta step : stepsMeta) {
       if (step.getStepMetaInterface() instanceof CsvInputMeta) {
         if (null != model.getCsvFilePath() && model.getRddIteratorKey() == null) {
@@ -419,11 +387,10 @@ public class DataGraphExecuter {
   /**
    * This method will validate the both fact as well as dimension csv files.
    *
-   * @param schemaInfo
+   * @param schema
    * @throws DataLoadingException
    */
-  private void validateCSVFiles(SchemaInfo schemaInfo, String partitionId,
-      CarbonDataLoadSchema schema) throws DataLoadingException {
+  private void validateCSVFiles(CarbonDataLoadSchema schema) throws DataLoadingException {
     // Validate the Fact CSV Files.
     String csvFilePath = model.getCsvFilePath();
     if (csvFilePath != null) {
@@ -445,7 +412,7 @@ public class DataGraphExecuter {
           });
 
           for (CarbonFile f : listFiles) {
-            validateCSV(schemaInfo, model.getTableName(), f, partitionId, schema, ",");
+            validateCSV(model.getTableName(), f, schema, ",");
           }
         } else {
 
@@ -458,12 +425,12 @@ public class DataGraphExecuter {
           }
 
           if (exists) {
-            validateCSV(schemaInfo, model.getTableName(),
-                FileFactory.getCarbonFile(csvFilePath, fileType), partitionId, schema, ",");
+            validateCSV(model.getTableName(),
+                FileFactory.getCarbonFile(csvFilePath, fileType), schema, ",");
           } else {
-            validateCSV(schemaInfo, model.getTableName(), FileFactory
+            validateCSV(model.getTableName(), FileFactory
                 .getCarbonFile(csvFilePath + CarbonCommonConstants.FILE_INPROGRESS_STATUS,
-                    fileType), partitionId, schema, ",");
+                    fileType), schema, ",");
           }
 
         }
@@ -487,8 +454,8 @@ public class DataGraphExecuter {
           try {
             FileFactory.FileType fileType = FileFactory.getFileType(file);
             if (FileFactory.isFileExist(file, fileType)) {
-              validateCSV(schemaInfo, model.getTableName(),
-                  FileFactory.getCarbonFile(file, fileType), partitionId, schema,
+              validateCSV(model.getTableName(),
+                  FileFactory.getCarbonFile(file, fileType), schema,
                   model.getCsvDelimiter());
             }
           } catch (IOException e) {
@@ -498,47 +465,6 @@ public class DataGraphExecuter {
         }
       }
     }
-  }
-
-  /**
-   * Validate the dimension csv files.
-   *
-   * @param schema
-   * @param schemaInfo
-   * @param dimFile
-   * @throws DataLoadingException
-   */
-  private void validateDimensionCSV(SchemaInfo schemaInfo, String factTableName,
-      String dimTableName, CarbonFile dimFile, String partitionId, CarbonDataLoadSchema schema,
-      String delimiter) throws DataLoadingException {
-    String[] columnNames =
-        getDimColumnNames(schemaInfo, factTableName, dimTableName, partitionId, schema);
-
-    if (null == columnNames || columnNames.length < 1) {
-      return;
-    }
-    if (!checkAllColumnsPresent(columnNames, dimFile.getAbsolutePath(), delimiter)) {
-      LOGGER.error(
-          "CSV File provided is not proper. Column names in schema and csv header are not same. "
-              + "CSVFile Name : "
-              + dimFile.getName());
-      throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
-          "Dimension CSV file provided is not proper. Column names in Schema and csv header are "
-              + "not same. CSVFile Name : "
-              + dimFile.getName());
-    }
-
-  }
-
-  /**
-   * Check All the columns are present in the CSV File
-   *
-   * @param dimFilePath
-   * @return
-   */
-  private boolean checkAllColumnsPresent(String[] columnNames, String dimFilePath,
-      String delimiter) {
-    return GraphExecutionUtil.checkCSVAndRequestedTableColumns(dimFilePath, columnNames, delimiter);
   }
 
 }

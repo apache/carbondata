@@ -31,7 +31,6 @@ public interface DimensionColumnDataChunk<T> {
    *
    * @param data   data to filed
    * @param offset offset from which data need to be filed
-   * @param rowId  row id of the chunk
    * @return how many bytes was copied
    */
   int fillChunkData(byte[] data, int offset, int columnIndex, KeyStructureInfo restructuringInfo);
@@ -61,8 +60,6 @@ public interface DimensionColumnDataChunk<T> {
   /**
    * Below method to get  the data based in row id
    *
-   * @param row id
-   *            row id of the data
    * @return chunk
    */
   byte[] getChunkData(int columnIndex);

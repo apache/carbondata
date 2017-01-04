@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -34,9 +35,6 @@ import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerat
 public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLengthGenerator
     implements ColumnarSplitter {
 
-  /**
-   *
-   */
   private static final long serialVersionUID = 1L;
 
   private int[] dimensionsToSplit;
@@ -83,7 +81,7 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
       splits[i++] = range;
     }
     for (int j = 1; j < splits.length; j++) {
-      if (splits[j - 1].get(splits[j - 1].size() - 1) == splits[j].get(0)) {
+      if (Objects.equals(splits[j - 1].get(splits[j - 1].size() - 1), splits[j].get(0))) {
         splits[j].remove(0);
       }
     }
@@ -200,14 +198,6 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
       copyIndex += key[i].length;
     }
     return fullKey;
-  }
-
-  @Override public byte[] getKeyByteArray(byte[][] key, int[] columnIndexes) {
-    return null;
-  }
-
-  @Override public long[] getKeyArray(byte[][] key, int[] columnIndexes) {
-    return null;
   }
 
   public int[] getBlockKeySize() {

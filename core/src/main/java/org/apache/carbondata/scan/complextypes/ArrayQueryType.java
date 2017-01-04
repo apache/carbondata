@@ -22,7 +22,6 @@ package org.apache.carbondata.scan.complextypes;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.List;
 
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.scan.filter.GenericQueryType;
@@ -34,7 +33,6 @@ import org.apache.spark.sql.types.*;
 public class ArrayQueryType extends ComplexQueryType implements GenericQueryType {
 
   private GenericQueryType children;
-  private int keyOrdinalForQuery;
 
   public ArrayQueryType(String name, String parentname, int blockIndex) {
     super(name, parentname, blockIndex);
@@ -65,14 +63,6 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
 
   }
 
-  @Override public void getAllPrimitiveChildren(List<GenericQueryType> primitiveChild) {
-    if (children instanceof PrimitiveQueryType) {
-      primitiveChild.add(children);
-    } else {
-      children.getAllPrimitiveChildren(primitiveChild);
-    }
-  }
-
   public void parseBlocksAndReturnComplexColumnByteArray(
       DimensionColumnDataChunk[] dimensionColumnDataChunks, int rowNumber,
       DataOutputStream dataOutputStream) throws IOException {
@@ -81,9 +71,7 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     ByteBuffer byteArray = ByteBuffer.wrap(input);
     int dataLength = byteArray.getInt();
     dataOutputStream.writeInt(dataLength);
-    if (dataLength == 0) {
-      // b.putInt(0);
-    } else {
+    if (dataLength > 0) {
       int columnIndex = byteArray.getInt();
       for (int i = 0; i < dataLength; i++) {
         children
@@ -93,52 +81,16 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     }
   }
 
-  @Override public int getSurrogateIndex() {
-    return 0;
-  }
-
-  @Override public void setSurrogateIndex(int surrIndex) {
-
-  }
-
-  @Override public int getBlockIndex() {
-    return blockIndex;
-  }
-
-  @Override public void setBlockIndex(int blockIndex) {
-    this.blockIndex = blockIndex;
-  }
-
   @Override public int getColsCount() {
     return children.getColsCount() + 1;
-  }
-
-  @Override public void parseAndGetResultBytes(ByteBuffer complexData, DataOutputStream dataOutput)
-      throws IOException {
-    int dataLength = complexData.getInt();
-    dataOutput.writeInt(dataLength);
-    for (int i = 0; i < dataLength; i++) {
-      children.parseAndGetResultBytes(complexData, dataOutput);
-    }
-  }
-
-  @Override public void setKeySize(int[] keyBlockSize) {
-    children.setKeySize(keyBlockSize);
   }
 
   @Override public DataType getSchemaType() {
     return new ArrayType(null, true);
   }
 
-  @Override public int getKeyOrdinalForQuery() {
-    return keyOrdinalForQuery;
-  }
-
-  @Override public void setKeyOrdinalForQuery(int keyOrdinalForQuery) {
-    this.keyOrdinalForQuery = keyOrdinalForQuery;
-  }
-
-  @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder) {
+  @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder)
+      throws IOException {
     readBlockDataChunk(blockChunkHolder);
     children.fillRequiredBlockData(blockChunkHolder);
   }

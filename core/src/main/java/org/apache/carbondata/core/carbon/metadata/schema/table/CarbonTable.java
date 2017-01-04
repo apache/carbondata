@@ -531,10 +531,6 @@ public class CarbonTable implements Serializable {
     return blockSize;
   }
 
-  public void setBlockSizeInMB(int blockSize) {
-    this.blockSize = blockSize;
-  }
-
   /**
    * to get the normal dimension or the primitive dimension of the complex type
    *

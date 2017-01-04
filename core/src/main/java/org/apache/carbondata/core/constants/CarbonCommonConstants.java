@@ -778,16 +778,6 @@ public final class CarbonCommonConstants {
   public static final String SEGMENT_COMPACTED = "Compacted";
 
   /**
-   * property for number of core to load the blocks in driver
-   */
-  public static final String NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT =
-      "no.of.cores.to.load.blocks.in.driver";
-  /**
-   * default number of cores
-   */
-  public static final int NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT_DEFAULT_VALUE = 10;
-
-  /**
    * ZOOKEEPERLOCK TYPE
    */
   public static final String CARBON_LOCK_TYPE_ZOOKEEPER =
@@ -839,11 +829,6 @@ public final class CarbonCommonConstants {
   public static final String HIVE_CONNECTION_URL = "javax.jdo.option.ConnectionURL";
 
   /**
-   * Rocord size in case of compaction.
-   */
-  public static final int COMPACTION_INMEMORY_RECORD_SIZE = 120000;
-
-  /**
    * If the level 2 compaction is done in minor then new compacted segment will end with .2
    */
   public static String LEVEL2_COMPACTION_INDEX = ".2";
@@ -862,17 +847,6 @@ public final class CarbonCommonConstants {
    * zookeeper url key
    */
   public static final String ZOOKEEPER_URL = "spark.deploy.zookeeper.url";
-
-  /**
-   * configure the minimum blocklet size eligible for blocklet distribution
-   */
-  public static final String CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE =
-      "carbon.blockletdistribution.min.blocklet.size";
-
-  /**
-   * default blocklet size eligible for blocklet distribution
-   */
-  public static final int DEFAULT_CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE = 2;
 
   /**
    * File created in case of minor compaction request

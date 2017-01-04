@@ -30,7 +30,7 @@ public class QueryStatisticsRecorderDummy implements QueryStatisticsRecorder,Ser
    */
   private static final long serialVersionUID = -5719752001674467864L;
 
-  public QueryStatisticsRecorderDummy(String queryId) {
+  public QueryStatisticsRecorderDummy() {
 
   }
 

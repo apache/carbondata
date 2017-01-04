@@ -122,8 +122,8 @@ public class CarbonFooterWriterTest extends TestCase{
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
    encodeList.add(Encoding.DICTIONARY);
    dimColumn.setEncodingList(encodeList);
-   dimColumn.setNumberOfChild(0);;
-   return dimColumn;
+   dimColumn.setNumberOfChild(0);
+    return dimColumn;
  }
 
   /**

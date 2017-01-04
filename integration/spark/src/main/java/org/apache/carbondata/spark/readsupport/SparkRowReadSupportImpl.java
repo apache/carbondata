@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.spark.readsupport;
 
+import java.io.IOException;
 import java.sql.Date;
 import java.sql.Timestamp;
 
@@ -35,7 +36,7 @@ import org.apache.spark.unsafe.types.UTF8String;
 public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSupport<Row> {
 
   @Override public void initialize(CarbonColumn[] carbonColumns,
-      AbsoluteTableIdentifier absoluteTableIdentifier) {
+      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException {
     super.initialize(carbonColumns, absoluteTableIdentifier);
     //can initialize and generate schema here.
   }

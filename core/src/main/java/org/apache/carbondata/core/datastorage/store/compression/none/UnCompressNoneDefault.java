@@ -75,9 +75,6 @@ public class UnCompressNoneDefault implements UnCompressValue<double[]> {
     return null;
   }
 
-  /**
-   * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
-   */
   @Override public UnCompressValue getCompressorObject() {
     return new UnCompressNoneByte(actualDataType);
   }

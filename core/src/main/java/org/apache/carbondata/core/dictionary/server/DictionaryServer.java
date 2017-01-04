@@ -54,7 +54,7 @@ public class DictionaryServer {
    * @param port
    * @throws Exception
    */
-  public void startServer(int port) throws Exception {
+  public void startServer(int port) {
     bootstrap = new ServerBootstrap();
     dictionaryServerHandler = new DictionaryServerHandler();
 

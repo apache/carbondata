@@ -48,8 +48,6 @@ public class CarbonFooterWriter {
     try {
       thriftWriter.write(footer);
       thriftWriter.writeOffset(currentPosition);
-    } catch (Exception e) {
-      throw e;
     } finally {
       thriftWriter.close();
     }

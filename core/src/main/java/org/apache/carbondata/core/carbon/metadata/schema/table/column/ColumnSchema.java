@@ -102,11 +102,6 @@ public class ColumnSchema implements Serializable {
   private int numberOfChild;
 
   /**
-   * Used when this column is part of an aggregate function.
-   */
-  private String aggregateFunction;
-
-  /**
    * used in case of schema restructuring
    */
   private byte[] defaultValue;
@@ -199,7 +194,6 @@ public class ColumnSchema implements Serializable {
   }
 
   /**
-   * @param columnGroup the columnGroup to set
    */
   public void setColumnGroup(int columnGroupId) {
     this.columnGroupId = columnGroupId;
@@ -245,20 +239,6 @@ public class ColumnSchema implements Serializable {
    */
   public void setNumberOfChild(int numberOfChild) {
     this.numberOfChild = numberOfChild;
-  }
-
-  /**
-   * @return the aggregator
-   */
-  public String getAggregateFunction() {
-    return aggregateFunction;
-  }
-
-  /**
-   * @param aggregateFunction the aggregator to set
-   */
-  public void setAggregateFunction(String aggregateFunction) {
-    this.aggregateFunction = aggregateFunction;
   }
 
   /**
@@ -332,7 +312,6 @@ public class ColumnSchema implements Serializable {
   }
 
   /**
-   * @param encoderList the encoderList to set
    */
   public void setEncodingList(List<Encoding> encodingList) {
     this.encodingList = encodingList;

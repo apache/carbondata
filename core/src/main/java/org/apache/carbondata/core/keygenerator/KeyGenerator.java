@@ -118,7 +118,4 @@ public interface KeyGenerator extends Serializable, Comparator<byte[]> {
    */
   int getDimCount();
 
-  int getStartAndEndKeySizeWithOnlyPrimitives();
-
-  void setStartAndEndKeySizeWithOnlyPrimitives(int startAndEndKeySizeWithPrimitives);
 }

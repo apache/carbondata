@@ -27,5 +27,5 @@ public enum Encoding {
   RLE,
   INVERTED_INDEX,
   BIT_PACKED,
-  DIRECT_DICTIONARY;
+  DIRECT_DICTIONARY
 }

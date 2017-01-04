@@ -18,11 +18,13 @@
  */
 package org.apache.carbondata.scan.scanner;
 
+import java.io.IOException;
+
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
+import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
 
@@ -48,12 +50,12 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
   }
 
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
-      throws QueryExecutionException {
+      throws IOException, FilterUnsupportedException {
     fillKeyValue(blocksChunkHolder);
     return scannedResult;
   }
 
-  protected void fillKeyValue(BlocksChunkHolder blocksChunkHolder) {
+  protected void fillKeyValue(BlocksChunkHolder blocksChunkHolder) throws IOException {
 
     QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
             .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);

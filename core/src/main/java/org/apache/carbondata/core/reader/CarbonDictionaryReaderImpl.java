@@ -137,9 +137,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
         readDictionaryMetadataFile();
     List<ColumnDictionaryChunk> columnDictionaryChunks =
         read(carbonDictionaryColumnMetaChunks, startOffset, endOffset);
-    Iterator<byte[]> columnDictionaryChunkWrapper =
-        new ColumnDictionaryChunkIterator(columnDictionaryChunks);
-    return columnDictionaryChunkWrapper;
+    return (Iterator<byte[]>) new ColumnDictionaryChunkIterator(columnDictionaryChunks);
   }
 
   /**
@@ -174,9 +172,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
     // open dictionary file thrift reader
     openThriftReader();
     // read the required number of chunks from dictionary file
-    List<ColumnDictionaryChunk> columnDictionaryChunks =
-        readDictionaryFile(startOffset, dictionaryChunkCountsToBeRead);
-    return columnDictionaryChunks;
+    return readDictionaryFile(startOffset, dictionaryChunkCountsToBeRead);
   }
 
   /**

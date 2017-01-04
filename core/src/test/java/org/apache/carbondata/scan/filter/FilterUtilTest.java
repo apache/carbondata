@@ -38,7 +38,6 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSche
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.expression.ColumnExpression;
 import org.apache.carbondata.scan.expression.Expression;
 import org.apache.carbondata.scan.expression.LiteralExpression;
@@ -334,67 +333,6 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
         defaultSurrogate) instanceof DimColumnFilterInfo);
   }
 
-  @Test public void testGetFilterList() throws Exception {
-    Expression expression = new ColumnExpression("IMEI", DataType.STRING);
-    ColumnExpression columnExpression = new ColumnExpression("IMEI", DataType.STRING);
-    int ordinal = 1;
-    boolean isIncludeFilter = true;
-    CarbonTableIdentifier carbonTableIdentifier =
-        new CarbonTableIdentifier("databaseName", "tableName", "tableID");
-    AbsoluteTableIdentifier absoluteTableIdentifier =
-        new AbsoluteTableIdentifier(this.carbonStorePath, carbonTableIdentifier);
-    final Map<String, String> columnProperties = new HashMap<>();
-    columnProperties.put("1", "column1");
-    columnProperties.put("2", "column2");
-    final CarbonTableIdentifier carbonTableIdentifier1 =
-        new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
-    int keyOrdinal = 1;
-    int columnGroupOrdinal = 1;
-    int complexTypeOrdinal = 1;
-    final CarbonDimension carbonDimension =
-        new CarbonDimension(columnSchema, ordinal, keyOrdinal, columnGroupOrdinal,
-            complexTypeOrdinal);
-
-    new MockUp<AbsoluteTableIdentifier>() {
-      @Mock public CarbonTableIdentifier getCarbonTableIdentifier() {
-        return carbonTableIdentifier1;
-      }
-    };
-
-    final Map<String, String> columnProperties1 = new HashMap<>();
-    columnProperties1.put("1", "column1");
-    columnProperties1.put("2", "column2");
-
-    new MockUp<CarbonColumn>() {
-      @Mock public ColumnIdentifier getColumnIdentifier() {
-        ColumnIdentifier columnIdentifier =
-            new ColumnIdentifier("1", columnProperties, DataType.STRING);
-        return columnIdentifier;
-      }
-    };
-
-    new MockUp<CarbonColumn>() {
-      @Mock public DataType getDataType() {
-        return DataType.STRING;
-      }
-    };
-
-    new MockUp<ColumnExpression>() {
-      @Mock public CarbonDimension getDimension() {
-        return carbonDimension;
-      }
-    };
-
-    final CarbonColumn carbonColumn = new CarbonColumn(columnSchema, ordinal, -1);
-    new MockUp<ColumnExpression>() {
-      @Mock public CarbonColumn getCarbonColumn() {
-        return carbonColumn;
-      }
-    };
-    assertTrue(FilterUtil.getFilterList(absoluteTableIdentifier, expression, columnExpression,
-        isIncludeFilter) instanceof DimColumnFilterInfo);
-  }
-
   @Test public void testCheckIfDataTypeNotTimeStamp() {
     Expression expression = new ColumnExpression("test", DataType.STRING);
     boolean result = FilterUtil.checkIfDataTypeNotTimeStamp(expression);
@@ -437,8 +375,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     List<String> evaluateResultListFinal = new ArrayList<>();
     evaluateResultListFinal.add("test1");
     evaluateResultListFinal.add("test2");
-    assertTrue(FilterUtil.getNoDictionaryValKeyMemberForFilter(absoluteTableIdentifier, expression,
-        evaluateResultListFinal, isIncludeFilter) instanceof DimColumnFilterInfo);
+    assertTrue(FilterUtil.getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal, isIncludeFilter) instanceof DimColumnFilterInfo);
   }
 
   @Test public void testPrepareDefaultStartIndexKey() throws KeyGenException {

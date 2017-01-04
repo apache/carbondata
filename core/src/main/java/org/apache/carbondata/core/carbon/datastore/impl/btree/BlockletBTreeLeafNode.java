@@ -18,6 +18,8 @@
  */
 package org.apache.carbondata.core.carbon.datastore.impl.btree;
 
+import java.io.IOException;
+
 import org.apache.carbondata.core.carbon.datastore.BTreeBuilderInfo;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
@@ -85,7 +87,7 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    * @return dimension data chunks
    */
   @Override public DimensionColumnDataChunk[] getDimensionChunks(FileHolder fileReader,
-      int[][] blockIndexes) {
+      int[][] blockIndexes) throws IOException {
     return dimensionChunksReader.readDimensionChunks(fileReader, blockIndexes);
   }
 
@@ -97,7 +99,7 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    * @return dimension data chunk
    */
   @Override public DimensionColumnDataChunk getDimensionChunk(FileHolder fileReader,
-      int blockIndex) {
+      int blockIndex) throws IOException {
     return dimensionChunksReader.readDimensionChunk(fileReader, blockIndex);
   }
 
@@ -109,7 +111,7 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    * @return measure column data chunk
    */
   @Override public MeasureColumnDataChunk[] getMeasureChunks(FileHolder fileReader,
-      int[][] blockIndexes) {
+      int[][] blockIndexes) throws IOException {
     return measureColumnChunkReader.readMeasureChunks(fileReader, blockIndexes);
   }
 
@@ -120,7 +122,8 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    * @param blockIndex block index to be read from file
    * @return measure data chunk
    */
-  @Override public MeasureColumnDataChunk getMeasureChunk(FileHolder fileReader, int blockIndex) {
+  @Override public MeasureColumnDataChunk getMeasureChunk(FileHolder fileReader, int blockIndex)
+      throws IOException {
     return measureColumnChunkReader.readMeasureChunk(fileReader, blockIndex);
   }
 }

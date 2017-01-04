@@ -221,12 +221,11 @@ public class WriterCompressModel {
     this.uniqueValue = uniqueValue;
   }
 
-
   public void setCompressionFinders(CompressionFinder[] compressionFinders) {
     this.compressionFinders = compressionFinders;
   }
 
-  public CompressionFinder[] getCompressionFinder() {
+  public CompressionFinder[] getCompressionFinders() {
     return this.compressionFinders;
   }
 }

@@ -19,6 +19,8 @@
 
 package org.apache.carbondata.core.util;
 
+import java.io.IOException;
+
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -39,7 +41,7 @@ public class CarbonMergerUtil {
     try {
       localCardinality = CarbonUtil.getCardinalityFromLevelMetadataFile(
           path + '/' + CarbonCommonConstants.LEVEL_METADATA_FILE + tableName + ".metadata");
-    } catch (CarbonUtilException e) {
+    } catch (IOException e) {
       LOGGER.error("Error occurred :: " + e.getMessage());
     }
 

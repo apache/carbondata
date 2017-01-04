@@ -20,11 +20,9 @@
 package org.apache.carbondata.core.datastorage.store.columnar;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 
 public class ColumnarKeyStoreDataHolder {
   private byte[] keyblockData;
-  private List<byte[]> noDictionaryValBasedKeyBlockData;
   private ColumnarKeyStoreMetadata columnarKeyStoreMetadata;
 
   public ColumnarKeyStoreDataHolder(final byte[] keyblockData,
@@ -33,32 +31,8 @@ public class ColumnarKeyStoreDataHolder {
     this.columnarKeyStoreMetadata = columnarKeyStoreMetadata;
   }
 
-  //Added constructor for holding noDictionaryValBasedKeyBlockData
-  public ColumnarKeyStoreDataHolder(final List<byte[]> noDictionaryValBasedKeyBlockData,
-      final ColumnarKeyStoreMetadata columnarKeyStoreMetadata) {
-    this.noDictionaryValBasedKeyBlockData = noDictionaryValBasedKeyBlockData;
+  public ColumnarKeyStoreDataHolder(final ColumnarKeyStoreMetadata columnarKeyStoreMetadata) {
     this.columnarKeyStoreMetadata = columnarKeyStoreMetadata;
-  }
-
-  public byte[] getKeyBlockData() {
-    return keyblockData;
-  }
-
-  /**
-   * @return the columnarKeyStoreMetadata
-   */
-  public ColumnarKeyStoreMetadata getColumnarKeyStoreMetadata() {
-    return columnarKeyStoreMetadata;
-  }
-
-  public void unCompress() {
-    if (columnarKeyStoreMetadata.isUnCompressed()) {
-      return;
-    }
-    this.keyblockData = UnBlockIndexer
-        .uncompressData(keyblockData, columnarKeyStoreMetadata.getDataIndex(),
-            columnarKeyStoreMetadata.getEachRowSize());
-    columnarKeyStoreMetadata.setUnCompressed(true);
   }
 
   public int getSurrogateKey(int columnIndex) {
@@ -77,21 +51,4 @@ public class ColumnarKeyStoreDataHolder {
     return ByteBuffer.wrap(actual).getInt();
   }
 
-  /**
-   * get the byte[] for high cardinality column block
-   *
-   * @return List<byte[]>.
-   */
-  public List<byte[]> getNoDictionaryValBasedKeyBlockData() {
-    return noDictionaryValBasedKeyBlockData;
-  }
-
-  /**
-   * set the byte[] for high cardinality column block
-   *
-   * @param noDictionaryValBasedKeyBlockData
-   */
-  public void setNoDictionaryValBasedKeyBlockData(List<byte[]> noDictionaryValBasedKeyBlockData) {
-    this.noDictionaryValBasedKeyBlockData = noDictionaryValBasedKeyBlockData;
-  }
 }

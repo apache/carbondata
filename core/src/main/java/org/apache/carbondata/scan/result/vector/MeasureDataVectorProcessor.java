@@ -28,7 +28,7 @@ import org.apache.spark.sql.types.Decimal;
 
 public class MeasureDataVectorProcessor {
 
-  public static interface MeasureVectorFiller {
+  public interface MeasureVectorFiller {
 
     void fillMeasureVector(MeasureColumnDataChunk dataChunk, ColumnVectorInfo info);
 

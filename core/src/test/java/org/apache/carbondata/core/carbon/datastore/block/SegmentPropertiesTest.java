@@ -325,7 +325,6 @@ public class SegmentPropertiesTest extends TestCase {
 
   private ColumnSchema getMeasureColumn() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setAggregateFunction("SUM");
     dimColumn.setColumnName("IMEI_COUNT");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataType.STRING);
@@ -338,7 +337,6 @@ public class SegmentPropertiesTest extends TestCase {
 
   private ColumnSchema getMeasureColumn1() {
     ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setAggregateFunction("SUM");
     dimColumn.setColumnName("IMEI_COUNT1");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataType.STRING);

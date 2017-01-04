@@ -19,7 +19,6 @@
 package org.apache.carbondata.core.writer.sortindex;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -32,17 +31,15 @@ public interface CarbonDictionarySortIndexWriter extends Closeable {
    * sortedIndex file in thrif format.
    *
    * @param sortIndexList list of sortIndex
-   * @throws IOException In Case of any I/O errors occurs.
    */
-  public void writeSortIndex(List<Integer> sortIndexList) throws IOException;
+  void writeSortIndex(List<Integer> sortIndexList);
 
   /**
    * The method is used write the dictionary sortIndexInverted data to columns
    * sortedIndex file in thrif format.
    *
    * @param invertedSortIndexList list of  sortIndexInverted
-   * @throws IOException In Case of any I/O errors occurs.
    */
-  public void writeInvertedSortIndex(List<Integer> invertedSortIndexList) throws IOException;
+  void writeInvertedSortIndex(List<Integer> invertedSortIndexList);
 
 }

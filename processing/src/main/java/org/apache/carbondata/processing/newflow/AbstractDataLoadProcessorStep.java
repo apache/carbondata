@@ -19,6 +19,7 @@
 
 package org.apache.carbondata.processing.newflow;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.carbondata.common.CarbonIterator;
@@ -56,9 +57,9 @@ public abstract class AbstractDataLoadProcessorStep {
   /**
    * Initialization process for this step.
    *
-   * @throws CarbonDataLoadingException
+   * @throws IOException
    */
-  public abstract void initialize() throws CarbonDataLoadingException;
+  public abstract void initialize() throws IOException;
 
   /**
    * Tranform the data as per the implementation.

@@ -51,20 +51,7 @@ import org.apache.hadoop.io.compress.GzipCodec;
 public final class FileFactory {
   private static Configuration configuration = null;
 
-  private static FileType storeDefaultFileType = FileType.LOCAL;
-
   static {
-    String property = CarbonUtil.getCarbonStorePath();
-    if (property != null) {
-      if (property.startsWith(CarbonUtil.HDFS_PREFIX)) {
-        storeDefaultFileType = FileType.HDFS;
-      } else if (property.startsWith(CarbonUtil.ALLUXIO_PREFIX)) {
-        storeDefaultFileType = FileType.ALLUXIO;
-      } else if (property.startsWith(CarbonUtil.VIEWFS_PREFIX)) {
-        storeDefaultFileType = FileType.VIEWFS;
-      }
-    }
-
     configuration = new Configuration();
     configuration.addResource(new Path("../core-default.xml"));
   }
@@ -88,22 +75,6 @@ public final class FileFactory {
       default:
         return new FileHolderImpl();
     }
-  }
-
-  public static FileType getFileType() {
-    String property = CarbonUtil.getCarbonStorePath();
-    if (property != null) {
-      if (property.startsWith(CarbonUtil.HDFS_PREFIX)) {
-        storeDefaultFileType = FileType.HDFS;
-      }
-      else if (property.startsWith(CarbonUtil.ALLUXIO_PREFIX)) {
-        storeDefaultFileType = FileType.ALLUXIO;
-      }
-      else if (property.startsWith(CarbonUtil.VIEWFS_PREFIX)) {
-        storeDefaultFileType = FileType.VIEWFS;
-      }
-    }
-    return storeDefaultFileType;
   }
 
   public static FileType getFileType(String path) {
@@ -228,44 +199,6 @@ public final class FileFactory {
         return stream;
       default:
         return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
-    }
-  }
-
-  public static DataOutputStream getDataOutputStream(String path, FileType fileType,
-      short replicationFactor) throws IOException {
-    path = path.replace("\\", "/");
-    switch (fileType) {
-      case LOCAL:
-        return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
-      case HDFS:
-      case ALLUXIO:
-      case VIEWFS:
-        Path pt = new Path(path);
-        FileSystem fs = pt.getFileSystem(configuration);
-        FSDataOutputStream stream = fs.create(pt, replicationFactor);
-        return stream;
-      default:
-        return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
-    }
-  }
-
-  public static DataOutputStream getDataOutputStream(String path, FileType fileType, int bufferSize)
-      throws IOException {
-    path = path.replace("\\", "/");
-    switch (fileType) {
-      case LOCAL:
-        return new DataOutputStream(
-            new BufferedOutputStream(new FileOutputStream(path), bufferSize));
-      case HDFS:
-      case ALLUXIO:
-      case VIEWFS:
-        Path pt = new Path(path);
-        FileSystem fs = pt.getFileSystem(configuration);
-        FSDataOutputStream stream = fs.create(pt, true, bufferSize);
-        return stream;
-      default:
-        return new DataOutputStream(
-            new BufferedOutputStream(new FileOutputStream(path), bufferSize));
     }
   }
 
@@ -427,7 +360,6 @@ public final class FileFactory {
     }
     return path.delete();
   }
-
 
   public static boolean mkdirs(String filePath, FileType fileType) throws IOException {
     filePath = filePath.replace("\\", "/");

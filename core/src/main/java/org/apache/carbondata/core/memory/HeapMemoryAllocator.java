@@ -77,8 +77,6 @@ public class HeapMemoryAllocator implements MemoryAllocator {
         }
         pool.add(new WeakReference<>(memory));
       }
-    } else {
-      // Do nothing
     }
   }
 }

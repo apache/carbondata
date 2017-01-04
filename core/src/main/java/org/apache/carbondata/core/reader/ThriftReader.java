@@ -140,7 +140,7 @@ public class ThriftReader {
    * needs a way of obtaining instances of the class to be populated and this interface
    * defines the mechanism by which a client provides these instances.
    */
-  public static interface TBaseCreator {
+  public interface TBaseCreator {
     TBase create();
   }
 }

@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.processing.newflow.steps;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -53,7 +54,7 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
   }
 
   @Override
-  public void initialize() throws CarbonDataLoadingException {
+  public void initialize() throws IOException {
     child.initialize();
     SortParameters sortParameters = SortParameters.createSortParameters(configuration);
     boolean offheapsort = Boolean.parseBoolean(CarbonProperties.getInstance()

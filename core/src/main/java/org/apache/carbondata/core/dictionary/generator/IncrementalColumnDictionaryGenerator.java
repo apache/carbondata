@@ -106,7 +106,7 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
     }
   }
 
-  @Override public void writeDictionaryData(String tableUniqueName) throws Exception {
+  @Override public void writeDictionaryData(String tableUniqueName) throws IOException {
     // initialize params
     CarbonMetadata metadata = CarbonMetadata.getInstance();
     CarbonTable carbonTable = metadata.getCarbonTable(tableUniqueName);
@@ -179,8 +179,6 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
           }
         }
       }
-    } catch (IOException ex) {
-      throw ex;
     } finally {
       if (null != dictionaryWriter) {
         dictionaryWriter.close();
@@ -206,7 +204,7 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
                               DictionaryService dictionaryService,
                               CarbonTableIdentifier tableIdentifier,
                               ColumnIdentifier columnIdentifier,
-                              String storePath) throws Exception{
+                              String storePath) throws IOException{
     CarbonDictionarySortIndexWriter carbonDictionarySortIndexWriter = null;
     try {
       CarbonDictionarySortInfoPreparator preparator = new CarbonDictionarySortInfoPreparator();

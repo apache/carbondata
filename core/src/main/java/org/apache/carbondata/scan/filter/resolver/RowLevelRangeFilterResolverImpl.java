@@ -25,17 +25,13 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.SortedMap;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.expression.ColumnExpression;
 import org.apache.carbondata.scan.expression.Expression;
 import org.apache.carbondata.scan.expression.ExpressionResult;
@@ -55,8 +51,6 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    *
    */
   private static final long serialVersionUID = 6629319265336666789L;
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(RowLevelRangeFilterResolverImpl.class.getName());
   private List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList;
   private List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList;
   private AbsoluteTableIdentifier tableIdentifier;
@@ -98,18 +92,12 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    *
    * @return start IndexKey
    */
-  public void getStartKey(long[] startKey, SortedMap<Integer, byte[]> noDictStartKeys,
-      List<long[]> startKeyList) {
-    if (null == dimColEvaluatorInfoList.get(0).getStarIndexKey()) {
-      try {
-        FilterUtil.getStartKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
-            startKey, startKeyList);
-        FilterUtil
-            .getStartKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), noDictStartKeys);
-      } catch (QueryExecutionException e) {
-        LOGGER.error("Can not get the start key during block prune");
-      }
-    }
+  public void getStartKey(long[] startKey,
+      SortedMap<Integer, byte[]> noDictStartKeys, List<long[]> startKeyList) {
+    FilterUtil.getStartKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
+        startKey, startKeyList);
+    FilterUtil
+        .getStartKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), noDictStartKeys);
   }
 
   /**
@@ -117,8 +105,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    *
    * @return end IndexKey
    */
-  @Override public void getEndKey(SegmentProperties segmentProperties,
-      AbsoluteTableIdentifier absoluteTableIdentifier, long[] endKeys,
+  @Override public void getEndKey(SegmentProperties segmentProperties, long[] endKeys,
       SortedMap<Integer, byte[]> noDicEndKeys, List<long[]> endKeyList) {
     if (null == dimColEvaluatorInfoList.get(0).getEndIndexKey()) {
       try {
@@ -168,7 +155,8 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    * Method which will resolve the filter expression by converting the filter
    * member to its assigned dictionary values.
    */
-  public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
+  public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
+      throws FilterUnsupportedException {
     DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = null;
     MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo = null;
     int index = 0;
@@ -180,7 +168,6 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           dimColumnEvaluatorInfo = new DimColumnResolvedFilterInfo();
           DimColumnFilterInfo filterInfo = new DimColumnFilterInfo();
           dimColumnEvaluatorInfo.setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
-          //dimColumnEvaluatorInfo.se
           dimColumnEvaluatorInfo.setRowIndex(index++);
           dimColumnEvaluatorInfo.setDimension(columnExpression.getDimension());
           dimColumnEvaluatorInfo.setDimensionExistsInCurrentSilce(false);
@@ -201,10 +188,8 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
         } else {
           msrColumnEvalutorInfo = new MeasureColumnResolvedFilterInfo();
           msrColumnEvalutorInfo.setRowIndex(index++);
-          msrColumnEvalutorInfo.setAggregator(
-              ((CarbonMeasure) columnExpression.getCarbonColumn()).getAggregateFunction());
           msrColumnEvalutorInfo
-              .setColumnIndex(((CarbonMeasure) columnExpression.getCarbonColumn()).getOrdinal());
+              .setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
           msrColumnEvalutorInfo.setType(columnExpression.getCarbonColumn().getDataType());
           msrColEvalutorInfoList.add(msrColumnEvalutorInfo);
         }
