@@ -144,9 +144,8 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
               || columnList.get(0).getDimension().getDataType()
               == org.apache.carbondata.core.carbon.metadata.datatype.DataType.ARRAY)) {
         dimColResolvedFilterInfo.setFilterValues(FilterUtil
-            .getFilterListForAllValues(absoluteTableIdentifier, exp, columnList.get(0),
-                isIncludeFilter));
-
+            .getFilterInfoByFilterExpressionEvaluation(absoluteTableIdentifier, exp,
+                columnList.get(0), isIncludeFilter));
         dimColResolvedFilterInfo.setColumnIndex(columnList.get(0).getDimension().getOrdinal());
         dimColResolvedFilterInfo.setDimension(columnList.get(0).getDimension());
       }

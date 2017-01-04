@@ -171,6 +171,10 @@ public final class CarbonCommonConstants {
    */
   public static final byte[] MEMBER_DEFAULT_VAL_ARRAY = MEMBER_DEFAULT_VAL.getBytes();
   /**
+   * MEMBER_DEFAULT_VAL
+   */
+  public static final Integer NULL_DEFAULT_DICT_VALUE = 1;
+  /**
    * FILE STATUS IN-PROGRESS
    */
   public static final String FILE_INPROGRESS_STATUS = ".inprogress";
