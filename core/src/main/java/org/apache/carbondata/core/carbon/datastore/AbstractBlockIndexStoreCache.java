@@ -92,9 +92,7 @@ public abstract class AbstractBlockIndexStoreCache<K, V>
       throws IOException {
     // calculate the required size is
     TableBlockInfo blockInfo = tableBlockUniqueIdentifier.getTableBlockInfo();
-    long requiredMetaSize = CarbonUtil
-        .calculateMetaSize(blockInfo.getFilePath(), blockInfo.getBlockOffset(),
-            blockInfo.getBlockLength());
+    long requiredMetaSize = CarbonUtil.calculateMetaSize(blockInfo);
     if (requiredMetaSize > 0) {
       tableBlock.setMemorySize(requiredMetaSize);
       tableBlock.incrementAccessCount();
