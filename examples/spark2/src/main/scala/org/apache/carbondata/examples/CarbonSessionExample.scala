@@ -56,7 +56,7 @@ object CarbonSessionExample {
       .enableHiveSupport()
       .config("spark.sql.warehouse.dir", warehouse)
       .config("javax.jdo.option.ConnectionURL",
-    s"jdbc:derby:;databaseName=$metastoredb;create=true")
+        s"jdbc:derby:;databaseName=$metastoredb;create=true")
       .getOrCreateCarbonSession()
 
     spark.sparkContext.setLogLevel("WARN")
@@ -75,7 +75,8 @@ object CarbonSessionExample {
          |    timestampField timestamp,
          |    decimalField decimal(18,2),
          |    dateField date,
-         |    charField char(5)
+         |    charField char(5),
+         |    floatField Float
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')
@@ -88,35 +89,41 @@ object CarbonSessionExample {
       s"""
          | LOAD DATA LOCAL INPATH '$path'
          | INTO TABLE carbon_table
-         | options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField')
+         | options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,
+         | timestampField,decimalField,dateField,charField,floatField')
        """.stripMargin)
     // scalastyle:on
 
-    spark.sql("""
+    spark.sql(
+      """
              SELECT *
              FROM carbon_table
              where stringfield = 'spark' and decimalField > 40
-              """).show
+      """).show
 
-    spark.sql("""
+    spark.sql(
+      """
              SELECT *
              FROM carbon_table where length(stringField) = 5
-              """).show
+      """).show
 
-    spark.sql("""
+    spark.sql(
+      """
              SELECT *
              FROM carbon_table where date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
-              """).show
+      """).show
 
-    spark.sql("""
+    spark.sql(
+      """
              select count(stringField) from carbon_table
-              """.stripMargin).show
+      """.stripMargin).show
 
-    spark.sql("""
+    spark.sql(
+      """
            SELECT sum(intField), stringField
            FROM carbon_table
            GROUP BY stringField
-              """).show
+      """).show
 
     spark.sql(
       """

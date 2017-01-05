@@ -40,6 +40,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   private byte[][] bytes;
 
   private double[] doubles;
+  private float[] floats;
 
   private BitSet nullBytes;
 
@@ -57,6 +58,9 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
         break;
       case DOUBLE:
         doubles = new double[batchSize];
+        break;
+      case FLOAT:
+        floats = new float[batchSize];
         break;
       case STRING:
         bytes = new byte[batchSize][];

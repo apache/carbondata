@@ -94,7 +94,6 @@ public class UnCompressNonDecimalMaxMinFloat
     CarbonReadDataHolder holder = new CarbonReadDataHolder();
     for (int i = 0; i < vals.length; i++) {
       vals[i] = value[i] / Math.pow(10, decimal);
-
       if (value[i] == 0) {
         vals[i] = maxValue;
       } else {

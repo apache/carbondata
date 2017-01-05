@@ -48,10 +48,9 @@ public final class DataTypeUtil {
   private static final Map<String, String> dataTypeDisplayNames;
 
   private static final ThreadLocal<DateFormat> formatter = new ThreadLocal<DateFormat>() {
-    @Override
-    protected DateFormat initialValue() {
-      return new SimpleDateFormat(
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+    @Override protected DateFormat initialValue() {
+      return new SimpleDateFormat(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
               CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
     }
   };
@@ -330,7 +329,7 @@ public final class DataTypeUtil {
         default:
           return data;
       }
-      if(null != parsedValue) {
+      if (null != parsedValue) {
         return data;
       }
       return null;
@@ -405,6 +404,7 @@ public final class DataTypeUtil {
     }
     return null;
   }
+
   /**
    * This method will compare double values it will preserve
    * the -0.0 and 0.0 equality as per == ,also preserve NaN equality check as per

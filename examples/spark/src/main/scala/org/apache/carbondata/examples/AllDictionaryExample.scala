@@ -25,7 +25,7 @@ object AllDictionaryExample {
   def main(args: Array[String]) {
     val cc = ExampleUtils.createCarbonContext("AllDictionaryExample")
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
-    val csvHeader = "ID,date,country,name,phonetype,serialname,salary"
+    val csvHeader = "ID,date,country,name,phonetype,serialname,salary,floatField"
     val dictCol = "|date|country|name|phonetype|serialname|"
     val allDictFile = ExampleUtils.currentPath + "/src/main/resources/data.dictionary"
     // extract all dictionary files from source data
@@ -37,21 +37,24 @@ object AllDictionaryExample {
 
     cc.sql("DROP TABLE IF EXISTS t3")
 
-    cc.sql("""
+    cc.sql(
+      """
            CREATE TABLE IF NOT EXISTS t3
            (ID Int, date Timestamp, country String,
-           name String, phonetype String, serialname String, salary Int)
+           name String, phonetype String, serialname String, salary Int,floatField float)
            STORED BY 'carbondata'
-           """)
+      """)
 
-    cc.sql(s"""
+    cc.sql(
+      s"""
            LOAD DATA LOCAL INPATH '$testData' into table t3
            options('ALL_DICTIONARY_PATH'='$allDictFile')
            """)
 
-    cc.sql("""
+    cc.sql(
+      """
            SELECT * FROM t3
-           """).show()
+      """).show()
 
     cc.sql("DROP TABLE IF EXISTS t3")
 
