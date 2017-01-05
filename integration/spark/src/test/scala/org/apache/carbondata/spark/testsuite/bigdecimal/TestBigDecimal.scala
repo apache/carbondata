@@ -36,6 +36,8 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hiveTable")
     sql("drop table if exists hiveBigDecimal")
     sql("drop table if exists carbonBigDecimal_2")
+    sql("drop table if exists testHiveDecimal")
+    sql("drop table if exists testCarbonDecimal")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.SORT_SIZE, "1")
@@ -48,6 +50,10 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
     sql("LOAD DATA local inpath './src/test/resources/decimalBoundaryDataHive.csv' INTO table hiveBigDecimal")
     sql("create table if not exists carbonBigDecimal_2 (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(30, 10)) STORED BY 'org.apache.carbondata.format'")
     sql("LOAD DATA LOCAL INPATH './src/test/resources/decimalBoundaryDataCarbon.csv' into table carbonBigDecimal_2")
+    sql("create table if not exists testHiveDecimal(ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(38, 38))row format delimited fields terminated by ','")
+    sql("LOAD DATA local inpath './src/test/resources/decimalBoundaryDataHive.csv' INTO table testHiveDecimal")
+    sql("create table if not exists testCarbonDecimal (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(38, 38)) STORED BY 'org.apache.carbondata.format'")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/decimalBoundaryDataCarbon.csv' into table testCarbonDecimal")
   }
 
   test("test detail query on big decimal column") {
@@ -187,11 +193,18 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
       sql("select avg(salary)/10 from hiveBigDecimal"))
   }
 
+  test("test decimal(n,n) when filter value is int") {
+    checkAnswer(sql("select salary from testHiveDecimal where salary=0.123 or salary=123 or salary<0.5"),
+      sql("select salary from testCarbonDecimal where salary=0.123 or salary=123 or salary<0.5"))
+  }
+
   override def afterAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
     sql("drop table if exists hiveBigDecimal")
     sql("drop table if exists carbonBigDecimal_2")
+    sql("drop table if exists testHiveDecimal")
+    sql("drop table if exists testCarbonDecimal")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.SORT_SIZE,
@@ -200,5 +213,3 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
       CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE)
   }
 }
-
-

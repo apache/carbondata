@@ -200,6 +200,20 @@ public class FilterExpressionProcessor implements FilterProcessor {
       AbsoluteTableIdentifier tableIdentifier) {
     ExpressionType filterExpressionType = expressionTree.getFilterExpressionType();
     BinaryExpression currentExpression = null;
+    if (filterExpressionType == ExpressionType.OR || filterExpressionType == ExpressionType.AND) {
+      Expression leftExpression = ((BinaryExpression) expressionTree).getLeft();
+      Expression rightExpression = ((BinaryExpression) expressionTree).getRight();
+      if (!(leftExpression instanceof BinaryExpression ||
+          leftExpression instanceof ConditionalExpression)) {
+        expressionTree = rightExpression;
+        filterExpressionType = rightExpression.getFilterExpressionType();
+      }
+      else if (!(rightExpression instanceof BinaryExpression ||
+          rightExpression instanceof ConditionalExpression)) {
+        expressionTree = leftExpression;
+        filterExpressionType = leftExpression.getFilterExpressionType();
+      }
+    }
     switch (filterExpressionType) {
       case OR:
         currentExpression = (BinaryExpression) expressionTree;
