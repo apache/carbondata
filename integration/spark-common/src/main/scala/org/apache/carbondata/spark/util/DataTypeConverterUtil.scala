@@ -39,7 +39,7 @@ object DataTypeConverterUtil {
       case _ => sys.error(s"Unsupported data type: $dataType")
     }
   }
-  
+
   def convertToString(dataType: DataType): String = {
     dataType match {
       case DataType.STRING => "string"
