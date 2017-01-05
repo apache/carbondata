@@ -211,4 +211,11 @@ public class WriterCompressModel {
   public CompressionFinder[] getCompressionFinder() {
     return this.compressionFinders;
   }
+
+  /**
+   * @return the compType
+   */
+  public ValueCompressionUtil.COMPRESSION_TYPE getCompType(int index) {
+    return this.compressionFinders[index].getCompType();
+  }
 }

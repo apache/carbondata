@@ -578,11 +578,11 @@ public class ValueCompressionUtilTest {
     WriterCompressModel writerCompressModel =
         ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
     assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE,
-        writerCompressModel.getCompressionFinder()[0].getCompType());
+        writerCompressModel.getCompType(0));
     assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE,
-        writerCompressModel.getCompressionFinder()[1].getCompType());
+        writerCompressModel.getCompType(1));
     assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE,
-        writerCompressModel.getCompressionFinder()[2].getCompType());
+        writerCompressModel.getCompType(2));
   }
 
   @Test public void testToGetValueCompressionModelForDefaultAggregatorType() {
@@ -598,7 +598,7 @@ public class ValueCompressionUtilTest {
     WriterCompressModel writerCompressModel =
         ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
     assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE,
-        writerCompressModel.getCompressionFinder()[0].getCompType());
+        writerCompressModel.getCompType(0));
   }
 
   @Test public void testToGetValueCompressionModelForShortAndByte() {
@@ -614,7 +614,7 @@ public class ValueCompressionUtilTest {
     WriterCompressModel writerCompressModel =
         ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
     assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_DOUBLE,
-        writerCompressModel.getCompressionFinder()[0].getCompType());
+        writerCompressModel.getCompType(0));
   }
 
   @Test public void testToGetValueCompressionModelForIntAndShort() {
@@ -630,7 +630,7 @@ public class ValueCompressionUtilTest {
     WriterCompressModel writerCompressModel =
         ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
     assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_DOUBLE,
-        writerCompressModel.getCompressionFinder()[0].getCompType());
+        writerCompressModel.getCompType(0));
   }
 
   @Test public void testToGetValueCompressionModelForByteAndInt() {
@@ -646,7 +646,7 @@ public class ValueCompressionUtilTest {
     WriterCompressModel writerCompressModel =
         ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
     assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE,
-        writerCompressModel.getCompressionFinder()[0].getCompType());
+        writerCompressModel.getCompType(0));
   }
 
   @Test public void testToGetValueCompressionModelForByteAndIntAndDecimal1() {
@@ -662,7 +662,7 @@ public class ValueCompressionUtilTest {
     WriterCompressModel writerCompressModel =
         ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
     assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_DOUBLE,
-        writerCompressModel.getCompressionFinder()[0].getCompType());
+        writerCompressModel.getCompType(0));
   }
 
   @Test public void testToGetValueCompressionModelForByteAndIntAndDataTypeSelected0() {
@@ -678,7 +678,7 @@ public class ValueCompressionUtilTest {
     WriterCompressModel writerCompressModel =
         ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
     assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.BIGINT,
-        writerCompressModel.getCompressionFinder()[0].getCompType());
+        writerCompressModel.getCompType(0));
   }
 
   @Test public void testToGetValueCompressionModelForFloatAndDataTypeSelected1() {
@@ -694,7 +694,7 @@ public class ValueCompressionUtilTest {
     WriterCompressModel writerCompressModel =
         ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
     assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE,
-        writerCompressModel.getCompressionFinder()[0].getCompType());
+        writerCompressModel.getCompType(0));
   }
 
 }
