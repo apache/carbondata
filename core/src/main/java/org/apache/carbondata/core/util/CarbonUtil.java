@@ -26,7 +26,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -40,7 +39,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 import org.apache.carbondata.common.factory.CarbonCommonFactory;
 import org.apache.carbondata.common.logging.LogService;
@@ -150,18 +148,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * @param eachFile
-   * @return
-   */
-  private static String getFolderName(CarbonFile eachFile) {
-    String str = eachFile.getAbsolutePath();
-    str = str.replace("\\", "/");
-    int firstFolderIndex = str.lastIndexOf("/");
-    String folderName = str.substring(firstFolderIndex);
-    return folderName;
-  }
-
-  /**
    * This method will be used to update the dimension cardinality
    *
    * @param dimCardinality
@@ -242,7 +228,7 @@ public final class CarbonUtil {
 
     for (int i = 0; i < columnGroups.length; i++) {
       columnSplit[i] = columnGroups[i].length;
-      columnarStore[i] = columnGroups[i].length > 1 ? false : true;
+      columnarStore[i] = columnGroups[i].length <= 1;
     }
     ColumnGroupModel colGroupModel = new ColumnGroupModel();
     colGroupModel.setNoOfColumnStore(noOfColumnStore);
@@ -296,32 +282,26 @@ public final class CarbonUtil {
    * @param path file path array
    * @throws Exception exception
    */
-  public static void deleteFoldersAndFiles(final File... path) throws CarbonUtilException {
-    try {
-      UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
+  public static void deleteFoldersAndFiles(final File... path)
+      throws IOException, InterruptedException {
+    UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
 
-        @Override public Void run() throws Exception {
-          for (int i = 0; i < path.length; i++) {
-            deleteRecursive(path[i]);
-          }
-          return null;
+      @Override public Void run() throws Exception {
+        for (int i = 0; i < path.length; i++) {
+          deleteRecursive(path[i]);
         }
-      });
-    } catch (IOException e) {
-      throw new CarbonUtilException("Error while deleting the folders and files");
-    } catch (InterruptedException e) {
-      throw new CarbonUtilException("Error while deleting the folders and files");
-    }
-
+        return null;
+      }
+    });
   }
 
   /**
    * Recursively delete the files
    *
    * @param f File to be deleted
-   * @throws CarbonUtilException
+   * @throws IOException
    */
-  private static void deleteRecursive(File f) throws CarbonUtilException {
+  private static void deleteRecursive(File f) throws IOException {
     if (f.isDirectory()) {
       if (f.listFiles() != null) {
         for (File c : f.listFiles()) {
@@ -330,26 +310,21 @@ public final class CarbonUtil {
       }
     }
     if (f.exists() && !f.delete()) {
-      throw new CarbonUtilException("Error while deleting the folders and files");
+      throw new IOException("Error while deleting the folders and files");
     }
   }
 
-  public static void deleteFoldersAndFiles(final CarbonFile... file) throws CarbonUtilException {
-    try {
-      UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
+  public static void deleteFoldersAndFiles(final CarbonFile... file)
+      throws IOException, InterruptedException {
+    UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
 
-        @Override public Void run() throws Exception {
-          for (int i = 0; i < file.length; i++) {
-            deleteRecursive(file[i]);
-          }
-          return null;
+      @Override public Void run() throws Exception {
+        for (int i = 0; i < file.length; i++) {
+          deleteRecursive(file[i]);
         }
-      });
-    } catch (IOException e) {
-      throw new CarbonUtilException("Error while deleting the folders and files");
-    } catch (InterruptedException e) {
-      throw new CarbonUtilException("Error while deleting the folders and files");
-    }
+        return null;
+      }
+    });
   }
 
   public static String getBadLogPath(String storeLocation) {
@@ -361,31 +336,25 @@ public final class CarbonUtil {
   }
 
   public static void deleteFoldersAndFilesSilent(final CarbonFile... file)
-      throws CarbonUtilException {
-    try {
-      UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
+      throws IOException, InterruptedException {
+    UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
 
-        @Override public Void run() throws Exception {
-          for (int i = 0; i < file.length; i++) {
-            deleteRecursiveSilent(file[i]);
-          }
-          return null;
+      @Override public Void run() throws Exception {
+        for (int i = 0; i < file.length; i++) {
+          deleteRecursiveSilent(file[i]);
         }
-      });
-    } catch (IOException e) {
-      throw new CarbonUtilException("Error while deleting the folders and files");
-    } catch (InterruptedException e) {
-      throw new CarbonUtilException("Error while deleting the folders and files");
-    }
+        return null;
+      }
+    });
   }
 
   /**
    * Recursively delete the files
    *
    * @param f File to be deleted
-   * @throws CarbonUtilException
+   * @throws IOException
    */
-  private static void deleteRecursive(CarbonFile f) throws CarbonUtilException {
+  private static void deleteRecursive(CarbonFile f) throws IOException {
     if (f.isDirectory()) {
       if (f.listFiles() != null) {
         for (CarbonFile c : f.listFiles()) {
@@ -394,11 +363,11 @@ public final class CarbonUtil {
       }
     }
     if (f.exists() && !f.delete()) {
-      throw new CarbonUtilException("Error while deleting the folders and files");
+      throw new IOException("Error while deleting the folders and files");
     }
   }
 
-  private static void deleteRecursiveSilent(CarbonFile f) throws CarbonUtilException {
+  private static void deleteRecursiveSilent(CarbonFile f) {
     if (f.isDirectory()) {
       if (f.listFiles() != null) {
         for (CarbonFile c : f.listFiles()) {
@@ -411,10 +380,10 @@ public final class CarbonUtil {
     }
   }
 
-  public static void deleteFiles(File[] intermediateFiles) throws CarbonUtilException {
+  public static void deleteFiles(File[] intermediateFiles) throws IOException {
     for (int i = 0; i < intermediateFiles.length; i++) {
       if (!intermediateFiles[i].delete()) {
-        throw new CarbonUtilException("Problem while deleting intermediate file");
+        throw new IOException("Problem while deleting intermediate file");
       }
     }
   }
@@ -530,10 +499,10 @@ public final class CarbonUtil {
    *
    * @param levelPath
    * @return
-   * @throws CarbonUtilException
+   * @throws IOException
    */
   public static int[] getCardinalityFromLevelMetadataFile(String levelPath)
-      throws CarbonUtilException {
+      throws IOException {
     DataInputStream dataInputStream = null;
     int[] cardinality = null;
 
@@ -548,10 +517,6 @@ public final class CarbonUtil {
           cardinality[i] = dataInputStream.readInt();
         }
       }
-    } catch (FileNotFoundException e) {
-      throw new CarbonUtilException("Problem while getting the file", e);
-    } catch (IOException e) {
-      throw new CarbonUtilException("Problem while reading the file", e);
     } finally {
       closeStreams(dataInputStream);
     }
@@ -775,7 +740,6 @@ public final class CarbonUtil {
    * Below method will be used to get the value compression model of the
    * measure data chunk
    *
-   * @param measureDataChunkList
    * @return value compression model
    */
   public static WriterCompressModel getValueCompressionModel(
@@ -880,37 +844,34 @@ public final class CarbonUtil {
    * Below method will be used to read the data file matadata
    */
   public static DataFileFooter readMetadatFile(TableBlockInfo tableBlockInfo)
-      throws CarbonUtilException {
+      throws IOException {
     AbstractDataFileFooterConverter fileFooterConverter =
         DataFileFooterConverterFactory.getInstance()
             .getDataFileFooterConverter(tableBlockInfo.getVersion());
-    try {
-      return fileFooterConverter.readDataFileFooter(tableBlockInfo);
-    } catch (IOException e) {
-      throw new CarbonUtilException("Problem while reading the file metadata", e);
-    }
+    return fileFooterConverter.readDataFileFooter(tableBlockInfo);
   }
 
   /**
    * The method calculate the B-Tree metadata size.
-   * @param filePath
-   * @param blockOffset
-   * @param blockLength
+   * @param tableBlockInfo
    * @return
    */
-  public static long calculateMetaSize(String filePath, long blockOffset, long blockLength) {
+  public static long calculateMetaSize(TableBlockInfo tableBlockInfo) throws IOException {
     FileHolder fileReader = null;
     try {
-      long completeBlockLength = blockOffset + blockLength;
+      long completeBlockLength = tableBlockInfo.getBlockLength();
       long footerPointer = completeBlockLength - 8;
+      String filePath = tableBlockInfo.getFilePath();
       fileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath));
       long actualFooterOffset = fileReader.readLong(filePath, footerPointer);
-      long size = footerPointer - actualFooterOffset;
-      return size;
-    }
-    finally {
-      if(null != fileReader) {
-        fileReader.finish();
+      return footerPointer - actualFooterOffset;
+    } finally {
+      if (null != fileReader) {
+        try {
+          fileReader.finish();
+        } catch (IOException e) {
+          // ignore the exception as nothing we can do about it
+        }
       }
     }
   }
@@ -972,23 +933,6 @@ public final class CarbonUtil {
         blocks.clear();
       }
     }
-  }
-  /**
-   * Thread to delete the tables
-   *
-   */
-  private static final class DeleteFolderAndFiles implements Callable<Void> {
-    private CarbonFile file;
-
-    private DeleteFolderAndFiles(CarbonFile file) {
-      this.file = file;
-    }
-
-    @Override public Void call() throws Exception {
-      deleteFoldersAndFiles(file);
-      return null;
-    }
-
   }
 
   /**
@@ -1159,11 +1103,11 @@ public final class CarbonUtil {
    * @param tableBlockInfoList      list of table block
    * @param absoluteTableIdentifier absolute table identifier
    * @return list of block info
-   * @throws CarbonUtilException if any problem while reading
+   * @throws IOException if any problem while reading
    */
   public static List<DataFileFooter> readCarbonIndexFile(String taskId, String bucketNumber,
       List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier absoluteTableIdentifier)
-      throws CarbonUtilException {
+      throws IOException {
     // need to sort the  block info list based for task in ascending  order so
     // it will be sinkup with block index read from file
     Collections.sort(tableBlockInfoList);
@@ -1176,12 +1120,8 @@ public final class CarbonUtil {
         .getCarbonIndexFilePath(taskId, "0", tableBlockInfoList.get(0).getSegmentId(),
             bucketNumber);
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
-    try {
-      // read the index info and return
-      return fileFooterConverter.getIndexInfo(carbonIndexFilePath, tableBlockInfoList);
-    } catch (IOException e) {
-      throw new CarbonUtilException("Problem while reading the file metadata", e);
-    }
+    // read the index info and return
+    return fileFooterConverter.getIndexInfo(carbonIndexFilePath, tableBlockInfoList);
   }
 
   /**
@@ -1208,7 +1148,7 @@ public final class CarbonUtil {
    * @param csvFilePath
    * @return
    */
-  public static String readHeader(String csvFilePath) {
+  public static String readHeader(String csvFilePath) throws IOException {
 
     DataInputStream fileReader = null;
     BufferedReader bufferedReader = null;
@@ -1220,11 +1160,6 @@ public final class CarbonUtil {
       bufferedReader = new BufferedReader(new InputStreamReader(fileReader,
               Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       readLine = bufferedReader.readLine();
-
-    } catch (FileNotFoundException e) {
-      LOGGER.error(e, "CSV Input File not found  " + e.getMessage());
-    } catch (IOException e) {
-      LOGGER.error(e, "Not able to read CSV input File  " + e.getMessage());
     } finally {
       CarbonUtil.closeStreams(fileReader, bufferedReader);
     }
@@ -1292,17 +1227,12 @@ public final class CarbonUtil {
    * @param dataChunkBytes datachunk thrift object in bytes
    * @return data chunk thrift object
    */
-  public static DataChunk2 readDataChunk(byte[] dataChunkBytes) {
-    try {
-      return (DataChunk2) read(dataChunkBytes, new ThriftReader.TBaseCreator() {
+  public static DataChunk2 readDataChunk(byte[] dataChunkBytes) throws IOException {
+    return (DataChunk2) read(dataChunkBytes, new ThriftReader.TBaseCreator() {
         @Override public TBase create() {
           return new DataChunk2();
         }
       });
-    } catch (IOException e) {
-      LOGGER.error(e);
-    }
-    return null;
   }
 
   /**

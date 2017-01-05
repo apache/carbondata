@@ -54,6 +54,7 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
+    sql("DROP TABLE IF EXISTS nodictionaryCompaction")
     sql(
       "CREATE TABLE nodictionaryCompaction (country String, ID Int, date Timestamp, name " +
         "String, " +
@@ -168,10 +169,10 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop table nodictionaryCompaction")
+    sql("DROP TABLE IF EXISTS nodictionaryCompaction")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-    CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "false")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
   }
 
 }

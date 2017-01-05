@@ -128,36 +128,6 @@ public class TableSchema implements Serializable {
     this.tableName = tableName;
   }
 
-  /**
-   * to get the column schema present in the table by name
-   *
-   * @param columnName
-   * @return column schema if matches the name
-   */
-  public ColumnSchema getColumnSchemaByName(String columnName) {
-    for (ColumnSchema tableColumn : listOfColumns) {
-      if (tableColumn.getColumnName().equals(columnName)) {
-        return tableColumn;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * to get the column schema present in the table by unique id
-   *
-   * @param columnUniqueId
-   * @return column schema if matches the id
-   */
-  public ColumnSchema getColumnSchemaById(String columnUniqueId) {
-    for (ColumnSchema tableColumn : listOfColumns) {
-      if (tableColumn.getColumnUniqueId().equalsIgnoreCase(columnUniqueId)) {
-        return tableColumn;
-      }
-    }
-    return null;
-  }
-
   @Override public int hashCode() {
     final int prime = 31;
     int result = 1;

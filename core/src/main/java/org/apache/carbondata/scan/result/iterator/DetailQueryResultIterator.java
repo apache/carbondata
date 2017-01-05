@@ -23,7 +23,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.model.QueryModel;
 import org.apache.carbondata.scan.result.BatchResult;
@@ -33,7 +32,7 @@ import org.apache.carbondata.scan.result.BatchResult;
  * executing that query are returning a iterator over block and every time next
  * call will come it will execute the block and return the result
  */
-public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator {
+public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator<BatchResult> {
 
   private final Object lock = new Object();
   private Future<BatchResult> future;
@@ -60,15 +59,18 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
       }
       totalScanTime += System.currentTimeMillis() - startTime;
     } catch (Exception ex) {
-      fileReader.finish();
-      throw new RuntimeException(ex);
+      try {
+        fileReader.finish();
+      } finally {
+        throw new RuntimeException(ex);
+      }
     }
     return result;
   }
 
   private Future<BatchResult> execute() {
     return execService.submit(new Callable<BatchResult>() {
-      @Override public BatchResult call() throws QueryExecutionException {
+      @Override public BatchResult call() {
         BatchResult batchResult = new BatchResult();
         synchronized (lock) {
           updateDataBlockIterator();

@@ -62,7 +62,6 @@ public class BTreeNonLeafNode implements BTreeNode {
    * as it is a non leaf node it will have the reference of all the leaf node
    * under it, setting all the children
    *
-   * @param leaf nodes
    */
   @Override public void setChildren(BTreeNode[] children) {
     this.children = children;
@@ -87,7 +86,6 @@ public class BTreeNonLeafNode implements BTreeNode {
   /**
    * add a key of a leaf node
    *
-   * @param leaf node start keys
    */
   @Override public void setKey(IndexKey key) {
     listOfKeys.add(key);
@@ -135,7 +133,6 @@ public class BTreeNonLeafNode implements BTreeNode {
    * This method will be used to get the max value of all the columns this can
    * be used in case of filter query
    *
-   * @param max value of all the columns
    */
   @Override public byte[][] getColumnsMaxValue() {
     // operation of getting the max value is not supported as its a non leaf
@@ -150,7 +147,6 @@ public class BTreeNonLeafNode implements BTreeNode {
    * This method will be used to get the max value of all the columns this can
    * be used in case of filter query
    *
-   * @param min value of all the columns
    */
   @Override public byte[][] getColumnsMinValue() {
     // operation of getting the min value is not supported as its a non leaf
@@ -183,7 +179,6 @@ public class BTreeNonLeafNode implements BTreeNode {
    * Below method will be used to get the dimension chunk
    *
    * @param fileReader file reader to read the chunk from file
-   * @param blockIndex block index to be read
    * @return dimension data chunk
    */
   @Override public DimensionColumnDataChunk getDimensionChunk(FileHolder fileReader,

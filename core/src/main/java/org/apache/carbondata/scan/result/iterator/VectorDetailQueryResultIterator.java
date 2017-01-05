@@ -28,7 +28,7 @@ import org.apache.carbondata.scan.result.vector.CarbonColumnarBatch;
 /**
  * It reads the data vector batch format
  */
-public class VectorDetailQueryResultIterator extends AbstractDetailQueryResultIterator {
+public class VectorDetailQueryResultIterator extends AbstractDetailQueryResultIterator<Object> {
 
   private final Object lock = new Object();
 

@@ -238,7 +238,7 @@ private[sql] case class LoadTableByInsert(relation: CarbonDatasourceRelation,
       relation.carbonRelation.tableName,
       null,
       Seq(),
-      scala.collection.immutable.Map(("fileheader" -> header)),
+      scala.collection.immutable.Map("fileheader" -> header),
       false,
       null,
       Some(df)).run(sqlContext)
@@ -563,7 +563,7 @@ case class LoadTable(
         throw new MalformedCarbonCommandException("Error: Option DateFormat is set an empty " +
                                                   "string.")
       } else {
-        var dateFormats: Array[String] = dateFormat.split(CarbonCommonConstants.COMMA)
+        val dateFormats: Array[String] = dateFormat.split(CarbonCommonConstants.COMMA)
         for (singleDateFormat <- dateFormats) {
           val dateFormatSplits: Array[String] = singleDateFormat.split(":", 2)
           val columnName = dateFormatSplits(0).trim.toLowerCase
@@ -669,7 +669,6 @@ private[sql] case class DescribeCommandFormatted(
           relation.tableMeta.carbonTableIdentifier.getTableName,
           field.name)
         if (null != dimension.getColumnProperties && dimension.getColumnProperties.size() > 0) {
-          val colprop = mapper.writeValueAsString(dimension.getColumnProperties)
           colProps.append(field.name).append(".")
             .append(mapper.writeValueAsString(dimension.getColumnProperties))
             .append(",")
@@ -681,7 +680,7 @@ private[sql] case class DescribeCommandFormatted(
           "KEY COLUMN"
         }
       } else {
-        ("MEASURE")
+        "MEASURE"
       }
       (field.name, field.dataType.simpleString, comment)
     }
@@ -723,7 +722,7 @@ private[sql] case class DescribeCommandFormatted(
       colGroups._2.map(dim => dim.getColName).mkString(", ")
     })
     var index = 1
-    groups.map { x =>
+    groups.foreach { x =>
       results = results :+ (s"Column Group $index", x, "")
       index = index + 1
     }

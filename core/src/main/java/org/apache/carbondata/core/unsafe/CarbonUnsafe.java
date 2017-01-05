@@ -33,7 +33,7 @@ public final class CarbonUnsafe {
     try {
       Field cause = Unsafe.class.getDeclaredField("theUnsafe");
       cause.setAccessible(true);
-      unsafe = (Unsafe) cause.get((Object) null);
+      unsafe = (Unsafe) cause.get(null);
     } catch (Throwable var2) {
       unsafe = null;
     }

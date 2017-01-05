@@ -20,6 +20,7 @@
 package org.apache.carbondata.core.datastorage.store.impl;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -27,17 +28,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 
 public class FileHolderImpl implements FileHolder {
-  /**
-   * Attribute for Carbon LOGGER
-   */
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(FileHolderImpl.class.getName());
   /**
    * cache to hold filename and its stream
    */
@@ -65,7 +59,8 @@ public class FileHolderImpl implements FileHolder {
    * @param length   number of bytes to be read
    * @return read byte array
    */
-  @Override public byte[] readByteArray(String filePath, long offset, int length) {
+  @Override public byte[] readByteArray(String filePath, long offset, int length)
+      throws IOException {
     FileChannel fileChannel = updateCache(filePath);
     ByteBuffer byteBffer = read(fileChannel, length, offset);
     return byteBffer.array();
@@ -74,19 +69,13 @@ public class FileHolderImpl implements FileHolder {
   /**
    * This method will be used to close all the streams currently present in the cache
    */
-  @Override public void finish() {
-
+  @Override public void finish() throws IOException {
     for (Entry<String, FileChannel> entry : fileNameAndStreamCache.entrySet()) {
-      try {
-        FileChannel channel = entry.getValue();
-        if (null != channel) {
-          channel.close();
-        }
-      } catch (IOException exception) {
-        LOGGER.error(exception, exception.getMessage());
+      FileChannel channel = entry.getValue();
+      if (null != channel) {
+        channel.close();
       }
     }
-
   }
 
   /**
@@ -97,7 +86,7 @@ public class FileHolderImpl implements FileHolder {
    * @param offset   reading start position,
    * @return read int
    */
-  @Override public int readInt(String filePath, long offset) {
+  @Override public int readInt(String filePath, long offset) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
     ByteBuffer byteBffer = read(fileChannel, CarbonCommonConstants.INT_SIZE_IN_BYTE, offset);
     return byteBffer.getInt();
@@ -110,7 +99,7 @@ public class FileHolderImpl implements FileHolder {
    * @param filePath fully qualified file path
    * @return read int
    */
-  @Override public int readInt(String filePath) {
+  @Override public int readInt(String filePath) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
     ByteBuffer byteBffer = read(fileChannel, CarbonCommonConstants.INT_SIZE_IN_BYTE);
     return byteBffer.getInt();
@@ -124,7 +113,7 @@ public class FileHolderImpl implements FileHolder {
    * @param offset   reading start position,
    * @return read int
    */
-  @Override public long readDouble(String filePath, long offset) {
+  @Override public long readDouble(String filePath, long offset) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
     ByteBuffer byteBffer = read(fileChannel, CarbonCommonConstants.LONG_SIZE_IN_BYTE, offset);
     return byteBffer.getLong();
@@ -138,16 +127,12 @@ public class FileHolderImpl implements FileHolder {
    * @param filePath fully qualified file path
    * @return channel
    */
-  private FileChannel updateCache(String filePath) {
+  private FileChannel updateCache(String filePath) throws FileNotFoundException {
     FileChannel fileChannel = fileNameAndStreamCache.get(filePath);
-    try {
-      if (null == fileChannel) {
-        FileInputStream stream = new FileInputStream(filePath);
-        fileChannel = stream.getChannel();
-        fileNameAndStreamCache.put(filePath, fileChannel);
-      }
-    } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
+    if (null == fileChannel) {
+      FileInputStream stream = new FileInputStream(filePath);
+      fileChannel = stream.getChannel();
+      fileNameAndStreamCache.put(filePath, fileChannel);
     }
     return fileChannel;
   }
@@ -160,14 +145,10 @@ public class FileHolderImpl implements FileHolder {
    * @param offset  position
    * @return byte buffer
    */
-  private ByteBuffer read(FileChannel channel, int size, long offset) {
+  private ByteBuffer read(FileChannel channel, int size, long offset) throws IOException {
     ByteBuffer byteBffer = ByteBuffer.allocate(size);
-    try {
-      channel.position(offset);
-      channel.read(byteBffer);
-    } catch (Exception e) {
-      LOGGER.error(e, e.getMessage());
-    }
+    channel.position(offset);
+    channel.read(byteBffer);
     byteBffer.rewind();
     return byteBffer;
   }
@@ -179,13 +160,9 @@ public class FileHolderImpl implements FileHolder {
    * @param size    number of bytes
    * @return byte buffer
    */
-  private ByteBuffer read(FileChannel channel, int size) {
+  private ByteBuffer read(FileChannel channel, int size) throws IOException {
     ByteBuffer byteBffer = ByteBuffer.allocate(size);
-    try {
-      channel.read(byteBffer);
-    } catch (Exception e) {
-      LOGGER.error(e, e.getMessage());
-    }
+    channel.read(byteBffer);
     byteBffer.rewind();
     return byteBffer;
   }
@@ -198,7 +175,7 @@ public class FileHolderImpl implements FileHolder {
    * @param length   number of bytes to be read
    * @return read byte array
    */
-  @Override public byte[] readByteArray(String filePath, int length) {
+  @Override public byte[] readByteArray(String filePath, int length) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
     ByteBuffer byteBffer = read(fileChannel, length);
     return byteBffer.array();
@@ -212,7 +189,7 @@ public class FileHolderImpl implements FileHolder {
    * @param offset   reading start position,
    * @return read long
    */
-  @Override public long readLong(String filePath, long offset) {
+  @Override public long readLong(String filePath, long offset) throws IOException {
     FileChannel fileChannel = updateCache(filePath);
     ByteBuffer byteBffer = read(fileChannel, CarbonCommonConstants.LONG_SIZE_IN_BYTE, offset);
     return byteBffer.getLong();

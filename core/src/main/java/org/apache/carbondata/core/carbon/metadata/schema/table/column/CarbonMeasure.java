@@ -30,11 +30,6 @@ public class CarbonMeasure extends CarbonColumn {
   private static final long serialVersionUID = 354341488059013977L;
 
   /**
-   * aggregator chosen for measure
-   */
-  private String aggregateFunction;
-
-  /**
    * Used when this column contains decimal data.
    */
   private int scale;
@@ -66,20 +61,6 @@ public class CarbonMeasure extends CarbonColumn {
    */
   public int getPrecision() {
     return precision;
-  }
-
-  /**
-   * @return the aggregator
-   */
-  public String getAggregateFunction() {
-    return aggregateFunction;
-  }
-
-  /**
-   * @param aggregateFunction the aggregateFunction to set
-   */
-  public void setAggregateFunction(String aggregateFunction) {
-    this.aggregateFunction = aggregateFunction;
   }
 
   /**

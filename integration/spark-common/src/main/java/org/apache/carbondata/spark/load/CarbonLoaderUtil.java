@@ -63,7 +63,6 @@ import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.apache.carbondata.core.load.LoadMetadataDetails;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.lcm.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.lcm.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.lcm.fileoperations.FileWriteOperation;
@@ -174,8 +173,7 @@ public final class CarbonLoaderUtil {
 
     DataGraphExecuter graphExecuter = new DataGraphExecuter(dataProcessTaskStatus);
     graphExecuter
-        .executeGraph(graphPath, new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN),
-            info, loadModel.getPartitionId(), loadModel.getCarbonDataLoadSchema());
+        .executeGraph(graphPath, info, loadModel.getCarbonDataLoadSchema());
   }
 
   public static List<String> addNewSliceNameToList(String newSlice, List<String> activeSlices) {
@@ -241,16 +239,14 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  public static void deleteStorePath(String path) {
+  private static void deleteStorePath(String path) {
     try {
       FileType fileType = FileFactory.getFileType(path);
       if (FileFactory.isFileExist(path, fileType)) {
         CarbonFile carbonFile = FileFactory.getCarbonFile(path, fileType);
         CarbonUtil.deleteFoldersAndFiles(carbonFile);
       }
-    } catch (IOException e) {
-      LOGGER.error("Unable to delete the given path :: " + e.getMessage());
-    } catch (CarbonUtilException e) {
+    } catch (IOException | InterruptedException e) {
       LOGGER.error("Unable to delete the given path :: " + e.getMessage());
     }
   }
@@ -311,9 +307,9 @@ public final class CarbonLoaderUtil {
     String localStoreLocation = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
     try {
-      CarbonUtil.deleteFoldersAndFiles(new File[] { new File(localStoreLocation).getParentFile() });
+      CarbonUtil.deleteFoldersAndFiles(new File(localStoreLocation).getParentFile());
       LOGGER.info("Deleted the local store location" + localStoreLocation);
-    } catch (CarbonUtilException e) {
+    } catch (IOException | InterruptedException e) {
       LOGGER.error(e, "Failed to delete local data load folder location");
     }
 
@@ -325,15 +321,13 @@ public final class CarbonLoaderUtil {
    * @param storePath
    * @param carbonTableIdentifier
    * @param segmentId
-   * @param partitionId
    * @return
    */
   public static String getStoreLocation(String storePath,
-      CarbonTableIdentifier carbonTableIdentifier, String segmentId, String partitionId) {
+      CarbonTableIdentifier carbonTableIdentifier, String segmentId) {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier);
-    String carbonDataFilePath = carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
-    return carbonDataFilePath;
+    return carbonTablePath.getCarbonDataDirectoryPath("0", segmentId);
   }
 
   /**
@@ -385,9 +379,7 @@ public final class CarbonLoaderUtil {
             new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         if (null != listOfLoadFolderDetailsArray) {
-          for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
-            listOfLoadFolderDetails.add(loadMetadata);
-          }
+          Collections.addAll(listOfLoadFolderDetails, listOfLoadFolderDetailsArray);
         }
         listOfLoadFolderDetails.add(loadMetadataDetails);
 
@@ -462,15 +454,15 @@ public final class CarbonLoaderUtil {
   }
 
   public static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier,
-      String carbonStorePath) throws CarbonUtilException {
-    Cache dictCache =
+      String carbonStorePath) throws IOException {
+    Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache =
         CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath);
-    return (Dictionary) dictCache.get(columnIdentifier);
+    return dictCache.get(columnIdentifier);
   }
 
   public static Dictionary getDictionary(CarbonTableIdentifier tableIdentifier,
       ColumnIdentifier columnIdentifier, String carbonStorePath, DataType dataType)
-      throws CarbonUtilException {
+      throws IOException {
     return getDictionary(
         new DictionaryColumnUniqueIdentifier(tableIdentifier, columnIdentifier, dataType),
         carbonStorePath);

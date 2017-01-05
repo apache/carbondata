@@ -39,11 +39,6 @@ public class KeyStructureInfo {
   private int[] maskByteRanges;
 
   /**
-   * masked bytes of the query
-   */
-  private int[] maskedBytes;
-
-  /**
    * max key for query execution
    */
   private byte[] maxKey;
@@ -79,20 +74,6 @@ public class KeyStructureInfo {
    */
   public void setMaskByteRanges(int[] maskByteRanges) {
     this.maskByteRanges = maskByteRanges;
-  }
-
-  /**
-   * @return the maskedBytes
-   */
-  public int[] getMaskedBytes() {
-    return maskedBytes;
-  }
-
-  /**
-   * @param maskedBytes the maskedBytes to set
-   */
-  public void setMaskedBytes(int[] maskedBytes) {
-    this.maskedBytes = maskedBytes;
   }
 
   /**

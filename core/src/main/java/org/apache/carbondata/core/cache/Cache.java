@@ -19,9 +19,8 @@
 
 package org.apache.carbondata.core.cache;
 
+import java.io.IOException;
 import java.util.List;
-
-import org.apache.carbondata.core.util.CarbonUtilException;
 
 /**
  * A semi-persistent mapping from keys to values. Cache entries are manually added using
@@ -41,9 +40,9 @@ public interface Cache<K, V> {
    *
    * @param key
    * @return
-   * @throws CarbonUtilException in case memory is not sufficient to load data into memory
+   * @throws IOException in case memory is not sufficient to load data into memory
    */
-  V get(K key) throws CarbonUtilException;
+  V get(K key) throws IOException;
 
   /**
    * This method will return a list of values for the given list of keys.
@@ -51,9 +50,9 @@ public interface Cache<K, V> {
    * Access count of Cacheable entry will be incremented
    * @param keys
    * @return
-   * @throws CarbonUtilException in case memory is not sufficient to load data into memory
+   * @throws IOException in case memory is not sufficient to load data into memory
    */
-  List<V> getAll(List<K> keys) throws CarbonUtilException;
+  List<V> getAll(List<K> keys) throws IOException;
 
   /**
    * This method will return the value for the given key. It will not check and load

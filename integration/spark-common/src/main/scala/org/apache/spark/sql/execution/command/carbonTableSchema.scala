@@ -163,7 +163,6 @@ class TableNewProcessor(cm: TableModel) {
       val colProps = cm.colProps.get.get(colName)
       colProps.asScala.foreach { x => colPropMap.put(x.key, x.value) }
     }
-    columnSchema.setColumnProperties(colPropMap)
     columnSchema.setEncodingList(encoders)
     val colUniqueIdGenerator = CarbonCommonFactory.getColumnUniqueIdGenerator
     val columnUniqueId = colUniqueIdGenerator.generateUniqueId(cm.databaseName,

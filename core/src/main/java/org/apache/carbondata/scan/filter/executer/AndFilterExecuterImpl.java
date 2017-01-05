@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.scan.filter.executer;
 
+import java.io.IOException;
 import java.util.BitSet;
 
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
@@ -34,7 +35,7 @@ public class AndFilterExecuterImpl implements FilterExecuter {
   }
 
   @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder)
-      throws FilterUnsupportedException {
+      throws FilterUnsupportedException, IOException {
     BitSet leftFilters = leftExecuter.applyFilter(blockChunkHolder);
     if (leftFilters.isEmpty()) {
       return leftFilters;

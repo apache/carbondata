@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.scan.executor.util;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -49,11 +50,9 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.scan.complextypes.ArrayQueryType;
 import org.apache.carbondata.scan.complextypes.PrimitiveQueryType;
 import org.apache.carbondata.scan.complextypes.StructQueryType;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.scan.expression.ColumnExpression;
 import org.apache.carbondata.scan.expression.Expression;
@@ -261,11 +260,11 @@ public class QueryUtil {
    *                                convert the result from surrogate key to actual data
    * @param absoluteTableIdentifier absolute table identifier
    * @return dimension unique id to its dictionary map
-   * @throws QueryExecutionException
+   * @throws IOException
    */
   public static Map<String, Dictionary> getDimensionDictionaryDetail(
       List<QueryDimension> queryDimensions, Set<CarbonDimension> filterComplexDimensions,
-      AbsoluteTableIdentifier absoluteTableIdentifier) throws QueryExecutionException {
+      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException {
     // to store dimension unique column id list, this is required as
     // dimension can be present in
     // query dimension, as well as some aggregation function will be applied
@@ -327,23 +326,20 @@ public class QueryUtil {
    * @param dictionaryColumnIdList  dictionary column list
    * @param absoluteTableIdentifier absolute table identifier
    * @return dictionary mapping
-   * @throws QueryExecutionException
+   * @throws IOException
    */
   private static Map<String, Dictionary> getDictionaryMap(List<String> dictionaryColumnIdList,
-      AbsoluteTableIdentifier absoluteTableIdentifier) throws QueryExecutionException {
+      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException {
     // this for dictionary unique identifier
     List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
         getDictionaryColumnUniqueIdentifierList(dictionaryColumnIdList,
             absoluteTableIdentifier.getCarbonTableIdentifier());
     CacheProvider cacheProvider = CacheProvider.getInstance();
-    Cache forwardDictionaryCache = cacheProvider
+    Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
         .createCache(CacheType.FORWARD_DICTIONARY, absoluteTableIdentifier.getStorePath());
-    List<Dictionary> columnDictionaryList = null;
-    try {
-      columnDictionaryList = forwardDictionaryCache.getAll(dictionaryColumnUniqueIdentifiers);
-    } catch (CarbonUtilException e) {
-      throw new QueryExecutionException(e);
-    }
+
+    List<Dictionary> columnDictionaryList =
+        forwardDictionaryCache.getAll(dictionaryColumnUniqueIdentifiers);
     Map<String, Dictionary> columnDictionaryMap = new HashMap<>(columnDictionaryList.size());
     for (int i = 0; i < dictionaryColumnUniqueIdentifiers.size(); i++) {
       // TODO: null check for column dictionary, if cache size is less it
@@ -361,8 +357,7 @@ public class QueryUtil {
    * @return
    */
   private static List<DictionaryColumnUniqueIdentifier> getDictionaryColumnUniqueIdentifierList(
-      List<String> dictionaryColumnIdList, CarbonTableIdentifier carbonTableIdentifier)
-      throws QueryExecutionException {
+      List<String> dictionaryColumnIdList, CarbonTableIdentifier carbonTableIdentifier) {
     CarbonTable carbonTable =
         CarbonMetadata.getInstance().getCarbonTable(carbonTableIdentifier.getTableUniqueName());
     List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
@@ -370,13 +365,15 @@ public class QueryUtil {
     for (String columnId : dictionaryColumnIdList) {
       CarbonDimension dimension = CarbonMetadata.getInstance()
           .getCarbonDimensionBasedOnColIdentifier(carbonTable, columnId);
-      if (null == dimension) {
-        throw new QueryExecutionException("The column id " + columnId + " could not be resolved.");
+      if (dimension != null) {
+        dictionaryColumnUniqueIdentifiers.add(
+            new DictionaryColumnUniqueIdentifier(
+                carbonTableIdentifier,
+                dimension.getColumnIdentifier(),
+                dimension.getDataType()
+            )
+        );
       }
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-          new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
-              dimension.getColumnIdentifier(), dimension.getDataType());
-      dictionaryColumnUniqueIdentifiers.add(dictionaryColumnUniqueIdentifier);
     }
     return dictionaryColumnUniqueIdentifiers;
   }
@@ -408,103 +405,6 @@ public class QueryUtil {
         ArrayUtils.toPrimitive(measureBlockIndex.toArray(new Integer[measureBlockIndex.size()]));
     Arrays.sort(measureIndexes);
     return measureIndexes;
-  }
-
-  /**
-   * Below method will be used to get the masked byte range for dimension
-   * which is present in order by
-   *
-   * @param orderByDimensions order by dimension
-   * @param generator         key generator
-   * @param maskedRanges      masked byte range for dimension
-   * @return range of masked byte for order by dimension
-   */
-  public static int[][] getMaskedByteRangeForSorting(List<QueryDimension> orderByDimensions,
-      KeyGenerator generator, int[] maskedRanges) {
-    int[][] dimensionCompareIndex = new int[orderByDimensions.size()][];
-    int index = 0;
-    for (int i = 0; i < dimensionCompareIndex.length; i++) {
-      Set<Integer> integers = new TreeSet<Integer>();
-      if (!orderByDimensions.get(i).getDimension().getEncoder().contains(Encoding.DICTIONARY)
-          || orderByDimensions.get(i).getDimension().numberOfChild() > 0) {
-        continue;
-      }
-      int[] range =
-          generator.getKeyByteOffsets(orderByDimensions.get(i).getDimension().getKeyOrdinal());
-      for (int j = range[0]; j <= range[1]; j++) {
-        integers.add(j);
-      }
-      dimensionCompareIndex[index] = new int[integers.size()];
-      int j = 0;
-      for (Iterator<Integer> iterator = integers.iterator(); iterator.hasNext(); ) {
-        Integer integer = (Integer) iterator.next();
-        dimensionCompareIndex[index][j++] = integer.intValue();
-      }
-      index++;
-    }
-    for (int i = 0; i < dimensionCompareIndex.length; i++) {
-      if (null == dimensionCompareIndex[i]) {
-        continue;
-      }
-      int[] range = dimensionCompareIndex[i];
-      if (null != range) {
-        for (int j = 0; j < range.length; j++) {
-          for (int k = 0; k < maskedRanges.length; k++) {
-            if (range[j] == maskedRanges[k]) {
-              range[j] = k;
-              break;
-            }
-          }
-        }
-      }
-
-    }
-    return dimensionCompareIndex;
-  }
-
-  /**
-   * Below method will be used to get the masked key for sorting
-   *
-   * @param orderDimensions           query dimension
-   * @param generator                 key generator
-   * @param maskedByteRangeForSorting masked byte range for sorting
-   * @param maskedRanges              masked range
-   * @return masked byte range
-   * @throws QueryExecutionException
-   */
-  public static byte[][] getMaksedKeyForSorting(List<QueryDimension> orderDimensions,
-      KeyGenerator generator, int[][] maskedByteRangeForSorting, int[] maskedRanges)
-      throws QueryExecutionException {
-    byte[][] maskedKey = new byte[orderDimensions.size()][];
-    byte[] mdKey = null;
-    long[] key = null;
-    byte[] maskedMdKey = null;
-    try {
-      if (null != maskedByteRangeForSorting) {
-        for (int i = 0; i < maskedByteRangeForSorting.length; i++) {
-          if (null == maskedByteRangeForSorting[i]) {
-            continue;
-          }
-          key = new long[generator.getDimCount()];
-          maskedKey[i] = new byte[maskedByteRangeForSorting[i].length];
-          key[orderDimensions.get(i).getDimension().getKeyOrdinal()] = Long.MAX_VALUE;
-          mdKey = generator.generateKey(key);
-          maskedMdKey = new byte[maskedRanges.length];
-          for (int k = 0; k < maskedMdKey.length; k++) { // CHECKSTYLE:OFF
-            // Approval
-            // No:Approval-V1R2C10_001
-            maskedMdKey[k] = mdKey[maskedRanges[k]];
-          }
-          for (int j = 0; j < maskedByteRangeForSorting[i].length; j++) {
-            maskedKey[i][j] = maskedMdKey[maskedByteRangeForSorting[i][j]];
-          }// CHECKSTYLE:ON
-
-        }
-      }
-    } catch (KeyGenException e) {
-      throw new QueryExecutionException(e);
-    }
-    return maskedKey;
   }
 
   /**
@@ -568,12 +468,9 @@ public class QueryUtil {
       int[] maskByteRanges = getMaskedByteRangeBasedOrdinal(mdKeyOrdinal, keyGenerator);
       // max key for column group
       byte[] maxKey = getMaxKeyBasedOnOrinal(mdKeyOrdinal, keyGenerator);
-      // get masked key for column group
-      int[] maksedByte = getMaskedByte(keyGenerator.getKeySizeInBytes(), maskByteRanges);
       restructureInfos.setKeyGenerator(keyGenerator);
       restructureInfos.setMaskByteRanges(maskByteRanges);
       restructureInfos.setMaxKey(maxKey);
-      restructureInfos.setMaskedBytes(maksedByte);
       restructureInfos.setMdkeyQueryDimensionOrdinal(ArrayUtils
           .toPrimitive(mdKeyOrdinalForQuery.toArray(new Integer[mdKeyOrdinalForQuery.size()])));
       rowGroupToItsRSInfo
@@ -728,11 +625,6 @@ public class QueryUtil {
       queryDimension
           .setDimension(carbonTable.getDimensionByName(tableName, queryDimension.getColumnName()));
     }
-    // resolve sort dimension
-    for (QueryDimension sortDimension : queryModel.getSortDimension()) {
-      sortDimension
-          .setDimension(carbonTable.getDimensionByName(tableName, sortDimension.getColumnName()));
-    }
     // resolve query measure
     for (QueryMeasure queryMeasure : queryModel.getQueryMeasures()) {
       // in case of count start column name will  be count * so
@@ -758,23 +650,6 @@ public class QueryUtil {
             .setMeasure(carbonTable.getMeasureByName(tableName, queryMeasure.getColumnName()));
       }
     }
-  }
-
-  /**
-   * Below method will be used to get the index of number type aggregator
-   *
-   * @param aggType
-   * @return index in aggregator
-   */
-  public static int[] getNumberTypeIndex(List<String> aggType) {
-    List<Integer> indexList = new ArrayList<Integer>();
-    for (int i = 0; i < aggType.size(); i++) {
-      if (CarbonCommonConstants.SUM.equals(aggType.get(i)) || CarbonCommonConstants.AVERAGE
-          .equals(aggType.get(i))) {
-        indexList.add(i);
-      }
-    }
-    return ArrayUtils.toPrimitive(indexList.toArray(new Integer[indexList.size()]));
   }
 
   /**
@@ -812,12 +687,10 @@ public class QueryUtil {
         .getColumnGroupMdKeyOrdinal(colGrpId, dimColumnEvaluatorInfo.getColumnIndex()));
     int[] maskByteRanges = QueryUtil.getMaskedByteRangeBasedOrdinal(mdKeyOrdinal, keyGenerator);
     byte[] maxKey = QueryUtil.getMaxKeyBasedOnOrinal(mdKeyOrdinal, keyGenerator);
-    int[] maksedByte = QueryUtil.getMaskedByte(keyGenerator.getKeySizeInBytes(), maskByteRanges);
     KeyStructureInfo restructureInfos = new KeyStructureInfo();
     restructureInfos.setKeyGenerator(keyGenerator);
     restructureInfos.setMaskByteRanges(maskByteRanges);
     restructureInfos.setMaxKey(maxKey);
-    restructureInfos.setMaskedBytes(maksedByte);
     return restructureInfos;
   }
 
@@ -872,7 +745,7 @@ public class QueryUtil {
     return complexTypeMap;
   }
 
-  private static GenericQueryType fillParentDetails(Map<Integer, Integer> dimensionToBlockIndexMap,
+  private static void fillParentDetails(Map<Integer, Integer> dimensionToBlockIndexMap,
       CarbonDimension dimension, Map<Integer, GenericQueryType> complexTypeMap,
       int[] eachComplexColumnValueSize, Map<String, Dictionary> columnIdToDictionaryMap) {
     int parentBlockIndex = dimensionToBlockIndexMap.get(dimension.getOrdinal());
@@ -884,7 +757,6 @@ public class QueryUtil {
     parentBlockIndex =
         fillChildrenDetails(eachComplexColumnValueSize, columnIdToDictionaryMap, parentBlockIndex,
             dimension, parentQueryType);
-    return parentQueryType;
   }
 
   private static int fillChildrenDetails(int[] eachComplexColumnValueSize,
@@ -942,9 +814,6 @@ public class QueryUtil {
    * This method will check if a given expression contains a column expression
    * recursively and add the dimension instance to the set which holds the dimension
    * instances of the complex filter expressions.
-   *
-   * @param filterDimensions
-   * @return
    */
   private static void addColumnDimensions(Expression expression,
       Set<CarbonDimension> filterDimensions, Set<CarbonMeasure> filterMeasure) {
@@ -981,9 +850,6 @@ public class QueryUtil {
 
   /**
    * Below method will be used to fill the children dimension column id
-   *
-   * @param queryDimensions              query dimension
-   * @param dictionaryDimensionFromQuery dictionary dimension for query
    */
   private static void getChildDimensionOrdinal(CarbonDimension queryDimensions,
       Set<Integer> filterDimensionsOrdinal) {

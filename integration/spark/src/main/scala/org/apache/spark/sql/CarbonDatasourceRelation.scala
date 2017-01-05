@@ -17,14 +17,10 @@
 
 package org.apache.spark.sql
 
-import java.util.LinkedHashSet
-
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.hadoop.fs.Path
-import org.apache.spark.sql.SchemaRDD
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
@@ -205,7 +201,7 @@ case class CarbonRelation(
   }
 
   val dimensionsAttr = {
-    val sett = new LinkedHashSet(
+    val sett = new java.util.LinkedHashSet(
       tableMeta.carbonTable.getDimensionByTableName(tableMeta.carbonTableIdentifier.getTableName)
           .asScala.asJava)
     sett.asScala.toSeq.filter(!_.getColumnSchema.isInvisible).map(dim => {
@@ -231,7 +227,7 @@ case class CarbonRelation(
 
   val measureAttr = {
     val factTable = tableMeta.carbonTable.getFactTableName
-    new LinkedHashSet(
+    new java.util.LinkedHashSet(
       tableMeta.carbonTable.
           getMeasureByTableName(tableMeta.carbonTable.getFactTableName).
           asScala.asJava).asScala.toSeq.filter(!_.getColumnSchema.isInvisible)
@@ -247,9 +243,8 @@ case class CarbonRelation(
   }
 
   override val output = {
-    val factTable = tableMeta.carbonTable.getFactTableName
-    var columns = tableMeta.carbonTable.getCreateOrderColumn(tableMeta.carbonTable.getFactTableName)
-      .asScala
+    val columns = tableMeta.carbonTable.getCreateOrderColumn(tableMeta.carbonTable.getFactTableName)
+        .asScala
     columns.filter(!_.getColumnSchema.isInvisible).map { column =>
       if (column.isDimesion()) {
         val output: DataType = column.getDataType.toString.toLowerCase match {

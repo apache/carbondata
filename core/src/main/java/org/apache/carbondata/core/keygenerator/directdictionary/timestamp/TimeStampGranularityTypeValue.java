@@ -49,7 +49,7 @@ public enum TimeStampGranularityTypeValue {
    *
    * @param value
    */
-  private TimeStampGranularityTypeValue(long value) {
+  TimeStampGranularityTypeValue(long value) {
     this.value = value;
   }
 

@@ -19,6 +19,7 @@
 
 package org.apache.carbondata.core.carbon.datastore.exception;
 
+import java.io.IOException;
 import java.util.Locale;
 
 /**
@@ -26,7 +27,7 @@ import java.util.Locale;
  *
  * @author Administrator
  */
-public class IndexBuilderException extends Exception {
+public class IndexBuilderException extends IOException {
   /**
    * default serial version ID.
    */
@@ -40,7 +41,6 @@ public class IndexBuilderException extends Exception {
   /**
    * Constructor
    *
-   * @param errorCode The error code for this exception.
    * @param msg       The error message for this exception.
    */
   public IndexBuilderException(String msg) {

@@ -117,12 +117,8 @@ public class UnCompressNoneLong implements ValueCompressonHolder.UnCompressValue
 
   private CarbonReadDataHolder unCompressLong() {
     CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
-
     long[] vals = new long[value.length];
-
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i];
-    }
+    System.arraycopy(value, 0, vals, 0, vals.length);
     dataHldr.setReadableLongValues(vals);
     return dataHldr;
   }

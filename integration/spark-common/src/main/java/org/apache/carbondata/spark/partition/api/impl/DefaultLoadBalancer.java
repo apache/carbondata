@@ -59,10 +59,6 @@ public class DefaultLoadBalancer {
     }
   }
 
-  public List<Partition> getPartitionsForNode(String node) {
-    return nodeToPartitonMap.get(node);
-  }
-
   public String getNodeForPartitions(Partition partition) {
     return partitonToNodeMap.get(partition);
   }

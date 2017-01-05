@@ -114,7 +114,7 @@ public class CompressionFinder implements Comparable<CompressionFinder> {
     DIFFNONDECIMAL(3);
     private int priority;
 
-    private PRIORITY(int priority) {
+    PRIORITY(int priority) {
       this.priority = priority;
     }
   }

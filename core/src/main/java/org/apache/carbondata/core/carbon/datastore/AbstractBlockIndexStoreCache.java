@@ -19,7 +19,8 @@
 
 package org.apache.carbondata.core.carbon.datastore;
 
-import java.util.Arrays;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,9 +31,9 @@ import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.carbon.datastore.block.BlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockUniqueIdentifier;
+import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CarbonUtilException;
 
 /**
  * This class validate and load the B-Tree in the executor lru cache
@@ -88,12 +89,10 @@ public abstract class AbstractBlockIndexStoreCache<K, V>
    */
   protected void checkAndLoadTableBlocks(AbstractIndex tableBlock,
       TableBlockUniqueIdentifier tableBlockUniqueIdentifier, String lruCacheKey)
-      throws CarbonUtilException {
+      throws IOException {
     // calculate the required size is
     TableBlockInfo blockInfo = tableBlockUniqueIdentifier.getTableBlockInfo();
-    long requiredMetaSize = CarbonUtil
-        .calculateMetaSize(blockInfo.getFilePath(), blockInfo.getBlockOffset(),
-            blockInfo.getBlockLength());
+    long requiredMetaSize = CarbonUtil.calculateMetaSize(blockInfo);
     if (requiredMetaSize > 0) {
       tableBlock.setMemorySize(requiredMetaSize);
       tableBlock.incrementAccessCount();
@@ -103,13 +102,12 @@ public abstract class AbstractBlockIndexStoreCache<K, V>
       if (isTableBlockAddedToLruCache) {
         // load table blocks data
         // getting the data file meta data of the block
-        DataFileFooter footer = CarbonUtil
-            .readMetadatFile(blockInfo);
+        DataFileFooter footer = CarbonUtil.readMetadatFile(blockInfo);
         footer.setBlockInfo(new BlockInfo(blockInfo));
         // building the block
-        tableBlock.buildIndex(Arrays.asList(footer));
+        tableBlock.buildIndex(Collections.singletonList(footer));
       } else {
-        throw new CarbonUtilException(
+        throw new IndexBuilderException(
             "Cannot load table blocks into memory. Not enough memory available");
       }
     }

@@ -19,6 +19,7 @@
 package org.apache.carbondata.processing.newflow.steps;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -78,7 +79,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return child.getOutput();
   }
 
-  @Override public void initialize() throws CarbonDataLoadingException {
+  @Override public void initialize() throws IOException {
     child.initialize();
   }
 

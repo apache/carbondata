@@ -34,7 +34,7 @@ public interface CarbonDictionarySortIndexReader extends Closeable {
    * @return The method return's the list of dictionary sort Index and sort Index reverse
    * @throws IOException In case any I/O error occurs
    */
-  public List<Integer> readSortIndex() throws IOException;
+  List<Integer> readSortIndex() throws IOException;
 
   /**
    * method for reading the carbon dictionary inverted sort index data
@@ -43,5 +43,5 @@ public interface CarbonDictionarySortIndexReader extends Closeable {
    * @return The method return's the list of dictionary inverted sort Index
    * @throws IOException In case any I/O error occurs
    */
-  public List<Integer> readInvertedSortIndex() throws IOException;
+  List<Integer> readInvertedSortIndex() throws IOException;
 }

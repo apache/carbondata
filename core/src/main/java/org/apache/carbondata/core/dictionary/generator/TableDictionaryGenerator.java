@@ -21,7 +21,12 @@ package org.apache.carbondata.core.dictionary.generator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -76,7 +81,7 @@ public class TableDictionaryGenerator
     return ((BiDictionary) generator).size();
   }
 
-  @Override public void writeDictionaryData(String tableUniqueName) throws Exception {
+  @Override public void writeDictionaryData(String tableUniqueName) {
     int numOfCores = 1;
     final String tableName = tableUniqueName;
     try {

@@ -196,7 +196,7 @@ public final class GraphExecutionUtil {
    * @return
    */
   public static boolean checkCSVAndRequestedTableColumns(String csvFilePath, String[] columnNames,
-      String delimiter) {
+      String delimiter) throws IOException {
 
     String readLine = CarbonUtil.readHeader(csvFilePath);
 

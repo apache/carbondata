@@ -186,7 +186,7 @@ public final class ValueCompressionUtil {
           getDataType(Math.pow(10, mantissa) * ((double) maxValue - (double) minValue), 0,
               dataTypeSelected);
 
-      CompressionFinder[] finders = new CompressionFinder[] {
+      CompressionFinder[] finders = {
           new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE, adaptiveDataType, adaptiveDataType,
               CompressionFinder.PRIORITY.ACTUAL, measureStoreType),
           new CompressionFinder(COMPRESSION_TYPE.DELTA_DOUBLE, adaptiveDataType, deltaDataType,
@@ -462,7 +462,7 @@ public final class ValueCompressionUtil {
         double[] defaultResult = new double[value.length];
 
         for (double a : value) {
-          defaultResult[i] = (double) (maxValue - a);
+          defaultResult[i] = maxValue - a;
           i++;
         }
         return defaultResult;
@@ -508,7 +508,7 @@ public final class ValueCompressionUtil {
         long[] longResult = new long[value.length];
 
         for (double a : value) {
-          longResult[i] = (long) (Math.round(Math.pow(10, mantissa) * a));
+          longResult[i] = Math.round(Math.pow(10, mantissa) * a);
           i++;
         }
         return longResult;
@@ -587,7 +587,7 @@ public final class ValueCompressionUtil {
         for (double a : value) {
           BigDecimal val = BigDecimal.valueOf(a);
           double diff = max.subtract(val).doubleValue();
-          longResult[i] = (long) (Math.round(diff * Math.pow(10, mantissa)));
+          longResult[i] = Math.round(diff * Math.pow(10, mantissa));
           i++;
         }
         return longResult;
@@ -728,7 +728,6 @@ public final class ValueCompressionUtil {
     WriterCompressModel compressionModel = new WriterCompressModel();
     DataType[] actualType = new DataType[measureCount];
     DataType[] convertedType = new DataType[measureCount];
-    COMPRESSION_TYPE[] compType = new COMPRESSION_TYPE[measureCount];
     CompressionFinder[] compressionFinders = new CompressionFinder[measureCount];
     for (int i = 0; i < measureCount; i++) {
       CompressionFinder compresssionFinder =
@@ -737,13 +736,11 @@ public final class ValueCompressionUtil {
       compressionFinders[i] = compresssionFinder;
       actualType[i] = compresssionFinder.getActualDataType();
       convertedType[i] = compresssionFinder.getConvertedDataType();
-      compType[i] = compresssionFinder.getCompType();
     }
     compressionModel.setCompressionFinders(compressionFinders);
     compressionModel.setMaxValue(maxValue);
     compressionModel.setMantissa(mantissa);
     compressionModel.setConvertedDataType(convertedType);
-    compressionModel.setCompType(compType);
     compressionModel.setActualDataType(actualType);
     compressionModel.setMinValue(minValue);
     compressionModel.setUniqueValue(uniqueValue);
@@ -899,7 +896,7 @@ public final class ValueCompressionUtil {
     DATA_LONG(),
     DATA_BIGINT(),
     DATA_DOUBLE();
-    private DataType() {
+    DataType() {
     }
   }
 }

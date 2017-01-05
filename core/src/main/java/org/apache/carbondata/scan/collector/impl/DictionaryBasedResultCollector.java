@@ -24,8 +24,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -42,9 +40,6 @@ import org.apache.commons.lang3.ArrayUtils;
  * It is not a collector it is just a scanned result holder.
  */
 public class DictionaryBasedResultCollector extends AbstractScannedResultCollector {
-
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DictionaryBasedResultCollector.class.getName());
 
   public DictionaryBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);

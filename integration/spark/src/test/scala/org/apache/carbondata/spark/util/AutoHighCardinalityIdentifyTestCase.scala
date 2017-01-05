@@ -36,9 +36,6 @@ import org.apache.carbondata.processing.model.CarbonLoadModel
 
 /**
   * Test Case for org.apache.carbondata.spark.util.GlobalDictionaryUtil
-  *
-  * @date: Apr 10, 2016 10:34:58 PM
-  * @See org.apache.carbondata.spark.util.GlobalDictionaryUtil
   */
 class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -68,6 +65,11 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
     buildTestData
     buildTable
     buildColGrpHighCardTable
+  }
+
+  override def afterAll {
+    sql("drop table if exists highcard")
+    sql("drop table if exists colgrp_highcard")
   }
 
   def buildTestData() = {

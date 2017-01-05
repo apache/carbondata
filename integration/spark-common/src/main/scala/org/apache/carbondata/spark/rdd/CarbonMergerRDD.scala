@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.rdd
 
+import java.io.IOException
 import java.util
 import java.util.{Collections, List}
 
@@ -37,7 +38,7 @@ import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableId
 import org.apache.carbondata.core.carbon.datastore.block.{Distributable, SegmentProperties, TaskBlockInfo}
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, CarbonUtilException}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.model.CarbonLoadModel
@@ -123,10 +124,8 @@ class CarbonMergerRDD[K, V](
 
         carbonLoadModel.setStorePath(storePath)
 
-        exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties, databaseName,
-          factTableName, storePath, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
-          dataFileMetadataSegMapping
-        )
+        exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties,
+          carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable, dataFileMetadataSegMapping)
 
         // fire a query and get the results.
         var result2: util.List[RawResultIterator] = null
@@ -250,7 +249,7 @@ class CarbonMergerRDD[K, V](
         dataFileFooter = CarbonUtil.readMetadatFile(
             CarbonInputSplit.getTableBlockInfo(carbonInputSplit))
       } catch {
-        case e: CarbonUtilException =>
+        case e: IOException =>
           logError("Exception in preparing the data file footer for compaction " + e.getMessage)
           throw e
       }

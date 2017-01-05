@@ -23,10 +23,6 @@ import org.apache.carbondata.core.util.CompressionFinder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 
 public class WriterCompressModel {
-  /**
-   * COMPRESSION_TYPE[] variable.
-   */
-  private ValueCompressionUtil.COMPRESSION_TYPE[] compType;
 
   /**
    * DataType[]  variable.
@@ -70,20 +66,6 @@ public class WriterCompressModel {
   private ValueCompressonHolder.UnCompressValue[] unCompressValues;
 
   private CompressionFinder[] compressionFinders;
-
-  /**
-   * @return the compType
-   */
-  public ValueCompressionUtil.COMPRESSION_TYPE[] getCompType() {
-    return compType;
-  }
-
-  /**
-   * @param compType the compType to set
-   */
-  public void setCompType(ValueCompressionUtil.COMPRESSION_TYPE[] compType) {
-    this.compType = compType;
-  }
 
   /**
    * @return the convertedDataType
@@ -221,12 +203,18 @@ public class WriterCompressModel {
     this.uniqueValue = uniqueValue;
   }
 
-
   public void setCompressionFinders(CompressionFinder[] compressionFinders) {
     this.compressionFinders = compressionFinders;
   }
 
-  public CompressionFinder[] getCompressionFinder() {
+  public CompressionFinder[] getCompressionFinders() {
     return this.compressionFinders;
+  }
+
+  /**
+   * @return the compType
+   */
+  public ValueCompressionUtil.COMPRESSION_TYPE getCompType(int index) {
+    return this.compressionFinders[index].getCompType();
   }
 }

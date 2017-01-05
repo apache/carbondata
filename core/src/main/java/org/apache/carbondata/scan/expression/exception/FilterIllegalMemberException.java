@@ -41,7 +41,6 @@ public class FilterIllegalMemberException extends Exception {
   /**
    * Constructor
    *
-   * @param errorCode The error code for this exception.
    * @param msg       The error message for this exception.
    */
   public FilterIllegalMemberException(String msg) {
@@ -52,7 +51,6 @@ public class FilterIllegalMemberException extends Exception {
   /**
    * Constructor
    *
-   * @param errorCode The error code for this exception.
    * @param msg       The error message for this exception.
    */
   public FilterIllegalMemberException(String msg, Throwable t) {
@@ -63,8 +61,6 @@ public class FilterIllegalMemberException extends Exception {
   /**
    * Constructor
    *
-   * @param errorCode The error code for this exception.
-   * @param msg       The error message for this exception.
    */
   public FilterIllegalMemberException(Throwable t) {
     super(t);

@@ -375,7 +375,7 @@ public class CarbonMetadataUtil {
         keyBlockIndexLens[i] = dataChunk.getRowid_page_length();
         indexMapOffsets[i] = dataChunk.getRle_page_offset();
         indexMapLens[i] = dataChunk.getRle_page_length();
-        sortState[i] = dataChunk.getSort_state().equals(SortState.SORT_EXPLICIT) ? true : false;
+        sortState[i] = dataChunk.getSort_state().equals(SortState.SORT_EXPLICIT);
         i++;
       }
       blockletInfoColumnar.setKeyLengths(keyLengths);

@@ -151,8 +151,7 @@ public abstract class AbstractBTreeBuilder implements BtreeBuilder {
     buffer.get(dictionaryKey);
     byte[] nonDictionaryKey = new byte[nonDictonaryKeySize];
     buffer.get(nonDictionaryKey);
-    IndexKey entry = new IndexKey(dictionaryKey, nonDictionaryKey);
-    return entry;
+    return new IndexKey(dictionaryKey, nonDictionaryKey);
   }
 
   /**

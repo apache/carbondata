@@ -22,8 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
@@ -38,9 +36,6 @@ import org.apache.carbondata.scan.result.vector.MeasureDataVectorProcessor;
  * It is not a collector it is just a scanned result holder.
  */
 public class DictionaryBasedVectorResultCollector extends AbstractScannedResultCollector {
-
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DictionaryBasedVectorResultCollector.class.getName());
 
   private ColumnVectorInfo[] dictionaryInfo;
 

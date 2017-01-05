@@ -33,7 +33,6 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
 
@@ -453,7 +452,7 @@ public class IntermediateFileMerger implements Callable<Void> {
     }
     try {
       CarbonUtil.deleteFiles(intermediateFiles);
-    } catch (CarbonUtilException e) {
+    } catch (IOException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while deleting the intermediate files");
     }
   }

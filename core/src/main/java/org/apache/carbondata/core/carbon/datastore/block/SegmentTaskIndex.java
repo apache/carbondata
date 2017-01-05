@@ -34,7 +34,6 @@ public class SegmentTaskIndex extends AbstractIndex {
   /**
    * Below method is store the blocks in some data structure
    *
-   * @param blockInfo block detail
    */
   public void buildIndex(List<DataFileFooter> footerList) {
     // create a metadata details

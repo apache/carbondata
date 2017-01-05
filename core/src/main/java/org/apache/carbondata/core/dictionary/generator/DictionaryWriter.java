@@ -18,12 +18,13 @@
  */
 package org.apache.carbondata.core.dictionary.generator;
 
+import java.io.IOException;
 
 /**
  * Interface to write dictionary to file system
  */
 public interface DictionaryWriter {
 
-  void writeDictionaryData(String tableUniqueName) throws Exception;
+  void writeDictionaryData(String tableUniqueName) throws IOException;
 
 }
