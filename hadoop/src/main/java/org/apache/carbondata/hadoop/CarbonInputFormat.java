@@ -119,16 +119,35 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   public static CarbonTable getCarbonTable(Configuration configuration) throws IOException {
     String carbonTableStr = configuration.get(CARBON_TABLE);
     if (carbonTableStr == null) {
+      populateCarbonTable(configuration);
       // read it from schema file in the store
-      AbsoluteTableIdentifier absIdentifier = getAbsoluteTableIdentifier(configuration);
-      CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absIdentifier);
-      setCarbonTable(configuration, carbonTable);
-      return carbonTable;
+      carbonTableStr = configuration.get(CARBON_TABLE);
+      return (CarbonTable) ObjectSerializationUtil.convertStringToObject(carbonTableStr);
     }
     return (CarbonTable) ObjectSerializationUtil.convertStringToObject(carbonTableStr);
   }
 
-  public static void setTablePath(Configuration configuration, String tablePath) {
+  /**
+   * this method will read the schema from the physical file and populate into CARBON_TABLE
+   * @param configuration
+   * @throws IOException
+   */
+  private static void populateCarbonTable(Configuration configuration) throws IOException {
+    String dirs = configuration.get(INPUT_DIR, "");
+    String[] inputPaths = StringUtils.split(dirs);
+    if (inputPaths.length == 0) {
+      throw new InvalidPathException("No input paths specified in job");
+    }
+    AbsoluteTableIdentifier absoluteTableIdentifier =
+        AbsoluteTableIdentifier.fromTablePath(inputPaths[0]);
+    // read the schema file to get the absoluteTableIdentifier having the correct table id
+    // persisted in the schema
+    CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
+    setCarbonTable(configuration, carbonTable);
+  }
+
+  public static void setTablePath(Configuration configuration, String tablePath)
+      throws IOException {
     configuration.set(FileInputFormat.INPUT_DIR, tablePath);
   }
 
@@ -187,13 +206,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         .set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, CarbonUtil.getSegmentString(validSegments));
   }
 
-  private static AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration) {
-    String dirs = configuration.get(INPUT_DIR, "");
-    String[] inputPaths = StringUtils.split(dirs);
-    if (inputPaths.length == 0) {
-      throw new InvalidPathException("No input paths specified in job");
-    }
-    return AbsoluteTableIdentifier.fromTablePath(inputPaths[0]);
+  private static AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
+      throws IOException {
+    return getCarbonTable(configuration).getAbsoluteTableIdentifier();
   }
 
   /**
@@ -592,7 +607,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       throws IOException {
     Configuration configuration = taskAttemptContext.getConfiguration();
     CarbonTable carbonTable = getCarbonTable(configuration);
-    AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(configuration);
+    // getting the table absoluteTableIdentifier from the carbonTable
+    // to avoid unnecessary deserialization
+    AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
 
     // query plan includes projection column
     String projection = getColumnProjection(configuration);
