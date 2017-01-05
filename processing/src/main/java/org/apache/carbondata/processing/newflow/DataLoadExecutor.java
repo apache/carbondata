@@ -63,7 +63,7 @@ public class DataLoadExecutor {
         new CarbonTableIdentifier(loadModel.getDatabaseName(), loadModel.getTableName(), null)
             .getBadRecordLoggerKey();
     if (null != BadRecordsLogger.hasBadRecord(key)) {
-      LOGGER.error("Data Load is partcially success for table " + loadModel.getTableName());
+      LOGGER.error("Data Load is partially success for table " + loadModel.getTableName());
       throw new BadRecordFoundException("Bad records found during load");
     } else {
       LOGGER.info("Data loading is successful for table "+loadModel.getTableName());

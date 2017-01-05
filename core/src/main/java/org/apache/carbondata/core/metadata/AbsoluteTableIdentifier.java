@@ -73,6 +73,14 @@ public class AbsoluteTableIdentifier implements Serializable {
     return new AbsoluteTableIdentifier(CarbonUtil.getCarbonStorePath(), identifier);
   }
 
+  /**
+   * By using the tablePath this method will prepare a AbsoluteTableIdentifier with
+   * dummy tableId(Long.toString(System.currentTimeMillis()).
+   * This instance could not be used to uniquely identify the table, this is just
+   * to get the database name, table name and store path to load the schema.
+   * @param tablePath
+   * @return returns AbsoluteTableIdentifier with dummy tableId
+   */
   public static AbsoluteTableIdentifier fromTablePath(String tablePath) {
     String formattedTablePath = tablePath.replace('\\', '/');
     String[] names = formattedTablePath.split("/");
