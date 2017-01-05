@@ -443,27 +443,14 @@ public class CarbonTablePath extends Path {
     /**
      * gets updated timestamp information from given carbon data file name
      */
-    public static String getUpdateTimeStamp(String carbonDataFileName) {
-      // Get the file name from path
+    public static String getTimeStampFromFileName(String carbonDataFileName) {
+      // Get the timestamp portion of the file.
       String fileName = getFileName(carbonDataFileName);
-      // + 1 for size of "-"
-      int firstDashPos = fileName.indexOf("-");
-      int secondDashPos = fileName.indexOf("-", firstDashPos + 1);
-      int startIndex = fileName.indexOf("-", secondDashPos + 1) + 1;
-      int endIndex = fileName.indexOf(".");
+      int startIndex = fileName.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1;
+      int endIndex = fileName.indexOf(".", startIndex);
       return fileName.substring(startIndex, endIndex);
     }
 
-    /**
-     * gets updated timestamp information from given carbon index file name
-     */
-    public static String getUpdateTimeStampFromIndexFile(String carbonIndexFileName) {
-      // Get the file name from path
-      String fileName = getFileName(carbonIndexFileName);
-      int startIndex = fileName.indexOf("-") + 1;
-      int endIndex = fileName.indexOf(".");
-      return fileName.substring(startIndex, endIndex);
-    }
 
     /**
      * This will return the timestamp present in the delete delta file.

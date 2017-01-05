@@ -488,7 +488,7 @@ object IUDCommon {
 class HorizontalCompactionException(
     message: String,
     // required for cleanup
-    val compactionTimeStamp: Long) extends Exception(message) {
+    val compactionTimeStamp: Long) extends RuntimeException(message) {
 }
 
 object deleteExecution {
