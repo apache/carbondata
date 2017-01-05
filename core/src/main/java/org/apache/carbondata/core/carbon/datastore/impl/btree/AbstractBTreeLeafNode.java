@@ -27,7 +27,6 @@ import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChun
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 
-
 /**
  * Non leaf node abstract class
  */
@@ -228,8 +227,9 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
     // measure chunks
     return null;
   }
+
   /**
-   * @return the segmentProperties
+   * @param deleteDeltaDataCache
    */
   public void setDeleteDeltaDataCache(BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache) {
 

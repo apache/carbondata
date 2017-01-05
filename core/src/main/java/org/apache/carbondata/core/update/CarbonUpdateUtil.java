@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.carbondata.core.update;
 
@@ -23,12 +39,11 @@ import org.apache.carbondata.core.updatestatus.SegmentStatusManager;
 import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.locks.ICarbonLock;
 
 
 /**
- *
+ * This class contains all update utility methods
  */
 public class CarbonUpdateUtil {
 
@@ -158,8 +173,12 @@ public class CarbonUpdateUtil {
   }
 
   /**
+   *
    * @param updatedSegmentsList
    * @param table
+   * @param updatedTimeStamp
+   * @param isTimestampUpdationRequired
+   * @param segmentsToBeDeleted
    * @return
    */
   public static boolean updateTableMetadataStatus(Set<String> updatedSegmentsList,
@@ -300,7 +319,9 @@ public class CarbonUpdateUtil {
       // deleting the files of a segment.
       try {
         CarbonUtil.deleteFoldersAndFilesSilent(toBeDeleted);
-      } catch (CarbonUtilException e) {
+      } catch (IOException e) {
+        LOGGER.error("Exception in deleting the delta files." + e);
+      } catch (InterruptedException e) {
         LOGGER.error("Exception in deleting the delta files." + e);
       }
     }
@@ -660,7 +681,9 @@ public class CarbonUpdateUtil {
       try {
         LOGGER.info("deleting the invalid file : " + invalidFile.getName());
         CarbonUtil.deleteFoldersAndFiles(invalidFile);
-      } catch (CarbonUtilException e) {
+      } catch (IOException e) {
+        LOGGER.error("error in clean up of compacted files." + e.getMessage());
+      } catch (InterruptedException e) {
         LOGGER.error("error in clean up of compacted files." + e.getMessage());
       }
     }

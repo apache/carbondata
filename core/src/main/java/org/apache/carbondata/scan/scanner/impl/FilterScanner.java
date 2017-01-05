@@ -35,7 +35,6 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.scan.filter.executer.FilterExecuter;
-import org.apache.carbondata.scan.filter.executer.ImplicitColumnFilterExecutor;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
 import org.apache.carbondata.scan.result.impl.FilterQueryScannedResult;
@@ -117,17 +116,9 @@ public class FilterScanner extends AbstractBlockletScanner {
             .getDataBlock().nodeNumber());
     // apply min max
     if (isMinMaxEnabled) {
-      BitSet bitSet = null;
-      // check for implicit include filter instance
-      if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
-        bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
-            .isFilterValuesPresentInBlockOrBlocklet(blocksChunkHolder.getDataBlock(),
-                scannedResult.getBlockletId());
-      } else {
-        bitSet = this.filterExecuter
-            .isScanRequired(blocksChunkHolder.getDataBlock().getColumnsMaxValue(),
-                blocksChunkHolder.getDataBlock().getColumnsMinValue());
-      }
+      BitSet bitSet = this.filterExecuter
+          .isScanRequired(blocksChunkHolder.getDataBlock().getColumnsMaxValue(),
+              blocksChunkHolder.getDataBlock().getColumnsMinValue());
       if (bitSet.isEmpty()) {
         scannedResult.setNumberOfRows(0);
         scannedResult.setIndexes(new int[0]);

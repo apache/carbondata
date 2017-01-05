@@ -744,7 +744,6 @@ private[sql] case class ShowLoads(
     limit: Option[String],
     override val output: Seq[Attribute]) extends RunnableCommand {
 
-
   override def run(sqlContext: SQLContext): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sqlContext)
     CarbonStore.showSegments(
@@ -753,7 +752,6 @@ private[sql] case class ShowLoads(
       limit
     )
   }
-
 }
 
 private[sql] case class DescribeCommandFormatted(

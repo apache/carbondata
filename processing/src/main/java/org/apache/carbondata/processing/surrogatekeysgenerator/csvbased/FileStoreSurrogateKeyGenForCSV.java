@@ -93,8 +93,8 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
    * @param columnsInfo
    * @throws IOException
    */
-  public FileStoreSurrogateKeyGenForCSV(ColumnsInfo columnsInfo, String partitionID, int segmentId,
-      String taskNo) throws IOException {
+  public FileStoreSurrogateKeyGenForCSV(ColumnsInfo columnsInfo, String partitionID,
+      String segmentId, String taskNo) throws IOException {
     super(columnsInfo);
     populatePrimaryKeyarray(dimInsertFileNames, columnsInfo.getPrimaryKeyMap());
     this.partitionID = partitionID;

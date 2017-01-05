@@ -118,7 +118,6 @@ public class LoadMetadataDetails implements Serializable {
    * @param modificationOrdeletionTimesStamp the modificationOrdeletionTimesStamp to set
    */
   public void setModificationOrdeletionTimesStamp(long modificationOrdeletionTimesStamp) {
-
     this.modificationOrdeletionTimesStamp =
         getTimeStampConvertion(modificationOrdeletionTimesStamp);
   }
@@ -256,8 +255,7 @@ public class LoadMetadataDetails implements Serializable {
 
   /**
    * Return true if it is a major compacted segment.
-   *
-   * @return
+   * @return majorCompacted
    */
   public String isMajorCompacted() {
     return majorCompacted;

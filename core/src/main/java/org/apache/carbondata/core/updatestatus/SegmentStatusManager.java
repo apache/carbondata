@@ -129,16 +129,12 @@ public class SegmentStatusManager {
     LoadMetadataDetails[] loadFolderDetailsArray;
     try {
       if (FileFactory.isFileExist(dataPath, FileFactory.getFileType(dataPath))) {
-
         dataInputStream = fileOperation.openForRead();
-
         BufferedReader buffReader =
                 new BufferedReader(new InputStreamReader(dataInputStream, "UTF-8"));
-
         loadFolderDetailsArray = gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
         //just directly iterate Array
         List<LoadMetadataDetails> loadFolderDetails = Arrays.asList(loadFolderDetailsArray);
-
         for (LoadMetadataDetails loadMetadataDetails : loadFolderDetails) {
           if (CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
                   .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
@@ -173,7 +169,6 @@ public class SegmentStatusManager {
                   .equalsIgnoreCase(loadMetadataDetails.getLoadStatus()))) {
             listOfInvalidSegments.add(loadMetadataDetails.getLoadName());
           }
-
         }
       }
     } catch (IOException e) {
@@ -181,7 +176,6 @@ public class SegmentStatusManager {
       throw e;
     } finally {
       try {
-
         if (null != dataInputStream) {
           dataInputStream.close();
         }
@@ -189,7 +183,6 @@ public class SegmentStatusManager {
         LOG.error(e);
         throw e;
       }
-
     }
     return new ValidAndInvalidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments,
             listOfInvalidSegments);
@@ -209,7 +202,6 @@ public class SegmentStatusManager {
     String metadataFileName = tableFolderPath + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonCommonConstants.LOADMETADATA_FILENAME;
     LoadMetadataDetails[] listOfLoadFolderDetailsArray;
-
     AtomicFileOperations fileOperation =
         new AtomicFileOperationsImpl(metadataFileName, FileFactory.getFileType(metadataFileName));
 
@@ -485,7 +477,6 @@ public class SegmentStatusManager {
         invalidLoadIds.add(loadId);
         return invalidLoadIds;
       }
-
     }
     return invalidLoadIds;
   }

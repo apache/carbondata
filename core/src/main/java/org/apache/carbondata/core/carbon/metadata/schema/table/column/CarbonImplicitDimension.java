@@ -27,6 +27,9 @@ import java.util.UUID;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 
+/**
+ * This instance will be created for implicit column like tupleid.
+ */
 public class CarbonImplicitDimension extends CarbonDimension {
   /**
    * serialization version

@@ -206,7 +206,7 @@ case class CarbonRelation(
   }
 
   val dimensionsAttr = {
-    val sett = new LinkedHashSet(tableMeta.carbonTable
+    val sett = new java.util.LinkedHashSet(tableMeta.carbonTable
       .getDimensionByTableName(tableMeta.carbonTableIdentifier.getTableName).asScala.asJava)
     sett.asScala.toSeq.filter(dim => !dim.isInvisible ||
                                      (dim.isInvisible && dim.isInstanceOf[CarbonImplicitDimension]))

@@ -29,8 +29,6 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.INVALID
 
 import org.apache.hadoop.fs.Path;
 
-
-
 /**
  * Helps to get Table content paths.
  */
@@ -333,19 +331,6 @@ public class CarbonTablePath extends Path {
     }
   }
 
-  public CarbonFile[] getCarbonDeleteDeltaFile(final String segmentId, final String partitionId) {
-    String segmentDir = getSegmentDir(partitionId, segmentId);
-    CarbonFile carbonFile =
-        FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir));
-
-    CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
-        return file.getName().endsWith(DELETE_DELTA_FILE_EXT);
-      }
-    });
-    return files;
-  }
-
   /**
    * Gets absolute path of data file
    *
@@ -402,25 +387,12 @@ public class CarbonTablePath extends Path {
     return getFactDir() + File.separator + PARTITION_PREFIX + partitionId;
   }
 
-  private String getAggSegmentDir(String aggTableID, String partitionId, String segmentId) {
-    return getAggPartitionDir(aggTableID, partitionId) + File.separator + SEGMENT_PREFIX
-        + segmentId;
-  }
-
-  private String getAggPartitionDir(String aggTableID, String partitionId) {
-    return getAggregateTableDir(aggTableID) + File.separator + PARTITION_PREFIX + partitionId;
-  }
-
   private String getMetaDataDir() {
     return tablePath + File.separator + METADATA_DIR;
   }
 
   public String getFactDir() {
     return tablePath + File.separator + FACT_DIR;
-  }
-
-  private String getAggregateTableDir(String aggTableId) {
-    return tablePath + File.separator + AGGREGATE_TABLE_PREFIX + aggTableId;
   }
 
   @Override public boolean equals(Object o) {

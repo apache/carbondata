@@ -70,6 +70,8 @@ public class BlockExecutionInfo {
    */
   private IndexKey endKey;
 
+  private String blockId;
+
   /**
    * masked byte for block which will be used to unpack the fixed length key,
    * this will be used for updating the older block key with new block key
@@ -590,5 +592,13 @@ public class BlockExecutionInfo {
 
   public void setVectorBatchCollector(boolean vectorBatchCollector) {
     this.vectorBatchCollector = vectorBatchCollector;
+  }
+
+  public String getBlockId() {
+    return blockId;
+  }
+
+  public void setBlockId(String blockId) {
+    this.blockId = blockId;
   }
 }

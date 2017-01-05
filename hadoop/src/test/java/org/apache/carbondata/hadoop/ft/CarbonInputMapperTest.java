@@ -57,58 +57,58 @@ public class CarbonInputMapperTest extends TestCase {
   }
 
   @Test public void testInputFormatMapperReadAllRowsAndColumns() throws Exception {
-//    try {
-//      String outPath = "target/output";
-//      CarbonProjection carbonProjection = new CarbonProjection();
-//      carbonProjection.addColumn("ID");
-//      carbonProjection.addColumn("date");
-//      carbonProjection.addColumn("country");
-//      carbonProjection.addColumn("name");
-//      carbonProjection.addColumn("phonetype");
-//      carbonProjection.addColumn("serialname");
-//      carbonProjection.addColumn("salary");
-//      runJob(outPath, carbonProjection, null);
-//      Assert.assertEquals("Count lines are not matching", 1000, countTheLines(outPath));
-//      Assert.assertEquals("Column count are not matching", 7, countTheColumns(outPath));
-//    } catch (Exception e) {
-//      Assert.assertTrue("failed", false);
-//      e.printStackTrace();
-//      throw e;
-//    }
+    try {
+      String outPath = "target/output";
+      CarbonProjection carbonProjection = new CarbonProjection();
+      carbonProjection.addColumn("ID");
+      carbonProjection.addColumn("date");
+      carbonProjection.addColumn("country");
+      carbonProjection.addColumn("name");
+      carbonProjection.addColumn("phonetype");
+      carbonProjection.addColumn("serialname");
+      carbonProjection.addColumn("salary");
+      runJob(outPath, carbonProjection, null);
+      Assert.assertEquals("Count lines are not matching", 1000, countTheLines(outPath));
+      Assert.assertEquals("Column count are not matching", 7, countTheColumns(outPath));
+    } catch (Exception e) {
+      Assert.assertTrue("failed", false);
+      e.printStackTrace();
+      throw e;
+    }
   }
 
   @Test public void testInputFormatMapperReadAllRowsAndFewColumns() throws Exception {
-//    try {
-//      String outPath = "target/output2";
-//      CarbonProjection carbonProjection = new CarbonProjection();
-//      carbonProjection.addColumn("ID");
-//      carbonProjection.addColumn("country");
-//      carbonProjection.addColumn("salary");
-//      runJob(outPath, carbonProjection, null);
-//
-//      Assert.assertEquals("Count lines are not matching", 1000, countTheLines(outPath));
-//      Assert.assertEquals("Column count are not matching", 3, countTheColumns(outPath));
-//    } catch (Exception e) {
-//      Assert.assertTrue("failed", false);
-//    }
+    try {
+      String outPath = "target/output2";
+      CarbonProjection carbonProjection = new CarbonProjection();
+      carbonProjection.addColumn("ID");
+      carbonProjection.addColumn("country");
+      carbonProjection.addColumn("salary");
+      runJob(outPath, carbonProjection, null);
+
+      Assert.assertEquals("Count lines are not matching", 1000, countTheLines(outPath));
+      Assert.assertEquals("Column count are not matching", 3, countTheColumns(outPath));
+    } catch (Exception e) {
+      Assert.assertTrue("failed", false);
+    }
   }
 
   @Test public void testInputFormatMapperReadAllRowsAndFewColumnsWithFilter() throws Exception {
-//    try {
-//      String outPath = "target/output3";
-//      CarbonProjection carbonProjection = new CarbonProjection();
-//      carbonProjection.addColumn("ID");
-//      carbonProjection.addColumn("country");
-//      carbonProjection.addColumn("salary");
-//      Expression expression =
-//          new EqualToExpression(new ColumnExpression("country", DataType.STRING),
-//              new LiteralExpression("france", DataType.STRING));
-//      runJob(outPath, carbonProjection, expression);
-//      Assert.assertEquals("Count lines are not matching", 101, countTheLines(outPath));
-//      Assert.assertEquals("Column count are not matching", 3, countTheColumns(outPath));
-//    } catch (Exception e) {
-//      Assert.assertTrue("failed", false);
-//    }
+    try {
+      String outPath = "target/output3";
+      CarbonProjection carbonProjection = new CarbonProjection();
+      carbonProjection.addColumn("ID");
+      carbonProjection.addColumn("country");
+      carbonProjection.addColumn("salary");
+      Expression expression =
+          new EqualToExpression(new ColumnExpression("country", DataType.STRING),
+              new LiteralExpression("france", DataType.STRING));
+      runJob(outPath, carbonProjection, expression);
+      Assert.assertEquals("Count lines are not matching", 101, countTheLines(outPath));
+      Assert.assertEquals("Column count are not matching", 3, countTheColumns(outPath));
+    } catch (Exception e) {
+      Assert.assertTrue("failed", false);
+    }
   }
 
   private int countTheLines(String outPath) throws Exception {

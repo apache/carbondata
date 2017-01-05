@@ -51,8 +51,6 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
   private DataOutputStream dataOutStream = null;
 
   /**
-   * Constructor
-   *
    * @param filePath
    * @param fileType
    */

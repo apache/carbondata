@@ -98,18 +98,6 @@ public class LoadMetadataDetailsUnitTest {
     assertEquals(true, result);
   }
 
-//  @Test public void testGetTimeStampWithEmptyTimeStamp() throws Exception {
-//    loadMetadataDetails.setLoadStartTime(0);
-//    Long result = loadMetadataDetails.getLoadStartTimeAsLong();
-//    assertNull(result);
-//  }
-//
-//  @Test public void testGetTimeStampWithParserException() throws Exception {
-//    loadMetadataDetails.setLoadStartTime(0);
-//    Long result = loadMetadataDetails.getLoadStartTimeAsLong();
-//    assertNull(result);
-//  }
-
   @Test public void testGetTimeStampWithDate() throws Exception {
     String date = "01-01-2016 00:00:00:000";
     long longVal = loadMetadataDetails.getTimeStamp(date);

@@ -84,7 +84,7 @@ public class SegmentTaskIndexStore
 
   @Override
   public SegmentTaskIndexWrapper get(TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier)
-      throws CarbonUtilException {
+      throws IOException {
     SegmentTaskIndexWrapper segmentTaskIndexWrapper = null;
     try {
       segmentTaskIndexWrapper =
@@ -92,19 +92,15 @@ public class SegmentTaskIndexStore
               tableSegmentUniqueIdentifier.getAbsoluteTableIdentifier(),
               tableSegmentUniqueIdentifier);
     } catch (IndexBuilderException e) {
-      throw new CarbonUtilException(e.getMessage(), e);
+      throw new IOException(e.getMessage(), e);
     } catch (Throwable e) {
-      throw new CarbonUtilException("Problem in loading segment block.", e);
-    }
-
-    if (null != segmentTaskIndexWrapper) {
-      segmentTaskIndexWrapper.incrementAccessCount();
+      throw new IOException("Problem in loading segment block.", e);
     }
     return segmentTaskIndexWrapper;
   }
 
   @Override public List<SegmentTaskIndexWrapper> getAll(
-      List<TableSegmentUniqueIdentifier> tableSegmentUniqueIdentifiers) throws CarbonUtilException {
+      List<TableSegmentUniqueIdentifier> tableSegmentUniqueIdentifiers) throws IOException {
     List<SegmentTaskIndexWrapper> segmentTaskIndexWrappers =
         new ArrayList<>(tableSegmentUniqueIdentifiers.size());
     try {
@@ -115,7 +111,7 @@ public class SegmentTaskIndexStore
       for (SegmentTaskIndexWrapper segmentTaskIndexWrapper : segmentTaskIndexWrappers) {
         segmentTaskIndexWrapper.clear();
       }
-      throw new CarbonUtilException("Problem in loading segment blocks.", e);
+      throw new IOException("Problem in loading segment blocks.", e);
     }
     return segmentTaskIndexWrappers;
   }
@@ -146,7 +142,7 @@ public class SegmentTaskIndexStore
   }
 
   /**
-   *
+   * returns block timestamp value from the given task
    * @param taskKey
    * @param listOfUpdatedFactFiles
    * @return

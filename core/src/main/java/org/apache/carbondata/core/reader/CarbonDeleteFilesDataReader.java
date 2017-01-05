@@ -53,9 +53,6 @@ public class CarbonDeleteFilesDataReader {
    */
   protected int thread_pool_size;
 
-  /**
-   * Constructor
-   */
   public CarbonDeleteFilesDataReader() {
     initThreadPoolSize();
   }
@@ -119,6 +116,13 @@ public class CarbonDeleteFilesDataReader {
 
   }
 
+  /**
+   * returns delete delta file details for the specified block name
+   * @param deltaFiles
+   * @param blockName
+   * @return DeleteDeltaBlockDetails
+   * @throws Exception
+   */
   public DeleteDeltaBlockDetails getCompactedDeleteDeltaFileFromBlock(List<String> deltaFiles,
       String blockName) throws Exception {
     // get the data.
