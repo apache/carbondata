@@ -650,7 +650,7 @@ public class CarbonUpdateUtil {
               .substring(invalidFile.getName().lastIndexOf(CarbonCommonConstants.HYPHEN) + 1));
     } else {
       fileTimestamp = CarbonUpdateUtil.getTimeStampAsLong(
-              CarbonTablePath.DataFileUtil.getUpdateTimeStamp(invalidFile.getName()));
+              CarbonTablePath.DataFileUtil.getTimeStampFromFileName(invalidFile.getName()));
     }
 
     // if the timestamp of the file is more than the current time by query execution timeout.
