@@ -18,6 +18,7 @@
 package org.apache.spark.sql
 
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.types._
 
@@ -54,7 +55,6 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
    * Firstly, saving DataFrame to CSV files
    * Secondly, load CSV files
    * @param options
-   * @param sqlContext
    */
   private def loadTempCSV(options: CarbonOption): Unit = {
     // temporary solution: write to csv file, then load the csv into carbon
@@ -91,17 +91,37 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
   }
 
   private def writeToTempCSVFile(tempCSVFolder: String, options: CarbonOption): Unit = {
-    var writer: DataFrameWriter[Row] =
-      dataFrame.write
-        .format(csvPackage)
-        .option("header", "false")
-        .mode(SaveMode.Overwrite)
+    val strRDD = dataFrame.rdd.mapPartitions { case iter =>
+      new Iterator[String] {
+        override def hasNext = iter.hasNext
 
-    if (options.compress) {
-      writer = writer.option("codec", "gzip")
+        def convertToCSVString(seq: Seq[Any]): String = {
+          val build = new java.lang.StringBuilder()
+          if (seq.head != null) {
+            build.append(seq.head.toString)
+          }
+          val itemIter = seq.tail.iterator
+          while (itemIter.hasNext) {
+            build.append(CarbonCommonConstants.COMMA)
+            val value = itemIter.next()
+            if (value != null) {
+              build.append(value.toString)
+            }
+          }
+          build.toString
+        }
+
+        override def next: String = {
+          convertToCSVString(iter.next.toSeq)
+        }
+      }
     }
 
-    writer.save(tempCSVFolder)
+    if (options.compress) {
+      strRDD.saveAsTextFile(tempCSVFolder, classOf[GzipCodec])
+    } else {
+      strRDD.saveAsTextFile(tempCSVFolder)
+    }
   }
 
   /**
@@ -120,8 +140,6 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       null,
       Some(dataFrame)).run(sqlContext.sparkSession)
   }
-
-  private def csvPackage: String = "com.databricks.spark.csv.newapi"
 
   private def convertToCarbonType(sparkType: DataType): String = {
     sparkType match {
