@@ -155,8 +155,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    * Method which will resolve the filter expression by converting the filter
    * member to its assigned dictionary values.
    */
-  public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
-      throws FilterUnsupportedException {
+  public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) throws FilterUnsupportedException {
     DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = null;
     MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo = null;
     int index = 0;
@@ -174,10 +173,8 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           if (columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
             try {
               filterInfo.setFilterList(getDirectSurrogateValues(columnExpression));
-            }
-            catch (FilterUnsupportedException e)
-            {
-              FilterUtil.logFilterError(e,false);
+            } catch (FilterUnsupportedException e) {
+              FilterUtil.logFilterError(e, false);
               throw e;
             }
           } else {
