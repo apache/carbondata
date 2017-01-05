@@ -376,12 +376,12 @@ object GlobalDictionaryUtil {
       } else {
         carbonLoadModel.getCsvHeader
       }
-      val delimiter = if (carbonLoadModel.getCsvDelimiter == null) {
+      val delimiter = if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter)) {
         CarbonCommonConstants.COMMA
       } else {
         carbonLoadModel.getCsvDelimiter
       }
-      val quote = if (carbonLoadModel.getQuoteChar == null) {
+      val quote = if (StringUtils.isEmpty(carbonLoadModel.getQuoteChar)) {
         "\""
       } else {
         carbonLoadModel.getQuoteChar
