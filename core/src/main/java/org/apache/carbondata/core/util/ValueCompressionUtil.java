@@ -728,7 +728,6 @@ public final class ValueCompressionUtil {
     WriterCompressModel compressionModel = new WriterCompressModel();
     DataType[] actualType = new DataType[measureCount];
     DataType[] convertedType = new DataType[measureCount];
-    COMPRESSION_TYPE[] compType = new COMPRESSION_TYPE[measureCount];
     CompressionFinder[] compressionFinders = new CompressionFinder[measureCount];
     for (int i = 0; i < measureCount; i++) {
       CompressionFinder compresssionFinder =
@@ -737,13 +736,11 @@ public final class ValueCompressionUtil {
       compressionFinders[i] = compresssionFinder;
       actualType[i] = compresssionFinder.getActualDataType();
       convertedType[i] = compresssionFinder.getConvertedDataType();
-      compType[i] = compresssionFinder.getCompType();
     }
     compressionModel.setCompressionFinders(compressionFinders);
     compressionModel.setMaxValue(maxValue);
     compressionModel.setMantissa(mantissa);
     compressionModel.setConvertedDataType(convertedType);
-    compressionModel.setCompType(compType);
     compressionModel.setActualDataType(actualType);
     compressionModel.setMinValue(minValue);
     compressionModel.setUniqueValue(uniqueValue);
