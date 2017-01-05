@@ -70,30 +70,12 @@ import com.google.gson.Gson;
 import org.apache.spark.SparkConf;
 import org.apache.spark.util.Utils;
 
-
 public final class CarbonLoaderUtil {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
-  /**
-   * minimum no of blocklet required for distribution
-   */
-  private static int minBlockLetsReqForDistribution = 0;
-
-  static {
-    String property = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE);
-    try {
-      minBlockLetsReqForDistribution = Integer.parseInt(property);
-    } catch (NumberFormatException ne) {
-      LOGGER.info("Invalid configuration. Consisering the defaul");
-      minBlockLetsReqForDistribution =
-          CarbonCommonConstants.DEFAULT_CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE;
-    }
-  }
 
   private CarbonLoaderUtil() {
-
   }
 
   private static void generateGraph(IDataProcessStatus dataProcessTaskStatus, SchemaInfo info,
@@ -167,7 +149,6 @@ public final class CarbonLoaderUtil {
     dataProcessTaskStatus.setRddIteratorKey(loadModel.getRddIteratorKey());
     dataProcessTaskStatus.setDateFormat(loadModel.getDateFormat());
     SchemaInfo info = new SchemaInfo();
-
     info.setDatabaseName(databaseName);
     info.setTableName(tableName);
     info.setAutoAggregateRequest(loadModel.isAggLoadRequest());
@@ -367,15 +348,12 @@ public final class CarbonLoaderUtil {
 
     String tableStatusPath = carbonTablePath.getTableStatusFilePath();
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
-
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
-
     try {
       if (carbonLock.lockWithRetries()) {
         LOGGER.info(
             "Acquired lock for table" + loadModel.getDatabaseName() + "." + loadModel.getTableName()
                 + " for table status updation");
-
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
             SegmentStatusManager.readLoadMetadata(metaDataFilepath);
 
@@ -384,7 +362,6 @@ public final class CarbonLoaderUtil {
         loadMetadataDetails.setLoadStatus(loadStatus);
         loadMetadataDetails.setLoadName(String.valueOf(loadCount));
         loadMetadataDetails.setLoadStartTime(startLoadTime);
-
         List<LoadMetadataDetails> listOfLoadFolderDetails =
             new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 

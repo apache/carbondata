@@ -27,7 +27,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 
 /**
- * This class stores the block details of delete delta file
+ * This class stores the blocklet details of delete delta file
  */
 public class DeleteDeltaBlockletDetails implements Serializable {
 

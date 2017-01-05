@@ -852,36 +852,6 @@ public final class CarbonDataMergerUtil {
     return validAndInvalidSegments.getValidSegments();
   }
 
-  /**
-   * Combining the list of maps to one map.
-   *
-   * @param mapsOfNodeBlockMapping
-   * @return
-   */
-  public static Map<String, List<TableBlockInfo>> combineNodeBlockMaps(
-      List<Map<String, List<TableBlockInfo>>> mapsOfNodeBlockMapping) {
-
-    Map<String, List<TableBlockInfo>> combinedMap =
-        new HashMap<String, List<TableBlockInfo>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    // traverse list of maps.
-    for (Map<String, List<TableBlockInfo>> eachMap : mapsOfNodeBlockMapping) {
-      // traverse inside each map.
-      for (Map.Entry<String, List<TableBlockInfo>> eachEntry : eachMap.entrySet()) {
-
-        String node = eachEntry.getKey();
-        List<TableBlockInfo> blocks = eachEntry.getValue();
-
-        // if already that node detail exist in the combined map.
-        if (null != combinedMap.get(node)) {
-          List<TableBlockInfo> blocksAlreadyPresent = combinedMap.get(node);
-          blocksAlreadyPresent.addAll(blocks);
-        } else { // if its not present in map then put to map.
-          combinedMap.put(node, blocks);
-        }
-      }
-    }
-    return combinedMap;
-  }
 
   /**
    * Removing the already merged segments from list.

@@ -41,7 +41,7 @@ import org.apache.carbondata.core.carbon.path.CarbonTablePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.update.UpdateVO
 import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, CarbonUtilException}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.model.CarbonLoadModel
@@ -126,7 +126,7 @@ class CarbonMergerRDD[K, V](
             dataFileFooter = CarbonUtil
               .readMetadatFile(tableBlockInfoList.get(tableBlockInfoList.size() - 1))
           } catch {
-            case e: CarbonUtilException =>
+            case e: IOException =>
               logError("Exception in preparing the data file footer for compaction " + e.getMessage)
               throw e
           }

@@ -332,7 +332,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       FilterExpressionProcessor filterExpressionProcessor,
       AbsoluteTableIdentifier absoluteTableIdentifier, FilterResolverIntf resolver,
       String segmentId, CacheClient cacheClient, SegmentUpdateStatusManager updateStatusManager)
-      throws IndexBuilderException, IOException, CarbonUtilException {
+      throws IOException {
     QueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.createDriverRecorder();
     QueryStatistic statistic = new QueryStatistic();
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap =
@@ -341,22 +341,24 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
     List<DataRefNode> resultFilterredBlocks = new LinkedList<DataRefNode>();
 
-    // build result
-    for (AbstractIndex abstractIndex : segmentIndexMap.values()) {
-      List<DataRefNode> filterredBlocks;
-      // if no filter is given get all blocks from Btree Index
-      if (null == resolver) {
-        filterredBlocks = getDataBlocksOfIndex(abstractIndex);
-      } else {
-        // apply filter and get matching blocks
-        filterredBlocks = filterExpressionProcessor.getFilterredBlocks(
-            abstractIndex.getDataRefNode(),
-            resolver,
-            abstractIndex,
-            absoluteTableIdentifier
-        );
+    if (null != segmentIndexMap) {
+      // build result
+      for (AbstractIndex abstractIndex : segmentIndexMap.values()) {
+        List<DataRefNode> filterredBlocks;
+        // if no filter is given get all blocks from Btree Index
+        if (null == resolver) {
+          filterredBlocks = getDataBlocksOfIndex(abstractIndex);
+        } else {
+          // apply filter and get matching blocks
+          filterredBlocks = filterExpressionProcessor.getFilterredBlocks(
+                  abstractIndex.getDataRefNode(),
+                  resolver,
+                  abstractIndex,
+                  absoluteTableIdentifier
+          );
+        }
+        resultFilterredBlocks.addAll(filterredBlocks);
       }
-      resultFilterredBlocks.addAll(filterredBlocks);
     }
     statistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_DRIVER, System.currentTimeMillis());
@@ -452,8 +454,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    */
   private Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> getSegmentAbstractIndexs(
       JobContext job, AbsoluteTableIdentifier absoluteTableIdentifier, String segmentId,
-      CacheClient cacheClient, SegmentUpdateStatusManager updateStatusManager)
-      throws IOException, IndexBuilderException, CarbonUtilException {
+      CacheClient cacheClient, SegmentUpdateStatusManager updateStatusManager) throws IOException {
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap = null;
     SegmentTaskIndexWrapper segmentTaskIndexWrapper = null;
     List<String> updatedTaskList = null;
@@ -498,9 +499,16 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return segmentIndexMap;
   }
 
+  /**
+   * Get the row count of the Block and mapping of segment and Block count.
+   * @param job
+   * @param absoluteTableIdentifier
+   * @return
+   * @throws IOException
+   * @throws KeyGenException
+   */
   public BlockMappingVO getBlockRowCount(JobContext job,
-                                         AbsoluteTableIdentifier absoluteTableIdentifier)
-          throws IOException, CarbonUtilException, IndexBuilderException, KeyGenException {
+      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException, KeyGenException {
     CacheClient cacheClient = new CacheClient(absoluteTableIdentifier.getStorePath());
     try {
       SegmentUpdateStatusManager updateStatusManager =

@@ -19,6 +19,7 @@
 package org.apache.carbondata.hadoop.test.util;
 
 import com.google.gson.Gson;
+import org.apache.carbondata.core.update.CarbonUpdateUtil;
 import org.apache.hadoop.fs.Path;
 
 import org.apache.carbondata.core.cache.Cache;
@@ -407,7 +408,6 @@ public class StoreCreator {
   public static void writeLoadMetadata(CarbonDataLoadSchema schema, String databaseName,
       String tableName, List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
     LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
-   // loadMetadataDetails.setTimestamp(readCurrentTime());
     loadMetadataDetails.setLoadStatus("SUCCESS");
     loadMetadataDetails.setLoadName(String.valueOf(0));
     loadMetadataDetails.setLoadStartTime(loadMetadataDetails.getTimeStamp(readCurrentTime()));
@@ -469,7 +469,7 @@ public class StoreCreator {
     model.setTableName(dataProcessTaskStatus.getTableName());
     model.setTaskNo("1");
     model.setBlocksID(dataProcessTaskStatus.getBlocksID());
-    model.setFactTimeStamp(readCurrentTime());
+    model.setFactTimeStamp(System.currentTimeMillis() + "");
     model.setEscapeCharacter(dataProcessTaskStatus.getEscapeCharacter());
     model.setQuoteCharacter(dataProcessTaskStatus.getQuoteCharacter());
     model.setCommentCharacter(dataProcessTaskStatus.getCommentCharacter());
@@ -542,6 +542,7 @@ public class StoreCreator {
     public void setDatabaseName(String databaseName) {
       this.databaseName = databaseName;
     }
+
 
   }
 

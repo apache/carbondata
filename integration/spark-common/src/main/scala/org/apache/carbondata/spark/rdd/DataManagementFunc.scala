@@ -372,7 +372,6 @@ object DataManagementFunc {
         LOGGER.audit(errorMsg)
         LOGGER.error(errorMsg)
         throw new Exception(errorMsg + " Please try after some time.")
-
       }
     } finally {
       CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)

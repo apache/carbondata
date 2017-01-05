@@ -47,17 +47,15 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
 
   private FileFactory.FileType fileType;
 
-  DataInputStream dataInputStream = null;
+  private DataInputStream dataInputStream = null;
 
-  BufferedReader buffReader = null;
+  private BufferedReader buffReader = null;
 
-  InputStreamReader inputStream = null;
+  private InputStreamReader inputStream = null;
 
   private static final int DEFAULT_BUFFER_SIZE = 258;
 
   /**
-   * Constructor
-   *
    * @param filePath
    * @param fileType
    */
@@ -91,6 +89,11 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
     return sw.toString();
   }
 
+  /**
+   * Reads delete delta file (json file) and returns DeleteDeltaBlockDetails
+   * @return DeleteDeltaBlockDetails
+   * @throws IOException
+   */
   @Override public DeleteDeltaBlockDetails readJson() throws IOException {
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;

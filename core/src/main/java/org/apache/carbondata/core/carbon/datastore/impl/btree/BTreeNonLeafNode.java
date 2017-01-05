@@ -29,8 +29,6 @@ import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 
-
-
 /**
  * No leaf node of a b+tree class which will keep the matadata(start key) of the
  * leaf node

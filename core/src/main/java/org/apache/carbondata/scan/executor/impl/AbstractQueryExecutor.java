@@ -118,15 +118,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // remove the invalid table blocks, block which is deleted or compacted
     cache.removeTableBlocks(queryModel.getInvalidSegmentIds(),
         queryModel.getAbsoluteTableIdentifier());
-    try {
-      List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
-          prepareTableBlockUniqueIdentifier(queryModel.getTableBlockInfos(),
-              queryModel.getAbsoluteTableIdentifier());
-      cache.removeTableBlocksIfHorizontalCompactionDone(queryModel);
-      queryProperties.dataBlocks = cache.getAll(tableBlockUniqueIdentifiers);
-    } catch (CarbonUtilException e) {
-      throw new QueryExecutionException(e);
-    }
+    List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
+        prepareTableBlockUniqueIdentifier(queryModel.getTableBlockInfos(),
+            queryModel.getAbsoluteTableIdentifier());
+    cache.removeTableBlocksIfHorizontalCompactionDone(queryModel);
+    queryProperties.dataBlocks = cache.getAll(tableBlockUniqueIdentifiers);
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
@@ -288,6 +284,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .setTotalNumberDimensionBlock(segmentProperties.getDimensionOrdinalToBlockMapping().size());
     blockExecutionInfo
         .setTotalNumberOfMeasureBlock(segmentProperties.getMeasuresOrdinalToBlockMapping().size());
+    blockExecutionInfo.setAbsoluteTableIdentifier(queryModel.getAbsoluteTableIdentifier());
     blockExecutionInfo.setComplexDimensionInfoMap(QueryUtil
         .getComplexDimensionsMap(updatedQueryDimension,
             segmentProperties.getDimensionOrdinalToBlockMapping(),

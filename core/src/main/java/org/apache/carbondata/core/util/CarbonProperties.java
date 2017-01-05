@@ -546,6 +546,11 @@ public final class CarbonProperties {
         String.valueOf(executorStartUpTimeOut));
     LOGGER.info("Executor start up wait time: " + executorStartUpTimeOut);
   }
+
+  /**
+   * Returns configured update deleta files value for IUD compaction
+   * @return numberOfDeltaFilesThreshold
+   */
   public int getNoUpdateDeltaFilesThresholdForIUDCompaction() {
     int numberOfDeltaFilesThreshold;
     try {
@@ -572,6 +577,10 @@ public final class CarbonProperties {
     return numberOfDeltaFilesThreshold;
   }
 
+  /**
+   * Returns configured delete deleta files value for IUD compaction
+   * @return numberOfDeltaFilesThreshold
+   */
   public int getNoDeleteDeltaFilesThresholdForIUDCompaction() {
     int numberOfDeltaFilesThreshold;
     try {
