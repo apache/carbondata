@@ -853,24 +853,20 @@ public final class CarbonUtil {
 
   /**
    * The method calculate the B-Tree metadata size.
-   * @param filePath
-   * @param blockOffset
-   * @param blockLength
+   * @param tableBlockInfo
    * @return
    */
-  public static long calculateMetaSize(String filePath, long blockOffset, long blockLength)
-      throws IOException {
+  public static long calculateMetaSize(TableBlockInfo tableBlockInfo) throws IOException {
     FileHolder fileReader = null;
     try {
-      long completeBlockLength = blockOffset + blockLength;
+      long completeBlockLength = tableBlockInfo.getBlockLength();
       long footerPointer = completeBlockLength - 8;
+      String filePath = tableBlockInfo.getFilePath();
       fileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath));
       long actualFooterOffset = fileReader.readLong(filePath, footerPointer);
-      long size = footerPointer - actualFooterOffset;
-      return size;
-    }
-    finally {
-      if(null != fileReader) {
+      return footerPointer - actualFooterOffset;
+    } finally {
+      if (null != fileReader) {
         try {
           fileReader.finish();
         } catch (IOException e) {
