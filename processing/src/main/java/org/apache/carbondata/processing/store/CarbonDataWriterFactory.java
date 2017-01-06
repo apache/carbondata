@@ -65,7 +65,7 @@ public class CarbonDataWriterFactory {
       case V1:
         return new CarbonFactDataWriterImplV1(carbonDataWriterVo);
       default:
-          return new CarbonFactDataWriterImplV2(carbonDataWriterVo);
+        return new CarbonFactDataWriterImplV2(carbonDataWriterVo);
     }
   }
 
