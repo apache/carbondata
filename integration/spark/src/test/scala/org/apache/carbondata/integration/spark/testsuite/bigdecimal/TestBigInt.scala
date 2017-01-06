@@ -40,6 +40,19 @@ class TestBigInt extends QueryTest with BeforeAndAfterAll {
     sql("create table if not exists hiveTable(ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary bigint)row format delimited fields terminated by ','")
     sql("LOAD DATA LOCAL INPATH './src/test/resources/bigIntDataWithHeader.csv' into table carbonTable")
     sql("LOAD DATA local inpath './src/test/resources/bigIntDataWithoutHeader.csv' INTO table hiveTable")
+
+    sql("drop table if exists carbonTable2")
+    sql("drop table if exists hiveTable2")
+    sql("CREATE TABLE IF NOT EXISTS carbonTable2 (ID Int, date Timestamp, country String, name " +
+      "String, phonetype String, serialname String, salary bigint)STORED BY 'org.apache.carbondata.format'")
+    sql("create table if not exists hiveTable2(ID Int, date Timestamp, country String, name " +
+      "String, phonetype String, serialname String, salary bigint)row format delimited fields terminated by ','")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/bigIntWithDecimalWithHeader.csv' into table" +
+      " " +
+      "carbonTable2")
+    sql("LOAD DATA local inpath './src/test/resources/bigIntWithDecimalWithoutHeader.csv' INTO " +
+      "table " +
+      "hiveTable2")
   }
 
   test("test detail query on big int column") {
@@ -82,9 +95,16 @@ class TestBigInt extends QueryTest with BeforeAndAfterAll {
       sql("select count(distinct salary) from hiveTable"))
   }
 
+  test("test load decimal to big int column") {
+    checkAnswer(sql("select id from carbonTable2 order by id"),
+      sql("select id from hiveTable2 order by id"))
+  }
+
   override def afterAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
+    sql("drop table if exists carbonTable2")
+    sql("drop table if exists hiveTable2")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }

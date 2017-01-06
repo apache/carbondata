@@ -92,7 +92,12 @@ public final class DataTypeUtil {
       case INT:
         return Double.valueOf(msrValue).longValue();
       case LONG:
-        return Long.valueOf(msrValue);
+        int index = msrValue.indexOf(".");
+        if (index != -1) {
+          return Long.valueOf(msrValue.substring(0,index));
+        } else {
+          return Long.valueOf(msrValue);
+        }
       default:
         Double parsedValue = Double.valueOf(msrValue);
         if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
