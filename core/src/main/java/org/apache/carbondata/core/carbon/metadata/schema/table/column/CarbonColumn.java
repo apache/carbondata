@@ -153,6 +153,14 @@ public class CarbonColumn implements Serializable {
   }
 
   /**
+   * return the visibility
+   * @return
+   */
+  public boolean isInvisible() {
+    return columnSchema.isInvisible();
+  }
+
+  /**
    * @return if column use inverted index return true, else false.
    */
   public Boolean isUseInvertedIndex() {

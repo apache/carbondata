@@ -21,6 +21,7 @@ package org.apache.carbondata.core.carbon.datastore.impl.btree;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.common.iudprocessor.cache.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.datastore.IndexKey;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
@@ -33,6 +34,13 @@ import org.apache.carbondata.core.datastorage.store.FileHolder;
  * leaf node
  */
 public class BTreeNonLeafNode implements BTreeNode {
+
+  /**
+   * Below method will be used to load the data block
+   *
+   * @param blockInfo block detail
+   */
+  protected BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache;
 
   /**
    * Child nodes
@@ -223,5 +231,19 @@ public class BTreeNonLeafNode implements BTreeNode {
     // intermediate
     // node will be used only for searching the leaf node
     throw new UnsupportedOperationException("Unsupported operation");
+  }
+
+  /**
+   * @return the segmentProperties
+   */
+  public void setDeleteDeltaDataCache(BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache) {
+
+    this.deleteDeltaDataCache = deleteDeltaDataCache;
+  }
+  /**
+   * @return the segmentProperties
+   */
+  public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
+    return deleteDeltaDataCache;
   }
 }

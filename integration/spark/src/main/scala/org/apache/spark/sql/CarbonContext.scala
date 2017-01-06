@@ -56,6 +56,7 @@ class CarbonContext(
 
   CarbonContext.addInstance(sc, this)
   CodeGenerateFactory.init(sc.version)
+  udf.register("getTupleId", () => "")
   CarbonEnv.init(this)
 
   var lastSchemaUpdatedTime = System.currentTimeMillis()
@@ -77,6 +78,7 @@ class CarbonContext(
       override val extendedResolutionRules =
         catalog.ParquetConversions ::
         catalog.CreateTables ::
+        CarbonIUDAnalysisRule ::
         CarbonPreInsertionCasts ::
         ExtractPythonUDFs ::
         ResolveHiveWindowFunction ::
@@ -182,4 +184,8 @@ object CarbonContext {
     }
     cache(sc) = cc
   }
+}
+
+object SQLParser {
+  def parse(sql: String, sqlContext: SQLContext): LogicalPlan = sqlContext.parseSql(sql)
 }

@@ -36,8 +36,10 @@ import org.apache.spark.sql.hive.execution.{DropTable, HiveNativeCommand}
 import org.apache.spark.sql.hive.execution.command._
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types.IntegerType
+import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
@@ -93,12 +95,22 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         relation.carbonRelation.metaData.carbonTable.getFactTableName.toLowerCase
       // Check out any expressions are there in project list. if they are present then we need to
       // decode them as well.
-
-      val projectSet = AttributeSet(projectList.flatMap(_.references))
+      val newProjectList = projectList.map { element =>
+        element match {
+          case a@Alias(s: ScalaUDF, name)
+            if (name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
+              name.equalsIgnoreCase(
+                CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)) =>
+            AttributeReference(name, StringType, true)().withExprId(a.exprId)
+          case other => other
+        }
+      }
+      val projectSet = AttributeSet(newProjectList.flatMap(_.references))
       val filterSet = AttributeSet(predicates.flatMap(_.references))
-
-      val scan = CarbonScan(projectSet.toSeq, relation.carbonRelation, predicates)(sqlContext)
-      projectList.map {
+      val scan = CarbonScan(projectSet.toSeq,
+        relation.carbonRelation,
+        predicates)(sqlContext)
+      newProjectList.map {
         case attr: AttributeReference =>
         case Alias(attr: AttributeReference, _) =>
         case others =>
@@ -135,7 +147,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         // just do a scan with no extra project.
         scanWithDecoder
       } else {
-        Project(projectList, scanWithDecoder)
+        Project(newProjectList, scanWithDecoder)
       }
     }
 
@@ -247,7 +259,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       case ShowLoadsCommand(databaseName, table, limit) =>
         ExecutedCommand(ShowLoads(databaseName, table, limit, plan.output)) :: Nil
       case LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
-      options, isOverwriteExist, inputSqlString, dataFrame) =>
+      options, isOverwriteExist, inputSqlString, dataFrame, _) =>
         val isCarbonTable = CarbonEnv.get.carbonMetastore
             .tableExists(TableIdentifier(tableName, databaseNameOp))(sqlContext)
         if (isCarbonTable || options.nonEmpty) {

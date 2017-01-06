@@ -18,12 +18,18 @@
  */
 package org.apache.carbondata.spark.testsuite.detailquery
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 import org.apache.spark.sql.Row
 
 class ColumnPropertyValidationTestCase extends QueryTest with BeforeAndAfterAll {
+  override def beforeAll {
+    sql("""drop table if exists employee""")
+  }
+
   test("Validate ColumnProperties_ valid key") {
      try {
        sql("create table employee(empname String,empid String,city String,country String,gender String,salary Double) stored by 'org.apache.carbondata.format' tblproperties('columnproperties.gender.key'='value')")
@@ -42,5 +48,4 @@ class ColumnPropertyValidationTestCase extends QueryTest with BeforeAndAfterAll 
        case e: Throwable =>assert(true)
      }
   }
-  
 }

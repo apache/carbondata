@@ -22,6 +22,9 @@ import java.io.File
 
 import scala.collection.JavaConverters._
 
+import org.apache.carbondata.core.carbon.path.CarbonStorePath
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -33,7 +36,6 @@ import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.CacheClient
-import org.apache.carbondata.lcm.status.SegmentStatusManager
 
 /**
   * FT for compaction scenario where major segment should not be included in minor.
@@ -69,7 +71,6 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     // compaction will happen here.
     sql("alter table ignoremajor compact 'major'"
     )
-    if (checkCompactionCompletedOrNot("0.1")) {
       sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE ignoremajor OPTIONS" +
         "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
       )
@@ -78,49 +79,9 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       )
       sql("alter table ignoremajor compact 'minor'"
       )
-      if (checkCompactionCompletedOrNot("2.1")) {
-        sql("alter table ignoremajor compact 'minor'"
-        )
-      }
-
-    }
 
   }
 
-  /**
-    * Check if the compaction is completed or not.
-    *
-    * @param requiredSeg
-    * @return
-    */
-  def checkCompactionCompletedOrNot(requiredSeg: String): Boolean = {
-    var status = false
-    var noOfRetries = 0
-    while (!status && noOfRetries < 10) {
-
-      val identifier = new AbsoluteTableIdentifier(
-            CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-            new CarbonTableIdentifier(
-              CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", noOfRetries + "")
-          )
-      val segments = SegmentStatusManager.getSegmentStatus(identifier)
-          .getValidSegments.asScala.toList
-      segments.foreach(seg =>
-        System.out.println( "valid segment is =" + seg)
-      )
-
-      if (!segments.contains(requiredSeg)) {
-        // wait for 2 seconds for compaction to complete.
-        System.out.println("sleping for 2 seconds.")
-        Thread.sleep(2000)
-        noOfRetries += 1
-      }
-      else {
-        status = true
-      }
-    }
-    return status
-  }
 
   /**
     * Test whether major compaction is not included in minor compaction.
@@ -134,9 +95,10 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
           new CarbonTableIdentifier(
             CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr")
         )
+    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+
     // merged segment should not be there
-    val segments = SegmentStatusManager.getSegmentStatus(identifier)
-        .getValidSegments.asScala.toList
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
     assert(segments.contains("0.1"))
     assert(segments.contains("2.1"))
     assert(!segments.contains("2"))
@@ -171,7 +133,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     val segs = SegmentStatusManager.readLoadMetadata(carbontablePath)
 
     // status should remain as compacted.
-    assert(segs(3).getLoadStatus.equalsIgnoreCase(CarbonCommonConstants.SEGMENT_COMPACTED))
+    assert(segs(3).getLoadStatus.equalsIgnoreCase(CarbonCommonConstants.COMPACTED))
 
   }
 
@@ -193,7 +155,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     val segs = SegmentStatusManager.readLoadMetadata(carbontablePath)
 
     // status should remain as compacted for segment 2.
-    assert(segs(3).getLoadStatus.equalsIgnoreCase(CarbonCommonConstants.SEGMENT_COMPACTED))
+    assert(segs(3).getLoadStatus.equalsIgnoreCase(CarbonCommonConstants.COMPACTED))
     // for segment 0.1 . should get deleted
     assert(segs(2).getLoadStatus.equalsIgnoreCase(CarbonCommonConstants.MARKED_FOR_DELETE))
 

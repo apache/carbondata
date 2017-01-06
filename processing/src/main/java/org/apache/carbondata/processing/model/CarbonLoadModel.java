@@ -29,6 +29,8 @@ import java.util.List;
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.load.LoadMetadataDetails;
+import org.apache.carbondata.core.update.SegmentUpdateDetails;
+import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager;
 
 public class CarbonLoadModel implements Serializable {
   /**
@@ -68,6 +70,8 @@ public class CarbonLoadModel implements Serializable {
 
   private boolean isDirectLoad;
   private List<LoadMetadataDetails> loadMetadataDetails;
+  private transient List<SegmentUpdateDetails> segmentUpdateDetails;
+  private transient SegmentUpdateStatusManager segmentUpdateStatusManager;
 
   private String blocksID;
 
@@ -132,6 +136,16 @@ public class CarbonLoadModel implements Serializable {
    * the key of RDD Iterator in RDD iterator Map
    */
   private String rddIteratorKey;
+
+  private String carbondataFileName = "";
+
+  public String getCarbondataFileName() {
+    return carbondataFileName;
+  }
+
+  public void setCarbondataFileName(String carbondataFileName) {
+    this.carbondataFileName = carbondataFileName;
+  }
 
   /**
    *  Use one pass to generate dictionary
@@ -495,6 +509,41 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
+   * getSegmentUpdateDetails
+   * @return
+   */
+  public List<SegmentUpdateDetails> getSegmentUpdateDetails() {
+    return segmentUpdateDetails;
+  }
+
+  /**
+   * setSegmentUpdateDetails
+   *
+   * @param segmentUpdateDetails
+   */
+  public void setSegmentUpdateDetails(List<SegmentUpdateDetails> segmentUpdateDetails) {
+    this.segmentUpdateDetails = segmentUpdateDetails;
+  }
+
+  /**
+   * getSegmentUpdateStatusManager
+   * @return
+   */
+  public SegmentUpdateStatusManager getSegmentUpdateStatusManager() {
+    return segmentUpdateStatusManager;
+  }
+
+  /**
+   * setSegmentUpdateStatusManager
+   *
+   * @param segmentUpdateStatusManager
+   */
+  public void setSegmentUpdateStatusManager(SegmentUpdateStatusManager segmentUpdateStatusManager) {
+    this.segmentUpdateStatusManager = segmentUpdateStatusManager;
+  }
+
+
+  /**
    * @return
    */
   public String getTaskNo() {
@@ -518,8 +567,8 @@ public class CarbonLoadModel implements Serializable {
   /**
    * @param factTimeStamp
    */
-  public void setFactTimeStamp(String factTimeStamp) {
-    this.factTimeStamp = factTimeStamp;
+  public void setFactTimeStamp(long factTimeStamp) {
+    this.factTimeStamp = factTimeStamp + "";
   }
 
   public String[] getDelimiters() {

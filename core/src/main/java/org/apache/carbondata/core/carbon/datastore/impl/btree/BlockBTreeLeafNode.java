@@ -45,7 +45,7 @@ public class BlockBTreeLeafNode extends AbstractBTreeLeafNode {
     BlockletMinMaxIndex minMaxIndex = footer.getBlockletIndex().getMinMaxIndex();
     maxKeyOfColumns = minMaxIndex.getMaxValues();
     minKeyOfColumns = minMaxIndex.getMinValues();
-    numberOfKeys = 1;
+    numberOfKeys = (int)footer.getNumberOfRows();
     this.nodeNumber = nodeNumber;
     this.blockInfo = footer.getBlockInfo();
   }

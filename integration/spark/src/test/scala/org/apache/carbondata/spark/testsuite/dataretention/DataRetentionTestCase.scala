@@ -22,6 +22,8 @@ package org.apache.carbondata.spark.testsuite.dataretention
 import java.io.File
 import java.text.SimpleDateFormat
 
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
+import org.apache.carbondata.locks.{LockUsage, CarbonLockFactory, ICarbonLock}
 import org.apache.commons.lang3.time.DateUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
@@ -33,8 +35,6 @@ import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableId
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.LoadMetadataDetails
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.lcm.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
-import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 /**
@@ -114,7 +114,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   private def getSegmentStartTime(segments: Array[LoadMetadataDetails],
       segmentId: Integer): String = {
     val segmentLoadTimeString = segments(segmentId).getLoadStartTime()
-    var loadTime = carbonDateFormat.parse(segmentLoadTimeString)
+    var loadTime = carbonDateFormat.parse(carbonDateFormat.format(segmentLoadTimeString))
     // add one min to execute delete before load start time command
     loadTime = DateUtils.addMinutes(loadTime, 1)
     defaultDateFormat.format(loadTime)

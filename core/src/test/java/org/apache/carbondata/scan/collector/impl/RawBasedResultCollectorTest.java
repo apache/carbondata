@@ -125,6 +125,9 @@ public class RawBasedResultCollectorTest {
       @SuppressWarnings("unused") @Mock byte[][] getComplexTypeKeyArray() {
         return new byte[][] { { 1, 2 }, { 1, 2 } };
       }
+      @SuppressWarnings("unused") @Mock String getBlockletId() {
+        return "0/0/0-1234567/0";
+      }
 
       @SuppressWarnings("unused") @Mock public MeasureColumnDataChunk getMeasureChunk(int ordinal) {
         MeasureColumnDataChunk measureColumnDataChunk = new MeasureColumnDataChunk();

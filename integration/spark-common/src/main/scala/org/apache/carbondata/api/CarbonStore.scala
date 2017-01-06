@@ -30,7 +30,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.lcm.status.SegmentStatusManager
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.DataManagementFunc
 
@@ -68,8 +68,8 @@ object CarbonStore {
             Row(
               load.getLoadName,
               load.getLoadStatus,
-              new java.sql.Timestamp(parser.parse(load.getLoadStartTime).getTime),
-              new java.sql.Timestamp(parser.parse(load.getTimestamp).getTime)
+              new java.sql.Timestamp(load.getLoadStartTime),
+              new java.sql.Timestamp(load.getLoadEndTime)
             )
           }.toSeq
     } else {
@@ -160,8 +160,10 @@ object CarbonStore {
       tableName: String,
       segmentId: String): Boolean = {
     val identifier = AbsoluteTableIdentifier.from(dbName, tableName)
-    val status = SegmentStatusManager.getSegmentStatus(identifier)
-    status.isValid(segmentId)
+    val validAndInvalidSegments: SegmentStatusManager.ValidAndInvalidSegmentsInfo = new
+        SegmentStatusManager(
+          identifier).getValidAndInvalidSegments
+    return validAndInvalidSegments.getValidSegments.contains(segmentId)
   }
 
   private def validateTimeFormat(timestamp: String): Long = {

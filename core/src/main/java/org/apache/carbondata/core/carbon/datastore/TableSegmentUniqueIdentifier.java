@@ -42,6 +42,7 @@ public class TableSegmentUniqueIdentifier {
   Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos;
 
   private String segmentId;
+  private  boolean isSegmentUpdated;
 
   /**
    * Constructor to initialize the class instance
@@ -101,10 +102,17 @@ public class TableSegmentUniqueIdentifier {
    */
   public String getUniqueTableSegmentIdentifier() {
     CarbonTableIdentifier carbonTableIdentifier =
-        absoluteTableIdentifier.getCarbonTableIdentifier();
-    return carbonTableIdentifier.getDatabaseName()
-        + CarbonCommonConstants.FILE_SEPARATOR + carbonTableIdentifier
-        .getTableId() + CarbonCommonConstants.FILE_SEPARATOR + segmentId;
+            absoluteTableIdentifier.getCarbonTableIdentifier();
+    return carbonTableIdentifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR
+            + carbonTableIdentifier.getTableName() + CarbonCommonConstants.UNDERSCORE
+            + carbonTableIdentifier.getTableId() + CarbonCommonConstants.FILE_SEPARATOR + segmentId;
+  }
+  public void setIsSegmentUpdated(boolean isSegmentUpdated) {
+    this.isSegmentUpdated=isSegmentUpdated;
+  }
+
+  public boolean isSegmentUpdated() {
+    return isSegmentUpdated;
   }
 
   /**

@@ -19,6 +19,8 @@
 package org.apache.carbondata.lcm.locks;
 
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
+import org.apache.carbondata.locks.LocalFileLock;
+import org.apache.carbondata.locks.LockUsage;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

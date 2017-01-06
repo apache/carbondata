@@ -199,6 +199,16 @@ public final class CarbonCommonConstants {
    * FACT_FILE_EXT
    */
   public static final String FACT_FILE_EXT = ".carbondata";
+
+  /**
+   * DELETE_DELTA_FILE_EXT
+   */
+  public static final String DELETE_DELTA_FILE_EXT = ".deletedelta";
+
+  /**
+   * UPDATE_DELTA_FILE_EXT
+   */
+  public static final String UPDATE_DELTA_FILE_EXT = FACT_FILE_EXT;
   /**
    * MEASUREMETADATA_FILE_EXT
    */
@@ -437,6 +447,10 @@ public final class CarbonCommonConstants {
    */
   public static final String STORE_LOADSTATUS_SUCCESS = "Success";
   /**
+   * LOAD_STATUS UPDATE
+   */
+  public static final String STORE_LOADSTATUS_UPDATE = "Update";
+  /**
    * LOAD_STATUS FAILURE
    */
   public static final String STORE_LOADSTATUS_FAILURE = "Failure";
@@ -448,6 +462,10 @@ public final class CarbonCommonConstants {
    * LOAD_STATUS
    */
   public static final String CARBON_METADATA_EXTENSION = ".metadata";
+  /**
+   * LOAD_STATUS
+   */
+  public static final String CARBON_DEFAULT_STREAM_ENCODEFORMAT = "UTF-8";
   /**
    * COMMA
    */
@@ -476,6 +494,11 @@ public final class CarbonCommonConstants {
    * CARBON_TIMESTAMP
    */
   public static final String CARBON_TIMESTAMP = "dd-MM-yyyy HH:mm:ss";
+
+  /**
+   * CARBON_TIMESTAMP
+   */
+  public static final String CARBON_TIMESTAMP_MILLIS = "dd-MM-yyyy HH:mm:ss:SSS";
   /**
    * NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK
    */
@@ -533,6 +556,7 @@ public final class CarbonCommonConstants {
   /**
    * FACT_UPDATE_EXTENSION.
    */
+  public static final String FACT_UPDATE_EXTENSION = ".carbondata_update";
   public static final String FACT_DELETE_EXTENSION = "_delete";
   /**
    * MARKED_FOR_UPDATION
@@ -547,6 +571,10 @@ public final class CarbonCommonConstants {
    */
   public static final String LOADMETADATA_FILENAME = "tablestatus";
   /**
+   * TABLE UPDATE STATUS FILENAME
+   */
+  public static final String TABLEUPDATESTATUS_FILENAME = "tableupdatestatus";
+  /**
    * INMEMORY_REOCRD_SIZE
    */
   public static final String DETAIL_QUERY_BATCH_SIZE = "carbon.detail.batch.size";
@@ -556,10 +584,21 @@ public final class CarbonCommonConstants {
    */
   public static final String SCHEMAS_MODIFIED_TIME_FILE = "modifiedTime.mdt";
   public static final String DEFAULT_INVISIBLE_DUMMY_MEASURE = "default_dummy_measure";
+  public static final String CARBON_IMPLICIT_COLUMN_POSITIONID = "positionId";
+  public static final String CARBON_IMPLICIT_COLUMN_TUPLEID = "tupleId";
   /**
    * max driver lru cache size upto which lru cache will be loaded in memory
    */
   public static final String CARBON_MAX_DRIVER_LRU_CACHE_SIZE = "carbon.max.driver.lru.cache.size";
+  public static final String POSITION_REFERENCE = "positionReference";
+  /**
+   * implicit column which will be added to each carbon table
+   */
+  public static final String POSITION_ID = "positionId";
+  /**
+   * max driver lru cache size upto which lru cache will be loaded in memory
+   */
+  public static final String CARBON_MAX_LEVEL_CACHE_SIZE = "carbon.max.level.cache.size";
   /**
    * max executor lru cache size upto which lru cache will be loaded in memory
    */
@@ -773,9 +812,9 @@ public final class CarbonCommonConstants {
   public static final long CARBON_256MB = 256*1024*1024;
 
   /**
-   * SEGMENT_COMPACTED is property to indicate whether seg is compacted or not.
+   * COMPACTED is property to indicate whether seg is compacted or not.
    */
-  public static final String SEGMENT_COMPACTED = "Compacted";
+  public static final String COMPACTED = "Compacted";
 
   /**
    * ZOOKEEPERLOCK TYPE
@@ -811,6 +850,30 @@ public final class CarbonCommonConstants {
    * Default count for Number of segments to be merged in levels is 4,3
    */
   public static final String DEFAULT_SEGMENT_LEVEL_THRESHOLD = "4,3";
+
+  /**
+   * Number of Update Delta files which is the Threshold for IUD compaction.
+   * Only accepted Range is 0 - 10000. Outside this range system will pick default value.
+   */
+  public static final String UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION =
+          "carbon.horizontal.update.compaction.threshold";
+  /**
+   * Default count of segments which act as a threshold for IUD compaction merge.
+   */
+  public static final String DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION = "1";
+
+
+  /**
+   * Number of Delete Delta files which is the Threshold for IUD compaction.
+   * Only accepted Range is 0 - 10000. Outside this range system will pick default value.
+   */
+  public static final String DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION  =
+      "carbon.horizontal.delete.compaction.threshold";
+  /**
+   * Default count of segments which act as a threshold for IUD compaction merge.
+   */
+  public static final String DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION = "1";
+
 
   /**
    * default location of the carbon metastore db
@@ -883,6 +946,57 @@ public final class CarbonCommonConstants {
    * carbon data file version property
    */
   public static final String CARBON_DATA_FILE_VERSION = "carbon.data.file.version";
+
+  /**
+   * property to set is IS_DRIVER_INSTANCE
+   */
+  public static final String UPDATE_INDEX_FILE_EXT = ".carbonindex";
+
+  /**
+   * Key word for true
+   */
+  public static final String KEYWORD_TRUE = "TRUE";
+
+  /**
+   * Key word for false
+   */
+  public static final String KEYWORD_FALSE = "FALSE";
+
+  /**
+   * hyphen
+   */
+  public static final String HYPHEN = "-";
+
+  /**
+   * columns which gets updated in update will have header ends with this extension.
+   */
+  public static String UPDATED_COL_EXTENSION = "-updatedColumn";
+
+  /**
+   * appending the key to differentiate the update flow with insert flow.
+   */
+  public static String RDDUTIL_UPDATE_KEY = "UPDATE_";
+
+  /**
+   * to determine to use the rdd persist or not.
+   */
+  public static String isPersistEnabled = "carbon.update.persist.enable";
+
+  /**
+   * for enabling or disabling Horizontal Compaction.
+   */
+  public static String isHorizontalCompactionEnabled = "carbon.horizontal.compaction.enable";
+
+  /**
+   * Default value for HorizontalCompaction is true.
+   */
+  public static String defaultIsHorizontalCompactionEnabled = "true";
+
+  /**
+   * by default rdd will be persisted in the update case.
+   */
+  public static String defaultValueIsPersistEnabled = "true";
+
   /**
    * current data file version
    */
@@ -974,6 +1088,12 @@ public final class CarbonCommonConstants {
    * property to set is IS_DRIVER_INSTANCE
    */
   public static final String IS_DRIVER_INSTANCE = "is.driver.instance";
+
+  /**
+   * maximum length of column
+   */
+  public static final int DEFAULT_COLUMN_LENGTH = 100000;
+
   private CarbonCommonConstants() {
   }
 }

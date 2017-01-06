@@ -81,6 +81,7 @@ case class CarbonScan(
     }
 
     val columns = carbonTable.getCreateOrderColumn(carbonTable.getFactTableName)
+    columns.addAll(carbonTable.getImplicitDimensionByTableName(carbonTable.getFactTableName))
     val colAttr = new Array[Attribute](columns.size())
     columnProjection.foreach { attr =>
     val column =

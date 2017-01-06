@@ -28,12 +28,14 @@ import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.execution.command.ProjectForUpdateCommand
 import org.apache.spark.sql.execution.RunnableCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{IntegerType, StringType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.apache.carbondata.spark.{CarbonAliasDecoderRelation, CarbonFilters}
 
@@ -72,12 +74,14 @@ object CarbonOptimizer {
 class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
   extends Rule[LogicalPlan] with PredicateHelper {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-  def apply(plan: LogicalPlan): LogicalPlan = {
-    if (relations.nonEmpty && !isOptimized(plan)) {
+  def apply(logicalPlan: LogicalPlan): LogicalPlan = {
+    if (relations.nonEmpty && !isOptimized(logicalPlan)) {
+      val plan = processPlan(logicalPlan)
+      val udfTransformedPlan = pushDownUDFToJoinLeftRelation(plan)
       LOGGER.info("Starting to optimize plan")
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("")
       val queryStatistic = new QueryStatistic()
-      val result = transformCarbonPlan(plan, relations)
+      val result = transformCarbonPlan(udfTransformedPlan, relations)
       queryStatistic.addStatistics("Time taken for Carbon Optimizer to optimize: ",
         System.currentTimeMillis)
       recorder.recordStatistics(queryStatistic)
@@ -85,10 +89,56 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
       result
     } else {
       LOGGER.info("Skip CarbonOptimizer")
-      plan
+      logicalPlan
     }
   }
 
+  private def processPlan(plan: LogicalPlan): LogicalPlan = {
+    plan transform {
+      case ProjectForUpdate(table, cols, Seq(updatePlan)) =>
+        var isTransformed = false
+        val newPlan = updatePlan transform {
+          case Project(pList, child) if (!isTransformed) =>
+            val (dest: Seq[NamedExpression], source: Seq[NamedExpression]) = pList
+              .splitAt(pList.size - cols.size)
+            val diff = cols.diff(dest.map(_.name))
+            if (diff.size > 0) {
+              sys.error(s"Unknown column(s) ${diff.mkString(",")} in table ${table.tableName}")
+            }
+            isTransformed = true
+            Project(dest.filter(a => !cols.contains(a.name)) ++ source, child)
+        }
+        ProjectForUpdateCommand(newPlan, table.tableIdentifier)
+    }
+  }
+  private def pushDownUDFToJoinLeftRelation(plan: LogicalPlan): LogicalPlan = {
+    val output = plan match {
+      case proj@Project(cols, Join(
+      left, right, jointype: org.apache.spark.sql.catalyst.plans.JoinType, condition)) =>
+        var projectionToBeAdded: Seq[org.apache.spark.sql.catalyst.expressions.Alias] = Seq.empty
+        val newCols = cols.map { col =>
+          col match {
+            case a@Alias(s: ScalaUDF, name)
+              if (name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
+                name.equalsIgnoreCase(
+                  CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)) =>
+              projectionToBeAdded :+= a
+              AttributeReference(name, StringType, true)().withExprId(a.exprId)
+            case other => other
+          }
+        }
+        val newLeft = left match {
+          case Project(columns, logicalPlan) =>
+            Project(columns ++ projectionToBeAdded, logicalPlan)
+          case filter: Filter =>
+            Project(filter.output ++ projectionToBeAdded, filter)
+          case other => other
+        }
+        Project(newCols, Join(newLeft, right, jointype, condition))
+      case other => other
+    }
+    output
+  }
   def isOptimized(plan: LogicalPlan): Boolean = {
     plan find {
       case cd: CarbonDictionaryCatalystDecoder => true

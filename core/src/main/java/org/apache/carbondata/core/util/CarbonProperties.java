@@ -547,4 +547,64 @@ public final class CarbonProperties {
     LOGGER.info("Executor start up wait time: " + executorStartUpTimeOut);
   }
 
+  /**
+   * Returns configured update deleta files value for IUD compaction
+   * @return numberOfDeltaFilesThreshold
+   */
+  public int getNoUpdateDeltaFilesThresholdForIUDCompaction() {
+    int numberOfDeltaFilesThreshold;
+    try {
+      numberOfDeltaFilesThreshold = Integer.parseInt(
+          getProperty(CarbonCommonConstants.UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION,
+              CarbonCommonConstants.DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION));
+
+      if (numberOfDeltaFilesThreshold < 0 || numberOfDeltaFilesThreshold > 10000) {
+        LOGGER.error("The specified value for property "
+            + CarbonCommonConstants.UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION
+            + "is incorrect."
+            + " Correct value should be in range of 0 -10000. Taking the default value.");
+        numberOfDeltaFilesThreshold = Integer.parseInt(
+            CarbonCommonConstants.DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.error("The specified value for property "
+          + CarbonCommonConstants.UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION
+          + "is incorrect."
+          + " Correct value should be in range of 0 -10000. Taking the default value.");
+      numberOfDeltaFilesThreshold = Integer
+          .parseInt(CarbonCommonConstants.DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);
+    }
+    return numberOfDeltaFilesThreshold;
+  }
+
+  /**
+   * Returns configured delete deleta files value for IUD compaction
+   * @return numberOfDeltaFilesThreshold
+   */
+  public int getNoDeleteDeltaFilesThresholdForIUDCompaction() {
+    int numberOfDeltaFilesThreshold;
+    try {
+      numberOfDeltaFilesThreshold = Integer.parseInt(
+          getProperty(CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION,
+              CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION));
+
+      if (numberOfDeltaFilesThreshold < 0 || numberOfDeltaFilesThreshold > 10000) {
+        LOGGER.error("The specified value for property "
+            + CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION
+            + "is incorrect."
+            + " Correct value should be in range of 0 -10000. Taking the default value.");
+        numberOfDeltaFilesThreshold = Integer.parseInt(
+            CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.error("The specified value for property "
+          + CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION
+          + "is incorrect."
+          + " Correct value should be in range of 0 -10000. Taking the default value.");
+      numberOfDeltaFilesThreshold = Integer
+          .parseInt(CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);
+    }
+    return numberOfDeltaFilesThreshold;
+  }
+
 }
