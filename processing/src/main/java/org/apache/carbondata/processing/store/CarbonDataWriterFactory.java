@@ -62,12 +62,10 @@ public class CarbonDataWriterFactory {
   public CarbonFactDataWriter<?> getFactDataWriter(final ColumnarFormatVersion version,
       final CarbonDataWriterVo carbonDataWriterVo) {
     switch (version) {
-      case V2:
-        return new CarbonFactDataWriterImplV2(carbonDataWriterVo);
       case V1:
         return new CarbonFactDataWriterImplV1(carbonDataWriterVo);
       default:
-        throw new IllegalArgumentException("invalid format version: " + version);
+          return new CarbonFactDataWriterImplV2(carbonDataWriterVo);
     }
   }
 
