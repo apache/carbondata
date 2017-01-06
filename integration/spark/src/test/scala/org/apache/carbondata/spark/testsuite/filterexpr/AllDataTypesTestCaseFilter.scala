@@ -39,6 +39,12 @@ class AllDataTypesTestCaseFilter extends QueryTest with BeforeAndAfterAll {
     sql("CREATE TABLE alldatatypestableFilter_hive (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)row format delimited fields terminated by ','")
     sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' INTO TABLE alldatatypestableFilter_hive");
 
+    // coalasce load
+    sql("CREATE TABLE coalasce_carbon(imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp,enddate timestamp,PointId double,score decimal(10,3))STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('dictionary_include' =  'imei,name,age,productdate,enddate,country ,city ,sale ,num ,PointId,level,score,task,quest','COLUMNPROPERTIES.level.shared_column'= 'share.level')")
+    sql("LOAD DATA INPATH './src/test/resources/big_int_withnull.csv'  INTO TABLE coalasce_carbon options ('DELIMITER'=',','fileheader'='imei,age,task,name,country,city,sale,num,level,quest,productdate,enddate,pointid,score')")
+    
+    sql("CREATE TABLE coalasce_hive(imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp,enddate timestamp,PointId double,score decimal(10,3))ROW FORMAT DELIMITED FIELDS TERMINATED BY ','")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/big_int_withnull.csv'  INTO TABLE coalasce_hive")
   }
 
   test("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableFilter where empname in ('arvind','ayushi') group by empno,empname,utilization") {
@@ -59,6 +65,13 @@ class AllDataTypesTestCaseFilter extends QueryTest with BeforeAndAfterAll {
       sql("select empno,empname from alldatatypestableFilter_hive where regexp_replace(workgroupcategoryname, 'er', 'ment') != 'development'"))
   }
   
+  test("select imei,name,country,city,productdate,enddate,age,task,sale,num,level,quest,pointid,score from big_int_null_hive where coalesce( name ,1) != 'Lily'") {
+    checkAnswer(
+     sql("select imei,name,country,city,productdate,enddate,age,task,sale,num,level,quest,pointid,score from coalasce_carbon where coalesce( name ,1) != 'Lily'"),
+     sql("select imei,name,country,city,productdate,enddate,age,task,sale,num,level,quest,pointid,score from coalasce_carbon where coalesce( name ,1) != 'Lily'")
+    )
+    
+  }
   override def afterAll {
     sql("drop table alldatatypestableFilter")
     sql("drop table alldatatypestableFilter_hive")
