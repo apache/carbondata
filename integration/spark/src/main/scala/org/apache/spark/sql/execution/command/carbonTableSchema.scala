@@ -728,15 +728,13 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
             val file = FileFactory.getCarbonFile(metadataFilePath, fileType)
             CarbonUtil.deleteFoldersAndFiles(file.getParentFile)
           }
-          // delete bad record log after drop table
-          val badLogPath = CarbonUtil.getBadLogPath(dbName + File.separator + tableName)
-          val badLogFileType = FileFactory.getFileType(badLogPath)
-          if (FileFactory.isFileExist(badLogPath, badLogFileType)) {
-            val file = FileFactory.getCarbonFile(badLogPath, badLogFileType)
-            CarbonUtil.deleteFoldersAndFiles(file)
-          }
-        } else {
-          logError("Unable to unlock Table MetaData")
+        }
+        // delete bad record log after drop table
+        val badLogPath = CarbonUtil.getBadLogPath(dbName + File.separator + tableName)
+        val badLogFileType = FileFactory.getFileType(badLogPath)
+        if (FileFactory.isFileExist(badLogPath, badLogFileType)) {
+          val file = FileFactory.getCarbonFile(badLogPath, badLogFileType)
+          CarbonUtil.deleteFoldersAndFiles(file)
         }
       }
     }
