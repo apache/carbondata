@@ -25,59 +25,33 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
-import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-public class UnCompressNonDecimalMaxMinByte
-    implements ValueCompressonHolder.UnCompressValue<byte[]> {
+public class CompressionNonDecimalMaxMinByte extends ValueCompressionHolder<byte[]> {
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnCompressNonDecimalMaxMinByte.class.getName());
+      LogServiceFactory.getLogService(CompressionNonDecimalMaxMinByte.class.getName());
+
   /**
    * compressor.
    */
   private static Compressor compressor = CompressorFactory.getInstance();
+
   /**
    * value.
    */
   private byte[] value;
 
-  @Override public ValueCompressonHolder.UnCompressValue<byte[]> getNew() {
-    try {
-      return (ValueCompressonHolder.UnCompressValue<byte[]>) clone();
-    } catch (CloneNotSupportedException cloneNotSupportedException) {
-      LOGGER.error(cloneNotSupportedException,
-          cloneNotSupportedException.getMessage());
-    }
-    return null;
+  @Override public void compress() {
+    compressedValue = super.compress(compressor, DataType.DATA_BYTE, value);
   }
 
-  @Override public ValueCompressonHolder.UnCompressValue compress() {
-    UnCompressNonDecimalMaxMinByte byte1 = new UnCompressNonDecimalMaxMinByte();
-    byte1.setValue(compressor.compressByte(value));
-    return byte1;
-  }
-
-  @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
-    ValueCompressonHolder.UnCompressValue byte1 =
-        ValueCompressionUtil.getUnCompressNonDecimalMaxMin(dataType);
-    ValueCompressonHolder.unCompress(dataType, byte1, value);
-    return byte1;
-  }
-
-  @Override public byte[] getBackArrayData() {
-    return value;
-  }
-
-  /**
-   * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
-   */
-  @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-    return new UnCompressNonDecimalMaxMinByte();
+  @Override public void uncompress(DataType dataType, byte[] data) {
+    super.unCompress(compressor, dataType, data);
   }
 
   @Override public void setValueInBytes(byte[] value) {
@@ -107,5 +81,7 @@ public class UnCompressNonDecimalMaxMinByte
   @Override public void setValue(byte[] value) {
     this.value = value;
   }
+
+  @Override public byte[] getValue() { return this.value; }
 
 }

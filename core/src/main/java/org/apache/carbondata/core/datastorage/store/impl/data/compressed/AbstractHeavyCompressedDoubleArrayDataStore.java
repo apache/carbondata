@@ -19,9 +19,11 @@
 
 package org.apache.carbondata.core.datastorage.store.impl.data.compressed;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.NodeMeasureDataStore;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionHolder;
 import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonWriteDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
@@ -30,10 +32,13 @@ public abstract class AbstractHeavyCompressedDoubleArrayDataStore
     implements NodeMeasureDataStore //NodeMeasureDataStore<double[]>
 {
 
+  private LogService LOGGER =
+      LogServiceFactory.getLogService(AbstractHeavyCompressedDoubleArrayDataStore.class.getName());
+
   /**
    * values.
    */
-  protected ValueCompressonHolder.UnCompressValue[] values;
+  protected ValueCompressionHolder[] values;
 
   /**
    * compressionModel.
@@ -55,14 +60,18 @@ public abstract class AbstractHeavyCompressedDoubleArrayDataStore
     if (null != compressionModel) {
       this.type = compressionModel.getType();
       values =
-          new ValueCompressonHolder.UnCompressValue[compressionModel.getUnCompressValues().length];
+          new ValueCompressionHolder[compressionModel.getValueCompressionHolder().length];
     }
   }
 
+  // this method first invokes encoding routine to encode the data chunk,
+  // followed by invoking compression routine for preparing the data chunk for writing.
   @Override public byte[][] getWritableMeasureDataArray(CarbonWriteDataHolder[] dataHolder) {
-    for (int i = 0; i < compressionModel.getUnCompressValues().length; i++) {
-      values[i] = compressionModel.getUnCompressValues()[i].getNew();
+    byte[][] returnValue = new byte[values.length][];
+    for (int i = 0; i < compressionModel.getValueCompressionHolder().length; i++) {
+      values[i] = compressionModel.getValueCompressionHolder()[i];
       if (type[i] != CarbonCommonConstants.BYTE_VALUE_MEASURE) {
+        // first perform encoding of the data chunk
         values[i].setValue(
             ValueCompressionUtil.getValueCompressor(compressionModel.getCompressionFinders()[i])
                 .getCompressedValues(compressionModel.getCompressionFinders()[i], dataHolder[i],
@@ -71,12 +80,10 @@ public abstract class AbstractHeavyCompressedDoubleArrayDataStore
       } else {
         values[i].setValue(dataHolder[i].getWritableByteArrayValues());
       }
-      values[i] = values[i].compress();
+      values[i].compress();
+      returnValue[i] = values[i].getCompressedData();
     }
-    byte[][] returnValue = new byte[values.length][];
-    for (int i = 0; i < values.length; i++) {
-      returnValue[i] = values[i].getBackArrayData();
-    }
+
     return returnValue;
   }
 

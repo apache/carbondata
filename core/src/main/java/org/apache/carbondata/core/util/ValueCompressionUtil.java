@@ -29,35 +29,12 @@ import org.apache.carbondata.core.compression.DoubleCompressor;
 import org.apache.carbondata.core.compression.ValueCompressor;
 import org.apache.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
 import org.apache.carbondata.core.datastorage.store.compression.ReaderCompressModel;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionHolder;
 import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
-import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressByteArray;
-import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinByte;
-import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinDefault;
-import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinFloat;
-import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinInt;
-import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinLong;
-import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinShort;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalByte;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalDefault;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalFloat;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalInt;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalLong;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinByte;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinDefault;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinFloat;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinInt;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinLong;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinShort;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalShort;
-import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneByte;
-import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneDefault;
-import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneFloat;
-import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneInt;
-import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneLong;
-import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneShort;
-import org.apache.carbondata.core.datastorage.store.compression.type.UnCompressBigDecimal;
+import org.apache.carbondata.core.datastorage.store.compression.decimal.*;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.*;
+import org.apache.carbondata.core.datastorage.store.compression.none.*;
+import org.apache.carbondata.core.datastorage.store.compression.type.*;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 
 public final class ValueCompressionUtil {
@@ -287,26 +264,32 @@ public final class ValueCompressionUtil {
    * @param compressionFinders : Compression types for measures
    * @return
    */
-  private static UnCompressValue[] getUncompressedValues(
+  private static ValueCompressionHolder[] getValueCompressionHolder(
       CompressionFinder[] compressionFinders) {
-    UnCompressValue[] unCompressedValues = new UnCompressValue[compressionFinders.length];
+    ValueCompressionHolder[] valueCompressionHolders =
+            new ValueCompressionHolder[compressionFinders.length];
     for (int i=0; i< compressionFinders.length; i++) {
-      unCompressedValues[i] = getUncompressedValue(compressionFinders[i]);
+      valueCompressionHolders[i] =
+              getValueCompressionHolder(compressionFinders[i]);
     }
-    return unCompressedValues;
+    return valueCompressionHolders;
   }
   /**
    *
    * @param compressionFinder bigdecimal compression finder
-   * @return Uncompressed measure object
+   * @return ValueCompressionHolder
    */
-  private static UnCompressValue getUncompressedValue(
+  private static ValueCompressionHolder getValueCompressionHolder(
       BigDecimalCompressionFinder compressionFinder) {
-    UnCompressValue leftPart = getUncompressedValue(compressionFinder.getLeftCompType(),
-        compressionFinder.getLeftActualDataType(), compressionFinder.getLeftConvertedDataType());
-    UnCompressValue rightPart = getUncompressedValue(compressionFinder.getRightCompType(),
-        compressionFinder.getRightActualDataType(), compressionFinder.getRightConvertedDataType());
-    return new UnCompressBigDecimal<>(compressionFinder, leftPart, rightPart);
+    ValueCompressionHolder leftPart = getValueCompressionHolder(
+            compressionFinder.getLeftCompType(), compressionFinder.getLeftActualDataType(),
+            compressionFinder.getLeftConvertedDataType());
+
+    ValueCompressionHolder rightPart = getValueCompressionHolder(
+            compressionFinder.getRightCompType(), compressionFinder.getRightActualDataType(),
+            compressionFinder.getRightConvertedDataType());
+
+    return new CompressionBigDecimal(compressionFinder, leftPart, rightPart);
   }
 
   /**
@@ -314,31 +297,31 @@ public final class ValueCompressionUtil {
    * @param compressionFinder for measure other then bigdecimal
    * @return
    */
-  private static UnCompressValue getUncompressedValue(
+  private static ValueCompressionHolder getValueCompressionHolder(
       CompressionFinder compressionFinder) {
     switch(compressionFinder.getMeasureStoreType()) {
       case 'b':
-        return getUncompressedValue(
+        return getValueCompressionHolder(
               (BigDecimalCompressionFinder) compressionFinder);
       default:
-        return getUncompressedValue(compressionFinder.getCompType(),
+        return getValueCompressionHolder(compressionFinder.getCompType(),
             compressionFinder.getActualDataType(), compressionFinder.getConvertedDataType());
     }
   }
 
-  private static ValueCompressonHolder.UnCompressValue getUncompressedValue(
-      COMPRESSION_TYPE compType, DataType actualDataType, DataType changedDataType) {
+  private static ValueCompressionHolder getValueCompressionHolder(COMPRESSION_TYPE compType,
+      DataType actualDataType, DataType changedDataType) {
     switch (compType) {
       case ADAPTIVE:
-        return getUnCompressNone(changedDataType, actualDataType);
+        return getCompressionNone(changedDataType, actualDataType);
       case DELTA_DOUBLE:
-        return getUnCompressDecimalMaxMin(changedDataType, actualDataType);
+        return getCompressionDecimalMaxMin(changedDataType, actualDataType);
       case DELTA_NON_DECIMAL:
-        return getUnCompressNonDecimalMaxMin(changedDataType);
+        return getCompressionNonDecimalMaxMin(changedDataType);
       case BIGINT:
-        return getUnCompressNonDecimal(changedDataType);
+        return getCompressionNonDecimal(changedDataType);
       case BIGDECIMAL:
-        return new UnCompressByteArray(UnCompressByteArray.ByteArrayType.BIG_DECIMAL);
+        return new CompressionByteArray(CompressionByteArray.ByteArrayType.BIG_DECIMAL);
       default:
         throw new IllegalArgumentException("unsupported compType: " + compType);
     }
@@ -622,84 +605,84 @@ public final class ValueCompressionUtil {
   /**
    * uncompress data for example: int -> double
    */
-  public static ValueCompressonHolder.UnCompressValue getUnCompressNone(DataType compDataType,
+  public static ValueCompressionHolder getCompressionNone(DataType compDataType,
       DataType actualDataType) {
     switch (compDataType) {
       case DATA_BYTE:
-        return new UnCompressNoneByte(actualDataType);
+        return new CompressionNoneByte(actualDataType);
       case DATA_SHORT:
-        return new UnCompressNoneShort(actualDataType);
+        return new CompressionNoneShort(actualDataType);
       case DATA_INT:
-        return new UnCompressNoneInt(actualDataType);
+        return new CompressionNoneInt(actualDataType);
       case DATA_LONG:
-        return new UnCompressNoneLong(actualDataType);
+        return new CompressionNoneLong(actualDataType);
       case DATA_FLOAT:
-        return new UnCompressNoneFloat(actualDataType);
+        return new CompressionNoneFloat(actualDataType);
       default:
-        return new UnCompressNoneDefault(actualDataType);
+        return new CompressionNoneDefault(actualDataType);
     }
   }
 
   /**
    * uncompress data 1. value = maxValue - subValue 2. value: int->double
    */
-  public static ValueCompressonHolder.UnCompressValue getUnCompressDecimalMaxMin(
+  public static ValueCompressionHolder getCompressionDecimalMaxMin(
       DataType compDataType, DataType actualDataType) {
     switch (compDataType) {
       case DATA_BYTE:
-        return new UnCompressMaxMinByte(actualDataType);
+        return new CompressionMaxMinByte(actualDataType);
       case DATA_SHORT:
-        return new UnCompressMaxMinShort(actualDataType);
+        return new CompressionMaxMinShort(actualDataType);
       case DATA_INT:
-        return new UnCompressMaxMinInt(actualDataType);
+        return new CompressionMaxMinInt(actualDataType);
       case DATA_LONG:
-        return new UnCompressMaxMinLong(actualDataType);
+        return new CompressionMaxMinLong(actualDataType);
       case DATA_FLOAT:
-        return new UnCompressMaxMinFloat(actualDataType);
+        return new CompressionMaxMinFloat(actualDataType);
       default:
-        return new UnCompressMaxMinDefault(actualDataType);
+        return new CompressionMaxMinDefault(actualDataType);
     }
   }
 
   /**
    * uncompress data value = value/Math.pow(10, mantissa)
    */
-  public static ValueCompressonHolder.UnCompressValue getUnCompressNonDecimal(
+  public static ValueCompressionHolder getCompressionNonDecimal(
       DataType compDataType) {
     switch (compDataType) {
       case DATA_BYTE:
-        return new UnCompressNonDecimalByte();
+        return new CompressionNonDecimalByte();
       case DATA_SHORT:
-        return new UnCompressNonDecimalShort();
+        return new CompressionNonDecimalShort();
       case DATA_INT:
-        return new UnCompressNonDecimalInt();
+        return new CompressionNonDecimalInt();
       case DATA_LONG:
-        return new UnCompressNonDecimalLong();
+        return new CompressionNonDecimalLong();
       case DATA_FLOAT:
-        return new UnCompressNonDecimalFloat();
+        return new CompressionNonDecimalFloat();
       default:
-        return new UnCompressNonDecimalDefault();
+        return new CompressionNonDecimalDefault();
     }
   }
 
   /**
    * uncompress data value = (maxValue - subValue)/Math.pow(10, mantissa)
    */
-  public static ValueCompressonHolder.UnCompressValue getUnCompressNonDecimalMaxMin(
+  public static ValueCompressionHolder getCompressionNonDecimalMaxMin(
       DataType compDataType) {
     switch (compDataType) {
       case DATA_BYTE:
-        return new UnCompressNonDecimalMaxMinByte();
+        return new CompressionNonDecimalMaxMinByte();
       case DATA_SHORT:
-        return new UnCompressNonDecimalMaxMinShort();
+        return new CompressionNonDecimalMaxMinShort();
       case DATA_INT:
-        return new UnCompressNonDecimalMaxMinInt();
+        return new CompressionNonDecimalMaxMinInt();
       case DATA_LONG:
-        return new UnCompressNonDecimalMaxMinLong();
+        return new CompressionNonDecimalMaxMinLong();
       case DATA_FLOAT:
-        return new UnCompressNonDecimalMaxMinFloat();
+        return new CompressionNonDecimalMaxMinFloat();
       default:
-        return new UnCompressNonDecimalMaxMinDefault();
+        return new CompressionNonDecimalMaxMinDefault();
     }
   }
 
@@ -746,9 +729,9 @@ public final class ValueCompressionUtil {
     compressionModel.setUniqueValue(uniqueValue);
     compressionModel.setType(type);
     compressionModel.setDataTypeSelected(dataTypeSelected);
-    ValueCompressonHolder.UnCompressValue[] values = ValueCompressionUtil
-        .getUncompressedValues(compressionFinders);
-    compressionModel.setUnCompressValues(values);
+    ValueCompressionHolder[] values = ValueCompressionUtil
+        .getValueCompressionHolder(compressionFinders);
+    compressionModel.setValueCompressionHolder(values);
     return compressionModel;
   }
 
@@ -760,8 +743,8 @@ public final class ValueCompressionUtil {
     CompressionFinder compressFinder =
         getCompressionFinder(meta.getMaxValue(), meta.getMinValue(), meta.getMantissa(),
             meta.getType(), meta.getDataTypeSelected());
-    compressModel.setUnCompressValues(
-          ValueCompressionUtil.getUncompressedValue(compressFinder));
+    compressModel.setValueCompressionHolder(
+          ValueCompressionUtil.getValueCompressionHolder(compressFinder));
     compressModel.setConvertedDataType(compressFinder.getConvertedDataType());
     compressModel.setValueEncoderMeta(meta);
     return compressModel;

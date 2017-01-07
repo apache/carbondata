@@ -29,7 +29,7 @@ import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.PresenceMeta;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionHolder;
 import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
@@ -166,17 +166,17 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
           CarbonUtil.deserializeEncoderMeta(measureColumnChunk.getEncoder_meta().get(i).array()));
     }
     WriterCompressModel compressionModel = CarbonUtil.getValueCompressionModel(valueEncodeMeta);
-    UnCompressValue values =
-        compressionModel.getUnCompressValues()[0].getNew().getCompressorObject();
-    // create a new uncompressor
-    // read data from file and set to uncompressor
-    values.setValue(dataPage);
-    // get the data holder after uncompressing
+    ValueCompressionHolder values = compressionModel.getValueCompressionHolder()[0];
+
+    // uncompress
+    values.uncompress(compressionModel.getConvertedDataType()[0], dataPage);
+
     CarbonReadDataHolder measureDataHolder =
-        values.uncompress(compressionModel.getConvertedDataType()[0])
-            .getValues(compressionModel.getMantissa()[0], compressionModel.getMaxValue()[0]);
+        values.getValues(compressionModel.getMantissa()[0], compressionModel.getMaxValue()[0]);
+
     // set the data chunk
     datChunk.setMeasureDataHolder(measureDataHolder);
+
     // set the enun value indexes
     datChunk.setNullValueIndexHolder(getPresenceMeta(measureColumnChunk.presence));
     return datChunk;
@@ -221,17 +221,17 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
             CarbonUtil.deserializeEncoderMeta(measureColumnChunk.getEncoder_meta().get(j).array()));
       }
       WriterCompressModel compressionModel = CarbonUtil.getValueCompressionModel(valueEncodeMeta);
-      UnCompressValue values =
-          compressionModel.getUnCompressValues()[0].getNew().getCompressorObject();
-      // create a new uncompressor
-      // read data from file and set to uncompressor
-      values.setValue(dataPage);
-      // get the data holder after uncompressing
+      ValueCompressionHolder values = compressionModel.getValueCompressionHolder()[0];
+
+      // uncompress
+      values.uncompress(compressionModel.getConvertedDataType()[0], dataPage);
+
       CarbonReadDataHolder measureDataHolder =
-          values.uncompress(compressionModel.getConvertedDataType()[0])
-              .getValues(compressionModel.getMantissa()[0], compressionModel.getMaxValue()[0]);
+          values.getValues(compressionModel.getMantissa()[0], compressionModel.getMaxValue()[0]);
+
       // set the data chunk
       dataChunk.setMeasureDataHolder(measureDataHolder);
+
       // set the enun value indexes
       dataChunk.setNullValueIndexHolder(getPresenceMeta(measureColumnChunk.presence));
       dataChunks[index++] = dataChunk;

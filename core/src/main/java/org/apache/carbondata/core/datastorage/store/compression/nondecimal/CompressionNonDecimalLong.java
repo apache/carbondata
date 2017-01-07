@@ -19,29 +19,29 @@
 
 package org.apache.carbondata.core.datastorage.store.compression.nondecimal;
 
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
+import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-public class UnCompressNonDecimalMaxMinLong
-    implements ValueCompressonHolder.UnCompressValue<long[]> {
+public class CompressionNonDecimalLong extends ValueCompressionHolder<long[]> {
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnCompressNonDecimalMaxMinLong.class.getName());
+      LogServiceFactory.getLogService(CompressionNonDecimalLong.class.getName());
 
   /**
    * longCompressor.
    */
   private static Compressor compressor = CompressorFactory.getInstance();
+
   /**
    * value.
    */
@@ -49,64 +49,31 @@ public class UnCompressNonDecimalMaxMinLong
 
   @Override public void setValue(long[] value) {
     this.value = value;
-
   }
 
-  @Override public ValueCompressonHolder.UnCompressValue getNew() {
-    try {
-      return (ValueCompressonHolder.UnCompressValue) clone();
-    } catch (CloneNotSupportedException exc) {
-      LOGGER.error(exc, exc.getMessage());
-    }
-    return null;
+  @Override public long[] getValue() { return this.value; }
+
+  @Override public void compress() {
+    compressedValue = super.compress(compressor, DataType.DATA_LONG, value);
   }
 
-  @Override public ValueCompressonHolder.UnCompressValue compress() {
-
-    UnCompressNonDecimalMaxMinByte uNonDecByte = new UnCompressNonDecimalMaxMinByte();
-    uNonDecByte.setValue(compressor.compressLong(value));
-    return uNonDecByte;
+  @Override public void uncompress(DataType dataType, byte[] data) {
+    super.unCompress(compressor, dataType, data);
   }
 
-  @Override
-  public ValueCompressonHolder.UnCompressValue uncompress(ValueCompressionUtil.DataType dataType) {
-    return null;
-  }
-
-  @Override public byte[] getBackArrayData() {
-    return ValueCompressionUtil.convertToBytes(value);
-  }
-
-  @Override public void setValueInBytes(byte[] value) {
-    ByteBuffer buff = ByteBuffer.wrap(value);
-    this.value = ValueCompressionUtil.convertToLongArray(buff, value.length);
-  }
-
-  /**
-   * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
-   */
-  @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-    return new UnCompressNonDecimalMaxMinByte();
+  @Override public void setValueInBytes(byte[] bytes) {
+    ByteBuffer buffer = ByteBuffer.wrap(bytes);
+    this.value = ValueCompressionUtil.convertToLongArray(buffer, bytes.length);
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    double maxValue = (double) maxValueObject;
     double[] vals = new double[value.length];
-    CarbonReadDataHolder carbonDataHolder = new CarbonReadDataHolder();
     for (int i = 0; i < vals.length; i++) {
       vals[i] = value[i] / Math.pow(10, decimal);
-
-      if (value[i] == 0) {
-        vals[i] = maxValue;
-      } else {
-        BigDecimal diff = BigDecimal.valueOf(value[i] / Math.pow(10, decimal));
-        BigDecimal max = BigDecimal.valueOf(maxValue);
-        vals[i] = max.subtract(diff).doubleValue();
-      }
-
     }
-    carbonDataHolder.setReadableDoubleValues(vals);
-    return carbonDataHolder;
+    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
+    dataHolder.setReadableDoubleValues(vals);
+    return dataHolder;
   }
 
 }

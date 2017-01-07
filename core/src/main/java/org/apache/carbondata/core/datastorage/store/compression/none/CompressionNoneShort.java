@@ -25,17 +25,17 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValue<short[]> {
+public class CompressionNoneShort extends ValueCompressionHolder<short[]> {
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnCompressNoneShort.class.getName());
+      LogServiceFactory.getLogService(CompressionNoneShort.class.getName());
 
   /**
    * shortCompressor.
@@ -49,7 +49,7 @@ public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValu
 
   private DataType actualDataType;
 
-  public UnCompressNoneShort(DataType actualDataType) {
+  public CompressionNoneShort(DataType actualDataType) {
     this.actualDataType = actualDataType;
   }
 
@@ -57,39 +57,19 @@ public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValu
     this.shortValue = shortValue;
   }
 
-  @Override public ValueCompressonHolder.UnCompressValue getNew() {
-    try {
-      return (ValueCompressonHolder.UnCompressValue) clone();
-    } catch (CloneNotSupportedException cns1) {
-      LOGGER.error(cns1, cns1.getMessage());
-    }
-    return null;
+  @Override public short[] getValue() { return this.shortValue; }
+
+  @Override public void compress() {
+    compressedValue = super.compress(compressor, DataType.DATA_SHORT, shortValue);
   }
 
-  @Override public ValueCompressonHolder.UnCompressValue compress() {
-    UnCompressNoneByte byte1 = new UnCompressNoneByte(actualDataType);
-    byte1.setValue(compressor.compressShort(shortValue));
-    return byte1;
-  }
-
-  @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
-    return null;
-  }
-
-  @Override public byte[] getBackArrayData() {
-    return ValueCompressionUtil.convertToBytes(shortValue);
+  @Override public void uncompress(DataType dataType, byte[] data) {
+    super.unCompress(compressor, dataType, data);
   }
 
   @Override public void setValueInBytes(byte[] value) {
     ByteBuffer buffer = ByteBuffer.wrap(value);
     shortValue = ValueCompressionUtil.convertToShortArray(buffer, value.length);
-  }
-
-  /**
-   * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
-   */
-  @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-    return new UnCompressNoneByte(this.actualDataType);
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {

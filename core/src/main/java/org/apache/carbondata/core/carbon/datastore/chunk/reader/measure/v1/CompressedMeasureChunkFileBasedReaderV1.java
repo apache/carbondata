@@ -27,7 +27,7 @@ import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.compression.ReaderCompressModel;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
@@ -83,14 +83,16 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
       final int blockIndex) throws IOException {
     ValueEncoderMeta meta = measureColumnChunks.get(blockIndex).getValueEncoderMeta().get(0);
     ReaderCompressModel compressModel = ValueCompressionUtil.getReaderCompressModel(meta);
-    UnCompressValue values = compressModel.getUnCompressValues().getNew().getCompressorObject();
-    values.setValue(
-        fileReader.readByteArray(filePath, measureColumnChunks.get(blockIndex).getDataPageOffset(),
-            measureColumnChunks.get(blockIndex).getDataPageLength()));
-    // get the data holder after uncompressing
+    ValueCompressionHolder values = compressModel.getValueCompressionHolder();
+    byte[] dataPage = fileReader.readByteArray(filePath,
+            measureColumnChunks.get(blockIndex).getDataPageOffset(),
+            measureColumnChunks.get(blockIndex).getDataPageLength());
+
+    // unCompress data
+    values.uncompress(compressModel.getConvertedDataType(), dataPage);
+
     CarbonReadDataHolder measureDataHolder =
-        values.uncompress(compressModel.getConvertedDataType())
-            .getValues(compressModel.getMantissa(), compressModel.getMaxValue());
+        values.getValues(compressModel.getMantissa(), compressModel.getMaxValue());
 
     // create and set the data chunk
     MeasureColumnDataChunk datChunk = new MeasureColumnDataChunk();

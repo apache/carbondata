@@ -25,18 +25,18 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-public class UnCompressMaxMinFloat implements UnCompressValue<float[]> {
+public class CompressionMaxMinFloat extends ValueCompressionHolder<float[]> {
 
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnCompressMaxMinFloat.class.getName());
+      LogServiceFactory.getLogService(CompressionMaxMinFloat.class.getName());
   /**
    * floatCompressor
    */
@@ -46,47 +46,34 @@ public class UnCompressMaxMinFloat implements UnCompressValue<float[]> {
    */
   private float[] value;
 
+  /**
+   * actual data type
+   */
   private DataType actualDataType;
 
-  public UnCompressMaxMinFloat(DataType actualDataType) {
+  public CompressionMaxMinFloat(DataType actualDataType) {
     this.actualDataType = actualDataType;
   }
+
 
   @Override public void setValue(float[] value) {
     this.value = value;
 
   }
 
-  @Override public UnCompressValue getNew() {
-    try {
-      return (UnCompressValue) clone();
-    } catch (CloneNotSupportedException ex4) {
-      LOGGER.error(ex4, ex4.getMessage());
-    }
-    return null;
+  @Override public float[] getValue() {return this.value; }
+
+  @Override public void compress() {
+    compressedValue = super.compress(compressor, DataType.DATA_FLOAT, value);
   }
 
-  @Override public UnCompressValue compress() {
-    UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte(actualDataType);
-    byte1.setValue(compressor.compressFloat(value));
-    return byte1;
-  }
-
-  @Override public UnCompressValue uncompress(DataType dTypeVal) {
-    return null;
-  }
-
-  @Override public byte[] getBackArrayData() {
-    return ValueCompressionUtil.convertToBytes(value);
+  @Override public void uncompress(DataType dTypeVal, byte[] data) {
+    super.unCompress(compressor, dTypeVal, data);
   }
 
   @Override public void setValueInBytes(byte[] value) {
     ByteBuffer buffer = ByteBuffer.wrap(value);
     this.value = ValueCompressionUtil.convertToFloatArray(buffer, value.length);
-  }
-
-  @Override public UnCompressValue getCompressorObject() {
-    return new UnCompressMaxMinByte(actualDataType);
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {

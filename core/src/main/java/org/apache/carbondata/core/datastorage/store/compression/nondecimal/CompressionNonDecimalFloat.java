@@ -19,87 +19,60 @@
 
 package org.apache.carbondata.core.datastorage.store.compression.nondecimal;
 
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-public class UnCompressNonDecimalMaxMinDefault implements UnCompressValue<double[]> {
+public class CompressionNonDecimalFloat extends ValueCompressionHolder<float[]> {
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnCompressNonDecimalMaxMinDefault.class.getName());
+      LogServiceFactory.getLogService(CompressionNonDecimalFloat.class.getName());
   /**
-   * doubleCompressor.
+   * floatCompressor
    */
   private static Compressor compressor = CompressorFactory.getInstance();
   /**
    * value.
    */
-  private double[] value;
 
-  @Override public void setValue(double[] value) {
+  private float[] value;
+
+  @Override public void setValue(float[] value) {
     this.value = value;
   }
 
-  @Override public UnCompressValue getNew() {
-    try {
-      return (UnCompressValue) clone();
-    } catch (CloneNotSupportedException exce) {
-      LOGGER.error(exce, exce.getMessage());
-    }
-    return null;
+  @Override public float[] getValue() {return this.value; }
+
+  @Override public void compress() {
+    compressedValue = super.compress(compressor, DataType.DATA_FLOAT, value);
   }
 
-  @Override public UnCompressValue compress() {
-    UnCompressNonDecimalMaxMinByte byte1 = new UnCompressNonDecimalMaxMinByte();
-    byte1.setValue(compressor.compressDouble(value));
-    return byte1;
-  }
-
-  @Override public byte[] getBackArrayData() {
-    return ValueCompressionUtil.convertToBytes(value);
+  @Override public void uncompress(DataType dataType, byte[] data) {
+    super.unCompress(compressor, dataType, data);
   }
 
   @Override public void setValueInBytes(byte[] value) {
     ByteBuffer buffer = ByteBuffer.wrap(value);
-    this.value = ValueCompressionUtil.convertToDoubleArray(buffer, value.length);
-  }
-
-  @Override public UnCompressValue getCompressorObject() {
-    return new UnCompressNonDecimalMaxMinByte();
-  }
-
-  @Override public UnCompressValue uncompress(DataType dataType) {
-    return null;
+    this.value = ValueCompressionUtil.convertToFloatArray(buffer, value.length);
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    double maxVal = (double) maxValueObject;
     double[] vals = new double[value.length];
-    CarbonReadDataHolder holder = new CarbonReadDataHolder();
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i] / Math.pow(10, decimal);
-
-      if (value[i] == 0) {
-        vals[i] = maxVal;
-      } else {
-        BigDecimal diff = BigDecimal.valueOf(value[i] / Math.pow(10, decimal));
-        BigDecimal max = BigDecimal.valueOf(maxVal);
-        vals[i] = max.subtract(diff).doubleValue();
-      }
-
+    for (int m = 0; m < vals.length; m++) {
+      vals[m] = value[m] / Math.pow(10, decimal);
     }
-    holder.setReadableDoubleValues(vals);
-    return holder;
+    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
+    dataHolder.setReadableDoubleValues(vals);
+    return dataHolder;
   }
 
 }
