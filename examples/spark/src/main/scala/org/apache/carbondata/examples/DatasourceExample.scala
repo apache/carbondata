@@ -37,5 +37,8 @@ object DatasourceExample {
         | OPTIONS (path '${cc.storePath}/default/table1')
       """.stripMargin)
     sqlContext.sql("SELECT c1, c2, count(*) FROM source WHERE c3 > 100 GROUP BY c1, c2").show
+
+    // delete carbondata file
+    ExampleUtils.cleanSampleCarbonFile(cc, "table1")
   }
 }

@@ -17,40 +17,46 @@
 
 package org.apache.carbondata.examples
 
+import org.apache.flink.api.java.ExecutionEnvironment
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.mapreduce.Job
 
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.examples.util.ExampleUtils
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonProjection}
-import org.apache.carbondata.scan.expression.{ColumnExpression, LiteralExpression}
-import org.apache.carbondata.scan.expression.conditional.GreaterThanExpression
 
+// Write carbondata file by spark and read it by flink
 // scalastyle:off println
-object HadoopFileExample {
+object FlinkExample {
 
   def main(args: Array[String]): Unit = {
-    val cc = ExampleUtils.createCarbonContext("HadoopFileExample")
-    ExampleUtils.writeSampleCarbonFile(cc, "carbon1")
+    // write carbondata file by spark
+    val cc = ExampleUtils.createCarbonContext("FlinkExample")
+    val path = ExampleUtils.writeSampleCarbonFile(cc, "carbon1")
 
-    // read two columns
+    // read two columns by flink
     val projection = new CarbonProjection
     projection.addColumn("c1")  // column c1
     projection.addColumn("c3")  // column c3
     val conf = new Configuration()
     CarbonInputFormat.setColumnProjection(conf, projection)
 
-    val sc = cc.sparkContext
-    val input = sc.newAPIHadoopFile(s"${cc.storePath}/default/carbon1",
-      classOf[CarbonInputFormat[Array[Object]]],
+    val env = ExecutionEnvironment.getExecutionEnvironment
+    val ds = env.readHadoopFile(
+      new CarbonInputFormat[Array[Object]],
       classOf[Void],
       classOf[Array[Object]],
-      conf)
-    val result = input.map(x => x._2.toList).collect
-    result.foreach(x => println(x.mkString(", ")))
+      path,
+      new Job(conf)
+    )
+
+    // print result
+    val result = ds.collect()
+    for (i <- 0 until result.size()) {
+      println(result.get(i).f1.mkString(","))
+    }
 
     // delete carbondata file
     ExampleUtils.cleanSampleCarbonFile(cc, "carbon1")
   }
 }
 // scalastyle:on println
-
