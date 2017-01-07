@@ -31,7 +31,7 @@ import org.apache.carbondata.core.util.BigDecimalCompressionFinder;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
 /**
- * Big decimal compression for writing
+ * Big decimal compression
  */
 public class CompressionBigDecimal<T> extends ValueCompressionHolder<T> {
 
