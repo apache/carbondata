@@ -17,35 +17,45 @@
 
 package org.apache.spark.sql.test
 
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.{CarbonContext, DataFrame, SQLContext}
+import org.apache.spark.sql.{DataFrame, SparkSession, SQLContext}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class TestQueryExecutorImplV1 extends TestQueryExecutorRegister {
-  override def sql(sqlText: String): DataFrame = TestQueryExecutorImplV1.cc.sql(sqlText)
+/**
+ * This class is a sql executor of unit test case for spark version 2.x.
+ */
 
-  override def sqlContext: SQLContext = TestQueryExecutorImplV1.cc
+class Spark2TestQueryExecutor extends TestQueryExecutorRegister {
+
+  override def sql(sqlText: String): DataFrame = Spark2TestQueryExecutor.spark.sql(sqlText)
+
+  override def sqlContext: SQLContext = Spark2TestQueryExecutor.spark.sqlContext
 }
 
-object TestQueryExecutorImplV1 {
+object Spark2TestQueryExecutor {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-  LOGGER.info("use TestQueryExecutorImplV1")
+  LOGGER.info("use TestQueryExecutorImplV2")
   CarbonProperties.getInstance()
+    .addProperty(CarbonCommonConstants.STORE_LOCATION, TestQueryExecutor.storeLocation)
     .addProperty("carbon.kettle.home", TestQueryExecutor.kettleHome)
     .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
     .addProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
       System.getProperty("java.io.tmpdir"))
     .addProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL)
 
-  val sc = new SparkContext(new SparkConf()
-    .setAppName("CarbonSpark")
-    .setMaster("local[2]")
-    .set("spark.sql.shuffle.partitions", "20")
-    .set("use_kettle_default", "true"))
-  sc.setLogLevel("ERROR")
 
-  val cc = new CarbonContext(sc, TestQueryExecutor.storeLocation, TestQueryExecutor.metastoredb)
+  import org.apache.spark.sql.CarbonSession._
+  val spark = SparkSession
+    .builder()
+    .master("local[2]")
+    .appName("CarbonExample")
+    .enableHiveSupport()
+    .config("spark.sql.warehouse.dir", TestQueryExecutor.warehouse)
+    .config("javax.jdo.option.ConnectionURL",
+      s"jdbc:derby:;databaseName=${TestQueryExecutor.metastoredb};create=true")
+    .getOrCreateCarbonSession()
+  spark.sparkContext.setLogLevel("ERROR")
+
 }
