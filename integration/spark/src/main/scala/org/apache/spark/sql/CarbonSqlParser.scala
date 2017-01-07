@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -261,7 +262,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
                   throw new Exception("ParsingException")) {
                   totalNumberOfBuckets => totalNumberOfBuckets
                 }
-                if (totalNumberOfBuckets.getText.contains("-")) {
+                if (totalNumberOfBuckets.getText.contains("-") || totalNumberOfBuckets.getText.contains("+")) {
                   throw new MalformedCarbonCommandException(
                     "INVALID NUMBER OF BUCKETS SPECIFIED IT CAN NOT BE A NEGATIVE NUMBER "
                       + numberOfBuckets.head.getText)
