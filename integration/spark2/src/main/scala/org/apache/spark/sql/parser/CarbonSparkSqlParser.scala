@@ -17,11 +17,13 @@
 package org.apache.spark.sql.parser
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, ParseException, SqlBaseParser}
 import org.apache.spark.sql.catalyst.parser.ParserUtils._
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{CreateTableContext, TablePropertyListContext}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
 import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field, TableModel}
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
@@ -47,7 +49,9 @@ class CarbonSparkSqlParser(conf: SQLConf) extends AbstractSqlParser {
     try {
       super.parsePlan(sqlText)
     } catch {
-      case e: Throwable =>
+      case ce: MalformedCarbonCommandException =>
+        throw ce
+      case ex =>
         astBuilder.parser.parse(sqlText)
     }
   }
@@ -139,13 +143,16 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
           None
         }
       }
+
+      val tableProperties = mutable.Map[String, String]()
+      properties.foreach(tableProperties += _)
       // prepare table model of the collected tokens
       val tableModel: TableModel = parser.prepareTableModel(ifNotExists,
         name.database,
-        name.table,
+        name.table.toLowerCase,
         fields,
         Seq(),
-        properties.asJava.asScala,
+        tableProperties,
         bucketFields)
 
       CreateTable(tableModel)
@@ -164,7 +171,9 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       operationNotAllowed(
         s"Values must be specified for key(s): ${ badKeys.mkString("[", ",", "]") }", ctx)
     }
-    props
+    props.map{ case (key, value) =>
+      (key.toLowerCase, value.toLowerCase)
+    }
   }
 
 }

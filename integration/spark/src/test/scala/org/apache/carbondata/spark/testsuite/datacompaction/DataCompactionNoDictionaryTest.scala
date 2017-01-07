@@ -18,19 +18,16 @@
  */
 package org.apache.carbondata.spark.testsuite.datacompaction
 
-import java.io.File
-
-import org.apache.carbondata.core.updatestatus.SegmentStatusManager
-
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.scalatest.BeforeAndAfterAll
 
 /**
   * FT for data compaction scenario.
@@ -47,12 +44,9 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
     segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
   }
 
-  val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
-    .getCanonicalPath
-
-  var csvFilePath1 = currentDirectory + "/src/test/resources/compaction/compaction1.csv"
-  var csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compaction2.csv"
-  var csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
+  var csvFilePath1 = s"$resourcesPath/compaction/compaction1.csv"
+  var csvFilePath2 = s"$resourcesPath/compaction/compaction2.csv"
+  var csvFilePath3 = s"$resourcesPath/compaction/compaction3.csv"
 
   override def beforeAll {
     CarbonProperties.getInstance()

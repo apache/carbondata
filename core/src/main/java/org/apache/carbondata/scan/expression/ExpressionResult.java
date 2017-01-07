@@ -85,6 +85,9 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           if (value instanceof Double) {
             return ((Double) value).intValue();
           }
+          if (value instanceof Long) {
+            return ((Long) value).intValue();
+          }
           return (Integer) value;
         case DATE:
           if (value instanceof java.sql.Date) {

@@ -23,6 +23,7 @@ import java.text.SimpleDateFormat
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
@@ -79,7 +80,7 @@ case class AlterTableCompaction(alterTableModel: AlterTableModel) extends Runnab
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   def run(sparkSession: SparkSession): Seq[Row] = {
-    val tableName = alterTableModel.tableName
+    val tableName = alterTableModel.tableName.toLowerCase
     val databaseName = alterTableModel.dbName.getOrElse(sparkSession.catalog.currentDatabase)
     if (null == org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(databaseName + "_" + tableName)) {
@@ -311,6 +312,12 @@ case class LoadTable(
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
+  private def checkDefaultValue(value: String, default: String) = if (StringUtils.isEmpty(value)) {
+    default
+  } else {
+    value
+  }
+
   def run(sparkSession: SparkSession): Seq[Row] = {
     if (dataFrame.isDefined && !updateModel.isDefined) {
       val rdd = dataFrame.get.rdd
@@ -406,10 +413,10 @@ case class LoadTable(
       val dateFormat = options.getOrElse("dateformat", null)
       validateDateFormat(dateFormat, table)
       val maxColumns = options.getOrElse("maxcolumns", null)
-      carbonLoadModel.setMaxColumns(maxColumns)
-      carbonLoadModel.setEscapeChar(escapeChar)
-      carbonLoadModel.setQuoteChar(quoteChar)
-      carbonLoadModel.setCommentChar(commentchar)
+      carbonLoadModel.setMaxColumns(checkDefaultValue(maxColumns, null))
+      carbonLoadModel.setEscapeChar(checkDefaultValue(escapeChar, "\\"))
+      carbonLoadModel.setQuoteChar(checkDefaultValue(quoteChar, "\""))
+      carbonLoadModel.setCommentChar(checkDefaultValue(commentchar, "#"))
       carbonLoadModel.setDateFormat(dateFormat)
       carbonLoadModel
         .setSerializationNullFormat(
@@ -729,7 +736,7 @@ private[sql] case class DescribeCommandFormatted(
       .getDimensionByTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
     results ++= getColumnGroups(dimension.asScala.toList)
     results.map { case (name, dataType, comment) =>
-      Row(f"$name%-36s $dataType%-80s $comment%-72s")
+      Row(f"$name%-36s", f"$dataType%-80s", f"$comment%-72s")
     }
   }
 

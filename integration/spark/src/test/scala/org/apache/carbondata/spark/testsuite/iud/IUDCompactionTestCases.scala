@@ -20,7 +20,6 @@
 package org.apache.carbondata.spark.testsuite.iud
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -38,20 +37,20 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
       """create table iud4.dest (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
 
       .show()
-    sql("""LOAD DATA LOCAL INPATH './src/test/resources/IUD/comp1.csv' INTO table iud4.dest""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/comp1.csv' INTO table iud4.dest""")
     sql(
       """create table iud4.source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED BY 'org.apache.carbondata.format'""")
-    sql("""LOAD DATA LOCAL INPATH './src/test/resources/IUD/source3.csv' INTO table iud4.source2""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/source3.csv' INTO table iud4.source2""")
     sql("""create table iud4.other (c1 string,c2 int) STORED BY 'org.apache.carbondata.format'""")
-    sql("""LOAD DATA LOCAL INPATH './src/test/resources/IUD/other.csv' INTO table iud4.other""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/other.csv' INTO table iud4.other""")
     sql(
       """create table iud4.hdest (c1 string,c2 int,c3 string,c5 string) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' STORED AS TEXTFILE""")
       .show()
-    sql("""LOAD DATA LOCAL INPATH './src/test/resources/IUD/comp1.csv' INTO table iud4.hdest""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/comp1.csv' INTO table iud4.hdest""")
     sql(
       """CREATE TABLE iud4.update_01(imei string,age int,task bigint,num double,level decimal(10,3),name string)STORED BY 'org.apache.carbondata.format' """)
     sql(
-      """LOAD DATA LOCAL INPATH './src/test/resources/IUD/update01.csv' INTO TABLE iud4.update_01 OPTIONS('BAD_RECORDS_LOGGER_ENABLE' = 'FALSE', 'BAD_RECORDS_ACTION' = 'FORCE') """)
+      s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/update01.csv' INTO TABLE iud4.update_01 OPTIONS('BAD_RECORDS_LOGGER_ENABLE' = 'FALSE', 'BAD_RECORDS_ACTION' = 'FORCE') """)
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled, "true")
   }
@@ -65,14 +64,14 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       """create table dest2 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
       .show()
-    sql("""load data local inpath './src/test/resources/IUD/comp1.csv' INTO table dest2""").show()
-    sql("""load data local inpath './src/test/resources/IUD/comp2.csv' INTO table dest2""").show()
-    sql("""load data local inpath './src/test/resources/IUD/comp3.csv' INTO table dest2""").show()
-    sql("""load data local inpath './src/test/resources/IUD/comp4.csv' INTO table dest2""").show()
+    sql(s"""load data local inpath '$resourcesPath/IUD/comp1.csv' INTO table dest2""").show()
+    sql(s"""load data local inpath '$resourcesPath/IUD/comp2.csv' INTO table dest2""").show()
+    sql(s"""load data local inpath '$resourcesPath/IUD/comp3.csv' INTO table dest2""").show()
+    sql(s"""load data local inpath '$resourcesPath/IUD/comp4.csv' INTO table dest2""").show()
     sql(
       """create table source2 (c11 string,c22 int,c33 string,c55 string, c66 int) STORED BY 'org.apache.carbondata.format'""")
       .show()
-    sql("""LOAD DATA LOCAL INPATH './src/test/resources/IUD/source3.csv' INTO table source2""").show()
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/source3.csv' INTO table source2""").show()
     sql(
       """update dest2 d set (d.c3, d.c5 ) = (select s.c33,s.c55 from source2 s where d.c1 = s.c11 and s.c22 < 3 or (s.c22 > 10 and s.c22 < 13) or (s.c22 > 20 and s.c22 < 23) or (s.c22 > 30 and s.c22 < 33))""")
       .show()
