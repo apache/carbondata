@@ -24,7 +24,6 @@ import java.nio.ByteBuffer;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.BigDecimalCompressionFinder;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -39,22 +38,28 @@ public class UnCompressBigDecimalByte<T> implements UnCompressValue<T> {
 
   private UnCompressValue rightPart;
 
-  public UnCompressBigDecimalByte(
-      BigDecimalCompressionFinder compressionFinder, UnCompressValue leftPart,
-      UnCompressValue rightPart) {
+  private double divisionFactor;
+
+  private boolean isDecimalPlacesNotZero;
+
+  public UnCompressBigDecimalByte(BigDecimalCompressionFinder compressionFinder,
+      UnCompressValue leftPart, UnCompressValue rightPart, int decimalPalacs,
+      Object maxValueObject) {
     this.compressionFinder = compressionFinder;
     this.leftPart = leftPart;
     this.rightPart = rightPart;
+    if (decimalPalacs > 0) {
+      this.isDecimalPlacesNotZero = true;
+    }
+    this.divisionFactor = Math.pow(10, decimalPalacs);
   }
 
-  @Override
-  public void setValue(T value) {
+  @Override public void setValue(T value) {
     byte[] values = (byte[]) value;
     ByteBuffer buffer = ByteBuffer.wrap(values);
     buffer.rewind();
     int leftPartLen = buffer.getInt();
-    int rightPartLen = values.length - leftPartLen
-        - CarbonCommonConstants.INT_SIZE_IN_BYTE;
+    int rightPartLen = values.length - leftPartLen - CarbonCommonConstants.INT_SIZE_IN_BYTE;
     byte[] leftValue = new byte[leftPartLen];
     byte[] rightValue = new byte[rightPartLen];
     buffer.get(leftValue);
@@ -63,72 +68,78 @@ public class UnCompressBigDecimalByte<T> implements UnCompressValue<T> {
     rightPart.setValue(rightValue);
   }
 
-  @Override
-  public void setValueInBytes(byte[] value) {
+  @Override public void setValueInBytes(byte[] value) {
     // TODO Auto-generated method stub
 
   }
 
-  @Override
-  public UnCompressValue<T> getNew() {
+  @Override public UnCompressValue<T> getNew() {
     UnCompressValue leftUnCompressClone = leftPart.getNew();
     UnCompressValue rightUnCompressClone = rightPart.getNew();
-    return new UnCompressBigDecimal(compressionFinder, leftUnCompressClone,
-        rightUnCompressClone);
+    return new UnCompressBigDecimal(compressionFinder, leftUnCompressClone, rightUnCompressClone);
   }
 
-  @Override
-  public UnCompressValue compress() {
-    UnCompressBigDecimal byt = new UnCompressBigDecimal<>(compressionFinder,
-        leftPart.compress(), rightPart.compress());
+  @Override public UnCompressValue compress() {
+    UnCompressBigDecimal byt =
+        new UnCompressBigDecimal<>(compressionFinder, leftPart.compress(), rightPart.compress());
     return byt;
   }
 
   @Override
-  public UnCompressValue uncompress(DataType dataType) {
+  public UnCompressValue uncompress(DataType dataType, byte[] data, int offset, int length,
+      int decimalPlaces, Object maxValueObject) {
+    ByteBuffer buffer = ByteBuffer.wrap(data, offset, length);
+    int leftPathLength = buffer.getInt();
+    int rightPartLength = length - leftPathLength - CarbonCommonConstants.INT_SIZE_IN_BYTE;
+    Long[] maxValue = (Long[]) maxValueObject;
     ValueCompressonHolder.UnCompressValue left = leftPart
-        .uncompress(compressionFinder.getLeftConvertedDataType());
+        .uncompress(compressionFinder.getLeftConvertedDataType(), data,
+            offset + CarbonCommonConstants.INT_SIZE_IN_BYTE, leftPathLength, decimalPlaces,
+            maxValue[0]);
     ValueCompressonHolder.UnCompressValue right = rightPart
-        .uncompress(compressionFinder.getRightConvertedDataType());
-    return new UnCompressBigDecimalByte<>(compressionFinder, left, right);
+        .uncompress(compressionFinder.getRightConvertedDataType(), data,
+            offset + CarbonCommonConstants.INT_SIZE_IN_BYTE + leftPathLength, rightPartLength,
+            decimalPlaces, maxValue[1]);
+    return new UnCompressBigDecimalByte<>(compressionFinder, left, right, decimalPlaces,
+        maxValueObject);
   }
 
-  @Override
-  public byte[] getBackArrayData() {
+  @Override public byte[] getBackArrayData() {
     return null;
   }
 
-  @Override
-  public UnCompressValue getCompressorObject() {
-    return new UnCompressBigDecimal<>(compressionFinder,
-        leftPart.getCompressorObject(), rightPart.getCompressorObject());
+  @Override public UnCompressValue getCompressorObject() {
+    return new UnCompressBigDecimal<>(compressionFinder, leftPart.getCompressorObject(),
+        rightPart.getCompressorObject());
   }
 
-  @Override
-  public CarbonReadDataHolder getValues(int decimal, Object maxValue) {
-    Long[] maxValues = (Long[]) maxValue;
-    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-    CarbonReadDataHolder leftDataHolder = leftPart.getValues(decimal,
-        maxValues[0]);
-    long[] leftVals = leftDataHolder.getReadableLongValue();
-    int size = leftVals.length;
-    long[] rightVals = new long[size];
-    if (decimal > 0) {
-      CarbonReadDataHolder rightDataHolder = rightPart.getValues(decimal,
-          maxValues[1]);
-      rightVals = rightDataHolder.getReadableLongValue();
+  @Override public void setUncompressValues(T data, int decimalPlaces, Object maxValueObject) {
+    //. do nothing
+  }
+
+  @Override public long getLongValue(int index) {
+    throw new UnsupportedOperationException("Get long is not supported");
+  }
+
+  @Override public double getDoubleValue(int index) {
+    throw new UnsupportedOperationException("Get double is not supported");
+  }
+
+  @Override public BigDecimal getBigDecimalValue(int index) {
+    long leftValue = leftPart.getLongValue(index);
+    long rightValue = 0;
+    if (isDecimalPlacesNotZero) {
+      rightValue = rightPart.getLongValue(index);
     }
-    BigDecimal[] values = new BigDecimal[size];
-    for (int i = 0; i < size; i++) {
-      String decimalPart = Double.toString(rightVals[i]/Math.pow(10, decimal));
-      String bigdStr = Long.toString(leftVals[i])
-          + CarbonCommonConstants.POINT
-          + decimalPart.substring(decimalPart.indexOf(".")+1, decimalPart.length());
-      BigDecimal bigdVal = new BigDecimal(bigdStr);
-      values[i] = bigdVal;
-    }
-    dataHolder.setReadableBigDecimalValues(values);
-    return dataHolder;
+    String decimalPart = Double.toString(rightValue / this.divisionFactor);
+    String bigdStr = Long.toString(leftValue) + CarbonCommonConstants.POINT + decimalPart
+        .substring(decimalPart.indexOf(".") + 1, decimalPart.length());
+    return new BigDecimal(bigdStr);
+  }
+
+  @Override public void freeMemory() {
+    leftPart.freeMemory();
+    rightPart.freeMemory();
   }
 
 }

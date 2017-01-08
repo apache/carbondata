@@ -21,70 +21,30 @@ package org.apache.carbondata.core.datastorage.store.dataholder;
 
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
+
 // This class is used with Uncompressor to hold the decompressed column chunk in memory
 public class CarbonReadDataHolder {
 
-  private byte[][] byteValues;
+  private ValueCompressonHolder.UnCompressValue unCompressValue;
 
-  private short[] shortValues;
-
-  private int[] intValues;
-
-  private long[] longValues;
-
-  private BigDecimal[] bigDecimalValues;
-
-  private double[] doubleValues;
-
-  public void setReadableByteValues(byte[][] byteValues) {
-    this.byteValues = byteValues;
+  public CarbonReadDataHolder(ValueCompressonHolder.UnCompressValue unCompressValue) {
+    this.unCompressValue = unCompressValue;
   }
 
-  public void setReadableShortValues(short[] shortValues) {
-    this.shortValues = shortValues;
-  }
-
-  public void setReadableIntValues(int[] intValues) {
-    this.intValues = intValues;
-  }
-
-  public void setReadableLongValues(long[] longValues) {
-    this.longValues = longValues;
-  }
-
-  public void setReadableBigDecimalValues(BigDecimal[] bigDecimalValues) {
-    this.bigDecimalValues = bigDecimalValues;
-  }
-
-  public void setReadableDoubleValues(double[] doubleValues) {
-    this.doubleValues = doubleValues;
-  }
-
-  public byte[] getReadableByteArrayValueByIndex(int index) {
-    return this.byteValues[index];
-  }
-
-  public long getReadableShortValueByIndex(int index) {
-    return this.shortValues[index];
-  }
-
-  public long getReadableIntValueByIndex(int index) {
-    return this.intValues[index];
-  }
-
-  public long[] getReadableLongValue() {
-    return this.longValues;
-  }
   public long getReadableLongValueByIndex(int index) {
-    return this.longValues[index];
+    return this.unCompressValue.getLongValue(index);
   }
 
   public BigDecimal getReadableBigDecimalValueByIndex(int index) {
-    return this.bigDecimalValues[index];
+    return this.unCompressValue.getBigDecimalValue(index);
   }
 
   public double getReadableDoubleValueByIndex(int index) {
-    return this.doubleValues[index];
+    return this.unCompressValue.getDoubleValue(index);
   }
 
+  public void freeMemory() {
+    unCompressValue.freeMemory();
+  }
 }

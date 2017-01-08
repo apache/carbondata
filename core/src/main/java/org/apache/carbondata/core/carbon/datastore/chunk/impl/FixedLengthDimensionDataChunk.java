@@ -18,37 +18,36 @@
  */
 package org.apache.carbondata.core.carbon.datastore.chunk.impl;
 
-import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
-import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.DimensionChunkStoreFactory;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.DimensionChunkStoreFactory.DimensionStoreType;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.scan.result.vector.ColumnVectorInfo;
 
 /**
- * This class is holder of the dimension column chunk data of the fixed length
- * key size
+ * This class is gives access to fixed length dimension data chunk store
  */
-public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk<byte[]> {
+public class FixedLengthDimensionDataChunk extends AbstractDimensionDataChunk {
 
   /**
-   * dimension chunk attributes
-   */
-  private DimensionChunkAttributes chunkAttributes;
-
-  /**
-   * data chunks
-   */
-  private byte[] dataChunk;
-
-  /**
-   * Constructor for this class
+   * Constructor
    *
-   * @param dataChunk       data chunk
-   * @param chunkAttributes chunk attributes
+   * @param dataChunk            data chunk
+   * @param invertedIndex        inverted index
+   * @param invertedIndexReverse reverse inverted index
+   * @param numberOfRows         number of rows
+   * @param columnValueSize      size of each column value
    */
-  public FixedLengthDimensionDataChunk(byte[] dataChunk, DimensionChunkAttributes chunkAttributes) {
-    this.chunkAttributes = chunkAttributes;
-    this.dataChunk = dataChunk;
+  public FixedLengthDimensionDataChunk(byte[] dataChunk, int[] invertedIndex,
+      int[] invertedIndexReverse, int numberOfRows, int columnValueSize) {
+    long totalSize = null != invertedIndex ?
+        dataChunk.length + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) :
+        dataChunk.length;
+    dataChunkStore = DimensionChunkStoreFactory.INSTANCE
+        .getDimensionChunkStore(columnValueSize, null != invertedIndex, numberOfRows, totalSize,
+            DimensionStoreType.FIXEDLENGTH);
+    dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunk);
   }
 
   /**
@@ -62,41 +61,42 @@ public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk<b
    */
   @Override public int fillChunkData(byte[] data, int offset, int index,
       KeyStructureInfo keyStructureInfo) {
-    if (chunkAttributes.getInvertedIndexes() != null) {
-      index = chunkAttributes.getInvertedIndexesReverse()[index];
-    }
-    System.arraycopy(dataChunk, index * chunkAttributes.getColumnValueSize(), data, offset,
-        chunkAttributes.getColumnValueSize());
-    return chunkAttributes.getColumnValueSize();
+    dataChunkStore.fillRow(index, data, offset);
+    return dataChunkStore.getColumnValueSize();
   }
 
   /**
    * Converts to column dictionary integer value
+   *
+   * @param rowId
+   * @param columnIndex
+   * @param row
+   * @param restructuringInfo
+   * @return
    */
   @Override public int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
       KeyStructureInfo restructuringInfo) {
-    if (chunkAttributes.getInvertedIndexes() != null) {
-      rowId = chunkAttributes.getInvertedIndexesReverse()[rowId];
-    }
-    int start = rowId * chunkAttributes.getColumnValueSize();
-    int dict = getInt(chunkAttributes.getColumnValueSize(), start);
-    row[columnIndex] = dict;
+    row[columnIndex] = dataChunkStore.getSurrogate(rowId);
     return columnIndex + 1;
   }
 
+  /**
+   * Fill the data to vector
+   *
+   * @param vectorInfo
+   * @param column
+   * @param restructuringInfo
+   * @return next column index
+   */
   @Override public int fillConvertedChunkData(ColumnVectorInfo[] vectorInfo, int column,
       KeyStructureInfo restructuringInfo) {
     ColumnVectorInfo columnVectorInfo = vectorInfo[column];
     int offset = columnVectorInfo.offset;
     int vectorOffset = columnVectorInfo.vectorOffset;
     int len = columnVectorInfo.size + offset;
-    int[] indexesReverse = chunkAttributes.getInvertedIndexesReverse();
-    int columnValueSize = chunkAttributes.getColumnValueSize();
     CarbonColumnVector vector = columnVectorInfo.vector;
     for (int j = offset; j < len; j++) {
-      int start =
-          indexesReverse == null ? j * columnValueSize : indexesReverse[j] * columnValueSize;
-      int dict = getInt(columnValueSize, start);
+      int dict = dataChunkStore.getSurrogate(j);
       if (columnVectorInfo.directDictionaryGenerator == null) {
         vector.putInt(vectorOffset++, dict);
       } else {
@@ -119,23 +119,24 @@ public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk<b
     return column + 1;
   }
 
-  @Override
-  public int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo, int column,
-      KeyStructureInfo restructuringInfo) {
+  /**
+   * Fill the data to vector
+   *
+   * @param rowMapping
+   * @param vectorInfo
+   * @param column
+   * @param restructuringInfo
+   * @return next column index
+   */
+  @Override public int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo,
+      int column, KeyStructureInfo restructuringInfo) {
     ColumnVectorInfo columnVectorInfo = vectorInfo[column];
     int offset = columnVectorInfo.offset;
     int vectorOffset = columnVectorInfo.vectorOffset;
     int len = columnVectorInfo.size + offset;
-    int[] indexesReverse = chunkAttributes.getInvertedIndexesReverse();
-    int columnValueSize = chunkAttributes.getColumnValueSize();
     CarbonColumnVector vector = columnVectorInfo.vector;
     for (int j = offset; j < len; j++) {
-      // calculate the start index to take the dictionary data. Here dictionary data size is fixed
-      // so calculate using fixed size of it.
-      int start = indexesReverse == null ?
-          rowMapping[j] * columnValueSize :
-          indexesReverse[rowMapping[j]] * columnValueSize;
-      int dict = getInt(columnValueSize, start);
+      int dict = dataChunkStore.getSurrogate(rowMapping[j]);
       if (columnVectorInfo.directDictionaryGenerator == null) {
         vector.putInt(vectorOffset++, dict);
       } else {
@@ -156,55 +157,5 @@ public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk<b
       }
     }
     return column + 1;
-  }
-
-  /**
-   * Create the integer from fixed column size and start index
-   * @param columnValueSize
-   * @param start
-   * @return
-   */
-  private int getInt(int columnValueSize, int start) {
-    int dict = 0;
-    for (int i = start; i < start + columnValueSize; i++) {
-      dict <<= 8;
-      dict ^= dataChunk[i] & 0xFF;
-    }
-    return dict;
-  }
-
-  /**
-   * Below method to get the data based in row id
-   *
-   * @param index row id of the data
-   * @return chunk
-   */
-  @Override public byte[] getChunkData(int index) {
-    byte[] data = new byte[chunkAttributes.getColumnValueSize()];
-    if (chunkAttributes.getInvertedIndexes() != null) {
-      index = chunkAttributes.getInvertedIndexesReverse()[index];
-    }
-    System.arraycopy(dataChunk, index * chunkAttributes.getColumnValueSize(), data, 0,
-        chunkAttributes.getColumnValueSize());
-    return data;
-  }
-
-  /**
-   * Below method will be used get the chunk attributes
-   *
-   * @return chunk attributes
-   */
-  @Override public DimensionChunkAttributes getAttributes() {
-    return chunkAttributes;
-  }
-
-  /**
-   * Below method will be used to return the complete data chunk
-   * This will be required during filter query
-   *
-   * @return complete chunk
-   */
-  @Override public byte[] getCompleteDataChunk() {
-    return dataChunk;
   }
 }

@@ -75,23 +75,22 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
       org.apache.carbondata.format.PresenceMeta presentMetadataThrift) {
     PresenceMeta presenceMeta = new PresenceMeta();
     presenceMeta.setRepresentNullValues(presentMetadataThrift.isRepresents_presence());
-    presenceMeta.setBitSet(
-        BitSet.valueOf(CompressorFactory.getInstance().unCompressByte(
-            presentMetadataThrift.getPresent_bit_stream())));
+    presenceMeta.setBitSet(BitSet.valueOf(CompressorFactory.getInstance().getCompressor()
+        .unCompressByte(presentMetadataThrift.getPresent_bit_stream())));
     return presenceMeta;
   }
 
   /**
    * Below method will be used to read the chunk based on block indexes
-   * Reading logic of below method is:
-   * Except last column all the column chunk can be read in group
-   * if not last column then read data of all the column present in block index
-   * together then process it.
-   * For last column read is separately and process
+   * Reading logic of below method is: Except last column all the column chunk
+   * can be read in group if not last column then read data of all the column
+   * present in block index together then process it. For last column read is
+   * separately and process
    *
    * @param fileReader   file reader to read the blocks from file
    * @param blockIndexes blocks range to be read
    * @return measure column chunks
+   * @throws IOException
    */
   public MeasureColumnDataChunk[] readMeasureChunks(FileHolder fileReader, int[][] blockIndexes)
       throws IOException {
@@ -131,6 +130,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
    * @param fileReader file reader to read the blocks
    * @param blockIndex block to be read
    * @return measure data chunk
+   * @throws IOException
    */
   @Override public MeasureColumnDataChunk readMeasureChunk(FileHolder fileReader, int blockIndex)
       throws IOException {
@@ -138,27 +138,23 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     DataChunk2 measureColumnChunk = null;
     byte[] measureDataChunk = null;
     byte[] data = null;
-    byte[] dataPage = null;
+    int copyPoint = 0;
     if (measureColumnChunkOffsets.size() - 1 == blockIndex) {
       measureDataChunk = fileReader
           .readByteArray(filePath, measureColumnChunkOffsets.get(blockIndex),
               measureColumnChunkLength.get(blockIndex));
-      measureColumnChunk = CarbonUtil.readDataChunk(measureDataChunk);
-      assert measureColumnChunk != null;
-      dataPage = fileReader.readByteArray(filePath,
+      measureColumnChunk = CarbonUtil
+          .readDataChunk(measureDataChunk, copyPoint, measureColumnChunkLength.get(blockIndex));
+      data = fileReader.readByteArray(filePath,
           measureColumnChunkOffsets.get(blockIndex) + measureColumnChunkLength.get(blockIndex),
           measureColumnChunk.data_page_length);
     } else {
       long currentMeasureOffset = measureColumnChunkOffsets.get(blockIndex);
       data = fileReader.readByteArray(filePath, currentMeasureOffset,
           (int) (measureColumnChunkOffsets.get(blockIndex + 1) - currentMeasureOffset));
-      measureDataChunk = new byte[measureColumnChunkLength.get(blockIndex)];
-      System.arraycopy(data, 0, measureDataChunk, 0, measureColumnChunkLength.get(blockIndex));
-      measureColumnChunk = CarbonUtil.readDataChunk(measureDataChunk);
-      assert measureColumnChunk != null;
-      dataPage = new byte[measureColumnChunk.data_page_length];
-      System.arraycopy(data, measureColumnChunkLength.get(blockIndex), dataPage, 0,
-          measureColumnChunk.data_page_length);
+      measureColumnChunk =
+          CarbonUtil.readDataChunk(data, copyPoint, measureColumnChunkLength.get(blockIndex));
+      copyPoint += measureColumnChunkLength.get(blockIndex);
     }
     List<ValueEncoderMeta> valueEncodeMeta = new ArrayList<>();
     for (int i = 0; i < measureColumnChunk.getEncoder_meta().size(); i++) {
@@ -168,13 +164,10 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     WriterCompressModel compressionModel = CarbonUtil.getValueCompressionModel(valueEncodeMeta);
     UnCompressValue values =
         compressionModel.getUnCompressValues()[0].getNew().getCompressorObject();
-    // create a new uncompressor
-    // read data from file and set to uncompressor
-    values.setValue(dataPage);
-    // get the data holder after uncompressing
-    CarbonReadDataHolder measureDataHolder =
-        values.uncompress(compressionModel.getConvertedDataType()[0])
-            .getValues(compressionModel.getMantissa()[0], compressionModel.getMaxValue()[0]);
+    CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values
+        .uncompress(compressionModel.getConvertedDataType()[0], data, copyPoint,
+            measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
+            compressionModel.getMaxValue()[0]));
     // set the data chunk
     datChunk.setMeasureDataHolder(measureDataHolder);
     // set the enun value indexes
@@ -183,14 +176,15 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
   }
 
   /**
-   * Below method will be used to read the dimension chunks in group.
-   * This is to enhance the IO performance. Will read the data from start index
-   * to end index(including)
+   * Below method will be used to read the dimension chunks in group. This is
+   * to enhance the IO performance. Will read the data from start index to end
+   * index(including)
    *
    * @param fileReader      stream used for reading
    * @param startBlockIndex start block index
    * @param endBlockIndex   end block index
    * @return measure column chunk array
+   * @throws IOException
    */
   private MeasureColumnDataChunk[] readMeasureChunksInGroup(FileHolder fileReader,
       int startBlockIndex, int endBlockIndex) throws IOException {
@@ -202,19 +196,12 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     MeasureColumnDataChunk dataChunk = null;
     int index = 0;
     int copyPoint = 0;
-    byte[] measureDataChunk = null;
-    byte[] dataPage = null;
     DataChunk2 measureColumnChunk = null;
     for (int i = startBlockIndex; i <= endBlockIndex; i++) {
       dataChunk = new MeasureColumnDataChunk();
-      measureDataChunk = new byte[measureColumnChunkLength.get(i)];
-      System.arraycopy(data, copyPoint, measureDataChunk, 0, measureColumnChunkLength.get(i));
-      measureColumnChunk = CarbonUtil.readDataChunk(measureDataChunk);
-      assert measureColumnChunk != null;
-      dataPage = new byte[measureColumnChunk.data_page_length];
+      measureColumnChunk =
+          CarbonUtil.readDataChunk(data, copyPoint, measureColumnChunkLength.get(i));
       copyPoint += measureColumnChunkLength.get(i);
-      System.arraycopy(data, copyPoint, dataPage, 0, measureColumnChunk.data_page_length);
-      copyPoint += measureColumnChunk.data_page_length;
       List<ValueEncoderMeta> valueEncodeMeta = new ArrayList<>();
       for (int j = 0; j < measureColumnChunk.getEncoder_meta().size(); j++) {
         valueEncodeMeta.add(
@@ -223,13 +210,12 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
       WriterCompressModel compressionModel = CarbonUtil.getValueCompressionModel(valueEncodeMeta);
       UnCompressValue values =
           compressionModel.getUnCompressValues()[0].getNew().getCompressorObject();
-      // create a new uncompressor
-      // read data from file and set to uncompressor
-      values.setValue(dataPage);
       // get the data holder after uncompressing
-      CarbonReadDataHolder measureDataHolder =
-          values.uncompress(compressionModel.getConvertedDataType()[0])
-              .getValues(compressionModel.getMantissa()[0], compressionModel.getMaxValue()[0]);
+      CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values
+          .uncompress(compressionModel.getConvertedDataType()[0], data, copyPoint,
+              measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
+              compressionModel.getMaxValue()[0]));
+      copyPoint += measureColumnChunk.data_page_length;
       // set the data chunk
       dataChunk.setMeasureDataHolder(measureDataHolder);
       // set the enun value indexes
