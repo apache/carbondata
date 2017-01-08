@@ -64,14 +64,12 @@ public class CarbonDataReaderFactory {
   public DimensionColumnChunkReader getDimensionColumnChunkReader(ColumnarFormatVersion version,
       BlockletInfo blockletInfo, int[] eachColumnValueSize, String filePath) {
     switch (version) {
-      case V2:
-        return new CompressedDimensionChunkFileBasedReaderV2(blockletInfo, eachColumnValueSize,
-            filePath);
       case V1:
         return new CompressedDimensionChunkFileBasedReaderV1(blockletInfo, eachColumnValueSize,
             filePath);
       default:
-        throw new IllegalArgumentException("invalid format version: " + version);
+        return new CompressedDimensionChunkFileBasedReaderV2(blockletInfo, eachColumnValueSize,
+            filePath);
     }
   }
 
@@ -86,12 +84,10 @@ public class CarbonDataReaderFactory {
   public MeasureColumnChunkReader getMeasureColumnChunkReader(ColumnarFormatVersion version,
       BlockletInfo blockletInfo, String filePath) {
     switch (version) {
-      case V2:
-        return new CompressedMeasureChunkFileBasedReaderV2(blockletInfo, filePath);
       case V1:
         return new CompressedMeasureChunkFileBasedReaderV1(blockletInfo, filePath);
       default:
-        throw new IllegalArgumentException("invalid format version: " + version);
+        return new CompressedMeasureChunkFileBasedReaderV2(blockletInfo, filePath);
     }
 
   }
