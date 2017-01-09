@@ -421,7 +421,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
           case Some(cond) =>
             "select tupleId from " + tableName  + " " + alias + " where " + cond
           case _ =>
-            "select tupleId from " + tableName
+            "select tupleId from " + tableName + " " + alias
         }
         DeleteRecords(stmt, table)
     }
