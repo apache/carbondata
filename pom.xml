@@ -97,12 +97,12 @@
     <module>processing</module>
     <module>hadoop</module>
     <module>integration/spark-common</module>
+    <module>integration/spark-common-test</module>
     <module>assembly</module>
   </modules>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <spark.csv.version>1.2.0</spark.csv.version>
     <snappy.version>1.1.2.6</snappy.version>
     <hadoop.version>2.2.0</hadoop.version>
     <kettle.version>4.4.0-stable</kettle.version>
@@ -338,9 +338,9 @@
       </modules>
     </profile>
     <profile>
-      <id>spark-2.0</id>
+      <id>spark-2.1</id>
       <properties>
-        <spark.version>2.0.2</spark.version>
+        <spark.version>2.1.0</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.8</scala.version>
       </properties>
@@ -350,9 +350,13 @@
       </modules>
     </profile>
     <profile>
-      <id>integration-test</id>
+      <id>flink</id>
+      <properties>
+        <flink.version>1.1.4</flink.version>
+        <scala.binary.version>2.10</scala.binary.version>
+      </properties>
       <modules>
-        <module>integration-testcases</module>
+        <module>examples/flink</module>
       </modules>
     </profile>
     <profile>

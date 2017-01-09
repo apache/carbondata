@@ -18,38 +18,44 @@
  */
 package org.apache.carbondata.spark.readsupport;
 
+<<<<<<< HEAD
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+=======
+import java.io.IOException;
+>>>>>>> bc5a061e9fac489f997cfd68238622e348512d6f
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
-import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.hadoop.readsupport.impl.AbstractDictionaryDecodedReadSupport;
 
+<<<<<<< HEAD
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
 import org.apache.spark.sql.catalyst.util.GenericArrayData;
 import org.apache.spark.sql.types.Decimal;
+=======
+import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
+>>>>>>> bc5a061e9fac489f997cfd68238622e348512d6f
 
-public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSupport<Row> {
+public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSupport<InternalRow> {
 
   @Override public void initialize(CarbonColumn[] carbonColumns,
-      AbsoluteTableIdentifier absoluteTableIdentifier) {
+      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException {
     super.initialize(carbonColumns, absoluteTableIdentifier);
     //can initialize and generate schema here.
   }
 
-  @Override public Row readRow(Object[] data) {
+  @Override public InternalRow readRow(Object[] data) {
     for (int i = 0; i < dictionaries.length; i++) {
+      if (data[i] == null) {
+        continue;
+      }
       if (dictionaries[i] == null) {
-        if (carbonColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-          //convert the long to timestamp in case of direct dictionary column
-          if (DataType.TIMESTAMP == carbonColumns[i].getDataType()) {
-            data[i] = new Timestamp((long) data[i] / 1000);
-          }
-        } else if(dataTypes[i].equals(DataType.INT)) {
+        if(dataTypes[i].equals(DataType.INT)) {
           data[i] = ((Long)(data[i])).intValue();
         } else if(dataTypes[i].equals(DataType.SHORT)) {
           data[i] = ((Long)(data[i])).shortValue();
@@ -62,6 +68,6 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
         data[i] = new GenericInternalRow((Object[]) data[i]);
       }
     }
-    return new GenericRow(data);
+    return new GenericInternalRow(data);
   }
 }

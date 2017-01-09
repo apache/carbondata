@@ -46,13 +46,6 @@ public class FileManager implements IFileManagerComposite {
     return listOfFileData.get(i);
   }
 
-  /**
-   * Renames the File/Folders
-   */
-  public boolean rename(IFileManagerComposite composite) {
-    return false;
-  }
-
   @Override public void setName(String name) {
     this.fileName = name;
   }

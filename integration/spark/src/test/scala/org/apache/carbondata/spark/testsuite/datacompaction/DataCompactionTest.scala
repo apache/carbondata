@@ -18,19 +18,16 @@
  */
 package org.apache.carbondata.spark.testsuite.datacompaction
 
-import java.io.File
-
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.lcm.status.SegmentStatusManager
 
 /**
   * FT for data compaction scenario.
@@ -38,7 +35,7 @@ import org.apache.carbondata.lcm.status.SegmentStatusManager
 class DataCompactionTest extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
     sql("drop table if exists  normalcompaction")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
@@ -49,26 +46,16 @@ class DataCompactionTest extends QueryTest with BeforeAndAfterAll {
         ".format'"
     )
 
-
-    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
-      .getCanonicalPath
-    val csvFilePath1 = currentDirectory + "/src/test/resources/compaction/compaction1.csv"
-
-    val csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compaction2.csv"
-    val csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
+    val csvFilePath1 = s"$resourcesPath/compaction/compaction1.csv"
+    val csvFilePath2 = s"$resourcesPath/compaction/compaction2.csv"
+    val csvFilePath3 = s"$resourcesPath/compaction/compaction3.csv"
 
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE normalcompaction OPTIONS" +
       "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
-    CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "true")
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE normalcompaction  OPTIONS" +
       "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
-    CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "true")
-    System.out
-      .println("load merge status is " + CarbonProperties.getInstance()
-        .getProperty("carbon.enable.load.merge")
-      )
     // compaction will happen here.
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath3 + "' INTO TABLE normalcompaction  OPTIONS" +
       "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
@@ -88,8 +75,10 @@ class DataCompactionTest extends QueryTest with BeforeAndAfterAll {
             CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
             new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "normalcompaction", "1")
           )
-      val segments = SegmentStatusManager.getSegmentStatus(identifier)
-          .getValidSegments.asScala.toList
+
+      val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+
+      val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
 
       if (!segments.contains("0.1")) {
         // wait for 2 seconds for compaction to complete.
@@ -135,9 +124,11 @@ class DataCompactionTest extends QueryTest with BeforeAndAfterAll {
           new CarbonTableIdentifier(
             CarbonCommonConstants.DATABASE_DEFAULT_NAME, "normalcompaction", "uniqueid")
         )
+
+    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+
     // merged segment should not be there
-    val segments = SegmentStatusManager.getSegmentStatus(identifier)
-        .getValidSegments.asScala.toList
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
     assert(!segments.contains("0"))
     assert(!segments.contains("1"))
     assert(!segments.contains("2"))
@@ -166,10 +157,10 @@ class DataCompactionTest extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    /* sql("drop table normalcompaction") */
+    sql("drop table if exists  normalcompaction")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-    CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "false")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
   }
 
 }

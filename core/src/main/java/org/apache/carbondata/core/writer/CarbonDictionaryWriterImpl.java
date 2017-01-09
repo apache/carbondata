@@ -285,8 +285,11 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   private void validateDictionaryFileOffsetWithLastSegmentEntryOffset() throws IOException {
     // read last dictionary chunk meta entry from dictionary metadata file
     chunkMetaObjectForLastSegmentEntry = getChunkMetaObjectForLastSegmentEntry();
-    int bytesToTruncate =
-        (int) (chunk_start_offset - chunkMetaObjectForLastSegmentEntry.getEnd_offset());
+    int bytesToTruncate = 0;
+    if (null != chunkMetaObjectForLastSegmentEntry) {
+      bytesToTruncate =
+              (int) (chunk_start_offset - chunkMetaObjectForLastSegmentEntry.getEnd_offset());
+    }
     if (bytesToTruncate > 0) {
       LOGGER.info("some inconsistency in dictionary file for column " + this.columnIdentifier);
       // truncate the dictionary data till chunk meta end offset

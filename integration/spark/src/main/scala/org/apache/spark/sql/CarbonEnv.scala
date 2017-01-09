@@ -18,8 +18,10 @@
 package org.apache.spark.sql
 
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
-import org.apache.spark.sql.hive.CarbonMetastore
+import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonMetastore}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.readsupport.impl.RawDataReadSupport
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 
@@ -39,7 +41,9 @@ object CarbonEnv {
       val cc = sqlContext.asInstanceOf[CarbonContext]
       val catalog = new CarbonMetastore(cc, cc.storePath, cc.hiveClientInterface, "")
       carbonEnv = CarbonEnv(catalog)
+      CarbonIUDAnalysisRule.init(sqlContext)
       initialized = true
+      CarbonProperties.getInstance.addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
     }
   }
 

@@ -35,7 +35,6 @@ public class CarbonIndexFileWriter {
   /**
    * It writes thrift object to file
    *
-   * @param footer
    * @throws IOException
    */
   public void writeThrift(TBase indexObject) throws IOException {

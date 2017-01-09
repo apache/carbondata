@@ -47,7 +47,7 @@ import org.apache.carbondata.core.reader.ThriftReader
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
 import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.lcm.locks.ZookeeperInit
+import org.apache.carbondata.locks.ZookeeperInit
 import org.apache.carbondata.spark.merger.TableMeta
 
 case class MetaData(var tablesMeta: ArrayBuffer[TableMeta])
@@ -148,12 +148,12 @@ class CarbonMetastore(hiveContext: HiveContext, val storePath: String,
                  c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))
   }
 
-  def tableExists(tableIdentifier: TableIdentifier)(sqlContext: SQLContext): Boolean = {
+  def tableExists(identifier: TableIdentifier)(sqlContext: SQLContext): Boolean = {
     checkSchemasModifiedTimeAndReloadTables()
-    val database = tableIdentifier.database.getOrElse(getDB.getDatabaseName(None, sqlContext))
+    val database = identifier.database.getOrElse(getDB.getDatabaseName(None, sqlContext))
     val tables = metadata.tablesMeta.filter(
       c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
-           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableIdentifier.table))
+           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(identifier.table))
     tables.nonEmpty
   }
 
@@ -498,7 +498,9 @@ object CarbonMetastoreTypes extends RegexParsers {
     fixedDecimalType |
     "decimal" ^^^ "decimal" ^^^ DecimalType(18, 2) |
     "varchar\\((\\d+)\\)".r ^^^ StringType |
-    "timestamp" ^^^ TimestampType
+    "timestamp" ^^^ TimestampType |
+    "date" ^^^ DateType |
+    "char\\((\\d+)\\)".r ^^^ StringType
 
   protected lazy val fixedDecimalType: Parser[DataType] =
     "decimal" ~> "(" ~> "^[1-9]\\d*".r ~ ("," ~> "^[0-9]\\d*".r <~ ")") ^^ {
@@ -556,6 +558,7 @@ object CarbonMetastoreTypes extends RegexParsers {
       case BinaryType => "binary"
       case BooleanType => "boolean"
       case DecimalType() => "decimal"
+      case DateType => "date"
       case TimestampType => "timestamp"
     }
   }

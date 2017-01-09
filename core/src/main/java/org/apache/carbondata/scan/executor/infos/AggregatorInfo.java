@@ -49,22 +49,6 @@ public class AggregatorInfo {
   private Object[] defaultValues;
 
   /**
-   * In carbon there are three type of aggregation
-   * (dimension aggregation, expression aggregation and measure aggregation)
-   * Below index will be used to set the start position of expression in measures
-   * aggregator array
-   */
-  private int expressionAggregatorStartIndex;
-
-  /**
-   * In carbon there are three type of aggregation
-   * (dimension aggregation, expression aggregation and measure aggregation)
-   * Below index will be used to set the start position of measures in measures
-   * aggregator array
-   */
-  private int measureAggregatorStartIndex;
-
-  /**
    * Datatype of each measure;
    */
   private DataType[] measureDataTypes;
@@ -109,34 +93,6 @@ public class AggregatorInfo {
    */
   public void setDefaultValues(Object[] defaultValues) {
     this.defaultValues = defaultValues;
-  }
-
-  /**
-   * @return the expressionAggregatorStartIndex
-   */
-  public int getExpressionAggregatorStartIndex() {
-    return expressionAggregatorStartIndex;
-  }
-
-  /**
-   * @param expressionAggregatorStartIndex the expressionAggregatorStartIndex to set
-   */
-  public void setExpressionAggregatorStartIndex(int expressionAggregatorStartIndex) {
-    this.expressionAggregatorStartIndex = expressionAggregatorStartIndex;
-  }
-
-  /**
-   * @return the measureAggregatorStartIndex
-   */
-  public int getMeasureAggregatorStartIndex() {
-    return measureAggregatorStartIndex;
-  }
-
-  /**
-   * @param measureAggregatorStartIndex the measureAggregatorStartIndex to set
-   */
-  public void setMeasureAggregatorStartIndex(int measureAggregatorStartIndex) {
-    this.measureAggregatorStartIndex = measureAggregatorStartIndex;
   }
 
   public DataType[] getMeasureDataTypes() {

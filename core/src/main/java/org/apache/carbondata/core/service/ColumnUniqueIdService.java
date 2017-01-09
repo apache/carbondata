@@ -30,5 +30,5 @@ public interface ColumnUniqueIdService {
    * @param columnSchema
    * @return generate unique id
    */
-  public String generateUniqueId(String databaseName, ColumnSchema columnSchema);
+  String generateUniqueId(String databaseName, ColumnSchema columnSchema);
 }

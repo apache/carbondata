@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.scan.filter.resolver;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.SortedMap;
 
@@ -26,7 +27,6 @@ import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.expression.ColumnExpression;
 import org.apache.carbondata.scan.expression.Expression;
 import org.apache.carbondata.scan.expression.conditional.BinaryConditionalExpression;
@@ -59,11 +59,10 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    * dictionaries for executing/evaluating the filter expressions in the
    * executer layer.
    *
-   * @throws QueryExecutionException
    * @throws FilterUnsupportedException
    */
   @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
-      throws FilterUnsupportedException {
+      throws FilterUnsupportedException, IOException {
     FilterResolverMetadata metadata = new FilterResolverMetadata();
     metadata.setTableIdentifier(absoluteTableIdentifier);
     if ((!isExpressionResolve) && exp instanceof BinaryConditionalExpression) {
@@ -103,7 +102,8 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
         metadata.setColumnExpression(columnExpression);
         metadata.setExpression(leftExp);
         metadata.setIncludeFilter(isIncludeFilter);
-        if (columnExpression.getDataType().equals(DataType.TIMESTAMP)) {
+        if (columnExpression.getDataType().equals(DataType.TIMESTAMP) ||
+            columnExpression.getDataType().equals(DataType.DATE)) {
           isExpressionResolve = true;
         } else {
           // if imei=imei comes in filter condition then we need to
@@ -188,32 +188,22 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    * method will calculates the start key based on the filter surrogates
    */
   public void getStartKey(long[] startKey,
-      SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList)
-      throws QueryExecutionException {
-    if (null == dimColResolvedFilterInfo.getStarIndexKey()) {
-      FilterUtil.getStartKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(),
-          startKey, startKeyList);
-      FilterUtil.getStartKeyForNoDictionaryDimension(dimColResolvedFilterInfo,
-          setOfStartKeyByteArray);
-    }
+      SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList) {
+    FilterUtil.getStartKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(),
+        startKey, startKeyList);
+    FilterUtil.getStartKeyForNoDictionaryDimension(dimColResolvedFilterInfo,
+        setOfStartKeyByteArray);
   }
 
   /**
-   * method will get the start key based on the filter surrogates
-   *
-   * @return end IndexKey
-   * @throws QueryExecutionException
+   * get the start key based on the filter surrogates
    */
-  @Override public void getEndKey(SegmentProperties segmentProperties,
-      AbsoluteTableIdentifier absoluteTableIdentifier, long[] endKeys,
-      SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> endKeyList)
-      throws QueryExecutionException {
-    if (null == dimColResolvedFilterInfo.getEndIndexKey()) {
-      FilterUtil.getEndKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(),
-          absoluteTableIdentifier, endKeys, segmentProperties, endKeyList);
-      FilterUtil.getEndKeyForNoDictionaryDimension(dimColResolvedFilterInfo,
-          setOfEndKeyByteArray);
-    }
+  @Override public void getEndKey(SegmentProperties segmentProperties, long[] endKeys,
+      SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> endKeyList) {
+    FilterUtil.getEndKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(), endKeys,
+        segmentProperties, endKeyList);
+    FilterUtil.getEndKeyForNoDictionaryDimension(dimColResolvedFilterInfo,
+        setOfEndKeyByteArray);
   }
 
   /**

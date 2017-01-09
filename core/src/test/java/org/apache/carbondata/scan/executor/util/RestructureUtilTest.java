@@ -18,6 +18,8 @@
  */
 package org.apache.carbondata.scan.executor.util;
 
+import org.apache.avro.generic.GenericData;
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
@@ -31,22 +33,30 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class RestructureUtilTest {
 
   @Test public void testToGetUpdatedQueryDimension() {
+    List<Encoding> encodingList = new ArrayList<Encoding>();
+    encodingList.add(Encoding.DICTIONARY);
     ColumnSchema columnSchema1 = new ColumnSchema();
     columnSchema1.setColumnName("Id");
+    columnSchema1.setEncodingList(encodingList);
     ColumnSchema columnSchema2 = new ColumnSchema();
     columnSchema2.setColumnName("Name");
+    columnSchema2.setEncodingList(encodingList);
     ColumnSchema columnSchema3 = new ColumnSchema();
     columnSchema3.setColumnName("Age");
+    columnSchema3.setEncodingList(encodingList);
     ColumnSchema columnSchema4 = new ColumnSchema();
     columnSchema4.setColumnName("Salary");
+    columnSchema4.setEncodingList(encodingList);
     ColumnSchema columnSchema5 = new ColumnSchema();
     columnSchema5.setColumnName("Address");
+    columnSchema5.setEncodingList(encodingList);
 
     CarbonDimension tableBlockDimension1 = new CarbonDimension(columnSchema1, 1, 1, 1, 1);
     CarbonDimension tableBlockDimension2 = new CarbonDimension(columnSchema2, 5, 5, 5, 5);

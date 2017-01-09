@@ -18,10 +18,6 @@
  */
 package org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.carbondata.core.carbon.datastore.chunk.reader.DimensionColumnChunkReader;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
@@ -38,7 +34,7 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
   /**
    * compressor will be used to uncompress the data
    */
-  protected static final Compressor compressor = CompressorFactory.getInstance();
+  protected static final Compressor COMPRESSOR = CompressorFactory.getInstance().getCompressor();
 
   /**
    * size of the each column value
@@ -61,18 +57,17 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
   /**
    * number of element in each chunk
    */
-  private int numberOfElement;
+  protected int numberOfRows;
 
   /**
    * Constructor to get minimum parameter to create
    * instance of this class
    *
-   * @param dimensionColumnChunk dimension chunk metadata
    * @param eachColumnValueSize  size of the each column value
    * @param filePath             file from which data will be read
    */
-  public AbstractChunkReader(final int[] eachColumnValueSize,
-      final String filePath) {
+  public AbstractChunkReader(final int[] eachColumnValueSize, final String filePath,
+      int numberOfRows) {
     this.eachColumnValueSize = eachColumnValueSize;
     this.filePath = filePath;
     int numberOfElement = 0;
@@ -84,6 +79,7 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
       numberOfElement = Integer.parseInt(CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
     }
     this.numberComressor = new NumberCompressor(numberOfElement);
+    this.numberOfRows = numberOfRows;
   }
 
   /**
@@ -100,35 +96,5 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
       columnIndexTemp[invertedIndex[i]] = i;
     }
     return columnIndexTemp;
-  }
-
-  /**
-   * In case of no dictionary column size of the each column value
-   * will not be same, so in case of filter query we can not take
-   * advantage of binary search as length with each value will be also
-   * store with the data, so converting this data to two dimension
-   * array format filter query processing will be faster
-   *
-   * @param dataChunkWithLength no dictionary column chunk
-   *                            <Lenght><Data><Lenght><data>
-   *                            Length will store in 2 bytes
-   * @return list of data chuck, one value in list will represent one column value
-   */
-  protected List<byte[]> getNoDictionaryDataChunk(byte[] dataChunkWithLength) {
-    List<byte[]> dataChunk = new ArrayList<byte[]>(numberOfElement);
-    // wrapping the chunk to byte buffer
-    ByteBuffer buffer = ByteBuffer.wrap(dataChunkWithLength);
-    buffer.rewind();
-    byte[] data = null;
-    // iterating till all the elements are read
-    while (buffer.hasRemaining()) {
-      // as all the data is stored with length(2 bytes)
-      // first reading the size and then based on size
-      // we need to read the actual value
-      data = new byte[buffer.getShort()];
-      buffer.get(data);
-      dataChunk.add(data);
-    }
-    return dataChunk;
   }
 }

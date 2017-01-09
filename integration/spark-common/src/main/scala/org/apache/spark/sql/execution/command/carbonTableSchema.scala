@@ -29,13 +29,15 @@ import org.apache.carbondata.common.factory.CarbonCommonFactory
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
-import org.apache.carbondata.core.carbon.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
+import org.apache.carbondata.core.carbon.metadata.schema.{BucketingInfo, SchemaEvolution, SchemaEvolutionEntry}
 import org.apache.carbondata.core.carbon.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.LoadMetadataDetails
+import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.CarbonSparkFactory
+import org.apache.carbondata.spark.load.FailureCauses
 import org.apache.carbondata.spark.merger.CompactionType
 import org.apache.carbondata.spark.util.DataTypeConverterUtil
 
@@ -50,13 +52,15 @@ case class TableModel(
     highcardinalitydims: Option[Seq[String]],
     noInvertedIdxCols: Option[Seq[String]],
     columnGroups: Seq[String],
-    colProps: Option[util.Map[String, util.List[ColumnProperty]]] = None)
+    colProps: Option[util.Map[String,
+    util.List[ColumnProperty]]] = None,
+    bucketFields: Option[BucketFields])
 
 case class Field(column: String, var dataType: Option[String], name: Option[String],
     children: Option[List[Field]], parent: String = null,
     storeType: Option[String] = Some("columnar"),
     var schemaOrdinal: Int = -1,
-    var precision: Int = 0, var scale: Int = 0)
+    var precision: Int = 0, var scale: Int = 0, var rawSchema: String = "")
 
 case class ColumnProperty(key: String, value: String)
 
@@ -69,18 +73,23 @@ case class Partitioner(partitionClass: String, partitionColumn: Array[String], p
 case class PartitionerField(partitionColumn: String, dataType: Option[String],
     columnComment: String)
 
+case class BucketFields(bucketColumns: Seq[String], numberOfBuckets: Int)
+
 case class DataLoadTableFileMapping(table: String, loadPath: String)
 
+case class ExecutionErrors(var failureCauses: FailureCauses, var errorMsg: String )
+
 case class CarbonMergerMapping(storeLocation: String,
-    storePath: String,
+    hdfsStoreLocation: String,
     metadataFilePath: String,
-    mergedLoadName: String,
+    var mergedLoadName: String,
     kettleHomePath: String,
     tableCreationTime: Long,
     databaseName: String,
     factTableName: String,
     validSegments: Array[String],
     tableId: String,
+    campactionType: CompactionType,
     // maxSegmentColCardinality is Cardinality of last segment of compaction
     var maxSegmentColCardinality: Array[Int],
     // maxSegmentColumnSchemaList is list of column schema of last segment of compaction
@@ -88,8 +97,16 @@ case class CarbonMergerMapping(storeLocation: String,
 
 case class NodeInfo(TaskId: String, noOfBlocks: Int)
 
-case class AlterTableModel(dbName: Option[String], tableName: String,
-    compactionType: String, alterSql: String)
+case class AlterTableModel(dbName: Option[String],
+                           tableName: String,
+                           segmentUpdateStatusManager: Option[SegmentUpdateStatusManager],
+                           compactionType: String,
+                           factTimeStamp: Option[Long],
+                           alterSql: String)
+
+case class UpdateTableModel(isUpdate: Boolean,
+                            updatedTimeStamp: Long,
+                            var executorErrors: ExecutionErrors)
 
 case class CompactionModel(compactionSize: Long,
     compactionType: CompactionType,
@@ -108,12 +125,12 @@ case class CompactionCallableModel(storePath: String,
     compactionType: CompactionType)
 
 object TableNewProcessor {
-  def apply(cm: TableModel, sqlContext: SQLContext): TableInfo = {
-    new TableNewProcessor(cm, sqlContext).process
+  def apply(cm: TableModel): TableInfo = {
+    new TableNewProcessor(cm).process
   }
 }
 
-class TableNewProcessor(cm: TableModel, sqlContext: SQLContext) {
+class TableNewProcessor(cm: TableModel) {
 
   var index = 0
   var rowGroup = 0
@@ -151,7 +168,7 @@ class TableNewProcessor(cm: TableModel, sqlContext: SQLContext) {
     if (highCardinalityDims.contains(colName)) {
       encoders.remove(encoders.remove(Encoding.DICTIONARY))
     }
-    if (dataType == DataType.TIMESTAMP) {
+    if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
     val colPropMap = new java.util.HashMap[String, String]()
@@ -159,7 +176,6 @@ class TableNewProcessor(cm: TableModel, sqlContext: SQLContext) {
       val colProps = cm.colProps.get.get(colName)
       colProps.asScala.foreach { x => colPropMap.put(x.key, x.value) }
     }
-    columnSchema.setColumnProperties(colPropMap)
     columnSchema.setEncodingList(encoders)
     val colUniqueIdGenerator = CarbonCommonFactory.getColumnUniqueIdGenerator
     val columnUniqueId = colUniqueIdGenerator.generateUniqueId(cm.databaseName,
@@ -300,6 +316,27 @@ class TableNewProcessor(cm: TableModel, sqlContext: SQLContext) {
       x => tablePropertiesMap.put(x._1, x._2)
     }
     tableSchema.setTableProperties(tablePropertiesMap)
+    if (cm.bucketFields.isDefined) {
+      val bucketCols = cm.bucketFields.get.bucketColumns.map { b =>
+        val col = allColumns.find(_.getColumnName.equalsIgnoreCase(b))
+        col match {
+          case Some(colSchema: ColumnSchema) =>
+            if (colSchema.isDimensionColumn && !colSchema.isComplex) {
+              colSchema
+            } else {
+              LOGGER.error(s"Bucket field must be dimension column and " +
+                           s"should not be measure or complex column: ${colSchema.getColumnName}")
+              sys.error(s"Bucket field must be dimension column and " +
+                        s"should not be measure or complex column: ${colSchema.getColumnName}")
+            }
+          case _ =>
+            LOGGER.error(s"Bucket field is not present in table columns")
+            sys.error(s"Bucket field is not present in table columns")
+        }
+      }
+      tableSchema.setBucketingInfo(
+        new BucketingInfo(bucketCols.asJava, cm.bucketFields.get.numberOfBuckets))
+    }
     tableSchema.setTableName(cm.tableName)
     tableSchema.setListOfColumns(allColumns.asJava)
     tableSchema.setSchemaEvalution(schemaEvol)

@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql
 
-import java.util.ArrayList
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
@@ -29,8 +27,6 @@ import org.apache.spark.sql.execution.LeafNode
 import org.apache.spark.sql.hive.CarbonMetastore
 import org.apache.spark.unsafe.types.UTF8String
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.scan.model._
 import org.apache.carbondata.spark.CarbonFilters
@@ -52,11 +48,6 @@ case class CarbonScan(
 
   val buildCarbonPlan: CarbonQueryPlan = {
     val plan: CarbonQueryPlan = new CarbonQueryPlan(relationRaw.databaseName, relationRaw.tableName)
-
-    plan.setSortedDimemsions(new ArrayList[QueryDimension])
-
-    plan.setOutLocationPath(
-      CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS))
     plan.setQueryId(ocRaw.getConf("queryId", System.nanoTime() + ""))
     processFilterExpressions(plan)
     plan
@@ -92,6 +83,7 @@ case class CarbonScan(
     }
 
     val columns = carbonTable.getCreateOrderColumn(carbonTable.getFactTableName)
+    columns.addAll(carbonTable.getImplicitDimensionByTableName(carbonTable.getFactTableName))
     val colAttr = new Array[Attribute](columns.size())
     columnProjection.foreach { attr =>
     val column =
@@ -127,7 +119,7 @@ case class CarbonScan(
     selectedMsrs.foreach(plan.addMeasure)
   }
 
-  def inputRdd: CarbonScanRDD[Array[Any]] = {
+  def inputRdd: CarbonScanRDD = {
     val projection = new CarbonProjection
     columnProjection.foreach { attr =>
       projection.addColumn(attr.name)
@@ -161,9 +153,13 @@ case class CarbonScan(
           }
 
           if (outUnsafeRows) {
+<<<<<<< HEAD
             unsafeProjection(new GenericMutableRow(converted))
+=======
+            unsafeProjection(value)
+>>>>>>> bc5a061e9fac489f997cfd68238622e348512d6f
           } else {
-            new GenericMutableRow(value)
+            value
           }
         }
       }

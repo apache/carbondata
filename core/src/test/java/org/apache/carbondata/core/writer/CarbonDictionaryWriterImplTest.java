@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -502,10 +503,13 @@ public class CarbonDictionaryWriterImplTest {
     InputStream in = null;
     props = new Properties();
     try {
-      URI uri = getClass().getClassLoader().getResource(PROPERTY_FILE_NAME).toURI();
-      File file = new File(uri);
-      in = new FileInputStream(file);
-      props.load(in);
+      URL url = getClass().getClassLoader().getResource(PROPERTY_FILE_NAME);
+      if (null != url) {
+        URI uri = url.toURI();
+        File file = new File(uri);
+        in = new FileInputStream(file);
+        props.load(in);
+      }
     } catch (IOException e) {
       e.printStackTrace();
     } catch (URISyntaxException e) {

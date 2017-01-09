@@ -18,7 +18,9 @@
  */
 package org.apache.carbondata.scan.scanner;
 
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
+import java.io.IOException;
+
+import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
 
@@ -34,8 +36,7 @@ public interface BlockletScanner {
    * @param blocksChunkHolder block chunk which holds the block data
    * @return scannerResult
    * result after processing
-   * @throws QueryExecutionException
    */
   AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
-      throws QueryExecutionException;
+      throws IOException, FilterUnsupportedException;
 }

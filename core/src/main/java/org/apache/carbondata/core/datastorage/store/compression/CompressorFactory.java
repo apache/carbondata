@@ -24,19 +24,29 @@ import org.apache.carbondata.core.util.CarbonProperties;
 
 public class CompressorFactory {
 
-  private static Compressor snappy;
+  private static final CompressorFactory COMPRESSOR_FACTORY = new CompressorFactory();
 
-  public static Compressor getInstance() {
-    String compressor = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.COMPRESSOR,
-        CarbonCommonConstants.DEFAULT_COMPRESSOR);
-    switch (compressor) {
+  private final Compressor compressor;
+
+  private CompressorFactory() {
+    String compressorType = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.COMPRESSOR, CarbonCommonConstants.DEFAULT_COMPRESSOR);
+    switch (compressorType) {
       case "snappy":
-        if (snappy == null) {
-          snappy = new SnappyCompressor();
-        }
-        return snappy;
+        compressor = new SnappyCompressor();
+        break;
       default:
-        throw new RuntimeException("Unsupported compressor: " + compressor);
+        throw new RuntimeException(
+            "Invalid compressor type provided! Please provide valid compressor type");
     }
   }
+
+  public static CompressorFactory getInstance() {
+    return COMPRESSOR_FACTORY;
+  }
+
+  public Compressor getCompressor() {
+    return compressor;
+  }
+
 }

@@ -29,6 +29,8 @@ import java.util.List;
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.load.LoadMetadataDetails;
+import org.apache.carbondata.core.update.SegmentUpdateDetails;
+import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager;
 
 public class CarbonLoadModel implements Serializable {
   /**
@@ -68,6 +70,8 @@ public class CarbonLoadModel implements Serializable {
 
   private boolean isDirectLoad;
   private List<LoadMetadataDetails> loadMetadataDetails;
+  private transient List<SegmentUpdateDetails> segmentUpdateDetails;
+  private transient SegmentUpdateStatusManager segmentUpdateStatusManager;
 
   private String blocksID;
 
@@ -132,6 +136,31 @@ public class CarbonLoadModel implements Serializable {
    * the key of RDD Iterator in RDD iterator Map
    */
   private String rddIteratorKey;
+
+  private String carbondataFileName = "";
+
+  public String getCarbondataFileName() {
+    return carbondataFileName;
+  }
+
+  public void setCarbondataFileName(String carbondataFileName) {
+    this.carbondataFileName = carbondataFileName;
+  }
+
+  /**
+   *  Use one pass to generate dictionary
+   */
+  private boolean useOnePass;
+
+  /**
+   * dictionary server host
+   */
+  private String dictionaryServerHost;
+
+  /**
+   * dictionary sever port
+   */
+  private int dictionaryServerPort;
 
   /**
    * get escape char
@@ -209,10 +238,6 @@ public class CarbonLoadModel implements Serializable {
 
   public List<String> getFactFilesToProcess() {
     return factFilesToProcess;
-  }
-
-  public void setFactFilesToProcess(List<String> factFilesToProcess) {
-    this.factFilesToProcess = factFilesToProcess;
   }
 
   public String getCsvHeader() {
@@ -307,21 +332,6 @@ public class CarbonLoadModel implements Serializable {
     this.colDictFilePath = colDictFilePath;
   }
 
-  /**
-   * @return the dimFolderPath
-   */
-  public String getDimFolderPath() {
-    return dimFolderPath;
-  }
-
-  //TODO SIMIAN
-
-  /**
-   * @param dimFolderPath the dimFolderPath to set
-   */
-  public void setDimFolderPath(String dimFolderPath) {
-    this.dimFolderPath = dimFolderPath;
-  }
 
   /**
    * get copy with parition
@@ -332,7 +342,6 @@ public class CarbonLoadModel implements Serializable {
   public CarbonLoadModel getCopyWithPartition(String uniqueId) {
     CarbonLoadModel copy = new CarbonLoadModel();
     copy.tableName = tableName;
-    copy.dimFolderPath = dimFolderPath;
     copy.factFilePath = factFilePath + '/' + uniqueId;
     copy.databaseName = databaseName;
     copy.partitionId = uniqueId;
@@ -356,6 +365,9 @@ public class CarbonLoadModel implements Serializable {
     copy.commentChar = commentChar;
     copy.maxColumns = maxColumns;
     copy.storePath = storePath;
+    copy.useOnePass = useOnePass;
+    copy.dictionaryServerHost = dictionaryServerHost;
+    copy.dictionaryServerPort = dictionaryServerPort;
     return copy;
   }
 
@@ -372,7 +384,6 @@ public class CarbonLoadModel implements Serializable {
       String header, String delimiter) {
     CarbonLoadModel copyObj = new CarbonLoadModel();
     copyObj.tableName = tableName;
-    copyObj.dimFolderPath = dimFolderPath;
     copyObj.factFilePath = null;
     copyObj.databaseName = databaseName;
     copyObj.partitionId = uniqueId;
@@ -401,6 +412,9 @@ public class CarbonLoadModel implements Serializable {
     copyObj.dateFormat = dateFormat;
     copyObj.maxColumns = maxColumns;
     copyObj.storePath = storePath;
+    copyObj.useOnePass = useOnePass;
+    copyObj.dictionaryServerHost = dictionaryServerHost;
+    copyObj.dictionaryServerPort = dictionaryServerPort;
     return copyObj;
   }
 
@@ -416,13 +430,6 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setPartitionId(String partitionId) {
     this.partitionId = partitionId;
-  }
-
-  /**
-   * @return the aggTables
-   */
-  public String[] getAggTables() {
-    return aggTables;
   }
 
   /**
@@ -484,13 +491,6 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * @param isRetentionRequest
-   */
-  public void setRetentionRequest(boolean isRetentionRequest) {
-    this.isRetentionRequest = isRetentionRequest;
-  }
-
-  /**
    * getLoadMetadataDetails.
    *
    * @return
@@ -507,6 +507,41 @@ public class CarbonLoadModel implements Serializable {
   public void setLoadMetadataDetails(List<LoadMetadataDetails> loadMetadataDetails) {
     this.loadMetadataDetails = loadMetadataDetails;
   }
+
+  /**
+   * getSegmentUpdateDetails
+   * @return
+   */
+  public List<SegmentUpdateDetails> getSegmentUpdateDetails() {
+    return segmentUpdateDetails;
+  }
+
+  /**
+   * setSegmentUpdateDetails
+   *
+   * @param segmentUpdateDetails
+   */
+  public void setSegmentUpdateDetails(List<SegmentUpdateDetails> segmentUpdateDetails) {
+    this.segmentUpdateDetails = segmentUpdateDetails;
+  }
+
+  /**
+   * getSegmentUpdateStatusManager
+   * @return
+   */
+  public SegmentUpdateStatusManager getSegmentUpdateStatusManager() {
+    return segmentUpdateStatusManager;
+  }
+
+  /**
+   * setSegmentUpdateStatusManager
+   *
+   * @param segmentUpdateStatusManager
+   */
+  public void setSegmentUpdateStatusManager(SegmentUpdateStatusManager segmentUpdateStatusManager) {
+    this.segmentUpdateStatusManager = segmentUpdateStatusManager;
+  }
+
 
   /**
    * @return
@@ -532,8 +567,8 @@ public class CarbonLoadModel implements Serializable {
   /**
    * @param factTimeStamp
    */
-  public void setFactTimeStamp(String factTimeStamp) {
-    this.factTimeStamp = factTimeStamp;
+  public void setFactTimeStamp(long factTimeStamp) {
+    this.factTimeStamp = factTimeStamp + "";
   }
 
   public String[] getDelimiters() {
@@ -643,5 +678,29 @@ public class CarbonLoadModel implements Serializable {
   public void setRddIteratorKey(String rddIteratorKey) {
     this.rddIteratorKey = rddIteratorKey;
 
+  }
+
+  public boolean getUseOnePass() {
+    return useOnePass;
+  }
+
+  public void setUseOnePass(boolean useOnePass) {
+    this.useOnePass = useOnePass;
+  }
+
+  public int getDictionaryServerPort() {
+    return dictionaryServerPort;
+  }
+
+  public void setDictionaryServerPort(int dictionaryServerPort) {
+    this.dictionaryServerPort = dictionaryServerPort;
+  }
+
+  public String getDictionaryServerHost() {
+    return dictionaryServerHost;
+  }
+
+  public void setDictionaryServerHost(String dictionaryServerHost) {
+    this.dictionaryServerHost = dictionaryServerHost;
   }
 }

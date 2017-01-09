@@ -76,6 +76,7 @@ object CarbonScalaUtil {
       case CarbonDataType.BOOLEAN => BooleanType
       case CarbonDataType.DECIMAL => DecimalType.SYSTEM_DEFAULT
       case CarbonDataType.TIMESTAMP => TimestampType
+      case CarbonDataType.DATE => DateType
     }
   }
 

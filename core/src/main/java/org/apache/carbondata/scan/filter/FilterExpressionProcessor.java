@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.scan.filter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -33,7 +34,6 @@ import org.apache.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFi
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.expression.BinaryExpression;
 import org.apache.carbondata.scan.expression.Expression;
 import org.apache.carbondata.scan.expression.conditional.BinaryConditionalExpression;
@@ -59,11 +59,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @param expressionTree  , filter expression tree
    * @param tableIdentifier ,contains carbon store informations
    * @return a filter resolver tree
-   * @throws QueryExecutionException
-   * @throws FilterUnsupportedException
    */
   public FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException {
+      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException, IOException {
     if (null != expressionTree && null != tableIdentifier) {
       return getFilterResolvertree(expressionTree, tableIdentifier);
     }
@@ -83,11 +81,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * Step:4 The selected blocks will be send to executers for applying the filters with the help
    * of Filter executers.
    *
-   * @throws QueryExecutionException
    */
   public List<DataRefNode> getFilterredBlocks(DataRefNode btreeNode,
       FilterResolverIntf filterResolver, AbstractIndex tableSegment,
-      AbsoluteTableIdentifier tableIdentifier) throws QueryExecutionException {
+      AbsoluteTableIdentifier tableIdentifier) {
     // Need to get the current dimension tables
     List<DataRefNode> listOfDataBlocksToScan = new ArrayList<DataRefNode>();
     // getting the start and end index key based on filter for hitting the
@@ -96,7 +93,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
         + "start and end block as per filter resolver");
     List<IndexKey> listOfStartEndKeys = new ArrayList<IndexKey>(2);
     FilterUtil.traverseResolverTreeAndGetStartAndEndKey(tableSegment.getSegmentProperties(),
-        tableIdentifier, filterResolver, listOfStartEndKeys);
+        filterResolver, listOfStartEndKeys);
     // reading the first value from list which has start key
     IndexKey searchStartKey = listOfStartEndKeys.get(0);
     // reading the last value from list which has end key
@@ -141,7 +138,6 @@ public class FilterExpressionProcessor implements FilterProcessor {
   /**
    * Selects the blocks based on col max and min value.
    *
-   * @param filterResolver
    * @param listOfDataBlocksToScan
    * @param dataRefNode
    */
@@ -163,11 +159,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @param expressionTree , resolver tree which will hold the resolver tree based on
    *                       filter expression.
    * @return FilterResolverIntf type.
-   * @throws QueryExecutionException
-   * @throws FilterUnsupportedException
    */
   private FilterResolverIntf getFilterResolvertree(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException {
+      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException, IOException {
     FilterResolverIntf filterEvaluatorTree =
         createFilterResolverTree(expressionTree, tableIdentifier);
     traverseAndResolveTree(filterEvaluatorTree, tableIdentifier);
@@ -182,18 +176,14 @@ public class FilterExpressionProcessor implements FilterProcessor {
    *
    * @param filterResolverTree
    * @param tableIdentifier
-   * @throws FilterUnsupportedException
-   * @throws QueryExecutionException
    */
   private void traverseAndResolveTree(FilterResolverIntf filterResolverTree,
-      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException {
+      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException, IOException {
     if (null == filterResolverTree) {
       return;
     }
     traverseAndResolveTree(filterResolverTree.getLeft(), tableIdentifier);
-
     filterResolverTree.resolve(tableIdentifier);
-
     traverseAndResolveTree(filterResolverTree.getRight(), tableIdentifier);
   }
 

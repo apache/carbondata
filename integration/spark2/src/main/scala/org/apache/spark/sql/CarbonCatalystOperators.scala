@@ -17,9 +17,12 @@
 
 package org.apache.spark.sql
 
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
-import org.apache.spark.sql.optimizer.{CarbonDecoderRelation}
+import org.apache.spark.sql.hive.{HiveContext, HiveSessionCatalog}
+import org.apache.spark.sql.optimizer.CarbonDecoderRelation
+import org.apache.spark.sql.types.{StringType, TimestampType}
 
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
@@ -39,3 +42,34 @@ abstract class CarbonProfile(attributes: Seq[Attribute]) extends Serializable {
 case class IncludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
 
 case class ExcludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
+
+object getDB {
+
+  def getDatabaseName(dbName: Option[String], sparkSession: SparkSession): String = {
+    dbName.getOrElse(
+      sparkSession.sessionState.catalog.asInstanceOf[HiveSessionCatalog].getCurrentDatabase)
+  }
+}
+
+/**
+ * Shows Loads in a table
+ */
+case class ShowLoadsCommand(databaseNameOp: Option[String], table: String, limit: Option[String])
+  extends Command {
+
+  override def output: Seq[Attribute] = {
+    Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
+      AttributeReference("Status", StringType, nullable = false)(),
+      AttributeReference("Load Start Time", TimestampType, nullable = false)(),
+      AttributeReference("Load End Time", TimestampType, nullable = false)())
+  }
+}
+
+/**
+ * Describe formatted for hive table
+ */
+case class DescribeFormattedCommand(sql: String, tblIdentifier: TableIdentifier) extends Command {
+
+  override def output: Seq[AttributeReference] =
+    Seq(AttributeReference("result", StringType, nullable = false)())
+}

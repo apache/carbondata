@@ -23,15 +23,11 @@ import org.apache.carbondata.core.util.CompressionFinder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 
 public class WriterCompressModel {
-  /**
-   * COMPRESSION_TYPE[] variable.
-   */
-  private ValueCompressionUtil.COMPRESSION_TYPE[] compType;
 
   /**
    * DataType[]  variable.
    */
-  private ValueCompressionUtil.DataType[] changedDataType;
+  private ValueCompressionUtil.DataType[] convertedDataType;
   /**
    * DataType[]  variable.
    */
@@ -72,31 +68,17 @@ public class WriterCompressModel {
   private CompressionFinder[] compressionFinders;
 
   /**
-   * @return the compType
+   * @return the convertedDataType
    */
-  public ValueCompressionUtil.COMPRESSION_TYPE[] getCompType() {
-    return compType;
+  public ValueCompressionUtil.DataType[] getConvertedDataType() {
+    return convertedDataType;
   }
 
   /**
-   * @param compType the compType to set
+   * @param convertedDataType the convertedDataType to set
    */
-  public void setCompType(ValueCompressionUtil.COMPRESSION_TYPE[] compType) {
-    this.compType = compType;
-  }
-
-  /**
-   * @return the changedDataType
-   */
-  public ValueCompressionUtil.DataType[] getChangedDataType() {
-    return changedDataType;
-  }
-
-  /**
-   * @param changedDataType the changedDataType to set
-   */
-  public void setChangedDataType(ValueCompressionUtil.DataType[] changedDataType) {
-    this.changedDataType = changedDataType;
+  public void setConvertedDataType(ValueCompressionUtil.DataType[] convertedDataType) {
+    this.convertedDataType = convertedDataType;
   }
 
   /**
@@ -221,12 +203,18 @@ public class WriterCompressModel {
     this.uniqueValue = uniqueValue;
   }
 
-
   public void setCompressionFinders(CompressionFinder[] compressionFinders) {
     this.compressionFinders = compressionFinders;
   }
 
-  public CompressionFinder[] getCompressionFinder() {
+  public CompressionFinder[] getCompressionFinders() {
     return this.compressionFinders;
+  }
+
+  /**
+   * @return the compType
+   */
+  public ValueCompressionUtil.COMPRESSION_TYPE getCompType(int index) {
+    return this.compressionFinders[index].getCompType();
   }
 }

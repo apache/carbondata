@@ -26,110 +26,106 @@ import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
  */
 public class BigIntCompressor extends ValueCompressor {
 
-  @Override protected Object compressNonDecimalMaxMin(DataType changedDataType,
+  @Override protected Object compressNonDecimalMaxMin(DataType convertedDataType,
       CarbonWriteDataHolder dataHolder, int decimal, Object max) {
     // in case if bigint, decimal will be 0
-    return compressMaxMin(changedDataType, dataHolder, max);
+    return compressMaxMin(convertedDataType, dataHolder, max);
   }
 
   @Override
-  protected Object compressNonDecimal(DataType changedDataType, CarbonWriteDataHolder dataHolder,
+  protected Object compressNonDecimal(DataType convertedDataType, CarbonWriteDataHolder dataHolder,
       int decimal) {
     // in case if bigint, decimal will be 0
-    return compressNone(changedDataType, dataHolder);
-  }
-
-  @Override
-  protected Object compressMaxMin(DataType changedDataType, CarbonWriteDataHolder dataHolder,
-      Object max) {
-    long maxValue = (long) max;
-    long[] value = dataHolder.getWritableLongValues();
-    return compressMaxMin(changedDataType, maxValue, value);
+    return compressAdaptive(convertedDataType, dataHolder);
   }
 
   /**
    * 1. It gets delta value i.e difference of maximum value and actual value
-   * 2. Convert the delta value computed above to changedDatatype
-   * @param changedDataType
-   * @param maxValue
-   * @param value
+   * 2. Convert the delta value computed above to convertedDatatype if it can
+   *    be stored with less byte
+   * @param convertedDataType
+   * @param dataHolder
+   * @param max
    * @return
    */
-  protected Object compressMaxMin(DataType changedDataType, long maxValue,
-      long[] value) {
-    int i = 0;
-    switch (changedDataType) {
-      case DATA_BYTE:
-        byte[] result = new byte[value.length];
-        for (int j = 0; j < value.length; j++) {
-          result[i] = (byte) (maxValue - value[j]);
-          i++;
-        }
-        return result;
-      case DATA_SHORT:
-        short[] shortResult = new short[value.length];
-        for (int j = 0; j < value.length; j++) {
-          shortResult[i] = (short) (maxValue - value[j]);
-          i++;
-        }
-        return shortResult;
-      case DATA_INT:
-        int[] intResult = new int[value.length];
-        for (int j = 0; j < value.length; j++) {
-          intResult[i] = (int) (maxValue - value[j]);
-          i++;
-        }
-        return intResult;
-      default:
-        long[] defaultResult = new long[value.length];
-        for (int j = 0; j < value.length; j++) {
-          defaultResult[i] = (long) (maxValue - value[j]);
-          i++;
-        }
-        return defaultResult;
-    }
-  }
-
   @Override
-  protected Object compressNone(DataType changedDataType, CarbonWriteDataHolder dataHolder) {
+  protected Object compressMaxMin(DataType convertedDataType, CarbonWriteDataHolder dataHolder,
+      Object max) {
+    long maxValue = (long) max;
     long[] value = dataHolder.getWritableLongValues();
-    return compressNone(changedDataType, value);
+    return compressValue(convertedDataType, value, maxValue, true);
   }
 
   /**
-   * It convert the value to changed datatype.
-   * Changed datatype is computed based list of values it has.
-   * for instance if value is 2,10,12,45
-   * these value can be easily fit in byte and hence below method convert to byte and store it.
-   * @param changedDataType
-   * @param value
+   * 1. It converts actual value to converted data type if it can be
+   *   stored with less bytes.
+   * @param convertedDataType
+   * @param dataHolder
    * @return
    */
-  protected Object compressNone(DataType changedDataType, long[] value) {
-    int i = 0;
-    switch (changedDataType) {
+  @Override
+  protected Object compressAdaptive(DataType convertedDataType, CarbonWriteDataHolder dataHolder) {
+    long[] value = dataHolder.getWritableLongValues();
+    return compressValue(convertedDataType, value, 0, false);
+  }
+
+  /**
+   * It convert the value or delta value (max - actual) to converted data type.
+   * Converted data type is computed based list of values it has.
+   * for instance if value is 2,10,12,45
+   * these value can be easily fitted in byte value,
+   * hence it will be converted into byte to store.
+   * @param convertedDataType
+   * @param value
+   * @param maxValue
+   * @param isMinMax
+   * @return
+   */
+  protected Object compressValue(DataType convertedDataType, long[] value, long maxValue,
+      boolean isMinMax) {
+    switch (convertedDataType) {
       case DATA_BYTE:
         byte[] result = new byte[value.length];
-        for (int j = 0; j < value.length; j++)  {
-          result[i] = (byte) value[j];
-          i++;
+        if (isMinMax) {
+          for (int j = 0; j < value.length; j++) {
+            result[j] = (byte) (maxValue - value[j]);
+          }
+        } else {
+          for (int j = 0; j < value.length; j++) {
+            result[j] = (byte) value[j];
+          }
         }
         return result;
       case DATA_SHORT:
         short[] shortResult = new short[value.length];
-        for (int j = 0; j < value.length; j++) {
-          shortResult[i] = (short) value[j];
-          i++;
+        if (isMinMax) {
+          for (int j = 0; j < value.length; j++) {
+            shortResult[j] = (short) (maxValue - value[j]);
+          }
+        } else {
+          for (int j = 0; j < value.length; j++) {
+            shortResult[j] = (short) value[j];
+          }
         }
         return shortResult;
       case DATA_INT:
         int[] intResult = new int[value.length];
-        for (int j = 0; j < value.length; j++) {
-          intResult[i] = (int) value[j];
-          i++;
+        if (isMinMax) {
+          for (int j = 0; j < value.length; j++) {
+            intResult[j] = (int) (maxValue - value[j]);
+          }
+        } else {
+          for (int j=0; j < value.length; j++) {
+            intResult[j] = (int) value[j];
+          }
         }
         return intResult;
       default:
+        if (isMinMax) {
+          for (int j = 0; j < value.length; j++) {
+            value[j] = (maxValue - value[j]);
+          }
+        }
         return value;
     }
   }

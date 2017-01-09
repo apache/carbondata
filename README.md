@@ -24,47 +24,53 @@ interactive query using advanced columnar storage, index, compression
 and encoding techniques to improve computing efficiency, in turn it will 
 help speedup queries an order of magnitude faster over PetaBytes of data. 
 
-You can find the latest CarbonData document and learn more at [CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA)
+You can find the latest CarbonData document and learn more at:
+[http://carbondata.incubator.apache.org](http://carbondata.incubator.apache.org/)
 
-### Features
+[CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA/)
+
+## Status
+[![Build Status](https://travis-ci.org/apache/incubator-carbondata.svg?branch=master)](https://travis-ci.org/apache/incubator-carbondata)
+[![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
+
+## Features
 CarbonData file format is a columnar store in HDFS, it has many features that a modern columnar format has, such as splittable, compression schema ,complex data type etc, and CarbonData has following unique features:
 * Stores data along with index: it can significantly accelerate query performance and reduces the I/O scans and CPU resources, where there are filters in the query.  CarbonData index consists of multiple level of indices, a processing framework can leverage this index to reduce the task it needs to schedule and process, and it can also do skip scan in more finer grain unit (called blocklet) in task side scanning instead of scanning the whole file. 
 * Operable encoded data :Through supporting efficient compression and global encoding schemes, can query on compressed/encoded data, the data can be converted just before returning the results to the users, which is "late materialized". 
-* Column group: Allow multiple columns to form a column group that would be stored as row format. This reduces the row reconstruction cost at query time.
 * Supports for various use cases with one single Data format : like interactive OLAP-style query, Sequential Access (big scan), Random Access (narrow scan). 
 
-### Building CarbonData,using development tools and cluster deployment guide
+## Building CarbonData,using development tools and cluster deployment guide
 Please refer [Building CarbonData and Configuring IDE](https://cwiki.apache.org/confluence/display/CARBONDATA/Building+CarbonData+And+IDE+Configuration)
 
 Please refer [Cluster Deployment Guide](https://cwiki.apache.org/confluence/display/CARBONDATA/Cluster+deployment+guide)
 
-### Getting Started
+## Getting Started
 Read the [quick start](https://cwiki.apache.org/confluence/display/CARBONDATA/Quick+Start)
 
-### Usage of CarbonData
+## Usage of CarbonData
  [DDL Operations on CarbonData](https://cwiki.apache.org/confluence/display/CARBONDATA/DDL+operations+on+CarbonData) 
  
  [DML Operations on CarbonData](https://cwiki.apache.org/confluence/display/CARBONDATA/DML+operations+on+CarbonData)  
  
  [CarbonData data management](https://cwiki.apache.org/confluence/display/CARBONDATA/Data+Management)  
 
-### CarbonData File Structure and interfaces
-Please refer [CarbonData File Format](https://cwiki.apache.org/confluence/display/CARBONDATA/CarbonData+File+Structure+and+Format) and [CarbonData Interfaces](https://cwiki.apache.org/confluence/display/CARBONDATA/Carbon+Packaging+and+Interfaces)
+## CarbonData File Structure and interfaces
+Please refer [CarbonData File Format](https://cwiki.apache.org/confluence/display/CARBONDATA/CarbonData+File+Structure+and+Format)
 
-### CarbonData FAQ 
+## CarbonData FAQ 
 [Configurations For Optimizing CarbonData Performance](https://cwiki.apache.org/confluence/display/CARBONDATA/Configurations+For+Optimizing+CarbonData+Performance)
 
 [Suggestion to create CarbonData table]
 (https://cwiki.apache.org/confluence/display/CARBONDATA/Suggestion+to+create+CarbonData+table)
 
-### Other Technical Material
+## Other Technical Material
 [Apache CarbonData meetup material](docs/Apache-CarbonData-meetup-material.pdf)
 
-### Fork and Contribute
+## Fork and Contribute
 This is an active open source project for everyone, and we are always open to people who want to use this system or contribute to it. 
 This guide document introduce [how to contribute to CarbonData](https://cwiki.apache.org/confluence/display/CARBONDATA/Contributing+to+CarbonData).
 
-### Contact us
+## Contact us
 To get involved in CarbonData:
 
 * First join by emailing to [dev-subscribe@carbondata.incubator.apache.org](mailto:dev-subscribe@carbondata.incubator.apache.org),then you can discuss issues by emailing to [dev@carbondata.incubator.apache.org](mailto:dev@carbondata.incubator.apache.org) or visit http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com

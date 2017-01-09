@@ -28,7 +28,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object DirectSQLExample {
 
   def main(args: Array[String]) {
-    val cc = ExampleUtils.createCarbonContext("DatasourceExample")
+    val cc = ExampleUtils.createCarbonContext("DirectSQLExample")
     ExampleUtils.writeSampleCarbonFile(cc, "table1")
 
     // Use SQLContext to read CarbonData files without creating table
@@ -40,5 +40,8 @@ object DirectSQLExample {
         | WHERE c3 > 100
         | GROUP BY c1, c2
       """.stripMargin).show
+
+    // delete carbondata file
+    ExampleUtils.cleanSampleCarbonFile(cc, "table1")
   }
 }

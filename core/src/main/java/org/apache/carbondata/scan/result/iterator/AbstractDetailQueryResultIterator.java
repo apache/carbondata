@@ -39,13 +39,14 @@ import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.model.QueryModel;
 import org.apache.carbondata.scan.processor.AbstractDataBlockIterator;
 import org.apache.carbondata.scan.processor.impl.DataBlockIteratorImpl;
+import org.apache.carbondata.scan.result.vector.CarbonColumnarBatch;
 
 /**
  * In case of detail query we cannot keep all the records in memory so for
  * executing that query are returning a iterator over block and every time next
  * call will come it will execute the block and return the result
  */
-public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
+public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterator<E> {
 
   /**
    * LOGGER.
@@ -58,6 +59,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
    * execution info of the block
    */
   protected List<BlockExecutionInfo> blockExecutionInfos;
+
   /**
    * file reader which will be used to execute the query
    */
@@ -171,10 +173,13 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     QueryStatistic queryStatisticTotalBlocklet = new QueryStatistic();
     queryStatisticsModel.getStatisticsTypeAndObjMap()
         .put(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM, queryStatisticTotalBlocklet);
-    QueryStatistic queryStatisticScanBlocklet = new QueryStatistic();
     QueryStatistic queryStatisticValidScanBlocklet = new QueryStatistic();
     queryStatisticsModel.getStatisticsTypeAndObjMap()
         .put(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM, queryStatisticValidScanBlocklet);
+  }
+
+  public void processNextBatch(CarbonColumnarBatch columnarBatch) {
+    throw new UnsupportedOperationException("Please use VectorDetailQueryResultIterator");
   }
 
 }

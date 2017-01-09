@@ -31,11 +31,12 @@ import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.apache.carbondata.core.carbon.datastore.IndexKey;
 import org.apache.carbondata.core.carbon.datastore.SegmentTaskIndexStore;
+import org.apache.carbondata.core.carbon.datastore.TableSegmentUniqueIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.carbon.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.carbon.datastore.block.SegmentTaskIndexWrapper;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.apache.carbondata.core.carbon.datastore.impl.btree.BlockBTreeLeafNode;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
@@ -43,11 +44,11 @@ import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstant
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
+import org.apache.carbondata.hadoop.CacheClient;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.internal.index.Block;
 import org.apache.carbondata.hadoop.internal.index.Index;
 import org.apache.carbondata.hadoop.internal.segment.Segment;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.scan.filter.FilterUtil;
 import org.apache.carbondata.scan.filter.resolver.FilterResolverIntf;
@@ -83,12 +84,8 @@ class InMemoryBTreeIndex implements Index {
     AbsoluteTableIdentifier identifier = null;
 
     //for this segment fetch blocks matching filter in BTree
-    List<DataRefNode> dataRefNodes = null;
-    try {
-      dataRefNodes = getDataBlocksOfSegment(job, filterExpressionProcessor, identifier, filter);
-    } catch (IndexBuilderException e) {
-      throw new IOException(e.getMessage());
-    }
+    List<DataRefNode> dataRefNodes =
+        getDataBlocksOfSegment(job, filterExpressionProcessor, identifier, filter);
     for (DataRefNode dataRefNode : dataRefNodes) {
       BlockBTreeLeafNode leafNode = (BlockBTreeLeafNode) dataRefNode;
       TableBlockInfo tableBlockInfo = leafNode.getTableBlockInfo();
@@ -100,23 +97,31 @@ class InMemoryBTreeIndex implements Index {
     return result;
   }
 
-  private Map<String, AbstractIndex> getSegmentAbstractIndexs(JobContext job,
-      AbsoluteTableIdentifier identifier)
-      throws IOException, IndexBuilderException {
-    Map<String, AbstractIndex> segmentIndexMap =
-        SegmentTaskIndexStore.getInstance().getSegmentBTreeIfExists(identifier, segment.getId());
-
-    // if segment tree is not loaded, load the segment tree
-    if (segmentIndexMap == null) {
-      List<TableBlockInfo> tableBlockInfoList = getTableBlockInfo(job);
-      Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos = new HashMap<>();
-      segmentToTableBlocksInfos.put(segment.getId(), tableBlockInfoList);
-
-      // TODO: loadAndGetTaskIdToSegmentsMap can be optimized, use tableBlockInfoList as input
-      // get Btree blocks for given segment
-      segmentIndexMap = SegmentTaskIndexStore.getInstance()
-          .loadAndGetTaskIdToSegmentsMap(segmentToTableBlocksInfos, identifier);
-
+  private Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> getSegmentAbstractIndexs(
+      JobContext job, AbsoluteTableIdentifier identifier) throws IOException {
+    Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap = null;
+    CacheClient cacheClient = new CacheClient(identifier.getStorePath());
+    TableSegmentUniqueIdentifier segmentUniqueIdentifier =
+        new TableSegmentUniqueIdentifier(identifier, segment.getId());
+    try {
+      SegmentTaskIndexWrapper segmentTaskIndexWrapper =
+          cacheClient.getSegmentAccessClient().getIfPresent(segmentUniqueIdentifier);
+      if (null != segmentTaskIndexWrapper) {
+        segmentIndexMap = segmentTaskIndexWrapper.getTaskIdToTableSegmentMap();
+      }
+      // if segment tree is not loaded, load the segment tree
+      if (segmentIndexMap == null) {
+        List<TableBlockInfo> tableBlockInfoList = getTableBlockInfo(job);
+        Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos = new HashMap<>();
+        segmentToTableBlocksInfos.put(segment.getId(), tableBlockInfoList);
+        segmentUniqueIdentifier.setSegmentToTableBlocksInfos(segmentToTableBlocksInfos);
+        // TODO: loadAndGetTaskIdToSegmentsMap can be optimized, use tableBlockInfoList as input
+        // get Btree blocks for given segment
+        segmentTaskIndexWrapper = cacheClient.getSegmentAccessClient().get(segmentUniqueIdentifier);
+        segmentIndexMap = segmentTaskIndexWrapper.getTaskIdToTableSegmentMap();
+      }
+    } finally {
+      cacheClient.close();
     }
     return segmentIndexMap;
   }
@@ -149,11 +154,12 @@ class InMemoryBTreeIndex implements Index {
    */
   private List<DataRefNode> getDataBlocksOfSegment(JobContext job,
       FilterExpressionProcessor filterExpressionProcessor, AbsoluteTableIdentifier identifier,
-      FilterResolverIntf resolver) throws IndexBuilderException, IOException {
+      FilterResolverIntf resolver) throws IOException {
 
     QueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.createDriverRecorder();
     QueryStatistic statistic = new QueryStatistic();
-    Map<String, AbstractIndex> segmentIndexMap = getSegmentAbstractIndexs(job, identifier);
+    Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap =
+        getSegmentAbstractIndexs(job, identifier);
 
     List<DataRefNode> resultFilterredBlocks = new LinkedList<DataRefNode>();
 
@@ -166,13 +172,12 @@ class InMemoryBTreeIndex implements Index {
         filterredBlocks = getDataBlocksOfIndex(abstractIndex);
       } else {
         // apply filter and get matching blocks
-        try {
-          filterredBlocks =
-              filterExpressionProcessor.getFilterredBlocks(abstractIndex.getDataRefNode(),
-                  resolver, abstractIndex, identifier);
-        } catch (QueryExecutionException e) {
-          throw new IndexBuilderException(e.getMessage());
-        }
+        filterredBlocks = filterExpressionProcessor.getFilterredBlocks(
+            abstractIndex.getDataRefNode(),
+            resolver,
+            abstractIndex,
+            identifier
+        );
       }
       resultFilterredBlocks.addAll(filterredBlocks);
     }

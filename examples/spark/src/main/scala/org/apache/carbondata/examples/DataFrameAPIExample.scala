@@ -44,7 +44,8 @@ object DataFrameAPIExample {
     // use SQL to read
     cc.sql("SELECT c1, count(c3) FROM carbon1 where c3 > 500 group by c1 limit 10").show
 
-    cc.sql("DROP TABLE IF EXISTS carbon1")
+    // delete carbondata file
+    ExampleUtils.cleanSampleCarbonFile(cc, "carbon1")
   }
 }
 // scalastyle:on println

@@ -66,11 +66,11 @@ object TableLoader {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 3) {
-      System.err.println("Usage: TableLoader <properties file> <table name> <input files>");
+      System.err.println("Usage: TableLoader <properties file> <table name> <input files>")
       System.exit(1)
     }
     System.out.println("parameter list:")
-    args.foreach(System.out.println(_))
+    args.foreach(System.out.println)
     val map = extractOptions(TableAPIUtil.escape(args(0)))
     val storePath = extractStorePath(map)
     System.out.println(s"${CarbonCommonConstants.STORE_LOCATION}:$storePath")
@@ -86,7 +86,7 @@ object TableLoader {
 
     val spark = TableAPIUtil.spark(storePath, s"TableLoader: $dbName.$tableName")
 
-    CarbonEnv.init(spark.sqlContext)
+    CarbonEnv.init(spark)
     loadTable(spark, Option(dbName), tableName, inputPaths, map)
   }
 

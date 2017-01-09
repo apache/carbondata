@@ -29,11 +29,6 @@ public interface Partition extends Serializable {
   String getUniqueID();
 
   /**
-   * File path for the raw data represented by this partition
-   */
-  String getFilePath();
-
-  /**
    * result
    *
    * @return

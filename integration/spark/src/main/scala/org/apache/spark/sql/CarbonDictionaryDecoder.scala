@@ -109,6 +109,7 @@ case class CarbonDictionaryDecoder(
           DecimalType(precision, scale)
         }
       case DataType.TIMESTAMP => TimestampType
+      case DataType.DATE => DateType
       case DataType.STRUCT =>
         CarbonMetastoreTypes
           .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
@@ -174,7 +175,7 @@ case class CarbonDictionaryDecoder(
           dictionaryTaskCleaner.addTaskCompletionListener(context =>
             dicts.foreach { dictionary =>
               if (null != dictionary) {
-                dictionary.clear
+                dictionary.clear()
               }
             }
           )

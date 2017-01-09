@@ -48,11 +48,11 @@ import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType
 import org.apache.carbondata.core.reader.ThriftReader
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
 import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.lcm.locks.ZookeeperInit
-import org.apache.carbondata.lcm.status.SegmentStatusManager
+import org.apache.carbondata.locks.ZookeeperInit
 import org.apache.carbondata.spark.merger.TableMeta
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
@@ -117,7 +117,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
   private val nextId = new AtomicLong(0)
 
   def nextQueryId: String = {
-    s"query_${nextId.getAndIncrement()}"
+    System.nanoTime() + ""
   }
 
   val metadata = loadMetadata(storePath, nextQueryId)
@@ -157,7 +157,6 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
         CarbonRelation(database, tableIdentifier.table,
           CarbonSparkUtil.createSparkMeta(tables.head.carbonTable), tables.head, alias)
       case None =>
-        LOGGER.audit(s"Table Not Found: ${tableIdentifier.table}")
         throw new NoSuchTableException(database, tableIdentifier.table)
     }
   }
@@ -174,6 +173,17 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
     metadata.tablesMeta
       .find(c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
                  c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))
+  }
+
+  def tableExists(
+      table: String,
+      databaseOp: Option[String] = None)(sparkSession: SparkSession): Boolean = {
+    checkSchemasModifiedTimeAndReloadTables()
+    val database = databaseOp.getOrElse(sparkSession.catalog.currentDatabase)
+    val tables = metadata.tablesMeta.filter(
+      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
+           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(table))
+    tables.nonEmpty
   }
 
   def tableExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
@@ -294,7 +304,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
       tableInfo: org.apache.carbondata.core.carbon.metadata.schema.table.TableInfo,
       dbName: String, tableName: String)
     (sparkSession: SparkSession): String = {
-    if (tableExists(TableIdentifier(tableName, Some(dbName)))(sparkSession)) {
+    if (tableExists(tableName, Some(dbName))(sparkSession)) {
       sys.error(s"Table [$tableName] already exists under Database [$dbName]")
     }
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
@@ -389,7 +399,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
 
   def isTablePathExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
     val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
-    val tableName = tableIdentifier.table
+    val tableName = tableIdentifier.table.toLowerCase
 
     val tablePath = CarbonStorePath.getCarbonTablePath(this.storePath,
       new CarbonTableIdentifier(dbName, tableName, "")).getPath
@@ -609,6 +619,7 @@ object CarbonMetastoreTypes extends RegexParsers {
     fixedDecimalType |
     "decimal" ^^^ "decimal" ^^^ DecimalType(18, 2) |
     "varchar\\((\\d+)\\)".r ^^^ StringType |
+    "date" ^^^ DateType |
     "timestamp" ^^^ TimestampType
 
   protected lazy val fixedDecimalType: Parser[DataType] =
@@ -668,6 +679,7 @@ object CarbonMetastoreTypes extends RegexParsers {
       case BooleanType => "boolean"
       case DecimalType() => "decimal"
       case TimestampType => "timestamp"
+      case DateType => "date"
     }
   }
 }

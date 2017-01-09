@@ -19,14 +19,17 @@
 
 package org.apache.carbondata.core.datastorage.store.compression.decimal;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureChunkStoreFactory;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureDataChunkStore;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -39,13 +42,16 @@ public class UnCompressMaxMinShort implements ValueCompressonHolder.UnCompressVa
   /**
    * shortCompressor.
    */
-  private static Compressor compressor = CompressorFactory.getInstance();
+  private static Compressor compressor = CompressorFactory.getInstance().getCompressor();
+
+  private MeasureDataChunkStore<short[]> measureChunkStore;
   /**
    * value.
    */
   private short[] value;
 
   private DataType actualDataType;
+  private double maxValue;
 
   public UnCompressMaxMinShort(DataType actualDataType) {
     this.actualDataType = actualDataType;
@@ -56,7 +62,9 @@ public class UnCompressMaxMinShort implements ValueCompressonHolder.UnCompressVa
 
   }
 
-  @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
+  @Override
+  public UnCompressValue uncompress(DataType dataType, byte[] compressData, int offset, int length,
+      int decimalPlaces, Object maxValueObject) {
     return null;
   }
 
@@ -91,36 +99,41 @@ public class UnCompressMaxMinShort implements ValueCompressonHolder.UnCompressVa
     return new UnCompressMaxMinByte(actualDataType);
   }
 
-  @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    switch (actualDataType) {
-      case DATA_BIGINT:
-        return unCompressLong(maxValueObject);
-      default:
-        return unCompressDouble(maxValueObject);
+  @Override public long getLongValue(int index) {
+    short shortValue = measureChunkStore.getShort(index);
+    if (shortValue == 0) {
+      return (long) maxValue;
+    } else {
+      return (long) maxValue - shortValue;
     }
-
   }
 
-  private CarbonReadDataHolder unCompressDouble(Object maxValueObject) {
-    double maxValue = (double) maxValueObject;
-    double[] vals = new double[value.length];
-    CarbonReadDataHolder carbonDataHolderObj = new CarbonReadDataHolder();
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = maxValue - value[i];
+  @Override public double getDoubleValue(int index) {
+    short shortValue = measureChunkStore.getShort(index);
+    if (shortValue == 0) {
+      return maxValue;
+    } else {
+      return maxValue - shortValue;
     }
-    carbonDataHolderObj.setReadableDoubleValues(vals);
-    return carbonDataHolderObj;
   }
 
-  private CarbonReadDataHolder unCompressLong(Object maxValueObject) {
-    long maxValue = (long) maxValueObject;
-    long[] vals = new long[value.length];
-    CarbonReadDataHolder carbonDataHolderObj = new CarbonReadDataHolder();
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = maxValue - value[i];
-    }
-    carbonDataHolderObj.setReadableLongValues(vals);
-    return carbonDataHolderObj;
+  @Override public BigDecimal getBigDecimalValue(int index) {
+    throw new UnsupportedOperationException("Get big decimal value is not supported");
   }
 
+  @Override
+  public void setUncompressValues(short[] data, int decimalPlaces, Object maxValueObject) {
+    this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
+        .getMeasureDataChunkStore(DataType.DATA_SHORT, data.length);
+    this.measureChunkStore.putData(data);
+    if (maxValueObject instanceof Long) {
+      this.maxValue = (long) maxValueObject;
+    } else {
+      this.maxValue = (double) maxValueObject;
+    }
+  }
+
+  @Override public void freeMemory() {
+    this.measureChunkStore.freeMemory();
+  }
 }

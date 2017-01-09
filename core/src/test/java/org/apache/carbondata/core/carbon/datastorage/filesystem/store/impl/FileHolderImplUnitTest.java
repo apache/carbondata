@@ -78,25 +78,25 @@ public class FileHolderImplUnitTest {
     fileNameWithEmptyContent = fileWithEmptyContent.getAbsolutePath();
   }
 
-  @AfterClass public static void tearDown() {
+  @AfterClass public static void tearDown() throws IOException {
     file.delete();
     fileWithEmptyContent.delete();
     fileHolder.finish();
   }
 
-  @Test public void testReadByteArray() {
+  @Test public void testReadByteArray() throws IOException  {
     byte[] result = fileHolder.readByteArray(fileName, 1);
     byte[] expected_result = new byte[] { 72 };
     assertThat(result, is(equalTo(expected_result)));
   }
 
-  @Test public void testReadByteArrayWithFilePath() {
+  @Test public void testReadByteArrayWithFilePath() throws IOException  {
     byte[] result = fileHolder.readByteArray(fileName, 2L, 2);
     byte[] expected_result = { 108, 108 };
     assertThat(result, is(equalTo(expected_result)));
   }
 
-  @Test public void testReadLong() {
+  @Test public void testReadLong() throws IOException  {
     long actualResult = fileHolder.readLong(fileName, 1L);
     long expectedResult = 7308335519855243122L;
     assertThat(actualResult, is(equalTo(expectedResult)));
@@ -104,31 +104,30 @@ public class FileHolderImplUnitTest {
 
   @Test public void testReadLongForIoException() throws IOException {
     fileHolder.readLong(fileNameWithEmptyContent, 1L);
-
   }
 
   @Test public void testReadIntForIoException() throws IOException {
     fileHolder.readInt(fileNameWithEmptyContent, 1L);
   }
 
-  @Test public void testReadInt() {
+  @Test public void testReadInt() throws IOException  {
     int actualResult = fileHolder.readInt(fileName, 1L);
     int expectedResult = 1701604463;
     assertThat(actualResult, is(equalTo(expectedResult)));
   }
 
-  @Test public void testReadIntWithFileName() {
+  @Test public void testReadIntWithFileName() throws IOException  {
     int actualResult = fileHolder.readInt(fileName);
     int expectedResult = 1701604463;
     assertThat(actualResult, is(equalTo(expectedResult)));
   }
 
-  @Test public void testReadIntWithFileNameForIOException() {
+  @Test public void testReadIntWithFileNameForIOException() throws IOException  {
     fileHolder.readInt(fileNameWithEmptyContent);
 
   }
 
-  @Test public void testDouble() {
+  @Test public void testDouble() throws IOException  {
     double actualResult = fileHolder.readDouble(fileName, 1L);
     double expectedResult = 7.3083355198552433E18;
     assertThat(actualResult, is(equalTo(expectedResult)));

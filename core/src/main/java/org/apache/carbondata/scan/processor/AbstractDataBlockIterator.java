@@ -18,20 +18,21 @@
  */
 package org.apache.carbondata.scan.processor;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.scan.collector.ScannedResultCollector;
 import org.apache.carbondata.scan.collector.impl.DictionaryBasedResultCollector;
+import org.apache.carbondata.scan.collector.impl.DictionaryBasedVectorResultCollector;
 import org.apache.carbondata.scan.collector.impl.RawBasedResultCollector;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
+import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
+import org.apache.carbondata.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.scan.scanner.BlockletScanner;
 import org.apache.carbondata.scan.scanner.impl.FilterScanner;
 import org.apache.carbondata.scan.scanner.impl.NonFilterScanner;
@@ -42,17 +43,10 @@ import org.apache.carbondata.scan.scanner.impl.NonFilterScanner;
  */
 public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Object[]>> {
 
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(AbstractDataBlockIterator.class.getName());
   /**
    * iterator which will be used to iterate over data blocks
    */
   protected CarbonIterator<DataRefNode> dataBlockIterator;
-
-  /**
-   * execution details
-   */
-  protected BlockExecutionInfo blockExecutionInfo;
 
   /**
    * result collector which will be used to aggregate the scanned result
@@ -77,11 +71,8 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
 
   protected AbstractScannedResult scannedResult;
 
-  QueryStatisticsModel queryStatisticsModel;
-
   public AbstractDataBlockIterator(BlockExecutionInfo blockExecutionInfo,
       FileHolder fileReader, int batchSize, QueryStatisticsModel queryStatisticsModel) {
-    this.blockExecutionInfo = blockExecutionInfo;
     dataBlockIterator = new BlockletIterator(blockExecutionInfo.getFirstDataBlock(),
         blockExecutionInfo.getNumberOfBlockToScan());
     blocksChunkHolder = new BlocksChunkHolder(blockExecutionInfo.getTotalNumberDimensionBlock(),
@@ -91,17 +82,19 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     if (blockExecutionInfo.getFilterExecuterTree() != null) {
       blockletScanner = new FilterScanner(blockExecutionInfo, queryStatisticsModel);
     } else {
-      blockletScanner = new NonFilterScanner(blockExecutionInfo);
+      blockletScanner = new NonFilterScanner(blockExecutionInfo, queryStatisticsModel);
     }
     if (blockExecutionInfo.isRawRecordDetailQuery()) {
       this.scannerResultAggregator =
           new RawBasedResultCollector(blockExecutionInfo);
+    } else if (blockExecutionInfo.isVectorBatchCollector()) {
+      this.scannerResultAggregator =
+          new DictionaryBasedVectorResultCollector(blockExecutionInfo);
     } else {
       this.scannerResultAggregator =
           new DictionaryBasedResultCollector(blockExecutionInfo);
     }
     this.batchSize = batchSize;
-    this.queryStatisticsModel = queryStatisticsModel;
   }
 
   public boolean hasNext() {
@@ -126,12 +119,13 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
         }
         return false;
       }
-    } catch (QueryExecutionException ex) {
+    } catch (IOException | FilterUnsupportedException ex) {
       throw new RuntimeException(ex);
     }
   }
 
-  private AbstractScannedResult getNextScannedResult() throws QueryExecutionException {
+  private AbstractScannedResult getNextScannedResult()
+      throws IOException, FilterUnsupportedException {
     if (dataBlockIterator.hasNext()) {
       blocksChunkHolder.setDataBlock(dataBlockIterator.next());
       blocksChunkHolder.reset();
@@ -140,5 +134,5 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     return null;
   }
 
-
+  public abstract void processNextBatch(CarbonColumnarBatch columnarBatch);
 }

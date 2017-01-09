@@ -29,7 +29,7 @@ abstract class AbstractNode
 
 case class Node(cd: CarbonDictionaryTempDecoder) extends AbstractNode
 
-case class BinaryCarbonNode(left: util.List[AbstractNode], right: util.List[AbstractNode])
+case class ArrayCarbonNode(children: Seq[util.List[AbstractNode]])
   extends AbstractNode
 
 case class CarbonDictionaryTempDecoder(
@@ -70,9 +70,16 @@ class CarbonDecoderProcessor {
       case j: BinaryNode =>
         val leftList = new util.ArrayList[AbstractNode]
         val rightList = new util.ArrayList[AbstractNode]
-        nodeList.add(BinaryCarbonNode(leftList, rightList))
+        nodeList.add(ArrayCarbonNode(Seq(leftList, rightList)))
         process(j.left, leftList)
         process(j.right, rightList)
+      case u: Union =>
+        val nodeListSeq = u.children.map { child =>
+          val list = new util.ArrayList[AbstractNode]
+          process(child, list)
+          list
+        }
+        nodeList.add(ArrayCarbonNode(nodeListSeq))
       case e: UnaryNode => process(e.child, nodeList)
       case _ =>
     }
@@ -91,13 +98,12 @@ class CarbonDecoderProcessor {
         decoderNotDecode.asScala.foreach(cd.attrsNotDecode.add)
         decoderNotDecode.asScala.foreach(cd.attrList.remove)
         decoderNotDecode.addAll(cd.attrList)
-      case BinaryCarbonNode(left: util.List[AbstractNode], right: util.List[AbstractNode]) =>
-        val leftNotDecode = new util.HashSet[AttributeReferenceWrapper]
-        val rightNotDecode = new util.HashSet[AttributeReferenceWrapper]
-        updateDecoderInternal(left.asScala, leftNotDecode)
-        updateDecoderInternal(right.asScala, rightNotDecode)
-        decoderNotDecode.addAll(leftNotDecode)
-        decoderNotDecode.addAll(rightNotDecode)
+      case ArrayCarbonNode(children) =>
+        children.foreach { child =>
+          val notDecode = new util.HashSet[AttributeReferenceWrapper]
+          updateDecoderInternal(child.asScala, notDecode)
+          decoderNotDecode.addAll(notDecode)
+        }
     }
   }
 

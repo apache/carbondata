@@ -21,9 +21,10 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.execution.command.{ExecutedCommandExec, LoadTableByInsert}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.execution.command.LoadTableByInsert
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.sources.{BaseRelation, Filter, InsertableRelation, PrunedFilteredScan}
+import org.apache.spark.sql.sources.{BaseRelation, Filter, InsertableRelation}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
@@ -61,7 +62,7 @@ case class CarbonDatasourceHadoopRelation(
 
   override def schema: StructType = tableSchema.getOrElse(carbonRelation.schema)
 
-  def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
+  def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[InternalRow] = {
     val filterExpression: Option[Expression] = filters.flatMap { filter =>
       CarbonFilters.createCarbonFilter(schema, filter)
     }.reduceOption(new AndExpression(_, _))
@@ -69,7 +70,7 @@ case class CarbonDatasourceHadoopRelation(
     val projection = new CarbonProjection
     requiredColumns.foreach(projection.addColumn)
 
-    new CarbonScanRDD[Row](sqlContext.sparkContext, projection, filterExpression.orNull,
+    new CarbonScanRDD(sqlContext.sparkContext, projection, filterExpression.orNull,
       absIdentifier, carbonTable)
   }
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)

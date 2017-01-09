@@ -22,7 +22,6 @@ package org.apache.carbondata.scan.filter;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.List;
 
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
@@ -37,27 +36,14 @@ public interface GenericQueryType {
 
   void setParentname(String parentname);
 
-  int getBlockIndex();
-
-  void setBlockIndex(int blockIndex);
-
   void addChildren(GenericQueryType children);
 
-  void getAllPrimitiveChildren(List<GenericQueryType> primitiveChild);
-
-  void setSurrogateIndex(int surrIndex);
-
   int getColsCount();
-
-  void setKeySize(int[] keyBlockSize);
 
   void parseBlocksAndReturnComplexColumnByteArray(DimensionColumnDataChunk[] dimensionDataChunks,
       int rowNumber, DataOutputStream dataOutputStream) throws IOException;
 
-  void parseAndGetResultBytes(ByteBuffer complexData, DataOutputStream dataOutput)
-      throws IOException;
-
-  void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder);
+  void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder) throws IOException;
 
   Object getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData);
 }

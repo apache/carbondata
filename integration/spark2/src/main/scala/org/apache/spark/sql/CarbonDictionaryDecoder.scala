@@ -22,6 +22,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.errors.attachTree
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.plans.physical.Partitioning
 import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
 import org.apache.spark.sql.hive.{CarbonMetastoreTypes, CarbonRelation}
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
@@ -74,6 +75,10 @@ case class CarbonDictionaryDecoder(
   }
 
 
+  override def outputPartitioning: Partitioning = {
+    child.outputPartitioning
+  }
+
   def canBeDecoded(attr: Attribute): Boolean = {
     profile match {
       case ip: IncludeProfile if ip.attributes.nonEmpty =>
@@ -104,6 +109,7 @@ case class CarbonDictionaryDecoder(
           DecimalType(precision, scale)
         }
       case DataType.TIMESTAMP => TimestampType
+      case DataType.DATE => DateType
       case DataType.STRUCT =>
         CarbonMetastoreTypes
           .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
@@ -158,10 +164,10 @@ case class CarbonDictionaryDecoder(
           // add a task completion listener to clear dictionary that is a decisive factor for
           // LRU eviction policy
           val dictionaryTaskCleaner = TaskContext.get
-          dictionaryTaskCleaner.addTaskCompletionListener(context =>
+          dictionaryTaskCleaner.addTaskCompletionListener(_ =>
             dicts.foreach { dictionary =>
               if (null != dictionary) {
-                dictionary.clear
+                dictionary.clear()
               }
             }
           )
@@ -227,9 +233,9 @@ class CarbonDecoderRDD(
     relations: Seq[CarbonDecoderRelation],
     profile: CarbonProfile,
     aliasMap: CarbonAliasDecoderRelation,
-    prev: RDD[Row],
+    prev: RDD[InternalRow],
     output: Seq[Attribute])
-    extends RDD[Row](prev) {
+    extends RDD[InternalRow](prev) {
 
   def canBeDecoded(attr: Attribute): Boolean = {
     profile match {
@@ -261,6 +267,7 @@ class CarbonDecoderRDD(
           DecimalType(precision, scale)
         }
       case DataType.TIMESTAMP => TimestampType
+      case DataType.DATE => DateType
       case DataType.STRUCT =>
         CarbonMetastoreTypes
             .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
@@ -294,54 +301,48 @@ class CarbonDecoderRDD(
     dictIds
   }
 
-  override def compute(split: Partition, context: TaskContext): Iterator[Row] = {
+  override def compute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
           val storepath = CarbonEnv.get.carbonMetastore.storePath
     val absoluteTableIdentifiers = relations.map { relation =>
       val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
       (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
     }.toMap
 
-      val cacheProvider: CacheProvider = CacheProvider.getInstance
-      val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storepath)
-      val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
-        forwardDictionaryCache)
-      val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
-      // add a task completion listener to clear dictionary that is a decisive factor for
-      // LRU eviction policy
-      val dictionaryTaskCleaner = TaskContext.get
-      dictionaryTaskCleaner.addTaskCompletionListener(context =>
-        dicts.foreach { dictionary =>
-          if (null != dictionary) {
-            dictionary.clear
-          }
-        }
-      )
-      val iter = firstParent[Row].iterator(split, context)
-      new Iterator[Row] {
-        var flag = true
-        var total = 0L
-        override final def hasNext: Boolean = iter.hasNext
-
-        override final def next(): Row = {
-          val startTime = System.currentTimeMillis()
-          val data = iter.next().asInstanceOf[GenericRow].toSeq.toArray
-          dictIndex.foreach { index =>
-            if ( data(index) != null) {
-              data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
-                  .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
-                getDictionaryColumnIds(index)._3)
-            }
-          }
-          new GenericRow(data)
+    val cacheProvider: CacheProvider = CacheProvider.getInstance
+    val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
+      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storepath)
+    val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
+      forwardDictionaryCache)
+    val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
+    // add a task completion listener to clear dictionary that is a decisive factor for
+    // LRU eviction policy
+    val dictionaryTaskCleaner = TaskContext.get
+    dictionaryTaskCleaner.addTaskCompletionListener(_ =>
+      dicts.foreach { dictionary =>
+        if (null != dictionary) {
+          dictionary.clear()
         }
       }
-  }
+    )
+    val iter = firstParent[InternalRow].iterator(split, context)
+    new Iterator[InternalRow] {
+      var flag = true
+      var total = 0L
+      val dataTypes = output.map { attr => attr.dataType }
+      override final def hasNext: Boolean = iter.hasNext
 
-  private def isRequiredToDecode = {
-    getDictionaryColumnIds.find(p => p._1 != null) match {
-      case Some(value) => true
-      case _ => false
+      override final def next(): InternalRow = {
+        val row: InternalRow = iter.next()
+        val data = row.toSeq(dataTypes).toArray
+        dictIndex.foreach { index =>
+          if ( data(index) != null) {
+            data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
+                .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
+              getDictionaryColumnIds(index)._3)
+          }
+        }
+        new GenericInternalRow(data)
+      }
     }
   }
 
@@ -363,5 +364,5 @@ class CarbonDecoderRDD(
     dicts
   }
 
-  override protected def getPartitions: Array[Partition] = firstParent[Row].partitions
+  override protected def getPartitions: Array[Partition] = firstParent[InternalRow].partitions
 }

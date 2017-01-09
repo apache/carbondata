@@ -141,10 +141,6 @@ public interface IDataProcessStatus {
    */
   void setCsvFilePath(String csvFilePath);
 
-  String getDimCSVDirLoc();
-
-  void setDimCSVDirLoc(String dimCSVDirLoc);
-
   /**
    * @return the dimTables
    */

@@ -23,18 +23,18 @@ import java.util.concurrent._
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.execution.command.{CompactionCallableModel, CompactionModel}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.LoadMetadataDetails
-import org.apache.carbondata.lcm.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
-import org.apache.carbondata.lcm.status.SegmentStatusManager
+import org.apache.carbondata.core.update.CarbonUpdateUtil
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
+import org.apache.carbondata.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark._
 import org.apache.carbondata.spark.load._
@@ -93,7 +93,8 @@ object DataManagementFunc {
         }
 
         if (statusList.isDefined) {
-          elem.setModificationOrdeletionTimesStamp(CarbonLoaderUtil.readCurrentTime())
+          elem.setModificationOrdeletionTimesStamp(elem.getTimeStamp(CarbonLoaderUtil
+            .readCurrentTime()))
           // if atleast on CarbonCommonConstants.MARKED_FOR_UPDATE status exist,
           // use MARKED_FOR_UPDATE
           if (statusList.get
@@ -125,7 +126,7 @@ object DataManagementFunc {
 
           // write
           CarbonLoaderUtil.writeLoadMetadata(
-            schema,
+            storePath,
             databaseName,
             table.getDatabaseName,
             updatedloadMetadataDetails.asJava
@@ -166,7 +167,9 @@ object DataManagementFunc {
       segList,
       compactionModel.compactionType
     )
-    while (loadsToMerge.size() > 1) {
+    while (loadsToMerge.size() > 1 ||
+           (compactionModel.compactionType.name().equals("IUD_UPDDEL_DELTA_COMPACTION") &&
+            loadsToMerge.size() > 0)) {
       val lastSegment = sortedSegments.get(sortedSegments.size() - 1)
       deletePartialLoadsInCompaction(carbonLoadModel)
       val futureList: util.List[Future[Void]] = new util.ArrayList[Future[Void]](
@@ -197,7 +200,6 @@ object DataManagementFunc {
           throw e
       }
 
-
       // scan again and determine if anything is there to merge again.
       CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
       segList = carbonLoadModel.getLoadMetadataDetails
@@ -207,15 +209,23 @@ object DataManagementFunc {
       if (compactionModel.compactionType == CompactionType.MAJOR_COMPACTION) {
 
         segList = CarbonDataMergerUtil
-            .filterOutNewlyAddedSegments(carbonLoadModel.getLoadMetadataDetails, lastSegment)
+          .filterOutNewlyAddedSegments(carbonLoadModel.getLoadMetadataDetails, lastSegment)
       }
-      loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
-        storePath,
-        carbonLoadModel,
-        compactionModel.compactionSize,
-        segList,
-        compactionModel.compactionType
-      )
+
+      if (compactionModel.compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
+        loadsToMerge.clear()
+      } else if (segList.size > 0) {
+        loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
+          storePath,
+          carbonLoadModel,
+          compactionModel.compactionSize,
+          segList,
+          compactionModel.compactionType
+        )
+      }
+      else {
+        loadsToMerge.clear()
+      }
     }
   }
 
@@ -224,7 +234,7 @@ object DataManagementFunc {
    *
    * @param futureList
    */
-  def scanSegmentsAndSubmitJob(futureList: util.List[Future[Void]],
+  private def scanSegmentsAndSubmitJob(futureList: util.List[Future[Void]],
       loadsToMerge: util
       .List[LoadMetadataDetails],
       executor: ExecutorService,
@@ -270,7 +280,7 @@ object DataManagementFunc {
     newCarbonLoadModel.setDatabaseName(table.getCarbonTableIdentifier.getDatabaseName)
     newCarbonLoadModel.setStorePath(table.getStorePath)
     CommonUtil.readLoadMetadataDetails(newCarbonLoadModel, storePath)
-    val loadStartTime = CarbonLoaderUtil.readCurrentTime()
+    val loadStartTime = CarbonUpdateUtil.readCurrentTime();
     newCarbonLoadModel.setFactTimeStamp(loadStartTime)
   }
 
@@ -289,21 +299,29 @@ object DataManagementFunc {
   }
 
   def deleteLoadsAndUpdateMetadata(
-      carbonLoadModel: CarbonLoadModel,
-      table: CarbonTable,
+      dbName: String,
+      tableName: String,
       storePath: String,
       isForceDeletion: Boolean): Unit = {
-    if (LoadMetadataUtil.isLoadDeletionRequired(carbonLoadModel)) {
-      val loadMetadataFilePath = CarbonLoaderUtil
-          .extractLoadMetadataFileLocation(carbonLoadModel)
+    if (LoadMetadataUtil.isLoadDeletionRequired(dbName, tableName)) {
+      val loadMetadataFilePath =
+        CarbonLoaderUtil.extractLoadMetadataFileLocation(dbName, tableName)
       val details = SegmentStatusManager.readLoadMetadata(loadMetadataFilePath)
-      val carbonTableStatusLock = CarbonLockFactory
-          .getCarbonLockObj(table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
-            LockUsage.TABLE_STATUS_LOCK)
+      val carbonTableStatusLock =
+        CarbonLockFactory.getCarbonLockObj(
+          new CarbonTableIdentifier(dbName, tableName, ""),
+          LockUsage.TABLE_STATUS_LOCK
+        )
 
       // Delete marked loads
-      val isUpdationRequired = DeleteLoadFolders
-          .deleteLoadFoldersFromFileSystem(carbonLoadModel, storePath, isForceDeletion, details)
+      val isUpdationRequired =
+        DeleteLoadFolders.deleteLoadFoldersFromFileSystem(
+          dbName,
+          tableName,
+          storePath,
+          isForceDeletion,
+          details
+        )
 
       if (isUpdationRequired) {
         try {
@@ -318,14 +336,10 @@ object DataManagementFunc {
             val latestStatus = CarbonLoaderUtil
                 .updateLoadMetadataFromOldToNew(details, latestMetadata)
 
-            CarbonLoaderUtil.writeLoadMetadata(
-              carbonLoadModel.getCarbonDataLoadSchema,
-              carbonLoadModel.getDatabaseName,
-              carbonLoadModel.getTableName, latestStatus)
+            CarbonLoaderUtil.writeLoadMetadata(storePath, dbName, tableName, latestStatus)
           } else {
             val errorMsg = "Clean files request is failed for " +
-                s"${ carbonLoadModel.getDatabaseName }." +
-                s"${ carbonLoadModel.getTableName }" +
+                s"$dbName.$tableName" +
                 ". Not able to acquire the table status lock due to other operation " +
                 "running in the background."
             LOGGER.audit(errorMsg)
@@ -340,29 +354,24 @@ object DataManagementFunc {
   }
 
   def cleanFiles(
-      sc: SparkContext,
-      carbonLoadModel: CarbonLoadModel,
-      storePath: String) {
-    val table = CarbonMetadata.getInstance.getCarbonTable(
-      carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName)
-    val carbonCleanFilesLock = CarbonLockFactory.getCarbonLockObj(
-      table.getAbsoluteTableIdentifier.getCarbonTableIdentifier, LockUsage.CLEAN_FILES_LOCK)
+      dbName: String,
+      tableName: String,
+      storePath: String): Unit = {
+    val identifier = new CarbonTableIdentifier(dbName, tableName, "")
+    val carbonCleanFilesLock =
+      CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.CLEAN_FILES_LOCK)
     try {
       if (carbonCleanFilesLock.lockWithRetries()) {
         LOGGER.info("Clean files lock has been successfully acquired.")
-        deleteLoadsAndUpdateMetadata(carbonLoadModel,
-          table,
-          storePath,
-          isForceDeletion = true)
+        deleteLoadsAndUpdateMetadata(dbName, tableName, storePath, isForceDeletion = true)
       } else {
         val errorMsg = "Clean files request is failed for " +
-            s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }" +
+            s"$dbName.$tableName" +
             ". Not able to acquire the clean files lock due to another clean files " +
             "operation is running in the background."
         LOGGER.audit(errorMsg)
         LOGGER.error(errorMsg)
         throw new Exception(errorMsg + " Please try after some time.")
-
       }
     } finally {
       CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)

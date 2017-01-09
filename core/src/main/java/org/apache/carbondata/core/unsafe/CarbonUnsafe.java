@@ -25,7 +25,13 @@ public final class CarbonUnsafe {
 
   public static final int BYTE_ARRAY_OFFSET;
 
+  public static final int SHORT_ARRAY_OFFSET;
+
+  public static final int INT_ARRAY_OFFSET;
+
   public static final int LONG_ARRAY_OFFSET;
+
+  public static final int DOUBLE_ARRAY_OFFSET;
 
   public static Unsafe unsafe;
 
@@ -33,16 +39,22 @@ public final class CarbonUnsafe {
     try {
       Field cause = Unsafe.class.getDeclaredField("theUnsafe");
       cause.setAccessible(true);
-      unsafe = (Unsafe) cause.get((Object) null);
+      unsafe = (Unsafe) cause.get(null);
     } catch (Throwable var2) {
       unsafe = null;
     }
     if (unsafe != null) {
       BYTE_ARRAY_OFFSET = unsafe.arrayBaseOffset(byte[].class);
+      SHORT_ARRAY_OFFSET = unsafe.arrayBaseOffset(short[].class);
+      INT_ARRAY_OFFSET = unsafe.arrayBaseOffset(int[].class);
       LONG_ARRAY_OFFSET = unsafe.arrayBaseOffset(long[].class);
+      DOUBLE_ARRAY_OFFSET = unsafe.arrayBaseOffset(double[].class);
     } else {
       BYTE_ARRAY_OFFSET = 0;
+      SHORT_ARRAY_OFFSET = 0;
+      INT_ARRAY_OFFSET = 0;
       LONG_ARRAY_OFFSET = 0;
+      DOUBLE_ARRAY_OFFSET = 0;
     }
   }
 }

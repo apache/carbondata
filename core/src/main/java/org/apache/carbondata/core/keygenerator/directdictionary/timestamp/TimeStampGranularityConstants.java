@@ -28,12 +28,12 @@ public interface TimeStampGranularityConstants {
    * java counts the number of milliseconds from  start of "January 1, 1970", this property is
    * customized the start of position. for example "January 1, 2000"
    */
-  public static final String CARBON_CUTOFF_TIMESTAMP = "carbon.cutOffTimestamp";
+  String CARBON_CUTOFF_TIMESTAMP = "carbon.cutOffTimestamp";
   /**
    * The property to set the timestamp (ie milis) conversion to the SECOND, MINUTE, HOUR
    * or DAY level
    */
-  public static final String CARBON_TIME_GRANULARITY = "carbon.timegranularity";
+  String CARBON_TIME_GRANULARITY = "carbon.timegranularity";
 
   /**
    * Second level key

@@ -34,7 +34,6 @@ public class BlockIndex extends AbstractIndex {
   /**
    * Below method will be used to load the data block
    *
-   * @param blockInfo block detail
    */
   public void buildIndex(List<DataFileFooter> footerList) {
     // create a metadata details

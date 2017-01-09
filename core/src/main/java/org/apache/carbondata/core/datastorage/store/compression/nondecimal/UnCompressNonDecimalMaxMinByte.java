@@ -23,10 +23,11 @@ import java.math.BigDecimal;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureChunkStoreFactory;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureDataChunkStore;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -40,18 +41,23 @@ public class UnCompressNonDecimalMaxMinByte
   /**
    * compressor.
    */
-  private static Compressor compressor = CompressorFactory.getInstance();
+  private static Compressor compressor = CompressorFactory.getInstance().getCompressor();
   /**
    * value.
    */
   private byte[] value;
 
+  private MeasureDataChunkStore<byte[]> measureChunkStore;
+
+  private BigDecimal maxValue;
+
+  private double divisionFactor;
+
   @Override public ValueCompressonHolder.UnCompressValue<byte[]> getNew() {
     try {
       return (ValueCompressonHolder.UnCompressValue<byte[]>) clone();
     } catch (CloneNotSupportedException cloneNotSupportedException) {
-      LOGGER.error(cloneNotSupportedException,
-          cloneNotSupportedException.getMessage());
+      LOGGER.error(cloneNotSupportedException, cloneNotSupportedException.getMessage());
     }
     return null;
   }
@@ -62,10 +68,13 @@ public class UnCompressNonDecimalMaxMinByte
     return byte1;
   }
 
-  @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
+  @Override
+  public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType, byte[] compressData,
+      int offset, int length, int decimalPlaces, Object maxValueObject) {
     ValueCompressonHolder.UnCompressValue byte1 =
         ValueCompressionUtil.getUnCompressNonDecimalMaxMin(dataType);
-    ValueCompressonHolder.unCompress(dataType, byte1, value);
+    ValueCompressonHolder
+        .unCompress(dataType, byte1, compressData, offset, length, decimalPlaces, maxValueObject);
     return byte1;
   }
 
@@ -84,28 +93,37 @@ public class UnCompressNonDecimalMaxMinByte
     this.value = value;
   }
 
-  @Override public CarbonReadDataHolder getValues(int decimalVal, Object maxValueObject) {
-    double maxValue = (double) maxValueObject;
-    double[] vals = new double[value.length];
-    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i] / Math.pow(10, decimalVal);
-
-      if (value[i] == 0) {
-        vals[i] = maxValue;
-      } else {
-        BigDecimal diff = BigDecimal.valueOf(value[i] / Math.pow(10, decimalVal));
-        BigDecimal max = BigDecimal.valueOf(maxValue);
-        vals[i] = max.subtract(diff).doubleValue();
-      }
-
-    }
-    dataHolder.setReadableDoubleValues(vals);
-    return dataHolder;
-  }
-
   @Override public void setValue(byte[] value) {
     this.value = value;
   }
 
+  @Override public long getLongValue(int index) {
+    throw new UnsupportedOperationException("Get long value is not supported");
+  }
+
+  @Override public double getDoubleValue(int index) {
+    byte byteValue = measureChunkStore.getByte(index);
+    if (byteValue == 0) {
+      return this.maxValue.doubleValue();
+    } else {
+      BigDecimal diff = BigDecimal.valueOf(byteValue / this.divisionFactor);
+      return maxValue.subtract(diff).doubleValue();
+    }
+  }
+
+  @Override public BigDecimal getBigDecimalValue(int index) {
+    throw new UnsupportedOperationException("Get bigdecimal value is not supported");
+  }
+
+  @Override public void setUncompressValues(byte[] data, int decimalPlaces, Object maxValueObject) {
+    this.measureChunkStore =
+        MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_BYTE, data.length);
+    this.measureChunkStore.putData(data);
+    this.maxValue = BigDecimal.valueOf((double) maxValueObject);
+    this.divisionFactor = Math.pow(10, decimalPlaces);
+  }
+
+  @Override public void freeMemory() {
+    this.measureChunkStore.freeMemory();
+  }
 }

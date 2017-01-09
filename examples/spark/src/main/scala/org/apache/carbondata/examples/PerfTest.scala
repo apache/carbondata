@@ -145,15 +145,13 @@ class QueryRunner(sqlContext: SQLContext, dataFrame: DataFrame, datasources: Seq
 
   def shutDown(): Unit = {
     // drop all tables and temp files
-    datasources.foreach { datasource =>
-      datasource match {
-        case "parquet" | "orc" =>
+    datasources.foreach {
+        case datasource @ ("parquet" | "orc") =>
           val f = new File(PerfTest.savePath(datasource))
           if (f.exists()) f.delete()
         case "carbon" =>
           sqlContext.sql(s"DROP TABLE IF EXISTS ${PerfTest.makeTableName("carbon")}")
         case _ => sys.error("unsupported data source")
-      }
     }
   }
 }

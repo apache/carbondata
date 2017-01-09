@@ -33,9 +33,6 @@ public abstract class AbstractMeasureChunkReader implements MeasureColumnChunkRe
   /**
    * Constructor to get minimum parameter to create instance of this class
    *
-   * @param measureColumnChunk measure chunk metadata
-   * @param compression        model metadata which was to used to compress and uncompress
-   *                           the measure value
    * @param filePath           file from which data will be read
    */
   public AbstractMeasureChunkReader(String filePath) {

@@ -1,2 +1,0 @@
-result StringType
-default	Default Hive database	hdfs://10.18.132.159:54310/user/hive/warehouse	public	ROLE	

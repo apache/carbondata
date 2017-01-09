@@ -18,7 +18,7 @@
 package org.apache.carbondata.spark.util
 
 import org.apache.spark.sql.CarbonRelation
-import org.apache.spark.sql.common.util.CarbonHiveContext
+import org.apache.spark.sql.test.TestQueryExecutor
 
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier
@@ -43,9 +43,7 @@ object DictionaryTestCaseUtil {
     val columnIdentifier = new DictionaryColumnUniqueIdentifier(tableIdentifier,
       dimension.getColumnIdentifier, dimension.getDataType
     )
-    val dict = CarbonLoaderUtil.getDictionary(columnIdentifier,
-      CarbonHiveContext.hdfsCarbonBasePath
-    )
+    val dict = CarbonLoaderUtil.getDictionary(columnIdentifier, TestQueryExecutor.storeLocation)
     assert(dict.getSurrogateKey(value) != CarbonCommonConstants.INVALID_SURROGATE_KEY)
   }
 }

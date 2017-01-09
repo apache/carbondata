@@ -66,6 +66,8 @@ public class CarbonDataWriterVo {
 
   private int tableBlocksize;
 
+  private int bucketNumber;
+
   /**
    * @return the storeLocation
    */
@@ -92,13 +94,6 @@ public class CarbonDataWriterVo {
    */
   public void setMeasureCount(int measureCount) {
     this.measureCount = measureCount;
-  }
-
-  /**
-   * @return the mdKeyLength
-   */
-  public int getMdKeyLength() {
-    return mdKeyLength;
   }
 
   /**
@@ -235,20 +230,6 @@ public class CarbonDataWriterVo {
   }
 
   /**
-   * @return the numberOfNoDictionaryColumn
-   */
-  public int getNumberOfNoDictionaryColumn() {
-    return numberOfNoDictionaryColumn;
-  }
-
-  /**
-   * @param numberOfNoDictionaryColumn the numberOfNoDictionaryColumn to set
-   */
-  public void setNumberOfNoDictionaryColumn(int numberOfNoDictionaryColumn) {
-    this.numberOfNoDictionaryColumn = numberOfNoDictionaryColumn;
-  }
-
-  /**
    * @return the isDictionaryColumn
    */
   public boolean[] getIsDictionaryColumn() {
@@ -318,4 +299,11 @@ public class CarbonDataWriterVo {
     this.tableBlocksize = tableBlocksize;
   }
 
+  public int getBucketNumber() {
+    return bucketNumber;
+  }
+
+  public void setBucketNumber(int bucketNumber) {
+    this.bucketNumber = bucketNumber;
+  }
 }

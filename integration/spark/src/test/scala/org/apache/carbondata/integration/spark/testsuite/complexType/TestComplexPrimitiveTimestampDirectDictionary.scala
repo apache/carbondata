@@ -19,16 +19,11 @@
 
 package org.apache.carbondata.integration.spark.testsuite.complexType
 
-import java.io.File
-
-import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
-import org.apache.spark.sql.Row
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
+import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test class of creating and loading for carbon table with double
@@ -42,10 +37,10 @@ class TestComplexPrimitiveTimestampDirectDictionary extends QueryTest with Befor
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss.SSS")
     sql("CREATE TABLE complexcarbontimestamptable (empno string,workdate Timestamp,punchinout array<Timestamp>, worktime struct<begintime:Timestamp, endtime:Timestamp>, salary double) STORED BY 'org.apache.carbondata.format'")
-    sql("LOAD DATA local inpath './src/test/resources/datasamplecomplex.csv' INTO TABLE complexcarbontimestamptable OPTIONS" +
+    sql(s"LOAD DATA local inpath '$resourcesPath/datasamplecomplex.csv' INTO TABLE complexcarbontimestamptable OPTIONS" +
         "('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='empno,workdate,punchinout,worktime,salary')");
     sql("CREATE TABLE complexhivetimestamptable (empno string,workdate Timestamp,punchinout array<Timestamp>, worktime struct<begintime:Timestamp, endtime:Timestamp>, salary double)row format delimited fields terminated by ',' collection items terminated by '$'")
-    sql("LOAD DATA local inpath './src/test/resources/datasamplecomplex.csv' INTO TABLE complexhivetimestamptable")
+    sql(s"LOAD DATA local inpath '$resourcesPath/datasamplecomplex.csv' INTO TABLE complexhivetimestamptable")
   }
 
   test("select * query") {
@@ -57,9 +52,9 @@ class TestComplexPrimitiveTimestampDirectDictionary extends QueryTest with Befor
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss.SSS")
     sql("CREATE TABLE testtimestampcarbon(imei string,rat array<string>, sid array<int>, end_time array<Timestamp>, probeid array<double>, contact struct<name:string, id:string>)STORED BY 'org.apache.carbondata.format'")
-    sql("LOAD DATA local inpath './src/test/resources/timestampdata.csv' INTO TABLE testtimestampcarbon options('DELIMITER'=',', 'QUOTECHAR'='\"','COMPLEX_DELIMITER_LEVEL_1'='$', 'FILEHEADER'='imei,rat,sid,end_time,probeid,contact')")
+    sql("LOAD DATA local inpath '" + resourcesPath + "/timestampdata.csv' INTO TABLE testtimestampcarbon options('DELIMITER'=',', 'QUOTECHAR'='\"','COMPLEX_DELIMITER_LEVEL_1'='$', 'FILEHEADER'='imei,rat,sid,end_time,probeid,contact')")
     sql("CREATE TABLE testtimestamphive(imei string,rat array<string>, sid array<int>, end_time array<Timestamp>, probeid array<double>, contact struct<name:string, id:string>)row format delimited fields terminated by ',' collection items terminated by '$'")
-    sql("LOAD DATA local inpath './src/test/resources/timestampdata.csv' INTO TABLE testtimestamphive")
+    sql(s"LOAD DATA local inpath '$resourcesPath/timestampdata.csv' INTO TABLE testtimestamphive")
     checkAnswer(sql("select * from testtimestampcarbon"), sql("select * from testtimestamphive"))
     sql("drop table if exists testtimestampcarbon")
     sql("drop table if exists testtimestamphive")

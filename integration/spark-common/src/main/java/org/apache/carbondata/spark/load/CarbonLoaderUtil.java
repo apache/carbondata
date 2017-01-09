@@ -18,26 +18,12 @@
  */
 package org.apache.carbondata.spark.load;
 
-import java.io.BufferedWriter;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -47,7 +33,6 @@ import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.ColumnIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.Distributable;
@@ -62,14 +47,14 @@ import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.apache.carbondata.core.load.LoadMetadataDetails;
+import org.apache.carbondata.core.update.CarbonUpdateUtil;
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CarbonUtilException;
-import org.apache.carbondata.lcm.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.lcm.fileoperations.AtomicFileOperationsImpl;
-import org.apache.carbondata.lcm.fileoperations.FileWriteOperation;
-import org.apache.carbondata.lcm.locks.ICarbonLock;
-import org.apache.carbondata.lcm.status.SegmentStatusManager;
+import org.apache.carbondata.fileoperations.AtomicFileOperations;
+import org.apache.carbondata.fileoperations.AtomicFileOperationsImpl;
+import org.apache.carbondata.fileoperations.FileWriteOperation;
+import org.apache.carbondata.locks.ICarbonLock;
 import org.apache.carbondata.processing.api.dataloader.DataLoadModel;
 import org.apache.carbondata.processing.api.dataloader.SchemaInfo;
 import org.apache.carbondata.processing.csvload.DataGraphExecuter;
@@ -78,7 +63,6 @@ import org.apache.carbondata.processing.dataprocessor.IDataProcessStatus;
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator;
 import org.apache.carbondata.processing.graphgenerator.GraphGeneratorException;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.spark.merger.NodeBlockRelation;
 import org.apache.carbondata.spark.merger.NodeMultiBlockRelation;
 
@@ -86,30 +70,12 @@ import com.google.gson.Gson;
 import org.apache.spark.SparkConf;
 import org.apache.spark.util.Utils;
 
-
 public final class CarbonLoaderUtil {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
-  /**
-   * minimum no of blocklet required for distribution
-   */
-  private static int minBlockLetsReqForDistribution = 0;
-
-  static {
-    String property = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE);
-    try {
-      minBlockLetsReqForDistribution = Integer.parseInt(property);
-    } catch (NumberFormatException ne) {
-      LOGGER.info("Invalid configuration. Consisering the defaul");
-      minBlockLetsReqForDistribution =
-          CarbonCommonConstants.DEFAULT_CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE;
-    }
-  }
 
   private CarbonLoaderUtil() {
-
   }
 
   private static void generateGraph(IDataProcessStatus dataProcessTaskStatus, SchemaInfo info,
@@ -121,12 +87,6 @@ public final class CarbonLoaderUtil {
     model.setSchemaInfo(info);
     model.setTableName(dataProcessTaskStatus.getTableName());
     List<LoadMetadataDetails> loadMetadataDetails = loadModel.getLoadMetadataDetails();
-    if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
-      model.setLoadNames(
-          CarbonDataProcessorUtil.getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));
-      model.setModificationOrDeletionTime(CarbonDataProcessorUtil
-          .getModificationOrDeletionTimesFromLoadMetadataDetails(loadMetadataDetails));
-    }
     model.setBlocksID(dataProcessTaskStatus.getBlocksID());
     model.setEscapeCharacter(dataProcessTaskStatus.getEscapeCharacter());
     model.setQuoteCharacter(dataProcessTaskStatus.getQuoteCharacter());
@@ -136,15 +96,9 @@ public final class CarbonLoaderUtil {
     model.setFactTimeStamp(loadModel.getFactTimeStamp());
     model.setMaxColumns(loadModel.getMaxColumns());
     model.setDateFormat(loadModel.getDateFormat());
-    boolean hdfsReadMode =
-        dataProcessTaskStatus.getCsvFilePath() != null
-                && dataProcessTaskStatus.getCsvFilePath().startsWith("hdfs:");
-    int allocate =
-            null != dataProcessTaskStatus.getCsvFilePath()
-                    ? 1 : dataProcessTaskStatus.getFilesToProcess().size();
-    GraphGenerator generator = new GraphGenerator(model, hdfsReadMode, loadModel.getPartitionId(),
-        loadModel.getStorePath(), allocate,
-        loadModel.getCarbonDataLoadSchema(), loadModel.getSegmentId(), outputLocation);
+    GraphGenerator generator = new GraphGenerator(model, loadModel.getPartitionId(),
+        loadModel.getStorePath(), loadModel.getCarbonDataLoadSchema(), loadModel.getSegmentId(),
+        outputLocation);
     generator.generateGraph();
   }
 
@@ -181,7 +135,6 @@ public final class CarbonLoaderUtil {
     DataProcessTaskStatus dataProcessTaskStatus
             = new DataProcessTaskStatus(databaseName, tableName);
     dataProcessTaskStatus.setCsvFilePath(loadModel.getFactFilePath());
-    dataProcessTaskStatus.setDimCSVDirLoc(loadModel.getDimFolderPath());
     if (loadModel.isDirectLoad()) {
       dataProcessTaskStatus.setFilesToProcess(loadModel.getFactFilesToProcess());
       dataProcessTaskStatus.setDirectLoad(true);
@@ -196,7 +149,6 @@ public final class CarbonLoaderUtil {
     dataProcessTaskStatus.setRddIteratorKey(loadModel.getRddIteratorKey());
     dataProcessTaskStatus.setDateFormat(loadModel.getDateFormat());
     SchemaInfo info = new SchemaInfo();
-
     info.setDatabaseName(databaseName);
     info.setTableName(tableName);
     info.setAutoAggregateRequest(loadModel.isAggLoadRequest());
@@ -210,8 +162,7 @@ public final class CarbonLoaderUtil {
 
     DataGraphExecuter graphExecuter = new DataGraphExecuter(dataProcessTaskStatus);
     graphExecuter
-        .executeGraph(graphPath, new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN),
-            info, loadModel.getPartitionId(), loadModel.getCarbonDataLoadSchema());
+        .executeGraph(graphPath, info, loadModel.getCarbonDataLoadSchema());
   }
 
   public static List<String> addNewSliceNameToList(String newSlice, List<String> activeSlices) {
@@ -277,16 +228,14 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  public static void deleteStorePath(String path) {
+  private static void deleteStorePath(String path) {
     try {
       FileType fileType = FileFactory.getFileType(path);
       if (FileFactory.isFileExist(path, fileType)) {
         CarbonFile carbonFile = FileFactory.getCarbonFile(path, fileType);
         CarbonUtil.deleteFoldersAndFiles(carbonFile);
       }
-    } catch (IOException e) {
-      LOGGER.error("Unable to delete the given path :: " + e.getMessage());
-    } catch (CarbonUtilException e) {
+    } catch (IOException | InterruptedException e) {
       LOGGER.error("Unable to delete the given path :: " + e.getMessage());
     }
   }
@@ -347,9 +296,9 @@ public final class CarbonLoaderUtil {
     String localStoreLocation = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
     try {
-      CarbonUtil.deleteFoldersAndFiles(new File[] { new File(localStoreLocation).getParentFile() });
+      CarbonUtil.deleteFoldersAndFiles(new File(localStoreLocation).getParentFile());
       LOGGER.info("Deleted the local store location" + localStoreLocation);
-    } catch (CarbonUtilException e) {
+    } catch (IOException | InterruptedException e) {
       LOGGER.error(e, "Failed to delete local data load folder location");
     }
 
@@ -361,15 +310,13 @@ public final class CarbonLoaderUtil {
    * @param storePath
    * @param carbonTableIdentifier
    * @param segmentId
-   * @param partitionId
    * @return
    */
   public static String getStoreLocation(String storePath,
-      CarbonTableIdentifier carbonTableIdentifier, String segmentId, String partitionId) {
+      CarbonTableIdentifier carbonTableIdentifier, String segmentId) {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier);
-    String carbonDataFilePath = carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
-    return carbonDataFilePath;
+    return carbonTablePath.getCarbonDataDirectoryPath("0", segmentId);
   }
 
   /**
@@ -385,7 +332,7 @@ public final class CarbonLoaderUtil {
    * @throws IOException
    */
   public static boolean recordLoadMetadata(int loadCount, LoadMetadataDetails loadMetadataDetails,
-      CarbonLoadModel loadModel, String loadStatus, String startLoadTime) throws IOException {
+      CarbonLoadModel loadModel, String loadStatus, long startLoadTime) throws IOException {
 
     boolean status = false;
 
@@ -400,30 +347,26 @@ public final class CarbonLoaderUtil {
             absoluteTableIdentifier.getCarbonTableIdentifier());
 
     String tableStatusPath = carbonTablePath.getTableStatusFilePath();
-    ICarbonLock carbonLock = SegmentStatusManager.getTableStatusLock(absoluteTableIdentifier);
-
+    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
+    ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     try {
       if (carbonLock.lockWithRetries()) {
         LOGGER.info(
             "Acquired lock for table" + loadModel.getDatabaseName() + "." + loadModel.getTableName()
                 + " for table status updation");
-
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
             SegmentStatusManager.readLoadMetadata(metaDataFilepath);
 
-        String loadEnddate = readCurrentTime();
-        loadMetadataDetails.setTimestamp(loadEnddate);
+        long loadEnddate = CarbonUpdateUtil.readCurrentTime();
+        loadMetadataDetails.setLoadEndTime(loadEnddate);
         loadMetadataDetails.setLoadStatus(loadStatus);
         loadMetadataDetails.setLoadName(String.valueOf(loadCount));
         loadMetadataDetails.setLoadStartTime(startLoadTime);
-
         List<LoadMetadataDetails> listOfLoadFolderDetails =
             new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         if (null != listOfLoadFolderDetailsArray) {
-          for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
-            listOfLoadFolderDetails.add(loadMetadata);
-          }
+          Collections.addAll(listOfLoadFolderDetails, listOfLoadFolderDetailsArray);
         }
         listOfLoadFolderDetails.add(loadMetadataDetails);
 
@@ -449,11 +392,10 @@ public final class CarbonLoaderUtil {
     return status;
   }
 
-  public static void writeLoadMetadata(CarbonDataLoadSchema schema, String databaseName,
-      String tableName, List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(schema.getCarbonTable().getStorePath(),
-            schema.getCarbonTable().getCarbonTableIdentifier());
+  public static void writeLoadMetadata(String storeLocation, String dbName, String tableName,
+      List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(storeLocation, dbName, tableName);
     String dataLoadLocation = carbonTablePath.getTableStatusFilePath();
 
     DataOutputStream dataOutputStream;
@@ -495,23 +437,23 @@ public final class CarbonLoaderUtil {
     return date;
   }
 
-  public static String extractLoadMetadataFileLocation(CarbonLoadModel loadModel) {
+  public static String extractLoadMetadataFileLocation(String dbName, String tableName) {
     CarbonTable carbonTable =
         org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-            .getCarbonTable(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
+            .getCarbonTable(dbName + '_' + tableName);
     return carbonTable.getMetaDataFilepath();
   }
 
   public static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier,
-      String carbonStorePath) throws CarbonUtilException {
-    Cache dictCache =
+      String carbonStorePath) throws IOException {
+    Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache =
         CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath);
-    return (Dictionary) dictCache.get(columnIdentifier);
+    return dictCache.get(columnIdentifier);
   }
 
   public static Dictionary getDictionary(CarbonTableIdentifier tableIdentifier,
       ColumnIdentifier columnIdentifier, String carbonStorePath, DataType dataType)
-      throws CarbonUtilException {
+      throws IOException {
     return getDictionary(
         new DictionaryColumnUniqueIdentifier(tableIdentifier, columnIdentifier, dataType),
         carbonStorePath);

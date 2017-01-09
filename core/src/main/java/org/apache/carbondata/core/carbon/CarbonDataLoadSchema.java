@@ -65,15 +65,6 @@ public class CarbonDataLoadSchema implements Serializable {
   }
 
   /**
-   * set dimensionrelation list
-   *
-   * @param dimensionRelationList
-   */
-  public void setDimensionRelationList(List<DimensionRelation> dimensionRelationList) {
-    this.dimensionRelationList = dimensionRelationList;
-  }
-
-  /**
    * get carbontable
    *
    * @return carbonTable
@@ -98,11 +89,6 @@ public class CarbonDataLoadSchema implements Serializable {
     private String tableName;
 
     /**
-     * dimensionSource csv path
-     */
-    private String dimensionSource;
-
-    /**
      * relation with fact and dimension table
      */
     private Relation relation;
@@ -118,14 +104,12 @@ public class CarbonDataLoadSchema implements Serializable {
      * constructor
      *
      * @param tableName       - dimension table name
-     * @param dimensionSource - source file path
      * @param relation        - fact foreign key with dimension primary key mapping
      * @param columns         - list of columns to be used from this dimension table
      */
-    public DimensionRelation(String tableName, String dimensionSource, Relation relation,
+    public DimensionRelation(String tableName, Relation relation,
         List<String> columns) {
       this.tableName = tableName;
-      this.dimensionSource = dimensionSource;
       this.relation = relation;
       this.columns = columns;
     }
@@ -135,13 +119,6 @@ public class CarbonDataLoadSchema implements Serializable {
      */
     public String getTableName() {
       return tableName;
-    }
-
-    /**
-     * @return dimensionSource
-     */
-    public String getDimensionSource() {
-      return dimensionSource;
     }
 
     /**

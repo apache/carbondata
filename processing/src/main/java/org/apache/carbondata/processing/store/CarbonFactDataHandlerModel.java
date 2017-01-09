@@ -68,10 +68,6 @@ public class CarbonFactDataHandlerModel {
    */
   private int blockSize;
   /**
-   * flag to check whether to group the similar data
-   */
-  private boolean isGroupByEnabled;
-  /**
    * total count of measures in table
    */
   private int measureCount;
@@ -103,10 +99,6 @@ public class CarbonFactDataHandlerModel {
    * flag to check whether to merge data based on custom aggregator
    */
   private boolean isMergingRequestForCustomAgg;
-  /**
-   * flag to check whether the request is for updating a member
-   */
-  private boolean isUpdateMemberRequest;
   /**
    * flag to check whether use inverted index
    */
@@ -186,13 +178,15 @@ public class CarbonFactDataHandlerModel {
    */
   private boolean useKettle = true;
 
+  private int bucketId = 0;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    * @param configuration
    * @return CarbonFactDataHandlerModel
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
-      CarbonDataLoadConfiguration configuration, String storeLocation) {
+      CarbonDataLoadConfiguration configuration, String storeLocation, int bucketId) {
 
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
@@ -291,6 +285,7 @@ public class CarbonFactDataHandlerModel {
     } else {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount);
     }
+    carbonFactDataHandlerModel.bucketId = bucketId;
     return carbonFactDataHandlerModel;
   }
 
@@ -346,10 +341,6 @@ public class CarbonFactDataHandlerModel {
     this.tableName = tableName;
   }
 
-  public boolean isGroupByEnabled() {
-    return isGroupByEnabled;
-  }
-
   public int getMeasureCount() {
     return measureCount;
   }
@@ -374,22 +365,6 @@ public class CarbonFactDataHandlerModel {
     this.mdKeyIndex = mdKeyIndex;
   }
 
-  public String[] getAggregators() {
-    return aggregators;
-  }
-
-  public void setAggregators(String[] aggregators) {
-    this.aggregators = aggregators;
-  }
-
-  public String[] getAggregatorClass() {
-    return aggregatorClass;
-  }
-
-  public void setAggregatorClass(String[] aggregatorClass) {
-    this.aggregatorClass = aggregatorClass;
-  }
-
   public String getStoreLocation() {
     return storeLocation;
   }
@@ -398,24 +373,8 @@ public class CarbonFactDataHandlerModel {
     this.storeLocation = storeLocation;
   }
 
-  public int[] getFactDimLens() {
-    return factDimLens;
-  }
-
   public void setFactDimLens(int[] factDimLens) {
     this.factDimLens = factDimLens;
-  }
-
-  public boolean isMergingRequestForCustomAgg() {
-    return isMergingRequestForCustomAgg;
-  }
-
-  public void setMergingRequestForCustomAgg(boolean mergingRequestForCustomAgg) {
-    isMergingRequestForCustomAgg = mergingRequestForCustomAgg;
-  }
-
-  public boolean isUpdateMemberRequest() {
-    return isUpdateMemberRequest;
   }
 
   public int[] getDimLens() {
@@ -424,26 +383,6 @@ public class CarbonFactDataHandlerModel {
 
   public void setDimLens(int[] dimLens) {
     this.dimLens = dimLens;
-  }
-
-  public String[] getFactLevels() {
-    return factLevels;
-  }
-
-  public void setFactLevels(String[] factLevels) {
-    this.factLevels = factLevels;
-  }
-
-  public String[] getAggLevels() {
-    return aggLevels;
-  }
-
-  public void setAggLevels(String[] aggLevels) {
-    this.aggLevels = aggLevels;
-  }
-
-  public boolean isDataWritingRequest() {
-    return isDataWritingRequest;
   }
 
   public void setDataWritingRequest(boolean dataWritingRequest) {
@@ -557,6 +496,10 @@ public class CarbonFactDataHandlerModel {
 
   public void setUseKettle(boolean useKettle) {
     this.useKettle = useKettle;
+  }
+
+  public int getBucketId() {
+    return bucketId;
   }
 }
 

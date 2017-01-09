@@ -213,9 +213,10 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     String readableBlockSize = ByteUtil.convertByteToReadable(blockSize);
     String readableFileSize = ByteUtil.convertByteToReadable(fileSize);
     String readableMaxSize = ByteUtil.convertByteToReadable(maxSize);
-    LOGGER.info("The configured block size is " + readableBlockSize +
-        ", the actual carbon file size is " + readableFileSize +
-        ", choose the max value " + readableMaxSize + " as the block size on HDFS");
+    LOGGER.info(
+        "The configured block size is " + readableBlockSize + ", the actual carbon file size is "
+            + readableFileSize + ", choose the max value " + readableMaxSize
+            + " as the block size on HDFS");
     return maxSize;
   }
 
@@ -271,6 +272,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     initFileCount();
     String carbonDataFileName = carbonTablePath
         .getCarbonDataFileName(fileCount, dataWriterVo.getCarbonDataFileAttributes().getTaskId(),
+            dataWriterVo.getBucketNumber(),
             dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
     String actualFileNameVal = carbonDataFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     FileData fileData = new FileData(actualFileNameVal, dataWriterVo.getStoreLocation());
@@ -389,25 +391,21 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   }
 
   /**
-   * This method will be used to get the blocklet metadata
-   *
-   * @return BlockletInfo - blocklet metadata
-   */
-  protected abstract BlockletInfoColumnar getBlockletInfo(NodeHolder nodeHolder, long offset);
-
-  /**
    * Method will be used to close the open file channel
    *
    * @throws CarbonDataWriterException
    */
   public void closeWriter() throws CarbonDataWriterException {
     CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
-    renameCarbonDataFile();
-    copyCarbonDataFileToCarbonStorePath(this.fileName.substring(0, this.fileName.lastIndexOf('.')));
-    try {
-      writeIndexFile();
-    } catch (IOException e) {
-      throw new CarbonDataWriterException("Problem while writing the index file", e);
+    if (this.blockletInfoList.size() > 0) {
+      renameCarbonDataFile();
+      copyCarbonDataFileToCarbonStorePath(
+          this.fileName.substring(0, this.fileName.lastIndexOf('.')));
+      try {
+        writeIndexFile();
+      } catch (IOException e) {
+        throw new CarbonDataWriterException("Problem while writing the index file", e);
+      }
     }
     closeExecutorService();
   }
@@ -420,12 +418,13 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   private void writeIndexFile() throws IOException, CarbonDataWriterException {
     // get the header
-    IndexHeader indexHeader =
-        CarbonMetadataUtil.getIndexHeader(localCardinality, thriftColumnSchemaList);
+    IndexHeader indexHeader = CarbonMetadataUtil
+        .getIndexHeader(localCardinality, thriftColumnSchemaList, dataWriterVo.getBucketNumber());
     // get the block index info thrift
     List<BlockIndex> blockIndexThrift = CarbonMetadataUtil.getBlockIndexInfo(blockIndexInfoList);
     String fileName = dataWriterVo.getStoreLocation() + File.separator + carbonTablePath
         .getCarbonIndexFileName(dataWriterVo.getCarbonDataFileAttributes().getTaskId(),
+            dataWriterVo.getBucketNumber(),
             dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
     CarbonIndexFileWriter writer = new CarbonIndexFileWriter();
     // open file
@@ -539,7 +538,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * @throws CarbonDataWriterException
    */
   @Override public void writeBlockletInfoToFile() throws CarbonDataWriterException {
-    writeBlockletInfoToFile(this.blockletInfoList, fileChannel, fileName);
+    if (this.blockletInfoList.size() > 0) {
+      writeBlockletInfoToFile(this.blockletInfoList, fileChannel, fileName);
+    }
   }
 
   /**
@@ -551,14 +552,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * @throws CarbonDataWriterException throws new CarbonDataWriterException if any problem
    */
   public abstract void writeBlockletData(NodeHolder nodeHolder) throws CarbonDataWriterException;
-
-  @Override public int getLeafMetadataSize() {
-    return blockletInfoList.size();
-  }
-
-  @Override public String getTempStoreLocation() {
-    return this.fileName;
-  }
 
   protected byte[][] fillAndCompressedKeyBlockData(IndexStorage<int[]>[] keyStorageArray,
       int entryCount) {
@@ -607,7 +600,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
           }
         }
       }
-      keyBlockData[i] = CompressorFactory.getInstance().compressByte(keyBlockData[i]);
+      keyBlockData[i] = CompressorFactory.getInstance().getCompressor()
+          .compressByte(keyBlockData[i]);
     }
     return keyBlockData;
   }

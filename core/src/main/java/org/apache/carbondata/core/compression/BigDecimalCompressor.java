@@ -24,7 +24,7 @@ import org.apache.carbondata.core.util.CompressionFinder;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
 /**
- * Bigdecimal data type compressor
+ * Big decimal data type compressor
  *
  */
 public class BigDecimalCompressor extends BigIntCompressor {
@@ -39,16 +39,16 @@ public class BigDecimalCompressor extends BigIntCompressor {
     Long[] maxValues = (Long[]) maxValue;
     Object leftCompressedValue = getCompressedValues(
         bigdCompressionFinder.getLeftCompType(), dataHolder,
-        bigdCompressionFinder.getLeftChangedDataType(), maxValues[0], 0);
+        bigdCompressionFinder.getLeftConvertedDataType(), maxValues[0], 0);
     readLeft = false;
     Object rightCompressedValue = getCompressedValues(
         bigdCompressionFinder.getRightCompType(), dataHolder,
-        bigdCompressionFinder.getRightChangedDataType(), maxValues[1], 0);
+        bigdCompressionFinder.getRightConvertedDataType(), maxValues[1], 0);
     return new Object[] { leftCompressedValue, rightCompressedValue };
   }
 
   @Override
-  protected Object compressMaxMin(DataType changedDataType,
+  protected Object compressMaxMin(DataType convertedDataType,
       CarbonWriteDataHolder dataHolder, Object max) {
     long maxValue = (long) max;
     long[][] writableBigDValues = dataHolder.getWritableBigDecimalValues();
@@ -58,11 +58,11 @@ public class BigDecimalCompressor extends BigIntCompressor {
     } else {
       value = writableBigDValues[1];
     }
-    return compressMaxMin(changedDataType, maxValue, value);
+    return compressValue(convertedDataType, value, maxValue, true);
   }
 
   @Override
-  protected Object compressNone(DataType changedDataType,
+  protected Object compressAdaptive(DataType convertedDataType,
       CarbonWriteDataHolder dataHolder) {
     long[][] writableBigDValues = dataHolder.getWritableBigDecimalValues();
     long[] value = null;
@@ -71,6 +71,6 @@ public class BigDecimalCompressor extends BigIntCompressor {
     } else {
       value = writableBigDValues[1];
     }
-    return compressNone(changedDataType, value);
+    return compressValue(convertedDataType, value, 0, false);
   }
 }

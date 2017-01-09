@@ -73,6 +73,7 @@ public class DataTypeUtilTest {
 
   @Test public void testGetDataType() {
     assertEquals(DataType.TIMESTAMP, getDataType("TIMESTAMP"));
+    assertEquals(DataType.DATE, getDataType("DATE"));
     assertEquals(DataType.STRING, getDataType("STRING"));
     assertEquals(DataType.INT, getDataType("INT"));
     assertEquals(DataType.SHORT, getDataType("SMALLINT"));

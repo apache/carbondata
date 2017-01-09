@@ -22,16 +22,21 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.Map;
 
+import org.apache.carbondata.common.iudprocessor.cache.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.scan.filter.GenericQueryType;
+import org.apache.carbondata.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.scan.result.vector.ColumnVectorInfo;
 
 /**
  * Scanned result class which will store and provide the result on request
@@ -59,24 +64,24 @@ public abstract class AbstractScannedResult {
   /**
    * to keep track of number of rows process
    */
-  private int rowCounter;
+  protected int rowCounter;
   /**
    * dimension column data chunk
    */
-  private DimensionColumnDataChunk[] dataChunks;
+  protected DimensionColumnDataChunk[] dataChunks;
   /**
    * measure column data chunk
    */
-  private MeasureColumnDataChunk[] measureDataChunks;
+  protected MeasureColumnDataChunk[] measureDataChunks;
   /**
    * dictionary column block index in file
    */
-  private int[] dictionaryColumnBlockIndexes;
+  protected int[] dictionaryColumnBlockIndexes;
 
   /**
    * no dictionary column block index in file
    */
-  private int[] noDictionaryColumnBlockIndexes;
+  protected int[] noDictionaryColumnBlockIndexes;
 
   /**
    * column group to is key structure info
@@ -86,7 +91,7 @@ public abstract class AbstractScannedResult {
    * then from complete column group key it will be used to mask the key and
    * get the particular column key
    */
-  private Map<Integer, KeyStructureInfo> columnGroupKeyStructureInfo;
+  protected Map<Integer, KeyStructureInfo> columnGroupKeyStructureInfo;
 
   /**
    *
@@ -96,9 +101,18 @@ public abstract class AbstractScannedResult {
   private int totalDimensionsSize;
 
   /**
+   * blockedId which will be blockId + blocklet number in the block
+   */
+  private String blockletId;
+
+  private long rowId;
+
+  /**
    * parent block indexes
    */
   private int[] complexParentBlockIndexes;
+
+  protected BlockletLevelDeleteDeltaDataCache blockletDeleteDeltaCache;
 
   public AbstractScannedResult(BlockExecutionInfo blockExecutionInfo) {
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
@@ -178,11 +192,77 @@ public abstract class AbstractScannedResult {
   }
 
   /**
+   * Fill the column data of dictionary to vector
+   */
+  public void fillColumnarDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
+    int column = 0;
+    for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
+      column = dataChunks[dictionaryColumnBlockIndexes[i]]
+          .fillConvertedChunkData(vectorInfo, column,
+              columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
+    }
+  }
+
+  /**
+   * Fill the column data to vector
+   */
+  public void fillColumnarNoDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
+    int column = 0;
+    for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
+      column = dataChunks[noDictionaryColumnBlockIndexes[i]]
+          .fillConvertedChunkData(vectorInfo, column,
+              columnGroupKeyStructureInfo.get(noDictionaryColumnBlockIndexes[i]));
+    }
+  }
+
+  /**
+   * Fill the measure column data to vector
+   */
+  public void fillColumnarMeasureBatch(ColumnVectorInfo[] vectorInfo, int[] measuresOrdinal) {
+    for (int i = 0; i < measuresOrdinal.length; i++) {
+      vectorInfo[i].measureVectorFiller
+          .fillMeasureVector(measureDataChunks[measuresOrdinal[i]], vectorInfo[i]);
+    }
+  }
+
+  public void fillColumnarComplexBatch(ColumnVectorInfo[] vectorInfos) {
+    for (int i = 0; i < vectorInfos.length; i++) {
+      int offset = vectorInfos[i].offset;
+      int len = offset + vectorInfos[i].size;
+      int vectorOffset = vectorInfos[i].vectorOffset;
+      CarbonColumnVector vector = vectorInfos[i].vector;
+      for (int j = offset; j < len; j++) {
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        DataOutputStream dataOutput = new DataOutputStream(byteStream);
+        try {
+          vectorInfos[i].genericQueryType.parseBlocksAndReturnComplexColumnByteArray(dataChunks,
+              rowMapping == null ? j : rowMapping[j], dataOutput);
+          Object data = vectorInfos[i].genericQueryType
+              .getDataBasedOnDataTypeFromSurrogates(ByteBuffer.wrap(byteStream.toByteArray()));
+          vector.putObject(vectorOffset++, data);
+        } catch (IOException e) {
+          LOGGER.error(e);
+        } finally {
+          CarbonUtil.closeStreams(dataOutput);
+          CarbonUtil.closeStreams(byteStream);
+        }
+      }
+    }
+  }
+
+  /**
    * Just increment the counter incase of query only on measures.
    */
   public void incrementCounter() {
-    rowCounter ++;
-    currentRow ++;
+    rowCounter++;
+    currentRow++;
+  }
+
+  /**
+   * increment the counter.
+   */
+  public void setRowCounter(int rowCounter) {
+    this.rowCounter = rowCounter;
   }
 
   /**
@@ -232,6 +312,35 @@ public abstract class AbstractScannedResult {
   }
 
   /**
+   * @return blockletId
+   */
+  public String getBlockletId() {
+    return blockletId;
+  }
+
+  /**
+   * @param blockletId
+   */
+  public void setBlockletId(String blockletId) {
+    this.blockletId = CarbonTablePath.getShortBlockId(blockletId);
+  }
+
+  /**
+   * @return blockletId
+   */
+  public long getRowId() {
+    return rowId;
+  }
+
+  /**
+   * @param blockletId
+   */
+  public void setRowId(long rowId) {
+    this.rowId = rowId;
+  }
+
+
+  /**
    * Below method will be used to get the complex type keys array based
    * on row id for all the complex type dimension selected in query
    *
@@ -271,7 +380,11 @@ public abstract class AbstractScannedResult {
    * @return
    */
   public boolean hasNext() {
-    return rowCounter < this.totalNumberOfRows;
+    if (rowCounter < this.totalNumberOfRows) {
+      return true;
+    }
+    CarbonUtil.freeMemory(dataChunks, measureDataChunks);
+    return false;
   }
 
   /**
@@ -347,6 +460,10 @@ public abstract class AbstractScannedResult {
   protected BigDecimal getBigDecimalMeasureValue(int ordinal, int rowIndex) {
     return measureDataChunks[ordinal].getMeasureDataHolder()
         .getReadableBigDecimalValueByIndex(rowIndex);
+  }
+
+  public int getRowCounter() {
+    return rowCounter;
   }
 
   /**
@@ -434,4 +551,20 @@ public abstract class AbstractScannedResult {
    * @return measure value
    */
   public abstract BigDecimal getBigDecimalMeasureValue(int ordinal);
+
+  /**
+   *
+   * @return BlockletLevelDeleteDeltaDataCache.
+   */
+  public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
+    return blockletDeleteDeltaCache;
+  }
+
+  /**
+   * @param blockletDeleteDeltaCache
+   */
+  public void setBlockletDeleteDeltaCache(
+      BlockletLevelDeleteDeltaDataCache blockletDeleteDeltaCache) {
+    this.blockletDeleteDeltaCache = blockletDeleteDeltaCache;
+  }
 }

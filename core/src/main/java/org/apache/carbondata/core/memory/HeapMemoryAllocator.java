@@ -17,11 +17,11 @@
 
 package org.apache.carbondata.core.memory;
 
-import javax.annotation.concurrent.GuardedBy;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import javax.annotation.concurrent.GuardedBy;
 
 import org.apache.carbondata.core.unsafe.CarbonUnsafe;
 
@@ -77,8 +77,6 @@ public class HeapMemoryAllocator implements MemoryAllocator {
         }
         pool.add(new WeakReference<>(memory));
       }
-    } else {
-      // Do nothing
     }
   }
 }

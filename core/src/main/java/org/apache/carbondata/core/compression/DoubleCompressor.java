@@ -28,12 +28,13 @@ import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
  */
 public class DoubleCompressor extends ValueCompressor {
 
-  @Override protected Object compressNonDecimalMaxMin(DataType changedDataType,
+
+  @Override protected Object compressNonDecimalMaxMin(DataType convertedDataType,
       CarbonWriteDataHolder dataHolder, int decimal, Object maxValue) {
     int i = 0;
     BigDecimal max = BigDecimal.valueOf((double)maxValue);
     double[] value = dataHolder.getWritableDoubleValues();
-    switch (changedDataType) {
+    switch (convertedDataType) {
       case DATA_BYTE:
         byte[] result = new byte[value.length];
         for (int j = 0; j < value.length; j++) {
@@ -66,7 +67,7 @@ public class DoubleCompressor extends ValueCompressor {
         for (int j = 0; j < value.length; j++) {
           BigDecimal val = BigDecimal.valueOf(value[j]);
           double diff = max.subtract(val).doubleValue();
-          longResult[i] = (long) (Math.round(diff * Math.pow(10, decimal)));
+          longResult[i] = Math.round(diff * Math.pow(10, decimal));
           i++;
         }
         return longResult;
@@ -92,11 +93,11 @@ public class DoubleCompressor extends ValueCompressor {
   }
 
   @Override
-  protected Object compressNonDecimal(DataType changedDataType, CarbonWriteDataHolder dataHolder,
+  protected Object compressNonDecimal(DataType convertedDataType, CarbonWriteDataHolder dataHolder,
       int decimal) {
     int i = 0;
     double[] value = dataHolder.getWritableDoubleValues();
-    switch (changedDataType) {
+    switch (convertedDataType) {
       case DATA_BYTE:
         byte[] result = new byte[value.length];
         for (int j = 0; j < value.length; j++) {
@@ -121,7 +122,7 @@ public class DoubleCompressor extends ValueCompressor {
       case DATA_LONG:
         long[] longResult = new long[value.length];
         for (int j = 0; j < value.length; j++) {
-          longResult[i] = (long) (Math.round(Math.pow(10, decimal) * value[j]));
+          longResult[i] = Math.round(Math.pow(10, decimal) * value[j]);
           i++;
         }
         return longResult;
@@ -143,12 +144,12 @@ public class DoubleCompressor extends ValueCompressor {
   }
 
   @Override
-  protected Object compressMaxMin(DataType changedDataType, CarbonWriteDataHolder dataHolder,
+  protected Object compressMaxMin(DataType convertedDataType, CarbonWriteDataHolder dataHolder,
       Object max) {
     double maxValue = (double) max;
     double[] value = dataHolder.getWritableDoubleValues();
     int i = 0;
-    switch (changedDataType) {
+    switch (convertedDataType) {
       case DATA_BYTE:
         byte[] result = new byte[value.length];
         for (int j = 0; j < value.length; j++) {
@@ -187,7 +188,7 @@ public class DoubleCompressor extends ValueCompressor {
       default:
         double[] defaultResult = new double[value.length];
         for (int j = 0; j < value.length; j++) {
-          defaultResult[i] = (double) (maxValue - value[j]);
+          defaultResult[i] = maxValue - value[j];
           i++;
         }
         return defaultResult;
@@ -195,7 +196,7 @@ public class DoubleCompressor extends ValueCompressor {
   }
 
   @Override
-  protected Object compressNone(DataType changedDataType, CarbonWriteDataHolder dataHolder) {
+  protected Object compressAdaptive(DataType changedDataType, CarbonWriteDataHolder dataHolder) {
     double[] value = dataHolder.getWritableDoubleValues();
     int i = 0;
     switch (changedDataType) {

@@ -19,6 +19,7 @@
 package org.apache.carbondata.hadoop.test.util;
 
 import com.google.gson.Gson;
+import org.apache.carbondata.core.update.CarbonUpdateUtil;
 import org.apache.hadoop.fs.Path;
 
 import org.apache.carbondata.core.cache.Cache;
@@ -59,9 +60,9 @@ import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWrit
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriterImpl;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfo;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfoPreparator;
-import org.apache.carbondata.lcm.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.lcm.fileoperations.AtomicFileOperationsImpl;
-import org.apache.carbondata.lcm.fileoperations.FileWriteOperation;
+import org.apache.carbondata.fileoperations.AtomicFileOperations;
+import org.apache.carbondata.fileoperations.AtomicFileOperationsImpl;
+import org.apache.carbondata.fileoperations.FileWriteOperation;
 import org.apache.carbondata.processing.api.dataloader.DataLoadModel;
 import org.apache.carbondata.processing.api.dataloader.SchemaInfo;
 import org.apache.carbondata.processing.constants.TableOptionConstant;
@@ -70,7 +71,6 @@ import org.apache.carbondata.processing.dataprocessor.DataProcessTaskStatus;
 import org.apache.carbondata.processing.dataprocessor.IDataProcessStatus;
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator;
 import org.apache.carbondata.processing.graphgenerator.GraphGeneratorException;
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -374,8 +374,7 @@ public class StoreCreator {
 
     DataGraphExecuter graphExecuter = new DataGraphExecuter(dataProcessTaskStatus);
     graphExecuter
-        .executeGraph(graphPath, new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN),
-            info, "0", loadModel.getSchema());
+        .executeGraph(graphPath, info, loadModel.getSchema());
     //    LoadMetadataDetails[] loadDetails =
     //        CarbonUtil.readLoadMetadata(loadModel.schema.getCarbonTable().getMetaDataFilepath());
     writeLoadMetadata(loadModel.schema, loadModel.getTableName(), loadModel.getTableName(),
@@ -409,10 +408,9 @@ public class StoreCreator {
   public static void writeLoadMetadata(CarbonDataLoadSchema schema, String databaseName,
       String tableName, List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
     LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
-    loadMetadataDetails.setTimestamp(readCurrentTime());
     loadMetadataDetails.setLoadStatus("SUCCESS");
     loadMetadataDetails.setLoadName(String.valueOf(0));
-    loadMetadataDetails.setLoadStartTime(readCurrentTime());
+    loadMetadataDetails.setLoadStartTime(loadMetadataDetails.getTimeStamp(readCurrentTime()));
     listOfLoadFolderDetails.add(loadMetadataDetails);
 
     String dataLoadLocation = schema.getCarbonTable().getMetaDataFilepath() + File.separator
@@ -471,25 +469,15 @@ public class StoreCreator {
     model.setTableName(dataProcessTaskStatus.getTableName());
     model.setTaskNo("1");
     model.setBlocksID(dataProcessTaskStatus.getBlocksID());
-    model.setFactTimeStamp(readCurrentTime());
+    model.setFactTimeStamp(System.currentTimeMillis() + "");
     model.setEscapeCharacter(dataProcessTaskStatus.getEscapeCharacter());
     model.setQuoteCharacter(dataProcessTaskStatus.getQuoteCharacter());
     model.setCommentCharacter(dataProcessTaskStatus.getCommentCharacter());
     model.setDateFormat(dataProcessTaskStatus.getDateFormat());
-    if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
-      model.setLoadNames(
-          CarbonDataProcessorUtil.getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));
-      model.setModificationOrDeletionTime(CarbonDataProcessorUtil
-          .getModificationOrDeletionTimesFromLoadMetadataDetails(loadMetadataDetails));
-    }
-    boolean hdfsReadMode =
-        dataProcessTaskStatus.getCsvFilePath() != null && dataProcessTaskStatus.getCsvFilePath().startsWith("hdfs:");
-    int allocate = null != dataProcessTaskStatus.getCsvFilePath() ? 1 : dataProcessTaskStatus.getFilesToProcess().size();
     String outputLocation = CarbonProperties.getInstance()
         .getProperty("store_output_location", "../carbon-store/system/carbon/etl");
     GraphGenerator generator =
-        new GraphGenerator(model, hdfsReadMode, partitionID, factStoreLocation,
-            allocate, schema, "0", outputLocation);
+        new GraphGenerator(model, partitionID, factStoreLocation, schema, "0", outputLocation);
     generator.generateGraph();
   }
 
@@ -554,6 +542,7 @@ public class StoreCreator {
     public void setDatabaseName(String databaseName) {
       this.databaseName = databaseName;
     }
+
 
   }
 

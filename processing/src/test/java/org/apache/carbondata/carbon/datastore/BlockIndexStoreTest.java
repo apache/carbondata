@@ -21,6 +21,7 @@ package org.apache.carbondata.carbon.datastore;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -28,26 +29,28 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.carbondata.core.cache.CacheProvider;
+import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.BlockIndexStore;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
+import org.apache.carbondata.core.carbon.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.test.util.StoreCreator;
 
 import junit.framework.TestCase;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class BlockIndexStoreTest extends TestCase {
 
-  private BlockIndexStore indexStore;
+  // private BlockIndexStore indexStore;
+  BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex> cache;
 
   private String property;
   @BeforeClass public void setUp() {
@@ -55,7 +58,10 @@ public class BlockIndexStoreTest extends TestCase {
 	
 	CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, "V1");
     StoreCreator.createCarbonStore();
-    indexStore = BlockIndexStore.getInstance();
+    CarbonProperties.getInstance().
+        addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
+    CacheProvider cacheProvider = CacheProvider.getInstance();
+    cache = (BlockIndexStore) cacheProvider.createCache(CacheType.EXECUTOR_BTREE, "");
   }
   
   @AfterClass public void tearDown() {
@@ -66,7 +72,8 @@ public class BlockIndexStoreTest extends TestCase {
 	    }
 	  }
 
-  @Test public void testloadAndGetTaskIdToSegmentsMapForSingleSegment() throws IOException {
+  @Test public void testLoadAndGetTaskIdToSegmentsMapForSingleSegment()
+      throws IOException {
     String canonicalPath =
         new File(this.getClass().getResource("/").getPath() + "/../../").getCanonicalPath();
     File file = getPartFile();
@@ -78,13 +85,26 @@ public class BlockIndexStoreTest extends TestCase {
     AbsoluteTableIdentifier absoluteTableIdentifier =
         new AbsoluteTableIdentifier("/src/test/resources", carbonTableIdentifier);
     try {
-      List<AbstractIndex> loadAndGetBlocks = indexStore
-          .loadAndGetBlocks(Arrays.asList(new TableBlockInfo[] { info }), absoluteTableIdentifier);
+
+      List<TableBlockUniqueIdentifier> tableBlockInfoList =
+          getTableBlockUniqueIdentifierList(Arrays.asList(new TableBlockInfo[] { info }), absoluteTableIdentifier);
+      List<AbstractIndex> loadAndGetBlocks = cache.getAll(tableBlockInfoList);
       assertTrue(loadAndGetBlocks.size() == 1);
-    } catch (IndexBuilderException e) {
+    } catch (Exception e) {
       assertTrue(false);
     }
-    indexStore.clear(absoluteTableIdentifier);
+    List<String> segmentIds = new ArrayList<>();
+      segmentIds.add(info.getSegmentId());
+    cache.removeTableBlocks(segmentIds, absoluteTableIdentifier);
+  }
+
+  private List<TableBlockUniqueIdentifier> getTableBlockUniqueIdentifierList(List<TableBlockInfo> tableBlockInfos,
+      AbsoluteTableIdentifier absoluteTableIdentifier) {
+    List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers = new ArrayList<>();
+    for (TableBlockInfo tableBlockInfo : tableBlockInfos) {
+      tableBlockUniqueIdentifiers.add(new TableBlockUniqueIdentifier(absoluteTableIdentifier, tableBlockInfo));
+    }
+    return tableBlockUniqueIdentifiers;
   }
 
   @Test public void testloadAndGetTaskIdToSegmentsMapForSameBlockLoadedConcurrently()
@@ -130,16 +150,21 @@ public class BlockIndexStoreTest extends TestCase {
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
-
+    List<TableBlockInfo> tableBlockInfos =
+        Arrays.asList(new TableBlockInfo[] { info, info1, info2, info3, info4 });
     try {
-      List<AbstractIndex> loadAndGetBlocks = indexStore.loadAndGetBlocks(
-          Arrays.asList(new TableBlockInfo[] { info, info1, info2, info3, info4 }),
-          absoluteTableIdentifier);
+      List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
+          getTableBlockUniqueIdentifierList(tableBlockInfos, absoluteTableIdentifier);
+      List<AbstractIndex> loadAndGetBlocks = cache.getAll(tableBlockUniqueIdentifiers);
       assertTrue(loadAndGetBlocks.size() == 5);
-    } catch (IndexBuilderException e) {
+    } catch (Exception e) {
       assertTrue(false);
     }
-    indexStore.clear(absoluteTableIdentifier);
+    List<String> segmentIds = new ArrayList<>();
+    for (TableBlockInfo tableBlockInfo : tableBlockInfos) {
+      segmentIds.add(tableBlockInfo.getSegmentId());
+    }
+    cache.removeTableBlocks(segmentIds, absoluteTableIdentifier);
   }
 
   @Test public void testloadAndGetTaskIdToSegmentsMapForDifferentSegmentLoadedConcurrently()
@@ -197,15 +222,21 @@ public class BlockIndexStoreTest extends TestCase {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
+    List<TableBlockInfo> tableBlockInfos = Arrays
+        .asList(new TableBlockInfo[] { info, info1, info2, info3, info4, info5, info6, info7 });
     try {
-      List<AbstractIndex> loadAndGetBlocks = indexStore.loadAndGetBlocks(Arrays
-              .asList(new TableBlockInfo[] { info, info1, info2, info3, info4, info5, info6, info7 }),
-          absoluteTableIdentifier);
+      List<TableBlockUniqueIdentifier> blockUniqueIdentifierList =
+          getTableBlockUniqueIdentifierList(tableBlockInfos, absoluteTableIdentifier);
+      List<AbstractIndex> loadAndGetBlocks = cache.getAll(blockUniqueIdentifierList);
       assertTrue(loadAndGetBlocks.size() == 8);
-    } catch (IndexBuilderException e) {
+    } catch (Exception e) {
       assertTrue(false);
     }
-    indexStore.clear(absoluteTableIdentifier);
+    List<String> segmentIds = new ArrayList<>();
+    for (TableBlockInfo tableBlockInfo : tableBlockInfos) {
+      segmentIds.add(tableBlockInfo.getSegmentId());
+    }
+    cache.removeTableBlocks(segmentIds, absoluteTableIdentifier);
   }
 
   private class BlockLoaderThread implements Callable<Void> {
@@ -214,13 +245,14 @@ public class BlockIndexStoreTest extends TestCase {
 
     public BlockLoaderThread(List<TableBlockInfo> tableBlockInfoList,
         AbsoluteTableIdentifier absoluteTableIdentifier) {
-      // TODO Auto-generated constructor stub
       this.tableBlockInfoList = tableBlockInfoList;
       this.absoluteTableIdentifier = absoluteTableIdentifier;
     }
 
     @Override public Void call() throws Exception {
-      indexStore.loadAndGetBlocks(tableBlockInfoList, absoluteTableIdentifier);
+      List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifierList =
+          getTableBlockUniqueIdentifierList(tableBlockInfoList, absoluteTableIdentifier);
+      cache.getAll(tableBlockUniqueIdentifierList);
       return null;
     }
 

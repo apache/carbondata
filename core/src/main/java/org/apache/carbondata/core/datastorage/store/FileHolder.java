@@ -19,6 +19,7 @@
 
 package org.apache.carbondata.core.datastorage.store;
 
+import java.io.IOException;
 
 public interface FileHolder {
   /**
@@ -30,7 +31,7 @@ public interface FileHolder {
    * @param length   number of bytes to be read
    * @return read byte array
    */
-  byte[] readByteArray(String filePath, long offset, int length);
+  byte[] readByteArray(String filePath, long offset, int length) throws IOException;
 
   /**
    * This method will be used to read the byte array from file based on length(number of bytes)
@@ -39,7 +40,7 @@ public interface FileHolder {
    * @param length   number of bytes to be read
    * @return read byte array
    */
-  byte[] readByteArray(String filePath, int length);
+  byte[] readByteArray(String filePath, int length) throws IOException;
 
   /**
    * This method will be used to read int from file from postion(offset), here
@@ -49,7 +50,7 @@ public interface FileHolder {
    * @param offset   reading start position,
    * @return read int
    */
-  int readInt(String filePath, long offset);
+  int readInt(String filePath, long offset) throws IOException;
 
   /**
    * This method will be used to read long from file from postion(offset), here
@@ -59,7 +60,7 @@ public interface FileHolder {
    * @param offset   reading start position,
    * @return read long
    */
-  long readLong(String filePath, long offset);
+  long readLong(String filePath, long offset) throws IOException;
 
   /**
    * This method will be used to read int from file from postion(offset), here
@@ -68,7 +69,7 @@ public interface FileHolder {
    * @param filePath fully qualified file path
    * @return read int
    */
-  int readInt(String filePath);
+  int readInt(String filePath) throws IOException;
 
   /**
    * This method will be used to read long value from file from postion(offset), here
@@ -78,10 +79,10 @@ public interface FileHolder {
    * @param offset   reading start position,
    * @return read long
    */
-  long readDouble(String filePath, long offset);
+  long readDouble(String filePath, long offset) throws IOException;
 
   /**
    * This method will be used to close all the streams currently present in the cache
    */
-  void finish();
+  void finish() throws IOException;
 }

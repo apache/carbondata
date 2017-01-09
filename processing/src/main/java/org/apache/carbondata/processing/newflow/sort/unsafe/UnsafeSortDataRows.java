@@ -43,9 +43,6 @@ import org.apache.carbondata.processing.newflow.sort.unsafe.sort.TimSort;
 import org.apache.carbondata.processing.newflow.sort.unsafe.sort.UnsafeIntSortDataFormat;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
-import org.apache.carbondata.processing.sortandgroupby.sortdata.SortTempFileChunkWriter;
-import org.apache.carbondata.processing.sortandgroupby.sortdata.TempSortFileWriter;
-import org.apache.carbondata.processing.sortandgroupby.sortdata.TempSortFileWriterFactory;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class UnsafeSortDataRows {
@@ -180,9 +177,9 @@ public class UnsafeSortDataRows {
    * record holder heap and then it will read first record from each file and
    * initialize the heap
    *
-   * @throws CarbonSortKeyAndGroupByException
+   * @throws InterruptedException
    */
-  public void startSorting() throws CarbonSortKeyAndGroupByException {
+  public void startSorting() throws InterruptedException {
     LOGGER.info("Unsafe based sorting will be used");
     if (this.rowPage.getUsedSize() > 0) {
       TimSort<UnsafeCarbonRow, IntPointerBuffer> timSort = new TimSort<>(
@@ -199,24 +196,6 @@ public class UnsafeSortDataRows {
       rowPage.freeMemory();
     }
     startFileBasedMerge();
-  }
-
-  private void writeSortTempFile(Object[][] recordHolderList, int entryCountLocal, File file)
-      throws CarbonSortKeyAndGroupByException {
-    TempSortFileWriter writer = null;
-
-    try {
-      writer = getWriter();
-      writer.initiaize(file, entryCountLocal);
-      writer.writeSortTempFile(recordHolderList);
-    } catch (CarbonSortKeyAndGroupByException e) {
-      LOGGER.error(e, "Problem while writing the sort temp file");
-      throw e;
-    } finally {
-      if (writer != null) {
-        writer.finish();
-      }
-    }
   }
 
   private void writeData(UnsafeCarbonRowPage rowPage, File file)
@@ -242,45 +221,21 @@ public class UnsafeSortDataRows {
     }
   }
 
-  private TempSortFileWriter getWriter() {
-    TempSortFileWriter chunkWriter = null;
-    TempSortFileWriter writer = TempSortFileWriterFactory.getInstance()
-        .getTempSortFileWriter(parameters.isSortFileCompressionEnabled(),
-            parameters.getDimColCount(), parameters.getComplexDimColCount(),
-            parameters.getMeasureColCount(), parameters.getNoDictionaryCount(),
-            parameters.getFileWriteBufferSize());
-
-    if (parameters.isPrefetch() && !parameters.isSortFileCompressionEnabled()) {
-      chunkWriter = new SortTempFileChunkWriter(writer, parameters.getBufferSize());
-    } else {
-      chunkWriter =
-          new SortTempFileChunkWriter(writer, parameters.getSortTempFileNoOFRecordsInCompression());
-    }
-
-    return chunkWriter;
-  }
-
   /**
    * This method will be used to delete sort temp location is it is exites
-   *
-   * @throws CarbonSortKeyAndGroupByException
    */
-  public void deleteSortLocationIfExists() throws CarbonSortKeyAndGroupByException {
+  public void deleteSortLocationIfExists() {
     CarbonDataProcessorUtil.deleteSortLocationIfExists(parameters.getTempFileLocation());
   }
 
   /**
    * Below method will be used to start file based merge
    *
-   * @throws CarbonSortKeyAndGroupByException
+   * @throws InterruptedException
    */
-  private void startFileBasedMerge() throws CarbonSortKeyAndGroupByException {
-    try {
-      dataSorterAndWriterExecutorService.shutdown();
-      dataSorterAndWriterExecutorService.awaitTermination(2, TimeUnit.DAYS);
-    } catch (InterruptedException e) {
-      throw new CarbonSortKeyAndGroupByException("Problem while shutdown the server ", e);
-    }
+  private void startFileBasedMerge() throws InterruptedException {
+    dataSorterAndWriterExecutorService.shutdown();
+    dataSorterAndWriterExecutorService.awaitTermination(2, TimeUnit.DAYS);
   }
 
   /**

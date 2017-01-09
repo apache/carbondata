@@ -72,7 +72,6 @@ public class CarbonInputFormatUtil {
       }
     }
 
-    plan.setLimit(-1);
     plan.setQueryId(System.nanoTime() + "");
     return plan;
   }

@@ -19,12 +19,12 @@ package org.apache.carbondata.scan.filter;
  * under the License.
  */
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.expression.Expression;
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.scan.filter.resolver.FilterResolverIntf;
@@ -38,11 +38,10 @@ public interface FilterProcessor {
    * @param expressionTree  , filter expression tree
    * @param tableIdentifier ,contains carbon store informations.
    * @return
-   * @throws QueryExecutionException
    * @throws FilterUnsupportedException
    */
   FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException;
+      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException, IOException;
 
   /**
    * This API is exposed inorder to get the required block reference node
@@ -51,10 +50,8 @@ public interface FilterProcessor {
    *
    * @param filterResolver DataBlock list with resolved filters
    * @return list of DataRefNode.
-   * @throws QueryExecutionException
    */
   List<DataRefNode> getFilterredBlocks(DataRefNode dataRefNode, FilterResolverIntf filterResolver,
-      AbstractIndex segmentIndexBuilder, AbsoluteTableIdentifier tableIdentifier)
-      throws QueryExecutionException;
+      AbstractIndex segmentIndexBuilder, AbsoluteTableIdentifier tableIdentifier);
 
 }

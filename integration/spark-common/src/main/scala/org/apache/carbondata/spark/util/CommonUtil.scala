@@ -22,14 +22,23 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field}
+import org.apache.spark.util.FileUtils
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.lcm.status.SegmentStatusManager
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.hadoop.csv.CSVInputFormat
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object CommonUtil {
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
   def validateColumnGroup(colGroup: String, noDictionaryDims: Seq[String],
       msrs: Seq[Field], retrievedColGrps: Seq[String], dims: Seq[Field]) {
     val colGrpCols = colGroup.split(',').map(_.trim)
@@ -254,5 +263,42 @@ object CommonUtil {
     val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetaDataFilepath
     val details = SegmentStatusManager.readLoadMetadata(metadataPath)
     model.setLoadMetadataDetails(details.toList.asJava)
+  }
+
+  def configureCSVInputFormat(configuration: Configuration,
+      carbonLoadModel: CarbonLoadModel): Unit = {
+    CSVInputFormat.setCommentCharacter(configuration, carbonLoadModel.getCommentChar)
+    CSVInputFormat.setCSVDelimiter(configuration, carbonLoadModel.getCsvDelimiter)
+    CSVInputFormat.setEscapeCharacter(configuration, carbonLoadModel.getEscapeChar)
+    CSVInputFormat.setHeaderExtractionEnabled(configuration,
+      carbonLoadModel.getCsvHeader == null || carbonLoadModel.getCsvHeader.isEmpty)
+    CSVInputFormat.setQuoteCharacter(configuration, carbonLoadModel.getQuoteChar)
+    CSVInputFormat.setReadBufferSize(configuration, CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
+        CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT))
+  }
+
+  def configSplitMaxSize(context: SparkContext, filePaths: String,
+      hadoopConfiguration: Configuration): Unit = {
+    val defaultParallelism = if (context.defaultParallelism < 1) {
+      1
+    } else {
+      context.defaultParallelism
+    }
+    val spaceConsumed = FileUtils.getSpaceOccupied(filePaths)
+    val blockSize =
+      hadoopConfiguration.getLongBytes("dfs.blocksize", CarbonCommonConstants.CARBON_256MB)
+    LOGGER.info("[Block Distribution]")
+    // calculate new block size to allow use all the parallelism
+    if (spaceConsumed < defaultParallelism * blockSize) {
+      var newSplitSize: Long = spaceConsumed / defaultParallelism
+      if (newSplitSize < CarbonCommonConstants.CARBON_16MB) {
+        newSplitSize = CarbonCommonConstants.CARBON_16MB
+      }
+      hadoopConfiguration.set(FileInputFormat.SPLIT_MAXSIZE, newSplitSize.toString)
+      LOGGER.info(s"totalInputSpaceConsumed: $spaceConsumed , " +
+                  s"defaultParallelism: $defaultParallelism")
+      LOGGER.info(s"mapreduce.input.fileinputformat.split.maxsize: ${ newSplitSize.toString }")
+    }
   }
 }

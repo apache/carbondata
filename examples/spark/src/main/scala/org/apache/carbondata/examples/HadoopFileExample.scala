@@ -17,23 +17,39 @@
 
 package org.apache.carbondata.examples
 
+import org.apache.hadoop.conf.Configuration
+
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.examples.util.ExampleUtils
-import org.apache.carbondata.hadoop.CarbonInputFormat
+import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonProjection}
+import org.apache.carbondata.scan.expression.{ColumnExpression, LiteralExpression}
+import org.apache.carbondata.scan.expression.conditional.GreaterThanExpression
 
 // scalastyle:off println
 object HadoopFileExample {
 
   def main(args: Array[String]): Unit = {
-    val cc = ExampleUtils.createCarbonContext("DataFrameAPIExample")
+    val cc = ExampleUtils.createCarbonContext("HadoopFileExample")
     ExampleUtils.writeSampleCarbonFile(cc, "carbon1")
+
+    // read two columns
+    val projection = new CarbonProjection
+    projection.addColumn("c1")  // column c1
+    projection.addColumn("c3")  // column c3
+    val conf = new Configuration()
+    CarbonInputFormat.setColumnProjection(conf, projection)
 
     val sc = cc.sparkContext
     val input = sc.newAPIHadoopFile(s"${cc.storePath}/default/carbon1",
       classOf[CarbonInputFormat[Array[Object]]],
       classOf[Void],
-      classOf[Array[Object]])
+      classOf[Array[Object]],
+      conf)
     val result = input.map(x => x._2.toList).collect
     result.foreach(x => println(x.mkString(", ")))
+
+    // delete carbondata file
+    ExampleUtils.cleanSampleCarbonFile(cc, "carbon1")
   }
 }
 // scalastyle:on println

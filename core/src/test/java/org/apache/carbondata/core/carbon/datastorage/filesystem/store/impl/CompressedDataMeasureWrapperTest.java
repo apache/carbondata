@@ -33,7 +33,7 @@ public class CompressedDataMeasureWrapperTest {
   private static CarbonReadDataHolder[] carbonReadDataHolders;
 
   @BeforeClass public static void setUp() {
-    carbonReadDataHolder = new CarbonReadDataHolder();
+    carbonReadDataHolder = new CarbonReadDataHolder(null);
     carbonReadDataHolders = new CarbonReadDataHolder[] { carbonReadDataHolder };
 
   }

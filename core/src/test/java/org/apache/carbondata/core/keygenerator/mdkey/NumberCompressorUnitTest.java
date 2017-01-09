@@ -19,12 +19,11 @@
 
 package org.apache.carbondata.core.keygenerator.mdkey;
 
-import org.junit.Test;
-
-import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+
+import org.junit.Test;
 
 public class NumberCompressorUnitTest {
 
@@ -75,7 +74,7 @@ public class NumberCompressorUnitTest {
     numberCompressor = new NumberCompressor(cardinality);
     int[] expected_result = new int[] { 6, 4, 0, 2 };
     byte[] keys = new byte[] { 100, 2 };
-    int[] result = numberCompressor.unCompress(keys);
+    int[] result = numberCompressor.unCompress(keys, 0, keys.length);
     assertThat(result, is(equalTo(expected_result)));
   }
 
@@ -85,7 +84,7 @@ public class NumberCompressorUnitTest {
     int[] expected_result =
         new int[] { 0, 10, 0, 2, 0, 10, 0, 2, 0, 10, 0, 2, 0, 10, 0, 2, 0, 10, 0, 2 };
     byte[] keys = new byte[] { 10, 2, 10, 2, 10, 2, 10, 2, 10, 2 };
-    int[] result = numberCompressor.unCompress(keys);
+    int[] result = numberCompressor.unCompress(keys, 0, keys.length);
     System.out.println(result);
     assertThat(result, is(equalTo(expected_result)));
   }
@@ -95,7 +94,7 @@ public class NumberCompressorUnitTest {
     numberCompressor = new NumberCompressor(cardinality);
     int[] expected_result = new int[] { 16, 4, 10, 1, 2, 64, 32, 80, 8, 20, 11 };
     byte[] keys = new byte[] { 100, 2, 10, 2, 10, 2, 10, 2, 10, 11 };
-    int[] result = numberCompressor.unCompress(keys);
+    int[] result = numberCompressor.unCompress(keys, 0, keys.length);
     assertThat(result, is(equalTo(expected_result)));
   }
 

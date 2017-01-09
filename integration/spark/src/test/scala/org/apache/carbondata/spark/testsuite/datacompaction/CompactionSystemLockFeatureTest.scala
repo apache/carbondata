@@ -18,19 +18,17 @@
  */
 package org.apache.carbondata.spark.testsuite.datacompaction
 
-import java.io.File
+import scala.collection.JavaConverters._
+
+import org.apache.spark.sql.common.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.lcm.status.SegmentStatusManager
-import org.apache.spark.sql.common.util.CarbonHiveContext._
-import org.apache.spark.sql.common.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
-
-import scala.collection.JavaConverters._
 
 /**
   * FT for compaction scenario where major segment should not be included in minor.
@@ -59,12 +57,10 @@ class CompactionSystemLockFeatureTest extends QueryTest with BeforeAndAfterAll {
     )
 
 
-    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
-      .getCanonicalPath
-    val csvFilePath1 = currentDirectory + "/src/test/resources/compaction/compaction1.csv"
+    val csvFilePath1 = s"$resourcesPath/compaction/compaction1.csv"
 
-    val csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compaction2.csv"
-    val csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
+    val csvFilePath2 = s"$resourcesPath/compaction/compaction2.csv"
+    val csvFilePath3 = s"$resourcesPath/compaction/compaction3.csv"
 
     // load table1
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE table1 OPTIONS" +
@@ -113,22 +109,26 @@ class CompactionSystemLockFeatureTest extends QueryTest with BeforeAndAfterAll {
     sql("clean files for table table2")
 
     // check for table 1.
-    val identifier1 = new AbsoluteTableIdentifier(
+    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
+        AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-          new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "table1", "rrr"))
+          new CarbonTableIdentifier("default", "table1", "rrr")
+        )
+    )
     // merged segment should not be there
-    val segments = SegmentStatusManager.getSegmentStatus(identifier1)
-        .getValidSegments.asScala.toList
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
     assert(segments.contains("0.1"))
     assert(!segments.contains("0"))
     assert(!segments.contains("1"))
     // check for table 2.
-    val identifier2 = new AbsoluteTableIdentifier(
+    val segmentStatusManager2: SegmentStatusManager = new SegmentStatusManager(new
+        AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-          new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "table2", "rrr1"))
+          new CarbonTableIdentifier("default", "table2", "rrr1")
+        )
+    )
     // merged segment should not be there
-    val segments2 = SegmentStatusManager.getSegmentStatus(identifier2)
-        .getValidSegments.asScala.toList
+    val segments2 = segmentStatusManager2.getValidAndInvalidSegments.getValidSegments.asScala.toList
     assert(segments2.contains("0.1"))
     assert(!segments2.contains("0"))
     assert(!segments2.contains("1"))

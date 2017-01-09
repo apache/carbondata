@@ -22,7 +22,6 @@ package org.apache.carbondata.scan.complextypes;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.List;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
@@ -82,21 +81,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
 
   }
 
-  @Override public void getAllPrimitiveChildren(List<GenericQueryType> primitiveChild) {
-
-  }
-
-  @Override public void setSurrogateIndex(int surrIndex) {
-  }
-
-  @Override public int getBlockIndex() {
-    return blockIndex;
-  }
-
-  @Override public void setBlockIndex(int blockIndex) {
-    this.blockIndex = blockIndex;
-  }
-
   @Override public int getColsCount() {
     return 1;
   }
@@ -105,25 +89,17 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       DimensionColumnDataChunk[] dimensionDataChunks, int rowNumber,
       DataOutputStream dataOutputStream) throws IOException {
     byte[] currentVal =
-        new byte[dimensionDataChunks[blockIndex].getAttributes().getColumnValueSize()];
+        new byte[dimensionDataChunks[blockIndex].getColumnValueSize()];
     copyBlockDataChunk(dimensionDataChunks, rowNumber, currentVal);
     dataOutputStream.write(currentVal);
   }
 
-  @Override public void setKeySize(int[] keyBlockSize) {
-    this.keySize = keyBlockSize[this.blockIndex];
-  }
-
-  @Override public void parseAndGetResultBytes(ByteBuffer complexData, DataOutputStream dataOutput)
+  @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder)
       throws IOException {
-  }
-
-  @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder) {
     readBlockDataChunk(blockChunkHolder);
   }
 
   @Override public Object getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData) {
-
     byte[] data = new byte[keySize];
     surrogateData.get(data);
     Bits bit = new Bits(new int[]{keySize * 8});

@@ -375,7 +375,7 @@ public class CarbonMetadataUtil {
         keyBlockIndexLens[i] = dataChunk.getRowid_page_length();
         indexMapOffsets[i] = dataChunk.getRle_page_offset();
         indexMapLens[i] = dataChunk.getRle_page_length();
-        sortState[i] = dataChunk.getSort_state().equals(SortState.SORT_EXPLICIT) ? true : false;
+        sortState[i] = dataChunk.getSort_state().equals(SortState.SORT_EXPLICIT);
         i++;
       }
       blockletInfoColumnar.setKeyLengths(keyLengths);
@@ -467,7 +467,7 @@ public class CarbonMetadataUtil {
    * @return Index header object
    */
   public static IndexHeader getIndexHeader(int[] columnCardinality,
-      List<ColumnSchema> columnSchemaList) {
+      List<ColumnSchema> columnSchemaList, int bucketNumber) {
     // create segment info object
     SegmentInfo segmentInfo = new SegmentInfo();
     // set the number of columns
@@ -482,6 +482,8 @@ public class CarbonMetadataUtil {
     indexHeader.setSegment_info(segmentInfo);
     // set the column names
     indexHeader.setTable_columns(columnSchemaList);
+    // set the bucket number
+    indexHeader.setBucket_id(bucketNumber);
     return indexHeader;
   }
 
@@ -572,7 +574,7 @@ public class CarbonMetadataUtil {
       //meta
       PresenceMeta presenceMeta = new PresenceMeta();
       presenceMeta.setPresent_bit_streamIsSet(true);
-      presenceMeta.setPresent_bit_stream(CompressorFactory.getInstance()
+      presenceMeta.setPresent_bit_stream(CompressorFactory.getInstance().getCompressor()
           .compressByte(blockletInfoColumnar.getMeasureNullValueIndex()[i].toByteArray()));
       dataChunk.setPresence(presenceMeta);
       //TODO : PresenceMeta needs to be implemented and set here

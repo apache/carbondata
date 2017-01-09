@@ -66,6 +66,7 @@ public final class DataTypeUtil {
     dataTypeDisplayNames.put(DataType.ARRAY.toString(), DataType.ARRAY.getName());
     dataTypeDisplayNames.put(DataType.STRUCT.toString(), DataType.STRUCT.getName());
     dataTypeDisplayNames.put(DataType.TIMESTAMP.toString(), DataType.TIMESTAMP.getName());
+    dataTypeDisplayNames.put(DataType.DATE.toString(), DataType.DATE.getName());
     dataTypeDisplayNames.put(DataType.SHORT.toString(), DataType.SHORT.getName());
     dataTypeDisplayNames.put(DataType.STRING.toString(), DataType.STRING.getName());
   }
@@ -149,7 +150,7 @@ public final class DataTypeUtil {
   public static byte[] bigDecimalToByte(BigDecimal num) {
     BigInteger sig = new BigInteger(num.unscaledValue().toString());
     int scale = num.scale();
-    byte[] bscale = new byte[] { (byte) (scale) };
+    byte[] bscale = { (byte) (scale) };
     byte[] buff = sig.toByteArray();
     byte[] completeArr = new byte[buff.length + bscale.length];
     System.arraycopy(bscale, 0, completeArr, 0, bscale.length);
@@ -180,6 +181,9 @@ public final class DataTypeUtil {
   public static DataType getDataType(String dataTypeStr) {
     DataType dataType = null;
     switch (dataTypeStr) {
+      case "DATE":
+        dataType = DataType.DATE;
+        break;
       case "TIMESTAMP":
         dataType = DataType.TIMESTAMP;
         break;
@@ -248,6 +252,7 @@ public final class DataTypeUtil {
             return null;
           }
           return Long.parseLong(data);
+        case DATE:
         case TIMESTAMP:
           if (data.isEmpty()) {
             return null;

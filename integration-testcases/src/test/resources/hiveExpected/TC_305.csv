@@ -1,8 +1,0 @@
-ActiveAreaId StringType,Activecity StringType,AMSize_number LongType,total DoubleType
-1,shenzhen,7,4.8863556E7
-5,zhuzhou,6,3.8359697E7
-6,wuhan,8,7.662756463499999E7
-3,changsha,8,1.00876754E8
-2,guangzhou,7,4.1185336562E7
-7,yichang,6,6.7214095E7
-4,xiangtan,7,1.02219772E8

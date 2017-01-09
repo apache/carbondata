@@ -40,10 +40,7 @@ object CarbonHiveMetadataUtil {
   def invalidateAndDropTable(schemaName: String,
       cubeName: String,
       sparkSession: SparkSession): Unit = {
-    val tableWithDb = schemaName + "." + cubeName
-    val tableIdent = sparkSession.sessionState.sqlParser.parseTableIdentifier(tableWithDb)
     try {
-      // todo(wf): in spark no invalidate method now
       sparkSession.sql(s"DROP TABLE IF EXISTS $schemaName.$cubeName")
     } catch {
       case e: Exception =>

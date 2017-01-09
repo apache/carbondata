@@ -17,41 +17,41 @@
 
 package org.apache.spark.util
 
+import java.text.SimpleDateFormat
+
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.catalyst.expressions.AttributeReference
-import org.apache.spark.sql.execution.command.ShowLoads
-import org.apache.spark.sql.types.{StringType, TimestampType}
+
+import org.apache.carbondata.api.CarbonStore
 
 // scalastyle:off
 object ShowSegments {
 
-  def showSegments(spark: SparkSession, dbName: Option[String], tableName: String,
+  def showSegments(spark: SparkSession, dbName: String, tableName: String,
       limit: Option[String]): Seq[Row] = {
-    val output =  Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
-      AttributeReference("Status", StringType, nullable = false)(),
-      AttributeReference("Load Start Time", TimestampType, nullable = false)(),
-      AttributeReference("Load End Time", TimestampType, nullable = false)())
-    ShowLoads(dbName, tableName, limit: Option[String], output).run(spark)
+    //val databaseName = dbName.getOrElse(spark.catalog.currentDatabase)
+    TableAPIUtil.validateTableExists(spark, dbName, tableName)
+    CarbonStore.showSegments(dbName, tableName, limit)
   }
 
   def showString(rows: Seq[Row]): String = {
+    val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.s")
     val sb = new StringBuilder
-    sb.append("+-----------------+---------------+---------------------+---------------------+\n")
-      .append("|SegmentSequenceId|Status         |Load Start Time      |Load End Time        |\n")
-      .append("+-----------------+---------------+---------------------+---------------------+\n")
+    sb.append("+------------+------------------+----------------------+----------------------+\n")
+      .append("|SegmentId   |Status            |Load Start Time       |Load End Time         |\n")
+      .append("+------------+------------------+----------------------+----------------------+\n")
       rows.foreach{row =>
         sb.append("|")
-          .append(StringUtils.rightPad(row.getString(0), 17))
+          .append(StringUtils.rightPad(row.getString(0), 12))
           .append("|")
-          .append(StringUtils.rightPad(row.getString(1).substring(0, 15), 15))
+          .append(StringUtils.rightPad(row.getString(1), 18))
           .append("|")
-          .append(row.getAs[java.sql.Timestamp](2).formatted("yyyy-MM-dd HH:mm:ss.s"))
+          .append(sdf.format(row.getAs[java.sql.Timestamp](2)))
           .append("|")
-          .append(row.getAs[java.sql.Timestamp](3).formatted("yyyy-MM-dd HH:mm:ss.s"))
+          .append(sdf.format(row.getAs[java.sql.Timestamp](3)))
           .append("|\n")
       }
-    sb.append("+-----------------+---------------+---------------------+---------------------+\n")
+    sb.append("+------------+------------------+----------------------+----------------------+\n")
     sb.toString
   }
 
@@ -62,7 +62,7 @@ object ShowSegments {
   def main(args: Array[String]): Unit = {
 
     if (args.length < 2) {
-      System.err.println("Usage: ShowSegments <store path> <table name> [limit]");
+      System.err.println("Usage: ShowSegments <store path> <table name> [limit]")
       System.exit(1)
     }
 
@@ -74,9 +74,9 @@ object ShowSegments {
     } else {
       None
     }
-    val spark = TableAPIUtil.spark(storePath, s"TableCleanFiles: $dbName.$tableName")
-    CarbonEnv.init(spark.sqlContext)
-    val rows = showSegments(spark, Option(dbName), tableName, limit)
+    val spark = TableAPIUtil.spark(storePath, s"ShowSegments: $dbName.$tableName")
+    CarbonEnv.init(spark)
+    val rows = showSegments(spark, dbName, tableName, limit)
     System.out.println(showString(rows))
   }
 }

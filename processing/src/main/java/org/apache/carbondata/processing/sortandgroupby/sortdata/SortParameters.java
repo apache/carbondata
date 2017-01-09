@@ -121,6 +121,34 @@ public class SortParameters {
    */
   private boolean useKettle = true;
 
+  public SortParameters getCopy() {
+    SortParameters parameters = new SortParameters();
+    parameters.tempFileLocation = tempFileLocation;
+    parameters.sortBufferSize = sortBufferSize;
+    parameters.measureColCount = measureColCount;
+    parameters.dimColCount = dimColCount;
+    parameters.complexDimColCount = complexDimColCount;
+    parameters.fileBufferSize = fileBufferSize;
+    parameters.numberOfIntermediateFileToBeMerged = numberOfIntermediateFileToBeMerged;
+    parameters.fileWriteBufferSize = fileWriteBufferSize;
+    parameters.observer = observer;
+    parameters.sortTempFileNoOFRecordsInCompression = sortTempFileNoOFRecordsInCompression;
+    parameters.isSortFileCompressionEnabled = isSortFileCompressionEnabled;
+    parameters.prefetch = prefetch;
+    parameters.bufferSize = bufferSize;
+    parameters.databaseName = databaseName;
+    parameters.tableName = tableName;
+    parameters.aggType = aggType;
+    parameters.noDictionaryCount = noDictionaryCount;
+    parameters.partitionID = partitionID;
+    parameters.segmentId = segmentId;
+    parameters.taskNo = taskNo;
+    parameters.noDictionaryDimnesionColumn = noDictionaryDimnesionColumn;
+    parameters.numberOfCores = numberOfCores;
+    parameters.useKettle = useKettle;
+    return parameters;
+  }
+
   public String getTempFileLocation() {
     return tempFileLocation;
   }
@@ -410,8 +438,8 @@ public class SortParameters {
   }
 
   public static SortParameters createSortParameters(String databaseName, String tableName,
-      int dimColCount, int complexDimColCount, int measureColCount, SortObserver observer,
-      int noDictionaryCount, String partitionID, String segmentId, String taskNo,
+      int dimColCount, int complexDimColCount, int measureColCount, int noDictionaryCount,
+      String partitionID, String segmentId, String taskNo,
       boolean[] noDictionaryColMaping) {
     SortParameters parameters = new SortParameters();
     CarbonProperties carbonProperties = CarbonProperties.getInstance();

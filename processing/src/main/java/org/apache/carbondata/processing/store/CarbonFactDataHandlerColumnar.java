@@ -161,29 +161,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private boolean[] aggKeyBlock;
   private boolean[] isNoDictionary;
   private boolean isAggKeyBlock;
-  private boolean enableInvertedIndex;
   private long processedDataCount;
   /**
    * thread pool size to be used for block sort
    */
   private int thread_pool_size;
-  /**
-   * factLevels
-   */
-  private int[] surrogateIndex;
-  /**
-   * factKeyGenerator
-   */
-  private KeyGenerator factKeyGenerator;
-  /**
-   * aggKeyGenerator
-   */
-  private KeyGenerator keyGenerator;
   private KeyGenerator[] complexKeyGenerator;
-  /**
-   * maskedByteRanges
-   */
-  private int[] maskedByte;
   /**
    * isDataWritingRequest
    */
@@ -274,6 +257,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   private boolean useKettle;
 
+  private int bucketNumber;
+
   /**
    * CarbonFactDataHandler constructor
    */
@@ -293,6 +278,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     this.aggKeyBlock = new boolean[columnStoreCount];
     this.isNoDictionary = new boolean[columnStoreCount];
+    this.bucketNumber = carbonFactDataHandlerModel.getBucketId();
     this.isUseInvertedIndex = new boolean[columnStoreCount];
     if (null != carbonFactDataHandlerModel.getIsUseInvertedIndex()) {
       for (int i = 0; i < isUseInvertedIndex.length; i++) {
@@ -493,7 +479,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       } else if (type[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
         max[i] = -Double.MAX_VALUE;
       } else if (type[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        //max[i] = new BigDecimal(0.0);
         Long[] bigdMinVal = new Long[2];
         bigdMinVal[0] = Long.MIN_VALUE;
         bigdMinVal[1] = Long.MIN_VALUE;
@@ -513,9 +498,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         Long[] bigdMaxVal = new Long[2];
         bigdMaxVal[0] = Long.MAX_VALUE;
         bigdMaxVal[1] = Long.MAX_VALUE;
-        //min[i] = new BigDecimal(Double.MAX_VALUE);
         min[i] = bigdMaxVal;
-        uniqueValue[i] = new BigDecimal(Double.MIN_VALUE);
         Long[] bigdUniqueVal = new Long[2];
         bigdUniqueVal[0] = Long.MIN_VALUE;
         bigdUniqueVal[1] = Long.MIN_VALUE;
@@ -654,7 +637,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       } else if (type[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
         max[i] = -Double.MAX_VALUE;
       } else if (type[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        max[i] = new BigDecimal(0.0);
+        Long[] bigdMinVal = new Long[2];
+        bigdMinVal[0] = Long.MIN_VALUE;
+        bigdMinVal[1] = Long.MIN_VALUE;
+        max[i] = bigdMinVal;
       } else {
         max[i] = 0.0;
       }
@@ -667,8 +653,14 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         min[i] = Double.MAX_VALUE;
         uniqueValue[i] = Double.MIN_VALUE;
       } else if (type[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        min[i] = new BigDecimal(Double.MAX_VALUE);
-        uniqueValue[i] = new BigDecimal(Double.MIN_VALUE);
+        Long[] bigdMaxVal = new Long[2];
+        bigdMaxVal[0] = Long.MAX_VALUE;
+        bigdMaxVal[1] = Long.MAX_VALUE;
+        min[i] = bigdMaxVal;
+        Long[] bigdUniqueVal = new Long[2];
+        bigdUniqueVal[0] = Long.MIN_VALUE;
+        bigdUniqueVal[1] = Long.MIN_VALUE;
+        uniqueValue[i] = bigdUniqueVal;
       } else {
         min[i] = 0.0;
         uniqueValue[i] = 0.0;
@@ -747,11 +739,22 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             b = (byte[]) row[customMeasureIndex[i]];
           }
         }
+        BigDecimal value = DataTypeUtil.byteToBigDecimal(b);
+        String[] bigdVals = value.toPlainString().split("\\.");
+        long[] bigDvalue = new long[2];
+        if (bigdVals.length == 2) {
+          bigDvalue[0] = Long.parseLong(bigdVals[0]);
+          BigDecimal bd = new BigDecimal(CarbonCommonConstants.POINT+bigdVals[1]);
+          bigDvalue[1] = (long)(bd.doubleValue()*Math.pow(10, value.scale()));
+        } else {
+          bigDvalue[0] = Long.parseLong(bigdVals[0]);
+        }
         byteBuffer = ByteBuffer.allocate(b.length + CarbonCommonConstants.INT_SIZE_IN_BYTE);
         byteBuffer.putInt(b.length);
         byteBuffer.put(b);
         byteBuffer.flip();
         b = byteBuffer.array();
+        dataHolder[customMeasureIndex[i]].setWritableBigDecimalValueByIndex(count, bigDvalue);
         dataHolder[customMeasureIndex[i]].setWritableByteArrayValueByIndex(count, b);
       }
       calculateMaxMin(max, min, decimal, customMeasureIndex, row);
@@ -1122,22 +1125,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
   }
 
-  private byte[] getAggregateTableMdkey(byte[] maksedKey) throws CarbonDataWriterException {
-    long[] keyArray = this.factKeyGenerator.getKeyArray(maksedKey, maskedByte);
-
-    int[] aggSurrogateKey = new int[surrogateIndex.length];
-
-    for (int j = 0; j < aggSurrogateKey.length; j++) {
-      aggSurrogateKey[j] = (int) keyArray[surrogateIndex[j]];
-    }
-
-    try {
-      return keyGenerator.generateKey(aggSurrogateKey);
-    } catch (KeyGenException e) {
-      throw new CarbonDataWriterException("Problem while generating the mdkeyfor aggregate ", e);
-    }
-  }
-
   private int getColsCount(int columnSplit) {
     int count = 0;
     for (int i = 0; i < columnSplit; i++) {
@@ -1478,6 +1465,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     carbonDataWriterVo.setColCardinality(colCardinality);
     carbonDataWriterVo.setSegmentProperties(segmentProperties);
     carbonDataWriterVo.setTableBlocksize(tableBlockSize);
+    carbonDataWriterVo.setBucketNumber(bucketNumber);
     return carbonDataWriterVo;
   }
 

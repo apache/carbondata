@@ -36,7 +36,6 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.newflow.sort.unsafe.holder.SortTempChunkHolder;
@@ -357,7 +356,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     try {
       CarbonUtil.deleteFiles(intermediateFiles);
       rowData.clear();
-    } catch (CarbonUtilException e) {
+    } catch (IOException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while deleting the intermediate files");
     }
   }

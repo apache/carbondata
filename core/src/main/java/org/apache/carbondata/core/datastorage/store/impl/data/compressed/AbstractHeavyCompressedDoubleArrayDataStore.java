@@ -64,8 +64,8 @@ public abstract class AbstractHeavyCompressedDoubleArrayDataStore
       values[i] = compressionModel.getUnCompressValues()[i].getNew();
       if (type[i] != CarbonCommonConstants.BYTE_VALUE_MEASURE) {
         values[i].setValue(
-            ValueCompressionUtil.getValueCompressor(compressionModel.getCompressionFinder()[i])
-                .getCompressedValues(compressionModel.getCompressionFinder()[i], dataHolder[i],
+            ValueCompressionUtil.getValueCompressor(compressionModel.getCompressionFinders()[i])
+                .getCompressedValues(compressionModel.getCompressionFinders()[i], dataHolder[i],
                     compressionModel.getMaxValue()[i],
                     compressionModel.getMantissa()[i]));
       } else {
@@ -78,10 +78,6 @@ public abstract class AbstractHeavyCompressedDoubleArrayDataStore
       returnValue[i] = values[i].getBackArrayData();
     }
     return returnValue;
-  }
-
-  @Override public short getLength() {
-    return values != null ? (short) values.length : 0;
   }
 
 }

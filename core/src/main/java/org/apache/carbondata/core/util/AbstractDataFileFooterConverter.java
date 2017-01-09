@@ -29,14 +29,11 @@ import org.apache.carbondata.core.carbon.datastore.block.BlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.carbon.metadata.blocklet.SegmentInfo;
-import org.apache.carbondata.core.carbon.metadata.blocklet.compressor.ChunkCompressorMeta;
-import org.apache.carbondata.core.carbon.metadata.blocklet.compressor.CompressionCodec;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.PresenceMeta;
 import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletBTreeIndex;
 import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletMinMaxIndex;
-import org.apache.carbondata.core.carbon.metadata.blocklet.sort.SortState;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
@@ -74,7 +71,7 @@ public abstract class AbstractDataFileFooterConverter {
    * @throws IOException problem while reading the index file
    */
   public List<DataFileFooter> getIndexInfo(String filePath, List<TableBlockInfo> tableBlockInfoList)
-      throws IOException, CarbonUtilException {
+      throws IOException {
     CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
     List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
     try {
@@ -200,7 +197,6 @@ public abstract class AbstractDataFileFooterConverter {
     wrapperColumnSchema.setColumnGroup(externalColumnSchema.getColumn_group_id());
     wrapperColumnSchema.setScale(externalColumnSchema.getScale());
     wrapperColumnSchema.setDefaultValue(externalColumnSchema.getDefault_value());
-    wrapperColumnSchema.setAggregateFunction(externalColumnSchema.getAggregate_function());
     return wrapperColumnSchema;
   }
 
@@ -227,23 +223,6 @@ public abstract class AbstractDataFileFooterConverter {
         return Encoding.DIRECT_DICTIONARY;
       default:
         throw new IllegalArgumentException(encoderThrift.toString() + " is not supported");
-    }
-  }
-
-  /**
-   * Below method will be used to convert the thrift compression to wrapper
-   * compression codec
-   *
-   * @param compressionCodecThrift
-   * @return wrapper compression codec
-   */
-  protected CompressionCodec getCompressionCodec(
-      org.apache.carbondata.format.CompressionCodec compressionCodecThrift) {
-    switch (compressionCodecThrift) {
-      case SNAPPY:
-        return CompressionCodec.SNAPPY;
-      default:
-        return CompressionCodec.SNAPPY;
     }
   }
 
@@ -284,23 +263,6 @@ public abstract class AbstractDataFileFooterConverter {
   }
 
   /**
-   * Below method will be used to convert the thrift compression meta to
-   * wrapper chunk compression meta
-   *
-   * @param chunkCompressionMetaThrift
-   * @return chunkCompressionMetaWrapper
-   */
-  protected ChunkCompressorMeta getChunkCompressionMeta(
-      org.apache.carbondata.format.ChunkCompressionMeta chunkCompressionMetaThrift) {
-    ChunkCompressorMeta compressorMeta = new ChunkCompressorMeta();
-    compressorMeta
-        .setCompressor(getCompressionCodec(chunkCompressionMetaThrift.getCompression_codec()));
-    compressorMeta.setCompressedSize(chunkCompressionMetaThrift.getTotal_compressed_size());
-    compressorMeta.setUncompressedSize(chunkCompressionMetaThrift.getTotal_uncompressed_size());
-    return compressorMeta;
-  }
-
-  /**
    * Below method will be used to convert the thrift data type to wrapper data
    * type
    *
@@ -322,6 +284,8 @@ public abstract class AbstractDataFileFooterConverter {
         return DataType.DOUBLE;
       case DECIMAL:
         return DataType.DECIMAL;
+      case DATE:
+        return DataType.DATE;
       case TIMESTAMP:
         return DataType.TIMESTAMP;
       case ARRAY:
@@ -330,22 +294,6 @@ public abstract class AbstractDataFileFooterConverter {
         return DataType.STRUCT;
       default:
         return DataType.STRING;
-    }
-  }
-
-  /**
-   * Below method will be used to convert the thrift object to wrapper object
-   *
-   * @param sortStateThrift
-   * @return wrapper sort state object
-   */
-  protected SortState getSortState(org.apache.carbondata.format.SortState sortStateThrift) {
-    if (sortStateThrift == org.apache.carbondata.format.SortState.SORT_EXPLICIT) {
-      return SortState.SORT_EXPLICT;
-    } else if (sortStateThrift == org.apache.carbondata.format.SortState.SORT_NATIVE) {
-      return SortState.SORT_NATIVE;
-    } else {
-      return SortState.SORT_NONE;
     }
   }
 
@@ -359,7 +307,6 @@ public abstract class AbstractDataFileFooterConverter {
   protected DataChunk getDataChunk(org.apache.carbondata.format.DataChunk datachunkThrift,
       boolean isPresenceMetaPresent) {
     DataChunk dataChunk = new DataChunk();
-    dataChunk.setColumnUniqueIdList(datachunkThrift.getColumn_ids());
     dataChunk.setDataPageLength(datachunkThrift.getData_page_length());
     dataChunk.setDataPageOffset(datachunkThrift.getData_page_offset());
     if (isPresenceMetaPresent) {
@@ -370,13 +317,11 @@ public abstract class AbstractDataFileFooterConverter {
     dataChunk.setRowMajor(datachunkThrift.isRowMajor());
     dataChunk.setRowIdPageLength(datachunkThrift.getRowid_page_length());
     dataChunk.setRowIdPageOffset(datachunkThrift.getRowid_page_offset());
-    dataChunk.setSortState(getSortState(datachunkThrift.getSort_state()));
-    dataChunk.setChunkCompressionMeta(getChunkCompressionMeta(datachunkThrift.getChunk_meta()));
     List<Encoding> encodingList = new ArrayList<Encoding>(datachunkThrift.getEncoders().size());
     for (int i = 0; i < datachunkThrift.getEncoders().size(); i++) {
       encodingList.add(fromExternalToWrapperEncoding(datachunkThrift.getEncoders().get(i)));
     }
-    dataChunk.setEncoderList(encodingList);
+    dataChunk.setEncodingList(encodingList);
     if (encodingList.contains(Encoding.DELTA)) {
       List<ByteBuffer> thriftEncoderMeta = datachunkThrift.getEncoder_meta();
       List<ValueEncoderMeta> encodeMetaList =

@@ -1,6 +1,0 @@
-imei StringType,gamePointId DoubleType,channelsId StringType,series StringType
-1AA100050,29.0,1,2Series
-1AA100014,151.0,3,5Series
-1AA100011,202.0,1,0Series
-1AA100012,568.0,2,4Series
-1AA100081,613.0,2,5Series

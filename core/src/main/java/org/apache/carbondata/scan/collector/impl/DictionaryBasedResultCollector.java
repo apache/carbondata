@@ -20,11 +20,14 @@ package org.apache.carbondata.scan.collector.impl;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.common.iudprocessor.cache.BlockletLevelDeleteDeltaDataCache;
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -35,13 +38,11 @@ import org.apache.carbondata.scan.model.QueryDimension;
 import org.apache.carbondata.scan.model.QueryMeasure;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
 
+import org.apache.commons.lang3.ArrayUtils;
 /**
  * It is not a collector it is just a scanned result holder.
  */
 public class DictionaryBasedResultCollector extends AbstractScannedResultCollector {
-
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DictionaryBasedResultCollector.class.getName());
 
   public DictionaryBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
@@ -52,15 +53,40 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
    * it will keep track of how many record is processed, to handle limit scenario
    */
   @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
+
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     boolean isMsrsPresent = measureDatatypes.length > 0;
+
     QueryDimension[] queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
+    List<Integer> dictionaryIndexes = new ArrayList<Integer>();
+    for (int i = 0; i < queryDimensions.length; i++) {
+      if(queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY) ||
+          queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY) ) {
+        dictionaryIndexes.add(queryDimensions[i].getDimension().getOrdinal());
+      }
+    }
+    int[] primitive = ArrayUtils.toPrimitive(dictionaryIndexes.toArray(
+        new Integer[dictionaryIndexes.size()]));
+    Arrays.sort(primitive);
+    int[] actualIndexInSurrogateKey = new int[dictionaryIndexes.size()];
+    int index = 0;
+    for (int i = 0; i < queryDimensions.length; i++) {
+      if(queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY) ||
+          queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY) ) {
+        actualIndexInSurrogateKey[index++] = Arrays.binarySearch(primitive,
+            queryDimensions[i].getDimension().getOrdinal());
+      }
+    }
+
     QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
+    BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
+        scannedResult.getDeleteDeltaDataCache();
     Map<Integer, GenericQueryType> comlexDimensionInfoMap =
         tableBlockExecutionInfos.getComlexDimensionInfoMap();
     boolean[] dictionaryEncodingArray = CarbonUtil.getDictionaryEncodingArray(queryDimensions);
     boolean[] directDictionaryEncodingArray =
         CarbonUtil.getDirectDictionaryEncodingArray(queryDimensions);
+    boolean[] implictColumnArray = CarbonUtil.getImplicitColumnArray(queryDimensions);
     boolean[] complexDataTypeArray = CarbonUtil.getComplexDataTypeArray(queryDimensions);
     int dimSize = queryDimensions.length;
     boolean isDimensionsExist = dimSize > 0;
@@ -90,16 +116,28 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         complexTypeColumnIndex = 0;
         for (int i = 0; i < dimSize; i++) {
           if (!dictionaryEncodingArray[i]) {
-            row[order[i]] = DataTypeUtil
-                .getDataBasedOnDataType(noDictionaryKeys[noDictionaryColumnIndex++],
-                    queryDimensions[i].getDimension().getDataType());
+            if (implictColumnArray[i]) {
+              if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
+                  .equals(queryDimensions[i].getDimension().getColName())) {
+                row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
+                    scannedResult.getBlockletId() + CarbonCommonConstants.FILE_SEPARATOR
+                        + scannedResult.getCurrenrRowId(), DataType.STRING);
+              } else {
+                row[order[i]] = DataTypeUtil
+                    .getDataBasedOnDataType(scannedResult.getBlockletId(), DataType.STRING);
+              }
+            } else {
+              row[order[i]] = DataTypeUtil
+                  .getDataBasedOnDataType(noDictionaryKeys[noDictionaryColumnIndex++],
+                      queryDimensions[i].getDimension().getDataType());
+            }
           } else if (directDictionaryEncodingArray[i]) {
             DirectDictionaryGenerator directDictionaryGenerator =
                 DirectDictionaryKeyGeneratorFactory
                     .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
             if (directDictionaryGenerator != null) {
               row[order[i]] = directDictionaryGenerator.getValueFromSurrogate(
-                  surrogateResult[dictionaryColumnIndex++]);
+                  surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]]);
             }
           } else if (complexDataTypeArray[i]) {
             row[order[i]] = comlexDimensionInfoMap
@@ -107,12 +145,16 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
                 .getDataBasedOnDataTypeFromSurrogates(
                     ByteBuffer.wrap(complexTypeKeyArray[complexTypeColumnIndex++]));
           } else {
-            row[order[i]] = surrogateResult[dictionaryColumnIndex++];
+            row[order[i]] = surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]];
           }
         }
 
       } else {
         scannedResult.incrementCounter();
+      }
+      if (null != deleteDeltaDataCache && deleteDeltaDataCache
+          .contains(scannedResult.getCurrenrRowId())) {
+        continue;
       }
       if (isMsrsPresent) {
         Object[] msrValues = new Object[measureDatatypes.length];

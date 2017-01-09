@@ -30,7 +30,6 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDime
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
-import org.apache.carbondata.scan.filter.GenericQueryType;
 
 /**
  * Holds all the properties required for query execution
@@ -42,25 +41,6 @@ public class QueryExecutorProperties {
    * dictionary key
    */
   public KeyStructureInfo keyStructureInfo;
-  /**
-   * as we have multiple type of column aggregation like
-   * dimension,expression,measure so this will be used to for getting the
-   * measure aggregation start index
-   */
-  public int measureStartIndex;
-  /**
-   * query like count(1),count(*) ,etc will used this parameter
-   */
-  public boolean isFunctionQuery;
-  /**
-   * aggExpressionStartIndex
-   */
-  public int aggExpressionStartIndex;
-  /**
-   * index of the dimension which is present in the order by
-   * in a query
-   */
-  public byte[] sortDimIndexes;
 
   /**
    * this will hold the information about the dictionary dimension
@@ -72,10 +52,6 @@ public class QueryExecutorProperties {
    * Measure datatypes
    */
   public DataType[] measureDataTypes;
-  /**
-   * complex parent index to query mapping
-   */
-  public Map<Integer, GenericQueryType> complexDimensionInfoMap;
   /**
    * all the complex dimension which is on filter
    */
