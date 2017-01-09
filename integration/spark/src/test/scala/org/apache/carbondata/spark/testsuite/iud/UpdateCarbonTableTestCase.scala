@@ -102,6 +102,19 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       sql("""drop table iud.dest33""").show
   }
 
+  test("update carbon table without alias in set columns with mulitple loads") {
+    sql("""drop table iud.dest33""").show
+    sql("""create table iud.dest33 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""").show()
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest33""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.dest33""")
+    sql("""update iud.dest33 d set (c3,c5 ) = (select s.c33 ,s.c55  from iud.source2 s where d.c1 = s.c11) where d.c1 = 'a'""").show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest33 where c1='a'"""),
+      Seq(Row("MGM","Disco"),Row("MGM","Disco"))
+    )
+    sql("""drop table iud.dest33""").show
+  }
+
    test("update carbon table without alias in set three columns") {
      sql("""drop table iud.dest44""").show
      sql("""create table iud.dest44 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""").show()
