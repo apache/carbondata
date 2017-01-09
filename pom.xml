@@ -316,11 +316,6 @@
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
-      <properties>
-        <spark.version>1.5.2</spark.version>
-        <scala.binary.version>2.10</scala.binary.version>
-        <scala.version>2.10.4</scala.version>
-      </properties>
       <modules>
         <module>integration/spark</module>
         <module>examples/spark</module>
