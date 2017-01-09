@@ -36,7 +36,7 @@ public class CacheAccessClient<K, V> {
 
   private Cache<K, V> cache;
 
-  public CacheAccessClient(Cache cache) {
+  public CacheAccessClient(Cache<K, V> cache) {
     this.cache = cache;
   }
 

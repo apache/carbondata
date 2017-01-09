@@ -123,11 +123,4 @@ public class CarbonInputFormatUtil {
       throw new RuntimeException("Error while resolving filter expression", e);
     }
   }
-
-  public static String processPath(String path) {
-    if (path != null && path.startsWith("file:")) {
-      return path.substring(5, path.length());
-    }
-    return path;
-  }
 }

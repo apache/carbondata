@@ -215,6 +215,9 @@ public class CarbonInputSplit extends FileSplit
   }
 
   @Override public int compareTo(Distributable o) {
+    if (o == null) {
+      return -1;
+    }
     CarbonInputSplit other = (CarbonInputSplit) o;
     int compareResult = 0;
     // get the segment id
