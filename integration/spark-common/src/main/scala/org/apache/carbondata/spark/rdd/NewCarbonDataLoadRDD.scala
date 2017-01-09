@@ -157,7 +157,7 @@ class NewCarbonDataLoadRDD[K, V](
           theSplit.index,
           null,
           null,
-          loadCount,
+          String.valueOf(loadCount),
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()
@@ -355,7 +355,7 @@ class NewDataFrameLoaderRDD[K, V](
           theSplit.index,
           null,
           null,
-          loadCount,
+          String.valueOf(loadCount),
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()
