@@ -18,8 +18,10 @@
 
 package org.apache.spark.sql
 
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.util.CommonUtil
+import scala.collection.JavaConverters._
+import scala.collection.mutable.Map
+import scala.language.implicitConversions
+
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
@@ -31,19 +33,19 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable.Map
-import scala.language.implicitConversions
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.util.CommonUtil
 
 /**
-  * Parser for All Carbon DDL, DML cases in Unified context
-  */
+ * Parser for All Carbon DDL, DML cases in Unified context
+ */
+
 class CarbonSqlParser() extends CarbonDDLSqlParser {
 
   override protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
   protected lazy val startCommand: Parser[LogicalPlan] =
     createDatabase | dropDatabase | loadManagement | describeTable |
-      showLoads | alterTable | updateTable | deleteRecords | createTable
+    showLoads | alterTable | updateTable | deleteRecords | createTable
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
   protected lazy val createDatabase: Parser[LogicalPlan] =
@@ -96,8 +98,8 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
         }
     }
   /**
-    * For handling the create table DDl systax compatible to Hive syntax
-    */
+   * For handling the create table DDl systax compatible to Hive syntax
+   */
   protected lazy val createTable: Parser[LogicalPlan] =
   restInput ^^ {
 
@@ -117,8 +119,8 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
   }
   protected lazy val loadDataNew: Parser[LogicalPlan] =
     LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
-      (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
-      (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
+    (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
+    (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
       case filePath ~ isOverwrite ~ table ~ optionsList =>
         val (databaseNameOp, tableName) = table match {
           case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
@@ -148,15 +150,15 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
     }
   protected lazy val showLoads: Parser[LogicalPlan] =
     SHOW ~> SEGMENTS ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident ~
-      (LIMIT ~> numericLit).? <~
-      opt(";") ^^ {
+    (LIMIT ~> numericLit).? <~
+    opt(";") ^^ {
       case databaseName ~ tableName ~ limit =>
         ShowLoadsCommand(databaseName, tableName.toLowerCase(), limit)
     }
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
     DELETE ~> SEGMENT ~> repsep(segmentId, ",") ~ (FROM ~> TABLE ~>
-      (ident <~ ".").? ~ ident) <~
-      opt(";") ^^ {
+                                                   (ident <~ ".").? ~ ident) <~
+    opt(";") ^^ {
       case loadids ~ table => table match {
         case databaseName ~ tableName =>
           DeleteLoadsById(loadids, databaseName, tableName.toLowerCase())
@@ -164,8 +166,8 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
     }
   protected lazy val deleteLoadsByLoadDate: Parser[LogicalPlan] =
     DELETE ~> SEGMENTS ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
-      (WHERE ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
-      opt(";") ^^ {
+    (WHERE ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
+    opt(";") ^^ {
       case schema ~ table ~ condition =>
         condition match {
           case dateField ~ dateValue =>
@@ -199,8 +201,8 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
     }
   protected lazy val updateTable: Parser[LogicalPlan] =
     UPDATE ~> table ~
-      (SET ~> "(" ~> repsep(element, ",") <~ ")") ~
-      ("=" ~> restInput) <~ opt(";") ^^ {
+    (SET ~> "(" ~> repsep(element, ",") <~ ")") ~
+    ("=" ~> restInput) <~ opt(";") ^^ {
       case tab ~ columns ~ rest =>
         val (sel, where) = splitQuery(rest)
         val (selectStmt, relation) =
@@ -216,7 +218,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
               case _ => tab
             }
             ("select " + sel + " from " + getTableName(relation.tableIdentifier) + " " +
-              relation.alias.get, relation)
+             relation.alias.get, relation)
           } else {
             (sel, updateRelation(tab, tab.tableIdentifier, tab.alias))
           }
@@ -253,11 +255,11 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
   }
 
   /**
-    * This function will traverse the tree and logical plan will be formed using that.
-    *
-    * @param node
-    * @return LogicalPlan
-    */
+   * This function will traverse the tree and logical plan will be formed using that.
+   *
+   * @param node
+   * @return LogicalPlan
+   */
   protected def nodeToPlan(node: Node): LogicalPlan = {
     node match {
       // if create table taken is found then only we will handle.
@@ -284,7 +286,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             case _ =>
           }
           if (!(storedBy.equals(CarbonContext.datasourceName) ||
-            storedBy.equals(CarbonContext.datasourceShortName))) {
+                storedBy.equals(CarbonContext.datasourceShortName))) {
             sys.error("Not a carbon format request")
           }
 
@@ -301,7 +303,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
                   dupColsGrp.toSeq.foreach(columnName += _._1 + ", ")
                   columnName = columnName.substring(0, columnName.lastIndexOf(", "))
                   val errorMessage = "Duplicate column name: " + columnName + " found in table " +
-                    ".Please check create table statement."
+                                     ".Please check create table statement."
                   throw new MalformedCarbonCommandException(errorMessage)
                 }
                 cols.asScala.map { col =>
@@ -361,7 +363,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
               if (repeatedProperties.nonEmpty) {
                 val repeatedPropStr: String = repeatedProperties.mkString(",")
                 throw new MalformedCarbonCommandException("Table properties is repeated: " +
-                  repeatedPropStr)
+                                                          repeatedPropStr)
               }
               tableProperties ++= propertySeq
 
@@ -375,10 +377,11 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
                   throw new Exception("ParsingException")) {
                   totalNumberOfBuckets => totalNumberOfBuckets
                 }
-                if (totalNumberOfBuckets.getText.contains("-") || totalNumberOfBuckets.getText.contains("+")) {
+                if (totalNumberOfBuckets.getText.contains("-") ||
+                    totalNumberOfBuckets.getText.contains("+")) {
                   throw new MalformedCarbonCommandException(
                     "INVALID NUMBER OF BUCKETS SPECIFIED "
-                      + numberOfBuckets.head.getText)
+                    + numberOfBuckets.head.getText)
                 }
                 else {
                   bucketFields = Some(BucketFields(cols,
@@ -414,7 +417,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
               s"Create table command failed for $tableName. "
             }
             else {
-              s"Create table command failed for ${dbName.get}.$tableName. "
+              s"Create table command failed for ${ dbName.get }.$tableName. "
             }
             LOGGER.audit(message + ce.getMessage)
             throw ce
@@ -424,11 +427,11 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
   }
 
   /**
-    * This function will traverse the tree and logical plan will be formed using that.
-    *
-    * @param node
-    * @return LogicalPlan
-    */
+   * This function will traverse the tree and logical plan will be formed using that.
+   *
+   * @param node
+   * @return LogicalPlan
+   */
   protected def nodeToPlanForAlterTable(node: Node, alterSql: String): LogicalPlan = {
     node match {
       // if create table taken is found then only we will handle.
@@ -511,9 +514,9 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
   }
 
   private def updateRelation(
-                              r: UnresolvedRelation,
-                              tableIdentifier: Seq[String],
-                              alias: Option[String]): UnresolvedRelation = {
+      r: UnresolvedRelation,
+      tableIdentifier: Seq[String],
+      alias: Option[String]): UnresolvedRelation = {
     alias match {
       case Some(_) => r
       case _ =>
