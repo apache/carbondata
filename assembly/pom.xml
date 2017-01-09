@@ -128,6 +128,11 @@
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
+      <properties>
+        <hadoop.deps.scope>provided</hadoop.deps.scope>
+        <spark.deps.scope>provided</spark.deps.scope>
+        <scala.deps.scope>provided</scala.deps.scope>
+      </properties>
       <dependencies>
         <dependency>
           <groupId>org.apache.carbondata</groupId>
@@ -138,6 +143,11 @@
     </profile>
     <profile>
       <id>spark-1.6</id>
+      <properties>
+        <hadoop.deps.scope>provided</hadoop.deps.scope>
+        <spark.deps.scope>provided</spark.deps.scope>
+        <scala.deps.scope>provided</scala.deps.scope>
+      </properties>
       <dependencies>
         <dependency>
           <groupId>org.apache.carbondata</groupId>
@@ -148,6 +158,11 @@
     </profile>
     <profile>
       <id>spark-2.1</id>
+      <properties>
+        <hadoop.deps.scope>provided</hadoop.deps.scope>
+        <spark.deps.scope>provided</spark.deps.scope>
+        <scala.deps.scope>provided</scala.deps.scope>
+      </properties>
       <dependencies>
         <dependency>
           <groupId>org.apache.carbondata</groupId>
@@ -155,17 +170,6 @@
           <version>${project.version}</version>
         </dependency>
       </dependencies>
-    </profile>
-    <profile>
-      <id>provided</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <properties>
-        <hadoop.deps.scope>provided</hadoop.deps.scope>
-        <spark.deps.scope>provided</spark.deps.scope>
-        <scala.deps.scope>provided</scala.deps.scope>
-      </properties>
     </profile>
     <profile>
       <id>include-all</id>

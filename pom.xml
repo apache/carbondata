@@ -291,6 +291,11 @@
   <profiles>
     <profile>
       <id>build-with-format</id>
+      <properties>
+        <spark.version>1.5.2</spark.version>
+        <scala.binary.version>2.10</scala.binary.version>
+        <scala.version>2.10.4</scala.version>
+      </properties>
       <modules>
         <module>format</module>
       </modules>
@@ -384,9 +389,6 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
-      <id>provided</id>
     </profile>
     <profile>
       <id>include-all</id>
