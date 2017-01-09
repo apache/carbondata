@@ -34,6 +34,9 @@
     <carbondata.jar.dir>scala-${scala.binary.version}</carbondata.jar.dir>
     <carbondata.jar.basename>carbondata_${scala.binary.version}-${project.version}-shade-hadoop${hadoop.version}.jar</carbondata.jar.basename>
     <carbondata.jar>${project.build.directory}/${carbondata.jar.dir}/${carbondata.jar.basename}</carbondata.jar>
+    <hadoop.deps.scope>provided</hadoop.deps.scope>
+    <spark.deps.scope>provided</spark.deps.scope>
+    <scala.deps.scope>provided</scala.deps.scope>
     <dev.path>${basedir}/../dev</dev.path>
   </properties>
 
@@ -155,17 +158,6 @@
           <version>${project.version}</version>
         </dependency>
       </dependencies>
-    </profile>
-    <profile>
-      <id>provided</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <properties>
-        <hadoop.deps.scope>provided</hadoop.deps.scope>
-        <spark.deps.scope>provided</spark.deps.scope>
-        <scala.deps.scope>provided</scala.deps.scope>
-      </properties>
     </profile>
     <profile>
       <id>include-all</id>
