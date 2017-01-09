@@ -107,6 +107,9 @@
     <hadoop.version>2.2.0</hadoop.version>
     <kettle.version>4.4.0-stable</kettle.version>
     <use.kettle>true</use.kettle>
+    <spark.version>1.5.2</spark.version>
+    <scala.binary.version>2.10</scala.binary.version>
+    <scala.version>2.10.4</scala.version>
     <hadoop.deps.scope>compile</hadoop.deps.scope>
     <spark.deps.scope>compile</spark.deps.scope>
     <scala.deps.scope>compile</scala.deps.scope>
@@ -313,11 +316,6 @@
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
-      <properties>
-        <spark.version>1.5.2</spark.version>
-        <scala.binary.version>2.10</scala.binary.version>
-        <scala.version>2.10.4</scala.version>
-      </properties>
       <modules>
         <module>integration/spark</module>
         <module>examples/spark</module>
@@ -384,9 +382,6 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
-      <id>provided</id>
     </profile>
     <profile>
       <id>include-all</id>
