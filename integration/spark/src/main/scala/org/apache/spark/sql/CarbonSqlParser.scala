@@ -264,7 +264,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
                 }
                 if (totalNumberOfBuckets.getText.contains("-") || totalNumberOfBuckets.getText.contains("+")) {
                   throw new MalformedCarbonCommandException(
-                    "INVALID NUMBER OF BUCKETS SPECIFIED IT CAN NOT BE A NEGATIVE NUMBER "
+                    "INVALID NUMBER OF BUCKETS SPECIFIED "
                       + numberOfBuckets.head.getText)
                 }
                 else {
