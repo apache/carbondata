@@ -60,7 +60,6 @@ import org.apache.carbondata.scan.model.QueryModel;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.BlockLocation;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.InvalidPathException;
@@ -121,8 +120,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return (CarbonTable) ObjectSerializationUtil.convertStringToObject(carbonTableStr);
   }
 
-  public static void setTablePath(Configuration configuration, String tablePath)
-      throws IOException {
+  public static void setTablePath(Configuration configuration, String tablePath) {
     configuration.set(FileInputFormat.INPUT_DIR, tablePath);
   }
 
@@ -169,7 +167,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     }
   }
 
-  public static CarbonTablePath getTablePath(Configuration configuration) throws IOException {
+  public static CarbonTablePath getTablePath(Configuration configuration) {
     AbsoluteTableIdentifier absIdentifier = getAbsoluteTableIdentifier(configuration);
     return CarbonStorePath.getCarbonTablePath(absIdentifier);
   }
@@ -241,6 +239,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     }
     CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
     FilterResolverIntf filterInterface = CarbonInputFormatUtil.resolveFilter(filter, identifier);
+
     // do block filtering and get split
     List<InputSplit> splits = getSplits(job, filterInterface, cacheClient);
     cacheClient.close();
@@ -376,11 +375,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    */
   private List<TableBlockInfo> getTableBlockInfo(JobContext job,
       TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier,
-      Set<SegmentTaskIndexStore.TaskBucketHolder> taskKeys,
-      List<String> updatedTaskList,
-      UpdateVO updateDetails,
-      SegmentUpdateStatusManager updateStatusManager,
-      String segmentId)
+      Set<SegmentTaskIndexStore.TaskBucketHolder> taskKeys, UpdateVO updateDetails,
+      SegmentUpdateStatusManager updateStatusManager, String segmentId)
     throws IOException {
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<TableBlockInfo>();
 
@@ -450,19 +446,16 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @param segmentId
    * @return
    * @throws IOException
-   * @throws IndexBuilderException
    */
   private Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> getSegmentAbstractIndexs(
       JobContext job, AbsoluteTableIdentifier absoluteTableIdentifier, String segmentId,
       CacheClient cacheClient, SegmentUpdateStatusManager updateStatusManager) throws IOException {
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap = null;
     SegmentTaskIndexWrapper segmentTaskIndexWrapper = null;
-    List<String> updatedTaskList = null;
     boolean isSegmentUpdated = false;
     Set<SegmentTaskIndexStore.TaskBucketHolder> taskKeys = null;
     TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier =
         new TableSegmentUniqueIdentifier(absoluteTableIdentifier, segmentId);
-    SegmentStatusManager statusManager = new SegmentStatusManager(absoluteTableIdentifier);
     segmentTaskIndexWrapper =
         cacheClient.getSegmentAccessClient().getIfPresent(tableSegmentUniqueIdentifier);
     UpdateVO updateDetails = updateStatusManager.getInvalidTimestampRange(segmentId);
@@ -471,8 +464,6 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       if (isSegmentUpdate(segmentTaskIndexWrapper, updateDetails)) {
         taskKeys = segmentIndexMap.keySet();
         isSegmentUpdated = true;
-        updatedTaskList =
-            statusManager.getUpdatedTasksDetailsForSegment(segmentId, updateStatusManager);
       }
     }
     // if segment tree is not loaded, load the segment tree
@@ -481,7 +472,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       // retrieved. the same will be filtered based on taskKeys , if the task is same
       // for the block then dont add it since already its btree is loaded.
       List<TableBlockInfo> tableBlockInfoList =
-          getTableBlockInfo(job, tableSegmentUniqueIdentifier, taskKeys, updatedTaskList,
+          getTableBlockInfo(job, tableSegmentUniqueIdentifier, taskKeys,
               updateStatusManager.getInvalidTimestampRange(segmentId), updateStatusManager,
               segmentId);
       if (!tableBlockInfoList.isEmpty()) {
@@ -586,7 +577,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
     Configuration configuration = taskAttemptContext.getConfiguration();
     QueryModel queryModel = getQueryModel(inputSplit, taskAttemptContext);
-    CarbonReadSupport readSupport = getReadSupportClass(configuration);
+    CarbonReadSupport<T> readSupport = getReadSupportClass(configuration);
     return new CarbonRecordReader<T>(queryModel, readSupport);
   }
 
@@ -623,7 +614,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return queryModel;
   }
 
-  public CarbonReadSupport getReadSupportClass(Configuration configuration) {
+  public CarbonReadSupport<T> getReadSupportClass(Configuration configuration) {
     String readSupportClass = configuration.get(CARBON_READ_SUPPORT);
     //By default it uses dictionary decoder read class
     CarbonReadSupport readSupport = null;
@@ -644,14 +635,6 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       readSupport = new DictionaryDecodedReadSupportImpl();
     }
     return readSupport;
-  }
-
-  @Override protected long computeSplitSize(long blockSize, long minSize, long maxSize) {
-    return super.computeSplitSize(blockSize, minSize, maxSize);
-  }
-
-  @Override protected int getBlockIndex(BlockLocation[] blkLocations, long offset) {
-    return super.getBlockIndex(blkLocations, offset);
   }
 
   @Override protected List<FileStatus> listStatus(JobContext job) throws IOException {
@@ -736,7 +719,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * return valid segment to access
    */
-  private String[] getSegmentsToAccess(JobContext job) throws IOException {
+  private String[] getSegmentsToAccess(JobContext job) {
     String segmentString = job.getConfiguration().get(INPUT_SEGMENT_NUMBERS, "");
     if (segmentString.trim().isEmpty()) {
       return new String[0];
