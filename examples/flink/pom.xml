@@ -62,6 +62,7 @@
   </dependencies>
 
   <build>
+    <sourceDirectory>src/main/scala</sourceDirectory>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
