@@ -20,9 +20,12 @@ package org.apache.carbondata.scan.scanner;
 
 import java.io.IOException;
 
+import org.apache.carbondata.common.iudprocessor.iuddata.BlockletDeleteDeltaCacheLoader;
+import org.apache.carbondata.common.iudprocessor.iuddata.DeleteDeltaCacheLoaderIntf;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
@@ -70,11 +73,21 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     queryStatisticsModel.getRecorder().recordStatistics(validScannedBlockletStatistic);
     scannedResult.reset();
     scannedResult.setNumberOfRows(blocksChunkHolder.getDataBlock().nodeSize());
+    scannedResult.setBlockletId(
+              blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR
+                      + blocksChunkHolder.getDataBlock().nodeNumber());
     scannedResult.setDimensionChunks(blocksChunkHolder.getDataBlock()
         .getDimensionChunks(blocksChunkHolder.getFileReader(),
             blockExecutionInfo.getAllSelectedDimensionBlocksIndexes()));
     scannedResult.setMeasureChunks(blocksChunkHolder.getDataBlock()
             .getMeasureChunks(blocksChunkHolder.getFileReader(),
                 blockExecutionInfo.getAllSelectedMeasureBlocksIndexes()));
+    // loading delete data cache in blockexecutioninfo instance
+    DeleteDeltaCacheLoaderIntf deleteCacheLoader =
+        new BlockletDeleteDeltaCacheLoader(scannedResult.getBlockletId(),
+            blocksChunkHolder.getDataBlock(), blockExecutionInfo.getAbsoluteTableIdentifier());
+    deleteCacheLoader.loadDeleteDeltaFileDataToCache();
+    scannedResult
+        .setBlockletDeleteDeltaCache(blocksChunkHolder.getDataBlock().getDeleteDeltaDataCache());
   }
 }

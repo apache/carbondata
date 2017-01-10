@@ -20,10 +20,11 @@ package org.apache.spark.sql.common.util
 import java.util.{Locale, TimeZone}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-
 import scala.collection.JavaConversions._
+
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 
 class QueryTest extends PlanTest {
@@ -79,9 +80,17 @@ class QueryTest extends PlanTest {
   protected def checkAnswer(df: DataFrame, expectedAnswer: DataFrame): Unit = {
     checkAnswer(df, expectedAnswer.collect())
   }
+
+  def sql(sqlText: String): DataFrame = TestQueryExecutor.INSTANCE.sql(sqlText)
+
+  val sqlContext: SQLContext = TestQueryExecutor.INSTANCE.sqlContext
+  val storeLocation = TestQueryExecutor.storeLocation
+  val resourcesPath = TestQueryExecutor.resourcesPath
+  val integrationPath = TestQueryExecutor.integrationPath
 }
 
 object QueryTest {
+
   def checkAnswer(df: DataFrame, expectedAnswer: java.util.List[Row]): String = {
     checkAnswer(df, expectedAnswer.toSeq) match {
       case Some(errorMessage) => errorMessage

@@ -48,11 +48,11 @@ import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType
 import org.apache.carbondata.core.reader.ThriftReader
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
 import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.lcm.locks.ZookeeperInit
-import org.apache.carbondata.lcm.status.SegmentStatusManager
+import org.apache.carbondata.locks.ZookeeperInit
 import org.apache.carbondata.spark.merger.TableMeta
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
@@ -399,7 +399,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
 
   def isTablePathExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
     val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
-    val tableName = tableIdentifier.table
+    val tableName = tableIdentifier.table.toLowerCase
 
     val tablePath = CarbonStorePath.getCarbonTablePath(this.storePath,
       new CarbonTableIdentifier(dbName, tableName, "")).getPath

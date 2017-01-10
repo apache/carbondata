@@ -60,7 +60,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     createDatabase | dropDatabase | loadManagement | describeTable |
-    showLoads | alterTable | createTable
+    showLoads | alterTable | updateTable | deleteRecords| createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -254,7 +254,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             case Token("TOK_LIKETABLE", child :: Nil) =>
               likeTableName = child.getChild(0).getText()
             case Token("TOK_ALTERTABLE_BUCKETS",
-                  Token("TOK_TABCOLNAME", list)::numberOfBuckets) =>
+            Token("TOK_TABCOLNAME", list)::numberOfBuckets) =>
               val cols = list.map(_.getText)
               if (cols != null) {
                 bucketFields = Some(BucketFields(cols,
@@ -326,7 +326,12 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
           case _ => // Unsupport features
         }
 
-        val altertablemodel = AlterTableModel(dbName, tableName, compactionType, alterSql)
+        val altertablemodel = AlterTableModel(dbName,
+          tableName,
+          None,
+          compactionType,
+          Some(System.currentTimeMillis()),
+          alterSql)
         AlterTableCompaction(altertablemodel)
     }
   }
@@ -405,6 +410,135 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
           case plan: CreateTable => ExplainCommand(logicalPlan, extended = isExtended.isDefined)
           case _ => ExplainCommand(OneRowRelation)
         }
+    }
+
+  protected lazy val deleteRecords: Parser[LogicalPlan] =
+    (DELETE ~> FROM ~> table) ~ (WHERE ~> restInput).? <~  opt(";") ^^ {
+      case table ~ condition =>
+        val tableName = getTableName(table.tableIdentifier)
+        val alias = table.alias.getOrElse("")
+        val stmt = condition match {
+          case Some(cond) =>
+            "select tupleId from " + tableName  + " " + alias + " where " + cond
+          case _ =>
+            "select tupleId from " + tableName + " " + alias
+        }
+        DeleteRecords(stmt, table)
+    }
+
+  protected lazy val updateTable: Parser[LogicalPlan] =
+    UPDATE ~> table ~
+    (SET ~> "(" ~>  repsep(element, ",") <~ ")") ~
+    ( "=" ~> restInput ) <~ opt(";")  ^^ {
+      case  tab~ columns ~ rest =>
+        val (sel, where ) = splitQuery(rest)
+        val (selectStmt, relation) =
+          if (!sel.toLowerCase.startsWith("select ")) {
+            if (sel.trim.isEmpty) {
+              sys.error("At least one source column has to be specified ")
+            }
+            // only list of expression are given, need to convert that list of expressions into
+            // select statement on destination table
+            val relation = tab match {
+              case r@UnresolvedRelation(tableIdentifier, alias) =>
+                updateRelation(r, tableIdentifier, alias)
+              case _ => tab
+            }
+            ("select " + sel + " from " + getTableName(relation.tableIdentifier) + " " +
+             relation.alias.get, relation)
+          } else {
+            (sel, updateRelation(tab, tab.tableIdentifier, tab.alias))
+          }
+        UpdateTable(relation, columns, selectStmt, where)
+    }
+
+  private def splitQuery(query: String): (String, String) = {
+    val stack = scala.collection.mutable.Stack[Char]()
+    var foundSingleQuotes = false
+    var foundDoubleQuotes = false
+    var foundEscapeChar = false
+    var ignoreChar = false
+    var stop = false
+    var bracketCount = 0
+    val (selectStatement, where) = query.span {
+      ch => {
+        if (stop) {
+          false
+        } else {
+          ignoreChar = false
+          if (foundEscapeChar && (ch == '\'' || ch == '\"' || ch == '\\')) {
+            foundEscapeChar = false
+            ignoreChar = true
+          }
+          // If escaped single or double quotes found, no need to consider
+          if (!ignoreChar) {
+            if (ch == '\\') {
+              foundEscapeChar = true
+            } else if (ch == '\'') {
+              foundSingleQuotes = !foundSingleQuotes
+            } else if (ch == '\"') {
+              foundDoubleQuotes = !foundDoubleQuotes
+            }
+            else if (ch == '(' &&  !foundSingleQuotes && !foundDoubleQuotes) {
+              bracketCount = bracketCount + 1
+              stack.push(ch)
+            } else if (ch == ')' && !foundSingleQuotes && !foundDoubleQuotes) {
+              bracketCount = bracketCount + 1
+              stack.pop()
+              if (0 == stack.size) {
+                stop = true
+              }
+            }
+          }
+          true
+        }
+      }
+    }
+    if (bracketCount == 0 || bracketCount % 2 != 0) {
+      sys.error("Parsing error, missing bracket ")
+    }
+    val select = selectStatement.trim
+    (select.substring(1, select.length - 1).trim -> where.trim)
+  }
+
+
+  protected lazy val table: Parser[UnresolvedRelation] = {
+    rep1sep(attributeName, ".")  ~  opt(ident)^^ {
+      case tableIdent ~ alias => UnresolvedRelation(tableIdent, alias)
+    }
+  }
+
+  protected lazy val attributeName: Parser[String] = acceptMatch("attribute name", {
+    case lexical.Identifier(str) => str.toLowerCase
+    case lexical.Keyword(str) if !lexical.delimiters.contains(str) => str.toLowerCase
+  })
+
+  private def updateRelation(
+      r: UnresolvedRelation,
+      tableIdentifier: Seq[String],
+      alias: Option[String]): UnresolvedRelation = {
+    alias match {
+      case Some(_) => r
+      case _ =>
+        val tableAlias = tableIdentifier match {
+          case Seq(dbName, tableName) => Some(tableName)
+          case Seq(tableName) => Some(tableName)
+        }
+        UnresolvedRelation(tableIdentifier, tableAlias)
+    }
+  }
+
+  private def getTableName(tableIdentifier: Seq[String]): String = {
+    if (tableIdentifier.size > 1) {
+      tableIdentifier(0) + "." + tableIdentifier(1)
+    } else {
+      tableIdentifier(0)
+    }
+  }
+
+  protected lazy val element: Parser[String] =
+    (ident <~ ".").? ~ ident  ^^ {
+      case table ~ column => column.toLowerCase
     }
 
 }

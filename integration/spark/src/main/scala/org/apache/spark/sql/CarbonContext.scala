@@ -56,6 +56,7 @@ class CarbonContext(
 
   CarbonContext.addInstance(sc, this)
   CodeGenerateFactory.init(sc.version)
+  udf.register("getTupleId", () => "")
   CarbonEnv.init(this)
 
   var lastSchemaUpdatedTime = System.currentTimeMillis()
@@ -77,6 +78,7 @@ class CarbonContext(
       override val extendedResolutionRules =
         catalog.ParquetConversions ::
         catalog.CreateTables ::
+        CarbonIUDAnalysisRule ::
         CarbonPreInsertionCasts ::
         ExtractPythonUDFs ::
         ResolveHiveWindowFunction ::
@@ -108,7 +110,7 @@ class CarbonContext(
       val metaStorePathAbsolute = new File(metaStorePath).getCanonicalPath
       val hiveMetaStoreDB = metaStorePathAbsolute + "/metastore_db"
       logDebug(s"metastore db is going to be created in location: $hiveMetaStoreDB")
-      super.configure() ++ Map((CarbonCommonConstants.HIVE_CONNECTION_URL,
+      super.configure() ++ Map[String, String]((CarbonCommonConstants.HIVE_CONNECTION_URL,
         s"jdbc:derby:;databaseName=$hiveMetaStoreDB;create=true"),
         ("hive.metastore.warehouse.dir", metaStorePathAbsolute + "/hivemetadata"))
     } else {
@@ -117,7 +119,7 @@ class CarbonContext(
   }
 
   @transient
-  val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)
+  private val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)
 
   var queryId: String = ""
 
@@ -151,7 +153,7 @@ object CarbonContext {
   val datasourceShortName: String = "carbondata"
 
   @transient
-  val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)
+  private val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)
 
   final def updateCarbonPorpertiesPath(hiveContext: HiveContext) {
     val carbonPropertiesFilePath = hiveContext.getConf("carbon.properties.filepath", null)
@@ -182,4 +184,8 @@ object CarbonContext {
     }
     cache(sc) = cc
   }
+}
+
+object SQLParser {
+  def parse(sql: String, sqlContext: SQLContext): LogicalPlan = sqlContext.parseSql(sql)
 }

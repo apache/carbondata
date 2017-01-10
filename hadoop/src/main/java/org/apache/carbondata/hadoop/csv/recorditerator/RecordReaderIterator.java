@@ -60,7 +60,7 @@ public class RecordReaderIterator extends CarbonIterator<Object []> {
         isConsumed = recordReader.nextKeyValue();
         return isConsumed;
       }
-      return isConsumed;
+      return true;
     } catch (Exception e) {
       throw new CarbonDataLoadingException(e);
     }

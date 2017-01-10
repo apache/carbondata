@@ -37,4 +37,11 @@ object CarbonTableIdentifierImplicit {
       case _ => Seq(tableIdentifier.table)
     }
   }
+
+  implicit def toOptionalSequence(alias: Option[String]): Option[Seq[String]] = {
+    alias match {
+      case Some(alias) => Some(Seq(alias))
+      case _ => None
+    }
+  }
 }

@@ -44,6 +44,7 @@ import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -120,6 +121,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
         prepareTableBlockUniqueIdentifier(queryModel.getTableBlockInfos(),
             queryModel.getAbsoluteTableIdentifier());
+    cache.removeTableBlocksIfHorizontalCompactionDone(queryModel);
     queryProperties.dataBlocks = cache.getAll(tableBlockUniqueIdentifiers);
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
@@ -218,8 +220,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       blockExecutionInfoList.add(
           getBlockExecutionInfoForBlock(queryModel, queryProperties.dataBlocks.get(i),
               queryModel.getTableBlockInfos().get(i).getBlockletInfos().getStartBlockletNumber(),
-              queryModel.getTableBlockInfos().get(i).getBlockletInfos()
-                  .getNumberOfBlockletToScan()));
+              queryModel.getTableBlockInfos().get(i).getBlockletInfos().getNumberOfBlockletToScan(),
+              queryModel.getTableBlockInfos().get(i).getFilePath()));
     }
     if (null != queryModel.getStatisticsRecorder()) {
       QueryStatistic queryStatistic = new QueryStatistic();
@@ -240,7 +242,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @throws QueryExecutionException any failure during block info creation
    */
   protected BlockExecutionInfo getBlockExecutionInfoForBlock(QueryModel queryModel,
-      AbstractIndex blockIndex, int startBlockletIndex, int numberOfBlockletToScan)
+      AbstractIndex blockIndex, int startBlockletIndex, int numberOfBlockletToScan, String filePath)
       throws QueryExecutionException {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
@@ -257,6 +259,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         QueryUtil.getMaskedByteRange(updatedQueryDimension, blockKeyGenerator);
     int[] maksedByte =
         QueryUtil.getMaskedByte(blockKeyGenerator.getKeySizeInBytes(), maskByteRangesForBlock);
+    int tableFactPathLength = CarbonStorePath
+        .getCarbonTablePath(queryModel.getAbsoluteTableIdentifier().getStorePath(),
+            queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier()).getFactDir()
+        .length() + 1;
+    blockExecutionInfo.setBlockId(filePath.substring(tableFactPathLength));
     blockExecutionInfo.setStartBlockletIndex(startBlockletIndex);
     blockExecutionInfo.setNumberOfBlockletToScan(numberOfBlockletToScan);
     blockExecutionInfo.setQueryDimensions(
@@ -277,6 +284,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .setTotalNumberDimensionBlock(segmentProperties.getDimensionOrdinalToBlockMapping().size());
     blockExecutionInfo
         .setTotalNumberOfMeasureBlock(segmentProperties.getMeasuresOrdinalToBlockMapping().size());
+    blockExecutionInfo.setAbsoluteTableIdentifier(queryModel.getAbsoluteTableIdentifier());
     blockExecutionInfo.setComplexDimensionInfoMap(QueryUtil
         .getComplexDimensionsMap(updatedQueryDimension,
             segmentProperties.getDimensionOrdinalToBlockMapping(),
@@ -317,9 +325,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         new ArrayList<CarbonMeasure>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // setting all the dimension chunk indexes to be read from file
     int numberOfElementToConsider = 0;
+    // list of dimensions to be projected
+    List<Integer> allProjectionListDimensionIdexes = new ArrayList<>();
     int[] dimensionsBlockIndexes = QueryUtil.getDimensionsBlockIndexes(updatedQueryDimension,
         segmentProperties.getDimensionOrdinalToBlockMapping(), expressionDimensions,
-        queryProperties.complexFilterDimension);
+        queryProperties.complexFilterDimension, allProjectionListDimensionIdexes);
     if (dimensionsBlockIndexes.length > 0) {
       numberOfElementToConsider = dimensionsBlockIndexes[dimensionsBlockIndexes.length - 1]
           == segmentProperties.getBlockTodimensionOrdinalMapping().size() - 1 ?

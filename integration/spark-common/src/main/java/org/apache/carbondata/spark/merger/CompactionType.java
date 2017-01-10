@@ -20,9 +20,14 @@ package org.apache.carbondata.spark.merger;
 
 /**
  * This enum is used to define the types of Compaction.
- * We have 2 types. one is Minor and another is Major
+ * We have 3 types. one is Minor another is Major and
+ * finally a compaction done after UPDATE-DELETE operation
+ * called IUD compaction.
  */
 public enum CompactionType {
     MINOR_COMPACTION,
-    MAJOR_COMPACTION
+    MAJOR_COMPACTION,
+    IUD_UPDDEL_DELTA_COMPACTION,
+    IUD_DELETE_DELTA_COMPACTION,
+    NONE
 }

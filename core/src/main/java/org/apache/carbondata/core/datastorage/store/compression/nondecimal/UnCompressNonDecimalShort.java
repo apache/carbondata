@@ -19,15 +19,18 @@
 
 package org.apache.carbondata.core.datastorage.store.compression.nondecimal;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureChunkStoreFactory;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureDataChunkStore;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
+import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
 public class UnCompressNonDecimalShort implements ValueCompressonHolder.UnCompressValue<short[]> {
   /**
@@ -38,11 +41,15 @@ public class UnCompressNonDecimalShort implements ValueCompressonHolder.UnCompre
   /**
    * shortCompressor.
    */
-  private static Compressor compressor = CompressorFactory.getInstance();
+  private static Compressor compressor = CompressorFactory.getInstance().getCompressor();
   /**
    * value.
    */
   private short[] value;
+
+  private MeasureDataChunkStore<short[]> measureChunkStore;
+
+  private double divisionFactory;
 
   @Override public void setValue(short[] value) {
     this.value = value;
@@ -69,7 +76,8 @@ public class UnCompressNonDecimalShort implements ValueCompressonHolder.UnCompre
   }
 
   @Override
-  public ValueCompressonHolder.UnCompressValue uncompress(ValueCompressionUtil.DataType dataType) {
+  public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType, byte[] compressData,
+      int offset, int length, int decimalPlaces, Object maxValueObject) {
     return null;
   }
 
@@ -85,14 +93,27 @@ public class UnCompressNonDecimalShort implements ValueCompressonHolder.UnCompre
     return new UnCompressNonDecimalByte();
   }
 
-  @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-    double[] vals = new double[value.length];
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i] / Math.pow(10, decimal);
-    }
-    dataHolder.setReadableDoubleValues(vals);
-    return dataHolder;
+  @Override public long getLongValue(int index) {
+    throw new UnsupportedOperationException("Get long value is not supported");
   }
 
+  @Override public double getDoubleValue(int index) {
+    return (measureChunkStore.getShort(index) / this.divisionFactory);
+  }
+
+  @Override public BigDecimal getBigDecimalValue(int index) {
+    throw new UnsupportedOperationException("Get big decimal value is not supported");
+  }
+
+  @Override
+  public void setUncompressValues(short[] data, int decimalPlaces, Object maxValueObject) {
+    this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
+        .getMeasureDataChunkStore(DataType.DATA_SHORT, data.length);
+    this.measureChunkStore.putData(data);
+    this.divisionFactory = Math.pow(10, decimalPlaces);
+  }
+
+  @Override public void freeMemory() {
+    this.measureChunkStore.freeMemory();
+  }
 }

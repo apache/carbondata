@@ -17,13 +17,8 @@
 
 package org.apache.carbondata.processing.store;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 /**
  * This class contains attributes of file which are required to
@@ -66,25 +61,7 @@ public class CarbonDataFileAttributes {
    * @return fact time stamp which is load start time
    */
   public String getFactTimeStamp() {
-    return convertTimeStampToString(factTimeStamp);
+    return factTimeStamp;
   }
 
-  /**
-   * This method will convert a given timestamp to long value and then to string back
-   *
-   * @param factTimeStamp
-   * @return
-   */
-  private String convertTimeStampToString(String factTimeStamp) {
-    SimpleDateFormat parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
-    Date dateToStr = null;
-    try {
-      dateToStr = parser.parse(factTimeStamp);
-      return Long.toString(dateToStr.getTime());
-    } catch (ParseException e) {
-      LOGGER.error("Cannot convert" + factTimeStamp
-          + " to Time/Long type value" + e.getMessage());
-      return null;
-    }
-  }
 }

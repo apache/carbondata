@@ -111,8 +111,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_001
     if (null != msrColEvalutorInfoList) {
       for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
-        if (null == blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()])
-        {
+        if (null == blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo
+            .getColumnIndex()]) {
           blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()] =
               blockChunkHolder.getDataBlock().getMeasureChunk(blockChunkHolder.getFileReader(),
                   msrColumnEvalutorInfo.getColumnIndex());
@@ -171,14 +171,10 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           VariableLengthDimensionDataChunk dimensionColumnDataChunk =
               (VariableLengthDimensionDataChunk) blockChunkHolder
                   .getDimensionDataChunk()[blocksIndex[i]];
-          if (null != dimensionColumnDataChunk.getCompleteDataChunk()) {
-            memberString =
-                readMemberBasedOnNoDictionaryVal(dimensionColumnDataChunk,
-                    index);
-            if (null != memberString) {
-              if (memberString.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-                memberString = null;
-              }
+          memberString = readMemberBasedOnNoDictionaryVal(dimensionColumnDataChunk, index);
+          if (null != memberString) {
+            if (memberString.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+              memberString = null;
             }
             record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
                 .getDataBasedOnDataType(memberString,
@@ -241,19 +237,16 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       switch (msrType) {
         case INT:
         case LONG:
-          msrValue =
-              blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
-                  .getMeasureDataHolder().getReadableLongValueByIndex(index);
+          msrValue = blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
+              .getMeasureDataHolder().getReadableLongValueByIndex(index);
           break;
         case DECIMAL:
-          msrValue =
-              blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
-                  .getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
+          msrValue = blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
+              .getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
           break;
         default:
-          msrValue =
-              blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
-                  .getMeasureDataHolder().getReadableDoubleValueByIndex(index);
+          msrValue = blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
+              .getMeasureDataHolder().getReadableDoubleValueByIndex(index);
       }
       record[msrColumnEvalutorInfo.getRowIndex()] =
           blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
@@ -293,8 +286,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   private String getFilterActualValueFromDictionaryValue(
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo, int dictionaryValue) throws IOException {
     String memberString;
-    Dictionary forwardDictionary = FilterUtil.getForwardDictionaryCache(
-        tableIdentifier, dimColumnEvaluatorInfo.getDimension());
+    Dictionary forwardDictionary = FilterUtil
+        .getForwardDictionaryCache(tableIdentifier, dimColumnEvaluatorInfo.getDimension());
 
     memberString = forwardDictionary.getDictionaryValueForKey(dictionaryValue);
     if (null != memberString) {
@@ -363,15 +356,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    */
   private String readMemberBasedOnNoDictionaryVal(
       VariableLengthDimensionDataChunk dimensionColumnDataChunk, int index) {
-    byte[] noDictionaryVals;
-    if (null != dimensionColumnDataChunk.getAttributes().getInvertedIndexesReverse()) {
-      // Getting the data for direct surrogates.
-      noDictionaryVals = dimensionColumnDataChunk.getCompleteDataChunk()
-          .get(dimensionColumnDataChunk.getAttributes().getInvertedIndexesReverse()[index]);
-    } else {
-      noDictionaryVals = dimensionColumnDataChunk.getCompleteDataChunk().get(index);
-    }
-    return new String(noDictionaryVals, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+    return new String(dimensionColumnDataChunk.getChunkData(index),
+        Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
   }
 
   @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {

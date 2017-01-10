@@ -34,8 +34,10 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.{CarbonTable, Tab
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.LoadMetadataDetails
+import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.CarbonSparkFactory
+import org.apache.carbondata.spark.load.FailureCauses
 import org.apache.carbondata.spark.merger.CompactionType
 import org.apache.carbondata.spark.util.DataTypeConverterUtil
 
@@ -75,16 +77,19 @@ case class BucketFields(bucketColumns: Seq[String], numberOfBuckets: Int)
 
 case class DataLoadTableFileMapping(table: String, loadPath: String)
 
+case class ExecutionErrors(var failureCauses: FailureCauses, var errorMsg: String )
+
 case class CarbonMergerMapping(storeLocation: String,
-    storePath: String,
+    hdfsStoreLocation: String,
     metadataFilePath: String,
-    mergedLoadName: String,
+    var mergedLoadName: String,
     kettleHomePath: String,
     tableCreationTime: Long,
     databaseName: String,
     factTableName: String,
     validSegments: Array[String],
     tableId: String,
+    campactionType: CompactionType,
     // maxSegmentColCardinality is Cardinality of last segment of compaction
     var maxSegmentColCardinality: Array[Int],
     // maxSegmentColumnSchemaList is list of column schema of last segment of compaction
@@ -92,8 +97,16 @@ case class CarbonMergerMapping(storeLocation: String,
 
 case class NodeInfo(TaskId: String, noOfBlocks: Int)
 
-case class AlterTableModel(dbName: Option[String], tableName: String,
-    compactionType: String, alterSql: String)
+case class AlterTableModel(dbName: Option[String],
+                           tableName: String,
+                           segmentUpdateStatusManager: Option[SegmentUpdateStatusManager],
+                           compactionType: String,
+                           factTimeStamp: Option[Long],
+                           alterSql: String)
+
+case class UpdateTableModel(isUpdate: Boolean,
+                            updatedTimeStamp: Long,
+                            var executorErrors: ExecutionErrors)
 
 case class CompactionModel(compactionSize: Long,
     compactionType: CompactionType,

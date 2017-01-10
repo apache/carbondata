@@ -27,5 +27,4 @@ public class HeavyCompressedDoubleArrayDataInMemoryStore
   public HeavyCompressedDoubleArrayDataInMemoryStore(WriterCompressModel compressionModel) {
     super(compressionModel);
   }
-
 }

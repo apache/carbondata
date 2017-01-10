@@ -19,11 +19,9 @@
 
 package org.apache.carbondata.integration.spark.testsuite.dataload
 
-import org.apache.spark.sql.{DataFrame, Row}
-import org.apache.spark.sql.common.util.CarbonHiveContext._
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 /**
  * Test Class for data loading when there is single quote in fact data
  *
@@ -38,8 +36,9 @@ class TestLoadDataWithSingleQuotechar extends QueryTest with BeforeAndAfterAll {
   test("test data loading with single quote char") {
     try {
       sql(
-        "LOAD DATA LOCAL INPATH './src/test/resources/dataWithSingleQuote.csv' INTO TABLE " +
+        s"LOAD DATA LOCAL INPATH '$resourcesPath/dataWithSingleQuote.csv' INTO TABLE " +
           "carbontable OPTIONS('DELIMITER'= ',')")
+      sql("SELECT * from carbontable").show(100, false)
       checkAnswer(
         sql("SELECT * from carbontable"),
         Seq(Row(1,"Tom"),

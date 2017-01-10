@@ -25,10 +25,12 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
+import org.apache.carbondata.common.iudprocessor.cache.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
@@ -99,9 +101,18 @@ public abstract class AbstractScannedResult {
   private int totalDimensionsSize;
 
   /**
+   * blockedId which will be blockId + blocklet number in the block
+   */
+  private String blockletId;
+
+  private long rowId;
+
+  /**
    * parent block indexes
    */
   private int[] complexParentBlockIndexes;
+
+  protected BlockletLevelDeleteDeltaDataCache blockletDeleteDeltaCache;
 
   public AbstractScannedResult(BlockExecutionInfo blockExecutionInfo) {
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
@@ -243,8 +254,8 @@ public abstract class AbstractScannedResult {
    * Just increment the counter incase of query only on measures.
    */
   public void incrementCounter() {
-    rowCounter ++;
-    currentRow ++;
+    rowCounter++;
+    currentRow++;
   }
 
   /**
@@ -301,6 +312,35 @@ public abstract class AbstractScannedResult {
   }
 
   /**
+   * @return blockletId
+   */
+  public String getBlockletId() {
+    return blockletId;
+  }
+
+  /**
+   * @param blockletId
+   */
+  public void setBlockletId(String blockletId) {
+    this.blockletId = CarbonTablePath.getShortBlockId(blockletId);
+  }
+
+  /**
+   * @return blockletId
+   */
+  public long getRowId() {
+    return rowId;
+  }
+
+  /**
+   * @param blockletId
+   */
+  public void setRowId(long rowId) {
+    this.rowId = rowId;
+  }
+
+
+  /**
    * Below method will be used to get the complex type keys array based
    * on row id for all the complex type dimension selected in query
    *
@@ -340,7 +380,11 @@ public abstract class AbstractScannedResult {
    * @return
    */
   public boolean hasNext() {
-    return rowCounter < this.totalNumberOfRows;
+    if (rowCounter < this.totalNumberOfRows) {
+      return true;
+    }
+    CarbonUtil.freeMemory(dataChunks, measureDataChunks);
+    return false;
   }
 
   /**
@@ -507,4 +551,20 @@ public abstract class AbstractScannedResult {
    * @return measure value
    */
   public abstract BigDecimal getBigDecimalMeasureValue(int ordinal);
+
+  /**
+   *
+   * @return BlockletLevelDeleteDeltaDataCache.
+   */
+  public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
+    return blockletDeleteDeltaCache;
+  }
+
+  /**
+   * @param blockletDeleteDeltaCache
+   */
+  public void setBlockletDeleteDeltaCache(
+      BlockletLevelDeleteDeltaDataCache blockletDeleteDeltaCache) {
+    this.blockletDeleteDeltaCache = blockletDeleteDeltaCache;
+  }
 }

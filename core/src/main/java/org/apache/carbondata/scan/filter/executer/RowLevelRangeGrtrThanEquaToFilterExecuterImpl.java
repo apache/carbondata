@@ -91,7 +91,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
 
   private BitSet getFilteredIndexes(DimensionColumnDataChunk dimensionColumnDataChunk,
       int numerOfRows) {
-    if (null != dimensionColumnDataChunk.getAttributes().getInvertedIndexes()
+    if (dimensionColumnDataChunk.isExplicitSorted()
         && dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
       return setFilterdIndexToBitSetWithColumnIndex(
           (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, numerOfRows);
@@ -112,7 +112,6 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
   private BitSet setFilterdIndexToBitSetWithColumnIndex(
       FixedLengthDimensionDataChunk dimensionColumnDataChunk, int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
-    int[] columnIndex = dimensionColumnDataChunk.getAttributes().getInvertedIndexes();
     int start = 0;
     int last = 0;
     int startIndex = 0;
@@ -129,16 +128,15 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
         // Method will compare the tentative index value after binary search, this tentative
         // index needs to be compared by the filter member if its >= filter then from that
         // index the bitset will be considered for filtering process.
-        if (ByteUtil
-            .compare(filterValues[i], dimensionColumnDataChunk.getChunkData(columnIndex[start]))
+        if (ByteUtil.compare(filterValues[i],
+            dimensionColumnDataChunk.getChunkData(dimensionColumnDataChunk.getInvertedIndex(start)))
             >= 0) {
           start = start + 1;
         }
       }
       last = start;
       for (int j = start; j < numerOfRows; j++) {
-
-        bitSet.set(columnIndex[j]);
+        bitSet.set(dimensionColumnDataChunk.getInvertedIndex(j));
         last++;
       }
       startIndex = last;

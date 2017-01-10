@@ -30,13 +30,12 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
 
-    clean
-    spark.sql("DROP TABLE IF EXISTS vectorreader")
+    sql("DROP TABLE IF EXISTS vectorreader")
     // clean data folder
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-    spark.sql(
+    sql(
     """
            CREATE TABLE default.vectorreader
            (ID Int, date Timestamp, country String,
@@ -46,8 +45,8 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test vector reader") {
-    spark.conf.set("carbon.enable.vector.reader", "true")
-    val plan = spark.sql(
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
+    val plan = sql(
       """select * from vectorreader""".stripMargin).queryExecution.executedPlan
     var batchReader = false
     plan.collect {
@@ -57,8 +56,8 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test without vector reader") {
-    spark.conf.set("carbon.enable.vector.reader", "false")
-    val plan = spark.sql(
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
+    val plan = sql(
       """select * from vectorreader""".stripMargin).queryExecution.executedPlan
     var rowReader = false
     plan.collect {
@@ -68,8 +67,6 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    spark.sql("DROP TABLE IF EXISTS vectorreader")
-    // clean data folder
-    clean
+    sql("DROP TABLE IF EXISTS vectorreader")
   }
 }

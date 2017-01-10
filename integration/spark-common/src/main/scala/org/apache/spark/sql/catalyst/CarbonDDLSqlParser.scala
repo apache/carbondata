@@ -109,13 +109,15 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val RELATION = carbonKeyWord("RELATION")
   protected val SCHEMA = carbonKeyWord("SCHEMA")
   protected val SCHEMAS = carbonKeyWord("SCHEMAS")
+  protected val SET = Keyword("SET")
   protected val SHOW = carbonKeyWord("SHOW")
   protected val TABLES = carbonKeyWord("TABLES")
   protected val TABLE = carbonKeyWord("TABLE")
   protected val TERMINATED = carbonKeyWord("TERMINATED")
   protected val TYPE = carbonKeyWord("TYPE")
+  protected val UPDATE = carbonKeyWord("UPDATE")
   protected val USE = carbonKeyWord("USE")
-  protected val WHERE = carbonKeyWord("WHERE")
+  protected val WHERE = Keyword("WHERE")
   protected val WITH = carbonKeyWord("WITH")
   protected val AGGREGATETABLE = carbonKeyWord("AGGREGATETABLE")
   protected val ABS = carbonKeyWord("abs")
@@ -787,7 +789,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case _ => ("", "")
     }
 
-
   protected lazy val dimCol: Parser[Field] = anyFieldDef
 
   protected lazy val primitiveTypes =
@@ -917,10 +918,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     field.dataType.getOrElse("NIL") match {
       case "Array" => Field(field.column, Some("Array"), field.name,
         field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent,
-        field.storeType, field.schemaOrdinal)
+        field.storeType, field.schemaOrdinal, rawSchema = field.rawSchema)
       case "Struct" => Field(field.column, Some("Struct"), field.name,
         field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent,
-        field.storeType, field.schemaOrdinal)
+        field.storeType, field.schemaOrdinal, rawSchema = field.rawSchema)
       case _ => field
     }
   }

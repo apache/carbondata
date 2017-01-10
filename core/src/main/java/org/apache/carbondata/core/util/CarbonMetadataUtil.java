@@ -574,7 +574,7 @@ public class CarbonMetadataUtil {
       //meta
       PresenceMeta presenceMeta = new PresenceMeta();
       presenceMeta.setPresent_bit_streamIsSet(true);
-      presenceMeta.setPresent_bit_stream(CompressorFactory.getInstance()
+      presenceMeta.setPresent_bit_stream(CompressorFactory.getInstance().getCompressor()
           .compressByte(blockletInfoColumnar.getMeasureNullValueIndex()[i].toByteArray()));
       dataChunk.setPresence(presenceMeta);
       //TODO : PresenceMeta needs to be implemented and set here

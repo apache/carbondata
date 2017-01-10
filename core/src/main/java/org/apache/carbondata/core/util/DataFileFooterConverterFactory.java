@@ -56,12 +56,10 @@ public class DataFileFooterConverterFactory {
   public AbstractDataFileFooterConverter getDataFileFooterConverter(
       final ColumnarFormatVersion version) {
     switch (version) {
-      case V2:
-        return new DataFileFooterConverter2();
       case V1:
         return new DataFileFooterConverter();
       default:
-        throw new IllegalArgumentException("invalid format version: " + version);
+        return new DataFileFooterConverter2();
     }
   }
 

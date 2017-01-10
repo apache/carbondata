@@ -20,6 +20,7 @@ package org.apache.carbondata.core.carbon.datastore;
 
 import java.io.IOException;
 
+import org.apache.carbondata.common.iudprocessor.cache.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
@@ -114,4 +115,14 @@ public interface DataRefNode {
    * @return measure data chunk
    */
   MeasureColumnDataChunk getMeasureChunk(FileHolder fileReader, int blockIndex) throws IOException;
+
+  /**
+   * @param deleteDeltaDataCache
+   */
+  void setDeleteDeltaDataCache(BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache);
+
+  /**
+   * @return
+   */
+  BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache();
 }

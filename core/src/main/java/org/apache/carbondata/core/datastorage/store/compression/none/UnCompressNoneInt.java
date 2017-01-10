@@ -19,14 +19,17 @@
 
 package org.apache.carbondata.core.datastorage.store.compression.none;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureChunkStoreFactory;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureDataChunkStore;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -39,13 +42,15 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
   /**
    * intCompressor.
    */
-  private static Compressor compressor = CompressorFactory.getInstance();
+  private static Compressor compressor = CompressorFactory.getInstance().getCompressor();
   /**
    * value.
    */
   private int[] value;
 
   private DataType actualDataType;
+
+  private MeasureDataChunkStore<int[]> measureChunkStore;
 
   public UnCompressNoneInt(DataType actualDataType) {
     this.actualDataType = actualDataType;
@@ -74,7 +79,9 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
     return byte1;
   }
 
-  @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
+  @Override
+  public UnCompressValue uncompress(DataType dataType, byte[] data, int offset, int length,
+      int decimalPlaces, Object maxValueObject) {
     return null;
   }
 
@@ -90,54 +97,26 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
     return new UnCompressNoneByte(this.actualDataType);
   }
 
-  @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    switch (actualDataType) {
-      case DATA_SHORT:
-        return unCompressShort();
-      case DATA_INT:
-        return unCompressInt();
-      case DATA_LONG:
-      case DATA_BIGINT:
-        return unCompressLong();
-      default:
-        return unCompressDouble();
-    }
+  @Override public long getLongValue(int index) {
+    return measureChunkStore.getInt(index);
   }
 
-  private CarbonReadDataHolder unCompressShort() {
-    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-    short[] vals = new short[value.length];
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = (short)value[i];
-    }
-    dataHolder.setReadableShortValues(vals);
-    return dataHolder;
+  @Override public double getDoubleValue(int index) {
+    return measureChunkStore.getInt(index);
   }
 
-  private CarbonReadDataHolder unCompressInt() {
-    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-    dataHolder.setReadableIntValues(value);
-    return dataHolder;
+  @Override public BigDecimal getBigDecimalValue(int index) {
+    throw new UnsupportedOperationException("Get big decimal is not supported");
   }
 
-  private CarbonReadDataHolder unCompressDouble() {
-    CarbonReadDataHolder dataHolderInfoObj = new CarbonReadDataHolder();
-    double[] vals = new double[value.length];
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i];
-    }
-    dataHolderInfoObj.setReadableDoubleValues(vals);
-    return dataHolderInfoObj;
+  @Override public void setUncompressValues(int[] data, int decimalPlaces, Object maxValueObject) {
+    this.measureChunkStore =
+        MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_INT, data.length);
+    this.measureChunkStore.putData(data);
+
   }
 
-  private CarbonReadDataHolder unCompressLong() {
-    CarbonReadDataHolder dataHolderInfoObj = new CarbonReadDataHolder();
-    long[] vals = new long[value.length];
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i];
-    }
-
-    dataHolderInfoObj.setReadableLongValues(vals);
-    return dataHolderInfoObj;
+  @Override public void freeMemory() {
+    this.measureChunkStore.freeMemory();
   }
 }

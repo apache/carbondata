@@ -210,12 +210,18 @@ public class QueryUtil {
    */
   public static int[] getDimensionsBlockIndexes(List<QueryDimension> queryDimensions,
       Map<Integer, Integer> dimensionOrdinalToBlockMapping,
-      List<CarbonDimension> customAggregationDimension, Set<CarbonDimension> filterDimensions) {
+      List<CarbonDimension> customAggregationDimension, Set<CarbonDimension> filterDimensions,
+      List<Integer> allProjectionListDimensionIndexes) {
     // using set as in row group columns will point to same block
     Set<Integer> dimensionBlockIndex = new HashSet<Integer>();
     Set<Integer> filterDimensionOrdinal = getFilterDimensionOrdinal(filterDimensions);
     int blockIndex = 0;
     for (int i = 0; i < queryDimensions.size(); i++) {
+      if (queryDimensions.get(i).getDimension().hasEncoding(Encoding.IMPLICIT)) {
+        continue;
+      }
+      allProjectionListDimensionIndexes.add(queryDimensions.get(i).getDimension().getOrdinal());
+
       if (!filterDimensionOrdinal.contains(queryDimensions.get(i).getDimension().getOrdinal())) {
         blockIndex =
             dimensionOrdinalToBlockMapping.get(queryDimensions.get(i).getDimension().getOrdinal());
@@ -277,7 +283,8 @@ public class QueryUtil {
       // TODO need to remove the data type check for parent column in complex type no need to
       // write encoding dictionary
       if (CarbonUtil.hasEncoding(encodingList, Encoding.DICTIONARY) && !CarbonUtil
-          .hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY)) {
+          .hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY) && !CarbonUtil
+          .hasEncoding(encodingList, Encoding.IMPLICIT)) {
 
         if (queryDimensions.get(i).getDimension().numberOfChild() == 0) {
           dictionaryDimensionFromQuery.add(queryDimensions.get(i).getDimension().getColumnId());
@@ -534,7 +541,10 @@ public class QueryUtil {
       // column group id
       // then we need to add ordinal of that column as it belongs to same
       // column group
-      if (!dimensions.get(index).getDimension().isColumnar()
+      if (dimensions.get(index).getDimension().hasEncoding(Encoding.IMPLICIT)) {
+        index++;
+        continue;
+      } else if (!dimensions.get(index).getDimension().isColumnar()
           && dimensions.get(index).getDimension().columnGroupId() == prvColumnGroupId
           && null != currentColumnGroup) {
         currentColumnGroup.add(dimensions.get(index).getDimension().getOrdinal());
@@ -599,7 +609,9 @@ public class QueryUtil {
           && queryDimension.getDimension().numberOfChild() == 0) {
         dictionaryDimensionBlockIndex
             .add(columnOrdinalToBlockIndexMapping.get(queryDimension.getDimension().getOrdinal()));
-      } else if (queryDimension.getDimension().numberOfChild() == 0) {
+      } else if (
+          !CarbonUtil.hasEncoding(queryDimension.getDimension().getEncoder(), Encoding.IMPLICIT)
+              && queryDimension.getDimension().numberOfChild() == 0) {
         noDictionaryDimensionBlockIndex
             .add(columnOrdinalToBlockIndexMapping.get(queryDimension.getDimension().getOrdinal()));
       }
@@ -738,6 +750,10 @@ public class QueryUtil {
     }
     if (null != filterDimensions) {
       for (CarbonDimension filterDimension : filterDimensions) {
+        // do not fill nay details for implicit dimension type
+        if (filterDimension.hasEncoding(Encoding.IMPLICIT)) {
+          continue;
+        }
         fillParentDetails(dimensionToBlockIndexMap, filterDimension, complexTypeMap,
             eachComplexColumnValueSize, columnIdToDictionaryMap);
       }

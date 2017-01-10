@@ -213,9 +213,10 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     String readableBlockSize = ByteUtil.convertByteToReadable(blockSize);
     String readableFileSize = ByteUtil.convertByteToReadable(fileSize);
     String readableMaxSize = ByteUtil.convertByteToReadable(maxSize);
-    LOGGER.info("The configured block size is " + readableBlockSize +
-        ", the actual carbon file size is " + readableFileSize +
-        ", choose the max value " + readableMaxSize + " as the block size on HDFS");
+    LOGGER.info(
+        "The configured block size is " + readableBlockSize + ", the actual carbon file size is "
+            + readableFileSize + ", choose the max value " + readableMaxSize
+            + " as the block size on HDFS");
     return maxSize;
   }
 
@@ -599,7 +600,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
           }
         }
       }
-      keyBlockData[i] = CompressorFactory.getInstance().compressByte(keyBlockData[i]);
+      keyBlockData[i] = CompressorFactory.getInstance().getCompressor()
+          .compressByte(keyBlockData[i]);
     }
     return keyBlockData;
   }

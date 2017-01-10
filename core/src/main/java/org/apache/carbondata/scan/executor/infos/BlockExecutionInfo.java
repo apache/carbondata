@@ -21,6 +21,7 @@ package org.apache.carbondata.scan.executor.infos;
 import java.util.Map;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.datastore.IndexKey;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
@@ -68,6 +69,8 @@ public class BlockExecutionInfo {
    * block based on filter values
    */
   private IndexKey endKey;
+
+  private String blockId;
 
   /**
    * masked byte for block which will be used to unpack the fixed length key,
@@ -198,6 +201,19 @@ public class BlockExecutionInfo {
    * whether it needs to read data in vector/columnar format.
    */
   private boolean vectorBatchCollector;
+
+  /**
+   * absolute table identifier
+   */
+  private AbsoluteTableIdentifier absoluteTableIdentifier;
+
+  public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
+    return absoluteTableIdentifier;
+  }
+
+  public void setAbsoluteTableIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier) {
+    this.absoluteTableIdentifier = absoluteTableIdentifier;
+  }
 
   /**
    * @param blockIndex the tableBlock to set
@@ -576,5 +592,13 @@ public class BlockExecutionInfo {
 
   public void setVectorBatchCollector(boolean vectorBatchCollector) {
     this.vectorBatchCollector = vectorBatchCollector;
+  }
+
+  public String getBlockId() {
+    return blockId;
+  }
+
+  public void setBlockId(String blockId) {
+    this.blockId = blockId;
   }
 }
