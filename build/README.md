@@ -29,14 +29,14 @@
 ## Build release version
 Note:Need install Apache Thrift
 ```
-mvn clean -DskipTests -Pbuild-with-format install
+mvn clean -DskipTests -Pbuild-with-format -Pspark-1.6 install
 ```
 
 ## Build dev version(snapshot version,clone from github)
 Note:Already uploaded format.jar to snapshot repo for facilitating dev users,
 so the compilation command works without "-Pbuild-with-format"
 
-Build without test,by default carbondata takes Spark 1.5.2 to build the project
+Build without test,by default carbondata takes Spark 1.6.2 to build the project
 ```
 mvn -DskipTests clean package
 ```
