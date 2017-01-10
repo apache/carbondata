@@ -19,15 +19,10 @@
 
 package org.apache.carbondata.processing.util;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -373,83 +368,15 @@ public final class CarbonDataProcessorUtil {
     return complexTypesMap;
   }
 
-  /**
-   * Get the csv file to read if it the path is file otherwise get the first file of directory.
-   *
-   * @param csvFilePath
-   * @return File
-   */
-  public static CarbonFile getCsvFileToRead(String csvFilePath) {
-    CarbonFile csvFile =
-        FileFactory.getCarbonFile(csvFilePath, FileFactory.getFileType(csvFilePath));
-
-    CarbonFile[] listFiles = null;
-    if (csvFile.isDirectory()) {
-      listFiles = csvFile.listFiles(new CarbonFileFilter() {
-        @Override public boolean accept(CarbonFile pathname) {
-          if (!pathname.isDirectory()) {
-            if (pathname.getName().endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION) || pathname
-                .getName().endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION
-                    + CarbonCommonConstants.FILE_INPROGRESS_STATUS)) {
-              return true;
-            }
-          }
-          return false;
-        }
-      });
-    } else {
-      listFiles = new CarbonFile[1];
-      listFiles[0] = csvFile;
-    }
-    return listFiles[0];
-  }
-
-  /**
-   * Get the file header from csv file.
-   */
-  public static String getFileHeader(CarbonFile csvFile)
-      throws DataLoadingException {
-    DataInputStream fileReader = null;
-    BufferedReader bufferedReader = null;
-    String readLine = null;
-
-    FileType fileType = FileFactory.getFileType(csvFile.getAbsolutePath());
-
-    if (!csvFile.exists()) {
-      csvFile = FileFactory
-          .getCarbonFile(csvFile.getAbsolutePath() + CarbonCommonConstants.FILE_INPROGRESS_STATUS,
-              fileType);
-    }
-
-    try {
-      fileReader = FileFactory.getDataInputStream(csvFile.getAbsolutePath(), fileType);
-      bufferedReader =
-          new BufferedReader(new InputStreamReader(fileReader, Charset.defaultCharset()));
-      readLine = bufferedReader.readLine();
-    } catch (FileNotFoundException e) {
-      LOGGER.error(e, "CSV Input File not found  " + e.getMessage());
-      throw new DataLoadingException("CSV Input File not found ", e);
-    } catch (IOException e) {
-      LOGGER.error(e, "Not able to read CSV input File  " + e.getMessage());
-      throw new DataLoadingException("Not able to read CSV input File ", e);
-    } finally {
-      CarbonUtil.closeStreams(fileReader, bufferedReader);
-    }
-
-    return readLine;
-  }
-
-  public static boolean isHeaderValid(String tableName, String header,
-      CarbonDataLoadSchema schema, String delimiter) throws DataLoadingException {
-    delimiter = CarbonUtil.delimiterConverter(delimiter);
+  public static boolean isHeaderValid(String tableName, String[] csvHeader,
+      CarbonDataLoadSchema schema) throws DataLoadingException {
     String[] columnNames =
         CarbonDataProcessorUtil.getSchemaColumnNames(schema, tableName).toArray(new String[0]);
-    String[] csvHeader = header.toLowerCase().split(delimiter);
 
-    List<String> csvColumnsList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    List<String> csvColumnsList = new ArrayList<String>(csvHeader.length);
 
     for (String column : csvHeader) {
-      csvColumnsList.add(column.replaceAll("\"", "").trim());
+      csvColumnsList.add(column);
     }
 
     int count = 0;
@@ -460,6 +387,13 @@ public final class CarbonDataProcessorUtil {
       }
     }
     return count == columnNames.length;
+  }
+
+  public static boolean isHeaderValid(String tableName, String header,
+      CarbonDataLoadSchema schema, String delimiter) throws DataLoadingException {
+    delimiter = CarbonUtil.delimiterConverter(delimiter);
+    String[] csvHeader = getColumnFields(header.toLowerCase(), delimiter);
+    return isHeaderValid(tableName, csvHeader, schema);
   }
 
   /**

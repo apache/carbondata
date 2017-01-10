@@ -22,6 +22,7 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
@@ -31,9 +32,11 @@ import org.apache.spark.util.FileUtils
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.updatestatus.SegmentStatusManager
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.hadoop.csv.CSVInputFormat
 import org.apache.carbondata.processing.model.CarbonLoadModel
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object CommonUtil {
@@ -300,5 +303,46 @@ object CommonUtil {
                   s"defaultParallelism: $defaultParallelism")
       LOGGER.info(s"mapreduce.input.fileinputformat.split.maxsize: ${ newSplitSize.toString }")
     }
+  }
+
+  def getCsvHeaderColumns(carbonLoadModel: CarbonLoadModel): Array[String] = {
+    val delimiter = if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter)) {
+      CarbonCommonConstants.COMMA
+    } else {
+      CarbonUtil.delimiterConverter(carbonLoadModel.getCsvDelimiter)
+    }
+    var csvFile: String = null
+    var csvHeader: String = carbonLoadModel.getCsvHeader
+    val csvColumns = if (StringUtils.isBlank(csvHeader)) {
+      // read header from csv file
+      csvFile = carbonLoadModel.getFactFilePath.split(",")(0)
+      csvHeader = CarbonUtil.readHeader(csvFile)
+      if (StringUtils.isBlank(csvHeader)) {
+        throw new CarbonDataLoadingException("First line of the csv is not valid.")
+      }
+      csvHeader.toLowerCase().split(delimiter).map(_.replaceAll("\"", "").trim)
+    } else {
+      csvHeader.toLowerCase.split(CarbonCommonConstants.COMMA).map(_.trim)
+    }
+
+    if (!CarbonDataProcessorUtil.isHeaderValid(carbonLoadModel.getTableName, csvColumns,
+        carbonLoadModel.getCarbonDataLoadSchema)) {
+      if (csvFile == null) {
+        LOGGER.error("CSV header provided in DDL is not proper."
+                     + " Column names in schema and CSV header are not the same.")
+        throw new CarbonDataLoadingException(
+          "CSV header provided in DDL is not proper. Column names in schema and CSV header are "
+          + "not the same.")
+      } else {
+        LOGGER.error(
+          "CSV File provided is not proper. Column names in schema and csv header are not same. "
+          + "CSVFile Name : " + csvFile)
+        throw new CarbonDataLoadingException(
+          "CSV File provided is not proper. Column names in schema and csv header are not same. "
+          + "CSVFile Name : " + csvFile)
+      }
+    }
+
+    csvColumns
   }
 }

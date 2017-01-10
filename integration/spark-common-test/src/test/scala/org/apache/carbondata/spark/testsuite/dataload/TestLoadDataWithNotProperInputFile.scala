@@ -35,10 +35,9 @@ class TestLoadDataWithNotProperInputFile extends QueryTest {
 
   test("test loading data with input path exists but has nothing") {
     try {
-      val carbonLoadModel: CarbonLoadModel = new CarbonLoadModel
       val dataPath = s"$resourcesPath/nullSample.csv"
-      carbonLoadModel.setFactFilePath(FileUtils.getPaths(dataPath))
-      GlobalDictionaryUtil.loadDataFrame(sqlContext, carbonLoadModel)
+      FileUtils.getPaths(dataPath)
+      assert(false)
     } catch {
       case e: Throwable =>
         assert(e.getMessage.contains("Please check your input path and make sure " +
@@ -48,24 +47,20 @@ class TestLoadDataWithNotProperInputFile extends QueryTest {
 
   test("test loading data with input file not ends with '.csv'") {
     try {
-      val carbonLoadModel: CarbonLoadModel = new CarbonLoadModel
       val dataPath = s"$resourcesPath/noneCsvFormat.cs"
-      carbonLoadModel.setFactFilePath(FileUtils.getPaths(dataPath))
-      GlobalDictionaryUtil.loadDataFrame(sqlContext, carbonLoadModel)
+      FileUtils.getPaths(dataPath)
+      assert(true)
     } catch {
       case e: Throwable =>
-        e.printStackTrace()
-        assert(e.getMessage.contains("Please check your input path and make sure " +
-          "that files end with '.csv' and content is not empty"))
+        assert(false)
     }
   }
 
   test("test loading data with input file does not exist") {
     try {
-      val carbonLoadModel: CarbonLoadModel = new CarbonLoadModel
       val dataPath = s"$resourcesPath/input_file_does_not_exist.csv"
-      carbonLoadModel.setFactFilePath(FileUtils.getPaths(dataPath))
-      GlobalDictionaryUtil.loadDataFrame(sqlContext, carbonLoadModel)
+      FileUtils.getPaths(dataPath)
+      assert(false)
     } catch {
       case e: Throwable =>
         assert(e.getMessage.contains("The input file does not exist"))
