@@ -209,13 +209,6 @@ Syntax1:
   SET (column_name1, column_name2, ... column_name n) =  (column1_expression , column2_expression , column3_expression . .. column n_expression )
   [ WHERE { <filter_condition> } ]; 
   ```
-
-  ```ruby
-  UPDATE <CARBON TABLE>
-  SET (column_name1, column_name2, ... column_name n) =  (column1_expression , column2_expression , column3_expression . .. column n_expression )
-  [ WHERE { <filter_condition> } ];
-  ```
-  
 Syntax2:
   ```ruby
   UPDATE <CARBON TABLE>
