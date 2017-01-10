@@ -135,7 +135,8 @@ class CarbonSource extends CreatableRelationProvider
         parameters.foreach { x => map.put(x._1, x._2) }
         val bucketFields = {
           if (options.isBucketingEnabled) {
-            if (options.bucketNumber.toString.contains("-") || options.bucketNumber.toString.contains("+") ) {
+            if (options.bucketNumber.toString.contains("-") ||
+                options.bucketNumber.toString.contains("+") ) {
               throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED" +
                                                         options.bucketNumber.toString)
             }
