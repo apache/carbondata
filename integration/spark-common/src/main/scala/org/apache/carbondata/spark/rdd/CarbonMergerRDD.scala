@@ -318,7 +318,10 @@ class CarbonMergerRDD[K, V](
 
     // prepare the details required to extract the segment properties using last segment.
     if (null != carbonInputSplits && carbonInputSplits.nonEmpty) {
-      val carbonInputSplit = carbonInputSplits.last
+      // taking head as scala sequence is use and while adding it will add at first
+      // so as we need to update the update the key of older segments with latest keygenerator
+      // we need to take the top of the split
+      val carbonInputSplit = carbonInputSplits.head
       var dataFileFooter: DataFileFooter = null
 
       try {
