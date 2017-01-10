@@ -107,9 +107,6 @@
     <hadoop.version>2.2.0</hadoop.version>
     <kettle.version>4.4.0-stable</kettle.version>
     <use.kettle>true</use.kettle>
-    <spark.version>1.5.2</spark.version>
-    <scala.binary.version>2.10</scala.binary.version>
-    <scala.version>2.10.4</scala.version>
     <hadoop.deps.scope>compile</hadoop.deps.scope>
     <spark.deps.scope>compile</spark.deps.scope>
     <scala.deps.scope>compile</scala.deps.scope>
@@ -293,9 +290,29 @@
 
   <profiles>
     <profile>
+      <!--This profile does not build spark module, so user should explicitly give spark profile also like spark-1.6 -->
       <id>build-with-format</id>
       <modules>
         <module>format</module>
+      </modules>
+    </profile>
+    <profile>
+      <!-- This profile only should be used for release prepare to cover all the modules -->
+      <id>build-all</id>
+      <properties>
+        <spark.version>1.6.2</spark.version>
+        <scala.binary.version>2.10</scala.binary.version>
+        <scala.version>2.10.4</scala.version>
+        <maven.test.skip>true</maven.test.skip>
+        <flink.version>1.1.4</flink.version>
+      </properties>
+      <modules>
+        <module>format</module>
+        <module>integration/spark</module>
+        <module>examples/spark</module>
+        <module>integration/spark2</module>
+        <module>examples/spark2</module>
+        <module>examples/flink</module>
       </modules>
     </profile>
     <profile>
@@ -313,9 +330,11 @@
     </profile>
     <profile>
       <id>spark-1.5</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
+      <properties>
+        <spark.version>1.5.2</spark.version>
+        <scala.binary.version>2.10</scala.binary.version>
+        <scala.version>2.10.4</scala.version>
+      </properties>
       <modules>
         <module>integration/spark</module>
         <module>examples/spark</module>
@@ -323,6 +342,9 @@
     </profile>
     <profile>
       <id>spark-1.6</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
         <spark.version>1.6.2</spark.version>
         <scala.binary.version>2.10</scala.binary.version>
