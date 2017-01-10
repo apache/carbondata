@@ -92,6 +92,7 @@ public class ColumnSchema implements Serializable {
 
   private int precision;
 
+  private int schemaOrdinal;
   /**
    * Nested fields.  Since thrift does not support nested fields,
    * the nesting is flattened to a single list by a depth-first traversal.
@@ -99,11 +100,6 @@ public class ColumnSchema implements Serializable {
    * This field is not set when the element is a primitive type
    */
   private int numberOfChild;
-
-  /**
-   * Used when this column is part of an aggregate function.
-   */
-  private String aggregateFunction;
 
   /**
    * used in case of schema restructuring
@@ -198,7 +194,6 @@ public class ColumnSchema implements Serializable {
   }
 
   /**
-   * @param columnGroup the columnGroup to set
    */
   public void setColumnGroup(int columnGroupId) {
     this.columnGroupId = columnGroupId;
@@ -244,20 +239,6 @@ public class ColumnSchema implements Serializable {
    */
   public void setNumberOfChild(int numberOfChild) {
     this.numberOfChild = numberOfChild;
-  }
-
-  /**
-   * @return the aggregator
-   */
-  public String getAggregateFunction() {
-    return aggregateFunction;
-  }
-
-  /**
-   * @param aggregateFunction the aggregator to set
-   */
-  public void setAggregateFunction(String aggregateFunction) {
-    this.aggregateFunction = aggregateFunction;
   }
 
   /**
@@ -331,7 +312,6 @@ public class ColumnSchema implements Serializable {
   }
 
   /**
-   * @param encoderList the encoderList to set
    */
   public void setEncodingList(List<Encoding> encodingList) {
     this.encodingList = encodingList;
@@ -415,4 +395,11 @@ public class ColumnSchema implements Serializable {
     this.columnReferenceId = columnReferenceId;
   }
 
+  public int getSchemaOrdinal() {
+    return schemaOrdinal;
+  }
+
+  public void setSchemaOrdinal(int schemaOrdinal) {
+    this.schemaOrdinal = schemaOrdinal;
+  }
 }

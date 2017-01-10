@@ -20,18 +20,17 @@ package org.apache.carbondata.spark.util
 
 import java.io.File
 
-import org.apache.spark.sql.common.util.CarbonHiveContext.sql
-import org.apache.spark.sql.common.util.{CarbonHiveContext, QueryTest}
+import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
-import org.apache.carbondata.spark.load.CarbonLoadModel
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.processing.constants.TableOptionConstant
+import org.apache.carbondata.processing.model.CarbonLoadModel
 
 /**
   * Test Case for org.apache.carbondata.integration.spark.util.GlobalDictionaryUtil
-  *
-  * @date: Apr 10, 2016 10:34:58 PM
-  * @See org.apache.carbondata.integration.spark.util.GlobalDictionaryUtil
   */
 class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -43,7 +42,6 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
 
   def buildCarbonLoadModel(relation: CarbonRelation,
     filePath: String,
-    dimensionFilePath: String,
     header: String,
     allDictFilePath: String): CarbonLoadModel = {
     val carbonLoadModel = new CarbonLoadModel
@@ -55,12 +53,13 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
     carbonLoadModel.setTableName(table.getFactTableName)
     carbonLoadModel.setCarbonDataLoadSchema(carbonSchema)
     carbonLoadModel.setFactFilePath(filePath)
-    carbonLoadModel.setDimFolderPath(dimensionFilePath)
     carbonLoadModel.setCsvHeader(header)
     carbonLoadModel.setCsvDelimiter(",")
     carbonLoadModel.setComplexDelimiterLevel1("\\$")
     carbonLoadModel.setComplexDelimiterLevel2("\\:")
     carbonLoadModel.setAllDictPath(allDictFilePath)
+    carbonLoadModel.setSerializationNullFormat(
+          TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
     carbonLoadModel
   }
 
@@ -74,9 +73,8 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   def buildTestData() = {
-    pwd = new File(this.getClass.getResource("/").getPath + "/../../").getCanonicalPath
-    sampleAllDictionaryFile = pwd + "/src/test/resources/alldictionary/sample/20160423/1400_1405/*.dictionary"
-    complexAllDictionaryFile = pwd + "/src/test/resources/alldictionary/complex/20160423/1400_1405/*.dictionary"
+    sampleAllDictionaryFile = s"${resourcesPath}/alldictionary/sample/20160423/1400_1405/*.dictionary"
+    complexAllDictionaryFile = s"${resourcesPath}/alldictionary/complex/20160423/1400_1405/*.dictionary"
   }
 
   def buildTable() = {
@@ -86,7 +84,7 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
           "age INT) STORED BY 'org.apache.carbondata.format'"
       )
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
     try {
       sql(
@@ -99,21 +97,23 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
           "TBLPROPERTIES('DICTIONARY_EXCLUDE'='ROMSize')"
       )
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
   }
 
   def buildRelation() = {
-    val catalog = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
-    sampleRelation = catalog.lookupRelation1(Option("default"), "sample")(CarbonHiveContext).asInstanceOf[CarbonRelation]
-    complexRelation = catalog.lookupRelation1(Option("default"), "complextypes")(CarbonHiveContext).asInstanceOf[CarbonRelation]
+    val catalog = CarbonEnv.get.carbonMetastore
+    sampleRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "sample")(sqlContext).asInstanceOf[CarbonRelation]
+    complexRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "complextypes")(sqlContext).asInstanceOf[CarbonRelation]
   }
 
   test("Support generate global dictionary from all dictionary files") {
     val header = "id,name,city,age"
-    val carbonLoadModel = buildCarbonLoadModel(sampleRelation, null, null, header, sampleAllDictionaryFile)
+    val carbonLoadModel = buildCarbonLoadModel(sampleRelation, null, header, sampleAllDictionaryFile)
     GlobalDictionaryUtil
-      .generateGlobalDictionary(CarbonHiveContext,
+      .generateGlobalDictionary(sqlContext,
         carbonLoadModel,
         sampleRelation.tableMeta.storePath)
 
@@ -123,9 +123,9 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("Support generate global dictionary from all dictionary files for complex type") {
     val header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber"
-    val carbonLoadModel = buildCarbonLoadModel(complexRelation, null, null, header, complexAllDictionaryFile)
+    val carbonLoadModel = buildCarbonLoadModel(complexRelation, null, header, complexAllDictionaryFile)
     GlobalDictionaryUtil
-      .generateGlobalDictionary(CarbonHiveContext,
+      .generateGlobalDictionary(sqlContext,
       carbonLoadModel,
       complexRelation.tableMeta.storePath)
 

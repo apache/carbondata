@@ -53,6 +53,11 @@ public final class DataProcessorConstants {
    */
   public static final String YEAR = "YEAR";
 
+  /**
+   * if data load fails due to bad record
+   */
+  public static final long BAD_REC_FAILURE_ERROR_CODE = 223732674;
+
   private DataProcessorConstants() {
 
   }

@@ -22,23 +22,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.scan.expression.ColumnExpression;
 import org.apache.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.scan.filter.DimColumnFilterInfo;
-import org.apache.carbondata.scan.filter.FilterUtil;
 import org.apache.carbondata.scan.filter.resolver.metadata.FilterResolverMetadata;
 import org.apache.carbondata.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
 public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorIntf {
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(CustomTypeDictionaryVisitor.class.getName());
 
   /**
    * This Visitor method is been used to resolve or populate the filter details
@@ -60,10 +55,8 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
     } catch (FilterIllegalMemberException e) {
       throw new FilterUnsupportedException(e);
     }
-    boolean isNotTimestampType = FilterUtil.checkIfDataTypeNotTimeStamp(metadata.getExpression());
-    resolvedFilterObject = getDirectDictionaryValKeyMemberForFilter(metadata.getTableIdentifier(),
-        metadata.getColumnExpression(), evaluateResultListFinal, metadata.isIncludeFilter(),
-        isNotTimestampType);
+    resolvedFilterObject = getDirectDictionaryValKeyMemberForFilter(metadata.getColumnExpression(),
+        evaluateResultListFinal, metadata.isIncludeFilter());
     if (!metadata.isIncludeFilter() && null != resolvedFilterObject && !resolvedFilterObject
         .getFilterList().contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
       // Adding default surrogate key of null member inorder to not display the same while
@@ -76,13 +69,13 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
   }
 
   private DimColumnFilterInfo getDirectDictionaryValKeyMemberForFilter(
-      AbsoluteTableIdentifier tableIdentifier, ColumnExpression columnExpression,
-      List<String> evaluateResultListFinal, boolean isIncludeFilter, boolean isNotTimestampType) {
+      ColumnExpression columnExpression, List<String> evaluateResultListFinal,
+      boolean isIncludeFilter) {
     List<Integer> surrogates = new ArrayList<Integer>(20);
     DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
         .getDirectDictionaryGenerator(columnExpression.getDimension().getDataType());
     // Reading the dictionary value direct
-    getSurrogateValuesForDictionary(evaluateResultListFinal, surrogates, isNotTimestampType,
+    getSurrogateValuesForDictionary(evaluateResultListFinal, surrogates,
         directDictionaryGenerator);
 
     Collections.sort(surrogates);
@@ -96,12 +89,10 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
   }
 
   private void getSurrogateValuesForDictionary(List<String> evaluateResultListFinal,
-      List<Integer> surrogates, boolean isNotTimestampType,
-      DirectDictionaryGenerator directDictionaryGenerator) {
-    String timeFormat = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT;
-    if (isNotTimestampType) {
-      timeFormat = null;
-    }
+      List<Integer> surrogates, DirectDictionaryGenerator directDictionaryGenerator) {
+    String timeFormat = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
     for (String filterMember : evaluateResultListFinal) {
       surrogates
           .add(directDictionaryGenerator.generateDirectSurrogateKey(filterMember, timeFormat));

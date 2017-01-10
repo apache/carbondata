@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,6 +18,8 @@
  */
 package org.apache.carbondata.scan.complextypes;
 
+import java.io.IOException;
+
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.scan.filter.GenericQueryType;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
@@ -38,14 +39,6 @@ public class ComplexQueryType {
     this.blockIndex = blockIndex;
   }
 
-  public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder) {
-    if (null == blockChunkHolder.getDimensionDataChunk()[blockIndex]) {
-      blockChunkHolder.getDimensionDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
-          .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
-    }
-    children.fillRequiredBlockData(blockChunkHolder);
-  }
-
   /**
    * Method will copy the block chunk holder data to the passed
    * byte[], this method is also used by child
@@ -55,23 +48,14 @@ public class ComplexQueryType {
    */
   protected void copyBlockDataChunk(DimensionColumnDataChunk[] dimensionColumnDataChunks,
       int rowNumber, byte[] input) {
-    byte[] data = (byte[]) dimensionColumnDataChunks[blockIndex].getCompleteDataChunk();
-    if (null != dimensionColumnDataChunks[blockIndex].getAttributes().getInvertedIndexes()) {
-      System.arraycopy(data, dimensionColumnDataChunks[blockIndex].getAttributes()
-              .getInvertedIndexesReverse()[rowNumber] * dimensionColumnDataChunks[blockIndex]
-              .getAttributes().getColumnValueSize(), input, 0,
-          dimensionColumnDataChunks[blockIndex].getAttributes().getColumnValueSize());
-    } else {
-      System.arraycopy(data,
-          rowNumber * dimensionColumnDataChunks[blockIndex].getAttributes().getColumnValueSize(),
-          input, 0, dimensionColumnDataChunks[blockIndex].getAttributes().getColumnValueSize());
-    }
+    byte[] data = dimensionColumnDataChunks[blockIndex].getChunkData(rowNumber);
+    System.arraycopy(data, 0, input, 0, data.length);
   }
 
   /*
    * This method will read the block data chunk from the respective block
    */
-  protected void readBlockDataChunk(BlocksChunkHolder blockChunkHolder) {
+  protected void readBlockDataChunk(BlocksChunkHolder blockChunkHolder) throws IOException {
     if (null == blockChunkHolder.getDimensionDataChunk()[blockIndex]) {
       blockChunkHolder.getDimensionDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
           .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);

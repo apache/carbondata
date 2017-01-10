@@ -20,16 +20,17 @@ package org.apache.carbondata.spark.util
 
 import java.io.File
 
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
-import org.apache.carbondata.processing.etl.DataLoadingException
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.load.CarbonLoadModel
-import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
-import org.apache.spark.sql.common.util.CarbonHiveContext
-import org.apache.spark.sql.common.util.CarbonHiveContext.sql
 import org.apache.spark.sql.common.util.QueryTest
-
+import org.apache.spark.sql.test.TestQueryExecutor
+import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.processing.constants.TableOptionConstant
+import org.apache.carbondata.processing.etl.DataLoadingException
+import org.apache.carbondata.processing.model.CarbonLoadModel
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
   /**
  * test case for external column dictionary generation
@@ -51,19 +52,16 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
   var header2: String = _
 
   def buildTestData() = {
-    pwd = new File(this.getClass.getResource("/").getPath + "/../../").
-        getCanonicalPath.replace("\\", "/")
-    filePath = pwd + "/src/test/resources/sample.csv"
-    complexFilePath1 = pwd + "/src/test/resources/complexdata2.csv"
-    complexFilePath2 = pwd + "/src/test/resources/verticalDelimitedData.csv"
-    extColDictFilePath1 = "deviceInformationId:" + pwd +
-      "/src/test/resources/deviceInformationId.csv,"
-      "mobile.imei:" + pwd + "/src/test/resources/mobileimei.csv,"
-      "mac:" + pwd + "/src/test/resources/mac.csv,"
-      "locationInfo.ActiveCountry:" + pwd + "/src/test/resources/locationInfoActiveCountry.csv"
-    extColDictFilePath2 = "deviceInformationId:" + pwd +
-      "/src/test/resources/deviceInformationId2.csv"
-    extColDictFilePath3 = "channelsId:" + pwd + "/src/test/resources/channelsId.csv"
+
+    filePath = s"${resourcesPath}/sample.csv"
+    complexFilePath1 = s"${resourcesPath}/complexdata2.csv"
+    complexFilePath2 = s"${resourcesPath}/verticalDelimitedData.csv"
+    extColDictFilePath1 = s"deviceInformationId:${resourcesPath}/deviceInformationId.csv," +
+      s"mobile.imei:${resourcesPath}/mobileimei.csv," +
+      s"mac:${resourcesPath}/mac.csv," +
+      s"locationInfo.ActiveCountry:${resourcesPath}/locationInfoActiveCountry.csv"
+    extColDictFilePath2 = s"deviceInformationId:${resourcesPath}/deviceInformationId2.csv"
+    extColDictFilePath3 = s"channelsId:${resourcesPath}/channelsId.csv"
     header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC," +
       "locationinfo,proddate,gamePointId,contractNumber"
     header2 = "deviceInformationId|channelsId|contractNumber"
@@ -82,7 +80,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
      TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
       """)
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
 
     try {
@@ -92,7 +90,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
      TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
       """)
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
 
     try {
@@ -107,17 +105,20 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
      TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
       """)
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
   }
 
   def buildRelation() = {
-    val catalog = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
-    extComplexRelation = catalog.lookupRelation1(Option("default"), "extComplextypes")(CarbonHiveContext)
+    val catalog = CarbonEnv.get.carbonMetastore
+    extComplexRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "extComplextypes")(sqlContext)
       .asInstanceOf[CarbonRelation]
-    verticalDelimiteRelation = catalog.lookupRelation1(Option("default"), "verticalDelimitedTable")(CarbonHiveContext)
+    verticalDelimiteRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "verticalDelimitedTable")(sqlContext)
       .asInstanceOf[CarbonRelation]
-    loadSqlRelation = catalog.lookupRelation1(Option("default"), "loadSqlTest")(CarbonHiveContext)
+    loadSqlRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "loadSqlTest")(sqlContext)
       .asInstanceOf[CarbonRelation]
   }
 
@@ -141,6 +142,8 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     carbonLoadModel.setComplexDelimiterLevel2("\\:")
     carbonLoadModel.setColDictFilePath(extColFilePath)
     carbonLoadModel.setQuoteChar("\"");
+    carbonLoadModel.setSerializationNullFormat(
+      TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
     carbonLoadModel
   }
 
@@ -154,7 +157,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     // load the first time
     var carbonLoadModel = buildCarbonLoadModel(extComplexRelation, complexFilePath1,
       header, extColDictFilePath1)
-    GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel,
+    GlobalDictionaryUtil.generateGlobalDictionary(sqlContext, carbonLoadModel,
       extComplexRelation.tableMeta.storePath)
     // check whether the dictionary is generated
     DictionaryTestCaseUtil.checkDictionary(
@@ -163,7 +166,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     // load the second time
     carbonLoadModel = buildCarbonLoadModel(extComplexRelation, complexFilePath1,
       header, extColDictFilePath2)
-    GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel,
+    GlobalDictionaryUtil.generateGlobalDictionary(sqlContext, carbonLoadModel,
       extComplexRelation.tableMeta.storePath)
     // check the old dictionary and whether the new distinct value is generated
     DictionaryTestCaseUtil.checkDictionary(
@@ -176,7 +179,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     //  when csv delimiter is comma
     var carbonLoadModel = buildCarbonLoadModel(extComplexRelation, complexFilePath1,
       header, extColDictFilePath3)
-    GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel,
+    GlobalDictionaryUtil.generateGlobalDictionary(sqlContext, carbonLoadModel,
       extComplexRelation.tableMeta.storePath)
     // check whether the dictionary is generated
     DictionaryTestCaseUtil.checkDictionary(
@@ -185,7 +188,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     //  when csv delimiter is not comma
     carbonLoadModel = buildCarbonLoadModel(verticalDelimiteRelation, complexFilePath2,
       header2, extColDictFilePath3, "|")
-    GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel,
+    GlobalDictionaryUtil.generateGlobalDictionary(sqlContext, carbonLoadModel,
       verticalDelimiteRelation.tableMeta.storePath)
     // check whether the dictionary is generated
     DictionaryTestCaseUtil.checkDictionary(
@@ -200,7 +203,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
         """)
     } catch {
       case ex: Exception =>
-        logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+        LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
         assert(false)
     }
     DictionaryTestCaseUtil.checkDictionary(
@@ -218,7 +221,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       case ex: MalformedCarbonCommandException =>
         assertResult(ex.getMessage)("Error: COLUMNDICT and ALL_DICTIONARY_PATH can not be used together " +
           "in options")
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 
@@ -233,7 +236,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       case ex: DataLoadingException =>
         assertResult(ex.getMessage)("Column gamePointId is not a key column. Only key column can be part " +
           "of dictionary and used in COLUMNDICT option.")
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 

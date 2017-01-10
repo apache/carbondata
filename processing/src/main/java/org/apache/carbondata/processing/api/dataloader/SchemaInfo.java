@@ -27,26 +27,6 @@ public class SchemaInfo {
   private String databaseName;
 
   /**
-   * srcDriverName
-   */
-  private String srcDriverName;
-
-  /**
-   * srcConUrl
-   */
-  private String srcConUrl;
-
-  /**
-   * srcUserName
-   */
-  private String srcUserName;
-
-  /**
-   * srcPwd
-   */
-  private String srcPwd;
-
-  /**
    * tableName
    */
   private String tableName;
@@ -64,6 +44,16 @@ public class SchemaInfo {
    */
   private String serializationNullFormat;
 
+  /**
+   * defines the string to specify whether the bad record logger should be enabled or not
+   */
+  private String badRecordsLoggerEnable;
+  /**
+   * defines the option to specify whether to bad record logger action
+   */
+  private String badRecordsLoggerAction;
+
+
   public String getComplexDelimiterLevel1() {
     return complexDelimiterLevel1;
   }
@@ -78,62 +68,6 @@ public class SchemaInfo {
 
   public void setComplexDelimiterLevel2(String complexDelimiterLevel2) {
     this.complexDelimiterLevel2 = complexDelimiterLevel2;
-  }
-
-  /**
-   * @return Returns the srcDriverName.
-   */
-  public String getSrcDriverName() {
-    return srcDriverName;
-  }
-
-  /**
-   * @param srcDriverName The srcDriverName to set.
-   */
-  public void setSrcDriverName(String srcDriverName) {
-    this.srcDriverName = srcDriverName;
-  }
-
-  /**
-   * @return Returns the srcConUrl.
-   */
-  public String getSrcConUrl() {
-    return srcConUrl;
-  }
-
-  /**
-   * @param srcConUrl The srcConUrl to set.
-   */
-  public void setSrcConUrl(String srcConUrl) {
-    this.srcConUrl = srcConUrl;
-  }
-
-  /**
-   * @return Returns the srcUserName.
-   */
-  public String getSrcUserName() {
-    return srcUserName;
-  }
-
-  /**
-   * @param srcUserName The srcUserName to set.
-   */
-  public void setSrcUserName(String srcUserName) {
-    this.srcUserName = srcUserName;
-  }
-
-  /**
-   * @return Returns the srcPwd.
-   */
-  public String getSrcPwd() {
-    return srcPwd;
-  }
-
-  /**
-   * @param srcPwd The srcPwd to set.
-   */
-  public void setSrcPwd(String srcPwd) {
-    this.srcPwd = srcPwd;
   }
 
   public String getTableName() {
@@ -188,4 +122,35 @@ public class SchemaInfo {
     this.serializationNullFormat = serializationNullFormat;
   }
 
+  /**
+   * returns the string to enable bad record logger
+   * @return
+   */
+  public String getBadRecordsLoggerEnable() {
+    return badRecordsLoggerEnable;
+  }
+
+  /**
+   * method sets the string to specify whether to enable or dissable the badrecord logger.
+   * @param badRecordsLoggerEnable
+   */
+  public void setBadRecordsLoggerEnable(String badRecordsLoggerEnable) {
+    this.badRecordsLoggerEnable = badRecordsLoggerEnable;
+  }
+
+  /**
+   * returns the option to set bad record logger action
+   * @return
+   */
+  public String getBadRecordsLoggerAction() {
+    return badRecordsLoggerAction;
+  }
+
+  /**
+   * set the option to set set bad record logger action
+   * @param badRecordsLoggerAction
+   */
+  public void setBadRecordsLoggerAction(String badRecordsLoggerAction) {
+    this.badRecordsLoggerAction = badRecordsLoggerAction;
+  }
 }

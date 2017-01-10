@@ -33,6 +33,7 @@ enum DataType {
 	DOUBLE = 4,
 	DECIMAL = 5,
 	TIMESTAMP = 6,
+	DATE = 7,
 	ARRAY = 20,
 	STRUCT = 21,
 }
@@ -68,7 +69,7 @@ struct ColumnSchema{
 	6: required bool dimension;  // Whether the column is a dimension or measure
 	7: optional i32 column_group_id; // The group ID for column used for row format columns, where in columns in each group are chunked together.
 	/**
-	* Used when this column contains decimal data.
+	* Used when this column contains mantissa data.
 	*/
 	8: optional i32 scale;
 	9: optional i32 precision;
@@ -87,7 +88,7 @@ struct ColumnSchema{
 
 	12: optional binary default_value;
 	
-	13: optional map<string,string> columnProperties
+	13: optional map<string,string> columnProperties;
 	
     /**
 	* To specify the visibily of the column by default its false
@@ -97,8 +98,11 @@ struct ColumnSchema{
 	/**
 	 * column reference id
 	 */
-	15: optional string columnReferenceId;	
-	
+	15: optional string columnReferenceId;
+	/**
+	 * It will have column order which user has provided
+	 */	
+	16: optional i32 schemaOrdinal
 }
 
 /**
@@ -118,12 +122,22 @@ struct SchemaEvolution{
 }
 
 /**
+* Bucketing information of fields on table
+**/
+struct BucketingInfo{
+  1: required list<ColumnSchema> table_columns;
+  2: required i32 number_of_buckets;
+}
+
+/**
 * The description of table schema
 */
 struct TableSchema{
 	1: required string table_id;  // ID used to
 	2: required list<ColumnSchema> table_columns; // Columns in the table
 	3: required SchemaEvolution schema_evolution; // History of schema evolution of this table
+  4: optional map<string,string> tableProperties; // table properties configured bu the user
+  5: optional BucketingInfo bucketingInfo; // bucketing information
 }
 
 struct TableInfo{

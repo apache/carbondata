@@ -21,14 +21,9 @@ package org.apache.carbondata.core.metadata;
 
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
-import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 
 public class BlockletInfoColumnar {
-  /**
-   * fileName.
-   */
-  private String fileName;
 
   /**
    * measureOffset.
@@ -91,14 +86,8 @@ public class BlockletInfoColumnar {
   private long[] dataIndexMapOffsets;
 
   private boolean[] aggKeyBlock;
-  /**
-   * blockletMetaSize
-   */
-  private int blockletMetaSize;
 
-  private NumberCompressor[] keyBlockUnCompressor;
-
-  private ValueCompressionModel compressionModel;
+  private WriterCompressModel compressionModel;
 
   /**
    * column min array
@@ -120,22 +109,6 @@ public class BlockletInfoColumnar {
    * indexes which are null
    */
   private BitSet[] measureNullValueIndex;
-
-  /**
-   * getFileName().
-   *
-   * @return String.
-   */
-  public String getFileName() {
-    return fileName;
-  }
-
-  /**
-   * setFileName.
-   */
-  public void setFileName(String fileName) {
-    this.fileName = fileName;
-  }
 
   /**
    * getMeasureLength
@@ -300,20 +273,6 @@ public class BlockletInfoColumnar {
   }
 
   /**
-   * @return the blockletMetaSize
-   */
-  public int getBlockletMetaSize() {
-    return blockletMetaSize;
-  }
-
-  /**
-   * @param blockletMetaSize the blockletMetaSize to set
-   */
-  public void setBlockletMetaSize(int blockletMetaSize) {
-    this.blockletMetaSize = blockletMetaSize;
-  }
-
-  /**
    * @return the dataIndexMapLenght
    */
   public int[] getDataIndexMapLength() {
@@ -343,14 +302,6 @@ public class BlockletInfoColumnar {
     this.aggKeyBlock = aggKeyBlock;
   }
 
-  public NumberCompressor[] getKeyBlockUnCompressor() {
-    return keyBlockUnCompressor;
-  }
-
-  public void setKeyBlockUnCompressor(NumberCompressor[] keyBlockUnCompressor) {
-    this.keyBlockUnCompressor = keyBlockUnCompressor;
-  }
-
   public byte[][] getColumnMaxData() {
     return this.columnMaxData;
   }
@@ -367,11 +318,11 @@ public class BlockletInfoColumnar {
     this.columnMinData = columnMinData;
   }
 
-  public ValueCompressionModel getCompressionModel() {
+  public WriterCompressModel getCompressionModel() {
     return compressionModel;
   }
 
-  public void setCompressionModel(ValueCompressionModel compressionModel) {
+  public void setCompressionModel(WriterCompressModel compressionModel) {
     this.compressionModel = compressionModel;
   }
 

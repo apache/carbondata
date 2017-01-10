@@ -25,12 +25,12 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.scan.collector.ScannedResultCollector;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.scan.executor.util.QueryUtil;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
+import org.apache.carbondata.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.scan.wrappers.ByteArrayWrapper;
 
 /**
@@ -100,19 +100,17 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
 
   private Object getMeasureData(MeasureColumnDataChunk dataChunk, int index, DataType dataType) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
-      Object msrVal;
       switch (dataType) {
+        case SHORT:
         case INT:
         case LONG:
-          msrVal = dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
-          break;
+          return dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
         case DECIMAL:
-          msrVal = dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
-          break;
+          return org.apache.spark.sql.types.Decimal
+              .apply(dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
         default:
-          msrVal = dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
+          return dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
       }
-      return DataTypeUtil.getMeasureDataBasedOnDataType(msrVal, dataType);
     }
     return null;
   }
@@ -138,7 +136,7 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
       ByteArrayWrapper key = null;
       for (int i = 0; i < listBasedResult.size(); i++) {
         // get the key
-        key = (ByteArrayWrapper)listBasedResult.get(i)[0];
+        key = (ByteArrayWrapper) listBasedResult.get(i)[0];
         // unpack the key with table block key generator
         data = tableBlockExecutionInfos.getBlockKeyGenerator()
             .getKeyArray(key.getDictionaryKey(), tableBlockExecutionInfos.getMaskedByteForBlock());
@@ -154,4 +152,8 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
     }
   }
 
+  @Override public void collectVectorBatch(AbstractScannedResult scannedResult,
+      CarbonColumnarBatch columnarBatch) {
+    throw new UnsupportedOperationException("Works only for batch collectors");
+  }
 }

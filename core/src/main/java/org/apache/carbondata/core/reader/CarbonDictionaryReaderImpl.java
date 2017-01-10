@@ -47,9 +47,9 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
   protected CarbonTableIdentifier carbonTableIdentifier;
 
   /**
-   * HDFS store path
+   * carbon dictionary data store path
    */
-  protected String hdfsStorePath;
+  protected String storePath;
 
   /**
    * column name
@@ -69,13 +69,13 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
   /**
    * Constructor
    *
-   * @param hdfsStorePath         HDFS store path
+   * @param storePath         carbon dictionary data store path
    * @param carbonTableIdentifier table identifier which will give table name and database name
    * @param columnIdentifier      column unique identifier
    */
-  public CarbonDictionaryReaderImpl(String hdfsStorePath,
+  public CarbonDictionaryReaderImpl(String storePath,
       CarbonTableIdentifier carbonTableIdentifier, ColumnIdentifier columnIdentifier) {
-    this.hdfsStorePath = hdfsStorePath;
+    this.storePath = storePath;
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.columnIdentifier = columnIdentifier;
     initFileLocation();
@@ -137,9 +137,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
         readDictionaryMetadataFile();
     List<ColumnDictionaryChunk> columnDictionaryChunks =
         read(carbonDictionaryColumnMetaChunks, startOffset, endOffset);
-    Iterator<byte[]> columnDictionaryChunkWrapper =
-        new ColumnDictionaryChunkIterator(columnDictionaryChunks);
-    return columnDictionaryChunkWrapper;
+    return (Iterator<byte[]>) new ColumnDictionaryChunkIterator(columnDictionaryChunks);
   }
 
   /**
@@ -174,9 +172,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
     // open dictionary file thrift reader
     openThriftReader();
     // read the required number of chunks from dictionary file
-    List<ColumnDictionaryChunk> columnDictionaryChunks =
-        readDictionaryFile(startOffset, dictionaryChunkCountsToBeRead);
-    return columnDictionaryChunks;
+    return readDictionaryFile(startOffset, dictionaryChunkCountsToBeRead);
   }
 
   /**
@@ -222,8 +218,8 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    */
   protected void initFileLocation() {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(columnIdentifier,
-                this.hdfsStorePath, carbonTableIdentifier);
+    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(
+            this.storePath, carbonTableIdentifier);
     this.columnDictionaryFilePath = carbonTablePath
         .getDictionaryFilePath(columnIdentifier.getColumnId());
   }
@@ -308,7 +304,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    * @return
    */
   protected CarbonDictionaryMetadataReader getDictionaryMetadataReader() {
-    return new CarbonDictionaryMetadataReaderImpl(this.hdfsStorePath, carbonTableIdentifier,
+    return new CarbonDictionaryMetadataReaderImpl(this.storePath, carbonTableIdentifier,
         this.columnIdentifier);
   }
 

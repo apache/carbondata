@@ -20,43 +20,16 @@
 package org.apache.carbondata.core.datastorage.util;
 
 import org.apache.carbondata.core.datastorage.store.NodeMeasureDataStore;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.impl.data.compressed.HeavyCompressedDoubleArrayDataInMemoryStore;
-import org.apache.carbondata.core.datastorage.store.impl.data.uncompressed.DoubleArrayDataInMemoryStore;
 
 public final class StoreFactory {
-  /**
-   * value type.
-   */
-  private static StoreType valueType;
-
-  static {
-    valueType = StoreType.HEAVY_VALUE_COMPRESSION;
-  }
 
   private StoreFactory() {
-
   }
 
-  public static NodeMeasureDataStore createDataStore(ValueCompressionModel compressionModel) {
-    switch (valueType) {
-      case COMPRESSED_DOUBLE_ARRAY:
-        return new DoubleArrayDataInMemoryStore(compressionModel);
-
-      case HEAVY_VALUE_COMPRESSION:
-        return new HeavyCompressedDoubleArrayDataInMemoryStore(compressionModel);
-      default:
-        return new HeavyCompressedDoubleArrayDataInMemoryStore(compressionModel);
-    }
-  }
-
-  /**
-   * enum defined.
-   */
-  public enum StoreType {
-    COMPRESSED_SINGLE_ARRAY,
-    COMPRESSED_DOUBLE_ARRAY,
-    HEAVY_VALUE_COMPRESSION
+  public static NodeMeasureDataStore createDataStore(WriterCompressModel compressionModel) {
+    return new HeavyCompressedDoubleArrayDataInMemoryStore(compressionModel);
   }
 
 }

@@ -18,23 +18,22 @@
  */
 package org.apache.carbondata.scan.collector.impl;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.common.iudprocessor.cache.BlockletLevelDeleteDeltaDataCache;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.model.QueryMeasure;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
 import org.apache.carbondata.scan.wrappers.ByteArrayWrapper;
 
+
 /**
  * It is not a collector it is just a scanned result holder.
  */
 public class RawBasedResultCollector extends AbstractScannedResultCollector {
-
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(RawBasedResultCollector.class.getName());
 
   public RawBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
@@ -48,6 +47,8 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
     ByteArrayWrapper wrapper = null;
+    BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
+        scannedResult.getDeleteDeltaDataCache();
     // scan the record and add to list
     int rowCounter = 0;
     while (scannedResult.hasNext() && rowCounter < batchSize) {
@@ -56,6 +57,12 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
       wrapper.setDictionaryKey(scannedResult.getDictionaryKeyArray());
       wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
       wrapper.setComplexTypesKeys(scannedResult.getComplexTypeKeyArray());
+      wrapper.setImplicitColumnByteArray(scannedResult.getBlockletId()
+          .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+      if (null != deleteDeltaDataCache && deleteDeltaDataCache
+          .contains(scannedResult.getCurrenrRowId())) {
+        continue;
+      }
       row[0] = wrapper;
       fillMeasureData(row, 1, scannedResult);
       listBasedResult.add(row);

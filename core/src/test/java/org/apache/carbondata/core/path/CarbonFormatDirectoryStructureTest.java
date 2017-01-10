@@ -53,8 +53,8 @@ public class CarbonFormatDirectoryStructureTest {
         .equals(CARBON_STORE + "/d1/t1/Metadata/t1_c1.dictmeta"));
     assertTrue(carbonTablePath.getSortIndexFilePath("t1_c1").replace("\\", "/")
         .equals(CARBON_STORE + "/d1/t1/Metadata/t1_c1.sortindex"));
-    assertTrue(carbonTablePath.getCarbonDataFilePath("1", "2", 3, 4, "999").replace("\\", "/")
-        .equals(CARBON_STORE + "/d1/t1/Fact/Part1/Segment_2/part-3-4-999.carbondata"));
+    assertTrue(carbonTablePath.getCarbonDataFilePath("1", "2", 3, 4, 0, "999").replace("\\", "/")
+        .equals(CARBON_STORE + "/d1/t1/Fact/Part1/Segment_2/part-3-4-0-999.carbondata"));
   }
 
   /**
@@ -64,10 +64,10 @@ public class CarbonFormatDirectoryStructureTest {
     assertTrue(CarbonTablePath.DataFileUtil.getPartNo("part-3-4-999.carbondata").equals("3"));
     assertTrue(CarbonTablePath.DataFileUtil.getTaskNo("part-3-4-999.carbondata").equals("4"));
     assertTrue(
-        CarbonTablePath.DataFileUtil.getUpdateTimeStamp("part-3-4-999.carbondata").equals("999"));
+        CarbonTablePath.DataFileUtil.getTimeStampFromFileName("part-3-4-999.carbondata").equals("999"));
     assertTrue(CarbonTablePath.DataFileUtil.getPartNo("/opt/apache-carbon/part-3-4-999.carbondata").equals("3"));
     assertTrue(CarbonTablePath.DataFileUtil.getTaskNo("/opt/apache-carbon/part-3-4-999.carbondata").equals("4"));
     assertTrue(
-        CarbonTablePath.DataFileUtil.getUpdateTimeStamp("/opt/apache-carbon/part-3-4-999.carbondata").equals("999"));
+        CarbonTablePath.DataFileUtil.getTimeStampFromFileName("/opt/apache-carbon/part-3-4-999.carbondata").equals("999"));
   }
 }

@@ -187,6 +187,7 @@ public class GraphGenerator {
   private String escapeCharacter;
   private String quoteCharacter;
   private String commentCharacter;
+  private String dateFormat;
   /**
    * task id, each spark task has a unique id
    */
@@ -204,16 +205,15 @@ public class GraphGenerator {
    */
   private String maxColumns;
 
-  public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
-      String factStoreLocation, int allocate,
+  private String rddIteratorKey;
+
+  public GraphGenerator(DataLoadModel dataLoadModel, String partitionID, String factStoreLocation,
       CarbonDataLoadSchema carbonDataLoadSchema, String segmentId) {
     CarbonMetadata.getInstance().addCarbonTable(carbonDataLoadSchema.getCarbonTable());
     this.schemaInfo = dataLoadModel.getSchemaInfo();
     this.tableName = dataLoadModel.getTableName();
     this.isCSVLoad = dataLoadModel.isCsvLoad();
-    this.modifiedDimension = dataLoadModel.getModifiedDimesion();
     this.isAutoAggRequest = schemaInfo.isAutoAggregateRequest();
-    //this.schema = schema;
     this.carbonDataLoadSchema = carbonDataLoadSchema;
     this.databaseName = carbonDataLoadSchema.getCarbonTable().getDatabaseName();
     this.partitionID = partitionID;
@@ -223,6 +223,7 @@ public class GraphGenerator {
     this.taskNo = dataLoadModel.getTaskNo();
     this.quoteCharacter = dataLoadModel.getQuoteCharacter();
     this.commentCharacter = dataLoadModel.getCommentCharacter();
+    this.dateFormat = dataLoadModel.getDateFormat();
     this.factTimeStamp = dataLoadModel.getFactTimeStamp();
     this.segmentId = segmentId;
     this.escapeCharacter = dataLoadModel.getEscapeCharacter();
@@ -231,12 +232,11 @@ public class GraphGenerator {
     LOGGER.info("************* Is Columnar Storage" + isColumnar);
   }
 
-  public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
-      String factStoreLocation, int allocate, CarbonDataLoadSchema carbonDataLoadSchema,
-      String segmentId, String outputLocation) {
-    this(dataLoadModel, isHDFSReadMode, partitionID, factStoreLocation, allocate,
-        carbonDataLoadSchema, segmentId);
+  public GraphGenerator(DataLoadModel dataLoadModel, String partitionID, String factStoreLocation,
+      CarbonDataLoadSchema carbonDataLoadSchema, String segmentId, String outputLocation) {
+    this(dataLoadModel, partitionID, factStoreLocation, carbonDataLoadSchema, segmentId);
     this.outputLocation = outputLocation;
+    this.rddIteratorKey = dataLoadModel.getRddIteratorKey();
   }
 
   /**
@@ -253,7 +253,7 @@ public class GraphGenerator {
     try {
       String xml = transMeta.getXML();
       dos = new DataOutputStream(new FileOutputStream(new File(graphFile)));
-      dos.write(xml.getBytes("UTF-8"));
+      dos.write(xml.getBytes(CarbonCommonConstants.DEFAULT_CHARSET));
     } catch (KettleException kettelException) {
       throw new GraphGeneratorException("Error while getting the graph XML", kettelException);
     }
@@ -413,7 +413,7 @@ public class GraphGenerator {
     fileInputMeta.setFilenameField("filename");
     fileInputMeta.setFileName(new String[] { "${csvInputFilePath}" });
     fileInputMeta.setDefault();
-    fileInputMeta.setEncoding("UTF-8");
+    fileInputMeta.setEncoding(CarbonCommonConstants.DEFAULT_CHARSET);
     fileInputMeta.setEnclosure("\"");
     fileInputMeta.setHeader(true);
     fileInputMeta.setSeparator(",");
@@ -439,7 +439,7 @@ public class GraphGenerator {
     // Init the Filename...
     csvInputMeta.setFilename("${csvInputFilePath}");
     csvInputMeta.setDefault();
-    csvInputMeta.setEncoding("UTF-8");
+    csvInputMeta.setEncoding(CarbonCommonConstants.DEFAULT_CHARSET);
     csvInputMeta.setEnclosure("\"");
     csvInputMeta.setHeaderPresent(true);
     csvInputMeta.setMaxColumns(maxColumns);
@@ -456,6 +456,7 @@ public class GraphGenerator {
     csvInputMeta.setEscapeCharacter(this.escapeCharacter);
     csvInputMeta.setQuoteCharacter(this.quoteCharacter);
     csvInputMeta.setCommentCharacter(this.commentCharacter);
+    csvInputMeta.setRddIteratorKey(this.rddIteratorKey == null ? "" : this.rddIteratorKey);
     csvDataStep.setDraw(true);
     csvDataStep.setDescription("Read raw data from " + GraphGeneratorConstants.CSV_INPUT);
 
@@ -555,7 +556,6 @@ public class GraphGenerator {
     seqMeta.setDatabaseName(schemaInfo.getDatabaseName());
     seqMeta.setComplexDelimiterLevel1(schemaInfo.getComplexDelimiterLevel1());
     seqMeta.setComplexDelimiterLevel2(schemaInfo.getComplexDelimiterLevel2());
-    seqMeta.setCarbonMetaHier(graphConfiguration.getMetaHeirString());
     seqMeta.setCarbonmsr(graphConfiguration.getMeasuresString());
     seqMeta.setCarbonProps(graphConfiguration.getPropertiesString());
     seqMeta.setCarbonhier(graphConfiguration.getHiersString());
@@ -566,6 +566,7 @@ public class GraphGenerator {
         graphConfiguration.getColumnAndTableNameColumnMapForAgg());
     seqMeta.setForgienKeyPrimayKeyString(graphConfiguration.getForgienKeyAndPrimaryKeyMapString());
     seqMeta.setTableName(graphConfiguration.getTableName());
+    seqMeta.setDateFormat(dateFormat);
     seqMeta.setModifiedDimension(modifiedDimension);
     seqMeta.setForeignKeyHierarchyString(graphConfiguration.getForeignKeyHierarchyString());
     seqMeta.setPrimaryKeysString(graphConfiguration.getPrimaryKeyString());
@@ -816,7 +817,7 @@ public class GraphGenerator {
     graphConfiguration.setNoDictionaryDims(noDictionarydimString.toString());
 
     String tableString =
-        CarbonSchemaParser.getTableNameString(factTableName, dimensions, carbonDataLoadSchema);
+        CarbonSchemaParser.getTableNameString(dimensions, carbonDataLoadSchema);
     String dimensionColumnIds = CarbonSchemaParser.getColumnIdString(dimensions);
     graphConfiguration.setDimensionTableNames(tableString);
     graphConfiguration.setDimensionString(dimString.toString());
@@ -882,9 +883,6 @@ public class GraphGenerator {
     // check quotes required in query or Not
     boolean isQuotesRequired = true;
     String quote = CarbonSchemaParser.QUOTES;
-    if (null != schemaInfo.getSrcDriverName()) {
-      quote = getQuoteType(schemaInfo);
-    }
     graphConfiguration.setTableInputSqlQuery(CarbonSchemaParser
         .getTableInputSQLQuery(dimensions, measures,
             carbonDataLoadSchema.getCarbonTable().getFactTableName(), isQuotesRequired,
@@ -901,10 +899,6 @@ public class GraphGenerator {
 
     graphConfiguration.setMeasures(CarbonSchemaParser.getMeasures(measures));
     graphConfiguration.setAGG(false);
-    graphConfiguration.setUsername(schemaInfo.getSrcUserName());
-    graphConfiguration.setPassword(schemaInfo.getSrcPwd());
-    graphConfiguration.setDriverclass(schemaInfo.getSrcDriverName());
-    graphConfiguration.setConnectionUrl(schemaInfo.getSrcConUrl());
     return graphConfiguration;
   }
 
@@ -916,26 +910,9 @@ public class GraphGenerator {
   private TableOptionWrapper getTableOptionWrapper() {
     TableOptionWrapper tableOptionWrapper = TableOptionWrapper.getTableOptionWrapperInstance();
     tableOptionWrapper.setTableOption(schemaInfo.getSerializationNullFormat());
+    tableOptionWrapper.setTableOption(schemaInfo.getBadRecordsLoggerEnable());
+    tableOptionWrapper.setTableOption(schemaInfo.getBadRecordsLoggerAction());
     return tableOptionWrapper;
-  }
-
-  private String getQuoteType(SchemaInfo schemaInfo) throws GraphGeneratorException {
-    String driverClass = schemaInfo.getSrcDriverName();
-    String type = DRIVERS.get(driverClass);
-
-    if (null == type) {
-      LOGGER.error("Driver : \"" + driverClass + " \"Not Supported.");
-      throw new GraphGeneratorException("Driver : \"" + driverClass + " \"Not Supported.");
-    }
-
-    if (type.equals(CarbonCommonConstants.TYPE_ORACLE) || type
-        .equals(CarbonCommonConstants.TYPE_MSSQL)) {
-      return CarbonSchemaParser.QUOTES;
-    } else if (type.equals(CarbonCommonConstants.TYPE_MYSQL)) {
-      return CarbonSchemaParser.QUOTES;
-    }
-
-    return CarbonSchemaParser.QUOTES;
   }
 
   public CarbonTable getTable() {
@@ -950,7 +927,6 @@ public class GraphGenerator {
    */
   private void prepareNoDictionaryMapping(List<CarbonDimension> dims,
       GraphConfigurationInfo graphConfig) {
-    // boolean[] NoDictionaryMapping = new boolean[dims.size()];
     List<Boolean> noDictionaryMapping = new ArrayList<Boolean>();
     for (CarbonDimension dimension : dims) {
       // for  complex type need to break the loop
@@ -980,7 +956,7 @@ public class GraphGenerator {
       GraphConfigurationInfo graphConfig) {
     List<Boolean> isUseInvertedIndexList = new ArrayList<Boolean>();
     for (CarbonDimension dimension : dims) {
-      if (dimension.isUseInvertedIndnex()) {
+      if (dimension.isUseInvertedIndex()) {
         isUseInvertedIndexList.add(true);
       } else {
         isUseInvertedIndexList.add(false);

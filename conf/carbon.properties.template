@@ -52,7 +52,7 @@ carbon.compaction.level.threshold=4,3
 #default size (in MB) for major compaction to be triggered
 carbon.major.compaction.size=1024
 ######## Query Configuration ########
-#Number of cores to be used while querying
+#Number of cores to be used for loading index into memory
 carbon.number.of.cores=4
 #Number of records to be in memory while querying :MIN=100000:MAX=240000
 carbon.inmemory.record.size=120000
@@ -83,8 +83,6 @@ carbon.enable.quick.filter=false
 #carbon.blocklet.size=120000
 ##number of retries to get the metadata lock for loading data to table
 #carbon.load.metadata.lock.retries=3
-##Maximum number of blocklets written in a single file :Min=1:Max=1000
-#carbon.max.file.size=100
 ##Minimum blocklets needed for distribution.
 #carbon.blockletdistribution.min.blocklet.size=10
 ##Interval between the retries to get the lock

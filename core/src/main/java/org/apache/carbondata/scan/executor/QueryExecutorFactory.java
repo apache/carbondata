@@ -19,6 +19,8 @@
 package org.apache.carbondata.scan.executor;
 
 import org.apache.carbondata.scan.executor.impl.DetailQueryExecutor;
+import org.apache.carbondata.scan.executor.impl.VectorDetailQueryExecutor;
+import org.apache.carbondata.scan.model.QueryModel;
 
 /**
  * Factory class to get the query executor from RDD
@@ -26,7 +28,11 @@ import org.apache.carbondata.scan.executor.impl.DetailQueryExecutor;
  */
 public class QueryExecutorFactory {
 
-  public static QueryExecutor getQueryExecutor() {
-    return new DetailQueryExecutor();
+  public static QueryExecutor getQueryExecutor(QueryModel queryModel) {
+    if (queryModel.isVectorReader()) {
+      return new VectorDetailQueryExecutor();
+    } else {
+      return new DetailQueryExecutor();
+    }
   }
 }

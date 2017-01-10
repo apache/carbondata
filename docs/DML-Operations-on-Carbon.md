@@ -21,8 +21,8 @@
 * [SHOW SEGMENTS](#SHOW SEGMENTS)
 * [DELETE SEGMENT BY ID](#DELETE SEGMENT BY ID)
 * [DELETE SEGMENT BY DATE](#DELETE SEGMENT BY DATE)
-* [UPDATE CARBON TABLE] (# UPDATE CARBON TABLE)
-* [DELETE RECORDS from CARBON TABLE] (# DELETE RECORDS from CARBON TABLE)
+* [UPDATE CARBON TABLE] (#UPDATE CARBON TABLE)
+* [DELETE RECORDS from CARBON TABLE] (#DELETE RECORDS from CARBON TABLE)
 
 ***
 
@@ -237,7 +237,6 @@ Following are the conditions to use UPDATE:
 - The update command fails if multiple input rows in source table are matched with single row in destination table.
 - If the source table generates empty records, the update operation will complete without updating the table.
 - If a source table row does not correspond to any of the existing rows in a destination table, the update operation will complete without updating the table.
-- UPDATE is not supported on the table which has secondary index.
 - In sub-query, if the source table and the target table are same, then the update operation fails.
 - If the sub-query used in UPDATE statement contains aggregate method or group by query, then the UPDATE operation fails.
   For example, update t_carbn01 a set (a.item_type_code, a.profit) = ( select b.item_type_cd, sum(b.profit) from t_carbn01b b where item_type_cd =2 group by item_type_code);
@@ -286,9 +285,6 @@ DELETE FROM CARBON_TABLE [WHERE expression];
 | ------------- | -----|
 | CARBON TABLE | The name of the Carbon table in which you want to perform the delete. |
  
-### Usage Guidelines
-DELETE is not supported on the table which has secondary index.
-
 **Example1:**
   ```ruby
   delete from columncarbonTable1 d where d.column1  = 'china'

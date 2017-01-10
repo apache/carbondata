@@ -18,22 +18,7 @@
  */
 package org.apache.carbondata.test.util;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
+import com.google.gson.Gson;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
@@ -72,9 +57,9 @@ import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWrit
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriterImpl;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfo;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfoPreparator;
-import org.apache.carbondata.lcm.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.lcm.fileoperations.AtomicFileOperationsImpl;
-import org.apache.carbondata.lcm.fileoperations.FileWriteOperation;
+import org.apache.carbondata.fileoperations.AtomicFileOperations;
+import org.apache.carbondata.fileoperations.AtomicFileOperationsImpl;
+import org.apache.carbondata.fileoperations.FileWriteOperation;
 import org.apache.carbondata.processing.api.dataloader.DataLoadModel;
 import org.apache.carbondata.processing.api.dataloader.SchemaInfo;
 import org.apache.carbondata.processing.csvload.DataGraphExecuter;
@@ -82,9 +67,12 @@ import org.apache.carbondata.processing.dataprocessor.DataProcessTaskStatus;
 import org.apache.carbondata.processing.dataprocessor.IDataProcessStatus;
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator;
 import org.apache.carbondata.processing.graphgenerator.GraphGeneratorException;
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+import org.apache.hadoop.fs.Path;
 
-import com.google.gson.Gson;
+import java.io.*;
+import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * This class will create store file based on provided schema
@@ -357,26 +345,26 @@ public class StoreCreator {
       path.delete();
     }
 
-    DataProcessTaskStatus schmaModel = new DataProcessTaskStatus(databaseName, tableName);
-    schmaModel.setCsvFilePath(loadModel.getFactFilePath());
+    DataProcessTaskStatus dataProcessTaskStatus = new DataProcessTaskStatus(databaseName, tableName);
+    dataProcessTaskStatus.setCsvFilePath(loadModel.getFactFilePath());
     SchemaInfo info = new SchemaInfo();
-    BlockDetails blockDetails = new BlockDetails(loadModel.getFactFilePath(),
+    BlockDetails blockDetails = new BlockDetails(new Path(loadModel.getFactFilePath()),
         0, new File(loadModel.getFactFilePath()).length(), new String[] {"localhost"});
     GraphGenerator.blockInfo.put("qwqwq", new BlockDetails[] { blockDetails });
-    schmaModel.setBlocksID("qwqwq");
-    schmaModel.setEscapeCharacter("\\");
-    schmaModel.setQuoteCharacter("\"");
-    schmaModel.setCommentCharacter("#");
+    dataProcessTaskStatus.setBlocksID("qwqwq");
+    dataProcessTaskStatus.setEscapeCharacter("\\");
+    dataProcessTaskStatus.setQuoteCharacter("\"");
+    dataProcessTaskStatus.setCommentCharacter("#");
+    dataProcessTaskStatus.setDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
     info.setDatabaseName(databaseName);
     info.setTableName(tableName);
 
-    generateGraph(schmaModel, info, loadModel.getTableName(), "0", loadModel.getSchema(), null,
+    generateGraph(dataProcessTaskStatus, info, loadModel.getTableName(), "0", loadModel.getSchema(), null,
         loadModel.getLoadMetadataDetails());
 
-    DataGraphExecuter graphExecuter = new DataGraphExecuter(schmaModel);
+    DataGraphExecuter graphExecuter = new DataGraphExecuter(dataProcessTaskStatus);
     graphExecuter
-        .executeGraph(graphPath, new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN),
-            info, "0", loadModel.getSchema());
+        .executeGraph(graphPath, info, loadModel.getSchema());
     //    LoadMetadataDetails[] loadDetails =
     //        CarbonUtil.readLoadMetadata(loadModel.schema.getCarbonTable().getMetaDataFilepath());
     writeLoadMetadata(loadModel.schema, loadModel.getTableName(), loadModel.getTableName(),
@@ -410,10 +398,10 @@ public class StoreCreator {
   public static void writeLoadMetadata(CarbonDataLoadSchema schema, String databaseName,
       String tableName, List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
     LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
-    loadMetadataDetails.setTimestamp(readCurrentTime());
+    loadMetadataDetails.setLoadEndTime(System.currentTimeMillis());
     loadMetadataDetails.setLoadStatus("SUCCESS");
     loadMetadataDetails.setLoadName(String.valueOf(0));
-    loadMetadataDetails.setLoadStartTime(readCurrentTime());
+    loadMetadataDetails.setLoadStartTime(loadMetadataDetails.getTimeStamp(readCurrentTime()));
     listOfLoadFolderDetails.add(loadMetadataDetails);
 
     String dataLoadLocation = schema.getCarbonTable().getMetaDataFilepath() + File.separator
@@ -453,7 +441,7 @@ public class StoreCreator {
   /**
    * generate graph
    *
-   * @param schmaModel
+   * @param dataProcessTaskStatus
    * @param info
    * @param tableName
    * @param partitionID
@@ -462,34 +450,25 @@ public class StoreCreator {
    * @param loadMetadataDetails
    * @throws GraphGeneratorException
    */
-  private static void generateGraph(IDataProcessStatus schmaModel, SchemaInfo info,
+  private static void generateGraph(IDataProcessStatus dataProcessTaskStatus, SchemaInfo info,
       String tableName, String partitionID, CarbonDataLoadSchema schema, String factStoreLocation,
       List<LoadMetadataDetails> loadMetadataDetails)
       throws GraphGeneratorException {
     DataLoadModel model = new DataLoadModel();
-    model.setCsvLoad(null != schmaModel.getCsvFilePath() || null != schmaModel.getFilesToProcess());
+    model.setCsvLoad(null != dataProcessTaskStatus.getCsvFilePath() || null != dataProcessTaskStatus.getFilesToProcess());
     model.setSchemaInfo(info);
-    model.setTableName(schmaModel.getTableName());
+    model.setTableName(dataProcessTaskStatus.getTableName());
     model.setTaskNo("1");
-    model.setBlocksID(schmaModel.getBlocksID());
-    model.setFactTimeStamp(readCurrentTime());
-    model.setEscapeCharacter(schmaModel.getEscapeCharacter());
-    model.setQuoteCharacter(schmaModel.getQuoteCharacter());
-    model.setCommentCharacter(schmaModel.getCommentCharacter());
-    if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
-      model.setLoadNames(
-          CarbonDataProcessorUtil.getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));
-      model.setModificationOrDeletionTime(CarbonDataProcessorUtil
-          .getModificationOrDeletionTimesFromLoadMetadataDetails(loadMetadataDetails));
-    }
-    boolean hdfsReadMode =
-        schmaModel.getCsvFilePath() != null && schmaModel.getCsvFilePath().startsWith("hdfs:");
-    int allocate = null != schmaModel.getCsvFilePath() ? 1 : schmaModel.getFilesToProcess().size();
+    model.setBlocksID(dataProcessTaskStatus.getBlocksID());
+    model.setFactTimeStamp(System.currentTimeMillis() + "");
+    model.setEscapeCharacter(dataProcessTaskStatus.getEscapeCharacter());
+    model.setQuoteCharacter(dataProcessTaskStatus.getQuoteCharacter());
+    model.setCommentCharacter(dataProcessTaskStatus.getCommentCharacter());
+    model.setDateFormat(dataProcessTaskStatus.getDateFormat());
     String outputLocation = CarbonProperties.getInstance()
         .getProperty("store_output_location", "../carbon-store/system/carbon/etl");
     GraphGenerator generator =
-        new GraphGenerator(model, hdfsReadMode, partitionID, factStoreLocation,
-            allocate, schema, "0", outputLocation);
+        new GraphGenerator(model, partitionID, factStoreLocation, schema, "0", outputLocation);
     generator.generateGraph();
   }
 

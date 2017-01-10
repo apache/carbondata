@@ -21,28 +21,38 @@ package org.apache.carbondata.core.carbon.metadata.datatype;
 
 public enum DataType {
 
-  STRING(0),
-  DATE(1),
-  TIMESTAMP(2),
-  BOOLEAN(1),
-  SHORT(2),
-  INT(3),
-  FLOAT(4),
-  LONG(5),
-  DOUBLE(6),
-  NULL(7),
-  DECIMAL(8),
-  ARRAY(9),
-  STRUCT(10),
-  MAP(11);
+  STRING(0, "STRING"),
+  DATE(1, "DATE"),
+  TIMESTAMP(2, "TIMESTAMP"),
+  BOOLEAN(1, "BOOLEAN"),
+  SHORT(2, "SMALLINT"),
+  INT(3, "INT"),
+  FLOAT(4, "FLOAT"),
+  LONG(5, "BIGINT"),
+  DOUBLE(6, "DOUBLE"),
+  NULL(7, "NULL"),
+  DECIMAL(8, "DECIMAL"),
+  ARRAY(9, "ARRAY"),
+  STRUCT(10, "STRUCT"),
+  MAP(11, "MAP");
 
-  private int presedenceOrder;
+  private int precedenceOrder;
+  private String name ;
 
-  DataType(int value) {
-    this.presedenceOrder = value;
+  DataType(int value ,String  name) {
+    this.precedenceOrder = value;
+    this.name = name;
   }
 
-  public int getPresedenceOrder() {
-    return presedenceOrder;
+  public int getPrecedenceOrder() {
+    return precedenceOrder;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public boolean isComplexType() {
+    return precedenceOrder >= 9 && precedenceOrder <= 11;
   }
 }

@@ -29,7 +29,7 @@ public abstract class BinaryConditionalExpression extends BinaryLogicalExpressio
    *
    */
   private static final long serialVersionUID = 1L;
-
+  public boolean isNull;
   public BinaryConditionalExpression(Expression left, Expression right) {
     super(left, right);
   }

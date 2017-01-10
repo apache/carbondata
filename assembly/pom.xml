@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.apache.carbondata</groupId>
     <artifactId>carbondata-parent</artifactId>
-    <version>0.2.0-incubating-SNAPSHOT</version>
+    <version>1.0.0-incubating-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -34,6 +34,9 @@
     <carbondata.jar.dir>scala-${scala.binary.version}</carbondata.jar.dir>
     <carbondata.jar.basename>carbondata_${scala.binary.version}-${project.version}-shade-hadoop${hadoop.version}.jar</carbondata.jar.basename>
     <carbondata.jar>${project.build.directory}/${carbondata.jar.dir}/${carbondata.jar.basename}</carbondata.jar>
+    <hadoop.deps.scope>provided</hadoop.deps.scope>
+    <spark.deps.scope>provided</spark.deps.scope>
+    <scala.deps.scope>provided</scala.deps.scope>
     <dev.path>${basedir}/../dev</dev.path>
   </properties>
 
@@ -51,11 +54,6 @@
     <dependency>
       <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-processing</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
@@ -128,15 +126,38 @@
 
   <profiles>
     <profile>
-      <id>provided</id>
+      <id>spark-1.5</id>
+      <!-- default -->
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
-      <properties>
-        <hadoop.deps.scope>provided</hadoop.deps.scope>
-        <spark.deps.scope>provided</spark.deps.scope>
-        <scala.deps.scope>provided</scala.deps.scope>
-      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.carbondata</groupId>
+          <artifactId>carbondata-spark</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>spark-1.6</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.carbondata</groupId>
+          <artifactId>carbondata-spark</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>spark-2.1</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.carbondata</groupId>
+          <artifactId>carbondata-spark2</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
     </profile>
     <profile>
       <id>include-all</id>

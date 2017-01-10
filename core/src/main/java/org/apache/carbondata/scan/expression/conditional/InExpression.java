@@ -48,8 +48,8 @@ public class InExpression extends BinaryConditionalExpression {
       ExpressionResult val = null;
       setOfExprResult = new HashSet<ExpressionResult>(10);
       for (ExpressionResult expressionResVal : rightRsult.getList()) {
-        if (expressionResVal.getDataType().getPresedenceOrder() < leftRsult.getDataType()
-            .getPresedenceOrder()) {
+        if (expressionResVal.getDataType().getPrecedenceOrder() < leftRsult.getDataType()
+            .getPrecedenceOrder()) {
           val = leftRsult;
         } else {
           val = expressionResVal;
@@ -70,6 +70,7 @@ public class InExpression extends BinaryConditionalExpression {
           case LONG:
             val = new ExpressionResult(val.getDataType(), expressionResVal.getLong());
             break;
+          case DATE:
           case TIMESTAMP:
             val = new ExpressionResult(val.getDataType(), expressionResVal.getTime());
             break;

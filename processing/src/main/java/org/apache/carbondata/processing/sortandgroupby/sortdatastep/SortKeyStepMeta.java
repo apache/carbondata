@@ -22,7 +22,6 @@ package org.apache.carbondata.processing.sortandgroupby.sortdatastep;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.processing.sortdatastep.SortKeyStepData;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.pentaho.di.core.CheckResultInterface;
@@ -348,13 +347,6 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
   }
 
   /**
-   * @return the tableName
-   */
-  public String getTableName() {
-    return tableName;
-  }
-
-  /**
    * @param tableName the tableName to set
    */
   public void setTableName(String tableName) {
@@ -412,35 +404,10 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
   }
 
   /**
-   * @return the factDimLensString
-   */
-  public String getFactDimLensString() {
-    return factDimLensString;
-  }
-
-  /**
-   * @param factDimLensString the factDimLensString to set
-   */
-  public void setFactDimLensString(String factDimLensString) {
-    this.factDimLensString = factDimLensString;
-  }
-
-  /**
-   * @return the isUpdateMemberRequest
-   */
-  public boolean isUpdateMemberRequest() {
-    return Boolean.parseBoolean(updateMemberRequest);
-  }
-
-  /**
    * @param isUpdateMemberRequest the isUpdateMemberRequest to set
    */
   public void setIsUpdateMemberRequest(String isUpdateMemberRequest) {
     this.updateMemberRequest = isUpdateMemberRequest;
-  }
-
-  public String getMeasureDataType() {
-    return measureDataType;
   }
 
   public void setMeasureDataType(String measureDataType) {
@@ -488,8 +455,8 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
    *
    * @return
    */
-  public int getSegmentId() {
-    return Integer.parseInt(segmentId);
+  public String getSegmentId() {
+    return segmentId;
   }
 
   /**

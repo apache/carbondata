@@ -18,13 +18,16 @@
  */
 package org.apache.carbondata.hadoop;
 
+import java.io.Serializable;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
  * User can add required columns
  */
-public class CarbonProjection {
+public class CarbonProjection implements Serializable {
+
+  private static final long serialVersionUID = -4328676723039530713L;
 
   private Set<String> columns = new LinkedHashSet<>();
 

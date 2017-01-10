@@ -49,7 +49,7 @@ public class LessThanExpression extends BinaryConditionalExpression {
       return elRes;
     }
     if (elRes.getDataType() != erRes.getDataType()) {
-      if (elRes.getDataType().getPresedenceOrder() < erRes.getDataType().getPresedenceOrder()) {
+      if (elRes.getDataType().getPrecedenceOrder() < erRes.getDataType().getPrecedenceOrder()) {
         val1 = erRes;
       }
 
@@ -67,6 +67,7 @@ public class LessThanExpression extends BinaryConditionalExpression {
       case DOUBLE:
         result = elRes.getDouble() < (erRes.getDouble());
         break;
+      case DATE:
       case TIMESTAMP:
         result = elRes.getTime() < (erRes.getTime());
         break;

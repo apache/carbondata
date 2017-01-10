@@ -19,40 +19,28 @@
 package org.apache.carbondata.spark.util
 
 import java.io.File
+import java.util.concurrent.{Callable, Executors}
 
-import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
-import org.apache.spark.sql.common.util.CarbonHiveContext
-import org.apache.spark.sql.common.util.CarbonHiveContext.sql
+import scala.collection.mutable.ListBuffer
+
 import org.apache.spark.sql.common.util.QueryTest
-
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
-import org.apache.carbondata.spark.load.CarbonLoadModel
+import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory
-import scala.collection.mutable.ListBuffer
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import java.util.concurrent.FutureTask
-import java.util.concurrent.Callable
-import java.util.concurrent.TimeUnit
-
 import org.apache.carbondata.common.ext.PathFactory
-
-import org.apache.carbondata.core.carbon.path.CarbonTablePath
-import org.apache.carbondata.core.carbon.ColumnIdentifier
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.processing.constants.TableOptionConstant
+import org.apache.carbondata.processing.model.CarbonLoadModel
 
 class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAfterAll {
 
   var sampleRelation: CarbonRelation = _
-  var workDirectory: String = _
 
   def buildCarbonLoadModel(relation: CarbonRelation,
                            filePath: String,
-                           dimensionFilePath: String,
                            header: String): CarbonLoadModel = {
     val carbonLoadModel = new CarbonLoadModel
     carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
@@ -64,38 +52,36 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     carbonLoadModel.setTableName(table.getFactTableName)
     carbonLoadModel.setCarbonDataLoadSchema(carbonSchema)
     carbonLoadModel.setFactFilePath(filePath)
-    carbonLoadModel.setDimFolderPath(dimensionFilePath)
     carbonLoadModel.setCsvHeader(header)
     carbonLoadModel.setCsvDelimiter(",")
     carbonLoadModel.setComplexDelimiterLevel1("\\$")
     carbonLoadModel.setComplexDelimiterLevel2("\\:")
     carbonLoadModel.setStorePath(relation.tableMeta.storePath)
     carbonLoadModel.setQuoteChar("\"")
+    carbonLoadModel.setSerializationNullFormat(
+      TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
     carbonLoadModel
   }
 
   override def beforeAll {
-    buildTestData
     // second time comment this line
     buildTable
     buildRelation
   }
 
-  def buildTestData() = {
-    workDirectory = new File(this.getClass.getResource("/").getPath + "/../../").getCanonicalPath.replace("\\", "/")
-  }
   def buildTable() = {
     try {
       sql(
         "CREATE TABLE IF NOT EXISTS employee (empid STRING) STORED BY 'org.apache.carbondata.format'")
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
   }
 
   def buildRelation() = {
-    val catalog = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
-    sampleRelation = catalog.lookupRelation1(Option("default"), "employee")(CarbonHiveContext)
+    val catalog = CarbonEnv.get.carbonMetastore
+    sampleRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "employee")(sqlContext)
       .asInstanceOf[CarbonRelation]
   }
   def writedummydata(filePath: String, recCount: Int) = {
@@ -114,9 +100,9 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     val files = new ListBuffer[String]()
     val loadModels = new ListBuffer[CarbonLoadModel]()
     for (i <- 0 until noOfFiles) {
-      val filePath: String = workDirectory + s"/src/test/resources/singlecolumn_${10 * (i + 1)}.csv"
+      val filePath: String = s"${integrationPath}/spark/target/singlecolumn_${10 * (i + 1)}.csv"
       files += filePath
-      loadModels += buildCarbonLoadModel(sampleRelation, filePath, null, "empid")
+      loadModels += buildCarbonLoadModel(sampleRelation, filePath, "empid")
       writedummydata(filePath, 10 * (i + 1))
     }
     try {
@@ -138,7 +124,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     val carbonTableIdentifier = sampleRelation.tableMeta.carbonTable.getCarbonTableIdentifier
     val columnIdentifier = sampleRelation.tableMeta.carbonTable.getDimensionByName("employee", "empid").getColumnIdentifier
     val carbonTablePath = PathFactory.getInstance()
-        .getCarbonTablePath(columnIdentifier, sampleRelation.tableMeta.storePath, carbonTableIdentifier);
+        .getCarbonTablePath(sampleRelation.tableMeta.storePath, carbonTableIdentifier);
     val dictPath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId)
     val dictFile = FileFactory.getCarbonFile(dictPath, FileFactory.getFileType(dictPath))
     val offSet = dictFile.getSize
@@ -166,7 +152,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
      var result = "Pass"
       try {
         GlobalDictionaryUtil
-          .generateGlobalDictionary(CarbonHiveContext,
+          .generateGlobalDictionary(sqlContext,
             loadModel,
             sampleRelation.tableMeta.storePath)
       } catch {

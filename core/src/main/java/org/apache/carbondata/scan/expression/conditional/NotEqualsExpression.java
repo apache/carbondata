@@ -59,7 +59,7 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
     //default implementation if the data types are different for the resultsets
     if (elRes.getDataType() != erRes.getDataType()) {
       //            result = elRes.getString().equals(erRes.getString());
-      if (elRes.getDataType().getPresedenceOrder() < erRes.getDataType().getPresedenceOrder()) {
+      if (elRes.getDataType().getPrecedenceOrder() < erRes.getDataType().getPrecedenceOrder()) {
         val1 = erRes;
         val2 = elRes;
       }
@@ -77,6 +77,7 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
       case DOUBLE:
         result = val1.getDouble().doubleValue() != val2.getDouble().doubleValue();
         break;
+      case DATE:
       case TIMESTAMP:
         result = val1.getTime().longValue() != val2.getTime().longValue();
         break;

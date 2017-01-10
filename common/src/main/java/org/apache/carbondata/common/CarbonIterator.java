@@ -35,4 +35,18 @@ public abstract class CarbonIterator<E> implements Iterator<E> {
     throw new UnsupportedOperationException("remove");
   }
 
+  /**
+   * Initialize the iterator
+   */
+  public void initialize() {
+    // sub classes can overwrite to provide initialize logic to this method
+  }
+
+  /**
+   * Close the resources
+   */
+  public void close() {
+    // sub classes can overwrite to provide close logic to this method
+  }
+
 }

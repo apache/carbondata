@@ -104,7 +104,7 @@ public class HierarchyValueWriterForCSV {
   /**
    * @return Returns the byteArrayList.
    */
-  public List<ByteArrayHolder> getByteArrayList() throws KettleException {
+  public List<ByteArrayHolder> getByteArrayList() {
     return byteArrayholder;
   }
 
@@ -287,7 +287,7 @@ public class HierarchyValueWriterForCSV {
     byteArrayholder.clear();
   }
 
-  private void closeStreamAndDeleteFile(File f, Closeable... streams) throws KettleException {
+  private void closeStreamAndDeleteFile(File f, Closeable... streams) {
     boolean isDeleted = false;
     for (Closeable stream : streams) {
       if (null != stream) {

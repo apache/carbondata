@@ -34,8 +34,6 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema.DimensionRelation;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
@@ -95,9 +93,8 @@ public final class GraphExecutionUtil {
    * @param measuresInCSVFile
    * @throws DataLoadingException
    */
-  public static TextFileInputField[] getTextInputFiles(CarbonFile csvFile,
-      List<String> measureColumns, StringBuilder builder, StringBuilder measuresInCSVFile,
-      String delimiter) throws DataLoadingException {
+  public static TextFileInputField[] getTextInputFiles(CarbonFile csvFile, StringBuilder builder,
+      StringBuilder measuresInCSVFile, String delimiter) throws DataLoadingException {
     DataInputStream fileReader = null;
     BufferedReader bufferedReader = null;
     String readLine = null;
@@ -194,71 +191,12 @@ public final class GraphExecutionUtil {
   }
 
   /**
-   * This method update the column Name
-   *
-   * @param table
-   * @param tableName
-   * @param schema
-   */
-  public static Set<String> getSchemaColumnNames(CarbonDataLoadSchema schema, String tableName) {
-    Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
-    String factTableName = schema.getCarbonTable().getFactTableName();
-    if (tableName.equals(factTableName)) {
-
-      List<CarbonDimension> dimensions =
-          schema.getCarbonTable().getDimensionByTableName(factTableName);
-
-      for (CarbonDimension dimension : dimensions) {
-
-        String foreignKey = null;
-        for (DimensionRelation dimRel : schema.getDimensionRelationList()) {
-          for (String field : dimRel.getColumns()) {
-            if (dimension.getColName().equals(field)) {
-              foreignKey = dimRel.getRelation().getFactForeignKeyColumn();
-              break;
-            }
-          }
-          if (null != foreignKey) {
-            break;
-          }
-        }
-        if (null == foreignKey) {
-          columnNames.add(dimension.getColName());
-        } else {
-          columnNames.add(foreignKey);
-        }
-      }
-
-      List<CarbonMeasure> measures = schema.getCarbonTable().getMeasureByTableName(factTableName);
-      for (CarbonMeasure msr : measures) {
-        if (!msr.getColumnSchema().isInvisible()) {
-          columnNames.add(msr.getColName());
-        }
-      }
-    } else {
-      List<CarbonDimension> dimensions = schema.getCarbonTable().getDimensionByTableName(tableName);
-      for (CarbonDimension dimension : dimensions) {
-        columnNames.add(dimension.getColName());
-      }
-
-      List<CarbonMeasure> measures = schema.getCarbonTable().getMeasureByTableName(tableName);
-      for (CarbonMeasure msr : measures) {
-        columnNames.add(msr.getColName());
-      }
-    }
-
-    return columnNames;
-
-  }
-
-  /**
    * @param csvFilePath
    * @param columnNames
    * @return
    */
   public static boolean checkCSVAndRequestedTableColumns(String csvFilePath, String[] columnNames,
-      String delimiter) {
+      String delimiter) throws IOException {
 
     String readLine = CarbonUtil.readHeader(csvFilePath);
 

@@ -28,9 +28,6 @@ import org.apache.carbondata.format.FileFooter;
  */
 public class CarbonFooterWriter {
 
-  // It is version number of this format class.
-  private static int VERSION_NUMBER = 1;
-
   // Fact file path
   private String filePath;
 
@@ -48,12 +45,9 @@ public class CarbonFooterWriter {
   public void writeFooter(FileFooter footer, long currentPosition) throws IOException {
 
     ThriftWriter thriftWriter = openThriftWriter(filePath);
-    footer.setVersion(VERSION_NUMBER);
     try {
       thriftWriter.write(footer);
       thriftWriter.writeOffset(currentPosition);
-    } catch (Exception e) {
-      throw e;
     } finally {
       thriftWriter.close();
     }

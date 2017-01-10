@@ -88,45 +88,10 @@ public class CarbonCSVBasedSeqGenData extends BaseStepData implements StepDataIn
   }
 
   /**
-   * @return Returns the defaultObjects.
-   */
-  public Object[] getDefaultObjects() {
-    return defaultObjects;
-  }
-
-  /**
-   * @param defaultObjects The defaultObjects to set.
-   */
-  public void setDefaultObjects(Object[] defaultObjects) {
-    this.defaultObjects = defaultObjects;
-  }
-
-  /**
-   * @return Returns the inputSize.
-   */
-  public int getInputSize() {
-    return inputSize;
-  }
-
-  /**
    * @param inputSize The inputSize to set.
    */
   public void setInputSize(int inputSize) {
     this.inputSize = inputSize;
-  }
-
-  /**
-   * @return Returns the columnIndex.
-   */
-  public Map<String, int[]> getColumnIndex() {
-    return columnIndex;
-  }
-
-  /**
-   * @return Returns the generator.
-   */
-  public KeyGenerator getGenerator() {
-    return generator;
   }
 
   /**

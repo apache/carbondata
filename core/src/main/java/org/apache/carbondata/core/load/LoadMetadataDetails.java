@@ -35,6 +35,16 @@ public class LoadMetadataDetails implements Serializable {
   private String loadStatus;
   private String loadName;
   private String partitionCount;
+  private String isDeleted = CarbonCommonConstants.KEYWORD_FALSE;
+
+  // update delta end timestamp
+  private String updateDeltaEndTimestamp = "";
+
+  // update delta start timestamp
+  private String updateDeltaStartTimestamp = "";
+
+  // this will represent the update status file name at that point of time.
+  private String updateStatusFileName = "";
 
   /**
    * LOGGER
@@ -42,6 +52,7 @@ public class LoadMetadataDetails implements Serializable {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(LoadMetadataDetails.class.getName());
 
+  // dont remove static as the write will fail.
   private static final SimpleDateFormat parser =
       new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
   /**
@@ -69,12 +80,12 @@ public class LoadMetadataDetails implements Serializable {
     this.partitionCount = partitionCount;
   }
 
-  public String getTimestamp() {
-    return timestamp;
+  public long getLoadEndTime() {
+    return convertTimeStampToLong(timestamp);
   }
 
-  public void setTimestamp(String timestamp) {
-    this.timestamp = timestamp;
+  public void setLoadEndTime(long timestamp) {
+    this.timestamp = getTimeStampConvertion(timestamp);;
   }
 
   public String getLoadStatus() {
@@ -96,15 +107,19 @@ public class LoadMetadataDetails implements Serializable {
   /**
    * @return the modificationOrdeletionTimesStamp
    */
-  public String getModificationOrdeletionTimesStamp() {
-    return modificationOrdeletionTimesStamp;
+  public long getModificationOrdeletionTimesStamp() {
+    if(null == modificationOrdeletionTimesStamp) {
+      return 0;
+    }
+    return convertTimeStampToLong(modificationOrdeletionTimesStamp);
   }
 
   /**
    * @param modificationOrdeletionTimesStamp the modificationOrdeletionTimesStamp to set
    */
-  public void setModificationOrdeletionTimesStamp(String modificationOrdeletionTimesStamp) {
-    this.modificationOrdeletionTimesStamp = modificationOrdeletionTimesStamp;
+  public void setModificationOrdeletionTimesStamp(long modificationOrdeletionTimesStamp) {
+    this.modificationOrdeletionTimesStamp =
+        getTimeStampConvertion(modificationOrdeletionTimesStamp);
   }
 
   /* (non-Javadoc)
@@ -142,28 +157,52 @@ public class LoadMetadataDetails implements Serializable {
   /**
    * @return the startLoadTime
    */
-  public String getLoadStartTime() {
-    return loadStartTime;
+  public long getLoadStartTime() {
+    return convertTimeStampToLong(loadStartTime);
   }
 
   /**
    * return loadStartTime
+   *
    * @return
    */
   public long getLoadStartTimeAsLong() {
-    return getTimeStamp(loadStartTime);
+    return (!loadStartTime.isEmpty()) ? getTimeStamp(loadStartTime) : 0;
+  }
+
+  /**
+   * This method will convert a given timestamp to long value and then to string back
+   *
+   * @param factTimeStamp
+   * @return
+   */
+  private long convertTimeStampToLong(String factTimeStamp) {
+    SimpleDateFormat parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
+    Date dateToStr = null;
+    try {
+      dateToStr = parser.parse(factTimeStamp);
+      return dateToStr.getTime();
+    } catch (ParseException e) {
+      LOGGER.error("Cannot convert" + factTimeStamp + " to Time/Long type value" + e.getMessage());
+      parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
+      try {
+        dateToStr = parser.parse(factTimeStamp);
+        return dateToStr.getTime();
+      } catch (ParseException e1) {
+        LOGGER
+            .error("Cannot convert" + factTimeStamp + " to Time/Long type value" + e1.getMessage());
+        return 0;
+      }
+    }
   }
 
   /**
    * returns load start time as long value
+   *
    * @param loadStartTime
    * @return
    */
-  private Long getTimeStamp(String loadStartTime) {
-    if (loadStartTime.isEmpty()) {
-      return null;
-    }
-
+  public Long getTimeStamp(String loadStartTime) {
     Date dateToStr = null;
     try {
       dateToStr = parser.parse(loadStartTime);
@@ -173,11 +212,17 @@ public class LoadMetadataDetails implements Serializable {
       return null;
     }
   }
+
+  private String getTimeStampConvertion(long time) {
+    SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
+    return sdf.format(time);
+  }
+
   /**
    * @param loadStartTime
    */
-  public void setLoadStartTime(String loadStartTime) {
-    this.loadStartTime = loadStartTime;
+  public void setLoadStartTime(long loadStartTime) {
+    this.loadStartTime = getTimeStampConvertion(loadStartTime);
   }
 
   /**
@@ -210,7 +255,7 @@ public class LoadMetadataDetails implements Serializable {
 
   /**
    * Return true if it is a major compacted segment.
-   * @return
+   * @return majorCompacted
    */
   public String isMajorCompacted() {
     return majorCompacted;
@@ -218,9 +263,82 @@ public class LoadMetadataDetails implements Serializable {
 
   /**
    * Set true if it is a major compacted segment.
+   *
    * @param majorCompacted
    */
   public void setMajorCompacted(String majorCompacted) {
     this.majorCompacted = majorCompacted;
+  }
+
+  /**
+   * To get isDeleted property.
+   *
+   * @return isDeleted
+   */
+  public String getIsDeleted() {
+    return isDeleted;
+  }
+
+  /**
+   * To set isDeleted property.
+   *
+   * @param isDeleted
+   */
+  public void setIsDeleted(String isDeleted) {
+    this.isDeleted = isDeleted;
+  }
+
+  /**
+   * To get the update delta end timestamp
+   *
+   * @return updateDeltaEndTimestamp
+   */
+  public String getUpdateDeltaEndTimestamp() {
+    return updateDeltaEndTimestamp;
+  }
+
+  /**
+   * To set the update delta end timestamp
+   *
+   * @param updateDeltaEndTimestamp
+   */
+  public void setUpdateDeltaEndTimestamp(String updateDeltaEndTimestamp) {
+    this.updateDeltaEndTimestamp = updateDeltaEndTimestamp;
+  }
+
+  /**
+   * To get the update delta start timestamp
+   *
+   * @return updateDeltaStartTimestamp
+   */
+  public String getUpdateDeltaStartTimestamp() {
+    return updateDeltaStartTimestamp;
+  }
+
+  /**
+   * To set the update delta start timestamp
+   *
+   * @param updateDeltaStartTimestamp
+   */
+  public void setUpdateDeltaStartTimestamp(String updateDeltaStartTimestamp) {
+    this.updateDeltaStartTimestamp = updateDeltaStartTimestamp;
+  }
+
+  /**
+   * To get the updateStatusFileName
+   *
+   * @return updateStatusFileName
+   */
+  public String getUpdateStatusFileName() {
+    return updateStatusFileName;
+  }
+
+  /**
+   * To set the updateStatusFileName
+   *
+   * @param updateStatusFileName
+   */
+  public void setUpdateStatusFileName(String updateStatusFileName) {
+    this.updateStatusFileName = updateStatusFileName;
   }
 }

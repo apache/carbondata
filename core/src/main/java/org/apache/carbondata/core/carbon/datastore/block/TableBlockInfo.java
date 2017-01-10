@@ -19,17 +19,20 @@
 package org.apache.carbondata.core.carbon.datastore.block;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath.DataFileUtil;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 
 /**
  * class will be used to pass the block detail detail will be passed form driver
  * to all the executor to load the b+ tree
  */
-public class TableBlockInfo extends Distributable
-    implements Serializable, Comparable<Distributable> {
+public class TableBlockInfo implements Distributable, Serializable {
 
   /**
    * serialization id
@@ -57,18 +60,27 @@ public class TableBlockInfo extends Distributable
   private String segmentId;
 
   private String[] locations;
+
+  private ColumnarFormatVersion version;
   /**
    * The class holds the blockletsinfo
    */
   private BlockletInfos blockletInfos = new BlockletInfos();
 
+  /**
+   * map of block location and storage id
+   */
+  private Map<String, String> blockStorageIdMap =
+          new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+
   public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
-      long blockLength) {
+      long blockLength, ColumnarFormatVersion version) {
     this.filePath = FileFactory.getUpdatedFilePath(filePath);
     this.blockOffset = blockOffset;
     this.segmentId = segmentId;
     this.locations = locations;
     this.blockLength = blockLength;
+    this.version = version;
   }
 
   /**
@@ -82,13 +94,28 @@ public class TableBlockInfo extends Distributable
    * @param blockletInfos
    */
   public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
-      long blockLength, BlockletInfos blockletInfos) {
-    this.filePath = FileFactory.getUpdatedFilePath(filePath);
-    this.blockOffset = blockOffset;
-    this.segmentId = segmentId;
-    this.locations = locations;
-    this.blockLength = blockLength;
+      long blockLength, BlockletInfos blockletInfos, ColumnarFormatVersion version) {
+    this(filePath, blockOffset, segmentId, locations, blockLength, version);
     this.blockletInfos = blockletInfos;
+  }
+
+  /**
+   * constructor to initialize the TableBlockInfo with blockStorageIdMap
+   *
+   * @param filePath
+   * @param blockOffset
+   * @param segmentId
+   * @param locations
+   * @param blockLength
+   * @param blockletInfos
+   * @param version
+   * @param blockStorageIdMap
+   */
+  public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
+      long blockLength, BlockletInfos blockletInfos, ColumnarFormatVersion version,
+      Map<String, String> blockStorageIdMap) {
+    this(filePath, blockOffset, segmentId, locations, blockLength, blockletInfos, version);
+    this.blockStorageIdMap = blockStorageIdMap;
   }
 
   /**
@@ -103,6 +130,10 @@ public class TableBlockInfo extends Distributable
    */
   public long getBlockOffset() {
     return blockOffset;
+  }
+
+  public void setBlockOffset(long blockOffset) {
+    this.blockOffset = blockOffset;
   }
 
   /**
@@ -250,5 +281,31 @@ public class TableBlockInfo extends Distributable
    */
   public void setBlockletInfos(BlockletInfos blockletInfos) {
     this.blockletInfos = blockletInfos;
+  }
+
+  public ColumnarFormatVersion getVersion() {
+    return version;
+  }
+
+  public void setVersion(ColumnarFormatVersion version) {
+    this.version = version;
+  }
+
+  /**
+   * returns the storage location vs storage id map
+   *
+   * @return
+   */
+  public Map<String, String> getBlockStorageIdMap() {
+    return this.blockStorageIdMap;
+  }
+
+  /**
+   * method to storage location vs storage id map
+   *
+   * @param blockStorageIdMap
+   */
+  public void setBlockStorageIdMap(Map<String, String> blockStorageIdMap) {
+    this.blockStorageIdMap = blockStorageIdMap;
   }
 }

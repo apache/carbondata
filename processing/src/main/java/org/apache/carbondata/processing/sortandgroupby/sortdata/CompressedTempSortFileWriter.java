@@ -24,7 +24,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
+import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 
@@ -65,7 +65,8 @@ public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter {
               noDictionaryCount, complexDimensionCount);
 
       stream.writeInt(records.length);
-      byte[] byteArray = SnappyByteCompression.INSTANCE.compress(blockDataArray.toByteArray());
+      byte[] byteArray = CompressorFactory.getInstance().getCompressor()
+          .compressByte(blockDataArray.toByteArray());
       stream.writeInt(byteArray.length);
       stream.write(byteArray);
 

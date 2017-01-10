@@ -22,6 +22,7 @@ package org.apache.carbondata.processing.csvreaderstep;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -38,9 +39,9 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator;
 
+import org.apache.commons.lang3.StringUtils;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
@@ -80,214 +81,19 @@ public class CsvInput extends BaseStep implements StepInterface {
    * resultArray
    */
   private Future[] resultArray;
-  private boolean isTerminated;
   private List<List<BlockDetails>> threadBlockList = new ArrayList<>();
 
   private ExecutorService exec;
+
+  /**
+   * If rddIteratorKey is not null, read data from RDD
+   */
+  private String rddIteratorKey = null;
 
   public CsvInput(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
       TransMeta transMeta, Trans trans) {
     super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
     LOGGER.info("** Using csv file **");
-  }
-
-  /**
-   * This method is borrowed from TextFileInput
-   *
-   * @param log
-   * @param line
-   * @param delimiter
-   * @param enclosure
-   * @param escapeCharacter
-   * @return
-   * @throws KettleException
-   */
-  public static final String[] guessStringsFromLine(LogChannelInterface log, String line,
-      String delimiter, String enclosure, String escapeCharacter) throws KettleException {
-    List<String> strings = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-
-    String pol; // piece of line
-
-    try {
-      if (line == null) {
-        return null;
-      }
-
-      // Split string in pieces, only for CSV!
-      int pos = 0;
-      int length = line.length();
-      boolean dencl = false;
-
-      int lenEncl = (enclosure == null ? 0 : enclosure.length());
-      int lenEsc = (escapeCharacter == null ? 0 : escapeCharacter.length());
-
-      while (pos < length) {
-        int from = pos;
-        int next;
-
-        boolean enclFound;
-        boolean containsEscapedEnclosures = false;
-        boolean containsEscapedSeparators = false;
-
-        // Is the field beginning with an enclosure?
-        // "aa;aa";123;"aaa-aaa";000;...
-        if (lenEncl > 0 && line.substring(from, from + lenEncl).equalsIgnoreCase(enclosure)) {
-          if (log.isRowLevel()) {
-            log.logRowlevel(BaseMessages.getString(PKG, "CsvInput.Log.ConvertLineToRowTitle"),
-                BaseMessages.getString(PKG, "CsvInput.Log.ConvertLineToRow",
-                    line.substring(from, from + lenEncl))); //$NON-NLS-1$ //$NON-NLS-2$
-          }
-          enclFound = true;
-          int p = from + lenEncl;
-
-          boolean isEnclosure =
-              lenEncl > 0 && p + lenEncl < length && line.substring(p, p + lenEncl)
-                  .equalsIgnoreCase(enclosure);
-          boolean isEscape = lenEsc > 0 && p + lenEsc < length && line.substring(p, p + lenEsc)
-              .equalsIgnoreCase(escapeCharacter);
-
-          boolean enclosureAfter = false;
-
-          // Is it really an enclosure? See if it's not repeated twice or escaped!
-          if ((isEnclosure || isEscape) && p < length - 1) {
-            String strnext = line.substring(p + lenEncl, p + 2 * lenEncl);
-            if (strnext.equalsIgnoreCase(enclosure)) {
-              p++;
-              enclosureAfter = true;
-              dencl = true;
-
-              // Remember to replace them later on!
-              if (isEscape) {
-                containsEscapedEnclosures = true;
-              }
-            }
-          }
-
-          // Look for a closing enclosure!
-          while ((!isEnclosure || enclosureAfter) && p < line.length()) {
-            p++;
-            enclosureAfter = false;
-            isEnclosure = lenEncl > 0 && p + lenEncl < length && line.substring(p, p + lenEncl)
-                .equals(enclosure);
-            isEscape = lenEsc > 0 && p + lenEsc < length && line.substring(p, p + lenEsc)
-                .equals(escapeCharacter);
-
-            // Is it really an enclosure? See if it's not repeated twice or escaped!
-            if ((isEnclosure || isEscape) && p < length - 1) // Is
-            {
-              String strnext = line.substring(p + lenEncl, p + 2 * lenEncl);
-              if (strnext.equals(enclosure)) {
-                p++;
-                enclosureAfter = true;
-                dencl = true;
-
-                // Remember to replace them later on!
-                if (isEscape) {
-                  containsEscapedEnclosures = true; // remember
-                }
-              }
-            }
-          }
-
-          if (p >= length) {
-            next = p;
-          } else {
-            next = p + lenEncl;
-          }
-
-          if (log.isRowLevel()) {
-            log.logRowlevel(BaseMessages.getString(PKG, "CsvInput.Log.ConvertLineToRowTitle"),
-                BaseMessages.getString(PKG, "CsvInput.Log.EndOfEnclosure",
-                    "" + p)); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-          }
-        } else {
-          enclFound = false;
-          boolean found = false;
-          int startpoint = from;
-          do {
-            next = line.indexOf(delimiter, startpoint);
-
-            // See if this position is preceded by an escape character.
-            if (lenEsc > 0 && next - lenEsc > 0) {
-              String before = line.substring(next - lenEsc, next);
-
-              if (escapeCharacter != null && escapeCharacter.equals(before)) {
-                // take the next separator, this one is escaped...
-                startpoint = next + 1;
-                containsEscapedSeparators = true;
-              } else {
-                found = true;
-              }
-            } else {
-              found = true;
-            }
-          } while (!found && next >= 0);
-        }
-        if (next == -1) {
-          next = length;
-        }
-
-        if (enclFound) {
-          pol = line.substring(from + lenEncl, next - lenEncl);
-          if (log.isRowLevel()) {
-            log.logRowlevel(BaseMessages.getString(PKG, "CsvInput.Log.ConvertLineToRowTitle"),
-                BaseMessages.getString(PKG, "CsvInput.Log.EnclosureFieldFound",
-                    "" + pol)); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-          }
-        } else {
-          pol = line.substring(from, next);
-          if (log.isRowLevel()) {
-            log.logRowlevel(BaseMessages.getString(PKG, "CsvInput.Log.ConvertLineToRowTitle"),
-                BaseMessages.getString(PKG, "CsvInput.Log.NormalFieldFound",
-                    "" + pol)); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-          }
-        }
-
-        if (dencl) {
-          StringBuilder sbpol = new StringBuilder(pol);
-          int idx = sbpol.indexOf(enclosure + enclosure);
-          while (idx >= 0) {
-            sbpol.delete(idx, idx + (enclosure == null ? 0 : enclosure.length()));
-            idx = sbpol.indexOf(enclosure + enclosure);
-          }
-          pol = sbpol.toString();
-        }
-
-        //  replace the escaped enclosures with enclosures...
-        if (containsEscapedEnclosures) {
-          String replace = escapeCharacter + enclosure;
-          String replaceWith = enclosure;
-
-          pol = Const.replace(pol, replace, replaceWith);
-        }
-
-        //replace the escaped separators with separators...
-        if (containsEscapedSeparators) {
-          String replace = escapeCharacter + delimiter;
-          String replaceWith = delimiter;
-
-          pol = Const.replace(pol, replace, replaceWith);
-        }
-
-        // Now add pol to the strings found!
-        strings.add(pol);
-
-        pos = next + delimiter.length();
-      }
-      if (pos == length) {
-        if (log.isRowLevel()) {
-          log.logRowlevel(BaseMessages.getString(PKG, "CsvInput.Log.ConvertLineToRowTitle"),
-              BaseMessages.getString(PKG, "CsvInput.Log.EndOfEmptyLineFound"));
-        }
-        strings.add(""); //$NON-NLS-1$
-      }
-    } catch (Exception e) {
-      throw new KettleException(
-          BaseMessages.getString(PKG, "CsvInput.Log.Error.ErrorConvertingLine", e.toString()),
-          e); //$NON-NLS-1$
-    }
-
-    return strings.toArray(new String[strings.size()]);
   }
 
   public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
@@ -332,6 +138,8 @@ public class CsvInput extends BaseStep implements StepInterface {
           data.rownumFieldIndex++;
         }
       }
+      rddIteratorKey = StringUtils.isEmpty(meta.getRddIteratorKey()) ? null : meta
+              .getRddIteratorKey();
     }
 
     // start multi-thread to process
@@ -343,39 +151,128 @@ public class CsvInput extends BaseStep implements StepInterface {
     } catch (NumberFormatException exc) {
       numberOfNodes = NUM_CORES_DEFAULT_VAL;
     }
+    if (rddIteratorKey == null) {
+      BlockDetails[] blocksInfo = GraphGenerator.blockInfo.get(meta.getBlocksID());
+      if (blocksInfo.length == 0) {
+        //if isDirectLoad = true, and partition number > file num
+        //then blocksInfo will get empty in some partition processing, so just return
+        setOutputDone();
+        return false;
+      }
 
-    BlockDetails[] blocksInfo = GraphGenerator.blockInfo.get(meta.getBlocksID());
-    if (blocksInfo.length == 0) {
-      //if isDirectLoad = true, and partition number > file num
-      //then blocksInfo will get empty in some partition processing, so just return
-      setOutputDone();
-      return false;
-    }
+      if (numberOfNodes > blocksInfo.length) {
+        numberOfNodes = blocksInfo.length;
+      }
 
-    if (numberOfNodes > blocksInfo.length) {
-      numberOfNodes = blocksInfo.length;
-    }
+      //new the empty lists
+      for (int pos = 0; pos < numberOfNodes; pos++) {
+        threadBlockList.add(new ArrayList<BlockDetails>());
+      }
 
-    //new the empty lists
-    for (int pos = 0; pos < numberOfNodes; pos++) {
-      threadBlockList.add(new ArrayList<BlockDetails>());
-    }
-
-    //block balance to every thread
-    for (int pos = 0; pos < blocksInfo.length; ) {
-      for (int threadNum = 0; threadNum < numberOfNodes; threadNum++) {
-        if (pos < blocksInfo.length) {
-          threadBlockList.get(threadNum).add(blocksInfo[pos++]);
+      //block balance to every thread
+      for (int pos = 0; pos < blocksInfo.length; ) {
+        for (int threadNum = 0; threadNum < numberOfNodes; threadNum++) {
+          if (pos < blocksInfo.length) {
+            threadBlockList.get(threadNum).add(blocksInfo[pos++]);
+          }
         }
       }
+      LOGGER.info("*****************Started all csv reading***********");
+      startProcess(numberOfNodes);
+      LOGGER.info("*****************Completed all csv reading***********");
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordCsvInputStepTime(
+              meta.getPartitionID(), System.currentTimeMillis());
+    } else if(rddIteratorKey.startsWith(CarbonCommonConstants.RDDUTIL_UPDATE_KEY)) {
+      scanRddIteratorForUpdate();
     }
-    LOGGER.info("*****************Started all csv reading***********");
-    startProcess(numberOfNodes);
-    LOGGER.info("*****************Completed all csv reading***********");
-    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordCsvInputStepTime(
-        meta.getPartitionID(), System.currentTimeMillis());
+    else {
+      scanRddIterator(numberOfNodes);
+    }
     setOutputDone();
     return false;
+  }
+
+  class RddScanCallable implements Callable<Void> {
+    List<JavaRddIterator<String[]>> iterList;
+
+    RddScanCallable() {
+      this.iterList = new ArrayList<JavaRddIterator<String[]>>(1000);
+    }
+
+    public void addJavaRddIterator(JavaRddIterator<String[]> iter) {
+      this.iterList.add(iter);
+    }
+
+    @Override
+    public Void call() throws Exception {
+      StandardLogService.setThreadName(("PROCESS_DataFrame_PARTITIONS"),
+          Thread.currentThread().getName());
+      try {
+        String[] values = null;
+        for (JavaRddIterator<String[]> iter: iterList) {
+          iter.initialize();
+          while (iter.hasNext()) {
+            values = iter.next();
+            synchronized (putRowLock) {
+              putRow(data.outputRowMeta, values);
+            }
+          }
+        }
+      } catch (Exception e) {
+        LOGGER.error(e, "Scan rdd during data load is terminated due to error.");
+        throw e;
+      }
+      return null;
+    }
+  };
+
+  private void scanRddIterator(int numberOfNodes) throws RuntimeException {
+    JavaRddIterator<JavaRddIterator<String[]>> iter = RddInputUtils.getAndRemove(rddIteratorKey);
+    if (iter != null) {
+      iter.initialize();
+      exec = Executors.newFixedThreadPool(numberOfNodes);
+      List<Future<Void>> results = new ArrayList<Future<Void>>(numberOfNodes);
+      RddScanCallable[] calls = new RddScanCallable[numberOfNodes];
+      for (int i = 0; i < numberOfNodes; i++ ) {
+        calls[i] = new RddScanCallable();
+      }
+      int index = 0 ;
+      while (iter.hasNext()) {
+        calls[index].addJavaRddIterator(iter.next());
+        index = index + 1;
+        if (index == numberOfNodes) {
+          index = 0;
+        }
+      }
+      for (RddScanCallable call: calls) {
+        results.add(exec.submit(call));
+      }
+      try {
+        for (Future<Void> futrue : results) {
+          futrue.get();
+        }
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException("Thread InterruptedException", e);
+      } finally {
+        exec.shutdownNow();
+      }
+    }
+  }
+
+  private void scanRddIteratorForUpdate() throws RuntimeException {
+    Iterator<String[]> iterator = RddInpututilsForUpdate.getAndRemove(rddIteratorKey);
+    if (iterator != null) {
+      try{
+        while(iterator.hasNext()){
+          putRow(data.outputRowMeta, iterator.next());
+        }
+      } catch (KettleException e) {
+        throw new RuntimeException(e);
+      } catch (Exception e) {
+        LOGGER.error(e, "Scan rdd during data load is terminated due to error.");
+        throw e;
+      }
+    }
   }
 
   private void startProcess(final int numberOfNodes) throws RuntimeException {
@@ -488,7 +385,7 @@ public class CsvInput extends BaseStep implements StepInterface {
       if (getTransMeta().findNrPrevSteps(getStepMeta()) == 0) {
         String filename = environmentSubstitute(meta.getFilename());
 
-        if (Const.isEmpty(filename)) {
+        if (Const.isEmpty(filename) && Const.isEmpty(meta.getRddIteratorKey())) {
           logError(BaseMessages.getString(PKG, "CsvInput.MissingFilename.Message")); //$NON-NLS-1$
           return false;
         }

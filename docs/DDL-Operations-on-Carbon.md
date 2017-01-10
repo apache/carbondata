@@ -67,6 +67,14 @@ Here, DICTIONARY_EXCLUDE will exclude dictionary creation. This is applicable fo
   ```ruby
   TBLPROPERTIES ("COLUMN_GROUPS"="(column1,column3),(Column4,Column5,Column6)") 
   ```
+ - **Table Block Size Configuration**
+
+   The block size of one table's files on hdfs can be defined using an int value whose size is in MB, the range is form 1MB to 2048MB and the default value is 1024MB, if user didn't define this values in ddl, it would use default value to set.
+
+  ```ruby
+  TBLPROPERTIES ("TABLE_BLOCKSIZE"="512 MB")
+  ```
+Here 512 MB means the block size of this table is 512 MB, user also can set it as 512M or 512.
  - **Inverted Index Configuration**
 
    Inverted index is very useful to improve compression ratio and query speed, especially for those low-cardinality columns who are in reward position.
@@ -155,6 +163,19 @@ This command can be used to delete the existing table.
 | db_name | Database name, if it is not specified then it uses current database. | YES |
 | table_name | The name of the table in provided database.| NO |
  
+### Usage Guideline
+Minor Compaction:
+  In Minor compaction, you can specify number of loads to be merged (compacted). 
+  Minor compaction triggers for every data load if the parameter carbon.enable.auto.load.merge is set. 
+  If any segments are available to be merged, then compaction will run parallel with data load. 
+  There are 2 levels in minor compaction.
+   - Level 1: Merging of the segments which are not yet compacted.
+   - Level 2: Merging of the compacted segments again to form a bigger segment.
+
+Major Compaction:
+ In Major compaction, many segments can be merged into one big segment. 
+ You can specify the compaction size until which the segments will be merged. 
+ Major compaction is usually done during the off-peak time.
 
 **Example:**
 

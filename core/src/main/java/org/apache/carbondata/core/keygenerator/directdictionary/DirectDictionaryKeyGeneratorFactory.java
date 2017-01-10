@@ -19,7 +19,10 @@
 package org.apache.carbondata.core.keygenerator.directdictionary;
 
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampDirectDictionaryGenerator;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * Factory for DirectDictionary Key generator
@@ -39,15 +42,26 @@ public final class DirectDictionaryKeyGeneratorFactory {
    * @param dataType DataType
    * @return the generator instance
    */
-  public static DirectDictionaryGenerator getDirectDictionaryGenerator(DataType dataType) {
+  public static DirectDictionaryGenerator getDirectDictionaryGenerator(DataType dataType,
+      String dateFormat) {
     DirectDictionaryGenerator directDictionaryGenerator = null;
     switch (dataType) {
+      case DATE:
+        directDictionaryGenerator = new DateDirectDictionaryGenerator(dateFormat);
+        break;
       case TIMESTAMP:
-        directDictionaryGenerator = TimeStampDirectDictionaryGenerator.instance;
+        directDictionaryGenerator = new TimeStampDirectDictionaryGenerator(dateFormat);
         break;
       default:
 
     }
     return directDictionaryGenerator;
+  }
+
+  public static DirectDictionaryGenerator getDirectDictionaryGenerator(DataType dataType) {
+    return getDirectDictionaryGenerator(dataType,
+        CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
   }
 }

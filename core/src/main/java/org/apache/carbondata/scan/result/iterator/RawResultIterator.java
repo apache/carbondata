@@ -134,7 +134,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
     if(hasNext())
     {
       Object[] rawRow = batch.getRawRow(counter);
-      currentConveretedRawRow = convertRow(rawRow);;
+      currentConveretedRawRow = convertRow(rawRow);
       return currentConveretedRawRow;
     }
     else

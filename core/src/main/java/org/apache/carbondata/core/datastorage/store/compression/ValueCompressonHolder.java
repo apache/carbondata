@@ -19,7 +19,8 @@
 
 package org.apache.carbondata.core.datastorage.store.compression;
 
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import java.math.BigDecimal;
+
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
 /**
@@ -30,36 +31,7 @@ public final class ValueCompressonHolder {
   /**
    * byteCompressor.
    */
-  private static Compressor<byte[]> byteCompressor =
-      SnappyCompression.SnappyByteCompression.INSTANCE;
-
-  /**
-   * shortCompressor.
-   */
-  private static Compressor<short[]> shortCompressor =
-      SnappyCompression.SnappyShortCompression.INSTANCE;
-
-  /**
-   * intCompressor.
-   */
-  private static Compressor<int[]> intCompressor = SnappyCompression.SnappyIntCompression.INSTANCE;
-
-  /**
-   * longCompressor.
-   */
-  private static Compressor<long[]> longCompressor =
-      SnappyCompression.SnappyLongCompression.INSTANCE;
-
-  /**
-   * floatCompressor
-   */
-  private static Compressor<float[]> floatCompressor =
-      SnappyCompression.SnappyFloatCompression.INSTANCE;
-  /**
-   * doubleCompressor.
-   */
-  private static Compressor<double[]> doubleCompressor =
-      SnappyCompression.SnappyDoubleCompression.INSTANCE;
+  private static Compressor compressor = CompressorFactory.getInstance().getCompressor();
 
   private ValueCompressonHolder() {
 
@@ -70,49 +42,41 @@ public final class ValueCompressonHolder {
    * @param value
    * @param data
    */
-  public static void unCompress(DataType dataType, UnCompressValue value, byte[] data) {
+  public static void unCompress(DataType dataType, UnCompressValue value, byte[] data, int offset,
+      int length, int decimal, Object maxValueObject) {
     switch (dataType) {
       case DATA_BYTE:
-
-        value.setValue(byteCompressor.unCompress(data));
+        value.setUncompressValues(compressor.unCompressByte(data, offset, length), decimal,
+            maxValueObject);
         break;
-
       case DATA_SHORT:
-
-        value.setValue(shortCompressor.unCompress(data));
+        value.setUncompressValues(compressor.unCompressShort(data, offset, length), decimal,
+            maxValueObject);
         break;
-
       case DATA_INT:
-
-        value.setValue(intCompressor.unCompress(data));
+        value.setUncompressValues(compressor.unCompressInt(data, offset, length), decimal,
+            maxValueObject);
         break;
-
       case DATA_LONG:
       case DATA_BIGINT:
-
-        value.setValue(longCompressor.unCompress(data));
+        value.setUncompressValues(compressor.unCompressLong(data, offset, length), decimal,
+            maxValueObject);
         break;
-
       case DATA_FLOAT:
-
-        value.setValue(floatCompressor.unCompress(data));
+        value.setUncompressValues(compressor.unCompressFloat(data, offset, length), decimal,
+            maxValueObject);
         break;
       default:
-
-        value.setValue(doubleCompressor.unCompress(data));
+        value.setUncompressValues(compressor.unCompressDouble(data, offset, length), decimal,
+            maxValueObject);
         break;
-
     }
   }
 
   /**
-   * interface for  UnCompressValue<T>.
-   *
-   * @param <T>
+   * interface for UnCompressValue<T>.
    */
-
   public interface UnCompressValue<T> extends Cloneable {
-    //        Object getValue(int index, int decimal, double maxValue);
 
     void setValue(T value);
 
@@ -122,13 +86,22 @@ public final class ValueCompressonHolder {
 
     UnCompressValue compress();
 
-    UnCompressValue uncompress(DataType dataType);
+    UnCompressValue uncompress(DataType dataType, byte[] compressData, int offset, int length,
+        int decimal, Object maxValueObject);
+
+    void setUncompressValues(T data, int decimal, Object maxValueObject);
 
     byte[] getBackArrayData();
 
     UnCompressValue getCompressorObject();
 
-    CarbonReadDataHolder getValues(int decimal, Object maxValue);
+    long getLongValue(int index);
+
+    double getDoubleValue(int index);
+
+    BigDecimal getBigDecimalValue(int index);
+
+    void freeMemory();
 
   }
 

@@ -23,12 +23,29 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.carbondata.core.cache.Cache;
+import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
+import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.devapi.BiDictionary;
+import org.apache.carbondata.core.devapi.DictionaryGenerationException;
+import org.apache.carbondata.core.dictionary.client.DictionaryClient;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.processing.newflow.dictionary.DictionaryServerClientDictionary;
+import org.apache.carbondata.processing.newflow.dictionary.DirectDictionary;
+import org.apache.carbondata.processing.newflow.dictionary.PreCreatedDictionary;
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -36,7 +53,7 @@ import org.pentaho.di.core.exception.KettleException;
 /**
  * Primitive DataType stateless object used in data loading
  */
-public class PrimitiveDataType implements GenericDataType {
+public class PrimitiveDataType implements GenericDataType<Object> {
 
   /**
    * surrogate index
@@ -78,6 +95,10 @@ public class PrimitiveDataType implements GenericDataType {
    */
   private int dataCounter;
 
+  private BiDictionary<Integer, Object> dictionaryGenerator;
+
+  private CarbonDimension carbonDimension;
+
   /**
    * constructor
    *
@@ -90,6 +111,59 @@ public class PrimitiveDataType implements GenericDataType {
     this.parentname = parentname;
     this.columnId = columnId;
     this.dimensionOrdinal = dimensionOrdinal;
+  }
+
+  /**
+   * constructor
+   *
+   * @param name
+   * @param parentname
+   * @param columnId
+   */
+  public PrimitiveDataType(String name, String parentname, String columnId,
+                           CarbonDimension carbonDimension,
+                           Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
+                           CarbonTableIdentifier carbonTableIdentifier,
+                           DictionaryClient client, Boolean useOnePass, String storePath) {
+    this.name = name;
+    this.parentname = parentname;
+    this.columnId = columnId;
+    this.carbonDimension = carbonDimension;
+    DictionaryColumnUniqueIdentifier identifier =
+        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
+            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType());
+    try {
+      if (carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        dictionaryGenerator = new DirectDictionary(DirectDictionaryKeyGeneratorFactory
+            .getDirectDictionaryGenerator(carbonDimension.getDataType()));
+      } else {
+        Dictionary dictionary = null;
+        if (useOnePass) {
+          if (CarbonUtil.isFileExistsForGivenColumn(storePath, identifier)) {
+            dictionary = cache.get(identifier);
+          }
+          String threadNo = "initial";
+          DictionaryKey dictionaryKey = new DictionaryKey();
+          dictionaryKey.setColumnName(carbonDimension.getColName());
+          dictionaryKey.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
+          dictionaryKey.setThreadNo(threadNo);
+          // for table initialization
+          dictionaryKey.setType("TABLE_INTIALIZATION");
+          dictionaryKey.setData("0");
+          client.getDictionary(dictionaryKey);
+          Map<Object, Integer> localCache = new HashMap<>();
+          // for generate dictionary
+          dictionaryKey.setType("DICTIONARY_GENERATION");
+          dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,
+                  dictionaryKey, localCache);
+        } else {
+          dictionary = cache.get(identifier);
+          dictionaryGenerator = new PreCreatedDictionary(dictionary);
+        }
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /*
@@ -106,14 +180,6 @@ public class PrimitiveDataType implements GenericDataType {
   @Override
   public String getName() {
     return name;
-  }
-
-  /*
-   * set column name
-   */
-  @Override
-  public void setName(String name) {
-    this.name = name;
   }
 
   /*
@@ -178,9 +244,27 @@ public class PrimitiveDataType implements GenericDataType {
     dataOutputStream.writeInt(surrogateKey);
   }
 
-  /*
-   * parse bytearray and bit pack
-   */
+  @Override public void writeByteArray(Object input, DataOutputStream dataOutputStream)
+      throws IOException, DictionaryGenerationException {
+    String parsedValue =
+        input == null ? null : DataTypeUtil.parseValue(input.toString(), carbonDimension);
+    Integer surrogateKey;
+    if (null == parsedValue) {
+      surrogateKey = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
+    } else {
+      surrogateKey = dictionaryGenerator.getOrGenerateKey(parsedValue);
+      if (surrogateKey == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
+        surrogateKey = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
+      }
+    }
+    dataOutputStream.writeInt(surrogateKey);
+  }
+
+  @Override
+  public void fillCardinality(List<Integer> dimCardWithComplex) {
+    dimCardWithComplex.add(dictionaryGenerator.size());
+  }
+
   @Override
   public void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
       KeyGenerator[] generator) throws IOException, KeyGenException {

@@ -19,11 +19,13 @@
 package org.apache.carbondata.core.carbon.datastore.block;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 
-public abstract class AbstractIndex {
+public abstract class AbstractIndex implements Cacheable {
 
   /**
    * vo class which will hold the RS information of the block
@@ -41,11 +43,14 @@ public abstract class AbstractIndex {
   protected long totalNumberOfRows;
 
   /**
-   * @return the totalNumberOfRows
+   * atomic integer to maintain the access count for a column access
    */
-  public long getTotalNumberOfRows() {
-    return totalNumberOfRows;
-  }
+  protected AtomicInteger accessCount = new AtomicInteger();
+
+  /**
+   * Table block meta size.
+   */
+  protected long memorySize;
 
   /**
    * @return the segmentProperties
@@ -61,10 +66,64 @@ public abstract class AbstractIndex {
     return dataRefNode;
   }
 
+  @Override public long getFileTimeStamp() {
+    return 0;
+  }
+
   /**
    * Below method will be used to load the data block
    *
-   * @param blockInfo block detail
+   * @param footerList footer list
    */
   public abstract void buildIndex(List<DataFileFooter> footerList);
+
+  /**
+   * the method returns the access count
+   *
+   * @return
+   */
+  @Override public int getAccessCount() {
+    return accessCount.get();
+  }
+
+  /**
+   * The method returns table block size
+   *
+   * @return
+   */
+  @Override public long getMemorySize() {
+    return this.memorySize;
+  }
+
+  /**
+   * The method is used to set the access count
+   */
+  public void incrementAccessCount() {
+    accessCount.incrementAndGet();
+  }
+
+  /**
+   * This method will release the objects and set default value for primitive types
+   */
+  public void clear() {
+    decrementAccessCount();
+  }
+
+  /**
+   * This method will decrement the access count for a column by 1
+   * whenever a column usage is complete
+   */
+  private void decrementAccessCount() {
+    if (accessCount.get() > 0) {
+      accessCount.decrementAndGet();
+    }
+  }
+
+  /**
+   * the method is used to set the memory size of the b-tree
+   * @param memorySize
+   */
+  public void setMemorySize(long memorySize) {
+    this.memorySize = memorySize;
+  }
 }

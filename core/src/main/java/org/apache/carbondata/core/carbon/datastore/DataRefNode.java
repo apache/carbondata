@@ -18,6 +18,9 @@
  */
 package org.apache.carbondata.core.carbon.datastore;
 
+import java.io.IOException;
+
+import org.apache.carbondata.common.iudprocessor.cache.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
@@ -55,7 +58,6 @@ public interface DataRefNode {
    * This method will be used to get the max value of all the columns this can
    * be used in case of filter query
    *
-   * @param max value of all the columns
    */
   byte[][] getColumnsMaxValue();
 
@@ -63,7 +65,6 @@ public interface DataRefNode {
    * This method will be used to get the min value of all the columns this can
    * be used in case of filter query
    *
-   * @param min value of all the columns
    */
   byte[][] getColumnsMinValue();
 
@@ -71,28 +72,40 @@ public interface DataRefNode {
    * Below method will be used to get the dimension chunks
    *
    * @param fileReader   file reader to read the chunks from file
-   * @param blockIndexes indexes of the blocks need to be read
+   * @param blockIndexes range indexes of the blocks need to be read
+   *                     value can be {{0,10},{11,12},{13,13}}
+   *                     here 0 to 10 and 11 to 12 column blocks will be read in one
+   *                     IO operation 13th column block will be read separately
+   *                     This will be helpful to reduce IO by reading bigger chunk of
+   *                     data in On IO
    * @return dimension data chunks
    */
-  DimensionColumnDataChunk[] getDimensionChunks(FileHolder fileReader, int[] blockIndexes);
+  DimensionColumnDataChunk[] getDimensionChunks(FileHolder fileReader, int[][] blockIndexes)
+      throws IOException;
 
   /**
    * Below method will be used to get the dimension chunk
    *
    * @param fileReader file reader to read the chunk from file
-   * @param blockIndex block index to be read
    * @return dimension data chunk
    */
-  DimensionColumnDataChunk getDimensionChunk(FileHolder fileReader, int blockIndexes);
+  DimensionColumnDataChunk getDimensionChunk(FileHolder fileReader, int blockIndexes)
+      throws IOException;
 
   /**
    * Below method will be used to get the measure chunk
    *
    * @param fileReader   file reader to read the chunk from file
-   * @param blockIndexes block indexes to be read from file
+   * @param blockIndexes range indexes of the blocks need to be read
+   *                     value can be {{0,10},{11,12},{13,13}}
+   *                     here 0 to 10 and 11 to 12 column blocks will be read in one
+   *                     IO operation 13th column block will be read separately
+   *                     This will be helpful to reduce IO by reading bigger chunk of
+   *                     data in On IO
    * @return measure column data chunk
    */
-  MeasureColumnDataChunk[] getMeasureChunks(FileHolder fileReader, int[] blockIndexes);
+  MeasureColumnDataChunk[] getMeasureChunks(FileHolder fileReader, int[][] blockIndexes)
+      throws IOException;
 
   /**
    * Below method will be used to read the measure chunk
@@ -101,5 +114,15 @@ public interface DataRefNode {
    * @param blockIndex block index to be read from file
    * @return measure data chunk
    */
-  MeasureColumnDataChunk getMeasureChunk(FileHolder fileReader, int blockIndex);
+  MeasureColumnDataChunk getMeasureChunk(FileHolder fileReader, int blockIndex) throws IOException;
+
+  /**
+   * @param deleteDeltaDataCache
+   */
+  void setDeleteDeltaDataCache(BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache);
+
+  /**
+   * @return
+   */
+  BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache();
 }

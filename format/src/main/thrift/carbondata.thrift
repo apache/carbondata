@@ -113,6 +113,22 @@ struct DataChunk{
     13: optional list<binary> encoder_meta; // extra information required by encoders
 }
 
+/**
+* Represents a chunk of data. The chunk can be a single column stored in Column Major format or a group of columns stored in Row Major Format.
+**/
+struct DataChunk2{
+    1: required ChunkCompressionMeta chunk_meta; // the metadata of a chunk
+    2: required bool rowMajor; // whether this chunk is a row chunk or column chunk ? Decide whether this can be replace with counting od columnIDs
+	/** The column IDs in this chunk, in the order in which the data is physically stored, will have atleast one column ID for columnar format, many column ID for row major format**/
+    3: required i32 data_page_length; // length of data page
+    4: optional i32 rowid_page_length; //length of row id page, only if encoded using inverted index
+    5: optional i32 rle_page_length;	// length of rle page, only if RLE coded.
+    6: optional PresenceMeta presence; // information about presence of values in each row of this column chunk
+    7: optional SortState sort_state;
+    8: optional list<schema.Encoding> encoders; // The List of encoders overriden at node level
+    9: optional list<binary> encoder_meta; // extra information required by encoders
+}
+
 
 /**
 *	Information about a blocklet
@@ -120,6 +136,15 @@ struct DataChunk{
 struct BlockletInfo{
     1: required i32 num_rows;	// Number of rows in this blocklet
     2: required list<DataChunk> column_data_chunks;	// Information about all column chunks in this blocklet
+}
+
+/**
+*	Information about a blocklet
+*/
+struct BlockletInfo2{
+    1: required i32 num_rows;	// Number of rows in this blocklet
+    2: required list<i64> column_data_chunks_offsets;	// Information about offsets all column chunks in this blocklet
+    3: required list<i16> column_data_chunks_length;	// Information about length all column chunks in this blocklet
 }
 
 /**
@@ -131,8 +156,9 @@ struct FileFooter{
     3: required list<schema.ColumnSchema> table_columns;	// Description of columns in this file
     4: required SegmentInfo segment_info;	// Segment info (will be same/repeated for all files in this segment)
     5: required list<BlockletIndex> blocklet_index_list;	// blocklet index of all blocklets in this file
-    6: required list<BlockletInfo> blocklet_info_list;	// Information about blocklets of all columns in this file
-    7: optional dictionary.ColumnDictionaryChunk dictionary; // blocklet local dictionary
+    6: optional list<BlockletInfo> blocklet_info_list;	// Information about blocklets of all columns in this file
+    7: optional list<BlockletInfo2> blocklet_info_list2;	// Information about blocklets of all columns in this file
+    8: optional dictionary.ColumnDictionaryChunk dictionary; // blocklet local dictionary
 }
 
 /**

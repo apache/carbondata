@@ -21,11 +21,10 @@ package org.apache.carbondata.scan.executor.infos;
 import java.util.Map;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.datastore.IndexKey;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.scan.filter.GenericQueryType;
 import org.apache.carbondata.scan.filter.executer.FilterExecuter;
@@ -52,26 +51,6 @@ public class BlockExecutionInfo {
   private boolean isFixedKeyUpdateRequired;
 
   /**
-   * in case of detail+order by query when number of output record is same we
-   * need to store data in the disk, so for this check will be used to whether
-   * we can write in the disk or not
-   */
-  private boolean isFileBasedQuery;
-
-  /**
-   * id of the query. this will be used to create directory while writing the
-   * data file in case of detail+order by query
-   */
-  private String queryId;
-
-  /**
-   * this to handle limit query in case of detail query we are pushing down
-   * the limit to executor level so based on the number of limit we can
-   * process only that many records
-   */
-  private int limit;
-
-  /**
    * below to store all the information required for aggregation during query
    * execution
    */
@@ -91,17 +70,14 @@ public class BlockExecutionInfo {
    */
   private IndexKey endKey;
 
+  private String blockId;
+
   /**
    * masked byte for block which will be used to unpack the fixed length key,
    * this will be used for updating the older block key with new block key
    * generator
    */
   private int[] maskedByteForBlock;
-
-  /**
-   * flag to check whether query is detail query or aggregation query
-   */
-  private boolean isDetailQuery;
 
   /**
    * total number of dimension in block
@@ -116,23 +92,18 @@ public class BlockExecutionInfo {
   /**
    * will be used to read the dimension block from file
    */
-  private int[] allSelectedDimensionBlocksIndexes;
+  private int[][] allSelectedDimensionBlocksIndexes;
 
   /**
    * will be used to read the measure block from file
    */
-  private int[] allSelectedMeasureBlocksIndexes;
+  private int[][] allSelectedMeasureBlocksIndexes;
 
   /**
    * this will be used to update the older block fixed length keys with the
    * new block fixed length key
    */
   private KeyStructureInfo keyStructureInfo;
-
-  /**
-   * below will be used to sort the data based
-   */
-  private SortInfo sortInfo;
 
   /**
    * first block from which query execution will start
@@ -169,11 +140,6 @@ public class BlockExecutionInfo {
   private int[] eachColumnValueSize;
 
   /**
-   * partition number
-   */
-  private String partitionId;
-
-  /**
    * column group block index in file to key structure info mapping
    */
   private Map<Integer, KeyStructureInfo> columnGroupToKeyStructureInfo;
@@ -188,11 +154,6 @@ public class BlockExecutionInfo {
    * filter tree to execute the filter
    */
   private FilterExecuter filterExecuterTree;
-
-  /**
-   * fileType
-   */
-  private FileType fileType;
 
   /**
    * whether it needs only raw byte records with out aggregation.
@@ -220,11 +181,6 @@ public class BlockExecutionInfo {
   private int[] complexColumnParentBlockIndexes;
 
   /**
-   * to record the statistics
-   */
-  private QueryStatisticsRecorder statisticsRecorder;
-
-  /**
    * @return the tableBlock
    */
   public AbstractIndex getDataBlock() {
@@ -240,6 +196,24 @@ public class BlockExecutionInfo {
    * list of measure selected in query
    */
   private QueryMeasure[] queryMeasures;
+
+  /**
+   * whether it needs to read data in vector/columnar format.
+   */
+  private boolean vectorBatchCollector;
+
+  /**
+   * absolute table identifier
+   */
+  private AbsoluteTableIdentifier absoluteTableIdentifier;
+
+  public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
+    return absoluteTableIdentifier;
+  }
+
+  public void setAbsoluteTableIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier) {
+    this.absoluteTableIdentifier = absoluteTableIdentifier;
+  }
 
   /**
    * @param blockIndex the tableBlock to set
@@ -260,48 +234,6 @@ public class BlockExecutionInfo {
    */
   public void setFixedKeyUpdateRequired(boolean isFixedKeyUpdateRequired) {
     this.isFixedKeyUpdateRequired = isFixedKeyUpdateRequired;
-  }
-
-  /**
-   * @return the isFileBasedQuery
-   */
-  public boolean isFileBasedQuery() {
-    return isFileBasedQuery;
-  }
-
-  /**
-   * @param isFileBasedQuery the isFileBasedQuery to set
-   */
-  public void setFileBasedQuery(boolean isFileBasedQuery) {
-    this.isFileBasedQuery = isFileBasedQuery;
-  }
-
-  /**
-   * @return the queryId
-   */
-  public String getQueryId() {
-    return queryId;
-  }
-
-  /**
-   * @param queryId the queryId to set
-   */
-  public void setQueryId(String queryId) {
-    this.queryId = queryId;
-  }
-
-  /**
-   * @return the limit
-   */
-  public int getLimit() {
-    return limit;
-  }
-
-  /**
-   * @param limit the limit to set
-   */
-  public void setLimit(int limit) {
-    this.limit = limit;
   }
 
   /**
@@ -363,20 +295,6 @@ public class BlockExecutionInfo {
   }
 
   /**
-   * @return the isDetailQuery
-   */
-  public boolean isDetailQuery() {
-    return isDetailQuery;
-  }
-
-  /**
-   * @param isDetailQuery the isDetailQuery to set
-   */
-  public void setDetailQuery(boolean isDetailQuery) {
-    this.isDetailQuery = isDetailQuery;
-  }
-
-  /**
    * @return the totalNumberDimensionBlock
    */
   public int getTotalNumberDimensionBlock() {
@@ -407,28 +325,28 @@ public class BlockExecutionInfo {
   /**
    * @return the allSelectedDimensionBlocksIndexes
    */
-  public int[] getAllSelectedDimensionBlocksIndexes() {
+  public int[][] getAllSelectedDimensionBlocksIndexes() {
     return allSelectedDimensionBlocksIndexes;
   }
 
   /**
    * @param allSelectedDimensionBlocksIndexes the allSelectedDimensionBlocksIndexes to set
    */
-  public void setAllSelectedDimensionBlocksIndexes(int[] allSelectedDimensionBlocksIndexes) {
+  public void setAllSelectedDimensionBlocksIndexes(int[][] allSelectedDimensionBlocksIndexes) {
     this.allSelectedDimensionBlocksIndexes = allSelectedDimensionBlocksIndexes;
   }
 
   /**
    * @return the allSelectedMeasureBlocksIndexes
    */
-  public int[] getAllSelectedMeasureBlocksIndexes() {
+  public int[][] getAllSelectedMeasureBlocksIndexes() {
     return allSelectedMeasureBlocksIndexes;
   }
 
   /**
    * @param allSelectedMeasureBlocksIndexes the allSelectedMeasureBlocksIndexes to set
    */
-  public void setAllSelectedMeasureBlocksIndexes(int[] allSelectedMeasureBlocksIndexes) {
+  public void setAllSelectedMeasureBlocksIndexes(int[][] allSelectedMeasureBlocksIndexes) {
     this.allSelectedMeasureBlocksIndexes = allSelectedMeasureBlocksIndexes;
   }
 
@@ -444,20 +362,6 @@ public class BlockExecutionInfo {
    */
   public void setKeyStructureInfo(KeyStructureInfo keyStructureInfo) {
     this.keyStructureInfo = keyStructureInfo;
-  }
-
-  /**
-   * @return the sortInfos
-   */
-  public SortInfo getSortInfo() {
-    return sortInfo;
-  }
-
-  /**
-   * @param sortInfo the sortInfos to set
-   */
-  public void setSortInfo(SortInfo sortInfo) {
-    this.sortInfo = sortInfo;
   }
 
   /**
@@ -545,20 +449,6 @@ public class BlockExecutionInfo {
   }
 
   /**
-   * @return the partitionId
-   */
-  public String getPartitionId() {
-    return partitionId;
-  }
-
-  /**
-   * @param partitionId the partitionId to set
-   */
-  public void setPartitionId(String partitionId) {
-    this.partitionId = partitionId;
-  }
-
-  /**
    * @return the dictionaryColumnBlockIndex
    */
   public int[] getDictionaryColumnBlockIndex() {
@@ -602,31 +492,10 @@ public class BlockExecutionInfo {
   }
 
   /**
-   * @return the columnIdToDcitionaryMapping
-   */
-  public Map<String, Dictionary> getColumnIdToDcitionaryMapping() {
-    return columnIdToDcitionaryMapping;
-  }
-
-  /**
    * @param columnIdToDcitionaryMapping the columnIdToDcitionaryMapping to set
    */
   public void setColumnIdToDcitionaryMapping(Map<String, Dictionary> columnIdToDcitionaryMapping) {
     this.columnIdToDcitionaryMapping = columnIdToDcitionaryMapping;
-  }
-
-  /**
-   * @return the fileType
-   */
-  public FileType getFileType() {
-    return fileType;
-  }
-
-  /**
-   * @param fileType the fileType to set
-   */
-  public void setFileType(FileType fileType) {
-    this.fileType = fileType;
   }
 
   public boolean isRawRecordDetailQuery() {
@@ -663,14 +532,6 @@ public class BlockExecutionInfo {
    */
   public void setComplexColumnParentBlockIndexes(int[] complexColumnParentBlockIndexes) {
     this.complexColumnParentBlockIndexes = complexColumnParentBlockIndexes;
-  }
-
-  public QueryStatisticsRecorder getStatisticsRecorder() {
-    return statisticsRecorder;
-  }
-
-  public void setStatisticsRecorder(QueryStatisticsRecorder statisticsRecorder) {
-    this.statisticsRecorder = statisticsRecorder;
   }
 
   public QueryDimension[] getQueryDimensions() {
@@ -723,5 +584,21 @@ public class BlockExecutionInfo {
    */
   public void setStartBlockletIndex(int startBlockletIndex) {
     this.startBlockletIndex = startBlockletIndex;
+  }
+
+  public boolean isVectorBatchCollector() {
+    return vectorBatchCollector;
+  }
+
+  public void setVectorBatchCollector(boolean vectorBatchCollector) {
+    this.vectorBatchCollector = vectorBatchCollector;
+  }
+
+  public String getBlockId() {
+    return blockId;
+  }
+
+  public void setBlockId(String blockId) {
+    this.blockId = blockId;
   }
 }

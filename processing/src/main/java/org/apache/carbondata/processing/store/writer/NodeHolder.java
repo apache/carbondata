@@ -21,18 +21,18 @@ package org.apache.carbondata.processing.store.writer;
 
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 
 public class NodeHolder {
   /**
    * keyArray
    */
-  private byte[] keyArray;
+  private byte[][] keyArray;
 
   /**
    * dataArray
    */
-  private byte[] dataArray;
+  private byte[][] dataArray;
 
   /**
    * measureLenght
@@ -110,7 +110,7 @@ public class NodeHolder {
   /**
    * compression model for numbers data block.
    */
-  private ValueCompressionModel compressionModel;
+  private WriterCompressModel compressionModel;
 
   /**
    * array of aggBlocks flag to identify the aggBlocks
@@ -139,30 +139,40 @@ public class NodeHolder {
   private BitSet[] measureNullValueIndex;
 
   /**
+   * total length of dimension values
+   */
+  private int totalDimensionArrayLength;
+
+  /**
+   * total length of all measure values
+   */
+  private int totalMeasureArrayLength;
+
+  /**
    * @return the keyArray
    */
-  public byte[] getKeyArray() {
+  public byte[][] getKeyArray() {
     return keyArray;
   }
 
   /**
    * @param keyArray the keyArray to set
    */
-  public void setKeyArray(byte[] keyArray) {
+  public void setKeyArray(byte[][] keyArray) {
     this.keyArray = keyArray;
   }
 
   /**
    * @return the dataArray
    */
-  public byte[] getDataArray() {
+  public byte[][] getDataArray() {
     return dataArray;
   }
 
   /**
    * @param dataArray the dataArray to set
    */
-  public void setDataArray(byte[] dataArray) {
+  public void setDataArray(byte[][] dataArray) {
     this.dataArray = dataArray;
   }
 
@@ -234,34 +244,6 @@ public class NodeHolder {
   }
 
   /**
-   * @return the dataAfterCompression
-   */
-  public short[][] getDataAfterCompression() {
-    return dataAfterCompression;
-  }
-
-  /**
-   * @param dataAfterCompression the dataAfterCompression to set
-   */
-  public void setDataAfterCompression(short[][] dataAfterCompression) {
-    this.dataAfterCompression = dataAfterCompression;
-  }
-
-  /**
-   * @return the indexMap
-   */
-  public short[][] getIndexMap() {
-    return indexMap;
-  }
-
-  /**
-   * @param indexMap the indexMap to set
-   */
-  public void setIndexMap(short[][] indexMap) {
-    this.indexMap = indexMap;
-  }
-
-  /**
    * @return the keyBlockIndexLength
    */
   public int[] getKeyBlockIndexLength() {
@@ -329,20 +311,6 @@ public class NodeHolder {
   }
 
   /**
-   * @return the dataIndexMapOffsets
-   */
-  public int[] getDataIndexMapOffsets() {
-    return dataIndexMapOffsets;
-  }
-
-  /**
-   * @param dataIndexMapOffsets the dataIndexMapOffsets to set
-   */
-  public void setDataIndexMapOffsets(int[] dataIndexMapOffsets) {
-    this.dataIndexMapOffsets = dataIndexMapOffsets;
-  }
-
-  /**
    * @return the dataIndexMapLength
    */
   public int[] getDataIndexMapLength() {
@@ -372,11 +340,11 @@ public class NodeHolder {
     this.columnMinData = columnMinData;
   }
 
-  public ValueCompressionModel getCompressionModel() {
+  public WriterCompressModel getCompressionModel() {
     return compressionModel;
   }
 
-  public void setCompressionModel(ValueCompressionModel compressionModel) {
+  public void setCompressionModel(WriterCompressModel compressionModel) {
     this.compressionModel = compressionModel;
   }
 
@@ -396,34 +364,6 @@ public class NodeHolder {
    */
   public void setAggBlocks(boolean[] aggBlocks) {
     this.aggBlocks = aggBlocks;
-  }
-
-  /**
-   * @return the allMaxValue
-   */
-  public byte[][] getAllMaxValue() {
-    return allMaxValue;
-  }
-
-  /**
-   * @param allMaxValue the allMaxValue to set
-   */
-  public void setAllMaxValue(byte[][] allMaxValue) {
-    this.allMaxValue = allMaxValue;
-  }
-
-  /**
-   * @return the allMinValue
-   */
-  public byte[][] getAllMinValue() {
-    return allMinValue;
-  }
-
-  /**
-   * @param allMinValue the allMinValue to set
-   */
-  public void setAllMinValue(byte[][] allMinValue) {
-    this.allMinValue = allMinValue;
   }
 
   /**
@@ -452,5 +392,21 @@ public class NodeHolder {
    */
   public void setMeasureNullValueIndex(BitSet[] measureNullValueIndex) {
     this.measureNullValueIndex = measureNullValueIndex;
+  }
+
+  public int getTotalDimensionArrayLength() {
+    return totalDimensionArrayLength;
+  }
+
+  public void setTotalDimensionArrayLength(int totalDimensionArrayLength) {
+    this.totalDimensionArrayLength = totalDimensionArrayLength;
+  }
+
+  public int getTotalMeasureArrayLength() {
+    return totalMeasureArrayLength;
+  }
+
+  public void setTotalMeasureArrayLength(int totalMeasureArrayLength) {
+    this.totalMeasureArrayLength = totalMeasureArrayLength;
   }
 }

@@ -123,6 +123,61 @@ public class RemoveDictionaryUtil {
   }
 
   /**
+   * This method will form one single byte [] for all the high card dims.
+   * For example if you need to pack 2 columns c1 and c2 , it stores in following way
+   *  <total_len(short)><offsetLen(short)><offsetLen+c1_len(short)><c1(byte[])><c2(byte[])>
+   * @param byteBufferArr
+   * @return
+   */
+  public static byte[] packByteBufferIntoSingleByteArray(byte[][] byteBufferArr) {
+    // for empty array means there is no data to remove dictionary.
+    if (null == byteBufferArr || byteBufferArr.length == 0) {
+      return null;
+    }
+    int noOfCol = byteBufferArr.length;
+    short toDetermineLengthOfByteArr = 2;
+    short offsetLen = (short) (noOfCol * 2 + toDetermineLengthOfByteArr);
+    int totalBytes = calculateTotalBytes(byteBufferArr) + offsetLen;
+
+    ByteBuffer buffer = ByteBuffer.allocate(totalBytes);
+
+    // write the length of the byte [] as first short
+    buffer.putShort((short) (totalBytes - toDetermineLengthOfByteArr));
+    // writing the offset of the first element.
+    buffer.putShort(offsetLen);
+
+    // prepare index for byte []
+    for (int index = 0; index < byteBufferArr.length - 1; index++) {
+      int noOfBytes = byteBufferArr[index].length;
+
+      buffer.putShort((short) (offsetLen + noOfBytes));
+      offsetLen += noOfBytes;
+    }
+
+    // put actual data.
+    for (int index = 0; index < byteBufferArr.length; index++) {
+      buffer.put(byteBufferArr[index]);
+    }
+    buffer.rewind();
+    return buffer.array();
+
+  }
+
+  /**
+   * To calculate the total bytes in byte Buffer[].
+   *
+   * @param byteBufferArr
+   * @return
+   */
+  private static int calculateTotalBytes(byte[][] byteBufferArr) {
+    int total = 0;
+    for (int index = 0; index < byteBufferArr.length; index++) {
+      total += byteBufferArr[index].length;
+    }
+    return total;
+  }
+
+  /**
    * Method to check whether entire row is empty or not.
    *
    * @param row
@@ -208,13 +263,13 @@ public class RemoveDictionaryUtil {
 
   }
 
-  /**
-   * @param row
-   * @return
-   */
-  public static Integer[] getCompleteDimensions(Object[] row) {
+  public static void prepareOutObj(Object[] out, int[] dimArray, byte[][] byteBufferArr,
+      Object[] measureArray) {
 
-    return (Integer[]) row[0];
+    out[IgnoreDictionary.DIMENSION_INDEX_IN_ROW.getIndex()] = dimArray;
+    out[IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex()] = byteBufferArr;
+    out[IgnoreDictionary.MEASURES_INDEX_IN_ROW.getIndex()] = measureArray;
+
   }
 
   /**

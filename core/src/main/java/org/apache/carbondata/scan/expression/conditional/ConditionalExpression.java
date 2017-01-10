@@ -34,10 +34,4 @@ public interface ConditionalExpression {
 
   List<ExpressionResult> getLiterals();
 
-  /**
-   * will return the flag of direct dictionary column
-   *
-   * @return
-   */
-  boolean isDirectDictionaryColumns();
 }

@@ -17,24 +17,39 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.hive.{CarbonMetastoreCatalog, HiveContext}
+import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
+import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonMetastore}
 
-/**
- * Carbon Environment for unified context
- */
-case class CarbonEnv(hiveContext: HiveContext, carbonCatalog: CarbonMetastoreCatalog)
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.hadoop.readsupport.impl.RawDataReadSupport
+import org.apache.carbondata.spark.rdd.SparkReadSupport
+
+case class CarbonEnv(carbonMetastore: CarbonMetastore)
 
 object CarbonEnv {
-  val className = classOf[CarbonEnv].getCanonicalName
-  var carbonEnv: CarbonEnv = _
 
-  def getInstance(sqlContext: SQLContext): CarbonEnv = {
-    if (carbonEnv == null) {
-      carbonEnv =
-        CarbonEnv(sqlContext.asInstanceOf[CarbonContext],
-          sqlContext.asInstanceOf[CarbonContext].catalog)
+  @volatile private var carbonEnv: CarbonEnv = _
+
+  // set readsupport class global so that the executor can get it.
+  SparkReadSupport.readSupportClass = classOf[RawDataReadSupport]
+
+  var initialized = false
+
+  def init(sqlContext: SQLContext): Unit = {
+    if (!initialized) {
+      val cc = sqlContext.asInstanceOf[CarbonContext]
+      val catalog = new CarbonMetastore(cc, cc.storePath, cc.hiveClientInterface, "")
+      carbonEnv = CarbonEnv(catalog)
+      CarbonIUDAnalysisRule.init(sqlContext)
+      initialized = true
+      CarbonProperties.getInstance.addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
     }
-    carbonEnv
+  }
+
+  def get: CarbonEnv = {
+    if (initialized) carbonEnv
+    else throw new RuntimeException("CarbonEnv not initialized")
   }
 }
 

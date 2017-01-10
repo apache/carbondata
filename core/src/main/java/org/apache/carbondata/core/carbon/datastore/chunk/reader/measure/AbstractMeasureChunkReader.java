@@ -18,13 +18,7 @@
  */
 package org.apache.carbondata.core.carbon.datastore.chunk.reader.measure;
 
-import java.util.List;
-
 import org.apache.carbondata.core.carbon.datastore.chunk.reader.MeasureColumnChunkReader;
-import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 
 /**
  * Measure block reader abstract class
@@ -32,44 +26,16 @@ import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonH
 public abstract class AbstractMeasureChunkReader implements MeasureColumnChunkReader {
 
   /**
-   * metadata which was to used to compress and uncompress the measure value
-   */
-  protected ValueCompressionModel compressionModel;
-
-  /**
    * file path from which blocks will be read
    */
   protected String filePath;
 
   /**
-   * measure chunk have the information about the metadata present in the file
-   */
-  protected List<DataChunk> measureColumnChunk;
-
-  /**
-   * type of valu comprssion model selected for each measure column
-   */
-  protected UnCompressValue[] values;
-
-  /**
    * Constructor to get minimum parameter to create instance of this class
    *
-   * @param measureColumnChunk measure chunk metadata
-   * @param compression        model metadata which was to used to compress and uncompress
-   *                           the measure value
    * @param filePath           file from which data will be read
-   * @param isInMemory         in case of in memory it will read and holds the data and when
-   *                           query request will come it will uncompress and the data
    */
-  public AbstractMeasureChunkReader(List<DataChunk> measureColumnChunk,
-      ValueCompressionModel compressionModel, String filePath, boolean isInMemory) {
-    this.measureColumnChunk = measureColumnChunk;
-    this.compressionModel = compressionModel;
+  public AbstractMeasureChunkReader(String filePath) {
     this.filePath = filePath;
-    values =
-        new ValueCompressonHolder.UnCompressValue[compressionModel.getUnCompressValues().length];
-    for (int i = 0; i < values.length; i++) {
-      values[i] = compressionModel.getUnCompressValues()[i].getNew().getCompressorObject();
-    }
   }
 }

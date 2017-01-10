@@ -1,4 +1,0 @@
-APP_SUB_CATEGORY_NAME StringType,APP_CATEGORY_NAME StringType,msidn_number LongType,total LongType
-HTTP,Web_Browsing,4,2896722
-HTTPS,Web_Browsing,1,73783
-HTTP_Browsing,Web_Browsing,1,2381

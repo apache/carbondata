@@ -31,9 +31,23 @@ public class CarbonWriteDataHolder {
   private long[] longValues;
 
   /**
+   * bigDecimal left part
+   */
+  private long[] bigDecimalLeftValues;
+
+  /**
+   * bigDecimal right part
+   */
+  private long[] bigDecimalRightValues;
+  /**
    * byteValues
    */
   private byte[][] byteValues;
+
+  /**
+   * byteValues for no dictionary and non kettle flow.
+   */
+  private byte[][][] byteValuesForNonDictionary;
 
   /**
    * byteValues
@@ -69,6 +83,7 @@ public class CarbonWriteDataHolder {
 
   /**
    * Method to initialise double array
+   * TODO Remove after kettle flow got removed.
    *
    * @param size
    */
@@ -82,6 +97,27 @@ public class CarbonWriteDataHolder {
   }
 
   /**
+   * Method to initialise byte array
+   *
+   * @param size
+   */
+  public void initialiseByteArrayValuesWithOutKettle(int size) {
+    if (size < 1) {
+      throw new IllegalArgumentException("Invalid array size");
+    }
+
+    byteValues = new byte[size][];
+  }
+
+  public void initialiseByteArrayValuesForNonDictionary(int size) {
+    if (size < 1) {
+      throw new IllegalArgumentException("Invalid array size");
+    }
+
+    byteValuesForNonDictionary = new byte[size][][];
+  }
+
+  /**
    * Method to initialise long array
    *
    * @param size
@@ -91,6 +127,14 @@ public class CarbonWriteDataHolder {
       throw new IllegalArgumentException("Invalid array size");
     }
     longValues = new long[size];
+  }
+
+  public void initialiseBigDecimalValues(int size) {
+    if (size < 1) {
+      throw new IllegalArgumentException("Invalid array size");
+    }
+    bigDecimalLeftValues = new long[size];
+    bigDecimalRightValues = new long[size];
   }
 
   /**
@@ -116,6 +160,17 @@ public class CarbonWriteDataHolder {
   }
 
   /**
+   * set bigdecimal value by index
+   *
+   * @param index
+   * @param value
+   */
+  public void setWritableBigDecimalValueByIndex(int index, long[] value) {
+    bigDecimalLeftValues[index] = value[0];
+    bigDecimalRightValues[index] = value[1];
+    size++;
+  }
+  /**
    * set byte array value by index
    *
    * @param index
@@ -123,6 +178,12 @@ public class CarbonWriteDataHolder {
    */
   public void setWritableByteArrayValueByIndex(int index, byte[] value) {
     byteValues[index] = value;
+    size++;
+    if (null != value) totalSize += value.length;
+  }
+
+  public void setWritableNonDictByteArrayValueByIndex(int index, byte[][] value) {
+    byteValuesForNonDictionary[index] = value;
     size++;
     if (null != value) totalSize += value.length;
   }
@@ -172,6 +233,15 @@ public class CarbonWriteDataHolder {
     return byteValues;
   }
 
+  public byte[][][] getNonDictByteArrayValues() {
+    if (size < byteValuesForNonDictionary.length) {
+      byte[][][] temp = new byte[size][][];
+      System.arraycopy(byteValuesForNonDictionary, 0, temp, 0, size);
+      byteValuesForNonDictionary = temp;
+    }
+    return byteValuesForNonDictionary;
+  }
+
   /**
    * Get Writable Double Values
    *
@@ -184,5 +254,27 @@ public class CarbonWriteDataHolder {
       longValues = temp;
     }
     return longValues;
+  }
+
+  /**
+   * Get Writable bigdecimal Values
+   *
+   * @return
+   */
+  public long[][] getWritableBigDecimalValues() {
+    long[][] bigDecimalValues = new long[2][];
+    if (size < bigDecimalLeftValues.length) {
+      long[] temp = new long[size];
+      System.arraycopy(bigDecimalLeftValues, 0, temp, 0, size);
+      bigDecimalLeftValues = temp;
+    }
+    if (size < bigDecimalRightValues.length) {
+      long[] temp = new long[size];
+      System.arraycopy(bigDecimalRightValues, 0, temp, 0, size);
+      bigDecimalRightValues = temp;
+    }
+    bigDecimalValues[0]= bigDecimalLeftValues;
+    bigDecimalValues[1] = bigDecimalRightValues;
+    return bigDecimalValues;
   }
 }

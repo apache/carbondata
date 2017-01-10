@@ -18,6 +18,8 @@
  */
 package org.apache.carbondata.hadoop.readsupport.impl;
 
+import java.io.IOException;
+
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
@@ -28,7 +30,6 @@ import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 /**
@@ -51,8 +52,8 @@ public abstract class AbstractDictionaryDecodedReadSupport<T> implements CarbonR
    * @param carbonColumns
    * @param absoluteTableIdentifier
    */
-  @Override public void intialize(CarbonColumn[] carbonColumns,
-      AbsoluteTableIdentifier absoluteTableIdentifier) {
+  @Override public void initialize(CarbonColumn[] carbonColumns,
+      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException {
     this.carbonColumns = carbonColumns;
     dictionaries = new Dictionary[carbonColumns.length];
     dataTypes = new DataType[carbonColumns.length];
@@ -62,14 +63,12 @@ public abstract class AbstractDictionaryDecodedReadSupport<T> implements CarbonR
         CacheProvider cacheProvider = CacheProvider.getInstance();
         Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
             .createCache(CacheType.FORWARD_DICTIONARY, absoluteTableIdentifier.getStorePath());
-        try {
-          dataTypes[i] = carbonColumns[i].getDataType();
-          dictionaries[i] = forwardDictionaryCache.get(new DictionaryColumnUniqueIdentifier(
-              absoluteTableIdentifier.getCarbonTableIdentifier(),
-              carbonColumns[i].getColumnIdentifier(), dataTypes[i]));
-        } catch (CarbonUtilException e) {
-          throw new RuntimeException(e);
-        }
+        dataTypes[i] = carbonColumns[i].getDataType();
+        dictionaries[i] = forwardDictionaryCache.get(new DictionaryColumnUniqueIdentifier(
+            absoluteTableIdentifier.getCarbonTableIdentifier(),
+            carbonColumns[i].getColumnIdentifier(), dataTypes[i]));
+      } else {
+        dataTypes[i] = carbonColumns[i].getDataType();
       }
     }
   }

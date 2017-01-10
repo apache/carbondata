@@ -81,9 +81,9 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   protected ColumnIdentifier columnIdentifier;
 
   /**
-   * HDFS store path
+   * carbon dictionary data store path
    */
-  protected String hdfsStorePath;
+  protected String storePath;
 
   /**
    * dictionary file path
@@ -131,15 +131,15 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   /**
    * Constructor
    *
-   * @param hdfsStorePath         HDFS store path
+   * @param storePath             carbon dictionary data store path
    * @param carbonTableIdentifier table identifier which will give table name and database name
    * @param columnIdentifier      column unique identifier
    */
-  public CarbonDictionaryWriterImpl(String hdfsStorePath,
+  public CarbonDictionaryWriterImpl(String storePath,
       CarbonTableIdentifier carbonTableIdentifier, ColumnIdentifier columnIdentifier) {
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.columnIdentifier = columnIdentifier;
-    this.hdfsStorePath = hdfsStorePath;
+    this.storePath = storePath;
     this.isFirstTime = true;
   }
 
@@ -252,8 +252,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
 
   protected void initPaths() {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(columnIdentifier,
-            this.hdfsStorePath, carbonTableIdentifier);
+    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(
+            this.storePath, carbonTableIdentifier);
     this.dictionaryFilePath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId());
     this.dictionaryMetaFilePath =
         carbonTablePath.getDictionaryMetaFilePath(columnIdentifier.getColumnId());
@@ -285,8 +285,11 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   private void validateDictionaryFileOffsetWithLastSegmentEntryOffset() throws IOException {
     // read last dictionary chunk meta entry from dictionary metadata file
     chunkMetaObjectForLastSegmentEntry = getChunkMetaObjectForLastSegmentEntry();
-    int bytesToTruncate =
-        (int) (chunk_start_offset - chunkMetaObjectForLastSegmentEntry.getEnd_offset());
+    int bytesToTruncate = 0;
+    if (null != chunkMetaObjectForLastSegmentEntry) {
+      bytesToTruncate =
+              (int) (chunk_start_offset - chunkMetaObjectForLastSegmentEntry.getEnd_offset());
+    }
     if (bytesToTruncate > 0) {
       LOGGER.info("some inconsistency in dictionary file for column " + this.columnIdentifier);
       // truncate the dictionary data till chunk meta end offset
@@ -400,7 +403,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    * @return
    */
   protected CarbonDictionaryMetadataReader getDictionaryMetadataReader() {
-    return new CarbonDictionaryMetadataReaderImpl(hdfsStorePath, carbonTableIdentifier,
+    return new CarbonDictionaryMetadataReaderImpl(storePath, carbonTableIdentifier,
         columnIdentifier);
   }
 

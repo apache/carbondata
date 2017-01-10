@@ -67,11 +67,6 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
 
   private String csvFilePath;
 
-  /**
-   * dimCSVDirLoc
-   */
-  private String dimCSVDirLoc;
-
   private String dimTables;
 
   private boolean isDirectLoad;
@@ -90,6 +85,10 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
   private String quoteCharacter;
 
   private String commentCharacter;
+
+  private String rddIteratorKey;
+
+  private String dateFormat;
 
   public DataProcessTaskStatus(String databaseName, String tableName) {
     this.databaseName = databaseName;
@@ -264,14 +263,6 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
     return copy;
   }
 
-  public String getDimCSVDirLoc() {
-    return dimCSVDirLoc;
-  }
-
-  public void setDimCSVDirLoc(String dimCSVDirLoc) {
-    this.dimCSVDirLoc = dimCSVDirLoc;
-  }
-
   public String getBlocksID() {
     return blocksID;
   }
@@ -297,4 +288,16 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
   public void setCommentCharacter(String commentCharacter) {
     this.commentCharacter = commentCharacter;
   }
+
+  public String getRddIteratorKey() {
+    return rddIteratorKey;
+  }
+
+  public void setRddIteratorKey(String rddIteratorKey) {
+    this.rddIteratorKey = rddIteratorKey;
+  }
+
+  public String getDateFormat() { return dateFormat; }
+
+  public void setDateFormat(String dateFormat) { this.dateFormat = dateFormat; }
 }

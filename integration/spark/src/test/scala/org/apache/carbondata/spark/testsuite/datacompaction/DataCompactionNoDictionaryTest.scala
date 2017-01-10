@@ -18,18 +18,16 @@
  */
 package org.apache.carbondata.spark.testsuite.datacompaction
 
-import java.io.File
-
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.lcm.status.SegmentStatusManager
-import org.scalatest.BeforeAndAfterAll
 
 /**
   * FT for data compaction scenario.
@@ -38,26 +36,22 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
 
   // return segment details
   def getSegments(databaseName : String, tableName : String, tableId : String): List[String] = {
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
-        AbsoluteTableIdentifier(
+    val identifier = new AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-          new CarbonTableIdentifier(databaseName, tableName.toLowerCase , tableId)
-        )
-    )
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
-    segments
+          new CarbonTableIdentifier(databaseName, tableName.toLowerCase , tableId))
+
+    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+    segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
   }
 
-  val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
-    .getCanonicalPath
-
-  var csvFilePath1 = currentDirectory + "/src/test/resources/compaction/compaction1.csv"
-  var csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compaction2.csv"
-  var csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
+  var csvFilePath1 = s"$resourcesPath/compaction/compaction1.csv"
+  var csvFilePath2 = s"$resourcesPath/compaction/compaction2.csv"
+  var csvFilePath3 = s"$resourcesPath/compaction/compaction3.csv"
 
   override def beforeAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
+    sql("DROP TABLE IF EXISTS nodictionaryCompaction")
     sql(
       "CREATE TABLE nodictionaryCompaction (country String, ID Int, date Timestamp, name " +
         "String, " +
@@ -92,7 +86,8 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
     var noOfRetries = 0
     while (status && noOfRetries < 10) {
 
-      val segments: List[String] = getSegments("default", "nodictionaryCompaction", "uni21")
+      val segments: List[String] = getSegments(
+        CarbonCommonConstants.DATABASE_DEFAULT_NAME, "nodictionaryCompaction", "uni21")
 
       if (!segments.contains("0.1")) {
         // wait for 2 seconds for compaction to complete.
@@ -133,7 +128,8 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
    sql("clean files for table nodictionaryCompaction")
 
     // merged segment should not be there
-    val segments = getSegments("default", "nodictionaryCompaction", "uni21")
+    val segments =
+      getSegments(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "nodictionaryCompaction", "uni21")
     assert(!segments.contains("0"))
     assert(!segments.contains("1"))
     assert(!segments.contains("2"))
@@ -170,10 +166,10 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop table nodictionaryCompaction")
+    sql("DROP TABLE IF EXISTS nodictionaryCompaction")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-    CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "false")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
   }
 
 }

@@ -35,20 +35,6 @@ public class DataLoadModel {
    */
   private boolean isCsvLoad;
 
-  /**
-   * Modified Dimension
-   */
-  private String[] modifiedDimesion;
-
-  /**
-   * loadNames separated by HASH_SPC_CHARACTER
-   */
-  private String loadNames;
-  /**
-   * modificationOrDeletionTime separated by HASH_SPC_CHARACTER
-   */
-  private String modificationOrDeletionTime;
-
   private String blocksID;
   /**
    * task id, each spark task has a unique id
@@ -64,6 +50,10 @@ public class DataLoadModel {
   private String quoteCharacter;
 
   private String commentCharacter;
+
+  private String rddIteratorKey;
+
+  private String dateFormat;
 
   private String maxColumns;
   /**
@@ -106,48 +96,6 @@ public class DataLoadModel {
    */
   public void setCsvLoad(boolean isCsvLoad) {
     this.isCsvLoad = isCsvLoad;
-  }
-
-  /**
-   * @return Returns the modifiedDimesion.
-   */
-  public String[] getModifiedDimesion() {
-    return modifiedDimesion;
-  }
-
-  /**
-   * @param modifiedDimesion The modifiedDimesion to set.
-   */
-  public void setModifiedDimesion(String[] modifiedDimesion) {
-    this.modifiedDimesion = modifiedDimesion;
-  }
-
-  /**
-   * return modificationOrDeletionTime separated by HASH_SPC_CHARACTER
-   */
-  public String getModificationOrDeletionTime() {
-    return modificationOrDeletionTime;
-  }
-
-  /**
-   * set modificationOrDeletionTime separated by HASH_SPC_CHARACTER
-   */
-  public void setModificationOrDeletionTime(String modificationOrDeletionTime) {
-    this.modificationOrDeletionTime = modificationOrDeletionTime;
-  }
-
-  /**
-   * return loadNames separated by HASH_SPC_CHARACTER
-   */
-  public String getLoadNames() {
-    return loadNames;
-  }
-
-  /**
-   * set loadNames separated by HASH_SPC_CHARACTER
-   */
-  public void setLoadNames(String loadNames) {
-    this.loadNames = loadNames;
   }
 
   /**
@@ -213,6 +161,10 @@ public class DataLoadModel {
   public void setCommentCharacter(String commentCharacter) {
     this.commentCharacter = commentCharacter;
   }
+
+  public String getDateFormat() { return dateFormat; }
+
+  public void setDateFormat(String dateFormat) { this.dateFormat = dateFormat; }
   /**
    * @return
    */
@@ -225,6 +177,14 @@ public class DataLoadModel {
    */
   public void setMaxColumns(String maxColumns) {
     this.maxColumns = maxColumns;
+  }
+
+  public String getRddIteratorKey() {
+    return rddIteratorKey;
+  }
+
+  public void setRddIteratorKey(String rddIteratorKey) {
+    this.rddIteratorKey = rddIteratorKey;
   }
 }
 

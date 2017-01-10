@@ -21,13 +21,14 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
 /**
  * This class is responsible for maintaining the mapping of tasks of a node.
  */
-public class TableTaskInfo extends Distributable {
+public class TableTaskInfo implements Distributable {
 
   private final List<TableBlockInfo> tableBlockInfoList;
   private final String taskId;
@@ -95,7 +96,7 @@ public class TableTaskInfo extends Distributable {
       } else {
         // for the case where all the nodes have same number of blocks then
         // we need to return complete list instead of max node.
-        if (previousValueOccurence != entry.getValue()) {
+        if (!Objects.equals(previousValueOccurence, entry.getValue())) {
           useIndex = false;
         }
       }

@@ -45,8 +45,8 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
       return exprLeftRes;
     }
     if (exprLeftRes.getDataType() != exprRightRes.getDataType()) {
-      if (exprLeftRes.getDataType().getPresedenceOrder() < exprRightRes.getDataType()
-          .getPresedenceOrder()) {
+      if (exprLeftRes.getDataType().getPrecedenceOrder() < exprRightRes.getDataType()
+          .getPrecedenceOrder()) {
         val1 = exprRightRes;
       }
 
@@ -65,6 +65,7 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
       case INT:
         result = exprLeftRes.getInt() > (exprRightRes.getInt());
         break;
+      case DATE:
       case TIMESTAMP:
         result = exprLeftRes.getTime() > (exprRightRes.getTime());
         break;

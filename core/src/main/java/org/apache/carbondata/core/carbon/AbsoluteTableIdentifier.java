@@ -18,9 +18,12 @@
  */
 package org.apache.carbondata.core.carbon;
 
+import java.io.File;
 import java.io.Serializable;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * identifier which will have store path and carbon table identifier
@@ -63,19 +66,31 @@ public class AbsoluteTableIdentifier implements Serializable {
     return carbonTableIdentifier;
   }
 
+  public static AbsoluteTableIdentifier from(String dbName, String tableName) {
+    CarbonTableIdentifier identifier = new CarbonTableIdentifier(dbName, tableName, "");
+    return new AbsoluteTableIdentifier(CarbonUtil.getCarbonStorePath(), identifier);
+  }
+
   public static AbsoluteTableIdentifier fromTablePath(String tablePath) {
-    String[] names = tablePath.replace('\\', '/').split("/");
+    String formattedTablePath = tablePath.replace('\\', '/');
+    String[] names = formattedTablePath.split("/");
     if (names.length < 3) {
       throw new IllegalArgumentException("invalid table path: " + tablePath);
     }
 
     String tableName = names[names.length - 1];
     String dbName = names[names.length - 2];
-    String storePath = tablePath.substring(0, tablePath.lastIndexOf(dbName));
+    String storePath = formattedTablePath.substring(0, formattedTablePath.lastIndexOf(dbName +
+            CarbonCommonConstants.FILE_SEPARATOR + tableName));
 
     CarbonTableIdentifier identifier =
         new CarbonTableIdentifier(dbName, tableName, Long.toString(System.currentTimeMillis()));
     return new AbsoluteTableIdentifier(storePath, identifier);
+  }
+
+  public String getTablePath() {
+    return getStorePath() + File.separator + getCarbonTableIdentifier().getDatabaseName() +
+        File.separator + getCarbonTableIdentifier().getTableName();
   }
 
   /**

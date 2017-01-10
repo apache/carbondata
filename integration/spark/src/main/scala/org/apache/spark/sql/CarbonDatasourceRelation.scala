@@ -17,26 +17,25 @@
 
 package org.apache.spark.sql
 
-import java.util.LinkedHashSet
-
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.hadoop.fs.Path
-import org.apache.spark._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.hive.{CarbonMetaData, CarbonMetastoreTypes, TableMeta}
+import org.apache.spark.sql.hive.{CarbonMetaData, CarbonMetastoreTypes}
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{DataType, StructType}
 
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonImplicitDimension
 import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
-import org.apache.carbondata.lcm.status.SegmentStatusManager
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.spark.{CarbonOption, _}
+import org.apache.carbondata.spark.merger.TableMeta
 
 /**
  * Carbon relation provider compliant to data source api.
@@ -106,10 +105,10 @@ class CarbonSource extends RelationProvider
     }
 
     if (doSave) {
-      // Only save data when the save mode is Overwrite.
-      data.saveAsCarbonFile(parameters)
+      // save data when the save mode is Overwrite.
+      new CarbonDataFrameWriter(data).saveAsCarbonFile(parameters)
     } else if (doAppend) {
-      data.appendToCarbonFile(parameters)
+      new CarbonDataFrameWriter(data).appendToCarbonFile(parameters)
     }
 
     createRelation(sqlContext, parameters)
@@ -132,13 +131,17 @@ private[sql] case class CarbonDatasourceRelation(
     tableIdentifier: TableIdentifier,
     alias: Option[String])
     (@transient context: SQLContext)
-    extends BaseRelation with Serializable with Logging {
+    extends BaseRelation with Serializable {
 
-  def carbonRelation: CarbonRelation = {
-    CarbonEnv.getInstance(context)
-        .carbonCatalog.lookupRelation1(tableIdentifier, None)(sqlContext)
+  lazy val carbonRelation: CarbonRelation = {
+    CarbonEnv.get
+        .carbonMetastore.lookupRelation1(tableIdentifier, None)(sqlContext)
         .asInstanceOf[CarbonRelation]
   }
+
+  def getDatabaseName(): String = tableIdentifier.database.getOrElse("default")
+
+  def getTable(): String = tableIdentifier.table
 
   def schema: StructType = carbonRelation.schema
 
@@ -153,7 +156,7 @@ private[sql] case class CarbonDatasourceRelation(
 case class CarbonRelation(
     databaseName: String,
     tableName: String,
-    metaData: CarbonMetaData,
+    var metaData: CarbonMetaData,
     tableMeta: TableMeta,
     alias: Option[String])(@transient sqlContext: SQLContext)
     extends LeafNode with MultiInstanceRelation {
@@ -203,10 +206,11 @@ case class CarbonRelation(
   }
 
   val dimensionsAttr = {
-    val sett = new LinkedHashSet(
-      tableMeta.carbonTable.getDimensionByTableName(tableMeta.carbonTableIdentifier.getTableName)
-          .asScala.asJava)
-    sett.asScala.toSeq.filter(!_.getColumnSchema.isInvisible).map(dim => {
+    val sett = new java.util.LinkedHashSet(tableMeta.carbonTable
+      .getDimensionByTableName(tableMeta.carbonTableIdentifier.getTableName).asScala.asJava)
+    sett.asScala.toSeq.filter(dim => !dim.isInvisible ||
+                                     (dim.isInvisible && dim.isInstanceOf[CarbonImplicitDimension]))
+      .map(dim => {
       val dimval = metaData.carbonTable
           .getDimensionByName(metaData.carbonTable.getFactTableName, dim.getColName)
       val output: DataType = dimval.getDataType
@@ -229,7 +233,7 @@ case class CarbonRelation(
 
   val measureAttr = {
     val factTable = tableMeta.carbonTable.getFactTableName
-    new LinkedHashSet(
+    new java.util.LinkedHashSet(
       tableMeta.carbonTable.
           getMeasureByTableName(tableMeta.carbonTable.getFactTableName).
           asScala.asJava).asScala.toSeq.filter(!_.getColumnSchema.isInvisible)
@@ -244,8 +248,39 @@ case class CarbonRelation(
           nullable = true)(qualifiers = tableName +: alias.toSeq))
   }
 
-  override val output = dimensionsAttr ++ measureAttr
-
+  override val output = {
+    val columns = tableMeta.carbonTable.getCreateOrderColumn(tableMeta.carbonTable.getFactTableName)
+        .asScala
+    columns.filter(!_.isInvisible).map { column =>
+      if (column.isDimesion()) {
+        val output: DataType = column.getDataType.toString.toLowerCase match {
+          case "array" =>
+            CarbonMetastoreTypes.toDataType(s"array<${getArrayChildren(column.getColName)}>")
+          case "struct" =>
+            CarbonMetastoreTypes.toDataType(s"struct<${getStructChildren(column.getColName)}>")
+          case dType =>
+            val dataType = addDecimalScaleAndPrecision(column, dType)
+            CarbonMetastoreTypes.toDataType(dataType)
+        }
+        AttributeReference(column.getColName, output,
+          nullable = true
+        )(qualifiers = tableName +: alias.toSeq)
+      } else {
+        AttributeReference(column.getColName, CarbonMetastoreTypes.toDataType(
+          column.getDataType.toString
+            .toLowerCase match {
+            case "int" => "long"
+            case "short" => "long"
+            case "decimal" => "decimal(" + column.getColumnSchema.getPrecision + "," + column
+              .getColumnSchema.getScale + ")"
+            case others => others
+          }
+        ),
+          nullable = true
+        )(qualifiers = tableName +: alias.toSeq)
+      }
+    }
+  }
   // TODO: Use data from the footers.
   override lazy val statistics = Statistics(sizeInBytes = this.sizeInBytes)
 
@@ -257,7 +292,7 @@ case class CarbonRelation(
     }
   }
 
-  def addDecimalScaleAndPrecision(dimval: CarbonDimension, dataType: String): String = {
+  def addDecimalScaleAndPrecision(dimval: CarbonColumn, dataType: String): String = {
     var dType = dataType
     if (dimval.getDataType
         == org.apache.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL) {
@@ -272,9 +307,8 @@ case class CarbonRelation(
   private var sizeInBytesLocalValue = 0L
 
   def sizeInBytes: Long = {
-    val tableStatusNewLastUpdatedTime = new SegmentStatusManager(
+    val tableStatusNewLastUpdatedTime = SegmentStatusManager.getTableStatusLastModifiedTime(
       tableMeta.carbonTable.getAbsoluteTableIdentifier)
-        .getTableStatusLastModifiedTime
     if (tableStatusLastUpdateTime != tableStatusNewLastUpdatedTime) {
       val tablePath = CarbonStorePath.getCarbonTablePath(
         tableMeta.storePath,

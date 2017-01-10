@@ -51,10 +51,8 @@ public class CarbonInputFormat_FT extends TestCase {
   @Test public void testGetSplits() throws Exception {
     CarbonInputFormat carbonInputFormat = new CarbonInputFormat();
     JobConf jobConf = new JobConf(new Configuration());
-    Job job = new Job(jobConf);
-    CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("db", "table1", UUID.randomUUID().toString());
-    FileInputFormat.addInputPath(job, new Path("/opt/carbonstore/"));
-    carbonInputFormat.setTableToAccess(job.getConfiguration(), tableIdentifier);
+    Job job = Job.getInstance(jobConf);
+    FileInputFormat.addInputPath(job, new Path("/opt/carbonstore/db/table1"));
     job.getConfiguration().set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, "1,2");
     List splits = carbonInputFormat.getSplits(job);
 
@@ -65,10 +63,8 @@ public class CarbonInputFormat_FT extends TestCase {
   @Test public void testGetFilteredSplits() throws Exception {
     CarbonInputFormat carbonInputFormat = new CarbonInputFormat();
     JobConf jobConf = new JobConf(new Configuration());
-    Job job = new Job(jobConf);
-    CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("db", "table1", UUID.randomUUID().toString());
-    FileInputFormat.addInputPath(job, new Path("/opt/carbonstore/"));
-    carbonInputFormat.setTableToAccess(job.getConfiguration(), tableIdentifier);
+    Job job = Job.getInstance(jobConf);
+    FileInputFormat.addInputPath(job, new Path("/opt/carbonstore/db/table1"));
     job.getConfiguration().set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, "1,2");
     Expression expression = new EqualToExpression(new ColumnExpression("c1", DataType.STRING),
         new LiteralExpression("a", DataType.STRING));

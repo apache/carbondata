@@ -102,6 +102,7 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
           return -1;
         }
         return val1.compareTo(val2);
+      case DATE:
       case TIMESTAMP:
         SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
@@ -132,8 +133,7 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
    * @see Object#hashCode()
    */
   @Override public int hashCode() {
-    int result = ((memberValue == null) ? 0 : memberValue.hashCode());
-    return result;
+    return ((memberValue == null) ? 0 : memberValue.hashCode());
   }
 
   /**
@@ -165,15 +165,6 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
    */
   public int getKey() {
     return key;
-  }
-
-  /**
-   * Returns member buye
-   *
-   * @return
-   */
-  public String getMemberValue() {
-    return memberValue;
   }
 
 }

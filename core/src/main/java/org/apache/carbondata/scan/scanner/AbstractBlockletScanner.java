@@ -18,8 +18,16 @@
  */
 package org.apache.carbondata.scan.scanner;
 
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
+import java.io.IOException;
+
+import org.apache.carbondata.common.iudprocessor.iuddata.BlockletDeleteDeltaCacheLoader;
+import org.apache.carbondata.common.iudprocessor.iuddata.DeleteDeltaCacheLoaderIntf;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
+import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
 
@@ -38,25 +46,48 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
    */
   protected BlockExecutionInfo blockExecutionInfo;
 
+  public QueryStatisticsModel queryStatisticsModel;
+
   public AbstractBlockletScanner(BlockExecutionInfo tableBlockExecutionInfos) {
     this.blockExecutionInfo = tableBlockExecutionInfos;
   }
 
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
-      throws QueryExecutionException {
+      throws IOException, FilterUnsupportedException {
     fillKeyValue(blocksChunkHolder);
     return scannedResult;
   }
 
-  protected void fillKeyValue(BlocksChunkHolder blocksChunkHolder) {
-    scannedResult.reset();
-    scannedResult.setMeasureChunks(blocksChunkHolder.getDataBlock()
-        .getMeasureChunks(blocksChunkHolder.getFileReader(),
-            blockExecutionInfo.getAllSelectedMeasureBlocksIndexes()));
-    scannedResult.setNumberOfRows(blocksChunkHolder.getDataBlock().nodeSize());
+  protected void fillKeyValue(BlocksChunkHolder blocksChunkHolder) throws IOException {
 
+    QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
+            .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);
+    totalBlockletStatistic.addCountStatistic(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM,
+            totalBlockletStatistic.getCount() + 1);
+    queryStatisticsModel.getRecorder().recordStatistics(totalBlockletStatistic);
+    QueryStatistic validScannedBlockletStatistic = queryStatisticsModel
+            .getStatisticsTypeAndObjMap().get(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM);
+    validScannedBlockletStatistic
+            .addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM,
+                    validScannedBlockletStatistic.getCount() + 1);
+    queryStatisticsModel.getRecorder().recordStatistics(validScannedBlockletStatistic);
+    scannedResult.reset();
+    scannedResult.setNumberOfRows(blocksChunkHolder.getDataBlock().nodeSize());
+    scannedResult.setBlockletId(
+              blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR
+                      + blocksChunkHolder.getDataBlock().nodeNumber());
     scannedResult.setDimensionChunks(blocksChunkHolder.getDataBlock()
         .getDimensionChunks(blocksChunkHolder.getFileReader(),
             blockExecutionInfo.getAllSelectedDimensionBlocksIndexes()));
+    scannedResult.setMeasureChunks(blocksChunkHolder.getDataBlock()
+            .getMeasureChunks(blocksChunkHolder.getFileReader(),
+                blockExecutionInfo.getAllSelectedMeasureBlocksIndexes()));
+    // loading delete data cache in blockexecutioninfo instance
+    DeleteDeltaCacheLoaderIntf deleteCacheLoader =
+        new BlockletDeleteDeltaCacheLoader(scannedResult.getBlockletId(),
+            blocksChunkHolder.getDataBlock(), blockExecutionInfo.getAbsoluteTableIdentifier());
+    deleteCacheLoader.loadDeleteDeltaFileDataToCache();
+    scannedResult
+        .setBlockletDeleteDeltaCache(blocksChunkHolder.getDataBlock().getDeleteDeltaDataCache());
   }
 }

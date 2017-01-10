@@ -20,7 +20,7 @@
 package org.apache.carbondata.processing.store.writer;
 
 import org.apache.carbondata.core.datastorage.store.columnar.IndexStorage;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
 public interface CarbonFactDataWriter<T> {
@@ -40,7 +40,7 @@ public interface CarbonFactDataWriter<T> {
    */
 
   NodeHolder buildDataNodeHolder(IndexStorage<T>[] keyStorageArray, byte[][] dataArray,
-      int entryCount, byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel,
+      int entryCount, byte[] startKey, byte[] endKey, WriterCompressModel compressionModel,
       byte[] noDictionaryStartKey, byte[] noDictionaryEndKey) throws CarbonDataWriterException;
 
   /**
@@ -68,18 +68,6 @@ public interface CarbonFactDataWriter<T> {
    * Below method will be used to close the writer
    */
   void closeWriter() throws CarbonDataWriterException;
-
-  /**
-   * Below method will be used to get the leaf meta data size
-   */
-  int getLeafMetadataSize();
-
-  /**
-   * For getting TempLocation
-   *
-   * @return
-   */
-  String getTempStoreLocation();
 
   /**
    * @param isNoDictionary

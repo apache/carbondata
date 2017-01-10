@@ -21,8 +21,8 @@ package org.apache.carbondata.core.datastorage.store.impl.data.compressed;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.NodeMeasureDataStore;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonWriteDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 
@@ -38,7 +38,7 @@ public abstract class AbstractHeavyCompressedDoubleArrayDataStore
   /**
    * compressionModel.
    */
-  protected ValueCompressionModel compressionModel;
+  protected WriterCompressModel compressionModel;
 
   /**
    * type
@@ -50,7 +50,7 @@ public abstract class AbstractHeavyCompressedDoubleArrayDataStore
    *
    * @param compressionModel
    */
-  public AbstractHeavyCompressedDoubleArrayDataStore(ValueCompressionModel compressionModel) {
+  public AbstractHeavyCompressedDoubleArrayDataStore(WriterCompressModel compressionModel) {
     this.compressionModel = compressionModel;
     if (null != compressionModel) {
       this.type = compressionModel.getType();
@@ -62,19 +62,12 @@ public abstract class AbstractHeavyCompressedDoubleArrayDataStore
   @Override public byte[][] getWritableMeasureDataArray(CarbonWriteDataHolder[] dataHolder) {
     for (int i = 0; i < compressionModel.getUnCompressValues().length; i++) {
       values[i] = compressionModel.getUnCompressValues()[i].getNew();
-      if (type[i] != CarbonCommonConstants.BYTE_VALUE_MEASURE
-          && type[i] != CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        if (type[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
-          values[i].setValue(ValueCompressionUtil
-              .getCompressedValues(compressionModel.getCompType()[i],
-                  dataHolder[i].getWritableLongValues(), compressionModel.getChangedDataType()[i],
-                  (long) compressionModel.getMaxValue()[i], compressionModel.getDecimal()[i]));
-        } else {
-          values[i].setValue(ValueCompressionUtil
-              .getCompressedValues(compressionModel.getCompType()[i],
-                  dataHolder[i].getWritableDoubleValues(), compressionModel.getChangedDataType()[i],
-                  (double) compressionModel.getMaxValue()[i], compressionModel.getDecimal()[i]));
-        }
+      if (type[i] != CarbonCommonConstants.BYTE_VALUE_MEASURE) {
+        values[i].setValue(
+            ValueCompressionUtil.getValueCompressor(compressionModel.getCompressionFinders()[i])
+                .getCompressedValues(compressionModel.getCompressionFinders()[i], dataHolder[i],
+                    compressionModel.getMaxValue()[i],
+                    compressionModel.getMantissa()[i]));
       } else {
         values[i].setValue(dataHolder[i].getWritableByteArrayValues());
       }
@@ -85,10 +78,6 @@ public abstract class AbstractHeavyCompressedDoubleArrayDataStore
       returnValue[i] = values[i].getBackArrayData();
     }
     return returnValue;
-  }
-
-  @Override public short getLength() {
-    return values != null ? (short) values.length : 0;
   }
 
 }

@@ -26,8 +26,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.processing.newflow.complexobjects.StructObject;
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -35,7 +37,7 @@ import org.pentaho.di.core.exception.KettleException;
 /**
  * Struct DataType stateless object used in data loading
  */
-public class StructDataType implements GenericDataType {
+public class StructDataType implements GenericDataType<StructObject> {
 
   /**
    * children columns
@@ -95,14 +97,6 @@ public class StructDataType implements GenericDataType {
   @Override
   public String getName() {
     return name;
-  }
-
-  /*
-   * set column name
-   */
-  @Override
-  public void setName(String name) {
-    this.name = name;
   }
 
   /*
@@ -186,9 +180,38 @@ public class StructDataType implements GenericDataType {
     }
   }
 
+  @Override public void writeByteArray(StructObject input, DataOutputStream dataOutputStream)
+      throws IOException, DictionaryGenerationException {
+    dataOutputStream.writeInt(children.size());
+    if (input == null) {
+      dataOutputStream.writeInt(children.size());
+      for (int i = 0; i < children.size(); i++) {
+        children.get(i).writeByteArray(null, dataOutputStream);
+      }
+    } else {
+      Object[] data = input.getData();
+      for (int i = 0; i < data.length && i < children.size(); i++) {
+        children.get(i).writeByteArray(data[i], dataOutputStream);
+      }
+
+      // For other children elements which dont have data, write empty
+      for (int i = data.length; i < children.size(); i++) {
+        children.get(i).writeByteArray(null, dataOutputStream);
+      }
+    }
+  }
+
+  @Override
+  public void fillCardinality(List<Integer> dimCardWithComplex) {
+    dimCardWithComplex.add(0);
+    for (int i = 0; i < children.size(); i++) {
+      children.get(i).fillCardinality(dimCardWithComplex);
+    }
+  }
+
   /*
-   * parse bytearray and bit pack
-   */
+       * parse bytearray and bit pack
+       */
   @Override
   public void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
       KeyGenerator[] generator) throws IOException, KeyGenException {

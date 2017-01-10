@@ -18,6 +18,8 @@
  */
 package org.apache.carbondata.core.carbon.datastore.chunk.reader;
 
+import java.io.IOException;
+
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 
@@ -35,7 +37,8 @@ public interface DimensionColumnChunkReader {
    * @param blockIndexes blocks to be read
    * @return dimension column chunks
    */
-  DimensionColumnDataChunk[] readDimensionChunks(FileHolder fileReader, int... blockIndexes);
+  DimensionColumnDataChunk[] readDimensionChunks(FileHolder fileReader, int[][] blockIndexes)
+      throws IOException;
 
   /**
    * Below method will be used to read the chunk based on block index
@@ -44,5 +47,6 @@ public interface DimensionColumnChunkReader {
    * @param blockIndex block to be read
    * @return dimension column chunk
    */
-  DimensionColumnDataChunk readDimensionChunk(FileHolder fileReader, int blockIndex);
+  DimensionColumnDataChunk readDimensionChunk(FileHolder fileReader, int blockIndex)
+      throws IOException;
 }

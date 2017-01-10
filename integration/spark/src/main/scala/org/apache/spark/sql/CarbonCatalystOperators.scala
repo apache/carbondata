@@ -17,14 +17,15 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
-import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
 import org.apache.spark.sql.hive.HiveContext
-import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
+import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types._
+
+import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 /**
  * Top command
@@ -90,3 +91,62 @@ abstract class CarbonProfile(attributes: Seq[Attribute]) extends Serializable {
 case class IncludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
 
 case class ExcludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
+
+case class CreateDatabase(dbName: String, sql: String) extends LogicalPlan with Command {
+  override def children: Seq[LogicalPlan] = Seq.empty
+  override def output: Seq[AttributeReference] = {
+    Seq()
+  }
+}
+
+case class DropDatabase(dbName: String, isCascade: Boolean, sql: String)
+    extends LogicalPlan with Command {
+  override def children: Seq[LogicalPlan] = Seq.empty
+  override def output: Seq[AttributeReference] = {
+    Seq()
+  }
+}
+
+case class ProjectForUpdate(
+    table: UnresolvedRelation,
+    columns: List[String],
+    children: Seq[LogicalPlan] ) extends LogicalPlan with Command {
+  override def output: Seq[AttributeReference] = Seq.empty
+}
+
+case class UpdateTable(
+    table: UnresolvedRelation,
+    columns: List[String],
+    selectStmt: String,
+    filer: String) extends LogicalPlan {
+  override def children: Seq[LogicalPlan] = Seq.empty
+  override def output: Seq[AttributeReference] = Seq.empty
+}
+
+case class DeleteRecords(
+    statement: String,
+    table: UnresolvedRelation) extends LogicalPlan {
+  override def children: Seq[LogicalPlan] = Seq.empty
+  override def output: Seq[AttributeReference] = Seq.empty
+}
+
+/**
+ * A logical plan representing insertion into Hive table.
+ * This plan ignores nullability of ArrayType, MapType, StructType unlike InsertIntoTable
+ * because Hive table doesn't have nullability for ARRAY, MAP, STRUCT types.
+ */
+case class InsertIntoCarbonTable(
+    table: CarbonDatasourceRelation,
+    partition: Map[String, Option[String]],
+    child: LogicalPlan,
+    overwrite: Boolean,
+    ifNotExists: Boolean)
+  extends LogicalPlan with Command {
+
+  override def children: Seq[LogicalPlan] = child :: Nil
+  override def output: Seq[Attribute] = Seq.empty
+
+  // This is the expected schema of the table prepared to be inserted into,
+  // including dynamic partition columns.
+  val tableOutput = table.carbonRelation.output
+}

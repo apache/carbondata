@@ -19,15 +19,12 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
-import java.io.File
-
-import org.apache.spark.sql.common.util.CarbonHiveContext._
-import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.Row
-
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
   * Test Class for no inverted index load and query
@@ -36,12 +33,8 @@ import org.scalatest.BeforeAndAfterAll
 
 class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
 
-  def currentPath: String = new File(this.getClass.getResource("/").getPath + "/../../")
-    .getCanonicalPath
-  val testData1 = new File(currentPath + "/../../examples/src/main/resources/dimSample.csv")
-    .getCanonicalPath
-  val testData2 = new File(currentPath + "/../../examples/src/main/resources/data.csv")
-    .getCanonicalPath
+  val testData1 = s"$resourcesPath/dimSample.csv"
+  val testData2 = s"$resourcesPath/example-data.csv"
 
   override def beforeAll {
     sql("DROP TABLE IF EXISTS index1")
@@ -63,7 +56,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
       sql("""
            SELECT * FROM index1 WHERE city = "Bangalore"
           """),
-      Seq(Row("Emily", "Bangalore", 19.0)))
+      Seq(Row(19.0,"Emily", "Bangalore" )))
 
   }
 
@@ -79,7 +72,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
       """)
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
     sql(s"""
            LOAD DATA LOCAL INPATH '$testData2' into table index2

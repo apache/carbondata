@@ -19,11 +19,23 @@
 
 package org.apache.carbondata.scan.filter;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -46,18 +58,25 @@ import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.core.util.DataTypeUtil;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.expression.ColumnExpression;
 import org.apache.carbondata.scan.expression.Expression;
 import org.apache.carbondata.scan.expression.ExpressionResult;
 import org.apache.carbondata.scan.expression.LiteralExpression;
-import org.apache.carbondata.scan.expression.UnknownExpression;
 import org.apache.carbondata.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
-import org.apache.carbondata.scan.filter.executer.*;
+import org.apache.carbondata.scan.filter.executer.AndFilterExecuterImpl;
+import org.apache.carbondata.scan.filter.executer.DimColumnExecuterFilterInfo;
+import org.apache.carbondata.scan.filter.executer.ExcludeColGroupFilterExecuterImpl;
+import org.apache.carbondata.scan.filter.executer.ExcludeFilterExecuterImpl;
+import org.apache.carbondata.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.scan.filter.executer.IncludeColGroupFilterExecuterImpl;
+import org.apache.carbondata.scan.filter.executer.IncludeFilterExecuterImpl;
+import org.apache.carbondata.scan.filter.executer.OrFilterExecuterImpl;
+import org.apache.carbondata.scan.filter.executer.RestructureFilterExecuterImpl;
+import org.apache.carbondata.scan.filter.executer.RowLevelFilterExecuterImpl;
+import org.apache.carbondata.scan.filter.executer.RowLevelRangeTypeExecuterFacory;
 import org.apache.carbondata.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.scan.filter.intf.RowImpl;
@@ -221,8 +240,8 @@ public final class FilterUtil {
    */
   public static boolean checkIfDataTypeNotTimeStamp(Expression expression) {
     if (expression.getFilterExpressionType() == ExpressionType.LITERAL) {
-      if (!(((LiteralExpression) expression).getLiteralExpDataType()
-          == DataType.TIMESTAMP)) {
+      DataType dataType = ((LiteralExpression) expression).getLiteralExpDataType();
+      if (!(dataType == DataType.TIMESTAMP || dataType == DataType.DATE)) {
         return true;
       }
     }
@@ -287,7 +306,7 @@ public final class FilterUtil {
     int j = 0;
     for (Iterator<Integer> iterator = integers.iterator(); iterator.hasNext(); ) {
       Integer integer = iterator.next();
-      byteIndexs[j++] = integer.intValue();
+      byteIndexs[j++] = integer;
     }
     return byteIndexs;
   }
@@ -296,14 +315,11 @@ public final class FilterUtil {
    * This method will get the no dictionary data based on filters and same
    * will be in DimColumnFilterInfo
    *
-   * @param tableIdentifier
-   * @param columnExpression
    * @param evaluateResultListFinal
    * @param isIncludeFilter
    * @return DimColumnFilterInfo
    */
   public static DimColumnFilterInfo getNoDictionaryValKeyMemberForFilter(
-      AbsoluteTableIdentifier tableIdentifier, ColumnExpression columnExpression,
       List<String> evaluateResultListFinal, boolean isIncludeFilter) {
     List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
     for (String result : evaluateResultListFinal) {
@@ -338,11 +354,11 @@ public final class FilterUtil {
    * @param evaluateResultList
    * @param isIncludeFilter
    * @return
-   * @throws QueryExecutionException
+   * @throws IOException
    */
   public static DimColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
       ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter)
-      throws QueryExecutionException {
+      throws IOException {
     Dictionary forwardDictionary = null;
     try {
       // Reading the dictionary value from cache.
@@ -364,11 +380,9 @@ public final class FilterUtil {
    * @param forwardDictionary
    * @param isIncludeFilter
    * @return
-   * @throws QueryExecutionException
    */
   private static DimColumnFilterInfo getFilterValues(ColumnExpression columnExpression,
-      List<String> evaluateResultList, Dictionary forwardDictionary, boolean isIncludeFilter)
-      throws QueryExecutionException {
+      List<String> evaluateResultList, Dictionary forwardDictionary, boolean isIncludeFilter) {
     sortFilterModelMembers(columnExpression, evaluateResultList);
     List<Integer> surrogates =
         new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -390,10 +404,9 @@ public final class FilterUtil {
    *
    * @param evaluateResultList filter value
    * @param surrogates
-   * @throws QueryExecutionException
    */
   private static void getDictionaryValue(List<String> evaluateResultList,
-      Dictionary forwardDictionary, List<Integer> surrogates) throws QueryExecutionException {
+      Dictionary forwardDictionary, List<Integer> surrogates) {
     ((ForwardDictionary) forwardDictionary)
         .getSurrogateKeyByIncrementalSearch(evaluateResultList, surrogates);
   }
@@ -408,12 +421,12 @@ public final class FilterUtil {
    * @param isIncludeFilter
    * @return DimColumnFilterInfo
    * @throws FilterUnsupportedException
-   * @throws QueryExecutionException
+   * @throws IOException
    */
   public static DimColumnFilterInfo getFilterListForAllValues(
       AbsoluteTableIdentifier tableIdentifier, Expression expression,
       final ColumnExpression columnExpression, boolean isIncludeFilter)
-      throws FilterUnsupportedException {
+      throws IOException, FilterUnsupportedException {
     Dictionary forwardDictionary = null;
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
     DictionaryChunksWrapper dictionaryWrapper = null;
@@ -433,7 +446,7 @@ public final class FilterUtil {
           row.setValues(new Object[] { DataTypeUtil.getDataBasedOnDataType(stringValue,
               columnExpression.getCarbonColumn().getDataType()) });
           Boolean rslt = expression.evaluate(row).getBoolean();
-          if (null != rslt && !(rslt ^ isIncludeFilter)) {
+          if (null != rslt && rslt == isIncludeFilter) {
             if (null == stringValue) {
               evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
             } else {
@@ -446,8 +459,6 @@ public final class FilterUtil {
       }
       return getFilterValues(columnExpression, evaluateResultListFinal, forwardDictionary,
           isIncludeFilter);
-    } catch (QueryExecutionException e) {
-      throw new FilterUnsupportedException(e.getMessage());
     } finally {
       CarbonUtil.clearDictionaryCache(forwardDictionary);
     }
@@ -464,49 +475,6 @@ public final class FilterUtil {
 
     };
     Collections.sort(evaluateResultListFinal, filterActualValueComaparator);
-  }
-
-  /**
-   * Metahod will resolve the filter member to its respective surrogates by
-   * scanning the dictionary cache.
-   *
-   * @param tableIdentifier
-   * @param expression
-   * @param columnExpression
-   * @param isIncludeFilter
-   * @return
-   * @throws QueryExecutionException
-   * @throws FilterUnsupportedException
-   */
-  public static DimColumnFilterInfo getFilterList(AbsoluteTableIdentifier tableIdentifier,
-      Expression expression, ColumnExpression columnExpression, boolean isIncludeFilter)
-      throws QueryExecutionException, FilterUnsupportedException {
-    DimColumnFilterInfo resolvedFilterObject = null;
-    List<String> evaluateResultListFinal = new ArrayList<String>(20);
-    try {
-      List<ExpressionResult> evaluateResultList = expression.evaluate(null).getList();
-      for (ExpressionResult result : evaluateResultList) {
-        if (result.getString() == null) {
-          evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
-          continue;
-        }
-        evaluateResultListFinal.add(result.getString());
-      }
-
-      if (null != columnExpression.getCarbonColumn() && !columnExpression.getCarbonColumn()
-          .hasEncoding(Encoding.DICTIONARY)) {
-        resolvedFilterObject =
-            getNoDictionaryValKeyMemberForFilter(tableIdentifier, columnExpression,
-                evaluateResultListFinal, isIncludeFilter);
-      } else {
-        resolvedFilterObject =
-            getFilterValues(tableIdentifier, columnExpression, evaluateResultListFinal,
-                isIncludeFilter);
-      }
-    } catch (FilterIllegalMemberException e) {
-      LOGGER.audit(e.getMessage());
-    }
-    return resolvedFilterObject;
   }
 
   /**
@@ -584,7 +552,7 @@ public final class FilterUtil {
       row.setValues(new Object[] { DataTypeUtil.getDataBasedOnDataType(defaultValues,
           columnExpression.getCarbonColumn().getDataType()) });
       Boolean rslt = expression.evaluate(row).getBoolean();
-      if (null != rslt && !(rslt ^ isIncludeFilter)) {
+      if (null != rslt && rslt == isIncludeFilter) {
         if (null == defaultValues) {
           evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
         } else {
@@ -680,12 +648,13 @@ public final class FilterUtil {
    * Method will return the start key based on KeyGenerator for the respective
    * filter resolved instance.
    *
-   * @param dimColResolvedFilterInfo
-   * @param segmentProperties
+   * @param dimensionFilter
+   * @param startKey
+   * @param startKeyList
    * @return long[] start key
    */
   public static void getStartKey(Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter,
-      long[] startKey, List<long[]> startKeyList) throws QueryExecutionException {
+      long[] startKey, List<long[]> startKeyList) {
     for(int i = 0; i < startKey.length; i++) {
       // The min surrogate key is 1, set it as the init value for starkey of each column level
       startKey[i] = 1;
@@ -706,7 +675,6 @@ public final class FilterUtil {
    * all dimension and the indexes which will help to read the respective filter value.
    *
    * @param dimColResolvedFilterInfo
-   * @param segmentProperties
    * @param setOfStartKeyByteArray
    * @return
    */
@@ -761,7 +729,6 @@ public final class FilterUtil {
    * all dimension and the indexes which will help to read the respective filter value.
    *
    * @param dimColResolvedFilterInfo
-   * @param segmentProperties
    * @param setOfEndKeyByteArray
    * @return end key array
    */
@@ -862,13 +829,13 @@ public final class FilterUtil {
   }
 
   public static void getEndKey(Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter,
-      AbsoluteTableIdentifier tableIdentifier, long[] endKey, SegmentProperties segmentProperties,
-      List<long[]> endKeyList) throws QueryExecutionException {
+      long[] endKey, SegmentProperties segmentProperties,
+      List<long[]> endKeyList) {
 
     List<CarbonDimension> updatedDimListBasedOnKeyGenerator =
         getCarbonDimsMappedToKeyGenerator(segmentProperties.getDimensions());
     for (int i = 0; i < endKey.length; i++) {
-      endKey[i] = getMaxValue(tableIdentifier, updatedDimListBasedOnKeyGenerator.get(i),
+      endKey[i] = getMaxValue(updatedDimListBasedOnKeyGenerator.get(i),
           segmentProperties.getDimColumnsCardinality());
     }
     getEndKeyWithFilter(dimensionFilter, endKey, endKeyList);
@@ -926,13 +893,8 @@ public final class FilterUtil {
    * determining the end key of particular btree.
    *
    * @param dimCarinality
-   * @throws QueryExecutionException
    */
-  private static long getMaxValue(AbsoluteTableIdentifier tableIdentifier,
-      CarbonDimension carbonDimension, int[] dimCarinality) throws QueryExecutionException {
-    //    if (DataType.TIMESTAMP == carbonDimension.getDataType()) {
-    //      return Integer.MAX_VALUE;
-    //    }
+  private static long getMaxValue(CarbonDimension carbonDimension, int[] dimCarinality) {
     // Get data from all the available slices of the table
     if (null != dimCarinality) {
       return dimCarinality[carbonDimension.getKeyOrdinal()];
@@ -944,24 +906,17 @@ public final class FilterUtil {
    * @param tableIdentifier
    * @param carbonDimension
    * @return
-   * @throws QueryExecutionException
    */
   public static Dictionary getForwardDictionaryCache(AbsoluteTableIdentifier tableIdentifier,
-      CarbonDimension carbonDimension) throws QueryExecutionException {
+      CarbonDimension carbonDimension) throws IOException {
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(tableIdentifier.getCarbonTableIdentifier(),
             carbonDimension.getColumnIdentifier(), carbonDimension.getDataType());
     CacheProvider cacheProvider = CacheProvider.getInstance();
-    Cache forwardDictionaryCache =
+    Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache =
         cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, tableIdentifier.getStorePath());
     // get the forward dictionary object
-    Dictionary forwardDictionary = null;
-    try {
-      forwardDictionary = (Dictionary) forwardDictionaryCache.get(dictionaryColumnUniqueIdentifier);
-    } catch (CarbonUtilException e) {
-      throw new QueryExecutionException(e);
-    }
-    return forwardDictionary;
+    return forwardDictionaryCache.get(dictionaryColumnUniqueIdentifier);
   }
 
   public static IndexKey createIndexKeyFromResolvedFilterVal(long[] startOrEndKey,
@@ -1019,7 +974,11 @@ public final class FilterUtil {
     long[] dictionarySurrogateKey =
         new long[segmentProperties.getDimensions().size() - segmentProperties
             .getNumberOfNoDictionaryDimension()];
-    Arrays.fill(dictionarySurrogateKey, Long.MAX_VALUE);
+    int index = 0;
+    int[] dimColumnsCardinality = segmentProperties.getDimColumnsCardinality();
+    for (int i = 0; i < dimColumnsCardinality.length; i++) {
+      dictionarySurrogateKey[index++] = dimColumnsCardinality[i];
+    }
     IndexKey endIndexKey;
     byte[] dictionaryendMdkey =
         segmentProperties.getDimensionKeyGenerator().generateKey(dictionarySurrogateKey);
@@ -1119,6 +1078,7 @@ public final class FilterUtil {
         case BOOLEAN:
           return Boolean
               .compare((Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
+        case DATE:
         case TIMESTAMP:
           SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
@@ -1146,14 +1106,11 @@ public final class FilterUtil {
    * utilized visitor pattern inorder to populate the start and end key population.
    *
    * @param segmentProperties
-   * @param tableIdentifier
    * @param filterResolver
    * @param listOfStartEndKeys
-   * @throws QueryExecutionException
    */
   public static void traverseResolverTreeAndGetStartAndEndKey(SegmentProperties segmentProperties,
-      AbsoluteTableIdentifier tableIdentifier, FilterResolverIntf filterResolver,
-      List<IndexKey> listOfStartEndKeys) throws QueryExecutionException {
+      FilterResolverIntf filterResolver, List<IndexKey> listOfStartEndKeys) {
     IndexKey searchStartKey = null;
     IndexKey searchEndKey = null;
     long[] startKey = new long[segmentProperties.getDimensionKeyGenerator().getDimCount()];
@@ -1168,8 +1125,8 @@ public final class FilterUtil {
     SortedMap<Integer, byte[]> defaultEndValues = new TreeMap<Integer, byte[]>();
     List<long[]> startKeyList = new ArrayList<long[]>();
     List<long[]> endKeyList = new ArrayList<long[]>();
-    traverseResolverTreeAndPopulateStartAndEndKeys(filterResolver, tableIdentifier,
-        segmentProperties, startKey, setOfStartKeyByteArray, endKey, setOfEndKeyByteArray,
+    traverseResolverTreeAndPopulateStartAndEndKeys(filterResolver, segmentProperties, startKey,
+        setOfStartKeyByteArray, endKey, setOfEndKeyByteArray,
         startKeyList, endKeyList);
     if (endKeyList.size() > 0) {
       //get the new end key from list
@@ -1243,6 +1200,7 @@ public final class FilterUtil {
           java.math.BigDecimal val1 = new BigDecimal(filterMember1);
           java.math.BigDecimal val2 = new BigDecimal(filterMember2);
           return val1.compareTo(val2);
+        case DATE:
         case TIMESTAMP:
           if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
             return 1;
@@ -1323,22 +1281,21 @@ public final class FilterUtil {
   }
 
   private static void traverseResolverTreeAndPopulateStartAndEndKeys(
-      FilterResolverIntf filterResolverTree, AbsoluteTableIdentifier tableIdentifier,
-      SegmentProperties segmentProperties, long[] startKeys,
+      FilterResolverIntf filterResolverTree, SegmentProperties segmentProperties, long[] startKeys,
       SortedMap<Integer, byte[]> setOfStartKeyByteArray, long[] endKeys,
       SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> startKeyList,
-      List<long[]> endKeyList) throws QueryExecutionException {
+      List<long[]> endKeyList) {
     if (null == filterResolverTree) {
       return;
     }
-    traverseResolverTreeAndPopulateStartAndEndKeys(filterResolverTree.getLeft(), tableIdentifier,
+    traverseResolverTreeAndPopulateStartAndEndKeys(filterResolverTree.getLeft(),
         segmentProperties, startKeys, setOfStartKeyByteArray, endKeys, setOfEndKeyByteArray,
         startKeyList, endKeyList);
     filterResolverTree.getStartKey(startKeys, setOfStartKeyByteArray, startKeyList);
-    filterResolverTree.getEndKey(segmentProperties, tableIdentifier, endKeys, setOfEndKeyByteArray,
+    filterResolverTree.getEndKey(segmentProperties, endKeys, setOfEndKeyByteArray,
         endKeyList);
 
-    traverseResolverTreeAndPopulateStartAndEndKeys(filterResolverTree.getRight(), tableIdentifier,
+    traverseResolverTreeAndPopulateStartAndEndKeys(filterResolverTree.getRight(),
         segmentProperties, startKeys, setOfStartKeyByteArray, endKeys, setOfEndKeyByteArray,
         startKeyList, endKeyList);
   }
@@ -1372,21 +1329,8 @@ public final class FilterUtil {
    */
   public static void logError(Throwable e, boolean invalidRowsPresent) {
     if (!invalidRowsPresent) {
-      invalidRowsPresent = true;
       LOGGER.error(e, CarbonCommonConstants.FILTER_INVALID_MEMBER + e.getMessage());
     }
-  }
-
-  /**
-   * This method will return list of all the unknown expressions
-   *
-   * @param expression
-   */
-  public static List<UnknownExpression> getUnknownExpressionsList(Expression expression) {
-    List<UnknownExpression> listOfExp =
-        new ArrayList<UnknownExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    getUnknownExpressionsList(expression, listOfExp);
-    return listOfExp;
   }
 
   /**
@@ -1399,31 +1343,11 @@ public final class FilterUtil {
    * @return boolean after comparing two double values.
    */
   public static boolean nanSafeEqualsDoubles(Double d1, Double d2) {
-    Boolean xIsNan = Double.isNaN(d1);
-    Boolean yIsNan = Double.isNaN(d2);
-    if ((xIsNan && yIsNan) || (d1.doubleValue() == d2.doubleValue())) {
-
+    if ((d1.doubleValue() == d2.doubleValue()) || (Double.isNaN(d1) && Double.isNaN(d2))) {
       return true;
     }
     return false;
 
   }
 
-  /**
-   * This method will prepare the list with all unknown expressions
-   *
-   * @param expression
-   * @param lst
-   */
-  private static void getUnknownExpressionsList(Expression expression,
-      List<UnknownExpression> lst) {
-    if (expression instanceof UnknownExpression) {
-      UnknownExpression colExp = (UnknownExpression) expression;
-      lst.add(colExp);
-      return;
-    }
-    for (Expression child : expression.getChildren()) {
-      getUnknownExpressionsList(child, lst);
-    }
-  }
 }

@@ -31,7 +31,6 @@ import org.apache.carbondata.scan.filter.intf.RowIntf;
 public class EqualToExpression extends BinaryConditionalExpression {
 
   private static final long serialVersionUID = 1L;
-  private boolean isNull;
 
   public EqualToExpression(Expression left, Expression right) {
     super(left, right);
@@ -62,7 +61,7 @@ public class EqualToExpression extends BinaryConditionalExpression {
     }
     //default implementation if the data types are different for the resultsets
     if (elRes.getDataType() != erRes.getDataType()) {
-      if (elRes.getDataType().getPresedenceOrder() < erRes.getDataType().getPresedenceOrder()) {
+      if (elRes.getDataType().getPrecedenceOrder() < erRes.getDataType().getPrecedenceOrder()) {
         val2 = elRes;
         val1 = erRes;
       }
@@ -81,6 +80,7 @@ public class EqualToExpression extends BinaryConditionalExpression {
       case DOUBLE:
         result = FilterUtil.nanSafeEqualsDoubles(val1.getDouble(), val2.getDouble());
         break;
+      case DATE:
       case TIMESTAMP:
         result = val1.getTime().equals(val2.getTime());
         break;

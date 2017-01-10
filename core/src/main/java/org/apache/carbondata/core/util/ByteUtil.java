@@ -25,6 +25,8 @@ import java.nio.ByteOrder;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+
 /**
  * Util class for byte comparision
  */
@@ -74,6 +76,26 @@ public final class ByteUtil {
 
     }
     return intArray;
+  }
+
+  /**
+   * convert number in byte to more readable format
+   * @param sizeInbyte
+   * @return
+   */
+  public static String convertByteToReadable(long sizeInbyte) {
+
+    String readableSize;
+    if (sizeInbyte < CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR) {
+      readableSize = sizeInbyte + " Byte";
+    } else if (sizeInbyte < CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR *
+            CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR) {
+      readableSize = sizeInbyte / CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR + " KB";
+    } else {
+      readableSize = sizeInbyte / CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR /
+              CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR + " MB";
+    }
+    return readableSize;
   }
 
   /**

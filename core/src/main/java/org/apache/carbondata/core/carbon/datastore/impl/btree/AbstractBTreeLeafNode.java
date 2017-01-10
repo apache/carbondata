@@ -18,6 +18,9 @@
  */
 package org.apache.carbondata.core.carbon.datastore.impl.btree;
 
+import java.io.IOException;
+
+import org.apache.carbondata.common.iudprocessor.cache.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.datastore.IndexKey;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
@@ -28,6 +31,13 @@ import org.apache.carbondata.core.datastorage.store.FileHolder;
  * Non leaf node abstract class
  */
 public abstract class AbstractBTreeLeafNode implements BTreeNode {
+
+  /**
+   * Below method will be used to load the data block
+   *
+   * @param blockInfo block detail
+   */
+  protected BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache;
 
   /**
    * number of keys in a btree
@@ -109,7 +119,6 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
    * This method will be used to get the max value of all the columns this can
    * be used in case of filter query
    *
-   * @param max value of all the columns
    */
   @Override public byte[][] getColumnsMaxValue() {
     return maxKeyOfColumns;
@@ -119,7 +128,6 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
    * This method will be used to get the max value of all the columns this can
    * be used in case of filter query
    *
-   * @param max value of all the columns
    */
   @Override public byte[][] getColumnsMinValue() {
     return minKeyOfColumns;
@@ -172,7 +180,7 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
    * @return dimension data chunks
    */
   @Override public DimensionColumnDataChunk[] getDimensionChunks(FileHolder fileReader,
-      int[] blockIndexes) {
+      int[][] blockIndexes) throws IOException {
     // No required here as leaf which will will be use this class will implement its own get
     // dimension chunks
     return null;
@@ -186,7 +194,7 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
    * @return dimension data chunk
    */
   @Override public DimensionColumnDataChunk getDimensionChunk(FileHolder fileReader,
-      int blockIndex) {
+      int blockIndex) throws IOException {
     // No required here as leaf which will will be use this class will implement
     // its own get dimension chunks
     return null;
@@ -200,7 +208,7 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
    * @return measure column data chunk
    */
   @Override public MeasureColumnDataChunk[] getMeasureChunks(FileHolder fileReader,
-      int[] blockIndexes) {
+      int[][] blockIndexes) throws IOException {
     // No required here as leaf which will will be use this class will implement its own get
     // measure chunks
     return null;
@@ -213,9 +221,24 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
    * @param blockIndex block index to be read from file
    * @return measure data chunk
    */
-  @Override public MeasureColumnDataChunk getMeasureChunk(FileHolder fileReader, int blockIndex) {
+  @Override public MeasureColumnDataChunk getMeasureChunk(FileHolder fileReader, int blockIndex)
+      throws IOException {
     // No required here as leaf which will will be use this class will implement its own get
     // measure chunks
     return null;
+  }
+
+  /**
+   * @param deleteDeltaDataCache
+   */
+  public void setDeleteDeltaDataCache(BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache) {
+
+    this.deleteDeltaDataCache = deleteDeltaDataCache;
+  }
+  /**
+   * @return the segmentProperties
+   */
+  public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
+    return deleteDeltaDataCache;
   }
 }

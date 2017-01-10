@@ -21,6 +21,7 @@ package org.apache.carbondata.core.carbon.datastore.impl.btree;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.common.iudprocessor.cache.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.datastore.IndexKey;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
@@ -33,6 +34,13 @@ import org.apache.carbondata.core.datastorage.store.FileHolder;
  * leaf node
  */
 public class BTreeNonLeafNode implements BTreeNode {
+
+  /**
+   * Below method will be used to load the data block
+   *
+   * @param blockInfo block detail
+   */
+  protected BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache;
 
   /**
    * Child nodes
@@ -62,7 +70,6 @@ public class BTreeNonLeafNode implements BTreeNode {
    * as it is a non leaf node it will have the reference of all the leaf node
    * under it, setting all the children
    *
-   * @param leaf nodes
    */
   @Override public void setChildren(BTreeNode[] children) {
     this.children = children;
@@ -87,7 +94,6 @@ public class BTreeNonLeafNode implements BTreeNode {
   /**
    * add a key of a leaf node
    *
-   * @param leaf node start keys
    */
   @Override public void setKey(IndexKey key) {
     listOfKeys.add(key);
@@ -135,7 +141,6 @@ public class BTreeNonLeafNode implements BTreeNode {
    * This method will be used to get the max value of all the columns this can
    * be used in case of filter query
    *
-   * @param max value of all the columns
    */
   @Override public byte[][] getColumnsMaxValue() {
     // operation of getting the max value is not supported as its a non leaf
@@ -150,7 +155,6 @@ public class BTreeNonLeafNode implements BTreeNode {
    * This method will be used to get the max value of all the columns this can
    * be used in case of filter query
    *
-   * @param min value of all the columns
    */
   @Override public byte[][] getColumnsMinValue() {
     // operation of getting the min value is not supported as its a non leaf
@@ -169,7 +173,7 @@ public class BTreeNonLeafNode implements BTreeNode {
    * @return dimension data chunks
    */
   @Override public DimensionColumnDataChunk[] getDimensionChunks(FileHolder fileReader,
-      int[] blockIndexes) {
+      int[][] blockIndexes) {
 
     // operation of getting the dimension chunks is not supported as its a
     // non leaf node
@@ -183,7 +187,6 @@ public class BTreeNonLeafNode implements BTreeNode {
    * Below method will be used to get the dimension chunk
    *
    * @param fileReader file reader to read the chunk from file
-   * @param blockIndex block index to be read
    * @return dimension data chunk
    */
   @Override public DimensionColumnDataChunk getDimensionChunk(FileHolder fileReader,
@@ -204,7 +207,7 @@ public class BTreeNonLeafNode implements BTreeNode {
    * @return measure column data chunk
    */
   @Override public MeasureColumnDataChunk[] getMeasureChunks(FileHolder fileReader,
-      int[] blockIndexes) {
+      int[][] blockIndexes) {
     // operation of getting the measure chunk is not supported as its a non
     // leaf node
     // and in case of B+Tree data will be stored only in leaf node and
@@ -228,5 +231,19 @@ public class BTreeNonLeafNode implements BTreeNode {
     // intermediate
     // node will be used only for searching the leaf node
     throw new UnsupportedOperationException("Unsupported operation");
+  }
+
+  /**
+   * @return the segmentProperties
+   */
+  public void setDeleteDeltaDataCache(BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache) {
+
+    this.deleteDeltaDataCache = deleteDeltaDataCache;
+  }
+  /**
+   * @return the segmentProperties
+   */
+  public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
+    return deleteDeltaDataCache;
   }
 }

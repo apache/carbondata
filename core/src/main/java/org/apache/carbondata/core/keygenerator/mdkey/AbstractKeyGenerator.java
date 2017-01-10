@@ -59,7 +59,7 @@ public abstract class AbstractKeyGenerator implements KeyGenerator {
   }
 
   @Override public void setProperty(Object key, Object value) {
-    /**
+    /*
      * No implementation required.
      */
   }

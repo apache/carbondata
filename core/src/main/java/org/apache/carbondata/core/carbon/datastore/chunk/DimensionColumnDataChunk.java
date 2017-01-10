@@ -19,53 +19,93 @@
 package org.apache.carbondata.core.carbon.datastore.chunk;
 
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
+import org.apache.carbondata.scan.result.vector.ColumnVectorInfo;
 
 /**
  * Interface for dimension column chunk.
  */
-public interface DimensionColumnDataChunk<T> {
+public interface DimensionColumnDataChunk {
 
   /**
    * Below method will be used to fill the data based on offset and row id
    *
    * @param data   data to filed
    * @param offset offset from which data need to be filed
-   * @param rowId  row id of the chunk
    * @return how many bytes was copied
    */
   int fillChunkData(byte[] data, int offset, int columnIndex, KeyStructureInfo restructuringInfo);
 
   /**
    * It uses to convert column data to dictionary integer value
+   *
    * @param rowId
    * @param columnIndex
    * @param row
-   * @param restructuringInfo  @return
+   * @param restructuringInfo @return
    */
   int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
       KeyStructureInfo restructuringInfo);
 
   /**
+   * Fill the data to vector
+   * @param vectorInfo
+   * @param column
+   * @param restructuringInfo
+   * @return next column index
+   */
+  int fillConvertedChunkData(ColumnVectorInfo[] vectorInfo, int column,
+      KeyStructureInfo restructuringInfo);
+
+  /**
+   * Fill the data to vector
+   * @param rowMapping
+   * @param vectorInfo
+   * @param column
+   * @param restructuringInfo
+   * @return next column index
+   */
+  int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo, int column,
+      KeyStructureInfo restructuringInfo);
+
+  /**
    * Below method to get  the data based in row id
    *
-   * @param row id
-   *            row id of the data
    * @return chunk
    */
   byte[] getChunkData(int columnIndex);
 
   /**
-   * Below method will be used get the chunk attributes
-   *
-   * @return chunk attributes
+   * @return inverted index
    */
-  DimensionChunkAttributes getAttributes();
+  int getInvertedIndex(int index);
 
   /**
-   * Below method will be used to return the complete data chunk
-   * This will be required during filter query
-   *
-   * @return complete chunk
+   * @return whether column is dictionary column or not
    */
-  T getCompleteDataChunk();
+  boolean isNoDicitionaryColumn();
+
+  /**
+   * @return length of each column
+   */
+  int getColumnValueSize();
+
+  /**
+   * @return whether columns where explictly sorted or not
+   */
+  boolean isExplicitSorted();
+
+  /**
+   * to compare the data
+   *
+   * @param index        row index to be compared
+   * @param compareValue value to compare
+   * @return compare result
+   */
+  int compareTo(int index, byte[] compareValue);
+
+  /**
+   * below method will be used to free the allocated memory
+   */
+  void freeMemory();
+
 }

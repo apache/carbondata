@@ -40,7 +40,7 @@ public class CacheProviderTest {
   @Before public void setUp() throws Exception {
     // enable lru cache by setting cache size
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_MAX_LEVEL_CACHE_SIZE, "10");
+        .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
   }
 
   @Test public void getInstance() throws Exception {

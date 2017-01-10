@@ -47,7 +47,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 public class CarbonInputMapperTest extends TestCase {
@@ -60,9 +59,17 @@ public class CarbonInputMapperTest extends TestCase {
   @Test public void testInputFormatMapperReadAllRowsAndColumns() throws Exception {
     try {
       String outPath = "target/output";
-      runJob(outPath, null, null);
-      Assert.assertTrue("Count lines are not matching", countTheLines(outPath) == 1000);
-      Assert.assertTrue("Column count are not matching", countTheColumns(outPath) == 7);
+      CarbonProjection carbonProjection = new CarbonProjection();
+      carbonProjection.addColumn("ID");
+      carbonProjection.addColumn("date");
+      carbonProjection.addColumn("country");
+      carbonProjection.addColumn("name");
+      carbonProjection.addColumn("phonetype");
+      carbonProjection.addColumn("serialname");
+      carbonProjection.addColumn("salary");
+      runJob(outPath, carbonProjection, null);
+      Assert.assertEquals("Count lines are not matching", 1000, countTheLines(outPath));
+      Assert.assertEquals("Column count are not matching", 7, countTheColumns(outPath));
     } catch (Exception e) {
       Assert.assertTrue("failed", false);
       e.printStackTrace();
@@ -79,8 +86,8 @@ public class CarbonInputMapperTest extends TestCase {
       carbonProjection.addColumn("salary");
       runJob(outPath, carbonProjection, null);
 
-      Assert.assertTrue("Count lines are not matching", countTheLines(outPath) == 1000);
-      Assert.assertTrue("Column count are not matching", countTheColumns(outPath) == 3);
+      Assert.assertEquals("Count lines are not matching", 1000, countTheLines(outPath));
+      Assert.assertEquals("Column count are not matching", 3, countTheColumns(outPath));
     } catch (Exception e) {
       Assert.assertTrue("failed", false);
     }
@@ -97,8 +104,8 @@ public class CarbonInputMapperTest extends TestCase {
           new EqualToExpression(new ColumnExpression("country", DataType.STRING),
               new LiteralExpression("france", DataType.STRING));
       runJob(outPath, carbonProjection, expression);
-      Assert.assertTrue("Count lines are not matching", countTheLines(outPath) == 101);
-      Assert.assertTrue("Column count are not matching", countTheColumns(outPath) == 3);
+      Assert.assertEquals("Count lines are not matching", 101, countTheLines(outPath));
+      Assert.assertEquals("Column count are not matching", 3, countTheColumns(outPath));
     } catch (Exception e) {
       Assert.assertTrue("failed", false);
     }
@@ -170,14 +177,13 @@ public class CarbonInputMapperTest extends TestCase {
     job.setInputFormatClass(CarbonInputFormat.class);
     job.setOutputFormatClass(TextOutputFormat.class);
     AbsoluteTableIdentifier abs = StoreCreator.getAbsoluteTableIdentifier();
-    CarbonInputFormat.setTableToAccess(job.getConfiguration(), abs.getCarbonTableIdentifier());
     if (projection != null) {
-      CarbonInputFormat.setColumnProjection(projection, job.getConfiguration());
+      CarbonInputFormat.setColumnProjection(job.getConfiguration(), projection);
     }
     if (filter != null) {
       CarbonInputFormat.setFilterPredicates(job.getConfiguration(), filter);
     }
-    FileInputFormat.addInputPath(job, new Path(abs.getStorePath()));
+    FileInputFormat.addInputPath(job, new Path(abs.getTablePath()));
     CarbonUtil.deleteFoldersAndFiles(new File(outPath + "1"));
     FileOutputFormat.setOutputPath(job, new Path(outPath + "1"));
     job.getConfiguration().set("outpath", outPath);

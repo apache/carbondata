@@ -141,10 +141,6 @@ public interface IDataProcessStatus {
    */
   void setCsvFilePath(String csvFilePath);
 
-  String getDimCSVDirLoc();
-
-  void setDimCSVDirLoc(String dimCSVDirLoc);
-
   /**
    * @return the dimTables
    */
@@ -193,4 +189,8 @@ public interface IDataProcessStatus {
   String getQuoteCharacter();
 
   String getCommentCharacter();
+
+  String getRddIteratorKey();
+
+  String getDateFormat();
 }

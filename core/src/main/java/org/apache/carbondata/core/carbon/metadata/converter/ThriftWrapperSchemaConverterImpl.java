@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.apache.carbondata.core.carbon.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.carbon.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.carbon.metadata.schema.SchemaEvolutionEntry;
 import org.apache.carbondata.core.carbon.metadata.schema.table.TableInfo;
@@ -132,6 +133,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return org.apache.carbondata.format.DataType.DOUBLE;
       case DECIMAL:
         return org.apache.carbondata.format.DataType.DECIMAL;
+      case DATE:
+        return org.apache.carbondata.format.DataType.DATE;
       case TIMESTAMP:
         return org.apache.carbondata.format.DataType.TIMESTAMP;
       case ARRAY:
@@ -167,6 +170,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     thriftColumnSchema.setColumnProperties(wrapperColumnSchema.getColumnProperties());
     thriftColumnSchema.setInvisible(wrapperColumnSchema.isInvisible());
     thriftColumnSchema.setColumnReferenceId(wrapperColumnSchema.getColumnReferenceId());
+    thriftColumnSchema.setSchemaOrdinal(wrapperColumnSchema.getSchemaOrdinal());
     return thriftColumnSchema;
   }
 
@@ -183,8 +187,26 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     }
     org.apache.carbondata.format.SchemaEvolution schemaEvolution =
         fromWrapperToExternalSchemaEvolution(wrapperTableSchema.getSchemaEvalution());
-    return new org.apache.carbondata.format.TableSchema(wrapperTableSchema.getTableId(),
-        thriftColumnSchema, schemaEvolution);
+    org.apache.carbondata.format.TableSchema externalTableSchema =
+        new org.apache.carbondata.format.TableSchema(
+            wrapperTableSchema.getTableId(), thriftColumnSchema, schemaEvolution);
+    externalTableSchema.setTableProperties(wrapperTableSchema.getTableProperties());
+    if (wrapperTableSchema.getBucketingInfo() != null) {
+      externalTableSchema.setBucketingInfo(
+          fromWrapperToExternalBucketingInfo(wrapperTableSchema.getBucketingInfo()));
+    }
+    return externalTableSchema;
+  }
+
+  private org.apache.carbondata.format.BucketingInfo fromWrapperToExternalBucketingInfo(
+      BucketingInfo bucketingInfo) {
+    List<org.apache.carbondata.format.ColumnSchema> thriftColumnSchema =
+        new ArrayList<org.apache.carbondata.format.ColumnSchema>();
+    for (ColumnSchema wrapperColumnSchema : bucketingInfo.getListOfColumns()) {
+      thriftColumnSchema.add(fromWrapperToExternalColumnSchema(wrapperColumnSchema));
+    }
+    return new org.apache.carbondata.format.BucketingInfo(thriftColumnSchema,
+        bucketingInfo.getNumberOfBuckets());
   }
 
   /* (non-Javadoc)
@@ -302,6 +324,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return DataType.DECIMAL;
       case TIMESTAMP:
         return DataType.TIMESTAMP;
+      case DATE:
+        return DataType.DATE;
       case ARRAY:
         return DataType.ARRAY;
       case STRUCT:
@@ -332,10 +356,9 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperColumnSchema.setColumnGroup(externalColumnSchema.getColumn_group_id());
     wrapperColumnSchema.setScale(externalColumnSchema.getScale());
     wrapperColumnSchema.setDefaultValue(externalColumnSchema.getDefault_value());
-    wrapperColumnSchema.setAggregateFunction(externalColumnSchema.getAggregate_function());
-    wrapperColumnSchema.setColumnProperties(externalColumnSchema.getColumnProperties());
     wrapperColumnSchema.setInvisible(externalColumnSchema.isInvisible());
     wrapperColumnSchema.setColumnReferenceId(externalColumnSchema.getColumnReferenceId());
+    wrapperColumnSchema.setSchemaOrdinal(externalColumnSchema.getSchemaOrdinal());
     return wrapperColumnSchema;
   }
 
@@ -347,6 +370,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     TableSchema wrapperTableSchema = new TableSchema();
     wrapperTableSchema.setTableId(externalTableSchema.getTable_id());
     wrapperTableSchema.setTableName(tableName);
+    wrapperTableSchema.setTableProperties(externalTableSchema.getTableProperties());
     List<ColumnSchema> listOfColumns = new ArrayList<ColumnSchema>();
     for (org.apache.carbondata.format.ColumnSchema externalColumnSchema : externalTableSchema
         .getTable_columns()) {
@@ -355,7 +379,21 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperTableSchema.setListOfColumns(listOfColumns);
     wrapperTableSchema.setSchemaEvalution(
         fromExternalToWrapperSchemaEvolution(externalTableSchema.getSchema_evolution()));
+    if (externalTableSchema.isSetBucketingInfo()) {
+      wrapperTableSchema.setBucketingInfo(
+          fromExternalToWarpperBucketingInfo(externalTableSchema.bucketingInfo));
+    }
     return wrapperTableSchema;
+  }
+
+  private BucketingInfo fromExternalToWarpperBucketingInfo(
+      org.apache.carbondata.format.BucketingInfo externalBucketInfo) {
+    List<ColumnSchema> listOfColumns = new ArrayList<ColumnSchema>();
+    for (org.apache.carbondata.format.ColumnSchema externalColumnSchema :
+          externalBucketInfo.table_columns) {
+      listOfColumns.add(fromExternalToWrapperColumnSchema(externalColumnSchema));
+    }
+    return new BucketingInfo(listOfColumns, externalBucketInfo.number_of_buckets);
   }
 
   /* (non-Javadoc)

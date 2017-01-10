@@ -24,7 +24,6 @@ import java.util.SortedMap;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.expression.BinaryExpression;
 import org.apache.carbondata.scan.expression.Expression;
 import org.apache.carbondata.scan.filter.intf.ExpressionType;
@@ -89,14 +88,12 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
 
   @Override
   public void getStartKey(long[] startKey, SortedMap<Integer, byte[]> setOfStartKeyByteArray,
-      List<long[]> startKeyList) throws QueryExecutionException {
+      List<long[]> startKeyList) {
 
   }
 
-  @Override public void getEndKey(SegmentProperties segmentProperties,
-      AbsoluteTableIdentifier tableIdentifier, long[] endKeys,
-      SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> endKeyList)
-      throws QueryExecutionException {
+  @Override public void getEndKey(SegmentProperties segmentProperties, long[] endKeys,
+      SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> endKeyList) {
 
   }
 

@@ -18,28 +18,39 @@
  */
 package org.apache.carbondata.scan.executor.impl;
 
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.common.logging.impl.StandardLogService;
+import org.apache.carbondata.core.cache.CacheProvider;
+import org.apache.carbondata.core.cache.CacheType;
+import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.BlockIndexStore;
 import org.apache.carbondata.core.carbon.datastore.IndexKey;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
+import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.carbon.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.scan.executor.QueryExecutor;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
@@ -80,7 +91,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    *
    * @param queryModel
    */
-  protected void initQuery(QueryModel queryModel) throws QueryExecutionException {
+  protected void initQuery(QueryModel queryModel) throws IOException {
     StandardLogService.setThreadName(StandardLogService.getPartitionID(
         queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName()),
         queryModel.getQueryId());
@@ -90,7 +101,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     queryProperties.executorService = Executors.newFixedThreadPool(1);
     // Initializing statistics list to record the query statistics
     // creating copy on write to handle concurrent scenario
-    queryProperties.queryStatisticsRecorder = new QueryStatisticsRecorder(queryModel.getQueryId());
+    queryProperties.queryStatisticsRecorder =
+        CarbonTimeStatisticsFactory.createExecutorRecorder(queryModel.getQueryId());
     queryModel.setStatisticsRecorder(queryProperties.queryStatisticsRecorder);
     QueryUtil.resolveQueryModel(queryModel);
     QueryStatistic queryStatistic = new QueryStatistic();
@@ -99,17 +111,18 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // query execution
     Collections.sort(queryModel.getTableBlockInfos());
     // get the table blocks
-    BlockIndexStore blockLoaderInstance = BlockIndexStore.getInstance();
+    CacheProvider cacheProvider = CacheProvider.getInstance();
+    BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex> cache =
+        (BlockIndexStore) cacheProvider
+            .createCache(CacheType.EXECUTOR_BTREE, queryModel.getTable().getStorePath());
     // remove the invalid table blocks, block which is deleted or compacted
-    blockLoaderInstance.removeTableBlocks(queryModel.getInvalidSegmentIds(),
+    cache.removeTableBlocks(queryModel.getInvalidSegmentIds(),
         queryModel.getAbsoluteTableIdentifier());
-    try {
-      queryProperties.dataBlocks = blockLoaderInstance
-          .loadAndGetBlocks(queryModel.getTableBlockInfos(),
-              queryModel.getAbsoluteTableIdentifier());
-    } catch (IndexBuilderException e) {
-      throw new QueryExecutionException(e);
-    }
+    List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
+        prepareTableBlockUniqueIdentifier(queryModel.getTableBlockInfos(),
+            queryModel.getAbsoluteTableIdentifier());
+    cache.removeTableBlocksIfHorizontalCompactionDone(queryModel);
+    queryProperties.dataBlocks = cache.getAll(tableBlockUniqueIdentifiers);
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
@@ -123,14 +136,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     int aggTypeCount = queryModel.getQueryMeasures().size();
 
     int currentIndex = 0;
-    String[] aggTypes = new String[aggTypeCount];
     DataType[] dataTypes = new DataType[aggTypeCount];
 
     for (QueryMeasure carbonMeasure : queryModel.getQueryMeasures()) {
       // adding the data type and aggregation type of all the measure this
       // can be used
       // to select the aggregator
-      aggTypes[currentIndex] = carbonMeasure.getAggregateFunction();
       dataTypes[currentIndex] = carbonMeasure.getMeasure().getDataType();
       currentIndex++;
     }
@@ -141,11 +152,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // 3. query measure
     // so calculating the index of the expression start index
     // and measure column start index
-    queryProperties.aggExpressionStartIndex = queryModel.getQueryMeasures().size();
-    queryProperties.measureStartIndex = aggTypes.length - queryModel.getQueryMeasures().size();
+    queryProperties.filterMeasures = new HashSet<>();
+    queryProperties.complexFilterDimension = new HashSet<>();
+    QueryUtil.getAllFilterDimensions(queryModel.getFilterExpressionResolverTree(),
+        queryProperties.complexFilterDimension, queryProperties.filterMeasures);
 
-    queryProperties.complexFilterDimension =
-        QueryUtil.getAllFilterDimensions(queryModel.getFilterExpressionResolverTree());
     queryStatistic = new QueryStatistic();
     // dictionary column unique column id to dictionary mapping
     // which will be used to get column actual data
@@ -156,13 +167,21 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .addStatistics(QueryStatisticsConstants.LOAD_DICTIONARY, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
     queryModel.setColumnToDictionaryMapping(queryProperties.columnToDictionayMapping);
-    // setting the sort dimension index. as it will be updated while getting the sort info
-    // so currently setting it to default 0 means sort is not present in any dimension
-    queryProperties.sortDimIndexes = new byte[queryModel.getQueryDimension().size()];
+  }
+
+  private List<TableBlockUniqueIdentifier> prepareTableBlockUniqueIdentifier(
+      List<TableBlockInfo> tableBlockInfos, AbsoluteTableIdentifier absoluteTableIdentifier) {
+    List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
+        new ArrayList<>(tableBlockInfos.size());
+    for (TableBlockInfo blockInfo : tableBlockInfos) {
+      tableBlockUniqueIdentifiers
+          .add(new TableBlockUniqueIdentifier(absoluteTableIdentifier, blockInfo));
+    }
+    return tableBlockUniqueIdentifiers;
   }
 
   /**
-   * Below method will be used to get the key structure info for the uqery
+   * Below method will be used to get the key structure info for the query
    *
    * @param queryModel   query model
    * @param keyGenerator
@@ -172,9 +191,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // getting the masked byte range for dictionary column
     int[] maskByteRanges =
         QueryUtil.getMaskedByteRange(queryModel.getQueryDimension(), keyGenerator);
-
-    // getting the masked bytes for query dimension dictionary column
-    int[] maskedBytes = QueryUtil.getMaskedByte(keyGenerator.getKeySizeInBytes(), maskByteRanges);
 
     // max key for the dictionary dimension present in the query
     byte[] maxKey = null;
@@ -189,13 +205,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     KeyStructureInfo restructureInfos = new KeyStructureInfo();
     restructureInfos.setKeyGenerator(keyGenerator);
     restructureInfos.setMaskByteRanges(maskByteRanges);
-    restructureInfos.setMaskedBytes(maskedBytes);
     restructureInfos.setMaxKey(maxKey);
     return restructureInfos;
   }
 
   protected List<BlockExecutionInfo> getBlockExecutionInfos(QueryModel queryModel)
-      throws QueryExecutionException {
+      throws IOException, QueryExecutionException {
     initQuery(queryModel);
     List<BlockExecutionInfo> blockExecutionInfoList = new ArrayList<BlockExecutionInfo>();
     // fill all the block execution infos for all the blocks selected in
@@ -205,11 +220,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       blockExecutionInfoList.add(
           getBlockExecutionInfoForBlock(queryModel, queryProperties.dataBlocks.get(i),
               queryModel.getTableBlockInfos().get(i).getBlockletInfos().getStartBlockletNumber(),
-              queryModel.getTableBlockInfos().get(i).getBlockletInfos()
-                  .getNumberOfBlockletToScan()));
+              queryModel.getTableBlockInfos().get(i).getBlockletInfos().getNumberOfBlockletToScan(),
+              queryModel.getTableBlockInfos().get(i).getFilePath()));
     }
-    queryProperties.complexDimensionInfoMap =
-        blockExecutionInfoList.get(blockExecutionInfoList.size() - 1).getComlexDimensionInfoMap();
     if (null != queryModel.getStatisticsRecorder()) {
       QueryStatistic queryStatistic = new QueryStatistic();
       queryStatistic.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKS_NUM,
@@ -229,7 +242,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @throws QueryExecutionException any failure during block info creation
    */
   protected BlockExecutionInfo getBlockExecutionInfoForBlock(QueryModel queryModel,
-      AbstractIndex blockIndex, int startBlockletIndex, int numberOfBlockletToScan)
+      AbstractIndex blockIndex, int startBlockletIndex, int numberOfBlockletToScan, String filePath)
       throws QueryExecutionException {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
@@ -246,6 +259,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         QueryUtil.getMaskedByteRange(updatedQueryDimension, blockKeyGenerator);
     int[] maksedByte =
         QueryUtil.getMaskedByte(blockKeyGenerator.getKeySizeInBytes(), maskByteRangesForBlock);
+    int tableFactPathLength = CarbonStorePath
+        .getCarbonTablePath(queryModel.getAbsoluteTableIdentifier().getStorePath(),
+            queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier()).getFactDir()
+        .length() + 1;
+    blockExecutionInfo.setBlockId(filePath.substring(tableFactPathLength));
     blockExecutionInfo.setStartBlockletIndex(startBlockletIndex);
     blockExecutionInfo.setNumberOfBlockletToScan(numberOfBlockletToScan);
     blockExecutionInfo.setQueryDimensions(
@@ -256,12 +274,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setBlockKeyGenerator(blockKeyGenerator);
     // adding aggregation info for query
     blockExecutionInfo.setAggregatorInfo(getAggregatorInfoForBlock(queryModel, blockIndex));
-    // adding query statistics list to record the statistics
-    blockExecutionInfo.setStatisticsRecorder(queryProperties.queryStatisticsRecorder);
-    // setting the limit
-    blockExecutionInfo.setLimit(queryModel.getLimit());
-    // setting whether detail query or not
-    blockExecutionInfo.setDetailQuery(queryModel.isDetailQuery());
     // setting whether raw record query or not
     blockExecutionInfo.setRawRecordDetailQuery(queryModel.isForcedDetailRawQuery());
     // setting the masked byte of the block which will be
@@ -272,6 +284,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .setTotalNumberDimensionBlock(segmentProperties.getDimensionOrdinalToBlockMapping().size());
     blockExecutionInfo
         .setTotalNumberOfMeasureBlock(segmentProperties.getMeasuresOrdinalToBlockMapping().size());
+    blockExecutionInfo.setAbsoluteTableIdentifier(queryModel.getAbsoluteTableIdentifier());
     blockExecutionInfo.setComplexDimensionInfoMap(QueryUtil
         .getComplexDimensionsMap(updatedQueryDimension,
             segmentProperties.getDimensionOrdinalToBlockMapping(),
@@ -289,8 +302,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
               blockExecutionInfo.getComlexDimensionInfoMap()));
       List<IndexKey> listOfStartEndKeys = new ArrayList<IndexKey>(2);
       FilterUtil.traverseResolverTreeAndGetStartAndEndKey(segmentProperties,
-          queryModel.getAbsoluteTableIdentifier(), queryModel.getFilterExpressionResolverTree(),
-          listOfStartEndKeys);
+          queryModel.getFilterExpressionResolverTree(), listOfStartEndKeys);
       startIndexKey = listOfStartEndKeys.get(0);
       endIndexKey = listOfStartEndKeys.get(1);
     } else {
@@ -301,8 +313,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         throw new QueryExecutionException(e);
       }
     }
-    blockExecutionInfo.setFileType(
-        FileFactory.getFileType(queryModel.getAbsoluteTableIdentifier().getStorePath()));
     //setting the start index key of the block node
     blockExecutionInfo.setStartKey(startIndexKey);
     //setting the end index key of the block node
@@ -314,13 +324,40 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<CarbonMeasure> expressionMeasures =
         new ArrayList<CarbonMeasure>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // setting all the dimension chunk indexes to be read from file
-    blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(QueryUtil
-        .getDimensionsBlockIndexes(updatedQueryDimension,
-            segmentProperties.getDimensionOrdinalToBlockMapping(), expressionDimensions));
-    // setting all the measure chunk indexes to be read from file
-    blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(QueryUtil
+    int numberOfElementToConsider = 0;
+    // list of dimensions to be projected
+    List<Integer> allProjectionListDimensionIdexes = new ArrayList<>();
+    int[] dimensionsBlockIndexes = QueryUtil.getDimensionsBlockIndexes(updatedQueryDimension,
+        segmentProperties.getDimensionOrdinalToBlockMapping(), expressionDimensions,
+        queryProperties.complexFilterDimension, allProjectionListDimensionIdexes);
+    if (dimensionsBlockIndexes.length > 0) {
+      numberOfElementToConsider = dimensionsBlockIndexes[dimensionsBlockIndexes.length - 1]
+          == segmentProperties.getBlockTodimensionOrdinalMapping().size() - 1 ?
+          dimensionsBlockIndexes.length - 1 :
+          dimensionsBlockIndexes.length;
+      blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(CarbonUtil
+          .getRangeIndex(dimensionsBlockIndexes, numberOfElementToConsider,
+              CarbonCommonConstants.NUMBER_OF_COLUMN_READ_IN_IO));
+    } else {
+      blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(new int[0][0]);
+    }
+
+    int[] measureBlockIndexes = QueryUtil
         .getMeasureBlockIndexes(queryModel.getQueryMeasures(), expressionMeasures,
-            segmentProperties.getMeasuresOrdinalToBlockMapping()));
+            segmentProperties.getMeasuresOrdinalToBlockMapping(), queryProperties.filterMeasures);
+    if (measureBlockIndexes.length > 0) {
+
+      numberOfElementToConsider = measureBlockIndexes[measureBlockIndexes.length - 1]
+          == segmentProperties.getMeasures().size() - 1 ?
+          measureBlockIndexes.length - 1 :
+          measureBlockIndexes.length;
+      // setting all the measure chunk indexes to be read from file
+      blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(CarbonUtil
+          .getRangeIndex(measureBlockIndexes, numberOfElementToConsider,
+              CarbonCommonConstants.NUMBER_OF_COLUMN_READ_IN_IO));
+    } else {
+      blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(new int[0][0]);
+    }
     // setting the key structure info which will be required
     // to update the older block key with new key generator
     blockExecutionInfo.setKeyStructureInfo(queryProperties.keyStructureInfo);
@@ -348,6 +385,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setEachColumnValueSize(segmentProperties.getEachDimColumnValueSize());
     blockExecutionInfo.setComplexColumnParentBlockIndexes(
         getComplexDimensionParentBlockIndexes(updatedQueryDimension));
+    blockExecutionInfo.setVectorBatchCollector(queryModel.isVectorReader());
     try {
       // to set column group and its key structure info which will be used
       // to
@@ -407,10 +445,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     AggregatorInfo aggregatorInfos = RestructureUtil
         .getAggregatorInfos(queryModel.getQueryMeasures(),
             tableBlock.getSegmentProperties().getMeasures());
-    // setting the index of expression in measure aggregators
-    aggregatorInfos.setExpressionAggregatorStartIndex(queryProperties.aggExpressionStartIndex);
-    // setting the index of measure columns in measure aggregators
-    aggregatorInfos.setMeasureAggregatorStartIndex(queryProperties.measureStartIndex);
     // setting the measure aggregator for all aggregation function selected
     // in query
     aggregatorInfos.setMeasureDataTypes(queryProperties.measureDataTypes);
@@ -435,8 +469,14 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @throws QueryExecutionException
    */
   @Override public void finish() throws QueryExecutionException {
+    CarbonUtil.clearBlockCache(queryProperties.dataBlocks);
     if (null != queryProperties.executorService) {
-      queryProperties.executorService.shutdownNow();
+      queryProperties.executorService.shutdown();
+      try {
+        queryProperties.executorService.awaitTermination(1, TimeUnit.HOURS);
+      } catch (InterruptedException e) {
+        throw new QueryExecutionException(e);
+      }
     }
   }
 

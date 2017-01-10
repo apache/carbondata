@@ -23,10 +23,14 @@ import java.io.Serializable;
 
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+
 /**
  * blocks info
+ * TODO Remove this class after removing of kettle.
  */
-public class BlockDetails implements Serializable {
+public class BlockDetails extends FileSplit implements Serializable {
 
   /**
    * serialization version
@@ -41,8 +45,9 @@ public class BlockDetails implements Serializable {
   // locations where this block exists
   private String[] locations;
 
-  public BlockDetails(String filePath, long blockOffset, long blockLength, String[] locations) {
-    this.filePath = filePath;
+  public BlockDetails(Path filePath, long blockOffset, long blockLength, String[] locations) {
+    super(filePath, blockOffset, blockLength, locations);
+    this.filePath = filePath.toString();
     this.blockOffset = blockOffset;
     this.blockLength = blockLength;
     this.locations = locations;
@@ -52,16 +57,8 @@ public class BlockDetails implements Serializable {
     return blockOffset;
   }
 
-  public void setBlockOffset(long blockOffset) {
-    this.blockOffset = blockOffset;
-  }
-
   public long getBlockLength() {
     return blockLength;
-  }
-
-  public void setBlockLength(long blockLength) {
-    this.blockLength = blockLength;
   }
 
   public String getFilePath() {
@@ -75,4 +72,16 @@ public class BlockDetails implements Serializable {
   public String[] getLocations() {
     return locations;
   }
+
+  /** The file containing this split's data. */
+  @Override
+  public Path getPath() { return new Path(filePath); }
+
+  /** The position of the first byte in the file to process. */
+  @Override
+  public long getStart() { return blockOffset; }
+
+  /** The number of bytes in the file to process. */
+  @Override
+  public long getLength() { return blockLength; }
 }

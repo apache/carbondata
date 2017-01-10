@@ -21,6 +21,10 @@ package org.apache.carbondata.core.cache;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
+import org.apache.carbondata.core.carbon.datastore.TableSegmentUniqueIdentifier;
+import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
+import org.apache.carbondata.core.carbon.datastore.block.SegmentTaskIndexWrapper;
+import org.apache.carbondata.core.carbon.datastore.block.TableBlockUniqueIdentifier;
 
 /**
  * class which defines different cache types. cache type can be dictionary cache for
@@ -40,6 +44,18 @@ public class CacheType<K, V> {
    */
   public static final CacheType<DictionaryColumnUniqueIdentifier, Dictionary> REVERSE_DICTIONARY =
       new CacheType("reverse_dictionary");
+
+  /**
+   * Executor BTree cache which maintains size of BTree metadata
+   */
+  public static final CacheType<TableBlockUniqueIdentifier, AbstractIndex> EXECUTOR_BTREE =
+      new CacheType("executor_btree");
+
+  /**
+   * Executor BTree cache which maintains size of BTree metadata
+   */
+  public static final CacheType<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
+      DRIVER_BTREE = new CacheType("driver_btree");
 
   /**
    * cacheName which is unique name for a cache

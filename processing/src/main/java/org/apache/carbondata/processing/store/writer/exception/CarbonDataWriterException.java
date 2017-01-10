@@ -21,7 +21,7 @@ package org.apache.carbondata.processing.store.writer.exception;
 
 import java.util.Locale;
 
-public class CarbonDataWriterException extends Exception {
+public class CarbonDataWriterException extends RuntimeException {
 
   /**
    * default serial version ID.

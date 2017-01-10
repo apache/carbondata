@@ -70,11 +70,11 @@ public final class CarbonLRUCache {
     }
     initCache();
     if (lruCacheMemorySize > 0) {
-      LOGGER.info("Configured level cahce size is " + lruCacheMemorySize + " MB");
+      LOGGER.info("Configured LRU cache size is " + lruCacheMemorySize + " MB");
       // convert in bytes
       lruCacheMemorySize = lruCacheMemorySize * BYTE_CONVERSION_CONSTANT;
     } else {
-      LOGGER.info("Column cache size not configured. Therefore default behavior will be "
+      LOGGER.info("LRU cache size not configured. Therefore default behavior will be "
               + "considered and no LRU based eviction of columns will be done");
     }
   }
@@ -159,8 +159,10 @@ public final class CarbonLRUCache {
     if (null != cacheable) {
       currentSize = currentSize - cacheable.getMemorySize();
     }
-    lruCacheMap.remove(key);
-    LOGGER.info("Removed level entry from InMemory level lru cache :: " + key);
+    Cacheable remove = lruCacheMap.remove(key);
+    if(null != remove) {
+      LOGGER.info("Removed entry from InMemory lru cache :: " + key);
+    }
   }
 
   /**
@@ -171,22 +173,51 @@ public final class CarbonLRUCache {
    * @param cacheInfo
    */
   public boolean put(String columnIdentifier, Cacheable cacheInfo, long requiredSize) {
+    LOGGER.debug("Required size for entry " + columnIdentifier + " :: " + requiredSize
+        + " Current cache size :: " + currentSize);
     boolean columnKeyAddedSuccessfully = false;
-    if (freeMemorySizeForAddingCache(requiredSize)) {
+    if (isLRUCacheSizeConfigured()) {
       synchronized (lruCacheMap) {
-        currentSize = currentSize + requiredSize;
-        if (null == lruCacheMap.get(columnIdentifier)) {
-          lruCacheMap.put(columnIdentifier, cacheInfo);
+        if (freeMemorySizeForAddingCache(requiredSize)) {
+          currentSize = currentSize + requiredSize;
+          addEntryToLRUCacheMap(columnIdentifier, cacheInfo);
+          columnKeyAddedSuccessfully = true;
+        } else {
+          LOGGER.error(
+              "Size not available. Entry cannot be added to lru cache :: " + columnIdentifier
+                  + " .Required Size = " + requiredSize + " Size available " + (lruCacheMemorySize
+                  - currentSize));
         }
-        columnKeyAddedSuccessfully = true;
       }
-      LOGGER.debug("Added level entry to InMemory level lru cache :: " + columnIdentifier);
     } else {
-      LOGGER.error("Size not available. Column cannot be added to level lru cache :: "
-          + columnIdentifier + " .Required Size = " + requiredSize + " Size available "
-          + (lruCacheMemorySize - currentSize));
+      synchronized (lruCacheMap) {
+        addEntryToLRUCacheMap(columnIdentifier, cacheInfo);
+      }
+      columnKeyAddedSuccessfully = true;
     }
     return columnKeyAddedSuccessfully;
+  }
+
+  /**
+   * The method will add the cache entry to LRU cache map
+   *
+   * @param columnIdentifier
+   * @param cacheInfo
+   */
+  private void addEntryToLRUCacheMap(String columnIdentifier, Cacheable cacheInfo) {
+    if (null == lruCacheMap.get(columnIdentifier)) {
+      lruCacheMap.put(columnIdentifier, cacheInfo);
+    }
+    LOGGER.debug("Added entry to InMemory lru cache :: " + columnIdentifier);
+  }
+
+  /**
+   * this will check whether the LRU cache size is configured
+   *
+   * @return <Boolean> value
+   */
+  private boolean isLRUCacheSizeConfigured() {
+    return lruCacheMemorySize > 0;
   }
 
   /**
@@ -198,24 +229,18 @@ public final class CarbonLRUCache {
    */
   private boolean freeMemorySizeForAddingCache(long requiredSize) {
     boolean memoryAvailable = false;
-    if (lruCacheMemorySize > 0) {
+    if (isSizeAvailableToLoadColumnDictionary(requiredSize)) {
+      memoryAvailable = true;
+    } else {
+      // get the keys that can be removed from memory
+      List<String> keysToBeRemoved = getKeysToBeRemoved(requiredSize);
+      for (String cacheKey : keysToBeRemoved) {
+        removeKey(cacheKey);
+      }
+      // after removing the keys check again if required size is available
       if (isSizeAvailableToLoadColumnDictionary(requiredSize)) {
         memoryAvailable = true;
-      } else {
-        synchronized (lruCacheMap) {
-          // get the keys that can be removed from memory
-          List<String> keysToBeRemoved = getKeysToBeRemoved(requiredSize);
-          for (String cacheKey : keysToBeRemoved) {
-            removeKey(cacheKey);
-          }
-          // after removing the keys check again if required size is available
-          if (isSizeAvailableToLoadColumnDictionary(requiredSize)) {
-            memoryAvailable = true;
-          }
-        }
       }
-    } else {
-      memoryAvailable = true;
     }
     return memoryAvailable;
   }

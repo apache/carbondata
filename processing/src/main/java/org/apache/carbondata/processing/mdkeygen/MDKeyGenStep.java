@@ -20,6 +20,7 @@
 package org.apache.carbondata.processing.mdkeygen;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -88,6 +89,11 @@ public class MDKeyGenStep extends BaseStep {
    * table name
    */
   private String tableName;
+
+  /**
+   * table blocksize in MB
+   */
+  private int blockSize;
 
   /**
    * File manager
@@ -252,8 +258,6 @@ public class MDKeyGenStep extends BaseStep {
   /**
    * This method will be used to get and update the step properties which will
    * required to run this step
-   *
-   * @throws CarbonUtilException
    */
   private boolean setStepConfiguration() {
     this.tableName = meta.getTableName();
@@ -282,7 +286,7 @@ public class MDKeyGenStep extends BaseStep {
     int[] dimLensWithComplex = null;
     try {
       dimLensWithComplex = CarbonUtil.getCardinalityFromLevelMetadataFile(levelCardinalityFilePath);
-    } catch (CarbonUtilException e) {
+    } catch (IOException e) {
       LOGGER.error("Level cardinality file :: " + e.getMessage());
       return false;
     }
@@ -309,6 +313,7 @@ public class MDKeyGenStep extends BaseStep {
     wrapperColumnSchema = CarbonUtil
         .getColumnSchemaList(carbonTable.getDimensionByTableName(tableName),
             carbonTable.getMeasureByTableName(tableName));
+    blockSize = carbonTable.getBlockSizeInMB();
     colCardinality =
         CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchema);
     segmentProperties = new SegmentProperties(wrapperColumnSchema, colCardinality);
@@ -357,7 +362,7 @@ public class MDKeyGenStep extends BaseStep {
     String carbonDataDirectoryPath = getCarbonDataFolderLocation();
     finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation, tableName,
         dimensionCount - meta.getComplexDimsCount(), meta.getComplexDimsCount(), measureCount,
-        meta.getNoDictionaryCount(), aggType, isNoDictionaryDimension);
+        meta.getNoDictionaryCount(), aggType, isNoDictionaryDimension, true);
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = getCarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setPrimitiveDimLens(simpleDimsLen);
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
@@ -393,6 +398,7 @@ public class MDKeyGenStep extends BaseStep {
     carbonFactDataHandlerModel.setAggType(aggType);
     carbonFactDataHandlerModel.setFactDimLens(dimLens);
     carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
+    carbonFactDataHandlerModel.setBlockSizeInMB(blockSize);
     return carbonFactDataHandlerModel;
   }
 

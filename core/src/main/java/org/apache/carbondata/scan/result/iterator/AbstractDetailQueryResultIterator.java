@@ -29,6 +29,7 @@ import org.apache.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.apache.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
@@ -38,13 +39,14 @@ import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.model.QueryModel;
 import org.apache.carbondata.scan.processor.AbstractDataBlockIterator;
 import org.apache.carbondata.scan.processor.impl.DataBlockIteratorImpl;
+import org.apache.carbondata.scan.result.vector.CarbonColumnarBatch;
 
 /**
  * In case of detail query we cannot keep all the records in memory so for
  * executing that query are returning a iterator over block and every time next
  * call will come it will execute the block and return the result
  */
-public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
+public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterator<E> {
 
   /**
    * LOGGER.
@@ -57,6 +59,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
    * execution info of the block
    */
   protected List<BlockExecutionInfo> blockExecutionInfos;
+
   /**
    * file reader which will be used to execute the query
    */
@@ -79,6 +82,10 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
    * number of cores which can be used
    */
   private int batchSize;
+  /**
+   * queryStatisticsModel to store query statistics object
+   */
+  QueryStatisticsModel queryStatisticsModel;
 
   public AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
       ExecutorService execService) {
@@ -100,6 +107,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
         FileFactory.getFileType(queryModel.getAbsoluteTableIdentifier().getStorePath()));
     this.execService = execService;
     intialiseInfos();
+    initQueryStatiticsModel();
   }
 
   private void intialiseInfos() {
@@ -108,7 +116,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
       DataRefNodeFinder finder = new BTreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
       DataRefNode startDataBlock = finder
           .findFirstDataBlock(blockInfo.getDataBlock().getDataRefNode(), blockInfo.getStartKey());
-      while (startDataBlock.nodeNumber() != blockInfo.getStartBlockletIndex()) {
+      while (startDataBlock.nodeNumber() < blockInfo.getStartBlockletIndex()) {
         startDataBlock = startDataBlock.getNextDataRefNode();
       }
 
@@ -154,9 +162,24 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     if (blockExecutionInfos.size() > 0) {
       BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
       blockExecutionInfos.remove(executionInfo);
-      return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize);
+      queryStatisticsModel.setRecorder(recorder);
+      return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize, queryStatisticsModel);
     }
     return null;
+  }
+
+  protected void initQueryStatiticsModel() {
+    this.queryStatisticsModel = new QueryStatisticsModel();
+    QueryStatistic queryStatisticTotalBlocklet = new QueryStatistic();
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM, queryStatisticTotalBlocklet);
+    QueryStatistic queryStatisticValidScanBlocklet = new QueryStatistic();
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM, queryStatisticValidScanBlocklet);
+  }
+
+  public void processNextBatch(CarbonColumnarBatch columnarBatch) {
+    throw new UnsupportedOperationException("Please use VectorDetailQueryResultIterator");
   }
 
 }

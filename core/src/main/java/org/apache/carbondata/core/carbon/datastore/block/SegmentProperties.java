@@ -160,7 +160,7 @@ public class SegmentProperties {
         new HashMap<Integer, Set<Integer>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     measuresOrdinalToBlockMapping =
         new HashMap<Integer, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    intialiseColGroups(columnsInTable);
+    intialiseColGroups();
     fillOrdinalToBlockMappingForDimension();
     fillOrdinalToBlockIndexMappingForMeasureColumns();
     fillColumnGroupAndItsCardinality(columnCardinality);
@@ -171,9 +171,8 @@ public class SegmentProperties {
    * it fills column groups
    * e.g {{1},{2,3,4},{5},{6},{7,8,9}}
    *
-   * @param columnsInTable
    */
-  private void intialiseColGroups(List<ColumnSchema> columnsInTable) {
+  private void intialiseColGroups() {
     // StringBuffer columnGroups = new StringBuffer();
     List<List<Integer>> colGrpList = new ArrayList<List<Integer>>();
     List<Integer> group = new ArrayList<Integer>();
@@ -743,6 +742,13 @@ public class SegmentProperties {
    */
   public Set<Integer> getDimensionOrdinalForBlock(int blockIndex) {
     return blockTodimensionOrdinalMapping.get(blockIndex);
+  }
+
+  /**
+   * @return It returns block index to dimension ordinal mapping
+   */
+  public Map<Integer, Set<Integer>> getBlockTodimensionOrdinalMapping() {
+    return blockTodimensionOrdinalMapping;
   }
 
 }
