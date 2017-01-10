@@ -26,6 +26,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.model.CarbonLoadModel
 
@@ -60,6 +61,9 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
     carbonLoadModel.setAllDictPath(allDictFilePath)
     carbonLoadModel.setSerializationNullFormat(
           TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
+    carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
+      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
     carbonLoadModel
   }
 

@@ -112,6 +112,8 @@ public class CarbonLoadModel implements Serializable {
 
   private String dateFormat;
 
+  private String defaultTimestampFormat;
+
   /**
    * defines the string that should be treated as null while loadind data
    */
@@ -363,6 +365,8 @@ public class CarbonLoadModel implements Serializable {
     copy.escapeChar = escapeChar;
     copy.quoteChar = quoteChar;
     copy.commentChar = commentChar;
+    copy.dateFormat = dateFormat;
+    copy.defaultTimestampFormat = defaultTimestampFormat;
     copy.maxColumns = maxColumns;
     copy.storePath = storePath;
     copy.useOnePass = useOnePass;
@@ -410,6 +414,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.quoteChar = quoteChar;
     copyObj.commentChar = commentChar;
     copyObj.dateFormat = dateFormat;
+    copyObj.defaultTimestampFormat = defaultTimestampFormat;
     copyObj.maxColumns = maxColumns;
     copyObj.storePath = storePath;
     copyObj.useOnePass = useOnePass;
@@ -640,6 +645,14 @@ public class CarbonLoadModel implements Serializable {
   public String getDateFormat() { return dateFormat; }
 
   public void setDateFormat(String dateFormat) { this.dateFormat = dateFormat; }
+
+  public String getDefaultTimestampFormat() {
+    return defaultTimestampFormat;
+  }
+
+  public void setDefaultTimestampFormat(String defaultTimestampFormat) {
+    this.defaultTimestampFormat = defaultTimestampFormat;
+  }
 
   /**
    * @return

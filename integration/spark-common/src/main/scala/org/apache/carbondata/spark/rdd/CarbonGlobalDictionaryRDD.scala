@@ -161,7 +161,8 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
     hdfsTempLocation: String,
     lockType: String,
     zooKeeperUrl: String,
-    serializationNullFormat: String) extends Serializable
+    serializationNullFormat: String,
+    defaultTimestampFormat: String) extends Serializable
 
 case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends Serializable
 
@@ -276,6 +277,8 @@ class CarbonBlockDistinctValuesCombineRDD(
   override def compute(split: Partition,
       context: TaskContext): Iterator[(Int, ColumnDistinctValues)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION,
+      model.hdfsLocation)
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordLoadCsvfilesToDfTime()
     val distinctValuesList = new ArrayBuffer[(Int, mutable.HashSet[String])]
     var rowCount = 0L
@@ -285,9 +288,7 @@ class CarbonBlockDistinctValuesCombineRDD(
       val dimNum = model.dimensions.length
       var row: Row = null
       val rddIter = firstParent[Row].iterator(split, context)
-      val formatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-          .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-      val format = new SimpleDateFormat(formatString)
+      val format = new SimpleDateFormat(model.defaultTimestampFormat)
       // generate block distinct value set
       while (rddIter.hasNext) {
         row = rddIter.next()
@@ -329,6 +330,8 @@ class CarbonGlobalDictionaryGenerateRDD(
 
   override def compute(split: Partition, context: TaskContext): Iterator[(Int, String, Boolean)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION,
+      model.hdfsLocation)
     val status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
     var isHighCardinalityColumn = false
     val iter = new Iterator[(Int, String, Boolean)] {
