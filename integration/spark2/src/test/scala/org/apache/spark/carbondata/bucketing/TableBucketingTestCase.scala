@@ -28,6 +28,7 @@ import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -42,6 +43,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t6")
     sql("DROP TABLE IF EXISTS t7")
     sql("DROP TABLE IF EXISTS t8")
+    sql("DROP TABLE IF EXISTS t9")
   }
 
   test("test create table with buckets") {
@@ -60,6 +62,23 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
       assert(true)
     } else {
       assert(false, "Bucketing info does not exist")
+    }
+  }
+
+  test("must be unable to create if number of buckets is in negative number") {
+    try {
+      sql(
+        """
+           CREATE TABLE t9
+           (ID Int, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int)
+           USING org.apache.spark.sql.CarbonSource
+           OPTIONS("bucketnumber"="-1", "bucketcolumns"="name", "tableName"="t9")
+        """)
+      assert(false)
+    }
+    catch {
+      case malformedCarbonCommandException: MalformedCarbonCommandException => assert(true)
     }
   }
 

@@ -41,10 +41,6 @@ class CarbonSparkSqlParser(conf: SQLConf) extends AbstractSqlParser {
 
   private val substitutor = new VariableSubstitution(conf)
 
-  protected override def parse[T](command: String)(toResult: SqlBaseParser => T): T = {
-    super.parse(substitutor.substitute(command))(toResult)
-  }
-
   override def parsePlan(sqlText: String): LogicalPlan = {
     try {
       super.parsePlan(sqlText)
@@ -54,6 +50,10 @@ class CarbonSparkSqlParser(conf: SQLConf) extends AbstractSqlParser {
       case ex =>
         astBuilder.parser.parse(sqlText)
     }
+  }
+
+  protected override def parse[T](command: String)(toResult: SqlBaseParser => T): T = {
+    super.parse(substitutor.substitute(command))(toResult)
   }
 }
 
@@ -124,7 +124,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
           f.scale = scale
           f.dataType = Some("decimal")
         }
-        if(f.dataType.getOrElse("").startsWith("char")) {
+        if (f.dataType.getOrElse("").startsWith("char")) {
           f.dataType = Some("char")
         }
         f.rawSchema = x
@@ -136,12 +136,16 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         throw new MalformedCarbonCommandException("Invalid table properties")
       }
       val options = new CarbonOption(properties)
-      val bucketFields = {
-        if (options.isBucketingEnabled) {
-          Some(BucketFields(options.bucketColumns.split(","), options.bucketNumber))
-        } else {
-          None
+      val bucketFields = if (options.isBucketingEnabled) {
+        if (options.bucketNumber.toString.contains("-") ||
+            options.bucketNumber.toString.contains("+")) {
+          throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED")
         }
+        else {
+          Some(BucketFields(options.bucketColumns.split(","), options.bucketNumber))
+        }
+      } else {
+        None
       }
 
       val tableProperties = mutable.Map[String, String]()
@@ -184,7 +188,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       operationNotAllowed(
         s"Values must be specified for key(s): ${ badKeys.mkString("[", ",", "]") }", ctx)
     }
-    props.map{ case (key, value) =>
+    props.map { case (key, value) =>
       (key.toLowerCase, value.toLowerCase)
     }
   }
