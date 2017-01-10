@@ -69,11 +69,11 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-           CREATE TABLE t6
+           CREATE TABLE t9
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            USING org.apache.spark.sql.CarbonSource
-           OPTIONS("bucketnumber"="-1", "bucketcolumns"="name", "tableName"="t6")
+           OPTIONS("bucketnumber"="-1", "bucketcolumns"="name", "tableName"="t9")
       """)
       assert(false)
       }
