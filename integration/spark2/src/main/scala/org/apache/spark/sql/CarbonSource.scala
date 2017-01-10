@@ -32,6 +32,7 @@ import org.apache.spark.sql.types.{DecimalType, StructType}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonOption
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 /**
  * Carbon relation provider compliant to data source api.
@@ -134,7 +135,13 @@ class CarbonSource extends CreatableRelationProvider
         parameters.foreach { x => map.put(x._1, x._2) }
         val bucketFields = {
           if (options.isBucketingEnabled) {
-            Some(BucketFields(options.bucketColumns.split(","), options.bucketNumber))
+            if (options.bucketNumber.toString.contains("-") || options.bucketNumber.toString.contains("+") ) {
+              throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED" +
+                                                        options.bucketNumber.toString)
+            }
+            else {
+              Some(BucketFields(options.bucketColumns.split(","), options.bucketNumber))
+            }
           } else {
             None
           }
