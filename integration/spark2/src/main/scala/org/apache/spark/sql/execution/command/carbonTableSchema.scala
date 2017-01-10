@@ -418,6 +418,9 @@ case class LoadTable(
       carbonLoadModel.setQuoteChar(checkDefaultValue(quoteChar, "\""))
       carbonLoadModel.setCommentChar(checkDefaultValue(commentchar, "#"))
       carbonLoadModel.setDateFormat(dateFormat)
+      carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
       carbonLoadModel
         .setSerializationNullFormat(
           TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + "," + serializationNullFormat)
@@ -453,40 +456,39 @@ case class LoadTable(
         carbonLoadModel.setDirectLoad(true)
         GlobalDictionaryUtil.updateTableMetadataFunc = LoadTable.updateTableMetadata
 
+        val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
+          val fields = dataFrame.get.schema.fields
+          import org.apache.spark.sql.functions.udf
+          // extracting only segment from tupleId
+          val getSegIdUDF = udf((tupleId: String) =>
+            CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID))
+          // getting all fields except tupleId field as it is not required in the value
+          var otherFields = fields.toSeq
+            .filter(field => !field.name
+              .equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))
+            .map(field => {
+              if (field.name.endsWith(CarbonCommonConstants.UPDATED_COL_EXTENSION) && false) {
+                new Column(field.name
+                  .substring(0,
+                    field.name.lastIndexOf(CarbonCommonConstants.UPDATED_COL_EXTENSION)))
+              } else {
 
-val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
-            val fields = dataFrame.get.schema.fields
-            import org.apache.spark.sql.functions.udf
-            // extracting only segment from tupleId
-            val getSegIdUDF = udf((tupleId: String) =>
-              CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID))
-            // getting all fields except tupleId field as it is not required in the value
-            var otherFields = fields.toSeq
-              .filter(field => !field.name
-                .equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))
-              .map(field => {
-                if (field.name.endsWith(CarbonCommonConstants.UPDATED_COL_EXTENSION) && false) {
-                  new Column(field.name
-                    .substring(0,
-                      field.name.lastIndexOf(CarbonCommonConstants.UPDATED_COL_EXTENSION)))
-                } else {
+                new Column(field.name)
+              }
+            })
 
-                  new Column(field.name)
-                }
-              })
-
-            // extract tupleId field which will be used as a key
-            val segIdColumn = getSegIdUDF(new Column(UnresolvedAttribute
-              .quotedString(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))).as("segId")
-            // use dataFrameWithoutTupleId as dictionaryDataFrame
-            val dataFrameWithoutTupleId = dataFrame.get.select(otherFields: _*)
-            otherFields = otherFields :+ segIdColumn
-            // use dataFrameWithTupleId as loadDataFrame
-            val dataFrameWithTupleId = dataFrame.get.select(otherFields: _*)
-            (Some(dataFrameWithoutTupleId), Some(dataFrameWithTupleId))
-          } else {
-            (dataFrame, dataFrame)
-          }
+          // extract tupleId field which will be used as a key
+          val segIdColumn = getSegIdUDF(new Column(UnresolvedAttribute
+            .quotedString(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))).as("segId")
+          // use dataFrameWithoutTupleId as dictionaryDataFrame
+          val dataFrameWithoutTupleId = dataFrame.get.select(otherFields: _*)
+          otherFields = otherFields :+ segIdColumn
+          // use dataFrameWithTupleId as loadDataFrame
+          val dataFrameWithTupleId = dataFrame.get.select(otherFields: _*)
+          (Some(dataFrameWithoutTupleId), Some(dataFrameWithTupleId))
+        } else {
+          (dataFrame, dataFrame)
+        }
         GlobalDictionaryUtil
           .generateGlobalDictionary(
             sparkSession.sqlContext,

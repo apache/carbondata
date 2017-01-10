@@ -60,6 +60,9 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     carbonLoadModel.setQuoteChar("\"")
     carbonLoadModel.setSerializationNullFormat(
       TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
+    carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
+      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
     carbonLoadModel
   }
 

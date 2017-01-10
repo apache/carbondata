@@ -352,8 +352,8 @@ object GlobalDictionaryUtil {
       hdfsTempLocation,
       lockType,
       zookeeperUrl,
-      serializationNullFormat
-    )
+      serializationNullFormat,
+      carbonLoadModel.getDefaultTimestampFormat)
   }
 
   /**

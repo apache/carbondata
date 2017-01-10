@@ -18,15 +18,13 @@
   */
 package org.apache.carbondata.spark.util
 
-import java.io.File
-
 import org.apache.spark.sql.common.util.QueryTest
-import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.CarbonLoadModel
@@ -144,6 +142,9 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     carbonLoadModel.setQuoteChar("\"");
     carbonLoadModel.setSerializationNullFormat(
       TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
+    carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
+      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
     carbonLoadModel
   }
 
