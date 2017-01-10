@@ -19,19 +19,16 @@
 
 package org.apache.carbondata.processing.util;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +56,6 @@ import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
 import org.apache.carbondata.processing.datatypes.StructDataType;
-import org.apache.carbondata.processing.etl.DataLoadingException;
 import org.apache.carbondata.processing.newflow.DataField;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -373,93 +369,28 @@ public final class CarbonDataProcessorUtil {
     return complexTypesMap;
   }
 
-  /**
-   * Get the csv file to read if it the path is file otherwise get the first file of directory.
-   *
-   * @param csvFilePath
-   * @return File
-   */
-  public static CarbonFile getCsvFileToRead(String csvFilePath) {
-    CarbonFile csvFile =
-        FileFactory.getCarbonFile(csvFilePath, FileFactory.getFileType(csvFilePath));
+  public static boolean isHeaderValid(String tableName, String[] csvHeader,
+      CarbonDataLoadSchema schema) {
+    Iterator<String> columnIterator =
+        CarbonDataProcessorUtil.getSchemaColumnNames(schema, tableName).iterator();
+    Set<String> csvColumns = new HashSet<String>(csvHeader.length);
+    Collections.addAll(csvColumns, csvHeader);
 
-    CarbonFile[] listFiles = null;
-    if (csvFile.isDirectory()) {
-      listFiles = csvFile.listFiles(new CarbonFileFilter() {
-        @Override public boolean accept(CarbonFile pathname) {
-          if (!pathname.isDirectory()) {
-            if (pathname.getName().endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION) || pathname
-                .getName().endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION
-                    + CarbonCommonConstants.FILE_INPROGRESS_STATUS)) {
-              return true;
-            }
-          }
-          return false;
-        }
-      });
-    } else {
-      listFiles = new CarbonFile[1];
-      listFiles[0] = csvFile;
+    // file header should contain all columns of carbon table.
+    // So csvColumns should contain all elements of columnIterator.
+    while (columnIterator.hasNext()) {
+      if (!csvColumns.contains(columnIterator.next().toLowerCase())) {
+        return false;
+      }
     }
-    return listFiles[0];
-  }
-
-  /**
-   * Get the file header from csv file.
-   */
-  public static String getFileHeader(CarbonFile csvFile)
-      throws DataLoadingException {
-    DataInputStream fileReader = null;
-    BufferedReader bufferedReader = null;
-    String readLine = null;
-
-    FileType fileType = FileFactory.getFileType(csvFile.getAbsolutePath());
-
-    if (!csvFile.exists()) {
-      csvFile = FileFactory
-          .getCarbonFile(csvFile.getAbsolutePath() + CarbonCommonConstants.FILE_INPROGRESS_STATUS,
-              fileType);
-    }
-
-    try {
-      fileReader = FileFactory.getDataInputStream(csvFile.getAbsolutePath(), fileType);
-      bufferedReader =
-          new BufferedReader(new InputStreamReader(fileReader, Charset.defaultCharset()));
-      readLine = bufferedReader.readLine();
-    } catch (FileNotFoundException e) {
-      LOGGER.error(e, "CSV Input File not found  " + e.getMessage());
-      throw new DataLoadingException("CSV Input File not found ", e);
-    } catch (IOException e) {
-      LOGGER.error(e, "Not able to read CSV input File  " + e.getMessage());
-      throw new DataLoadingException("Not able to read CSV input File ", e);
-    } finally {
-      CarbonUtil.closeStreams(fileReader, bufferedReader);
-    }
-
-    return readLine;
+    return true;
   }
 
   public static boolean isHeaderValid(String tableName, String header,
-      CarbonDataLoadSchema schema, String delimiter) throws DataLoadingException {
-    delimiter = CarbonUtil.delimiterConverter(delimiter);
-    String[] columnNames =
-        CarbonDataProcessorUtil.getSchemaColumnNames(schema, tableName).toArray(new String[0]);
-    String[] csvHeader = header.toLowerCase().split(delimiter);
-
-    List<String> csvColumnsList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-
-    for (String column : csvHeader) {
-      csvColumnsList.add(column.replaceAll("\"", "").trim());
-    }
-
-    int count = 0;
-
-    for (String columns : columnNames) {
-      if (csvColumnsList.contains(columns.toLowerCase())) {
-        count++;
-      }
-    }
-    return count == columnNames.length;
+      CarbonDataLoadSchema schema, String delimiter) {
+    String convertedDelimiter = CarbonUtil.delimiterConverter(delimiter);
+    String[] csvHeader = getColumnFields(header.toLowerCase(), convertedDelimiter);
+    return isHeaderValid(tableName, csvHeader, schema);
   }
 
   /**

@@ -41,8 +41,7 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
       assert(false)
     } catch {
       case e: Exception =>
-        assert(e.getMessage.equals("DataLoad failure: CSV File provided is not proper. " +
-          "Column names in schema and csv header are not same. CSVFile Name : windows.csv"))
+        assert(e.getMessage.contains("CSV header in input file is not proper. Column names in schema and csv header are not the same."))
     }
   }
 
@@ -55,8 +54,7 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
       assert(false)
     } catch {
       case e: Exception =>
-        assert(e.getMessage.equals("DataLoad failure: CSV header provided in DDL is not proper. " +
-          "Column names in schema and CSV header are not the same."))
+        assert(e.getMessage.contains("CSV header in DDL is not proper. Column names in schema and CSV header are not the same"))
     }
   }
 

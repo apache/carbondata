@@ -64,6 +64,7 @@ public class CarbonLoadModel implements Serializable {
 
   private List<String> factFilesToProcess;
   private String csvHeader;
+  private String[] csvHeaderColumns;
   private String csvDelimiter;
   private String complexDelimiterLevel1;
   private String complexDelimiterLevel2;
@@ -250,6 +251,14 @@ public class CarbonLoadModel implements Serializable {
     this.csvHeader = csvHeader;
   }
 
+  public String[] getCsvHeaderColumns() {
+    return csvHeaderColumns;
+  }
+
+  public void setCsvHeaderColumns(String[] csvHeaderColumns) {
+    this.csvHeaderColumns = csvHeaderColumns;
+  }
+
   public void initPredefDictMap() {
     predefDictMap = new HashMap<>();
   }
@@ -398,6 +407,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.isRetentionRequest = isRetentionRequest;
     copyObj.carbonDataLoadSchema = carbonDataLoadSchema;
     copyObj.csvHeader = header;
+    copyObj.csvHeaderColumns = csvHeaderColumns;
     copyObj.factFilesToProcess = filesForPartition;
     copyObj.isDirectLoad = true;
     copyObj.csvDelimiter = delimiter;
