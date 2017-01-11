@@ -1087,21 +1087,21 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       Seq(Row(96981.54360516652)))
   })
 
-//  test("CARBONDATA-60-union-defect")({
-//    sql("drop table if exists carbonunion")
-//    import sqlContext.implicits._
-//    val df = sqlContext.sparkContext.parallelize(1 to 1000).map(x => (x+"", (x+100)+"")).toDF("c1", "c2")
-//    df.registerTempTable("sparkunion")
-//    df.write
-//      .format("carbondata")
-//      .mode(SaveMode.Overwrite)
-//      .option("tableName", "carbonunion")
-//      .save()
-//    checkAnswer(
-//      sql("select c1,count(c1) from (select c1 as c1,c2 as c2 from carbonunion union all select c2 as c1,c1 as c2 from carbonunion)t where c1='200' group by c1"),
-//      sql("select c1,count(c1) from (select c1 as c1,c2 as c2 from sparkunion union all select c2 as c1,c1 as c2 from sparkunion)t where c1='200' group by c1"))
-//    sql("drop table if exists carbonunion")
-//  })
+  test("CARBONDATA-60-union-defect")({
+    sql("drop table if exists carbonunion")
+    import sqlContext.implicits._
+    val df = sqlContext.sparkContext.parallelize(1 to 1000).map(x => (x+"", (x+100)+"")).toDF("c1", "c2")
+    df.registerTempTable("sparkunion")
+    df.write
+      .format("carbondata")
+      .mode(SaveMode.Overwrite)
+      .option("tableName", "carbonunion")
+      .save()
+    checkAnswer(
+      sql("select c1,count(c1) from (select c1 as c1,c2 as c2 from carbonunion union all select c2 as c1,c1 as c2 from carbonunion)t where c1='200' group by c1"),
+      sql("select c1,count(c1) from (select c1 as c1,c2 as c2 from sparkunion union all select c2 as c1,c1 as c2 from sparkunion)t where c1='200' group by c1"))
+    sql("drop table if exists carbonunion")
+  })
 
   test("select Min(imei) from (select imei from Carbon_automation_test order by imei) t")({
     checkAnswer(
