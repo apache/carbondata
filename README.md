@@ -19,7 +19,7 @@
 
 <img src="/docs/images/format/CarbonData_logo.png" width="200" height="40">
 
-Apache CarbonData(incubating) is a fully indexed columnar and Hadoop native data format for processing heavy analytical workloads and detailed queries on big data.
+Apache CarbonData(incubating) is a fully indexed columnar data format for fast analytics on big data platform, e.g. Apache Hadoop, Apache Spark etc.
 
 You can find the latest CarbonData document and learn more at:
 [http://carbondata.incubator.apache.org](http://carbondata.incubator.apache.org/)
