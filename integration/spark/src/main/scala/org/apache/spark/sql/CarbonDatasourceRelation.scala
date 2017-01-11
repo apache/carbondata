@@ -242,6 +242,7 @@ case class CarbonRelation(
               .toLowerCase match {
             case "int" => "long"
             case "short" => "long"
+            case "float" => "double"
             case "decimal" => "decimal(" + x.getPrecision + "," + x.getScale + ")"
             case others => others
           }),
@@ -271,6 +272,7 @@ case class CarbonRelation(
             .toLowerCase match {
             case "int" => "long"
             case "short" => "long"
+            case "float" => "double"
             case "decimal" => "decimal(" + column.getColumnSchema.getPrecision + "," + column
               .getColumnSchema.getScale + ")"
             case others => others

@@ -40,7 +40,7 @@ object AllDictionaryExample {
     cc.sql("""
            CREATE TABLE IF NOT EXISTS t3
            (ID Int, date Timestamp, country String,
-           name String, phonetype String, serialname String, salary Int)
+           name String, phonetype String, serialname String, salary Int,floatField float)
            STORED BY 'carbondata'
            """)
 

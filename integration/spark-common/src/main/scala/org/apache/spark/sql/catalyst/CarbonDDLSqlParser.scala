@@ -146,6 +146,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val NUMERIC = carbonKeyWord("NUMERIC")
   protected val DECIMAL = carbonKeyWord("DECIMAL")
   protected val DOUBLE = carbonKeyWord("DOUBLE")
+  protected val FLOAT = carbonKeyWord("FLOAT")
   protected val SHORT = carbonKeyWord("SMALLINT")
   protected val INT = carbonKeyWord("INT")
   protected val BIGINT = carbonKeyWord("BIGINT")
@@ -818,7 +819,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     STRING ^^^ "string" | INTEGER ^^^ "integer" |
     TIMESTAMP ^^^ "timestamp" | NUMERIC ^^^ "numeric" |
     BIGINT ^^^ "bigint" | SHORT ^^^ "smallint" |
-    INT ^^^ "int" | DOUBLE ^^^ "double" | decimalType | DATE ^^^ "date" | charType
+    INT ^^^ "int" | DOUBLE ^^^ "double" | FLOAT ^^^ "double" | decimalType |
+    DATE ^^^ "date" | charType
 
   /**
    * Matching the decimal(10,0) data type and returning the same.
@@ -895,6 +897,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case "double" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
         field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
       )
+      case "float" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
+      )
       case "timestamp" =>
         Field(field.column, Some("Timestamp"), field.name, Some(null),
           field.parent, field.storeType, field.schemaOrdinal,
@@ -960,6 +965,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case "Long" => Field(parentName + "." + field.column, Some("Long"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
       case "Double" => Field(parentName + "." + field.column, Some("Double"),
+        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
+      case "Float" => Field(parentName + "." + field.column, Some("Double"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
       case "Timestamp" => Field(parentName + "." + field.column, Some("Timestamp"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)

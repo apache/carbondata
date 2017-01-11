@@ -75,7 +75,8 @@ object CarbonSessionExample {
          |    timestampField timestamp,
          |    decimalField decimal(18,2),
          |    dateField date,
-         |    charField char(5)
+         |    charField char(5),
+         |    floatField float
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')
@@ -88,7 +89,7 @@ object CarbonSessionExample {
       s"""
          | LOAD DATA LOCAL INPATH '$path'
          | INTO TABLE carbon_table
-         | options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField')
+         | options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField')
        """.stripMargin)
     // scalastyle:on
 
