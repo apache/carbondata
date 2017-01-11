@@ -291,6 +291,8 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         } else {
           ExecutedCommand(DropDatabaseCommand(dbName, HiveNativeCommand(sql))) :: Nil
         }
+      case UseDatabase(sql) =>
+        ExecutedCommand(HiveNativeCommand(sql)) :: Nil
       case d: HiveNativeCommand =>
         try {
           val resolvedTable = sqlContext.executePlan(CarbonHiveSyntax.parse(d.sql)).optimizedPlan

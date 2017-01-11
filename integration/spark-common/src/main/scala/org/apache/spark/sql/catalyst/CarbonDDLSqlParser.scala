@@ -644,10 +644,33 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         case Token(part, Nil) => cleanIdentifier(part)
       } match {
         case Seq(tableOnly) => (None, tableOnly)
-        case Seq(databaseName, table) => (Some(databaseName), table)
+        case Seq(databaseName, table) => (Some(convertDbNameToLowerCase(databaseName)), table)
       }
 
     (db, tableName)
+  }
+
+  /**
+   * This method will convert the database name to lower case
+   *
+   * @param dbName
+   * @return String
+   */
+  protected def convertDbNameToLowerCase(dbName: String) = {
+    dbName.toLowerCase
+  }
+
+  /**
+   * This method will convert the database name to lower case
+   *
+   * @param dbName
+   * @return Option of String
+   */
+  protected def convertDbNameToLowerCase(dbName: Option[String]): Option[String] = {
+    dbName match {
+      case Some(databaseName) => Some(convertDbNameToLowerCase(databaseName))
+      case None => dbName
+    }
   }
 
   protected def cleanIdentifier(ident: String): String = {
