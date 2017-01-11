@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
@@ -42,6 +44,9 @@ import org.apache.carbondata.scan.scanner.impl.NonFilterScanner;
  * Block iterator.
  */
 public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Object[]>> {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(AbstractDataBlockIterator.class.getName());
 
   /**
    * iterator which will be used to iterate over data blocks
@@ -85,12 +90,15 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
       blockletScanner = new NonFilterScanner(blockExecutionInfo, queryStatisticsModel);
     }
     if (blockExecutionInfo.isRawRecordDetailQuery()) {
+      LOGGER.audit("Row based raw collector is used to scan and collect the data");
       this.scannerResultAggregator =
           new RawBasedResultCollector(blockExecutionInfo);
     } else if (blockExecutionInfo.isVectorBatchCollector()) {
+      LOGGER.audit("Vector based dictionary collector is used to scan and collect the data");
       this.scannerResultAggregator =
           new DictionaryBasedVectorResultCollector(blockExecutionInfo);
     } else {
+      LOGGER.audit("Row based dictionary collector is used to scan and collect the data");
       this.scannerResultAggregator =
           new DictionaryBasedResultCollector(blockExecutionInfo);
     }

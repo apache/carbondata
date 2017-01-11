@@ -19,7 +19,9 @@
 
 package org.apache.spark.carbondata.vectorreader
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.execution.{BatchedDataSourceScanExec, RowDataSourceScanExec}
 import org.scalatest.BeforeAndAfterAll
 
@@ -37,11 +39,14 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(
     """
-           CREATE TABLE default.vectorreader
+           CREATE TABLE vectorreader
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            USING org.apache.spark.sql.CarbonSource
+          OPTIONS("tableName"="vectorreader")
       """)
+    LoadTable(Some("default"), "vectorreader", s"$resourcesPath/dataDiff.csv", Nil,
+      Map(("use_kettle", "false"))).run(sqlContext.sparkSession)
   }
 
   test("test vector reader") {
@@ -64,6 +69,12 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
       case s: RowDataSourceScanExec => rowReader = true
     }
     assert(rowReader, "row reader should exist by default")
+  }
+
+  test("test vector reader for random measure selection") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
+    checkAnswer(sql("""select salary, ID from vectorreader where ID=394""".stripMargin),
+      Seq(Row(15393, 394)))
   }
 
   override def afterAll {
