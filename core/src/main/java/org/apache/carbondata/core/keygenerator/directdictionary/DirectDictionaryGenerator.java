@@ -57,6 +57,7 @@ public interface DirectDictionaryGenerator {
 
   /**
    * Return value datatype for this generator
+   *
    * @return
    */
   DataType getReturnType();

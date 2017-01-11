@@ -28,7 +28,7 @@ import java.util.List;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 public class ExpressionResult implements Comparable<ExpressionResult> {
 
@@ -175,9 +175,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       switch (this.getDataType()) {
         case DATE:
         case TIMESTAMP:
-          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          String format = CarbonUtil.getFormatFromProperty(this.getDataType());
+          SimpleDateFormat parser = new SimpleDateFormat(format);
           if (value instanceof Timestamp) {
             return parser.format((Timestamp) value);
           } else if (value instanceof java.sql.Date) {
@@ -523,9 +522,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           return val1.compareTo(val2);
         case DATE:
         case TIMESTAMP:
-          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          String format= CarbonUtil.getFormatFromProperty(o.dataType);
+          SimpleDateFormat parser = new SimpleDateFormat(format);
           Date date1 = null;
           Date date2 = null;
           date1 = parser.parse(this.getString());

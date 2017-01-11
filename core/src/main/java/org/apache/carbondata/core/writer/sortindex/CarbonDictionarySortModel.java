@@ -22,7 +22,7 @@ import java.util.Date;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * Dictionary sort model class holds the member byte value and corresponding key value.
@@ -102,9 +102,8 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
         return val1.compareTo(val2);
       case DATE:
       case TIMESTAMP:
-        SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+        String format= CarbonUtil.getFormatFromProperty(dataType);
+        SimpleDateFormat parser = new SimpleDateFormat(format);
         Date date1 = null;
         Date date2 = null;
         try {

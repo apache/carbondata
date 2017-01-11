@@ -399,9 +399,12 @@ class NewRddIterator(rddIter: Iterator[Row],
     carbonLoadModel: CarbonLoadModel,
     context: TaskContext) extends CarbonIterator[Array[AnyRef]] {
 
-  val formatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+  val timeStampformatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
     .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-  val format = new SimpleDateFormat(formatString)
+  val timeStampFormat = new SimpleDateFormat(timeStampformatString)
+  val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+    .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+  val dateFormat = new SimpleDateFormat(dateFormatString)
   val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
   val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
   val serializationNullFormat =
@@ -413,7 +416,7 @@ class NewRddIterator(rddIter: Iterator[Row],
     val columns = new Array[AnyRef](row.length)
     for (i <- 0 until columns.length) {
       columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
-        delimiterLevel1, delimiterLevel2, format)
+        delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat)
     }
     columns
   }
