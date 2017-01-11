@@ -28,92 +28,69 @@ import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureChunkStore
 import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureDataChunkStore;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<int[]> {
+public class CompressionNoneLong extends ValueCompressionHolder<long[]> {
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnCompressNoneInt.class.getName());
+      LogServiceFactory.getLogService(CompressionNoneLong.class.getName());
   /**
-   * intCompressor.
+   * longCompressor.
    */
   private static Compressor compressor = CompressorFactory.getInstance().getCompressor();
   /**
    * value.
    */
-  private int[] value;
+  protected long[] value;
 
   private DataType actualDataType;
 
-  private MeasureDataChunkStore<int[]> measureChunkStore;
+  private MeasureDataChunkStore<long[]> measureChunkStore;
 
-  public UnCompressNoneInt(DataType actualDataType) {
+  public CompressionNoneLong(DataType actualDataType) {
     this.actualDataType = actualDataType;
   }
 
-  @Override public void setValue(int[] value) {
-    this.value = value;
-  }
+  @Override public void setValue(long[] value) { this.value = value;  }
 
-  @Override public byte[] getBackArrayData() {
-    return ValueCompressionUtil.convertToBytes(value);
-  }
+  @Override public long[] getValue() { return this.value; }
 
-  @Override public ValueCompressonHolder.UnCompressValue getNew() {
-    try {
-      return (ValueCompressonHolder.UnCompressValue) clone();
-    } catch (CloneNotSupportedException exc) {
-      LOGGER.error(exc, exc.getMessage());
-    }
-    return null;
-  }
-
-  @Override public ValueCompressonHolder.UnCompressValue compress() {
-    UnCompressNoneByte byte1 = new UnCompressNoneByte(actualDataType);
-    byte1.setValue(compressor.compressInt(value));
-    return byte1;
+  @Override public void compress() {
+    compressedValue = super.compress(compressor, DataType.DATA_LONG, value);
   }
 
   @Override
-  public UnCompressValue uncompress(DataType dataType, byte[] data, int offset, int length,
+  public void uncompress(DataType dataType, byte[] data, int offset, int length,
       int decimalPlaces, Object maxValueObject) {
-    return null;
+    super.unCompress(compressor, dataType, data, offset, length);
+    setUncompressedValues(value);
   }
 
-  @Override public void setValueInBytes(byte[] value) {
-    ByteBuffer buffer = ByteBuffer.wrap(value);
-    this.value = ValueCompressionUtil.convertToIntArray(buffer, value.length);
-  }
-
-  /**
-   * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
-   */
-  @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-    return new UnCompressNoneByte(this.actualDataType);
+  @Override public void setValueInBytes(byte[] byteValue) {
+    ByteBuffer buffer = ByteBuffer.wrap(byteValue);
+    this.value = ValueCompressionUtil.convertToLongArray(buffer, byteValue.length);
   }
 
   @Override public long getLongValue(int index) {
-    return measureChunkStore.getInt(index);
+    return measureChunkStore.getLong(index);
   }
 
   @Override public double getDoubleValue(int index) {
-    return measureChunkStore.getInt(index);
+    return measureChunkStore.getLong(index);
   }
 
   @Override public BigDecimal getBigDecimalValue(int index) {
     throw new UnsupportedOperationException("Get big decimal is not supported");
   }
 
-  @Override public void setUncompressValues(int[] data, int decimalPlaces, Object maxValueObject) {
+  private void setUncompressedValues(long[] data) {
     this.measureChunkStore =
-        MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_INT, data.length);
+      MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_LONG, data.length);
     this.measureChunkStore.putData(data);
-
   }
 
   @Override public void freeMemory() {

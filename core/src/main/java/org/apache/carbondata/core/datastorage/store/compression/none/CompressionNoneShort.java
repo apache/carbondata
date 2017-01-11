@@ -28,17 +28,16 @@ import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureChunkStore
 import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureDataChunkStore;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValue<short[]> {
+public class CompressionNoneShort extends ValueCompressionHolder<short[]> {
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnCompressNoneShort.class.getName());
+      LogServiceFactory.getLogService(CompressionNoneShort.class.getName());
 
   /**
    * shortCompressor.
@@ -54,7 +53,7 @@ public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValu
 
   private DataType actualDataType;
 
-  public UnCompressNoneShort(DataType actualDataType) {
+  public CompressionNoneShort(DataType actualDataType) {
     this.actualDataType = actualDataType;
   }
 
@@ -62,41 +61,22 @@ public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValu
     this.shortValue = shortValue;
   }
 
-  @Override public ValueCompressonHolder.UnCompressValue getNew() {
-    try {
-      return (ValueCompressonHolder.UnCompressValue) clone();
-    } catch (CloneNotSupportedException cns1) {
-      LOGGER.error(cns1, cns1.getMessage());
-    }
-    return null;
-  }
-
-  @Override public ValueCompressonHolder.UnCompressValue compress() {
-    UnCompressNoneByte byte1 = new UnCompressNoneByte(actualDataType);
-    byte1.setValue(compressor.compressShort(shortValue));
-    return byte1;
-  }
+  @Override public short[] getValue() { return this.shortValue; }
 
   @Override
-  public UnCompressValue uncompress(DataType dataType, byte[] data, int offset, int length,
+  public void uncompress(DataType dataType, byte[] data, int offset, int length,
       int decimalPlaces, Object maxValueObject) {
-    return null;
+    super.unCompress(compressor, dataType, data, offset, length);
+    setUncompressedValues(shortValue);
   }
 
-  @Override public byte[] getBackArrayData() {
-    return ValueCompressionUtil.convertToBytes(shortValue);
+  @Override public void compress() {
+    compressedValue = super.compress(compressor, DataType.DATA_SHORT, shortValue);
   }
 
   @Override public void setValueInBytes(byte[] value) {
     ByteBuffer buffer = ByteBuffer.wrap(value);
     shortValue = ValueCompressionUtil.convertToShortArray(buffer, value.length);
-  }
-
-  /**
-   * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
-   */
-  @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-    return new UnCompressNoneByte(this.actualDataType);
   }
 
   @Override public long getLongValue(int index) {
@@ -108,15 +88,14 @@ public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValu
   }
 
   @Override public BigDecimal getBigDecimalValue(int index) {
-    throw new UnsupportedOperationException("Get big decimal is not supported");
+    throw new UnsupportedOperationException(
+      "Big decimal is not defined for CompressionNonShort");
   }
 
-  @Override
-  public void setUncompressValues(short[] data, int decimalPlaces, Object maxValueObject) {
+  private void setUncompressedValues(short[] data) {
     this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
         .getMeasureDataChunkStore(DataType.DATA_SHORT, data.length);
     this.measureChunkStore.putData(data);
-
   }
 
   @Override public void freeMemory() {

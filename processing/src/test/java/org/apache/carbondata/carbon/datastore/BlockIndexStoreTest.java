@@ -29,6 +29,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
@@ -53,6 +55,10 @@ public class BlockIndexStoreTest extends TestCase {
   BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex> cache;
 
   private String property;
+
+  private static final LogService LOGGER =
+          LogServiceFactory.getLogService(BlockIndexStoreTest.class.getName());
+
   @BeforeClass public void setUp() {
 	property = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION);
 	
