@@ -25,8 +25,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +56,6 @@ import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
 import org.apache.carbondata.processing.datatypes.StructDataType;
-import org.apache.carbondata.processing.etl.DataLoadingException;
 import org.apache.carbondata.processing.newflow.DataField;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -369,30 +370,26 @@ public final class CarbonDataProcessorUtil {
   }
 
   public static boolean isHeaderValid(String tableName, String[] csvHeader,
-      CarbonDataLoadSchema schema) throws DataLoadingException {
-    String[] columnNames =
-        CarbonDataProcessorUtil.getSchemaColumnNames(schema, tableName).toArray(new String[0]);
+      CarbonDataLoadSchema schema) {
+    Iterator<String> columnIterator =
+        CarbonDataProcessorUtil.getSchemaColumnNames(schema, tableName).iterator();
+    Set<String> csvColumns = new HashSet<String>(csvHeader.length);
+    Collections.addAll(csvColumns, csvHeader);
 
-    List<String> csvColumnsList = new ArrayList<String>(csvHeader.length);
-
-    for (String column : csvHeader) {
-      csvColumnsList.add(column);
-    }
-
-    int count = 0;
-
-    for (String columns : columnNames) {
-      if (csvColumnsList.contains(columns.toLowerCase())) {
-        count++;
+    // file header should contain all columns of carbon table.
+    // So csvColumns should contain all elements of columnIterator.
+    while (columnIterator.hasNext()) {
+      if (!csvColumns.contains(columnIterator.next().toLowerCase())) {
+        return false;
       }
     }
-    return count == columnNames.length;
+    return true;
   }
 
   public static boolean isHeaderValid(String tableName, String header,
-      CarbonDataLoadSchema schema, String delimiter) throws DataLoadingException {
-    delimiter = CarbonUtil.delimiterConverter(delimiter);
-    String[] csvHeader = getColumnFields(header.toLowerCase(), delimiter);
+      CarbonDataLoadSchema schema, String delimiter) {
+    String convertedDelimiter = CarbonUtil.delimiterConverter(delimiter);
+    String[] csvHeader = getColumnFields(header.toLowerCase(), convertedDelimiter);
     return isHeaderValid(tableName, csvHeader, schema);
   }
 

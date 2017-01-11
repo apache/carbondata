@@ -328,18 +328,18 @@ object CommonUtil {
     if (!CarbonDataProcessorUtil.isHeaderValid(carbonLoadModel.getTableName, csvColumns,
         carbonLoadModel.getCarbonDataLoadSchema)) {
       if (csvFile == null) {
-        LOGGER.error("CSV header provided in DDL is not proper."
+        LOGGER.error("CSV header in DDL is not proper."
                      + " Column names in schema and CSV header are not the same.")
         throw new CarbonDataLoadingException(
-          "CSV header provided in DDL is not proper. Column names in schema and CSV header are "
+          "CSV header in DDL is not proper. Column names in schema and CSV header are "
           + "not the same.")
       } else {
         LOGGER.error(
-          "CSV File provided is not proper. Column names in schema and csv header are not same. "
-          + "CSVFile Name : " + csvFile)
+          "CSV header in input file is not proper. Column names in schema and csv header are not "
+          + "the same. Input file : " + csvFile)
         throw new CarbonDataLoadingException(
-          "CSV File provided is not proper. Column names in schema and csv header are not same. "
-          + "CSVFile Name : " + csvFile)
+          "CSV header in input file is not proper. Column names in schema and csv header are not "
+          + "the same. Input file : " + csvFile)
       }
     }
 
