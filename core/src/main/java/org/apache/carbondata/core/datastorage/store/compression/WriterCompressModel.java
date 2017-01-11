@@ -63,7 +63,7 @@ public class WriterCompressModel {
   /**
    * unCompressValues.
    */
-  private ValueCompressonHolder.UnCompressValue[] unCompressValues;
+  private ValueCompressionHolder[] valueHolder;
 
   private CompressionFinder[] compressionFinders;
 
@@ -128,15 +128,15 @@ public class WriterCompressModel {
    *
    * @return the unCompressValues
    */
-  public ValueCompressonHolder.UnCompressValue[] getUnCompressValues() {
-    return unCompressValues;
+  public ValueCompressionHolder[] getValueCompressionHolder() {
+    return valueHolder;
   }
 
   /**
-   * @param unCompressValues the unCompressValues to set
+   * @param valueHolder set the ValueCompressionHolder
    */
-  public void setUnCompressValues(ValueCompressonHolder.UnCompressValue[] unCompressValues) {
-    this.unCompressValues = unCompressValues;
+  public void setValueCompressionHolder(ValueCompressionHolder[] valueHolder) {
+    this.valueHolder = valueHolder;
   }
 
   /**
