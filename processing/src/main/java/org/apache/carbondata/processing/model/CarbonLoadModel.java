@@ -74,7 +74,7 @@ public class CarbonLoadModel implements Serializable {
   private String blocksID;
 
   /**
-   *  Map from carbon dimension to pre defined dict file path
+   * Map from carbon dimension to pre defined dict file path
    */
   private HashMap<CarbonDimension, String> predefDictMap;
 
@@ -112,6 +112,8 @@ public class CarbonLoadModel implements Serializable {
 
   private String defaultTimestampFormat;
 
+  private String defaultDateFormat;
+
   /**
    * defines the string that should be treated as null while loadind data
    */
@@ -148,7 +150,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   *  Use one pass to generate dictionary
+   * Use one pass to generate dictionary
    */
   private boolean useOnePass;
 
@@ -169,6 +171,7 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * get escape char
+   *
    * @return
    */
   public String getEscapeChar() {
@@ -177,6 +180,7 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * set escape char
+   *
    * @param escapeChar
    */
   public void setEscapeChar(String escapeChar) {
@@ -330,7 +334,6 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   *
    * @return external column dictionary file path
    */
   public String getColDictFilePath() {
@@ -339,12 +342,12 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * set external column dictionary file path
+   *
    * @param colDictFilePath
    */
   public void setColDictFilePath(String colDictFilePath) {
     this.colDictFilePath = colDictFilePath;
   }
-
 
   /**
    * get copy with parition
@@ -529,6 +532,7 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * getSegmentUpdateDetails
+   *
    * @return
    */
   public List<SegmentUpdateDetails> getSegmentUpdateDetails() {
@@ -546,6 +550,7 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * getSegmentUpdateStatusManager
+   *
    * @return
    */
   public SegmentUpdateStatusManager getSegmentUpdateStatusManager() {
@@ -560,7 +565,6 @@ public class CarbonLoadModel implements Serializable {
   public void setSegmentUpdateStatusManager(SegmentUpdateStatusManager segmentUpdateStatusManager) {
     this.segmentUpdateStatusManager = segmentUpdateStatusManager;
   }
-
 
   /**
    * @return
@@ -610,6 +614,7 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * the method returns the value to be treated as null while data load
+   *
    * @return
    */
   public String getSerializationNullFormat() {
@@ -618,6 +623,7 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * the method sets the value to be treated as null while data load
+   *
    * @param serializationNullFormat
    */
   public void setSerializationNullFormat(String serializationNullFormat) {
@@ -626,6 +632,7 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * returns the string to enable bad record logger
+   *
    * @return
    */
   public String getBadRecordsLoggerEnable() {
@@ -634,6 +641,7 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * method sets the string to specify whether to enable or dissable the badrecord logger.
+   *
    * @param badRecordsLoggerEnable
    */
   public void setBadRecordsLoggerEnable(String badRecordsLoggerEnable) {
@@ -656,9 +664,13 @@ public class CarbonLoadModel implements Serializable {
     this.commentChar = commentChar;
   }
 
-  public String getDateFormat() { return dateFormat; }
+  public String getDateFormat() {
+    return dateFormat;
+  }
 
-  public void setDateFormat(String dateFormat) { this.dateFormat = dateFormat; }
+  public void setDateFormat(String dateFormat) {
+    this.dateFormat = dateFormat;
+  }
 
   public String getDefaultTimestampFormat() {
     return defaultTimestampFormat;
@@ -683,7 +695,8 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   *  returns option to specify the bad record logger action
+   * returns option to specify the bad record logger action
+   *
    * @return
    */
   public String getBadRecordsAction() {
@@ -692,6 +705,7 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * set option to specify the bad record logger action
+   *
    * @param badRecordsAction
    */
   public void setBadRecordsAction(String badRecordsAction) {
@@ -737,5 +751,13 @@ public class CarbonLoadModel implements Serializable {
 
   public void setPreFetch(boolean preFetch) {
     this.preFetch = preFetch;
+  }
+
+  public String getDefaultDateFormat() {
+    return defaultDateFormat;
+  }
+
+  public void setDefaultDateFormat(String defaultDateFormat) {
+    this.defaultDateFormat = defaultDateFormat;
   }
 }

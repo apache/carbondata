@@ -1078,9 +1078,8 @@ public final class FilterUtil {
               .compare((Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
         case DATE:
         case TIMESTAMP:
-          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          String format= CarbonUtil.getFormatFromProperty(dataType);
+          SimpleDateFormat parser = new SimpleDateFormat(format);
           Date dateToStr;
           Date dictionaryDate;
           dateToStr = parser.parse(memberVal);
@@ -1203,9 +1202,17 @@ public final class FilterUtil {
           if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
             return 1;
           }
-          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          String format= null;
+          if(dataType==DataType.DATE) {
+            format = CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+                    CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+          } else {
+            format = CarbonProperties.getInstance()
+                .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                    CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+          }
+          SimpleDateFormat parser = new SimpleDateFormat(format);
           Date date1 = null;
           Date date2 = null;
           date1 = parser.parse(filterMember1);

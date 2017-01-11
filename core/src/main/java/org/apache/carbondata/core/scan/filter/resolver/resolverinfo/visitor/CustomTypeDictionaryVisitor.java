@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
@@ -41,7 +42,7 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
    * @param visitableObj
    * @param metadata
    * @throws FilterUnsupportedException,if exception occurs while evaluating
-   * filter models.
+   *                                       filter models.
    */
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
@@ -54,7 +55,8 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
       throw new FilterUnsupportedException(e);
     }
     resolvedFilterObject = getDirectDictionaryValKeyMemberForFilter(metadata.getColumnExpression(),
-        evaluateResultListFinal, metadata.isIncludeFilter());
+        evaluateResultListFinal, metadata.isIncludeFilter(),
+        metadata.getColumnExpression().getDimension().getDataType());
     if (!metadata.isIncludeFilter() && null != resolvedFilterObject && !resolvedFilterObject
         .getFilterList().contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
       // Adding default surrogate key of null member inorder to not display the same while
@@ -68,13 +70,13 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
 
   private DimColumnFilterInfo getDirectDictionaryValKeyMemberForFilter(
       ColumnExpression columnExpression, List<String> evaluateResultListFinal,
-      boolean isIncludeFilter) {
+      boolean isIncludeFilter, DataType dataType) {
     List<Integer> surrogates = new ArrayList<Integer>(20);
     DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
         .getDirectDictionaryGenerator(columnExpression.getDimension().getDataType());
     // Reading the dictionary value direct
-    getSurrogateValuesForDictionary(evaluateResultListFinal, surrogates,
-        directDictionaryGenerator);
+    getSurrogateValuesForDictionary(evaluateResultListFinal, surrogates, directDictionaryGenerator,
+        dataType);
 
     Collections.sort(surrogates);
     DimColumnFilterInfo columnFilterInfo = null;
@@ -87,10 +89,18 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
   }
 
   private void getSurrogateValuesForDictionary(List<String> evaluateResultListFinal,
-      List<Integer> surrogates, DirectDictionaryGenerator directDictionaryGenerator) {
-    String timeFormat = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+      List<Integer> surrogates, DirectDictionaryGenerator directDictionaryGenerator,
+      DataType dataType) {
+    String timeFormat = null;
+    if (dataType == DataType.DATE) {
+      timeFormat = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+              CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+    } else {
+      timeFormat = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+    }
     for (String filterMember : evaluateResultListFinal) {
       surrogates
           .add(directDictionaryGenerator.generateDirectSurrogateKey(filterMember, timeFormat));

@@ -352,7 +352,8 @@ object GlobalDictionaryUtil {
       lockType,
       zookeeperUrl,
       serializationNullFormat,
-      carbonLoadModel.getDefaultTimestampFormat)
+      carbonLoadModel.getDefaultTimestampFormat,
+      carbonLoadModel.getDefaultDateFormat)
   }
 
   /**
@@ -363,29 +364,29 @@ object GlobalDictionaryUtil {
    */
   def loadDataFrame(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel): DataFrame = {
-      val hadoopConfiguration = new Configuration()
-      CommonUtil.configureCSVInputFormat(hadoopConfiguration, carbonLoadModel)
-      hadoopConfiguration.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
-      val columnNames = carbonLoadModel.getCsvHeaderColumns
-      val schema = StructType(columnNames.map[StructField, Array[StructField]]{ column =>
-        StructField(column, StringType)
-      })
-      val values = new Array[String](columnNames.length)
-      val row = new StringArrayRow(values)
-      val rdd = new NewHadoopRDD[NullWritable, StringArrayWritable](
-        sqlContext.sparkContext,
-        classOf[CSVInputFormat],
-        classOf[NullWritable],
-        classOf[StringArrayWritable],
-        hadoopConfiguration).setName("global dictionary").map[Row] { currentRow =>
-          row.setValues(currentRow._2.get())
-      }
-      sqlContext.createDataFrame(rdd, schema)
+    val hadoopConfiguration = new Configuration()
+    CommonUtil.configureCSVInputFormat(hadoopConfiguration, carbonLoadModel)
+    hadoopConfiguration.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
+    val columnNames = carbonLoadModel.getCsvHeaderColumns
+    val schema = StructType(columnNames.map[StructField, Array[StructField]] { column =>
+      StructField(column, StringType)
+    })
+    val values = new Array[String](columnNames.length)
+    val row = new StringArrayRow(values)
+    val rdd = new NewHadoopRDD[NullWritable, StringArrayWritable](
+      sqlContext.sparkContext,
+      classOf[CSVInputFormat],
+      classOf[NullWritable],
+      classOf[StringArrayWritable],
+      hadoopConfiguration).setName("global dictionary").map[Row] { currentRow =>
+      row.setValues(currentRow._2.get())
+    }
+    sqlContext.createDataFrame(rdd, schema)
   }
 
   // Hack for spark2 integration
   var updateTableMetadataFunc: (CarbonLoadModel, SQLContext, DictionaryLoadModel,
-      Array[CarbonDimension]) => Unit = _
+    Array[CarbonDimension]) => Unit = _
 
   /**
    * check whether global dictionary have been generated successfully or not
@@ -466,7 +467,11 @@ object GlobalDictionaryUtil {
       colName match {
         case "" => colName
         case _ =>
-          if (parentDimName.isEmpty) middleDimName else "." + middleDimName
+          if (parentDimName.isEmpty) {
+            middleDimName
+          } else {
+            "." + middleDimName
+          }
       }
     }
     // judge whether the column is exists

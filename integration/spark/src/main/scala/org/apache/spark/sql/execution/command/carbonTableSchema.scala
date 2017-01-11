@@ -424,6 +424,9 @@ case class LoadTable(
       carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
         CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+      carbonLoadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
       carbonLoadModel
         .setSerializationNullFormat(
           TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + "," + serializationNullFormat)
