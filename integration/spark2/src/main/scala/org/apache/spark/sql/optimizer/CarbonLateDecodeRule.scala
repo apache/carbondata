@@ -173,7 +173,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
               !child.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
               CarbonDictionaryTempDecoder(condAttrs,
                 new util.HashSet[AttributeReferenceWrapper](),
-                union.children.head)
+                child)
             } else {
               child
             }
