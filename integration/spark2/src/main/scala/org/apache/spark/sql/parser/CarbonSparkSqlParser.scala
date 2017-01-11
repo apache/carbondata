@@ -138,6 +138,11 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       val options = new CarbonOption(properties)
       val bucketFields = {
         if (options.isBucketingEnabled) {
+          if (options.bucketNumber.toString.contains("-") || options.bucketNumber.toString.contains("+") ){
+            throw new ParseException("INVALID NUMBER OF BUCKETS SPECIFIED. " +
+              "PARSING ERROR", ctx)
+          }
+          else
           Some(BucketFields(options.bucketColumns.split(","), options.bucketNumber))
         } else {
           None

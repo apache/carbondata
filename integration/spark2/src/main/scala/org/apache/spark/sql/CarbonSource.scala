@@ -17,10 +17,10 @@
 
 package org.apache.spark.sql
 
-import java.io.File
-
-import scala.language.implicitConversions
-
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.CarbonOption
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
@@ -29,16 +29,14 @@ import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{DecimalType, StructType}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.CarbonOption
+import scala.language.implicitConversions
 
 /**
- * Carbon relation provider compliant to data source api.
- * Creates carbon relations
- */
+  * Carbon relation provider compliant to data source api.
+  * Creates carbon relations
+  */
 class CarbonSource extends CreatableRelationProvider
-    with SchemaRelationProvider with DataSourceRegister {
+  with SchemaRelationProvider with DataSourceRegister {
 
   override def shortName(): String = "carbondata"
 
@@ -52,13 +50,13 @@ class CarbonSource extends CreatableRelationProvider
     // User should not specify path since only one store is supported in carbon currently,
     // after we support multi-store, we can remove this limitation
     require(!parameters.contains("path"), "'path' should not be specified, " +
-        "the path to store carbon file is the 'storePath' specified when creating CarbonContext")
+      "the path to store carbon file is the 'storePath' specified when creating CarbonContext")
 
     val options = new CarbonOption(parameters)
     val storePath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
     val tablePath = new Path(storePath + "/" + options.dbName + "/" + options.tableName)
     val isExists = tablePath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
-        .exists(tablePath)
+      .exists(tablePath)
     val (doSave, doAppend) = (mode, isExists) match {
       case (SaveMode.ErrorIfExists, true) =>
         sys.error(s"ErrorIfExists mode, path $storePath already exists.")
@@ -131,10 +129,15 @@ class CarbonSource extends CreatableRelationProvider
           f
         }
         val map = scala.collection.mutable.Map[String, String]()
-        parameters.foreach { x => map.put(x._1, x._2) }
+        parameters.foreach { parameter => map.put(parameter._1, parameter._2) }
         val bucketFields = {
           if (options.isBucketingEnabled) {
-            Some(BucketFields(options.bucketColumns.split(","), options.bucketNumber))
+            if (options.bucketNumber.toString.contains("-") || options.bucketNumber.toString.contains("+") ) {
+              throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED IT CAN NOT BE A NEGATIVE NUMBER " + options.bucketNumber.toString)
+            }
+            else {
+              Some(BucketFields(options.bucketColumns.split(","), options.bucketNumber))
+            }
           } else {
             None
           }

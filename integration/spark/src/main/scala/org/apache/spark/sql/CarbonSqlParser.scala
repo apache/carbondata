@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -23,8 +24,8 @@ import scala.language.implicitConversions
 
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
-import org.apache.spark.sql.catalyst._
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
+import org.apache.spark.sql.catalyst._
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.ExplainCommand
@@ -38,33 +39,15 @@ import org.apache.carbondata.spark.util.CommonUtil
 /**
  * Parser for All Carbon DDL, DML cases in Unified context
  */
+
 class CarbonSqlParser() extends CarbonDDLSqlParser {
 
-  override def parse(input: String): LogicalPlan = {
-    synchronized {
-      // Initialize the Keywords.
-      initLexical
-      phrase(start)(new lexical.Scanner(input)) match {
-        case Success(plan, _) => plan match {
-          case x: LoadTable =>
-            x.inputSqlString = input
-            x
-          case logicalPlan => logicalPlan
-        }
-        case failureOrError => sys.error(failureOrError.toString)
-      }
-    }
-  }
-
   override protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
-
   protected lazy val startCommand: Parser[LogicalPlan] =
     createDatabase | dropDatabase | loadManagement | describeTable |
-    showLoads | alterTable | updateTable | deleteRecords| createTable
-
+    showLoads | alterTable | updateTable | deleteRecords | createTable
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
-
   protected lazy val createDatabase: Parser[LogicalPlan] =
     CREATE ~> (DATABASE | SCHEMA) ~> restInput ^^ {
       case statement =>
@@ -79,7 +62,6 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
         }
         CreateDatabase(dbName, createDbSql)
     }
-
   protected lazy val dropDatabase: Parser[LogicalPlan] =
     DROP ~> (DATABASE | SCHEMA) ~> restInput ^^ {
       case statement =>
@@ -100,7 +82,6 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
         }
         DropDatabase(dbName, isCascade, dropDbSql)
     }
-
   protected lazy val alterTable: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> restInput ^^ {
       case statement =>
@@ -116,7 +97,6 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             throw ce
         }
     }
-
   /**
    * For handling the create table DDl systax compatible to Hive syntax
    */
@@ -136,6 +116,142 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
         case e: Exception =>
           sys.error("Parsing error") // no need to do anything.
       }
+  }
+  protected lazy val loadDataNew: Parser[LogicalPlan] =
+    LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
+    (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
+    (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
+      case filePath ~ isOverwrite ~ table ~ optionsList =>
+        val (databaseNameOp, tableName) = table match {
+          case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
+        }
+        if (optionsList.isDefined) {
+          validateOptions(optionsList)
+        }
+        val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
+        LoadTable(databaseNameOp, tableName, filePath, Seq(), optionsMap,
+          isOverwrite.isDefined)
+    }
+  protected lazy val describeTable: Parser[LogicalPlan] =
+    ((DESCRIBE | DESC) ~> opt(EXTENDED | FORMATTED)) ~ (ident <~ ".").? ~ ident ^^ {
+      case ef ~ db ~ tbl =>
+        val tblIdentifier = db match {
+          case Some(dbName) =>
+            TableIdentifier(tbl.toLowerCase, Some(dbName))
+          case None =>
+            TableIdentifier(tbl.toLowerCase, None)
+        }
+        if (ef.isDefined && "FORMATTED".equalsIgnoreCase(ef.get)) {
+          new DescribeFormattedCommand("describe formatted " + tblIdentifier,
+            tblIdentifier)
+        } else {
+          new DescribeCommand(UnresolvedRelation(tblIdentifier, None), ef.isDefined)
+        }
+    }
+  protected lazy val showLoads: Parser[LogicalPlan] =
+    SHOW ~> SEGMENTS ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident ~
+    (LIMIT ~> numericLit).? <~
+    opt(";") ^^ {
+      case databaseName ~ tableName ~ limit =>
+        ShowLoadsCommand(databaseName, tableName.toLowerCase(), limit)
+    }
+  protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
+    DELETE ~> SEGMENT ~> repsep(segmentId, ",") ~ (FROM ~> TABLE ~>
+                                                   (ident <~ ".").? ~ ident) <~
+    opt(";") ^^ {
+      case loadids ~ table => table match {
+        case databaseName ~ tableName =>
+          DeleteLoadsById(loadids, databaseName, tableName.toLowerCase())
+      }
+    }
+  protected lazy val deleteLoadsByLoadDate: Parser[LogicalPlan] =
+    DELETE ~> SEGMENTS ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
+    (WHERE ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
+    opt(";") ^^ {
+      case schema ~ table ~ condition =>
+        condition match {
+          case dateField ~ dateValue =>
+            DeleteLoadsByLoadDate(schema, table.toLowerCase(), dateField, dateValue)
+        }
+    }
+  protected lazy val cleanFiles: Parser[LogicalPlan] =
+    CLEAN ~> FILES ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
+      case databaseName ~ tableName => CleanFiles(databaseName, tableName.toLowerCase())
+    }
+  protected lazy val explainPlan: Parser[LogicalPlan] =
+    (EXPLAIN ~> opt(EXTENDED)) ~ startCommand ^^ {
+      case isExtended ~ logicalPlan =>
+        logicalPlan match {
+          case plan: CreateTable => ExplainCommand(logicalPlan, extended = isExtended.isDefined)
+          case _ => ExplainCommand(OneRowRelation)
+        }
+    }
+  protected lazy val deleteRecords: Parser[LogicalPlan] =
+    (DELETE ~> FROM ~> table) ~ (WHERE ~> restInput).? <~ opt(";") ^^ {
+      case table ~ condition =>
+        val tableName = getTableName(table.tableIdentifier)
+        val alias = table.alias.getOrElse("")
+        val stmt = condition match {
+          case Some(cond) =>
+            "select tupleId from " + tableName + " " + alias + " where " + cond
+          case _ =>
+            "select tupleId from " + tableName + " " + alias
+        }
+        DeleteRecords(stmt, table)
+    }
+  protected lazy val updateTable: Parser[LogicalPlan] =
+    UPDATE ~> table ~
+    (SET ~> "(" ~> repsep(element, ",") <~ ")") ~
+    ("=" ~> restInput) <~ opt(";") ^^ {
+      case tab ~ columns ~ rest =>
+        val (sel, where) = splitQuery(rest)
+        val (selectStmt, relation) =
+          if (!sel.toLowerCase.startsWith("select ")) {
+            if (sel.trim.isEmpty) {
+              sys.error("At least one source column has to be specified ")
+            }
+            // only list of expression are given, need to convert that list of expressions into
+            // select statement on destination table
+            val relation = tab match {
+              case r@UnresolvedRelation(tableIdentifier, alias) =>
+                updateRelation(r, tableIdentifier, alias)
+              case _ => tab
+            }
+            ("select " + sel + " from " + getTableName(relation.tableIdentifier) + " " +
+             relation.alias.get, relation)
+          } else {
+            (sel, updateRelation(tab, tab.tableIdentifier, tab.alias))
+          }
+        UpdateTable(relation, columns, selectStmt, where)
+    }
+  protected lazy val table: Parser[UnresolvedRelation] = {
+    rep1sep(attributeName, ".") ~ opt(ident) ^^ {
+      case tableIdent ~ alias => UnresolvedRelation(tableIdent, alias)
+    }
+  }
+  protected lazy val attributeName: Parser[String] = acceptMatch("attribute name", {
+    case lexical.Identifier(str) => str.toLowerCase
+    case lexical.Keyword(str) if !lexical.delimiters.contains(str) => str.toLowerCase
+  })
+  protected lazy val element: Parser[String] =
+    (ident <~ ".").? ~ ident ^^ {
+      case table ~ column => column.toLowerCase
+    }
+
+  override def parse(input: String): LogicalPlan = {
+    synchronized {
+      // Initialize the Keywords.
+      initLexical
+      phrase(start)(new lexical.Scanner(input)) match {
+        case Success(plan, _) => plan match {
+          case x: LoadTable =>
+            x.inputSqlString = input
+            x
+          case logicalPlan => logicalPlan
+        }
+        case failureOrError => sys.error(failureOrError.toString)
+      }
+    }
   }
 
   /**
@@ -211,7 +327,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
                     f.scale = scale
                     f.dataType = Some("decimal")
                   }
-                  if(f.dataType.getOrElse("").startsWith("char")) {
+                  if (f.dataType.getOrElse("").startsWith("char")) {
                     f.dataType = Some("char")
                   }
                   f.rawSchema = x
@@ -254,11 +370,23 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             case Token("TOK_LIKETABLE", child :: Nil) =>
               likeTableName = child.getChild(0).getText()
             case Token("TOK_ALTERTABLE_BUCKETS",
-            Token("TOK_TABCOLNAME", list)::numberOfBuckets) =>
+            Token("TOK_TABCOLNAME", list) :: numberOfBuckets) =>
               val cols = list.map(_.getText)
               if (cols != null) {
-                bucketFields = Some(BucketFields(cols,
-                  numberOfBuckets.head.getText.toInt))
+                val totalNumberOfBuckets = numberOfBuckets.headOption.fold(
+                  throw new Exception("ParsingException")) {
+                  totalNumberOfBuckets => totalNumberOfBuckets
+                }
+                if (totalNumberOfBuckets.getText.contains("-") ||
+                    totalNumberOfBuckets.getText.contains("+")) {
+                  throw new MalformedCarbonCommandException(
+                    "INVALID NUMBER OF BUCKETS SPECIFIED "
+                    + numberOfBuckets.head.getText)
+                }
+                else {
+                  bucketFields = Some(BucketFields(cols,
+                    totalNumberOfBuckets.getText.toInt))
+                }
               }
 
             case _ => // Unsupport features
@@ -336,122 +464,6 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
     }
   }
 
-  protected lazy val loadDataNew: Parser[LogicalPlan] =
-    LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
-    (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
-    (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
-      case filePath ~ isOverwrite ~ table ~ optionsList =>
-        val (databaseNameOp, tableName) = table match {
-          case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
-        }
-        if (optionsList.isDefined) {
-          validateOptions(optionsList)
-        }
-        val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
-        LoadTable(databaseNameOp, tableName, filePath, Seq(), optionsMap,
-          isOverwrite.isDefined)
-    }
-
-  protected lazy val describeTable: Parser[LogicalPlan] =
-    ((DESCRIBE | DESC) ~> opt(EXTENDED | FORMATTED)) ~ (ident <~ ".").? ~ ident ^^ {
-      case ef ~ db ~ tbl =>
-        val tblIdentifier = db match {
-          case Some(dbName) =>
-            TableIdentifier(tbl.toLowerCase, Some(dbName))
-          case None =>
-            TableIdentifier(tbl.toLowerCase, None)
-        }
-        if (ef.isDefined && "FORMATTED".equalsIgnoreCase(ef.get)) {
-          new DescribeFormattedCommand("describe formatted " + tblIdentifier,
-            tblIdentifier)
-        } else {
-          new DescribeCommand(UnresolvedRelation(tblIdentifier, None), ef.isDefined)
-        }
-    }
-
-  protected lazy val showLoads: Parser[LogicalPlan] =
-    SHOW ~> SEGMENTS ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident ~
-    (LIMIT ~> numericLit).? <~
-    opt(";") ^^ {
-      case databaseName ~ tableName ~ limit =>
-        ShowLoadsCommand(databaseName, tableName.toLowerCase(), limit)
-    }
-
-  protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
-    DELETE ~> SEGMENT ~> repsep(segmentId, ",") ~ (FROM ~> TABLE ~>
-                                                   (ident <~ ".").? ~ ident) <~
-    opt(";") ^^ {
-      case loadids ~ table => table match {
-        case databaseName ~ tableName =>
-          DeleteLoadsById(loadids, databaseName, tableName.toLowerCase())
-      }
-    }
-
-  protected lazy val deleteLoadsByLoadDate: Parser[LogicalPlan] =
-    DELETE ~> SEGMENTS ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
-    (WHERE ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
-    opt(";") ^^ {
-      case schema ~ table ~ condition =>
-        condition match {
-          case dateField ~ dateValue =>
-            DeleteLoadsByLoadDate(schema, table.toLowerCase(), dateField, dateValue)
-        }
-    }
-
-  protected lazy val cleanFiles: Parser[LogicalPlan] =
-    CLEAN ~> FILES ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
-      case databaseName ~ tableName => CleanFiles(databaseName, tableName.toLowerCase())
-    }
-
-  protected lazy val explainPlan: Parser[LogicalPlan] =
-    (EXPLAIN ~> opt(EXTENDED)) ~ startCommand ^^ {
-      case isExtended ~ logicalPlan =>
-        logicalPlan match {
-          case plan: CreateTable => ExplainCommand(logicalPlan, extended = isExtended.isDefined)
-          case _ => ExplainCommand(OneRowRelation)
-        }
-    }
-
-  protected lazy val deleteRecords: Parser[LogicalPlan] =
-    (DELETE ~> FROM ~> table) ~ (WHERE ~> restInput).? <~  opt(";") ^^ {
-      case table ~ condition =>
-        val tableName = getTableName(table.tableIdentifier)
-        val alias = table.alias.getOrElse("")
-        val stmt = condition match {
-          case Some(cond) =>
-            "select tupleId from " + tableName  + " " + alias + " where " + cond
-          case _ =>
-            "select tupleId from " + tableName + " " + alias
-        }
-        DeleteRecords(stmt, table)
-    }
-
-  protected lazy val updateTable: Parser[LogicalPlan] =
-    UPDATE ~> table ~
-    (SET ~> "(" ~>  repsep(element, ",") <~ ")") ~
-    ( "=" ~> restInput ) <~ opt(";")  ^^ {
-      case  tab~ columns ~ rest =>
-        val (sel, where ) = splitQuery(rest)
-        val (selectStmt, relation) =
-          if (!sel.toLowerCase.startsWith("select ")) {
-            if (sel.trim.isEmpty) {
-              sys.error("At least one source column has to be specified ")
-            }
-            // only list of expression are given, need to convert that list of expressions into
-            // select statement on destination table
-            val relation = tab match {
-              case r@UnresolvedRelation(tableIdentifier, alias) =>
-                updateRelation(r, tableIdentifier, alias)
-              case _ => tab
-            }
-            ("select " + sel + " from " + getTableName(relation.tableIdentifier) + " " +
-             relation.alias.get, relation)
-          } else {
-            (sel, updateRelation(tab, tab.tableIdentifier, tab.alias))
-          }
-        UpdateTable(relation, columns, selectStmt, where)
-    }
-
   private def splitQuery(query: String): (String, String) = {
     val stack = scala.collection.mutable.Stack[Char]()
     var foundSingleQuotes = false
@@ -479,7 +491,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             } else if (ch == '\"') {
               foundDoubleQuotes = !foundDoubleQuotes
             }
-            else if (ch == '(' &&  !foundSingleQuotes && !foundDoubleQuotes) {
+            else if (ch == '(' && !foundSingleQuotes && !foundDoubleQuotes) {
               bracketCount = bracketCount + 1
               stack.push(ch)
             } else if (ch == ')' && !foundSingleQuotes && !foundDoubleQuotes) {
@@ -500,18 +512,6 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
     val select = selectStatement.trim
     (select.substring(1, select.length - 1).trim -> where.trim)
   }
-
-
-  protected lazy val table: Parser[UnresolvedRelation] = {
-    rep1sep(attributeName, ".")  ~  opt(ident)^^ {
-      case tableIdent ~ alias => UnresolvedRelation(tableIdent, alias)
-    }
-  }
-
-  protected lazy val attributeName: Parser[String] = acceptMatch("attribute name", {
-    case lexical.Identifier(str) => str.toLowerCase
-    case lexical.Keyword(str) if !lexical.delimiters.contains(str) => str.toLowerCase
-  })
 
   private def updateRelation(
       r: UnresolvedRelation,
@@ -535,10 +535,5 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
       tableIdentifier(0)
     }
   }
-
-  protected lazy val element: Parser[String] =
-    (ident <~ ".").? ~ ident  ^^ {
-      case table ~ column => column.toLowerCase
-    }
 
 }
