@@ -367,32 +367,7 @@ object GlobalDictionaryUtil {
       val hadoopConfiguration = new Configuration()
       CommonUtil.configureCSVInputFormat(hadoopConfiguration, carbonLoadModel)
       hadoopConfiguration.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
-      val header = if (StringUtils.isBlank(carbonLoadModel.getCsvHeader)) {
-        val fileHeader = CarbonUtil.readHeader(carbonLoadModel.getFactFilePath.split(",")(0))
-        if (StringUtils.isBlank(fileHeader)) {
-          throw new CarbonDataLoadingException("First line of the csv is not valid.");
-        }
-        fileHeader
-      } else {
-        carbonLoadModel.getCsvHeader
-      }
-      val delimiter = if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter)) {
-        CarbonCommonConstants.COMMA
-      } else {
-        carbonLoadModel.getCsvDelimiter
-      }
-      val quote = if (StringUtils.isEmpty(carbonLoadModel.getQuoteChar)) {
-        "\""
-      } else {
-        carbonLoadModel.getQuoteChar
-      }
-      val columnNames = header.split(delimiter).map { column =>
-        if ( column.startsWith(quote) && column.endsWith(quote)) {
-          column.substring(1, column.length - 1)
-        } else {
-          column
-        }
-      }
+      val columnNames = carbonLoadModel.getCsvHeaderColumns
       val schema = StructType(columnNames.map[StructField, Array[StructField]]{ column =>
         StructField(column, StringType)
       })
@@ -704,31 +679,6 @@ object GlobalDictionaryUtil {
   }
 
   /**
-   * get file headers from fact file
-   *
-   * @param carbonLoadModel
-   * @return headers
-   */
-  private def getHeaderFormFactFile(carbonLoadModel: CarbonLoadModel): Array[String] = {
-    var headers: Array[String] = null
-    val factFile: String = carbonLoadModel.getFactFilePath.split(",")(0)
-    val readLine = CarbonUtil.readHeader(factFile)
-
-    if (null != readLine) {
-      val delimiter = if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter)) {
-        "" + DEFAULT_SEPARATOR
-      } else {
-        carbonLoadModel.getCsvDelimiter
-      }
-      headers = readLine.toLowerCase().split(delimiter)
-    } else {
-      LOGGER.error("Not found file header! Please set fileheader")
-      throw new IOException("Failed to get file header")
-    }
-    headers
-  }
-
-  /**
    * generate global dictionary with SQLContext and CarbonLoadModel
    *
    * @param sqlContext      sql context
@@ -755,11 +705,7 @@ object GlobalDictionaryUtil {
         LOGGER.info("Generate global dictionary from source data files!")
         // load data by using dataSource com.databricks.spark.csv
         var df = dataFrame.getOrElse(loadDataFrame(sqlContext, carbonLoadModel))
-        var headers = if (StringUtils.isEmpty(carbonLoadModel.getCsvHeader)) {
-          df.columns
-        } else {
-          carbonLoadModel.getCsvHeader.split("" + DEFAULT_SEPARATOR)
-        }
+        var headers = carbonLoadModel.getCsvHeaderColumns
         headers = headers.map(headerName => headerName.trim)
         val colDictFilePath = carbonLoadModel.getColDictFilePath
         if (colDictFilePath != null) {
@@ -796,11 +742,7 @@ object GlobalDictionaryUtil {
         LOGGER.info("Generate global dictionary from dictionary files!")
         val isNonempty = validateAllDictionaryPath(allDictionaryPath)
         if (isNonempty) {
-          var headers = if (StringUtils.isEmpty(carbonLoadModel.getCsvHeader)) {
-            getHeaderFormFactFile(carbonLoadModel)
-          } else {
-            carbonLoadModel.getCsvHeader.toLowerCase.split("" + DEFAULT_SEPARATOR)
-          }
+          var headers = carbonLoadModel.getCsvHeaderColumns
           headers = headers.map(headerName => headerName.trim)
           // prune columns according to the CSV file header, dimension columns
           val (requireDimension, requireColumnNames) = pruneDimensions(dimensions, headers, headers)

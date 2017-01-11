@@ -31,19 +31,15 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColu
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
-import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.steps.DataConverterProcessorStepImpl;
 import org.apache.carbondata.processing.newflow.steps.DataConverterProcessorWithBucketingStepImpl;
 import org.apache.carbondata.processing.newflow.steps.DataWriterProcessorStepImpl;
 import org.apache.carbondata.processing.newflow.steps.InputProcessorStepImpl;
 import org.apache.carbondata.processing.newflow.steps.SortProcessorStepImpl;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
-
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * It builds the pipe line of steps for loading data to carbon.
@@ -117,41 +113,7 @@ public final class DataLoadProcessBuilder {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     configuration.setTableIdentifier(identifier);
-    String csvHeader = loadModel.getCsvHeader();
-    String csvFileName = null;
-    if (csvHeader != null && !csvHeader.isEmpty()) {
-      configuration.setHeader(CarbonDataProcessorUtil.getColumnFields(csvHeader, ","));
-    } else {
-      CarbonFile csvFile =
-          CarbonDataProcessorUtil.getCsvFileToRead(loadModel.getFactFilesToProcess().get(0));
-      csvFileName = csvFile.getName();
-      csvHeader = CarbonDataProcessorUtil.getFileHeader(csvFile);
-      // if firstRow = " ", then throw exception
-      if (StringUtils.isNotEmpty(csvHeader) && StringUtils.isBlank(csvHeader)) {
-        throw new CarbonDataLoadingException("First line of the csv is not valid.");
-      }
-      configuration.setHeader(
-          CarbonDataProcessorUtil.getColumnFields(csvHeader, loadModel.getCsvDelimiter()));
-    }
-    if (!CarbonDataProcessorUtil
-        .isHeaderValid(loadModel.getTableName(), csvHeader, loadModel.getCarbonDataLoadSchema(),
-            loadModel.getCsvDelimiter())) {
-      if (csvFileName == null) {
-        LOGGER.error("CSV header provided in DDL is not proper."
-            + " Column names in schema and CSV header are not the same.");
-        throw new CarbonDataLoadingException(
-            "CSV header provided in DDL is not proper. Column names in schema and CSV header are "
-                + "not the same.");
-      } else {
-        LOGGER.error(
-            "CSV File provided is not proper. Column names in schema and csv header are not same. "
-                + "CSVFile Name : " + csvFileName);
-        throw new CarbonDataLoadingException(
-            "CSV File provided is not proper. Column names in schema and csv header are not same. "
-                + "CSVFile Name : " + csvFileName);
-      }
-    }
-
+    configuration.setHeader(loadModel.getCsvHeaderColumns());
     configuration.setPartitionId(loadModel.getPartitionId());
     configuration.setSegmentId(loadModel.getSegmentId());
     configuration.setTaskNo(loadModel.getTaskNo());
