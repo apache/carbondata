@@ -19,10 +19,7 @@
 
 <img src="/docs/images/format/CarbonData_logo.png" width="200" height="40">
 
-Apache CarbonData(incubating) is a new big data file format for faster
-interactive query using advanced columnar storage, index, compression
-and encoding techniques to improve computing efficiency, in turn it will 
-help speedup queries an order of magnitude faster over PetaBytes of data. 
+Apache CarbonData(incubating) is an indexed columnar data format for fast analytics on big data platform, e.g.Apache Hadoop, Apache Spark etc.
 
 You can find the latest CarbonData document and learn more at:
 [http://carbondata.incubator.apache.org](http://carbondata.incubator.apache.org/)
@@ -64,7 +61,7 @@ Please refer [CarbonData File Format](https://cwiki.apache.org/confluence/displa
 (https://cwiki.apache.org/confluence/display/CARBONDATA/Suggestion+to+create+CarbonData+table)
 
 ## Other Technical Material
-[Apache CarbonData meetup material](docs/Apache-CarbonData-meetup-material.pdf)
+[Apache CarbonData meetup material](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=66850609)
 
 ## Fork and Contribute
 This is an active open source project for everyone, and we are always open to people who want to use this system or contribute to it. 

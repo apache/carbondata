@@ -28,10 +28,9 @@
   <groupId>org.apache.carbondata</groupId>
   <artifactId>carbondata-parent</artifactId>
   <name>Apache CarbonData :: Parent</name>
-  <description>CarbonData is a new Apache Hadoop native file format for faster
-    interactive query using advanced columnar storage, index, compression
-    and encoding techniques to improve computing efficiency, in turn it will
-    help speedup queries an order of magnitude faster over PetaBytes of data.</description>
+  <description>Apache CarbonData(incubating) is an indexed columnar data format for fast analytics
+    on big data platform, e.g.Apache Hadoop, Apache Spark etc.
+  </description>
   <url>http://carbondata.incubator.apache.org</url>
   <inceptionYear>2016</inceptionYear>
   <packaging>pom</packaging>
