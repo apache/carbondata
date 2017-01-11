@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.datastorage.store.compression.nondecimal;
+package org.apache.carbondata.core.datastorage.store.compression.none;
 
 import java.math.BigDecimal;
 
@@ -27,90 +27,75 @@ import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureChunkStore
 import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureDataChunkStore;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.util.ValueCompressionUtil;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-public class UnCompressNonDecimalByte implements ValueCompressonHolder.UnCompressValue<byte[]> {
+public class CompressionNoneByte extends ValueCompressionHolder<byte[]> {
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnCompressNonDecimalByte.class.getName());
+      LogServiceFactory.getLogService(CompressionNoneByte.class.getName());
+
   /**
-   * compressor.
+   * byteCompressor.
    */
   private static Compressor compressor = CompressorFactory.getInstance().getCompressor();
+
   /**
    * value.
    */
   private byte[] value;
 
+  /**
+   * actual data type
+   */
+  private DataType actualDataType;
+
   private MeasureDataChunkStore<byte[]> measureChunkStore;
 
-  private double divisionFactory;
+  public CompressionNoneByte(DataType actualDataType) {
+    this.actualDataType = actualDataType;
+  }
 
   @Override public void setValue(byte[] value) {
     this.value = value;
   }
 
-  @Override public ValueCompressonHolder.UnCompressValue getNew() {
-    try {
-      return (ValueCompressonHolder.UnCompressValue) clone();
-    } catch (CloneNotSupportedException e) {
-      LOGGER.error(e, e.getMessage());
-    }
-    return null;
-  }
-
-  @Override public ValueCompressonHolder.UnCompressValue compress() {
-    UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
-    byte1.setValue(compressor.compressByte(value));
-    return byte1;
-  }
-
   @Override
-  public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType, byte[] compressData,
-      int offset, int length, int decimalPlaces, Object maxValueObject) {
-    ValueCompressonHolder.UnCompressValue byte1 =
-        ValueCompressionUtil.getUnCompressNonDecimal(dataType);
-    ValueCompressonHolder
-        .unCompress(dataType, byte1, compressData, offset, length, decimalPlaces, maxValueObject);
-    return byte1;
+  public void uncompress(DataType dataType, byte[] data, int offset, int length,
+      int mantissa, Object maxValueObject) {
+    super.unCompress(compressor, dataType, data, offset, length);
+    setUncompressedValues(value);
+  }
+
+  @Override public byte[] getValue() { return this.value; }
+
+  @Override public void compress() {
+    compressedValue = super.compress(compressor, DataType.DATA_BYTE, value);
   }
 
   @Override public void setValueInBytes(byte[] value) {
     this.value = value;
   }
 
-  @Override public byte[] getBackArrayData() {
-    return value;
-  }
-
-  /**
-   * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
-   */
-  @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-    return new UnCompressNonDecimalByte();
-  }
-
   @Override public long getLongValue(int index) {
-    throw new UnsupportedOperationException("Get long value is not supported");
+    return measureChunkStore.getByte(index);
   }
 
   @Override public double getDoubleValue(int index) {
-    return (measureChunkStore.getByte(index) / this.divisionFactory);
+    return measureChunkStore.getByte(index);
   }
 
   @Override public BigDecimal getBigDecimalValue(int index) {
-    throw new UnsupportedOperationException("Get big decimal value is not supported");
+    throw new UnsupportedOperationException(
+      "Big decimal is not defined for CompressionNoneByte");
   }
 
-  @Override public void setUncompressValues(byte[] data, int decimalPlaces, Object maxValueObject) {
+  private void setUncompressedValues(byte[] data) {
     this.measureChunkStore =
-        MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_BYTE, data.length);
+      MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_BYTE, data.length);
     this.measureChunkStore.putData(data);
-    this.divisionFactory = Math.pow(10, decimalPlaces);
   }
 
   @Override public void freeMemory() {

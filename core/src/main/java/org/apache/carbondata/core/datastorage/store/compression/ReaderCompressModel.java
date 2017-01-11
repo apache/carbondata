@@ -28,7 +28,7 @@ public class ReaderCompressModel {
 
   private ValueCompressionUtil.DataType convertedDataType;
 
-  private ValueCompressonHolder.UnCompressValue unCompressValues;
+  private ValueCompressionHolder valueHolder;
 
   public void setValueEncoderMeta(ValueEncoderMeta valueEncoderMeta) {
     this.valueEncoderMeta = valueEncoderMeta;
@@ -50,12 +50,12 @@ public class ReaderCompressModel {
     return valueEncoderMeta.getMantissa();
   }
 
-  public ValueCompressonHolder.UnCompressValue getUnCompressValues() {
-    return unCompressValues;
+  public ValueCompressionHolder getValueCompressionHolder() {
+    return valueHolder;
   }
 
-  public void setUnCompressValues(ValueCompressonHolder.UnCompressValue unCompressValues) {
-    this.unCompressValues = unCompressValues;
+  public void setValueCompressionHolder(ValueCompressionHolder valueHolder) {
+    this.valueHolder = valueHolder;
   }
 
 }
