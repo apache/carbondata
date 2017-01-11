@@ -21,9 +21,9 @@ import scala.collection.mutable
 
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, ParseException, SqlBaseParser}
 import org.apache.spark.sql.catalyst.parser.ParserUtils._
-import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{CreateTableContext, TablePropertyListContext}
+import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{CreateTableContext,
+TablePropertyListContext}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
 import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field, TableModel}
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
@@ -108,7 +108,12 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       val schema = cols ++ partitionCols
 
       val fields = schema.map { col =>
-        val x = col.name + ' ' + col.dataType.catalogString
+        val x = if (col.dataType.catalogString == "float") {
+          col.name + " double"
+        }
+        else {
+          col.name + ' ' + col.dataType.catalogString
+        }
         val f: Field = parser.anyFieldDef(new parser.lexical.Scanner(x))
         match {
           case parser.Success(field, _) => field.asInstanceOf[Field]
@@ -126,6 +131,9 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         }
         if (f.dataType.getOrElse("").startsWith("char")) {
           f.dataType = Some("char")
+        }
+        else if (f.dataType.getOrElse("").startsWith("float")) {
+          f.dataType = Some("double")
         }
         f.rawSchema = x
         f
