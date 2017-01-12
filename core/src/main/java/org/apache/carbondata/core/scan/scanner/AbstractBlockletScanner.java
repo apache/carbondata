@@ -52,6 +52,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
 
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
       throws IOException, FilterUnsupportedException {
+    scannedResult = new NonFilterQueryScannedResult(blockExecutionInfo);
     fillKeyValue(blocksChunkHolder);
     return scannedResult;
   }
