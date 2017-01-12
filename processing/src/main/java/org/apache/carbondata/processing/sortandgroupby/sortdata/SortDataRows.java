@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
@@ -82,7 +83,9 @@ public class SortDataRows {
 
     this.intermediateFileMerger = intermediateFileMerger;
 
-    this.sortBufferSize = parameters.getSortBufferSize();
+    int batchSize = CarbonProperties.getInstance().getBatchSize();
+
+    this.sortBufferSize = Math.max(parameters.getSortBufferSize(), batchSize);
     // observer of writing file in thread
     this.threadStatusObserver = new ThreadStatusObserver();
   }
@@ -95,7 +98,7 @@ public class SortDataRows {
     // create holder list which will hold incoming rows
     // size of list will be sort buffer size + 1 to avoid creation of new
     // array in list array
-    this.recordHolderList = new Object[parameters.getSortBufferSize()][];
+    this.recordHolderList = new Object[sortBufferSize][];
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
 

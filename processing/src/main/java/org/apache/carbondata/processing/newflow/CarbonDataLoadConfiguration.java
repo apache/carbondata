@@ -56,6 +56,8 @@ public class CarbonDataLoadConfiguration {
    */
   private int dictionaryServerPort;
 
+  private boolean preFetch;
+
   public CarbonDataLoadConfiguration() {
   }
 
@@ -185,5 +187,13 @@ public class CarbonDataLoadConfiguration {
 
   public void setDictionaryServerPort(int dictionaryServerPort) {
     this.dictionaryServerPort = dictionaryServerPort;
+  }
+
+  public boolean isPreFetch() {
+    return preFetch;
+  }
+
+  public void setPreFetch(boolean preFetch) {
+    this.preFetch = preFetch;
   }
 }

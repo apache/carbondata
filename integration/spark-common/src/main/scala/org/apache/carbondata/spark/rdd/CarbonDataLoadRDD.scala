@@ -33,21 +33,21 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.util.SparkUtil
 
+import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
 import org.apache.carbondata.processing.constants.DataProcessorConstants
-import org.apache.carbondata.processing.csvreaderstep.{JavaRddIterator, RddInputUtils}
+import org.apache.carbondata.processing.csvreaderstep.RddInputUtils
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.DataLoadResult
-import org.apache.carbondata.spark.load.{_}
+import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.splits.TableSplit
-import org.apache.carbondata.spark.util.CarbonQueryUtil
-import org.apache.carbondata.spark.util.CarbonScalaUtil
+import org.apache.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil}
 
 /**
  * This partition class use to split by TableSplit
@@ -549,12 +549,12 @@ class DataFrameLoaderRDD[K, V](
 
 class PartitionIterator(partitionIter: Iterator[DataLoadPartitionWrap[Row]],
     carbonLoadModel: CarbonLoadModel,
-    context: TaskContext) extends JavaRddIterator[JavaRddIterator[Array[String]]] {
+    context: TaskContext) extends CarbonIterator[CarbonIterator[Array[String]]] {
   val serializer = SparkEnv.get.closureSerializer.newInstance()
   var serializeBuffer: ByteBuffer = null
   def hasNext: Boolean = partitionIter.hasNext
 
-  def next: JavaRddIterator[Array[String]] = {
+  def next: CarbonIterator[Array[String]] = {
     val value = partitionIter.next
     // The rdd (which come from Hive Table) don't support to read dataframe concurrently.
     // So here will create different rdd instance for each thread.
@@ -569,7 +569,7 @@ class PartitionIterator(partitionIter: Iterator[DataLoadPartitionWrap[Row]],
         carbonLoadModel,
         context)
   }
-  def initialize: Unit = {
+  override def initialize: Unit = {
     SparkUtil.setTaskContext(context)
   }
 }
@@ -583,7 +583,7 @@ class PartitionIterator(partitionIter: Iterator[DataLoadPartitionWrap[Row]],
  */
 class RddIterator(rddIter: Iterator[Row],
                   carbonLoadModel: CarbonLoadModel,
-                  context: TaskContext) extends JavaRddIterator[Array[String]] {
+                  context: TaskContext) extends CarbonIterator[Array[String]] {
 
   val formatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
     .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
@@ -604,7 +604,7 @@ class RddIterator(rddIter: Iterator[Row],
     columns
   }
 
-  def initialize: Unit = {
+  override def initialize: Unit = {
     SparkUtil.setTaskContext(context)
   }
 

@@ -166,6 +166,11 @@ public class CarbonLoadModel implements Serializable {
   private int dictionaryServerPort;
 
   /**
+   * Pre fetch data from csv reader
+   */
+  private boolean preFetch;
+
+  /**
    * get escape char
    * @return
    */
@@ -381,6 +386,7 @@ public class CarbonLoadModel implements Serializable {
     copy.useOnePass = useOnePass;
     copy.dictionaryServerHost = dictionaryServerHost;
     copy.dictionaryServerPort = dictionaryServerPort;
+    copy.preFetch = preFetch;
     return copy;
   }
 
@@ -430,6 +436,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.useOnePass = useOnePass;
     copyObj.dictionaryServerHost = dictionaryServerHost;
     copyObj.dictionaryServerPort = dictionaryServerPort;
+    copyObj.preFetch = preFetch;
     return copyObj;
   }
 
@@ -725,5 +732,13 @@ public class CarbonLoadModel implements Serializable {
 
   public void setDictionaryServerHost(String dictionaryServerHost) {
     this.dictionaryServerHost = dictionaryServerHost;
+  }
+
+  public boolean isPreFetch() {
+    return preFetch;
+  }
+
+  public void setPreFetch(boolean preFetch) {
+    this.preFetch = preFetch;
   }
 }
