@@ -237,6 +237,8 @@ class CarbonDecoderRDD(
     output: Seq[Attribute])
     extends RDD[InternalRow](prev) {
 
+  val storepath = CarbonEnv.get.carbonMetastore.storePath
+
   def canBeDecoded(attr: Attribute): Boolean = {
     profile match {
       case ip: IncludeProfile if ip.attributes.nonEmpty =>
@@ -302,7 +304,6 @@ class CarbonDecoderRDD(
   }
 
   override def compute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
-          val storepath = CarbonEnv.get.carbonMetastore.storePath
     val absoluteTableIdentifiers = relations.map { relation =>
       val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
       (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
