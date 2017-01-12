@@ -90,15 +90,15 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
       blockletScanner = new NonFilterScanner(blockExecutionInfo, queryStatisticsModel);
     }
     if (blockExecutionInfo.isRawRecordDetailQuery()) {
-      LOGGER.audit("Row based raw collector is used to scan and collect the data");
+      LOGGER.info("Row based raw collector is used to scan and collect the data");
       this.scannerResultAggregator =
           new RawBasedResultCollector(blockExecutionInfo);
     } else if (blockExecutionInfo.isVectorBatchCollector()) {
-      LOGGER.audit("Vector based dictionary collector is used to scan and collect the data");
+      LOGGER.info("Vector based dictionary collector is used to scan and collect the data");
       this.scannerResultAggregator =
           new DictionaryBasedVectorResultCollector(blockExecutionInfo);
     } else {
-      LOGGER.audit("Row based dictionary collector is used to scan and collect the data");
+      LOGGER.info("Row based dictionary collector is used to scan and collect the data");
       this.scannerResultAggregator =
           new DictionaryBasedResultCollector(blockExecutionInfo);
     }
