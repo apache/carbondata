@@ -29,7 +29,7 @@
   <artifactId>carbondata-parent</artifactId>
   <name>Apache CarbonData :: Parent</name>
   <description>Apache CarbonData(incubating) is an indexed columnar data format for fast analytics
-    on big data platform, e.g.Apache Hadoop, Apache Spark etc.
+    on big data platform, e.g.Apache Hadoop, Apache Spark, etc.
   </description>
   <url>http://carbondata.incubator.apache.org</url>
   <inceptionYear>2016</inceptionYear>
