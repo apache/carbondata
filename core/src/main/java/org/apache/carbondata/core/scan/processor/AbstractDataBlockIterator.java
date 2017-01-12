@@ -18,6 +18,10 @@ package org.apache.carbondata.core.scan.processor;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
@@ -63,23 +67,29 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
   protected BlockletScanner blockletScanner;
 
   /**
-   * to hold the data block
-   */
-  protected BlocksChunkHolder blocksChunkHolder;
-
-  /**
    * batch size of result
    */
   protected int batchSize;
 
+  protected ExecutorService executorService;
+
+  private Future<AbstractScannedResult> future;
+
+  private boolean nextResult;
+
   protected AbstractScannedResult scannedResult;
 
-  public AbstractDataBlockIterator(BlockExecutionInfo blockExecutionInfo, FileHolder fileReader,
-      int batchSize, QueryStatisticsModel queryStatisticsModel,
-      BlocksChunkHolder blockChunkHolder) {
+  private BlockExecutionInfo blockExecutionInfo;
+
+  private FileHolder fileReader;
+
+  public AbstractDataBlockIterator(BlockExecutionInfo blockExecutionInfo,
+      FileHolder fileReader, int batchSize, QueryStatisticsModel queryStatisticsModel,
+      ExecutorService executorService) {
+    this.blockExecutionInfo = blockExecutionInfo;
+    this.fileReader = fileReader;
     dataBlockIterator = new BlockletIterator(blockExecutionInfo.getFirstDataBlock(),
         blockExecutionInfo.getNumberOfBlockToScan());
-    blocksChunkHolder = blockChunkHolder;
     if (blockExecutionInfo.getFilterExecuterTree() != null) {
       blockletScanner = new FilterScanner(blockExecutionInfo, queryStatisticsModel);
     } else {
@@ -99,6 +109,8 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
           new DictionaryBasedResultCollector(blockExecutionInfo);
     }
     this.batchSize = batchSize;
+    this.executorService = executorService;
+    this.nextResult = false;
   }
 
   public boolean hasNext() {
@@ -123,19 +135,41 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
         }
         return false;
       }
-    } catch (IOException | FilterUnsupportedException ex) {
+    } catch (Exception ex) {
       throw new RuntimeException(ex);
     }
   }
 
-  private AbstractScannedResult getNextScannedResult()
-      throws IOException, FilterUnsupportedException {
-    if (dataBlockIterator.hasNext()) {
-      blocksChunkHolder.setDataBlock(dataBlockIterator.next());
-      blocksChunkHolder.reset();
-      return blockletScanner.scanBlocklet(blocksChunkHolder);
+  private AbstractScannedResult getNextScannedResult() throws Exception {
+    AbstractScannedResult result = null;
+    if (dataBlockIterator.hasNext() || nextResult) {
+      if (future == null) {
+        BlocksChunkHolder blocksChunkHolder =
+            new BlocksChunkHolder(blockExecutionInfo.getTotalNumberDimensionBlock(),
+            blockExecutionInfo.getTotalNumberOfMeasureBlock(), fileReader);
+        blocksChunkHolder.setDataBlock(dataBlockIterator.next());
+        future = execute(blocksChunkHolder);
+      }
+      result = future.get();
+      nextResult = false;
+      if (dataBlockIterator.hasNext()) {
+        nextResult = true;
+        BlocksChunkHolder blocksChunkHolder =
+            new BlocksChunkHolder(blockExecutionInfo.getTotalNumberDimensionBlock(),
+                blockExecutionInfo.getTotalNumberOfMeasureBlock(), fileReader);
+        blocksChunkHolder.setDataBlock(dataBlockIterator.next());
+        future = execute(blocksChunkHolder);
+      }
     }
-    return null;
+    return result;
+  }
+
+  private Future<AbstractScannedResult> execute(final BlocksChunkHolder blocksChunkHolder) {
+    return executorService.submit(new Callable<AbstractScannedResult>() {
+      @Override public AbstractScannedResult call() throws Exception {
+        return blockletScanner.scanBlocklet(blocksChunkHolder);
+      }
+    });
   }
 
   public abstract void processNextBatch(CarbonColumnarBatch columnarBatch);

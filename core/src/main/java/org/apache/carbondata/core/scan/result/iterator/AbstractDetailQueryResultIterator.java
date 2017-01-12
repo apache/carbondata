@@ -171,7 +171,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
       CarbonUtil.freeMemory(blocksChunkHolder.getDimensionDataChunk(),
           blocksChunkHolder.getMeasureDataChunk());
       return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize, queryStatisticsModel,
-          blocksChunkHolder);
+          blocksChunkHolder, execService);
     }
     return null;
   }
