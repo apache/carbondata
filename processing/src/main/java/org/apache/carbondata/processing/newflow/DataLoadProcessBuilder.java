@@ -166,6 +166,7 @@ public final class DataLoadProcessBuilder {
     configuration.setUseOnePass(loadModel.getUseOnePass());
     configuration.setDictionaryServerHost(loadModel.getDictionaryServerHost());
     configuration.setDictionaryServerPort(loadModel.getDictionaryServerPort());
+    configuration.setPreFetch(loadModel.isPreFetch());
 
     return configuration;
   }
