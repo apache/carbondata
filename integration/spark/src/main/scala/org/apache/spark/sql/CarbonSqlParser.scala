@@ -60,7 +60,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     createDatabase | dropDatabase | loadManagement | describeTable |
-    showLoads | alterTable | updateTable | deleteRecords| createTable
+    showLoads | alterTable | updateTable | deleteRecords | useDatabase | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -77,7 +77,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
           case Token("TOK_CREATEDATABASE", children) =>
             dbName = BaseSemanticAnalyzer.unescapeIdentifier(children(0).getText)
         }
-        CreateDatabase(dbName, createDbSql)
+        CreateDatabase(convertDbNameToLowerCase(dbName), createDbSql)
     }
 
   protected lazy val dropDatabase: Parser[LogicalPlan] =
@@ -98,7 +98,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
               case _ => // Unsupport features
             }
         }
-        DropDatabase(dbName, isCascade, dropDbSql)
+        DropDatabase(convertDbNameToLowerCase(dbName), isCascade, dropDbSql)
     }
 
   protected lazy val alterTable: Parser[LogicalPlan] =
@@ -348,7 +348,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
           validateOptions(optionsList)
         }
         val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
-        LoadTable(databaseNameOp, tableName, filePath, Seq(), optionsMap,
+        LoadTable(convertDbNameToLowerCase(databaseNameOp), tableName, filePath, Seq(), optionsMap,
           isOverwrite.isDefined)
     }
 
@@ -357,7 +357,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
       case ef ~ db ~ tbl =>
         val tblIdentifier = db match {
           case Some(dbName) =>
-            TableIdentifier(tbl.toLowerCase, Some(dbName))
+            TableIdentifier(tbl.toLowerCase, Some(convertDbNameToLowerCase(dbName)))
           case None =>
             TableIdentifier(tbl.toLowerCase, None)
         }
@@ -374,7 +374,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
     (LIMIT ~> numericLit).? <~
     opt(";") ^^ {
       case databaseName ~ tableName ~ limit =>
-        ShowLoadsCommand(databaseName, tableName.toLowerCase(), limit)
+        ShowLoadsCommand(convertDbNameToLowerCase(databaseName), tableName.toLowerCase(), limit)
     }
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
@@ -383,7 +383,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
     opt(";") ^^ {
       case loadids ~ table => table match {
         case databaseName ~ tableName =>
-          DeleteLoadsById(loadids, databaseName, tableName.toLowerCase())
+          DeleteLoadsById(loadids, convertDbNameToLowerCase(databaseName), tableName.toLowerCase())
       }
     }
 
@@ -394,13 +394,17 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
       case schema ~ table ~ condition =>
         condition match {
           case dateField ~ dateValue =>
-            DeleteLoadsByLoadDate(schema, table.toLowerCase(), dateField, dateValue)
+            DeleteLoadsByLoadDate(convertDbNameToLowerCase(schema),
+              table.toLowerCase(),
+              dateField,
+              dateValue)
         }
     }
 
   protected lazy val cleanFiles: Parser[LogicalPlan] =
     CLEAN ~> FILES ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
-      case databaseName ~ tableName => CleanFiles(databaseName, tableName.toLowerCase())
+      case databaseName ~ tableName =>
+        CleanFiles(convertDbNameToLowerCase(databaseName), tableName.toLowerCase())
     }
 
   protected lazy val explainPlan: Parser[LogicalPlan] =
@@ -541,4 +545,8 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
       case table ~ column => column.toLowerCase
     }
 
+  protected lazy val useDatabase: Parser[LogicalPlan] =
+    USE ~> ident <~ opt(";") ^^ {
+      case databaseName => UseDatabase(s"use ${ databaseName.toLowerCase }")
+    }
 }

@@ -148,7 +148,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       properties.foreach(tableProperties += _)
       // prepare table model of the collected tokens
       val tableModel: TableModel = parser.prepareTableModel(ifNotExists,
-        name.database,
+        convertDbNameToLowerCase(name.database),
         name.table.toLowerCase,
         fields,
         Seq(),
@@ -158,6 +158,19 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       CreateTable(tableModel)
     } else {
       super.visitCreateTable(ctx)
+    }
+  }
+
+  /**
+   * This method will convert the database name to lower case
+   *
+   * @param dbName
+   * @return Option of String
+   */
+  protected def convertDbNameToLowerCase(dbName: Option[String]): Option[String] = {
+    dbName match {
+      case Some(databaseName) => Some(databaseName.toLowerCase)
+      case None => dbName
     }
   }
 

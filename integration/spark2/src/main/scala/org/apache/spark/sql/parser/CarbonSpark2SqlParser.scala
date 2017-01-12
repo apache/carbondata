@@ -60,7 +60,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val alterTable: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (COMPACT ~ stringLit) <~ opt(";")  ^^ {
       case dbName ~ table ~ (compact ~ compactType) =>
-        val altertablemodel = AlterTableModel(dbName, table, None, compactType,
+        val altertablemodel =
+          AlterTableModel(convertDbNameToLowerCase(dbName), table, None, compactType,
           Some(System.currentTimeMillis()), null)
         AlterTableCompaction(altertablemodel)
     }
@@ -78,7 +79,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           validateOptions(optionsList)
         }
         val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
-        LoadTable(databaseNameOp, tableName, filePath, Seq(), optionsMap,
+        LoadTable(convertDbNameToLowerCase(databaseNameOp), tableName, filePath, Seq(), optionsMap,
           isOverwrite.isDefined)
     }
 
@@ -88,7 +89,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     opt(";") ^^ {
       case loadids ~ table => table match {
         case databaseName ~ tableName =>
-          DeleteLoadsById(loadids, databaseName, tableName.toLowerCase())
+          DeleteLoadsById(loadids, convertDbNameToLowerCase(databaseName), tableName.toLowerCase())
       }
     }
 
@@ -99,13 +100,17 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       case schema ~ table ~ condition =>
         condition match {
           case dateField ~ dateValue =>
-            DeleteLoadsByLoadDate(schema, table.toLowerCase(), dateField, dateValue)
+            DeleteLoadsByLoadDate(convertDbNameToLowerCase(schema),
+              table.toLowerCase(),
+              dateField,
+              dateValue)
         }
     }
 
   protected lazy val cleanFiles: Parser[LogicalPlan] =
     CLEAN ~> FILES ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
-      case databaseName ~ tableName => CleanFiles(databaseName, tableName.toLowerCase())
+      case databaseName ~ tableName =>
+        CleanFiles(convertDbNameToLowerCase(databaseName), tableName.toLowerCase())
     }
 
   protected lazy val explainPlan: Parser[LogicalPlan] =
@@ -122,6 +127,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     (LIMIT ~> numericLit).? <~
     opt(";") ^^ {
       case databaseName ~ tableName ~ limit =>
-        ShowLoadsCommand(databaseName, tableName.toLowerCase(), limit)
+        ShowLoadsCommand(convertDbNameToLowerCase(databaseName), tableName.toLowerCase(), limit)
     }
 }
