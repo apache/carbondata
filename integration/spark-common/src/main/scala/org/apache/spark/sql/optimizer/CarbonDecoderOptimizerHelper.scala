@@ -81,6 +81,7 @@ class CarbonDecoderProcessor {
         }
         nodeList.add(ArrayCarbonNode(nodeListSeq))
       case e: UnaryNode => process(e.child, nodeList)
+      case i: InsertIntoTable => process(i.child, nodeList)
       case _ =>
     }
   }
