@@ -91,6 +91,8 @@ public class CsvInput extends BaseStep implements StepInterface {
    */
   private String rddIteratorKey = null;
 
+  private CarbonIterator<CarbonIterator<String[]>> rddIterator;
+
   public CsvInput(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
       TransMeta transMeta, Trans trans) {
     super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
@@ -194,28 +196,25 @@ public class CsvInput extends BaseStep implements StepInterface {
   }
 
   class RddScanCallable implements Callable<Void> {
-    List<CarbonIterator<String[]>> iterList;
-
-    RddScanCallable() {
-      this.iterList = new ArrayList<CarbonIterator<String[]>>(1000);
-    }
-
-    public void addJavaRddIterator(CarbonIterator<String[]> iter) {
-      this.iterList.add(iter);
-    }
-
-    @Override
-    public Void call() throws Exception {
-      StandardLogService.setThreadName(("PROCESS_DataFrame_PARTITIONS"),
-          Thread.currentThread().getName());
+    @Override public Void call() throws Exception {
+      StandardLogService
+          .setThreadName(("PROCESS_DataFrame_PARTITIONS"), Thread.currentThread().getName());
       try {
         String[] values = null;
-        for (CarbonIterator<String[]> iter: iterList) {
-          iter.initialize();
-          while (iter.hasNext()) {
-            values = iter.next();
-            synchronized (putRowLock) {
-              putRow(data.outputRowMeta, values);
+        boolean hasNext = true;
+        CarbonIterator<String[]> iter;
+        boolean isInitialized = false;
+        while (hasNext) {
+          iter = getRddIterator(isInitialized);
+          isInitialized = true;
+          if (iter == null) {
+            hasNext = false;
+          } else {
+            while (iter.hasNext()) {
+              values = iter.next();
+              synchronized (putRowLock) {
+                putRow(data.outputRowMeta, values);
+              }
             }
           }
         }
@@ -225,34 +224,34 @@ public class CsvInput extends BaseStep implements StepInterface {
       }
       return null;
     }
-  };
+  }
+
+  private synchronized CarbonIterator<String[]> getRddIterator(boolean isInitialized) {
+    if (!isInitialized) {
+      rddIterator.initialize();
+    }
+    if (rddIterator.hasNext()) {
+      return rddIterator.next();
+    }
+    return null;
+  }
 
   private void scanRddIterator(int numberOfNodes) throws RuntimeException {
-    CarbonIterator<CarbonIterator<String[]>> iter = RddInputUtils.getAndRemove(rddIteratorKey);
-    if (iter != null) {
-      iter.initialize();
+    rddIterator = RddInputUtils.getAndRemove(rddIteratorKey);
+    if (rddIterator != null) {
       exec = Executors.newFixedThreadPool(numberOfNodes);
       List<Future<Void>> results = new ArrayList<Future<Void>>(numberOfNodes);
       RddScanCallable[] calls = new RddScanCallable[numberOfNodes];
       for (int i = 0; i < numberOfNodes; i++ ) {
         calls[i] = new RddScanCallable();
-      }
-      int index = 0 ;
-      while (iter.hasNext()) {
-        calls[index].addJavaRddIterator(iter.next());
-        index = index + 1;
-        if (index == numberOfNodes) {
-          index = 0;
-        }
-      }
-      for (RddScanCallable call: calls) {
-        results.add(exec.submit(call));
+        results.add(exec.submit(calls[i]));
       }
       try {
         for (Future<Void> futrue : results) {
           futrue.get();
         }
       } catch (InterruptedException | ExecutionException e) {
+        LOGGER.error(e, "Thread InterruptedException");
         throw new RuntimeException("Thread InterruptedException", e);
       } finally {
         exec.shutdownNow();
@@ -264,7 +263,7 @@ public class CsvInput extends BaseStep implements StepInterface {
     Iterator<String[]> iterator = RddInpututilsForUpdate.getAndRemove(rddIteratorKey);
     if (iterator != null) {
       try{
-        while(iterator.hasNext()){
+        while (iterator.hasNext()) {
           putRow(data.outputRowMeta, iterator.next());
         }
       } catch (KettleException e) {

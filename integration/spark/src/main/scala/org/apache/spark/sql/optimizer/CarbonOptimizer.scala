@@ -237,9 +237,15 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           val leftCondAttrs = new util.HashSet[AttributeReferenceWrapper]
           val rightCondAttrs = new util.HashSet[AttributeReferenceWrapper]
           union.left.output.foreach(attr =>
-            leftCondAttrs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr))))
+            if (isDictionaryEncoded(attr, attrMap, aliasMap)) {
+              leftCondAttrs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
+            }
+          )
           union.right.output.foreach(attr =>
-            rightCondAttrs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr))))
+            if (isDictionaryEncoded(attr, attrMap, aliasMap)) {
+              rightCondAttrs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
+            }
+          )
           var leftPlan = union.left
           var rightPlan = union.right
           if (hasCarbonRelation(leftPlan) && leftCondAttrs.size() > 0 &&

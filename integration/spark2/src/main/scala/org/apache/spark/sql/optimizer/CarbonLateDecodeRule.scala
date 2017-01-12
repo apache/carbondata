@@ -163,12 +163,15 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
             Sort(sort.order, sort.global, child)
           }
         case union: Union
-          if !(union.children.head.isInstanceOf[CarbonDictionaryTempDecoder] ||
-            union.children(1).isInstanceOf[CarbonDictionaryTempDecoder]) =>
+          if !union.children.exists(_.isInstanceOf[CarbonDictionaryTempDecoder]) =>
           val children = union.children.map { child =>
             val condAttrs = new util.HashSet[AttributeReferenceWrapper]
             child.output.foreach(attr =>
-              condAttrs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr))))
+              if (isDictionaryEncoded(attr, attrMap, aliasMap)) {
+                condAttrs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
+              }
+            )
+
             if (hasCarbonRelation(child) && condAttrs.size() > 0 &&
               !child.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
               CarbonDictionaryTempDecoder(condAttrs,
