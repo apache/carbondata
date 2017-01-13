@@ -110,7 +110,8 @@ class CarbonSource extends CreatableRelationProvider
 
     val dbName: String = parameters.getOrElse("dbName", CarbonCommonConstants.DATABASE_DEFAULT_NAME)
     val tableName: String = parameters.getOrElse("tableName", "default_table")
-    if(org.apache.commons.lang.StringUtils.isBlank(tableName) || org.apache.commons.lang.StringUtils.isWhitespace(tableName)) {
+    if(org.apache.commons.lang.StringUtils.isBlank(tableName) ||
+       org.apache.commons.lang.StringUtils.isWhitespace(tableName)) {
       throw new MalformedCarbonCommandException("INVALID TABLE NAME")
     }
     val options = new CarbonOption(parameters)
