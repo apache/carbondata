@@ -34,7 +34,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-
 import org.apache.commons.lang.StringUtils
 /**
  * Carbon relation provider compliant to data source api.
