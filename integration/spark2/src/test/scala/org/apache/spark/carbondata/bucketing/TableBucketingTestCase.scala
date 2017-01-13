@@ -65,7 +65,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("must be unable to create if number of buckets is in negative number"){
+  test("must be unable to create if number of buckets is in negative number") {
     try {
       sql(
         """
@@ -74,11 +74,11 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            name String, phonetype String, serialname String, salary Int)
            USING org.apache.spark.sql.CarbonSource
            OPTIONS("bucketnumber"="-1", "bucketcolumns"="name", "tableName"="t9")
-      """)
+        """)
       assert(false)
-      }
+    }
     catch {
-      case malformedCarbonCommandException:MalformedCarbonCommandException =>assert(true)
+      case malformedCarbonCommandException: MalformedCarbonCommandException => assert(true)
     }
   }
 
