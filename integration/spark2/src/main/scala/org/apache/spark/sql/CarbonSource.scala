@@ -17,13 +17,11 @@
 
 package org.apache.spark.sql
 
-import java.io.File
-
 import scala.language.implicitConversions
 
+import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.catalyst.util.StringUtils
 import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
 import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
@@ -34,38 +32,40 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.commons.lang.StringUtils
+
 /**
  * Carbon relation provider compliant to data source api.
  * Creates carbon relations
  */
 class CarbonSource extends CreatableRelationProvider
-    with SchemaRelationProvider with DataSourceRegister {
+  with SchemaRelationProvider with DataSourceRegister {
 
   override def shortName(): String = "carbondata"
 
   // called by any write operation like INSERT INTO DDL or DataFrame.write API
   override def createRelation(
-                               sqlContext: SQLContext,
-                               mode: SaveMode,
-                               parameters: Map[String, String],
-                               data: DataFrame): BaseRelation = {
+      sqlContext: SQLContext,
+      mode: SaveMode,
+      parameters: Map[String, String],
+      data: DataFrame): BaseRelation = {
     CarbonEnv.init(sqlContext.sparkSession)
     // User should not specify path since only one store is supported in carbon currently,
     // after we support multi-store, we can remove this limitation
     require(!parameters.contains("path"), "'path' should not be specified, " +
-        "the path to store carbon file is the 'storePath' specified when creating CarbonContext")
+                                          "the path to store carbon file is the 'storePath' " +
+                                          "specified when creating CarbonContext")
 
     val options = new CarbonOption(parameters)
     val storePath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
     val tablePath = new Path(storePath + "/" + options.dbName + "/" + options.tableName)
     val isExists = tablePath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
-        .exists(tablePath)
+      .exists(tablePath)
     val (doSave, doAppend) = (mode, isExists) match {
       case (SaveMode.ErrorIfExists, true) =>
         sys.error(s"ErrorIfExists mode, path $storePath already exists.")
       case (SaveMode.Overwrite, true) =>
-        sqlContext.sparkSession.sql(s"DROP TABLE IF EXISTS ${options.dbName}.${options.tableName}")
+        sqlContext.sparkSession
+          .sql(s"DROP TABLE IF EXISTS ${ options.dbName }.${ options.tableName }")
         (true, false)
       case (SaveMode.Overwrite, false) | (SaveMode.ErrorIfExists, false) =>
         (true, false)
@@ -87,9 +87,9 @@ class CarbonSource extends CreatableRelationProvider
 
   // called by DDL operation with a USING clause
   override def createRelation(
-                               sqlContext: SQLContext,
-                               parameters: Map[String, String],
-                               dataSchema: StructType): BaseRelation = {
+      sqlContext: SQLContext,
+      parameters: Map[String, String],
+      dataSchema: StructType): BaseRelation = {
     CarbonEnv.init(sqlContext.sparkSession)
     addLateDecodeOptimization(sqlContext.sparkSession)
     val path = createTableIfNotExists(sqlContext.sparkSession, parameters, dataSchema)
@@ -106,7 +106,7 @@ class CarbonSource extends CreatableRelationProvider
   }
 
   private def createTableIfNotExists(sparkSession: SparkSession, parameters: Map[String, String],
-                                     dataSchema: StructType): String = {
+      dataSchema: StructType): String = {
 
     val dbName: String = parameters.getOrElse("dbName", CarbonCommonConstants.DATABASE_DEFAULT_NAME)
     val emptyTableName: String = parameters.getOrElse("tableName", "default_table")
