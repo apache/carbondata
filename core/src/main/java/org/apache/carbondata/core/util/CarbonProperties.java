@@ -375,7 +375,8 @@ public final class CarbonProperties {
       return getDefaultFormatVersion();
     } else {
       try {
-        return ColumnarFormatVersion.valueOf(versionStr);
+        short version = Short.parseShort(versionStr);
+        return ColumnarFormatVersion.valueOf(version);
       } catch (IllegalArgumentException e) {
         return getDefaultFormatVersion();
       }
