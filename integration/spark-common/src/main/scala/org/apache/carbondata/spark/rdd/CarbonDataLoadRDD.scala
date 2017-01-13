@@ -172,7 +172,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
  * @param carbonLoadModel       Carbon load model which contain the load info
  * @param storePath             The store location
  * @param kettleHomePath        The kettle home path
- * @param columinar             whether it is columinar
+ * @param columnar             whether it is columnar
  * @param loadCount             Current load count
  * @param tableCreationTime     Time of creating table
  * @param schemaLastUpdatedTime Time of last schema update
@@ -187,7 +187,7 @@ class DataFileLoaderRDD[K, V](
     carbonLoadModel: CarbonLoadModel,
     storePath: String,
     kettleHomePath: String,
-    columinar: Boolean,
+    columnar: Boolean,
     loadCount: Integer,
     tableCreationTime: Long,
     schemaLastUpdatedTime: Long,
@@ -475,7 +475,7 @@ class DataFileLoaderRDD[K, V](
  * @param carbonLoadModel
  * @param storePath
  * @param kettleHomePath
- * @param columinar
+ * @param columnar
  * @param loadCount
  * @param tableCreationTime
  * @param schemaLastUpdatedTime
@@ -489,7 +489,7 @@ class DataFrameLoaderRDD[K, V](
     carbonLoadModel: CarbonLoadModel,
     storePath: String,
     kettleHomePath: String,
-    columinar: Boolean,
+    columnar: Boolean,
     loadCount: Integer,
     tableCreationTime: Long,
     schemaLastUpdatedTime: Long,
