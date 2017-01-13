@@ -164,9 +164,6 @@
   <profiles>
     <profile>
       <id>spark-1.5</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <dependencies>
         <dependency>
           <groupId>org.apache.carbondata</groupId>
@@ -188,6 +185,9 @@
     </profile>
     <profile>
       <id>spark-1.6</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <dependencies>
         <dependency>
           <groupId>org.apache.carbondata</groupId>
