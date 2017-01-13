@@ -39,11 +39,12 @@ public class DetailQueryExecutor extends AbstractQueryExecutor<BatchResult> {
   public CarbonIterator<BatchResult> execute(QueryModel queryModel)
       throws QueryExecutionException, IOException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    return new DetailQueryResultIterator(
+    this.queryIterator = new DetailQueryResultIterator(
         blockExecutionInfoList,
         queryModel,
         queryProperties.executorService
     );
+    return queryIterator;
   }
 
 }

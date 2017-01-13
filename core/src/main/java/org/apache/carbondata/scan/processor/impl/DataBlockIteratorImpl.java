@@ -25,6 +25,7 @@ import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.processor.AbstractDataBlockIterator;
+import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.scan.result.vector.CarbonColumnarBatch;
 
 /**
@@ -37,8 +38,9 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
    * @param blockExecutionInfo execution information
    */
   public DataBlockIteratorImpl(BlockExecutionInfo blockExecutionInfo, FileHolder fileReader,
-      int batchSize, QueryStatisticsModel queryStatisticsModel) {
-    super(blockExecutionInfo, fileReader, batchSize, queryStatisticsModel);
+      int batchSize, QueryStatisticsModel queryStatisticsModel,
+      BlocksChunkHolder blockChunkHolder) {
+    super(blockExecutionInfo, fileReader, batchSize, queryStatisticsModel, blockChunkHolder);
   }
 
   /**

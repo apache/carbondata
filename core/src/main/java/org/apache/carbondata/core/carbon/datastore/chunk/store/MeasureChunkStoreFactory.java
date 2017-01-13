@@ -62,7 +62,7 @@ public class MeasureChunkStoreFactory {
    * @return measure chunk store
    */
   public MeasureDataChunkStore getMeasureDataChunkStore(DataType dataType, int numberOfRows) {
-    if (isUnsafe) {
+    if (!isUnsafe) {
       switch (dataType) {
         case DATA_BYTE:
           return new SafeByteMeasureChunkStore(numberOfRows);
