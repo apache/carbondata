@@ -38,6 +38,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
@@ -795,11 +796,10 @@ case class CarbonRelation(
             val dataType = addDecimalScaleAndPrecision(column, dType)
             CarbonMetastoreTypes.toDataType(dataType)
         }
-        AttributeReference(column.getColName, output,
-          nullable = true
-        )(qualifier = Option(tableName + "." + column.getColName))
+        AttributeReference(column.getColName, output, nullable = true )(
+          qualifier = Option(tableName + "." + column.getColName))
       } else {
-        AttributeReference(column.getColName, CarbonMetastoreTypes.toDataType(
+        val output = CarbonMetastoreTypes.toDataType {
           column.getDataType.toString
             .toLowerCase match {
             case "int" => "long"
@@ -808,17 +808,16 @@ case class CarbonRelation(
               .getColumnSchema.getScale + ")"
             case others => others
           }
-        ),
-          nullable = true
-        )(qualifier = Option(tableName + "." + column.getColName))
+        }
+        AttributeReference(column.getColName, output, nullable = true)(
+          qualifier = Option(tableName + "." + column.getColName))
       }
     }
   }
 
   def addDecimalScaleAndPrecision(dimval: CarbonColumn, dataType: String): String = {
     var dType = dataType
-    if (dimval.getDataType
-        == org.apache.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL) {
+    if (dimval.getDataType == DECIMAL) {
       dType +=
       "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema.getScale + ")"
     }
@@ -838,8 +837,7 @@ case class CarbonRelation(
 
   def addDecimalScaleAndPrecision(dimval: CarbonDimension, dataType: String): String = {
     var dType = dataType
-    if (dimval.getDataType
-      == org.apache.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL) {
+    if (dimval.getDataType == DECIMAL) {
       dType +=
         "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema.getScale + ")"
     }
