@@ -89,8 +89,11 @@ public final class DataTypeUtil {
             new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
         return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
       case SHORT:
+        Short shortValue = Short.parseShort(msrValue);
+        return shortValue.longValue();
       case INT:
-        return Double.valueOf(msrValue).longValue();
+        Integer intValue = Integer.parseInt(msrValue);
+        return intValue.longValue();
       case LONG:
         return Long.valueOf(msrValue);
       default:
@@ -321,6 +324,9 @@ public final class DataTypeUtil {
     try {
       Object parsedValue = null;
       switch (actualDataType) {
+        case SHORT:
+          parsedValue = Short.parseShort(data);
+          break;
         case INT:
           parsedValue = Integer.parseInt(data);
           break;
@@ -355,6 +361,7 @@ public final class DataTypeUtil {
       switch (dimension.getDataType()) {
         case DECIMAL:
           return parseStringToBigDecimal(value, dimension);
+        case SHORT:
         case INT:
         case LONG:
           parsedValue = normalizeIntAndLongValues(value, dimension.getDataType());
