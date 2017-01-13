@@ -54,8 +54,6 @@ public class ParallelReadMergeSorterImpl implements Sorter {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(ParallelReadMergeSorterImpl.class.getName());
 
-  private static final Object taskContext = CarbonDataProcessorUtil.fetchTaskContext();
-
   private SortParameters sortParameters;
 
   private SortIntermediateFileMerger intermediateFileMerger;
@@ -196,7 +194,6 @@ public class ParallelReadMergeSorterImpl implements Sorter {
     @Override
     public Void call() throws CarbonDataLoadingException {
       try {
-        CarbonDataProcessorUtil.configureTaskContext(taskContext);
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
           Iterator<CarbonRow> batchIterator = batch.getBatchIterator();

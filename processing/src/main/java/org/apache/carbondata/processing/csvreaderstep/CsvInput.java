@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.common.logging.impl.StandardLogService;
@@ -193,13 +194,13 @@ public class CsvInput extends BaseStep implements StepInterface {
   }
 
   class RddScanCallable implements Callable<Void> {
-    List<JavaRddIterator<String[]>> iterList;
+    List<CarbonIterator<String[]>> iterList;
 
     RddScanCallable() {
-      this.iterList = new ArrayList<JavaRddIterator<String[]>>(1000);
+      this.iterList = new ArrayList<CarbonIterator<String[]>>(1000);
     }
 
-    public void addJavaRddIterator(JavaRddIterator<String[]> iter) {
+    public void addJavaRddIterator(CarbonIterator<String[]> iter) {
       this.iterList.add(iter);
     }
 
@@ -209,7 +210,7 @@ public class CsvInput extends BaseStep implements StepInterface {
           Thread.currentThread().getName());
       try {
         String[] values = null;
-        for (JavaRddIterator<String[]> iter: iterList) {
+        for (CarbonIterator<String[]> iter: iterList) {
           iter.initialize();
           while (iter.hasNext()) {
             values = iter.next();
@@ -227,7 +228,7 @@ public class CsvInput extends BaseStep implements StepInterface {
   };
 
   private void scanRddIterator(int numberOfNodes) throws RuntimeException {
-    JavaRddIterator<JavaRddIterator<String[]>> iter = RddInputUtils.getAndRemove(rddIteratorKey);
+    CarbonIterator<CarbonIterator<String[]>> iter = RddInputUtils.getAndRemove(rddIteratorKey);
     if (iter != null) {
       iter.initialize();
       exec = Executors.newFixedThreadPool(numberOfNodes);

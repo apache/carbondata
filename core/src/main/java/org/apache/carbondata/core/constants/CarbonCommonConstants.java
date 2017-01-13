@@ -1115,6 +1115,16 @@ public final class CarbonCommonConstants {
    */
   public static final String USE_OFFHEAP_IN_QUERY_PROCSSING_DEFAULT = "true";
 
+  /**
+   * whether to prefetch data while loading.
+   */
+  public static final String USE_PREFETCH_WHILE_LOADING = "carbon.loading.prefetch";
+
+  /**
+   * default value for prefetch data while loading.
+   */
+  public static final String USE_PREFETCH_WHILE_LOADING_DEFAULT = "false";
+
   private CarbonCommonConstants() {
   }
 }
