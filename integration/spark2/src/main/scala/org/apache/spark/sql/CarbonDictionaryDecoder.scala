@@ -237,7 +237,7 @@ class CarbonDecoderRDD(
     output: Seq[Attribute])
     extends RDD[InternalRow](prev) {
 
-  val storepath = CarbonEnv.get.carbonMetastore.storePath
+  private val storepath = CarbonEnv.get.carbonMetastore.storePath
 
   def canBeDecoded(attr: Attribute): Boolean = {
     profile match {
