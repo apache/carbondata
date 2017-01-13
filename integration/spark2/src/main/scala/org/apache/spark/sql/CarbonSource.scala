@@ -22,8 +22,8 @@ import java.io.File
 import scala.language.implicitConversions
 
 import org.apache.hadoop.fs.Path
-
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.catalyst.util.StringUtils
 import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
 import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
@@ -32,7 +32,6 @@ import org.apache.spark.sql.types.{DecimalType, StructType}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
@@ -111,7 +110,7 @@ class CarbonSource extends CreatableRelationProvider
 
     val dbName: String = parameters.getOrElse("dbName", CarbonCommonConstants.DATABASE_DEFAULT_NAME)
     val tableName: String = parameters.getOrElse("tableName", "default_table")
-    if(tableName.isEmpty || tableName.contains("")) {
+    if(org.apache.commons.lang.StringUtils.isBlank(tableName) || org.apache.commons.lang.StringUtils.isWhitespace(tableName)) {
       throw new MalformedCarbonCommandException("INVALID TABLE NAME")
     }
     val options = new CarbonOption(parameters)
