@@ -35,9 +35,11 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.model.QueryModel;
 import org.apache.carbondata.scan.processor.AbstractDataBlockIterator;
+import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.scan.processor.impl.DataBlockIteratorImpl;
 import org.apache.carbondata.scan.result.vector.CarbonColumnarBatch;
 
@@ -87,6 +89,8 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
    */
   QueryStatisticsModel queryStatisticsModel;
 
+  private BlocksChunkHolder blocksChunkHolder;
+
   public AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
       ExecutorService execService) {
     String batchSizeString =
@@ -101,10 +105,13 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
     } else {
       batchSize = CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT;
     }
+    this.blocksChunkHolder = new BlocksChunkHolder(infos.get(0).getTotalNumberDimensionBlock(),
+        infos.get(0).getTotalNumberOfMeasureBlock());
     this.recorder = queryModel.getStatisticsRecorder();
     this.blockExecutionInfos = infos;
     this.fileReader = FileFactory.getFileHolder(
         FileFactory.getFileType(queryModel.getAbsoluteTableIdentifier().getStorePath()));
+    this.blocksChunkHolder.setFileReader(fileReader);
     this.execService = execService;
     intialiseInfos();
     initQueryStatiticsModel();
@@ -163,7 +170,10 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
       BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
       blockExecutionInfos.remove(executionInfo);
       queryStatisticsModel.setRecorder(recorder);
-      return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize, queryStatisticsModel);
+      CarbonUtil.freeMemory(blocksChunkHolder.getDimensionDataChunk(),
+          blocksChunkHolder.getMeasureDataChunk());
+      return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize, queryStatisticsModel,
+          blocksChunkHolder);
     }
     return null;
   }
@@ -180,6 +190,11 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
 
   public void processNextBatch(CarbonColumnarBatch columnarBatch) {
     throw new UnsupportedOperationException("Please use VectorDetailQueryResultIterator");
+  }
+
+  @Override public void close() {
+    CarbonUtil.freeMemory(blocksChunkHolder.getDimensionDataChunk(),
+        blocksChunkHolder.getMeasureDataChunk());
   }
 
 }
