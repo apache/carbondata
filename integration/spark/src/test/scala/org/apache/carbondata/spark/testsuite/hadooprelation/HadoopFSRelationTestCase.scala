@@ -38,12 +38,12 @@ class HadoopFSRelationTestCase extends QueryTest with BeforeAndAfterAll {
       "STORED BY 'org.apache.carbondata.format'")
     sql(
       s"LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE hadoopfsrelation " +
-      "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
+      "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
     
     sql("CREATE TABLE hadoopfsrelation_hive (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)row format delimited fields terminated by ','")
     
     sql(
-      s"LOAD DATA local inpath '$resourcesPath/datawithoutheader.csv' INTO TABLE hadoopfsrelation_hive ");
+      s"LOAD DATA local inpath '$resourcesPath/datawithoutheader.csv' INTO TABLE hadoopfsrelation_hive ")
   }
 
   test("hadoopfsrelation select all test") {
