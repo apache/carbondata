@@ -35,6 +35,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
+import org.apache.commons.lang.StringUtils
 /**
  * Carbon relation provider compliant to data source api.
  * Creates carbon relations
@@ -109,15 +110,14 @@ class CarbonSource extends CreatableRelationProvider
                                      dataSchema: StructType): String = {
 
     val dbName: String = parameters.getOrElse("dbName", CarbonCommonConstants.DATABASE_DEFAULT_NAME)
-    val tableName: String = parameters.getOrElse("tableName", "default_table")
-    if(org.apache.commons.lang.StringUtils.isBlank(tableName) ||
-       org.apache.commons.lang.StringUtils.isWhitespace(tableName)) {
+    val emptyTableName: String = parameters.getOrElse("tableName", "default_table")
+    if (StringUtils.isBlank(emptyTableName)) {
       throw new MalformedCarbonCommandException("INVALID TABLE NAME")
     }
     val options = new CarbonOption(parameters)
     try {
-      CarbonEnv.get.carbonMetastore.lookupRelation(Option(dbName), tableName)(sparkSession)
-      CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
+      CarbonEnv.get.carbonMetastore.lookupRelation(Option(dbName), emptyTableName)(sparkSession)
+      CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$emptyTableName"
     } catch {
       case ex: NoSuchTableException =>
         val fields = dataSchema.map { col =>
@@ -146,9 +146,9 @@ class CarbonSource extends CreatableRelationProvider
           }
         }
         val cm = TableCreator.prepareTableModel(false, Option(dbName),
-          tableName, fields, Nil, bucketFields, map)
+          emptyTableName, fields, Nil, bucketFields, map)
         CreateTable(cm, false).run(sparkSession)
-        CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
+        CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$emptyTableName"
       case ex: Exception =>
         throw new Exception("do not have dbname and tablename for carbon table", ex)
     }
