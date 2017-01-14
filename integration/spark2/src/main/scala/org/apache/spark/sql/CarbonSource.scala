@@ -109,14 +109,14 @@ class CarbonSource extends CreatableRelationProvider
       dataSchema: StructType): String = {
 
     val dbName: String = parameters.getOrElse("dbName", CarbonCommonConstants.DATABASE_DEFAULT_NAME)
-    val emptyTableName: String = parameters.getOrElse("tableName", "default_table")
-    if (StringUtils.isBlank(emptyTableName)) {
-      throw new MalformedCarbonCommandException("INVALID TABLE NAME")
+    val tableName: String = parameters.getOrElse("tableName", "default_table")
+    if (StringUtils.isBlank(tableName)) {
+      throw new MalformedCarbonCommandException("The Specified Table Name is Blank")
     }
     val options = new CarbonOption(parameters)
     try {
-      CarbonEnv.get.carbonMetastore.lookupRelation(Option(dbName), emptyTableName)(sparkSession)
-      CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$emptyTableName"
+      CarbonEnv.get.carbonMetastore.lookupRelation(Option(dbName), tableName)(sparkSession)
+      CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
     } catch {
       case ex: NoSuchTableException =>
         val fields = dataSchema.map { col =>
@@ -145,9 +145,9 @@ class CarbonSource extends CreatableRelationProvider
           }
         }
         val cm = TableCreator.prepareTableModel(false, Option(dbName),
-          emptyTableName, fields, Nil, bucketFields, map)
+          tableName, fields, Nil, bucketFields, map)
         CreateTable(cm, false).run(sparkSession)
-        CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$emptyTableName"
+        CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
       case ex: Exception =>
         throw new Exception("do not have dbname and tablename for carbon table", ex)
     }
