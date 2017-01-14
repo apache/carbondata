@@ -36,11 +36,12 @@ public class VectorDetailQueryExecutor extends AbstractQueryExecutor<Object> {
   public CarbonIterator<Object> execute(QueryModel queryModel)
       throws QueryExecutionException, IOException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    return new VectorDetailQueryResultIterator(
+    this.queryIterator = new VectorDetailQueryResultIterator(
         blockExecutionInfoList,
         queryModel,
         queryProperties.executorService
     );
+    return this.queryIterator;
   }
 
 }

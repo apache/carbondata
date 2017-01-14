@@ -76,14 +76,12 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
 
   protected AbstractScannedResult scannedResult;
 
-  public AbstractDataBlockIterator(BlockExecutionInfo blockExecutionInfo,
-      FileHolder fileReader, int batchSize, QueryStatisticsModel queryStatisticsModel) {
+  public AbstractDataBlockIterator(BlockExecutionInfo blockExecutionInfo, FileHolder fileReader,
+      int batchSize, QueryStatisticsModel queryStatisticsModel,
+      BlocksChunkHolder blockChunkHolder) {
     dataBlockIterator = new BlockletIterator(blockExecutionInfo.getFirstDataBlock(),
         blockExecutionInfo.getNumberOfBlockToScan());
-    blocksChunkHolder = new BlocksChunkHolder(blockExecutionInfo.getTotalNumberDimensionBlock(),
-        blockExecutionInfo.getTotalNumberOfMeasureBlock());
-    blocksChunkHolder.setFileReader(fileReader);
-
+    blocksChunkHolder = blockChunkHolder;
     if (blockExecutionInfo.getFilterExecuterTree() != null) {
       blockletScanner = new FilterScanner(blockExecutionInfo, queryStatisticsModel);
     } else {

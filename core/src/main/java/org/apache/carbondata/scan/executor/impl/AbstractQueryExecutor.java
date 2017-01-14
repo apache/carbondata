@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.common.logging.impl.StandardLogService;
@@ -79,6 +80,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * holder for query properties which will be used to execute the query
    */
   protected QueryExecutorProperties queryProperties;
+
+  /**
+   * query result iterator which will execute the query
+   * and give the result
+   */
+  protected CarbonIterator queryIterator;
 
   public AbstractQueryExecutor() {
     queryProperties = new QueryExecutorProperties();
@@ -470,6 +477,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   @Override public void finish() throws QueryExecutionException {
     CarbonUtil.clearBlockCache(queryProperties.dataBlocks);
+    if(null != queryIterator) {
+      queryIterator.close();
+    }
     if (null != queryProperties.executorService) {
       queryProperties.executorService.shutdown();
       try {

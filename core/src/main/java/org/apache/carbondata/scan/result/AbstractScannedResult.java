@@ -383,7 +383,6 @@ public abstract class AbstractScannedResult {
     if (rowCounter < this.totalNumberOfRows) {
       return true;
     }
-    CarbonUtil.freeMemory(dataChunks, measureDataChunks);
     return false;
   }
 

@@ -134,6 +134,8 @@ public class FilterScanner extends AbstractBlockletScanner {
     if (bitSet.isEmpty()) {
       scannedResult.setNumberOfRows(0);
       scannedResult.setIndexes(new int[0]);
+      CarbonUtil.freeMemory(blocksChunkHolder.getDimensionDataChunk(),
+          blocksChunkHolder.getMeasureDataChunk());
       return;
     }
     // valid scanned blocklet
