@@ -583,11 +583,6 @@ object CarbonDataRDDFactory {
           CommonUtil.configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConfiguration)
 
           val inputFormat = new org.apache.hadoop.mapreduce.lib.input.TextInputFormat
-          inputFormat match {
-            case configurable: Configurable =>
-              configurable.setConf(hadoopConfiguration)
-            case _ =>
-          }
           val jobContext = new Job(hadoopConfiguration)
           val rawSplits = inputFormat.getSplits(jobContext).toArray
           val blockList = rawSplits.map { inputSplit =>
