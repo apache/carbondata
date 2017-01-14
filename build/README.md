@@ -24,10 +24,10 @@
 * Git
 * [Apache Maven (Recommend version 3.3 or later)](https://maven.apache.org/download.cgi)
 * [Oracle Java 7 or 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
-* [Apache Thrift 0.9.3](https://thrift.apache.org/download)
+* [Apache Thrift 0.9.3](http://archive.apache.org/dist/thrift/0.9.3/)
 
 ## Build release version
-Note:Need install Apache Thrift
+Note:Need install Apache Thrift 0.9.3
 ```
 mvn clean -DskipTests -Pbuild-with-format -Pspark-1.6 install
 ```
