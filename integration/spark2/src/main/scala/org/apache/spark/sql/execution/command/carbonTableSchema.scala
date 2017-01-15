@@ -167,9 +167,12 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
       val tablePath = catalog.createTableFromThrift(tableInfo, dbName, tbName)(sparkSession)
       if (createDSTable) {
         try {
+          val fields = new Array[Field](cm.dimCols.size + cm.msrCols.size)
+          cm.dimCols.foreach(f => fields(f.schemaOrdinal) = f)
+          cm.msrCols.foreach(f => fields(f.schemaOrdinal) = f)
           sparkSession.sql(
             s"""CREATE TABLE $dbName.$tbName
-                |(${(cm.dimCols ++ cm.msrCols).map(f => f.rawSchema).mkString(",")})
+                |(${fields.map(f => f.rawSchema).mkString(",")})
                 |USING org.apache.spark.sql.CarbonSource""".stripMargin +
             s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath "$tablePath") """)
         } catch {

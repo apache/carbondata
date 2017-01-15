@@ -95,7 +95,6 @@ class CarbonSource extends CreatableRelationProvider
     val path = createTableIfNotExists(sqlContext.sparkSession, parameters, dataSchema)
     CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(path), parameters,
       Option(dataSchema))
-
   }
 
   private def addLateDecodeOptimization(ss: SparkSession): Unit = {
