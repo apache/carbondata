@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.carbondata.core.locks;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
