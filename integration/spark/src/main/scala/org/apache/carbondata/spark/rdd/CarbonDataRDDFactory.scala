@@ -539,13 +539,14 @@ object CarbonDataRDDFactory {
           }
         } else {
           /*
-         * when data load handle by node partition
-         * 1)clone the hadoop configuration,and set the file path to the configuration
-         * 2)use NewHadoopRDD to get split,size:Math.max(minSize, Math.min(maxSize, blockSize))
-         * 3)use DummyLoadRDD to group blocks by host,and let spark balance the block location
-         * 4)DummyLoadRDD output (host,Array[BlockDetails])as the parameter to CarbonDataLoadRDD
-         *   which parititon by host
-         */
+           * when data load handle by node partition
+           * 1)clone the hadoop configuration,and set the file path to the configuration
+           * 2)use org.apache.hadoop.mapreduce.lib.input.TextInputFormat to get splits,size info
+           * 3)use CarbonLoaderUtil.nodeBlockMapping to get mapping info of node and block,
+           *   for locally writing carbondata files(one file one block) in nodes
+           * 4)use kettle: use DataFileLoaderRDD to load data and write to carbondata files
+           *   non kettle: use NewCarbonDataLoadRDD to load data and write to carbondata files
+           */
           val hadoopConfiguration = new Configuration(sqlContext.sparkContext.hadoopConfiguration)
           // FileUtils will skip file which is no csv, and return all file path which split by ','
           val filePaths = carbonLoadModel.getFactFilePath
@@ -559,11 +560,6 @@ object CarbonDataRDDFactory {
           CommonUtil.configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConfiguration)
 
           val inputFormat = new org.apache.hadoop.mapreduce.lib.input.TextInputFormat
-          inputFormat match {
-            case configurable: Configurable =>
-              configurable.setConf(hadoopConfiguration)
-            case _ =>
-          }
           val jobContext = new Job(hadoopConfiguration)
           val rawSplits = inputFormat.getSplits(jobContext).toArray
           val blockList = rawSplits.map { inputSplit =>

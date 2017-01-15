@@ -387,7 +387,7 @@ case class LoadTable(
                               relation.tableMeta.carbonTableIdentifier.getTableName + "/"
 
 
-      val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
+      val columnar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
 
       // TODO It will be removed after kettle is removed.
       val useKettle = options.get("use_kettle") match {
@@ -534,7 +534,7 @@ case class LoadTable(
             carbonLoadModel,
             relation.tableMeta.storePath,
             kettleHomePath,
-            columinar,
+            columnar,
             partitionStatus,
             useKettle,
             result,
@@ -581,7 +581,7 @@ case class LoadTable(
             carbonLoadModel,
             relation.tableMeta.storePath,
             kettleHomePath,
-            columinar,
+            columnar,
             partitionStatus,
             useKettle,
             result,
