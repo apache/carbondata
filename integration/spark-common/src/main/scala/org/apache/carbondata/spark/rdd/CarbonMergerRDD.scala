@@ -18,7 +18,6 @@
 package org.apache.carbondata.spark.rdd
 
 import java.io.IOException
-import java.util
 import java.util.{Collections, List}
 
 import scala.collection.JavaConverters._
@@ -38,8 +37,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block._
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
-import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.mutate.UpdateVO
+import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -155,7 +154,7 @@ class CarbonMergerRDD[K, V](
           carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable, dataFileMetadataSegMapping)
 
         // fire a query and get the results.
-        var result2: util.List[RawResultIterator] = null
+        var result2: java.util.List[RawResultIterator] = null
         try {
           result2 = exec.processTableBlocks()
         } catch {
@@ -252,14 +251,14 @@ class CarbonMergerRDD[K, V](
     val job: Job = new Job(jobConf)
     val format = CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)
     var defaultParallelism = sparkContext.defaultParallelism
-    val result = new util.ArrayList[Partition](defaultParallelism)
+    val result = new java.util.ArrayList[Partition](defaultParallelism)
 
     // mapping of the node and block list.
-    var nodeBlockMapping: util.Map[String, util.List[Distributable]] = new
-        util.HashMap[String, util.List[Distributable]]
+    var nodeBlockMapping: java.util.Map[String, java.util.List[Distributable]] = new
+            java.util.HashMap[String, java.util.List[Distributable]]
 
     var noOfBlocks = 0
-    val taskInfoList = new util.ArrayList[Distributable]
+    val taskInfoList = new java.util.ArrayList[Distributable]
     var carbonInputSplits = mutable.Seq[CarbonInputSplit]()
 
     var blocksOfLastSegment: List[TableBlockInfo] = null
@@ -267,8 +266,8 @@ class CarbonMergerRDD[K, V](
     // for each valid segment.
     for (eachSeg <- carbonMergerMapping.validSegments) {
       // map for keeping the relation of a task and its blocks.
-      val taskIdMapping: util.Map[String, util.List[TableBlockInfo]] = new
-          util.HashMap[String, util.List[TableBlockInfo]]
+      val taskIdMapping: java.util.Map[String, java.util.List[TableBlockInfo]] = new
+            java.util.HashMap[String, java.util.List[TableBlockInfo]]
 
       // map for keeping the relation of a task and its blocks.
       job.getConfiguration.set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, eachSeg)
@@ -299,7 +298,7 @@ class CarbonMergerRDD[K, V](
         val taskNo = CarbonTablePath.DataFileUtil.getTaskNo(tableBlockInfo.getFilePath)
         val blockList = taskIdMapping.get(taskNo)
         if (null == blockList) {
-          val blockListTemp = new util.ArrayList[TableBlockInfo]()
+          val blockListTemp = new java.util.ArrayList[TableBlockInfo]()
           blockListTemp.add(tableBlockInfo)
           taskIdMapping.put(taskNo, blockListTemp)
         }
@@ -362,11 +361,11 @@ class CarbonMergerRDD[K, V](
     defaultParallelism = sparkContext.defaultParallelism
     var i = 0
 
-    val nodeTaskBlocksMap = new util.HashMap[String, util.List[NodeInfo]]()
+    val nodeTaskBlocksMap = new java.util.HashMap[String, java.util.List[NodeInfo]]()
 
     // Create Spark Partition for each task and assign blocks
     nodeBlockMapping.asScala.foreach { case (nodeName, blockList) =>
-      val taskBlockList = new util.ArrayList[NodeInfo](0)
+      val taskBlockList = new java.util.ArrayList[NodeInfo](0)
       nodeTaskBlocksMap.put(nodeName, taskBlockList)
       var blockletCount = 0
       blockList.asScala.foreach { taskInfo =>
