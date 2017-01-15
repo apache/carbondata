@@ -439,15 +439,22 @@
                 <exclude>**/*.csv</exclude>
                 <exclude>**/*.dictionary</exclude>
                 <exclude>**/*.ktr</exclude>
+                <exclude>**/*.rat</exclude>
                 <exclude>**/_SUCCESS</exclude>
                 <exclude>**/non-csv</exclude>
                 <exclude>**/.invisibilityfile</exclude>
                 <exclude>**/noneCsvFormat.cs</exclude>
                 <exclude>**/org.apache.spark.sql.sources.DataSourceRegister</exclude>
+                <exclude>**/org.apache.spark.sql.test.TestQueryExecutorRegister</exclude>
                 <exclude>**/derby.log</exclude>
                 <exclude>**/meta.lock</exclude>
                 <exclude>**/loadmetadata.metadata</exclude>
                 <exclude>**/modifiedTime.mdt</exclude>
+                <exclude>**/PULL_REQUEST_TEMPLATE.md</exclude>
+                <exclude>**/dict.txt</exclude>
+                <exclude>**/dict.txt</exclude>
+                <exclude>**/sample</exclude>
+                <exclude>**/test.json</exclude>
               </excludes>
             </configuration>
           </plugin>
