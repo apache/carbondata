@@ -334,7 +334,7 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
       }
     }
     max = new int[noOfPrimitiveDims];
-    for(int i = 0; i < isDirectDictionary.size(); i++) {
+    for (int i = 0; i < isDirectDictionary.size(); i++) {
       if (isDirectDictionary.get(i)) {
         max[i] = Integer.MAX_VALUE;
       }

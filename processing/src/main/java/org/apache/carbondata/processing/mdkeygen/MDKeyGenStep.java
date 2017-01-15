@@ -264,7 +264,8 @@ public class MDKeyGenStep extends BaseStep {
     this.tableName = meta.getTableName();
     storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(meta.getDatabaseName(), meta.getTableName(),
-            String.valueOf(meta.getTaskNo()), meta.getPartitionID(), meta.getSegmentId()+"", false);
+            String.valueOf(meta.getTaskNo()), meta.getPartitionID(), meta.getSegmentId() + "",
+            false);
     isNoDictionaryDimension =
         RemoveDictionaryUtil.convertStringToBooleanArr(meta.getNoDictionaryDimsMapping());
     isUseInvertedIndex =

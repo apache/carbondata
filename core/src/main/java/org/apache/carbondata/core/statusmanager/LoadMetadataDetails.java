@@ -106,7 +106,7 @@ public class LoadMetadataDetails implements Serializable {
    * @return the modificationOrdeletionTimesStamp
    */
   public long getModificationOrdeletionTimesStamp() {
-    if(null == modificationOrdeletionTimesStamp) {
+    if (null == modificationOrdeletionTimesStamp) {
       return 0;
     }
     return convertTimeStampToLong(modificationOrdeletionTimesStamp);

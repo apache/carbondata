@@ -103,8 +103,8 @@ public class UnivocityCsvParser {
     parserSettings.setIgnoreLeadingWhitespaces(false);
     parserSettings.setIgnoreTrailingWhitespaces(false);
     parserSettings.setSkipEmptyLines(false);
-    parserSettings.getFormat().setQuote(null == csvParserVo.getQuoteCharacter() ?
-        '\"':csvParserVo.getQuoteCharacter().charAt(0));
+    parserSettings.getFormat().setQuote(
+        null == csvParserVo.getQuoteCharacter() ? '\"' : csvParserVo.getQuoteCharacter().charAt(0));
     parserSettings.getFormat().setQuoteEscape(null == csvParserVo.getEscapeCharacter() ?
         '\\' :
         csvParserVo.getEscapeCharacter().charAt(0));

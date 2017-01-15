@@ -99,8 +99,8 @@ public final class DeleteLoadFolders {
           }
         }
         // need to delete the complete folder.
-        if(status){
-          if(!file.delete()){
+        if (status) {
+          if (!file.delete()) {
             LOGGER.warn("Unable to delete the folder as per delete command "
                 + file.getAbsolutePath());
             status = false;

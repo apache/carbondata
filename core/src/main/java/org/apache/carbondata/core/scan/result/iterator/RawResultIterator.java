@@ -89,7 +89,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
     }
     if (!checkIfBatchIsProcessedCompletely(batch)) {
       try {
-        if(null != currentConveretedRawRow){
+        if (null != currentConveretedRawRow) {
           counter++;
           Object[] currentConveretedRawRowTemp = this.currentConveretedRawRow;
           currentConveretedRawRow = null;
@@ -106,7 +106,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
       counter = 0;
     }
     try {
-      if(null != currentConveretedRawRow){
+      if (null != currentConveretedRawRow) {
         counter++;
         Object[] currentConveretedRawRowTemp = this.currentConveretedRawRow;
         currentConveretedRawRow = null;
@@ -126,10 +126,10 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
    * @return
    */
   public Object[] fetchConverted() throws KeyGenException {
-    if(null != currentConveretedRawRow){
+    if (null != currentConveretedRawRow) {
       return currentConveretedRawRow;
     }
-    if(hasNext())
+    if (hasNext())
     {
       Object[] rawRow = batch.getRawRow(counter);
       currentConveretedRawRow = convertRow(rawRow);
@@ -155,12 +155,10 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
    * @param batch
    * @return
    */
-  private boolean checkIfBatchIsProcessedCompletely(BatchResult batch){
-    if(counter < batch.getSize())
-    {
+  private boolean checkIfBatchIsProcessedCompletely(BatchResult batch) {
+    if (counter < batch.getSize()) {
       return false;
-    }
-    else{
+    } else {
       return true;
     }
   }

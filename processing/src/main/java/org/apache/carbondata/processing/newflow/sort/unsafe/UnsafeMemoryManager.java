@@ -45,7 +45,7 @@ public class UnsafeMemoryManager {
     if (offHeap) {
       allocator = MemoryAllocator.UNSAFE;
     } else {
-      long maxMemory = Runtime.getRuntime().maxMemory()*60/100;
+      long maxMemory = Runtime.getRuntime().maxMemory() * 60 / 100;
       if (takenSize > maxMemory) {
         takenSize = maxMemory;
       }
@@ -67,9 +67,9 @@ public class UnsafeMemoryManager {
   private UnsafeMemoryManager(long totalMemory, MemoryAllocator allocator) {
     this.totalMemory = totalMemory;
     this.allocator = allocator;
-    minimumMemory = (long) (totalMemory * ((double)10/100));
-    LOGGER.audit("Memory manager is created with size "  + totalMemory
-        +" with "+allocator +" and minimum reserve memory "+minimumMemory);
+    minimumMemory = (long) (totalMemory * ((double) 10 / 100));
+    LOGGER.audit("Memory manager is created with size " + totalMemory + " with " + allocator
+        + " and minimum reserve memory " + minimumMemory);
   }
   public synchronized MemoryBlock allocateMemory(long memoryRequested) {
     if (memoryUsed + memoryRequested <= totalMemory) {
@@ -86,8 +86,8 @@ public class UnsafeMemoryManager {
     allocator.free(memoryBlock);
     memoryUsed -= memoryBlock.size();
     memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
-    LOGGER.audit("Memory released, memory used "+ memoryUsed
-        + " memory left "+(getAvailableMemory()));
+    LOGGER.audit(
+        "Memory released, memory used " + memoryUsed + " memory left " + (getAvailableMemory()));
   }
 
   public synchronized long getAvailableMemory() {

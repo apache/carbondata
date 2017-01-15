@@ -135,7 +135,7 @@ public final class ValueCompressionUtil {
     //Here we should use the Max abs as max to getDatatype, let's say -1 and -10000000, -1 is max,
     //but we can't use -1 to getDatatype, we should use -10000000.
     double absMaxValue = Math.abs((double) maxValue) >= Math.abs((double) minValue) ?
-        (double) maxValue:(double) minValue;
+        (double) maxValue : (double) minValue;
     DataType adaptiveDataType = getDataType(absMaxValue, mantissa, dataTypeSelected);
     DataType deltaDataType = getDataType((double) maxValue - (double) minValue, mantissa,
         dataTypeSelected);
@@ -225,9 +225,11 @@ public final class ValueCompressionUtil {
    * @return compressor based on actualdatatype
    */
   public static ValueCompressor getValueCompressor(CompressionFinder compressorFinder) {
-    switch(compressorFinder.getMeasureStoreType()) {
-      case 'd': return new BigIntCompressor();
-      default : return new DoubleCompressor();
+    switch (compressorFinder.getMeasureStoreType()) {
+      case 'd':
+        return new BigIntCompressor();
+      default:
+        return new DoubleCompressor();
     }
   }
 
@@ -239,10 +241,9 @@ public final class ValueCompressionUtil {
   private static ValueCompressionHolder[] getValueCompressionHolder(
       CompressionFinder[] compressionFinders) {
     ValueCompressionHolder[] valueCompressionHolders =
-            new ValueCompressionHolder[compressionFinders.length];
-    for (int i=0; i< compressionFinders.length; i++) {
-      valueCompressionHolders[i] =
-              getValueCompressionHolder(compressionFinders[i]);
+        new ValueCompressionHolder[compressionFinders.length];
+    for (int i = 0; i < compressionFinders.length; i++) {
+      valueCompressionHolders[i] = getValueCompressionHolder(compressionFinders[i]);
     }
     return valueCompressionHolders;
   }
@@ -255,7 +256,7 @@ public final class ValueCompressionUtil {
    */
   private static ValueCompressionHolder getValueCompressionHolder(
       CompressionFinder compressionFinder) {
-    switch(compressionFinder.getMeasureStoreType()) {
+    switch (compressionFinder.getMeasureStoreType()) {
       default:
         return getValueCompressionHolder(compressionFinder.getCompType(),
             compressionFinder.getActualDataType(), compressionFinder.getConvertedDataType());

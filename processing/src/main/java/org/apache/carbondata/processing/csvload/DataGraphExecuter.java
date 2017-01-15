@@ -116,7 +116,7 @@ public class DataGraphExecuter {
       throws DataLoadingException {
 
     //This Method will validate the both fact and dimension csv files.
-    if (!schemaInfo.isAutoAggregateRequest() && model.getRddIteratorKey() == null ) {
+    if (!schemaInfo.isAutoAggregateRequest() && model.getRddIteratorKey() == null) {
       validateCSVFiles(schema);
     }
     execute(graphFilePath, schemaInfo);

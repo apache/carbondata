@@ -453,7 +453,7 @@ public final class CarbonSchemaParser {
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dimension = dimensions.get(i);
       //assuming complex dimensions will always be atlast
-      if(null != dimension.getListOfChildDimensions() &&
+      if (null != dimension.getListOfChildDimensions() &&
           dimension.getListOfChildDimensions().size() > 0) {
         break;
       }

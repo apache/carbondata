@@ -114,10 +114,9 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     initialize();
   }
 
-  public TimeStampDirectDictionaryGenerator( ) {
-    this(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+  public TimeStampDirectDictionaryGenerator() {
+    this(CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
   }
 
   /**
@@ -222,7 +221,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     }
   }
 
-  public void initialize(){
+  public void initialize() {
     if (simpleDateFormatLocal.get() == null) {
       simpleDateFormatLocal.set(new SimpleDateFormat(dateFormat));
       simpleDateFormatLocal.get().setLenient(false);

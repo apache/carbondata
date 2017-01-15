@@ -245,7 +245,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       if (invalidSegments.size() > 0) {
         List<TableSegmentUniqueIdentifier> invalidSegmentsIds
             = new ArrayList<>(invalidSegments.size());
-        for(String segId: invalidSegments) {
+        for (String segId : invalidSegments) {
           invalidSegmentsIds.add(new TableSegmentUniqueIdentifier(identifier, segId));
         }
         cacheClient.getSegmentAccessClient().invalidateAll(invalidSegmentsIds);
@@ -256,7 +256,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     Expression filter = getFilterPredicates(job.getConfiguration());
     CarbonTable carbonTable = getCarbonTable(job.getConfiguration());
     // this will be null in case of corrupt schema file.
-    if(null == carbonTable){
+    if (null == carbonTable) {
       throw new IOException("Missing/Corrupt schema file for table.");
     }
     CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);

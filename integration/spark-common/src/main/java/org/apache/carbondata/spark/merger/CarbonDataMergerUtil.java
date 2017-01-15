@@ -573,7 +573,7 @@ public final class CarbonDataMergerUtil {
    */
   private static boolean isTwoDatesPresentInRequiredRange(Date segDate1, Date segDate2,
       long numberOfDaysAllowedToMerge) {
-    if(segDate1 == null || segDate2 == null) {
+    if (segDate1 == null || segDate2 == null) {
       return false;
     }
     // take 1 st date add the configured days .
@@ -742,7 +742,7 @@ public final class CarbonDataMergerUtil {
    * @return
    */
   private static boolean isMergedSegment(String segName) {
-    if(segName.contains(".")){
+    if (segName.contains(".")) {
       return true;
     }
     return false;
@@ -1324,7 +1324,7 @@ public final class CarbonDataMergerUtil {
     LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metadataPath);
     List<LoadMetadataDetails> originalList = Arrays.asList(details);
     for (LoadMetadataDetails segment : changedSegDetails) {
-      if(preservedSegment.contains(segment)) {
+      if (preservedSegment.contains(segment)) {
         continue;
       }
       originalList.get(originalList.indexOf(segment)).setMajorCompacted("true");

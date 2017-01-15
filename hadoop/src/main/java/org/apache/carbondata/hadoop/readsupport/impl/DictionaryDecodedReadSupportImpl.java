@@ -23,7 +23,7 @@ public class DictionaryDecodedReadSupportImpl
     extends AbstractDictionaryDecodedReadSupport<Object[]> {
 
   @Override public Object[] readRow(Object[] data) {
-    assert(data.length == dictionaries.length);
+    assert (data.length == dictionaries.length);
     for (int i = 0; i < dictionaries.length; i++) {
       if (dictionaries[i] != null) {
         data[i] = dictionaries[i].getDictionaryValueForKey((int) data[i]);

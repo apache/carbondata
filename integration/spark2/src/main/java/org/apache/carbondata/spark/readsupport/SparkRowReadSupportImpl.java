@@ -40,9 +40,9 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
         continue;
       }
       if (dictionaries[i] == null) {
-        if(dataTypes[i].equals(DataType.INT)) {
+        if (dataTypes[i].equals(DataType.INT)) {
           data[i] = ((Long)(data[i])).intValue();
-        } else if(dataTypes[i].equals(DataType.SHORT)) {
+        } else if (dataTypes[i].equals(DataType.SHORT)) {
           data[i] = ((Long)(data[i])).shortValue();
         }
       }

@@ -555,7 +555,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     isComplexTypeColumn = new boolean[metaColumnNames.length];
     noDictionaryAndComplexIndexMapping = new int[metaColumnNames.length];
     isStringDataType = new boolean[metaColumnNames.length];
-    dataTypes= new String[metaColumnNames.length];
+    dataTypes = new String[metaColumnNames.length];
     complexTypes = new GenericDataType[meta.getComplexTypeColumns().length];
     for (int i = 0; i < meta.noDictionaryCols.length; i++) {
       for (int j = 0; j < metaColumnNames.length; j++) {
@@ -563,7 +563,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             .equalsIgnoreCase(meta.dimColDataTypes.get(metaColumnNames[j]))) {
           isStringDataType[j] = true;
         }
-        dataTypes[j]=meta.dimColDataTypes.get(metaColumnNames[j].toLowerCase());
+        dataTypes[j] = meta.dimColDataTypes.get(metaColumnNames[j].toLowerCase());
         if (meta.noDictionaryCols[i].equalsIgnoreCase(
             meta.getTableName() + CarbonCommonConstants.UNDERSCORE + metaColumnNames[j])) {
           isNoDictionaryColumn[j] = true;
@@ -769,7 +769,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   private void updateStoreLocation() {
     loadFolderLoc = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(meta.getDatabaseName(), meta.getTableName(), meta.getTaskNo(),
-            meta.getPartitionID(), meta.getSegmentId()+"", false);
+            meta.getPartitionID(), meta.getSegmentId() + "", false);
   }
 
   private String getBadLogStoreLocation(String storeLocation) {
@@ -978,7 +978,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           (String) r[j];
       // check whether the column value is the value to be  serialized as null.
       boolean isSerialized = false;
-      if(tuple.equalsIgnoreCase(serializationNullFormat)) {
+      if (tuple.equalsIgnoreCase(serializationNullFormat)) {
         tuple = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
         isSerialized = true;
       }
@@ -1025,7 +1025,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             || msr.length() == 0)) {
           addEntryToBadRecords(r, j, columnName,
               msrDataType[meta.msrMapping[msrCount]].name());
-          if(badRecordsLogger.isBadRecordConvertNullDisable()) {
+          if (badRecordsLogger.isBadRecordConvertNullDisable()) {
             return null;
           }
         } else {
@@ -1132,9 +1132,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
         }
 
-      }
-      //If it refers to single hierarchy
-      else if(isComplexTypeColumn[j]) {
+      } else if (isComplexTypeColumn[j]) {
+        //If it refers to single hierarchy
         try {
           GenericDataType complexType =
               complexTypes[noDictionaryAndComplexIndexMapping[j] - meta.noDictionaryCols.length];
@@ -1211,7 +1210,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
               if (!isSerialized && surrogateKeyForHrrchy[0] == 1) {
                 addEntryToBadRecords(r, j, columnName,
                     details.getColumnType().name());
-                if(badRecordsLogger.isBadRecordConvertNullDisable()) {
+                if (badRecordsLogger.isBadRecordConvertNullDisable()) {
                   return null;
                 }
               }
@@ -1220,7 +1219,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             } else {
               String parsedValue = DataTypeUtil.parseValue(tuple, data.getSurrogateKeyGen()
                   .getDimensionOrdinalToDimensionMapping()[memberMapping[i]]);
-              if(null == parsedValue) {
+              if (null == parsedValue) {
                 surrogateKeyForHrrchy[0] = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
               } else {
                 surrogateKeyForHrrchy[0] =
@@ -1230,9 +1229,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           }
           if (surrogateKeyForHrrchy[0] == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
 
-            if (!isSerialized ) {
+            if (!isSerialized) {
               addEntryToBadRecords(r, j, columnName);
-              if(badRecordsLogger.isBadRecordConvertNullDisable()) {
+              if (badRecordsLogger.isBadRecordConvertNullDisable()) {
                 return null;
               }
             }
@@ -1262,9 +1261,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     return newArray;
   }
 
-  private void addEntryToBadRecords(Object[] r, int j, String columnName,
-      String dataType) {
-    dataType= DataTypeUtil.getColumnDataTypeDisplayName(dataType);
+  private void addEntryToBadRecords(Object[] r, int j, String columnName, String dataType) {
+    dataType = DataTypeUtil.getColumnDataTypeDisplayName(dataType);
     badRecordsLogger.addBadRecordsToBuilder(r,
         "The value " + " \"" + r[j] + "\"" + " with column name " + columnName
             + " and column data type " + dataType + " is not a valid " + dataType + " type.");
@@ -1731,9 +1729,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       String name = hieEntry.getKey();
       //
       if (name.equalsIgnoreCase(timeHierNameVal)) {
-        for (int i = 0; i < a.length; i++) {//CHECKSTYLE:OFF
+        for (int i = 0; i < a.length; i++) { //CHECKSTYLE:OFF
           lens[i] = dimLens[a[i]];
-        }//CHECKSTYLE:ON
+        } //CHECKSTYLE:ON
       } else {
         String[] columns = meta.hierColumnMap.get(name);
 
@@ -1761,9 +1759,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
               newIndex = j;
               break;
             }
-          }//CHECKSTYLE:OFF
+          } //CHECKSTYLE:OFF
           lens[i] = dimLens[newIndex];
-        }//CHECKSTYLE:ON
+        } //CHECKSTYLE:ON
       }
       //
       KeyGenerator generator = KeyGeneratorFactory.getKeyGenerator(lens);
@@ -1917,7 +1915,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     for (int i = 0; i < measures.length; i++) {
       CarbonMeasure carbonMeasure = carbonTable.getMeasureByName(meta.getTableName(), measures[i]);
       msrDataType[i] = carbonMeasure.getDataType();
-      if(DataType.DECIMAL == carbonMeasure.getDataType()) {
+      if (DataType.DECIMAL == carbonMeasure.getDataType()) {
         meta.carbonMeasures[i] = carbonMeasure;
       }
     }

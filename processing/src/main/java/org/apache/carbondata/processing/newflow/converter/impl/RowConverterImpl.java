@@ -131,7 +131,7 @@ public class RowConverterImpl implements RowConverter {
       if (logHolder.isBadRecordNotAdded()) {
         badRecordLogger.addBadRecordsToBuilder(copy.getData(), logHolder.getReason());
         logHolder.clear();
-        if(badRecordLogger.isBadRecordConvertNullDisable()) {
+        if (badRecordLogger.isBadRecordConvertNullDisable()) {
           return null;
         }
       }

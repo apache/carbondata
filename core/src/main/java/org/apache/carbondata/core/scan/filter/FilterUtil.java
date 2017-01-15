@@ -653,7 +653,7 @@ public final class FilterUtil {
    */
   public static void getStartKey(Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter,
       long[] startKey, List<long[]> startKeyList) {
-    for(int i = 0; i < startKey.length; i++) {
+    for (int i = 0; i < startKey.length; i++) {
       // The min surrogate key is 1, set it as the init value for starkey of each column level
       startKey[i] = 1;
     }
@@ -1078,7 +1078,7 @@ public final class FilterUtil {
               .compare((Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
         case DATE:
         case TIMESTAMP:
-          String format= CarbonUtil.getFormatFromProperty(dataType);
+          String format = CarbonUtil.getFormatFromProperty(dataType);
           SimpleDateFormat parser = new SimpleDateFormat(format);
           Date dateToStr;
           Date dictionaryDate;
@@ -1202,8 +1202,8 @@ public final class FilterUtil {
           if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
             return 1;
           }
-          String format= null;
-          if(dataType==DataType.DATE) {
+          String format = null;
+          if (dataType == DataType.DATE) {
             format = CarbonProperties.getInstance()
                 .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
                     CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);

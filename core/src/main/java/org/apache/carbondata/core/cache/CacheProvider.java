@@ -173,9 +173,9 @@ public class CacheProvider {
    * Below method will be used to clear the cache
    */
   public void dropAllCache() {
-    if(null != carbonLRUCache) {
+    if (null != carbonLRUCache) {
       carbonLRUCache.clear();
-      carbonLRUCache= null;
+      carbonLRUCache = null;
     }
     cacheTypeToCacheMap.clear();
   }

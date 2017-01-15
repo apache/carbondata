@@ -43,7 +43,7 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
       int start = 0;
       List<Integer> map = new ArrayList<Integer>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
       int length = keyBlockInput.length;
-      for(int i = 1; i < length; i++) {
+      for (int i = 1; i < length; i++) {
         if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(prvKey, keyBlockInput[i]) != 0) {
           prvKey = keyBlockInput[i];
           list.add(keyBlockInput[i]);
@@ -91,7 +91,7 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
 
   private int[] convertToArray(List<Integer> list) {
     int[] shortArray = new int[list.size()];
-    for(int i = 0; i < shortArray.length; i++) {
+    for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = list.get(i);
     }
     return shortArray;

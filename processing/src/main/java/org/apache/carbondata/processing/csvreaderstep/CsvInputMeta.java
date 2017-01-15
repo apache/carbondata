@@ -124,7 +124,7 @@ public class CsvInputMeta extends BaseStepMeta
     bufferSize = "50000";
     blocksID = "";
     partitionID = "";
-    escapeCharacter ="\\";
+    escapeCharacter = "\\";
     quoteCharacter = "\"";
     commentCharacter = "#";
     rddIteratorKey = "";
@@ -641,7 +641,7 @@ public class CsvInputMeta extends BaseStepMeta
     return escapeCharacter;
   }
 
-  public void setEscapeCharacter(String escapeCharacter){
+  public void setEscapeCharacter(String escapeCharacter) {
     this.escapeCharacter = escapeCharacter;
   }
 

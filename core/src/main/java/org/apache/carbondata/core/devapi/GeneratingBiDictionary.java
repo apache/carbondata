@@ -32,7 +32,7 @@ public abstract class GeneratingBiDictionary<K, V> implements BiDictionary<K, V>
       return key;
     } else {
       K newKey = generator.generateKey(value);
-      assert(newKey != null);
+      assert (newKey != null);
       put(newKey, value);
       return newKey;
     }

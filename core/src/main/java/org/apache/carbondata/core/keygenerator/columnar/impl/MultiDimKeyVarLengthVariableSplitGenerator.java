@@ -214,7 +214,7 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
   }
 
   @Override public boolean equals(Object obj) {
-    if(!(obj instanceof MultiDimKeyVarLengthVariableSplitGenerator)) {
+    if (!(obj instanceof MultiDimKeyVarLengthVariableSplitGenerator)) {
       return false;
     }
     MultiDimKeyVarLengthVariableSplitGenerator o = (MultiDimKeyVarLengthVariableSplitGenerator)obj;

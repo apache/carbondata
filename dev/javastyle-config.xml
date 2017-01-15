@@ -166,5 +166,8 @@
         </module>
         <module name="CommentsIndentation"/>
         <module name="UnusedImports"/>
+
+        <module name="ParenPad"/>
+        <module name="WhitespaceAround"/>
     </module>
 </module>

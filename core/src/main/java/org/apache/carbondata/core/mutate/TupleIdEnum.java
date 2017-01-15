@@ -32,7 +32,7 @@ public enum TupleIdEnum {
     this.index = index;
   }
 
-  public int getTupleIdIndex(){
+  public int getTupleIdIndex() {
     return this.index;
   }
 

@@ -39,7 +39,7 @@ public class BlockletDeleteDeltaCacheLoader implements DeleteDeltaCacheLoaderInt
        DataRefNode blockletNode, AbsoluteTableIdentifier absoluteIdentifier) {
     this.blockletID = blockletID;
     this.blockletNode = blockletNode;
-    this.absoluteIdentifier= absoluteIdentifier;
+    this.absoluteIdentifier = absoluteIdentifier;
   }
 
   /**

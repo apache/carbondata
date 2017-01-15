@@ -158,7 +158,7 @@ public class RowResultMerger {
         // iterator the top record
         iterator = this.recordHolderHeap.poll();
         Object[] convertedRow = iterator.next();
-        if(null == convertedRow){
+        if (null == convertedRow) {
           index--;
           continue;
         }
@@ -182,7 +182,7 @@ public class RowResultMerger {
       iterator = this.recordHolderHeap.poll();
       while (true) {
         Object[] convertedRow = iterator.next();
-        if(null == convertedRow){
+        if (null == convertedRow) {
           break;
         }
         // do it only once
@@ -196,7 +196,7 @@ public class RowResultMerger {
           break;
         }
       }
-      if(isDataPresent)
+      if (isDataPresent)
       {
         this.dataHandler.finish();
       }
@@ -206,7 +206,7 @@ public class RowResultMerger {
       mergeStatus = false;
     } finally {
       try {
-        if(isDataPresent) {
+        if (isDataPresent) {
           this.dataHandler.closeHandler();
         }
       } catch (CarbonDataWriterException e) {

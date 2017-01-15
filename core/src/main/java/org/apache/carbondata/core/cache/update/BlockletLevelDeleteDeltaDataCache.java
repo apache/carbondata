@@ -28,7 +28,7 @@ public class BlockletLevelDeleteDeltaDataCache {
 
   public BlockletLevelDeleteDeltaDataCache(int[] deleteDeltaFileData, String timeStamp) {
     deleteDelataDataCache = RoaringBitmap.bitmapOf(deleteDeltaFileData);
-    this.timeStamp=timeStamp;
+    this.timeStamp = timeStamp;
   }
 
   public boolean contains(int key) {

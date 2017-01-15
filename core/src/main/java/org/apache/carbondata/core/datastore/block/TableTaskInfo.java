@@ -41,14 +41,14 @@ public class TableTaskInfo implements Distributable {
     return tableBlockInfoList;
   }
 
-  public TableTaskInfo(String taskId, List<TableBlockInfo> tableBlockInfoList){
+  public TableTaskInfo(String taskId, List<TableBlockInfo> tableBlockInfoList) {
     this.taskId = taskId;
     this.tableBlockInfoList = tableBlockInfoList;
   }
 
   @Override public String[] getLocations() {
     Set<String> locations = new HashSet<String>();
-    for(TableBlockInfo tableBlockInfo: tableBlockInfoList){
+    for (TableBlockInfo tableBlockInfo : tableBlockInfoList) {
       locations.addAll(Arrays.asList(tableBlockInfo.getLocations()));
     }
     locations.toArray(new String[locations.size()]);

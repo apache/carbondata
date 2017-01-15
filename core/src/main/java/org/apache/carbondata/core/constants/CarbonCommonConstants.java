@@ -812,11 +812,11 @@ public final class CarbonCommonConstants {
   /**
    * 16 mb size
    */
-  public static final long CARBON_16MB = 16*1024*1024;
+  public static final long CARBON_16MB = 16 * 1024 * 1024;
   /**
    * 256 mb size
    */
-  public static final long CARBON_256MB = 256*1024*1024;
+  public static final long CARBON_256MB = 256 * 1024 * 1024;
 
   /**
    * COMPACTED is property to indicate whether seg is compacted or not.

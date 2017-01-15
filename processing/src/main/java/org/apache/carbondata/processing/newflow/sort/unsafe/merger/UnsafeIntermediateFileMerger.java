@@ -99,7 +99,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     noDictionarycolumnMapping = mergerParameters.getNoDictionaryDimnesionColumn();
     this.nullSetWords = new long[((mergerParameters.getMeasureColCount() - 1) >> 6) + 1];
     // Take size of 2 MB for each row. I think it is high enough to use
-    rowData = ByteBuffer.allocate(2*1024*1024);
+    rowData = ByteBuffer.allocate(2 * 1024 * 1024);
   }
 
   @Override public Void call() throws Exception {

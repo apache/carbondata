@@ -132,8 +132,8 @@ public class IntermediateFileMerger implements Callable<Void> {
           }
         }
       }
-      double intermediateMergeCostTime = (System.currentTimeMillis() -
-          intermediateMergeStartTime)/1000.0;
+      double intermediateMergeCostTime =
+          (System.currentTimeMillis() - intermediateMergeStartTime) / 1000.0;
       LOGGER.info("============================== Intermediate Merge of " + fileConterConst +
           " Sort Temp Files Cost Time: " + intermediateMergeCostTime + "(s)");
     } catch (Exception e) {

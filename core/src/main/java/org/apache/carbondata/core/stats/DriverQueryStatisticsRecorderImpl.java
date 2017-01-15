@@ -32,7 +32,7 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Class will be used to record and log the query statistics
  */
-public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorder{
+public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorder {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DriverQueryStatisticsRecorderImpl.class.getName());
@@ -100,7 +100,7 @@ public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorde
         Map.Entry<String, List<QueryStatistic>> entry = entries.next();
         String queryId = entry.getKey();
         // clear the unknown query statistics
-        if(StringUtils.isEmpty(queryId)) {
+        if (StringUtils.isEmpty(queryId)) {
           entries.remove();
         } else {
           // clear the timeout query statistics
@@ -211,7 +211,7 @@ public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorde
                 printLine(" ", (len4 - load_blocks_time.length())) +
                 load_blocks_time + "|" + "\n");
         tableInfo.append(line2).append("\n");
-        tableInfo.append("|" + printLine(" ", len1 ) + "|" +
+        tableInfo.append("|" + printLine(" ", len1) + "|" +
             printLine(" ", (len2 - "Block allocation".length())) + "Block allocation" + "|" +
             printLine(" ", len3) + "|" +
             printLine(" ", (len4 - block_allocation_time.length())) +

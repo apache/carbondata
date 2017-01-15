@@ -150,7 +150,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     } catch (IOException e) {
       throw new RuntimeException("Error while reading filter expression", e);
     }
-    assert(filter instanceof Expression);
+    assert (filter instanceof Expression);
     return (Expression) filter;
   }
 

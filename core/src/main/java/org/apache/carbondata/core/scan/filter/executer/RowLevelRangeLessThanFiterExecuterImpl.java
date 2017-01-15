@@ -220,7 +220,7 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
         start = CarbonUtil.getFirstIndexUsingBinarySearch(
             (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, startIndex, numerOfRows - 1,
             filterValues[k], false);
-        if(start >= 0) {
+        if (start >= 0) {
           start = CarbonUtil.nextLesserValueToTarget(start,
               (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, filterValues[k]);
         }

@@ -573,7 +573,7 @@ public final class CarbonLoaderUtil {
       noofNodes = activeNodes.size();
     }
     int blocksPerNode = blockInfos.size() / noofNodes;
-    blocksPerNode = blocksPerNode <=0 ? 1 : blocksPerNode;
+    blocksPerNode = blocksPerNode <= 0 ? 1 : blocksPerNode;
 
     // sort the flattened data.
     Collections.sort(flattenedList);
@@ -804,7 +804,7 @@ public final class CarbonLoaderUtil {
       try {
         String hostName = InetAddress.getLocalHost().getHostName();
         isActiveNode = activeNode.contains(hostName);
-        if(isActiveNode){
+        if (isActiveNode) {
           return hostName;
         }
       } catch (UnknownHostException ue) {
@@ -814,7 +814,7 @@ public final class CarbonLoaderUtil {
       try {
         String hostAddress = InetAddress.getByName(nodeName).getHostAddress();
         isActiveNode = activeNode.contains(hostAddress);
-        if(isActiveNode){
+        if (isActiveNode) {
           return hostAddress;
         }
       } catch (UnknownHostException ue) {

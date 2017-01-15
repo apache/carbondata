@@ -93,7 +93,7 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
       throws CarbonDataLoadingException {
     try {
       String parsedValue = DataTypeUtil.parseValue(row.getString(index), carbonDimension);
-      if(null == parsedValue || parsedValue.equals(nullFormat)) {
+      if (null == parsedValue || parsedValue.equals(nullFormat)) {
         row.update(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY, index);
       } else {
         row.update(dictionaryGenerator.getOrGenerateKey(parsedValue), index);

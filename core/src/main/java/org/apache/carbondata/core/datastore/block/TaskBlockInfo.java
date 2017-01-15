@@ -32,7 +32,7 @@ public class TaskBlockInfo {
   // stores TableBlockInfo list of each task
   private Map<String, List<TableBlockInfo>> taskBlockInfoMapping;
 
-  public TaskBlockInfo(){
+  public TaskBlockInfo() {
 
     taskBlockInfoMapping = new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   }

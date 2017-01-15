@@ -102,7 +102,7 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
         return val1.compareTo(val2);
       case DATE:
       case TIMESTAMP:
-        String format= CarbonUtil.getFormatFromProperty(dataType);
+        String format = CarbonUtil.getFormatFromProperty(dataType);
         SimpleDateFormat parser = new SimpleDateFormat(format);
         Date date1 = null;
         Date date2 = null;
