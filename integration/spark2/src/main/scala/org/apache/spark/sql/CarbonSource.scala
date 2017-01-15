@@ -135,14 +135,20 @@ class CarbonSource extends CreatableRelationProvider
           f
         }
         val map = scala.collection.mutable.Map[String, String]()
-        parameters.foreach { x => map.put(x._1, x._2) }
-        val bucketFields = {
-          if (options.isBucketingEnabled) {
-            Some(BucketFields(options.bucketColumns.split(","), options.bucketNumber))
+        parameters.foreach { parameter => map.put(parameter._1, parameter._2) }
+        val bucketFields = if (options.isBucketingEnabled) {
+            if (options.bucketNumber.toString.contains("-") ||
+                options.bucketNumber.toString.contains("+") ) {
+              throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED" +
+                                                        options.bucketNumber.toString)
+            }
+            else {
+              Some(BucketFields(options.bucketColumns.split(","), options.bucketNumber))
+            }
           } else {
             None
           }
-        }
+
         val cm = TableCreator.prepareTableModel(false, Option(dbName),
           tableName, fields, Nil, bucketFields, map)
         CreateTable(cm, false).run(sparkSession)
