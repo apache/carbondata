@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.update.data;
+package org.apache.carbondata.core.mutate.data;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 
 /**
  * This class is responsible for loading delete delta file cache based on

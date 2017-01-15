@@ -36,8 +36,8 @@ import org.apache.carbondata.core.scan.scanner.AbstractBlockletScanner;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
-import org.apache.carbondata.core.update.data.BlockletDeleteDeltaCacheLoader;
-import org.apache.carbondata.core.update.data.DeleteDeltaCacheLoaderIntf;
+import org.apache.carbondata.core.mutate.data.BlockletDeleteDeltaCacheLoader;
+import org.apache.carbondata.core.mutate.data.DeleteDeltaCacheLoaderIntf;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 

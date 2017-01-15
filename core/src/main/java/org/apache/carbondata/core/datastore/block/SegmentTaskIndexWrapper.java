@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.datastore.SegmentTaskIndexStore;
-import org.apache.carbondata.core.update.UpdateVO;
+import org.apache.carbondata.core.mutate.UpdateVO;
 
 /**
  * SegmentTaskIndexWrapper class holds the  taskIdToTableSegmentMap

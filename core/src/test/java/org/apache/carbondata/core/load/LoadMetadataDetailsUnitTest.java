@@ -22,7 +22,7 @@ package org.apache.carbondata.core.load;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.updatestatus.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 
 import org.junit.Before;
 import org.junit.Test;

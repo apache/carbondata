@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.updatestatus;
+package org.apache.carbondata.core.statusmanager;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -44,10 +44,10 @@ import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.reader.CarbonDeleteFilesDataReader;
-import org.apache.carbondata.core.update.CarbonUpdateUtil;
-import org.apache.carbondata.core.update.SegmentUpdateDetails;
-import org.apache.carbondata.core.update.TupleIdEnum;
-import org.apache.carbondata.core.update.UpdateVO;
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
+import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
+import org.apache.carbondata.core.mutate.TupleIdEnum;
+import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.updatestatus;
+package org.apache.carbondata.core.statusmanager;
 
 import java.io.Serializable;
 import java.text.ParseException;

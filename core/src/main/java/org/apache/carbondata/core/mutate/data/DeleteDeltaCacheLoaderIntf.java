@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.update.data;
+package org.apache.carbondata.core.mutate.data;
 
 /**
  * This interface holds all methods required to load delete delta file data to cache

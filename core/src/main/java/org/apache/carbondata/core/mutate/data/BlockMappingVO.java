@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.update.data;
+package org.apache.carbondata.core.mutate.data;
 
 import java.util.Map;
 

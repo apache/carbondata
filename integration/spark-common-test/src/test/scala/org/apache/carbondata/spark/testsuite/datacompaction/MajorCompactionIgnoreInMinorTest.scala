@@ -28,7 +28,7 @@ import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier
 import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.updatestatus.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.CacheClient
 

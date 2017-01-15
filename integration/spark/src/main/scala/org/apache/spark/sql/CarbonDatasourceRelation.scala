@@ -32,7 +32,7 @@ import org.apache.spark.sql.types.{DataType, StructType}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension
-import org.apache.carbondata.core.updatestatus.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.spark.{CarbonOption, _}
 import org.apache.carbondata.spark.merger.TableMeta

@@ -27,9 +27,9 @@ import org.apache.carbondata.core.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.apache.carbondata.core.datastore.impl.btree.BlockBTreeLeafNode;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
-import org.apache.carbondata.core.update.CarbonUpdateUtil;
-import org.apache.carbondata.core.update.SegmentUpdateDetails;
-import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
+import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
+import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 

@@ -27,9 +27,9 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.update.SegmentUpdateDetails;
-import org.apache.carbondata.core.updatestatus.LoadMetadataDetails;
-import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 
 public class CarbonLoadModel implements Serializable {
   /**

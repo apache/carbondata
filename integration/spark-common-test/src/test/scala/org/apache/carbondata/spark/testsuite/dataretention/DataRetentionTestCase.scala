@@ -21,7 +21,7 @@ package org.apache.carbondata.spark.testsuite.dataretention
 
 import java.text.SimpleDateFormat
 
-import org.apache.carbondata.core.updatestatus.{LoadMetadataDetails, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.commons.lang3.time.DateUtils
 import org.apache.spark.sql.Row

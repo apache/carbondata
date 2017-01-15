@@ -31,8 +31,8 @@ package org.apache.carbondata.spark.util;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.updatestatus.LoadMetadataDetails;
-import org.apache.carbondata.core.updatestatus.SegmentStatusManager;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 
 public final class LoadMetadataUtil {
   private LoadMetadataUtil() {

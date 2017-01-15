@@ -33,7 +33,7 @@ import org.apache.carbondata.core.metadata.schema.{BucketingInfo, SchemaEvolutio
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.service.CarbonCommonFactory
-import org.apache.carbondata.core.updatestatus.{LoadMetadataDetails, SegmentUpdateStatusManager}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.load.FailureCauses

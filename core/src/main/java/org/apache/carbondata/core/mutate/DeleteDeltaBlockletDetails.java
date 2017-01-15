@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.update;
+package org.apache.carbondata.core.mutate;
 
 import java.io.Serializable;
 import java.util.Set;

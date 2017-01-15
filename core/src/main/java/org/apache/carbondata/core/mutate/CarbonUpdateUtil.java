@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.update;
+package org.apache.carbondata.core.mutate;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -37,11 +37,11 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.update.data.BlockMappingVO;
-import org.apache.carbondata.core.update.data.RowCountDetailsVO;
-import org.apache.carbondata.core.updatestatus.LoadMetadataDetails;
-import org.apache.carbondata.core.updatestatus.SegmentStatusManager;
-import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.mutate.data.BlockMappingVO;
+import org.apache.carbondata.core.mutate.data.RowCountDetailsVO;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
+import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
