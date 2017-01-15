@@ -205,6 +205,8 @@ public class CsvInput extends BaseStep implements StepInterface {
         CarbonIterator<String[]> iter;
         boolean isInitialized = false;
         while (hasNext) {
+          // Inovke getRddIterator to get a RDD[Row] iterator of a partition.
+          // The RDD comes from the sub-query DataFrame in InsertInto statement.
           iter = getRddIterator(isInitialized);
           isInitialized = true;
           if (iter == null) {

@@ -785,6 +785,7 @@ case class CarbonRelation(
   override val output = {
     val columns = tableMeta.carbonTable.getCreateOrderColumn(tableMeta.carbonTable.getFactTableName)
       .asScala
+    // convert each column to Attribute
     columns.filter(!_.isInvisible).map { column =>
       if (column.isDimesion()) {
         val output: DataType = column.getDataType.toString.toLowerCase match {
