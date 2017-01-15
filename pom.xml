@@ -242,17 +242,16 @@
         <version>2.17</version>
         <configuration>
           <configLocation>${dev.path}/javastyle-config.xml</configLocation>
+          <suppressionsLocation>${dev.path}/javastyle-suppressions.xml</suppressionsLocation>
+          <headerLocation>${dev.path}/java.header</headerLocation>
           <consoleOutput>true</consoleOutput>
           <failsOnError>true</failsOnError>
           <linkXRef>false</linkXRef>
-          <verbose>false</verbose>
           <failOnViolation>true</failOnViolation>
           <includeTestSourceDirectory>false</includeTestSourceDirectory>
           <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
           <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
           <outputFile>${basedir}/target/checkstyle-output.xml</outputFile>
-          <inputEncoding>${project.build.sourceEncoding}</inputEncoding>
-          <outputEncoding>${project.build.sourceEncoding}</outputEncoding>
         </configuration>
         <executions>
           <execution>
@@ -439,15 +438,21 @@
                 <exclude>**/*.csv</exclude>
                 <exclude>**/*.dictionary</exclude>
                 <exclude>**/*.ktr</exclude>
+                <exclude>**/*.rat</exclude>
                 <exclude>**/_SUCCESS</exclude>
                 <exclude>**/non-csv</exclude>
                 <exclude>**/.invisibilityfile</exclude>
                 <exclude>**/noneCsvFormat.cs</exclude>
                 <exclude>**/org.apache.spark.sql.sources.DataSourceRegister</exclude>
+                <exclude>**/org.apache.spark.sql.test.TestQueryExecutorRegister</exclude>
                 <exclude>**/derby.log</exclude>
                 <exclude>**/meta.lock</exclude>
                 <exclude>**/loadmetadata.metadata</exclude>
                 <exclude>**/modifiedTime.mdt</exclude>
+                <exclude>**/PULL_REQUEST_TEMPLATE.md</exclude>
+                <exclude>**/dict.txt</exclude>
+                <exclude>**/sample</exclude>
+                <exclude>**/test.json</exclude>
               </excludes>
             </configuration>
           </plugin>
