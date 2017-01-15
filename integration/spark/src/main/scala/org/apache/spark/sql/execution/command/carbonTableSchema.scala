@@ -417,15 +417,6 @@ case class LoadTable(
       val complex_delimiter_level_2 = options.getOrElse("complex_delimiter_level_2", "\\:")
       val dateFormat = options.getOrElse("dateformat", null)
       validateDateFormat(dateFormat, table)
-      val multiLine = options.getOrElse("multiline", "false").trim.toLowerCase match {
-        case "true" => true
-        case "false" => false
-        case illegal =>
-          val errorMessage = "Illegal syntax found: [" + illegal + "] .The value multiline in " +
-                             "load DDL which you set can only be 'true' or 'false', please check " +
-                             "your input DDL."
-          throw new MalformedCarbonCommandException(errorMessage)
-      }
       val maxColumns = options.getOrElse("maxcolumns", null)
 
       carbonLoadModel.setMaxColumns(checkDefaultValue(maxColumns, null))
