@@ -23,8 +23,8 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 /**
@@ -78,8 +78,8 @@ class TestCreateTableWithDouble extends QueryTest with BeforeAndAfterAll {
     // assert that field 'number' is a dimension
     val tableIdentifier = new CarbonTableIdentifier(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME, "doubleComplex2".toLowerCase(), "uniqueid")
-    val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-      .getCarbonTable(tableIdentifier.getTableUniqueName)
+    val carbonTable =
+      CarbonMetadata.getInstance().getCarbonTable(tableIdentifier.getTableUniqueName)
     val dimExist = carbonTable.getDimensionByTableName("doubleComplex2".toLowerCase()).toArray.
       exists(_.asInstanceOf[CarbonDimension].getColName.equalsIgnoreCase("number"))
     assertResult(dimExist)(true)

@@ -20,7 +20,7 @@ package org.apache.carbondata.spark.merger;
 
 import java.util.List;
 
-import org.apache.carbondata.core.carbon.datastore.block.Distributable;
+import org.apache.carbondata.core.datastore.block.Distributable;
 
 public class NodeMultiBlockRelation implements Comparable<NodeMultiBlockRelation> {
 

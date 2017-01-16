@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.spark.util
 
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.DataType
 
 object DataTypeConverterUtil {
   def convertToCarbonType(dataType: String): DataType = {

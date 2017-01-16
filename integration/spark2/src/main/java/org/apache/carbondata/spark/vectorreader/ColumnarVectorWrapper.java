@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.spark.vectorreader;
 
-import org.apache.carbondata.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 
 import org.apache.spark.sql.execution.vectorized.ColumnVector;
 import org.apache.spark.sql.types.Decimal;

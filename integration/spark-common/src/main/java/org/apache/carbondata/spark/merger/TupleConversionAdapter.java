@@ -21,9 +21,9 @@ package org.apache.carbondata.spark.merger;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
-import org.apache.carbondata.scan.wrappers.ByteArrayWrapper;
 
 /**
  * This class will be used to convert the Result into the format used in data writer.

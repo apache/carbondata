@@ -35,8 +35,8 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{IntegerType, StringType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.stats.QueryStatistic
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.apache.carbondata.spark.{CarbonAliasDecoderRelation, CarbonFilters}
 
@@ -59,7 +59,7 @@ object CarbonOptimizer {
     }
   }
 
-  // get the carbon relation from plan.
+// get the carbon relation from plan.
   def collectCarbonRelation(plan: LogicalPlan): Seq[CarbonDecoderRelation] = {
     plan collect {
       case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
@@ -73,7 +73,7 @@ object CarbonOptimizer {
  * decoder plan.
  */
 class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
-  extends Rule[LogicalPlan] with PredicateHelper {
+    extends Rule[LogicalPlan] with PredicateHelper {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
   def apply(logicalPlan: LogicalPlan): LogicalPlan = {
     if (relations.nonEmpty && !isOptimized(logicalPlan)) {
@@ -101,7 +101,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
         val newPlan = updatePlan transform {
           case Project(pList, child) if (!isTransformed) =>
             val (dest: Seq[NamedExpression], source: Seq[NamedExpression]) = pList
-              .splitAt(pList.size - cols.size)
+                .splitAt(pList.size - cols.size)
             val diff = cols.diff(dest.map(_.name))
             if (diff.size > 0) {
               sys.error(s"Unknown column(s) ${diff.mkString(",")} in table ${table.tableName}")
@@ -121,8 +121,8 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           col match {
             case a@Alias(s: ScalaUDF, name)
               if (name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
-                name.equalsIgnoreCase(
-                  CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)) =>
+                  name.equalsIgnoreCase(
+                    CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)) =>
               projectionToBeAdded :+= a
               AttributeReference(name, StringType, true)().withExprId(a.exprId)
             case other => other
@@ -233,7 +233,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
 
         case union: Union
           if !(union.left.isInstanceOf[CarbonDictionaryTempDecoder] ||
-               union.right.isInstanceOf[CarbonDictionaryTempDecoder]) =>
+              union.right.isInstanceOf[CarbonDictionaryTempDecoder]) =>
           val leftCondAttrs = new util.HashSet[AttributeReferenceWrapper]
           val rightCondAttrs = new util.HashSet[AttributeReferenceWrapper]
           union.left.output.foreach { attr =>
@@ -343,7 +343,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             }
           } else {
             CarbonFilters
-              .selectFilters(splitConjunctivePredicates(filter.condition), attrsOnConds, aliasMap)
+                .selectFilters(splitConjunctivePredicates(filter.condition), attrsOnConds, aliasMap)
           }
 
           var child = filter.child
@@ -365,7 +365,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
 
         case j: Join
           if !(j.left.isInstanceOf[CarbonDictionaryTempDecoder] ||
-               j.right.isInstanceOf[CarbonDictionaryTempDecoder]) =>
+              j.right.isInstanceOf[CarbonDictionaryTempDecoder]) =>
           val attrsOnJoin = new util.HashSet[Attribute]
           j.condition match {
             case Some(expression) =>
@@ -770,14 +770,14 @@ case class CarbonDecoderRelation(
   def contains(attr: Attribute): Boolean = {
     val exists =
       attributeMap.exists(entry => entry._1.name.equalsIgnoreCase(attr.name) &&
-                                   entry._1.exprId.equals(attr.exprId)) ||
-      extraAttrs.exists(entry => entry.name.equalsIgnoreCase(attr.name) &&
-                                 entry.exprId.equals(attr.exprId))
+          entry._1.exprId.equals(attr.exprId)) ||
+          extraAttrs.exists(entry => entry.name.equalsIgnoreCase(attr.name) &&
+              entry.exprId.equals(attr.exprId))
     exists
   }
 
   def fillAttributeMap(attrMap: java.util.HashMap[AttributeReferenceWrapper,
-    CarbonDecoderRelation]): Unit = {
+      CarbonDecoderRelation]): Unit = {
     attributeMap.foreach { attr =>
       attrMap.put(AttributeReferenceWrapper(attr._1), this)
     }
@@ -785,4 +785,3 @@ case class CarbonDecoderRelation(
 
   lazy val dictionaryMap = carbonRelation.carbonRelation.metaData.dictionaryMap
 }
-

@@ -20,15 +20,13 @@
 package org.apache.carbondata.hadoop.ft;
 
 import java.util.List;
-import java.util.UUID;
 
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.hadoop.CarbonInputFormat;
-import org.apache.carbondata.scan.expression.ColumnExpression;
-import org.apache.carbondata.scan.expression.Expression;
-import org.apache.carbondata.scan.expression.LiteralExpression;
-import org.apache.carbondata.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 
 import junit.framework.TestCase;
 

@@ -19,7 +19,10 @@
 
 package org.apache.carbondata.core.cache.dictionary;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.SortedSet;
 import java.util.TreeSet;
 

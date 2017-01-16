@@ -21,7 +21,7 @@ package org.apache.carbondata.core.reader;
 
 import java.io.IOException;
 
-import org.apache.carbondata.core.update.DeleteDeltaBlockDetails;
+import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
 
 
 /**

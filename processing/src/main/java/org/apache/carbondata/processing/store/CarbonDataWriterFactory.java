@@ -19,7 +19,7 @@
 
 package org.apache.carbondata.processing.store;
 
-import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
 import org.apache.carbondata.processing.store.writer.v1.CarbonFactDataWriterImplV1;

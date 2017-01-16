@@ -20,8 +20,8 @@ package org.apache.carbondata.processing.newflow;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.carbon.metadata.schema.BucketingInfo;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 
 public class CarbonDataLoadConfiguration {
 

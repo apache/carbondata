@@ -21,8 +21,6 @@ package org.apache.carbondata.processing.csvreaderstep;
 
 import java.util.List;
 
-import org.apache.carbondata.core.load.BlockDetails;
-
 /**
  * Vo class which will holds all the properties required to read and parse the
  * csv file
