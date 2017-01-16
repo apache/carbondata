@@ -30,6 +30,7 @@ import org.apache.spark.sql.execution.ExtractPythonUDFs
 import org.apache.spark.sql.execution.datasources.{PreInsertCastAndRename, PreWriteCheck}
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.optimizer.CarbonOptimizer
+import org.apache.spark.util.FunctionRegistory
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants}
@@ -54,6 +55,7 @@ class CarbonContext(
       new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
   }
 
+  this.udf.register("replace", FunctionRegistory.replace)
   CarbonContext.addInstance(sc, this)
   CodeGenerateFactory.init(sc.version)
   udf.register("getTupleId", () => "")
