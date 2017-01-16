@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.scan.model.CarbonQueryPlan;
+import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.spark.partition.api.DataPartitioner;
 import org.apache.carbondata.spark.partition.api.Partition;
 

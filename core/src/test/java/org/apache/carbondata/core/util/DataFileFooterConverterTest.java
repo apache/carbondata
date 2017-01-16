@@ -22,33 +22,24 @@ package org.apache.carbondata.core.util;
 import mockit.Mock;
 import mockit.MockUp;
 
-import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
-import org.apache.carbondata.core.carbon.datastore.block.BlockInfo;
-import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
-import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.carbon.metadata.blocklet.SegmentInfo;
-import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.*;
-import org.apache.carbondata.core.datastorage.store.FileHolder;
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
-import org.apache.carbondata.core.datastorage.store.impl.FileHolderImpl;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
+import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.datastore.impl.FileHolderImpl;
 import org.apache.carbondata.core.reader.CarbonFooterReader;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.format.*;
 import org.apache.carbondata.format.ColumnSchema;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.carbondata.core.util.DataFileFooterConverter.*;
 
 import java.io.*;
 import java.util.*;

@@ -22,7 +22,7 @@ package org.apache.carbondata.core.reader;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.thrift.TBase;

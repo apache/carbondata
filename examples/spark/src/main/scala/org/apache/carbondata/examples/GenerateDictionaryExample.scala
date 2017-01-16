@@ -20,10 +20,10 @@ package org.apache.carbondata.examples
 import org.apache.spark.sql.{CarbonContext, CarbonEnv, CarbonRelation}
 
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
-import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.examples.util.ExampleUtils
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 

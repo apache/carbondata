@@ -20,8 +20,8 @@ package org.apache.carbondata.hadoop.readsupport;
 
 import java.io.IOException;
 
-import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 
 /**
  * It converts to the desired class while reading the rows from RecordReader

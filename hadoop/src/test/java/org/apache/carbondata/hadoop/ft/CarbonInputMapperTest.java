@@ -25,16 +25,16 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.CarbonInputFormat;
 import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.test.util.StoreCreator;
-import org.apache.carbondata.scan.expression.ColumnExpression;
-import org.apache.carbondata.scan.expression.Expression;
-import org.apache.carbondata.scan.expression.LiteralExpression;
-import org.apache.carbondata.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 
 import junit.framework.TestCase;
 import org.apache.hadoop.conf.Configuration;

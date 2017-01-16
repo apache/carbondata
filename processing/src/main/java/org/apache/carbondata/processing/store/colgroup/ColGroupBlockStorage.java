@@ -20,7 +20,7 @@ package org.apache.carbondata.processing.store.colgroup;
 
 import java.util.concurrent.Callable;
 
-import org.apache.carbondata.core.datastorage.store.columnar.IndexStorage;
+import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 
 /**
  * it is holder of column group data and also min max for colgroup block data

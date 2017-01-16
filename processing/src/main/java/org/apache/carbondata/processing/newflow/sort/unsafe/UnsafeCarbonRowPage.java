@@ -22,8 +22,8 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryBlock;
-import org.apache.carbondata.core.unsafe.CarbonUnsafe;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**

@@ -22,9 +22,9 @@ package org.apache.carbondata.core.util;
 import mockit.Mock;
 import mockit.MockUp;
 
-import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.carbon.metadata.index.BlockIndexInfo;
-import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
+import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.format.*;
@@ -173,11 +173,11 @@ public class CarbonMetadataUtilTest {
     int[] cardinality = { 1, 2, 3, 4, 5 };
     char[] charArr = { 'a', 's', 'd', 'g', 'h' };
 
-    org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema colSchema =
-        new org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema();
-    org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema colSchema1 =
-        new org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema();
-    List<org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema>
+    org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema colSchema =
+        new org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema();
+    org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema colSchema1 =
+        new org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema();
+    List<org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema>
         columnSchemaList = new ArrayList<>();
     columnSchemaList.add(colSchema);
     columnSchemaList.add(colSchema1);
@@ -288,16 +288,16 @@ public class CarbonMetadataUtilTest {
     List<ByteBuffer> maxList = new ArrayList<>();
     maxList.add(ByteBuffer.wrap(byteArr1));
 
-    org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletMinMaxIndex
+    org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex
         blockletMinMaxIndex =
-        new org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletMinMaxIndex(minList,
+        new org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex(minList,
             maxList);
-    org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletBTreeIndex
+    org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex
         blockletBTreeIndex =
-        new org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletBTreeIndex(startKey,
+        new org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex(startKey,
             endKey);
-    org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex blockletIndex =
-        new org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex(
+    org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex blockletIndex =
+        new org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex(
             blockletBTreeIndex, blockletMinMaxIndex);
 
     BlockIndexInfo blockIndexInfo = new BlockIndexInfo(1, "file", 1, blockletIndex);

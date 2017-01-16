@@ -25,14 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.carbondata.common.ext.PathFactory;
-import org.apache.carbondata.common.factory.CarbonCommonFactory;
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.carbon.ColumnIdentifier;
-import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
-import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
-import org.apache.carbondata.core.reader.CarbonDictionaryReaderImpl;
-import org.apache.carbondata.core.reader.ThriftReader;
+import org.apache.carbondata.core.service.impl.PathFactory;
+import org.apache.carbondata.core.service.CarbonCommonFactory;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.service.PathService;
 
 import mockit.Mock;

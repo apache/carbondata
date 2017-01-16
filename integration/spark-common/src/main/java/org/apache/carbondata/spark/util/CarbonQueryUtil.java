@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.load.LoadMetadataDetails;
-import org.apache.carbondata.scan.model.CarbonQueryPlan;
+import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
+import org.apache.carbondata.core.updatestatus.LoadMetadataDetails;
 import org.apache.carbondata.spark.partition.api.Partition;
 import org.apache.carbondata.spark.partition.api.impl.DefaultLoadBalancer;
 import org.apache.carbondata.spark.partition.api.impl.PartitionMultiFileImpl;

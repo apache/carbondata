@@ -27,14 +27,14 @@ import org.apache.carbondata.core.compression.BigDecimalCompressor;
 import org.apache.carbondata.core.compression.BigIntCompressor;
 import org.apache.carbondata.core.compression.DoubleCompressor;
 import org.apache.carbondata.core.compression.ValueCompressor;
-import org.apache.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
-import org.apache.carbondata.core.datastorage.store.compression.ReaderCompressModel;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionHolder;
-import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
-import org.apache.carbondata.core.datastorage.store.compression.decimal.*;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.*;
-import org.apache.carbondata.core.datastorage.store.compression.none.*;
-import org.apache.carbondata.core.datastorage.store.compression.type.*;
+import org.apache.carbondata.core.datastore.compression.MeasureMetaDataModel;
+import org.apache.carbondata.core.datastore.compression.ReaderCompressModel;
+import org.apache.carbondata.core.datastore.compression.ValueCompressionHolder;
+import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
+import org.apache.carbondata.core.datastore.compression.decimal.*;
+import org.apache.carbondata.core.datastore.compression.nondecimal.*;
+import org.apache.carbondata.core.datastore.compression.none.*;
+import org.apache.carbondata.core.datastore.compression.type.*;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 
 public final class ValueCompressionUtil {

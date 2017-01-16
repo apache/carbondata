@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.internal.CarbonInputSplit;
 import org.apache.carbondata.hadoop.internal.segment.Segment;
@@ -30,8 +32,6 @@ import org.apache.carbondata.hadoop.internal.segment.SegmentManager;
 import org.apache.carbondata.hadoop.internal.segment.SegmentManagerFactory;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
-import org.apache.carbondata.scan.expression.Expression;
-import org.apache.carbondata.scan.filter.resolver.FilterResolverIntf;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;

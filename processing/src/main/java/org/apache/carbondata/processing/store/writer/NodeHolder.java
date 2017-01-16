@@ -21,7 +21,7 @@ package org.apache.carbondata.processing.store.writer;
 
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
+import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 
 public class NodeHolder {
   /**

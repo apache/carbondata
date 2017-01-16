@@ -20,7 +20,7 @@ package org.apache.carbondata.core.compression;
 
 import java.math.BigDecimal;
 
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonWriteDataHolder;
+import org.apache.carbondata.core.datastore.dataholder.CarbonWriteDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
 /**

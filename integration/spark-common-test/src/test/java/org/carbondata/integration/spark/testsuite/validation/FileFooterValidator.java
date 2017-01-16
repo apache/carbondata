@@ -20,12 +20,12 @@ package org.apache.carbondata.integration.spark.testsuite.validation;
 
 import org.apache.spark.sql.common.util.CarbonHiveContext;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.carbon.path.CarbonStorePath;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.reader.CarbonFooterReader;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.format.BlockletIndex;

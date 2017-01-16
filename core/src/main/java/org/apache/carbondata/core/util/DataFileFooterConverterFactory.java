@@ -18,7 +18,7 @@
  */
 package org.apache.carbondata.core.util;
 
-import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 
 /**
  * Factory class to get the thrift reader object based on version

@@ -21,7 +21,7 @@ package org.apache.carbondata.processing.newflow.sort.unsafe.comparator;
 
 import java.util.Comparator;
 
-import org.apache.carbondata.core.unsafe.CarbonUnsafe;
+import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.newflow.sort.unsafe.holder.UnsafeCarbonRow;
 

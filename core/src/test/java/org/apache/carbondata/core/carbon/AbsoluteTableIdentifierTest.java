@@ -19,6 +19,9 @@
 
 package org.apache.carbondata.core.carbon;
 
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 

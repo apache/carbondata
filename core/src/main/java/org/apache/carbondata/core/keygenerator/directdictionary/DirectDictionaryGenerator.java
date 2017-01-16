@@ -18,7 +18,7 @@
  */
 package org.apache.carbondata.core.keygenerator.directdictionary;
 
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
  * The interface provides the method to generate dictionary key

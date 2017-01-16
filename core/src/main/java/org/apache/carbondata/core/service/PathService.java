@@ -18,8 +18,8 @@
  */
 package org.apache.carbondata.core.service;
 
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.carbon.path.CarbonTablePath;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * Create helper to get path details

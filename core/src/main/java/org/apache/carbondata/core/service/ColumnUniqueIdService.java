@@ -18,7 +18,7 @@
  */
 package org.apache.carbondata.core.service;
 
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
  * Column Unique id generator

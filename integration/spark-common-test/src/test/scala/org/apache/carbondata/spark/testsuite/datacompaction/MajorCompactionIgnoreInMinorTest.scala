@@ -23,10 +23,10 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
-import org.apache.carbondata.core.carbon.datastore.TableSegmentUniqueIdentifier
-import org.apache.carbondata.core.carbon.datastore.block.SegmentTaskIndexWrapper
-import org.apache.carbondata.core.carbon.path.CarbonStorePath
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier
+import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties

@@ -21,7 +21,7 @@ import org.apache.spark.sql.CarbonRelation
 import org.apache.spark.sql.test.TestQueryExecutor
 
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 

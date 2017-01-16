@@ -22,7 +22,7 @@ package org.apache.carbondata.core.carbon.datastorage.filesystem.store.impl;
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 
 import mockit.Mock;
 import mockit.MockUp;

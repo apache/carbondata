@@ -21,10 +21,10 @@ import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.mutable.{LinkedHashSet, Map}
 
-import org.apache.spark.sql.execution.command.{BucketFields, ColumnProperty, Field, PartitionerField, TableModel}
+import org.apache.spark.sql.execution.command._
 
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil

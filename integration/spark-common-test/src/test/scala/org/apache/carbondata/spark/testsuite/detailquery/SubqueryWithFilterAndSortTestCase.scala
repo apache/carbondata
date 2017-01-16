@@ -22,8 +22,8 @@ package org.apache.carbondata.spark.testsuite.detailquery
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
 
 class SubqueryWithFilterAndSortTestCase extends QueryTest with BeforeAndAfterAll {
   val tempDirPath = s"$resourcesPath/temp"

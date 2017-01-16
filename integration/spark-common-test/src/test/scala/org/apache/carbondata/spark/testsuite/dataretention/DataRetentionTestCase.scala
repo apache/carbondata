@@ -21,17 +21,16 @@ package org.apache.carbondata.spark.testsuite.dataretention
 
 import java.text.SimpleDateFormat
 
-import org.apache.carbondata.core.updatestatus.SegmentStatusManager
-import org.apache.carbondata.locks.{LockUsage, CarbonLockFactory, ICarbonLock}
+import org.apache.carbondata.core.updatestatus.{LoadMetadataDetails, SegmentStatusManager}
+import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.commons.lang3.time.DateUtils
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.carbon.path.CarbonStorePath
-import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.load.LoadMetadataDetails
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 

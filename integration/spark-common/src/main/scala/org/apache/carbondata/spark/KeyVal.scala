@@ -27,8 +27,8 @@ package org.apache.carbondata.spark
 
 import org.apache.spark.sql.execution.command.ExecutionErrors
 
-import org.apache.carbondata.core.load.LoadMetadataDetails
 import org.apache.carbondata.core.update.SegmentUpdateDetails
+import org.apache.carbondata.core.updatestatus.LoadMetadataDetails
 
 
 trait Value[V] extends Serializable {

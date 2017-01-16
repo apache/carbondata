@@ -19,7 +19,7 @@
 
 package org.apache.carbondata.processing.schema.metadata;
 
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**

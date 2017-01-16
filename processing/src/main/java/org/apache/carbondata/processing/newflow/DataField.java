@@ -21,8 +21,8 @@ package org.apache.carbondata.processing.newflow;
 
 import java.io.Serializable;
 
-import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 
 /**
  * Metadata class for each column of table.

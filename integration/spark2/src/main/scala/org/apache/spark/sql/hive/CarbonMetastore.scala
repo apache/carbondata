@@ -22,8 +22,8 @@ import java.util.{GregorianCalendar, LinkedHashSet, UUID}
 import java.util.concurrent.atomic.AtomicLong
 
 import scala.Array.canBuildFrom
-import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 import scala.util.parsing.combinator.RegexParsers
 
 import org.apache.spark.sql.{RuntimeConfig, SparkSession}
@@ -35,24 +35,23 @@ import org.apache.spark.sql.execution.command.Partitioner
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier
-import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
-import org.apache.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL
-import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
-import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
-import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
+import org.apache.carbondata.core.locks.ZookeeperInit
+import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
+import org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.reader.ThriftReader
+import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants}
 import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.locks.ZookeeperInit
 import org.apache.carbondata.spark.merger.TableMeta
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
@@ -273,9 +272,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
                   wrapperTableInfo
                     .setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath))
                   CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
-                  val carbonTable =
-                    org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-                      .getCarbonTable(tableUniqueName)
+                  val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
                   metaDataBuffer += new TableMeta(carbonTable.getCarbonTableIdentifier, storePath,
                     carbonTable)
                 }
@@ -301,7 +298,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
    *
    */
   def createTableFromThrift(
-      tableInfo: org.apache.carbondata.core.carbon.metadata.schema.table.TableInfo,
+      tableInfo: org.apache.carbondata.core.metadata.schema.table.TableInfo,
       dbName: String, tableName: String)
     (sparkSession: SparkSession): String = {
     if (tableExists(tableName, Some(dbName))(sparkSession)) {
@@ -340,7 +337,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
   }
 
   private def updateMetadataByWrapperTable(
-      wrapperTableInfo: org.apache.carbondata.core.carbon.metadata.schema.table.TableInfo): Unit = {
+      wrapperTableInfo: org.apache.carbondata.core.metadata.schema.table.TableInfo): Unit = {
 
     CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
@@ -429,10 +426,8 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
       metadataToBeRemoved match {
         case Some(tableMeta) =>
           metadata.tablesMeta -= tableMeta
-          org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-            .removeTable(dbName + "_" + tableName)
-          org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-            .removeTable(dbName + "_" + tableName)
+          CarbonMetadata.getInstance.removeTable(dbName + "_" + tableName)
+          CarbonMetadata.getInstance.removeTable(dbName + "_" + tableName)
           updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
         case None =>
           LOGGER.info(s"Metadata does not contain entry for table $tableName in database $dbName")

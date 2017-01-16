@@ -20,8 +20,8 @@ package org.apache.carbondata.processing.newflow.parser;
 
 import java.util.List;
 
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.processing.newflow.parser.impl.ArrayParserImpl;
 import org.apache.carbondata.processing.newflow.parser.impl.PrimitiveParserImpl;
 import org.apache.carbondata.processing.newflow.parser.impl.StructParserImpl;
