@@ -26,6 +26,7 @@ import org.apache.hadoop.hive.ql.parse._
 import org.apache.spark.sql.catalyst._
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.analysis._
+import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.ExplainCommand
 import org.apache.spark.sql.execution.command._
@@ -259,6 +260,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             Token("TOK_TABCOLNAME", list) :: numberOfBuckets) =>
               val cols = list.map(_.getText)
               if (cols != null) {
+                throw new MalformedCarbonCommandException("Bucketing Is not Supported in spark 1.6 yet")
                 bucketFields = Some(BucketFields(cols,
                   numberOfBuckets.head.getText.toInt))
               }
@@ -284,6 +286,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
           CreateTable(tableModel)
         } catch {
           case ce: MalformedCarbonCommandException =>
+
             val message = if (tableName.isEmpty) {
               "Create table command failed. "
             }
