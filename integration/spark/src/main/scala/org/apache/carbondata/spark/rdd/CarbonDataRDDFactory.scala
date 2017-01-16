@@ -732,10 +732,9 @@ object CarbonDataRDDFactory {
                   val recordReaders = mutable.Buffer[CarbonIterator[Array[AnyRef]]]()
                   val serializer = SparkEnv.get.closureSerializer.newInstance()
                   var serializeBuffer: ByteBuffer = null
-                    recordReaders += new CarbonIteratorImpl(
-                      new NewRddIterator(iter,
+                    recordReaders += new NewRddIterator(iter,
                         carbonLoadModel,
-                        TaskContext.get()))
+                        TaskContext.get())
 
                   val loader = new SparkPartitionLoader(carbonLoadModel,
                     index,
