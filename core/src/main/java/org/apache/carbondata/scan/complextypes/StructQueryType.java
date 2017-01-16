@@ -29,12 +29,6 @@ import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChun
 import org.apache.carbondata.scan.filter.GenericQueryType;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.Metadata;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
-
 public class StructQueryType extends ComplexQueryType implements GenericQueryType {
 
   private List<GenericQueryType> children = new ArrayList<GenericQueryType>();
@@ -100,15 +94,6 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     }
   }
 
-  @Override public DataType getSchemaType() {
-    StructField[] fields = new StructField[children.size()];
-    for (int i = 0; i < children.size(); i++) {
-      fields[i] = new StructField(children.get(i).getName(), null, true,
-          Metadata.empty());
-    }
-    return new StructType(fields);
-  }
-
   @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder)
       throws IOException {
     readBlockDataChunk(blockChunkHolder);
@@ -124,7 +109,6 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     for (int i = 0; i < childLength; i++) {
       fields[i] =  children.get(i).getDataBasedOnDataTypeFromSurrogates(surrogateData);
     }
-
-    return new GenericInternalRow(fields);
+    return fields;
   }
 }

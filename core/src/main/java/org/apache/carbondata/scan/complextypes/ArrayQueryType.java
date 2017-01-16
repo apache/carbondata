@@ -27,9 +27,6 @@ import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChun
 import org.apache.carbondata.scan.filter.GenericQueryType;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 
-import org.apache.spark.sql.catalyst.util.*;
-import org.apache.spark.sql.types.*;
-
 public class ArrayQueryType extends ComplexQueryType implements GenericQueryType {
 
   private GenericQueryType children;
@@ -85,10 +82,6 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     return children.getColsCount() + 1;
   }
 
-  @Override public DataType getSchemaType() {
-    return new ArrayType(null, true);
-  }
-
   @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder)
       throws IOException {
     readBlockDataChunk(blockChunkHolder);
@@ -104,7 +97,7 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     for (int i = 0; i < dataLength; i++) {
       data[i] = children.getDataBasedOnDataTypeFromSurrogates(surrogateData);
     }
-    return new GenericArrayData(data);
+    return data;
   }
 
 }

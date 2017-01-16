@@ -25,11 +25,13 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.LeafNode
 import org.apache.spark.sql.hive.CarbonMetastore
+import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.scan.model._
 import org.apache.carbondata.spark.CarbonFilters
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
+import org.apache.carbondata.spark.util.DataTypeUtil
 
 case class CarbonScan(
     var columnProjection: Seq[Attribute],
@@ -143,8 +145,19 @@ case class CarbonScan(
 
         override def next(): InternalRow = {
           val value = iter.next
+          val converted = value.map {
+            case str: String =>
+              UTF8String.fromString(str)
+            case data =>
+              data
+          }
+
           if (outUnsafeRows) {
+<<<<<<< HEAD
+            unsafeProjection(new GenericMutableRow(converted))
+=======
             unsafeProjection(value)
+>>>>>>> bc5a061e9fac489f997cfd68238622e348512d6f
           } else {
             value
           }

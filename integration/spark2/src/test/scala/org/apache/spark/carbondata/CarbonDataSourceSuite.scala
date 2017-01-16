@@ -23,9 +23,14 @@ import org.scalatest.BeforeAndAfterAll
 class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     // Drop table
+<<<<<<< HEAD
+    spark.sql("DROP TABLE IF EXISTS carbon_testtable")
+    spark.sql("DROP TABLE IF EXISTS csv_table")
+=======
     sql("DROP TABLE IF EXISTS carbon_testtable")
     sql("DROP TABLE IF EXISTS csv_table")
 
+>>>>>>> bc5a061e9fac489f997cfd68238622e348512d6f
     // Create table
     sql(
       s"""
@@ -55,8 +60,15 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll(): Unit = {
+<<<<<<< HEAD
+    spark.sql("drop table csv_table")
+    spark.sql("drop table carbon_testtable")
+    spark.sparkContext.stop()
+    spark = null
+=======
     sql("drop table carbon_testtable")
     sql("DROP TABLE IF EXISTS csv_table")
+>>>>>>> bc5a061e9fac489f997cfd68238622e348512d6f
   }
 
   test("project") {

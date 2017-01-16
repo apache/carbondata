@@ -18,15 +18,28 @@
  */
 package org.apache.carbondata.spark.readsupport;
 
+<<<<<<< HEAD
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+=======
 import java.io.IOException;
+>>>>>>> bc5a061e9fac489f997cfd68238622e348512d6f
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.hadoop.readsupport.impl.AbstractDictionaryDecodedReadSupport;
 
+<<<<<<< HEAD
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
+import org.apache.spark.sql.catalyst.expressions.GenericRow;
+import org.apache.spark.sql.catalyst.util.GenericArrayData;
+import org.apache.spark.sql.types.Decimal;
+=======
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
+>>>>>>> bc5a061e9fac489f997cfd68238622e348512d6f
 
 public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSupport<InternalRow> {
 
@@ -47,6 +60,12 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
         } else if(dataTypes[i].equals(DataType.SHORT)) {
           data[i] = ((Long)(data[i])).shortValue();
         }
+      } else if (carbonColumns[i].getDataType().equals(DataType.DECIMAL)) {
+        data[i] = Decimal.apply((BigDecimal) data[i]);
+      } else if (carbonColumns[i].getDataType().equals(DataType.ARRAY)) {
+        data[i] = new GenericArrayData(data[i]);
+      } else if (carbonColumns[i].getDataType().equals(DataType.STRUCT)) {
+        data[i] = new GenericInternalRow((Object[]) data[i]);
       }
     }
     return new GenericInternalRow(data);

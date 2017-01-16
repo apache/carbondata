@@ -65,10 +65,4 @@ public class StructQueryTypeTest {
     int expectedValue = 2;
     assertEquals(expectedValue, actualValue);
   }
-
-  @Test public void testGetSchemaType() {
-    List children = new ArrayList();
-    children.add(null);
-    assertNotNull(structQueryType.getSchemaType());
-  }
 }

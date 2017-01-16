@@ -26,10 +26,12 @@ import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 
 public class RawDataReadSupport implements CarbonReadSupport<InternalRow> {
+  private CarbonColumn[] carbonColumns;
 
   @Override
   public void initialize(CarbonColumn[] carbonColumns,
       AbsoluteTableIdentifier absoluteTableIdentifier) {
+    this.carbonColumns = carbonColumns;
   }
 
   /**

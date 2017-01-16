@@ -32,8 +32,6 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.scan.filter.GenericQueryType;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 
-import org.apache.spark.sql.types.*;
-
 public class PrimitiveQueryType extends ComplexQueryType implements GenericQueryType {
 
   private String name;
@@ -94,25 +92,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
         new byte[dimensionDataChunks[blockIndex].getColumnValueSize()];
     copyBlockDataChunk(dimensionDataChunks, rowNumber, currentVal);
     dataOutputStream.write(currentVal);
-  }
-
-  @Override public DataType getSchemaType() {
-    switch (dataType) {
-      case INT:
-        return IntegerType$.MODULE$;
-      case DOUBLE:
-        return DoubleType$.MODULE$;
-      case LONG:
-        return LongType$.MODULE$;
-      case BOOLEAN:
-        return BooleanType$.MODULE$;
-      case TIMESTAMP:
-        return TimestampType$.MODULE$;
-      case DATE:
-        return DateType$.MODULE$;
-      default:
-        return IntegerType$.MODULE$;
-    }
   }
 
   @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder)

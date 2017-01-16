@@ -34,8 +34,9 @@ import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.carbon.querystatistics._
-import org.apache.carbondata.core.util.{CarbonTimeStatisticsFactory, DataTypeUtil}
+import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
+import org.apache.carbondata.spark.util.DataTypeUtil
 
 /**
  * It decodes the dictionary key to value
