@@ -17,17 +17,15 @@
 
 package org.apache.carbondata.spark.rdd
 
-import java.nio.ByteBuffer
-
 import scala.collection.mutable
 
-import org.apache.spark.{SparkEnv, TaskContext}
+import org.apache.spark.TaskContext
 import org.apache.spark.sql.Row
 
 import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.load.LoadMetadataDetails
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.DataLoadExecutor
 import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException
@@ -45,8 +43,6 @@ object UpdateDataLoad {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     try {
       val recordReaders = mutable.Buffer[CarbonIterator[Array[AnyRef]]]()
-      val serializer = SparkEnv.get.closureSerializer.newInstance()
-      var serializeBuffer: ByteBuffer = null
       recordReaders += new NewRddIterator(iter,
           carbonLoadModel,
           TaskContext.get())

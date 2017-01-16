@@ -30,14 +30,14 @@ import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
-import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.carbon.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
-import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
+import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.BlockletBTreeIndex;
 import org.apache.carbondata.format.BlockletIndex;
@@ -134,7 +134,7 @@ public class CarbonMetadataUtil {
   }
 
   private static BlockletIndex getBlockletIndex(
-      org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex info) {
+      org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex info) {
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
 
     for (int i = 0; i < info.getMinMaxIndex().getMaxValues().length; i++) {

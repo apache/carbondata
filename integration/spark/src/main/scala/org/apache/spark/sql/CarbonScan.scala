@@ -26,8 +26,8 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.LeafNode
 import org.apache.spark.sql.hive.CarbonMetastore
 
+import org.apache.carbondata.core.scan.model._
 import org.apache.carbondata.hadoop.CarbonProjection
-import org.apache.carbondata.scan.model._
 import org.apache.carbondata.spark.CarbonFilters
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 

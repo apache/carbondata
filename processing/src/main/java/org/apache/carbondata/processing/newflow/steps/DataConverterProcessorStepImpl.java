@@ -24,8 +24,8 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.constants.LoggerAction;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;

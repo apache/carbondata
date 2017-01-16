@@ -19,19 +19,18 @@ package org.apache.carbondata.hadoop.util;
 
 import java.util.Map;
 
-import org.apache.carbondata.core.carbon.datastore.DataRefNode;
-import org.apache.carbondata.core.carbon.datastore.DataRefNodeFinder;
-import org.apache.carbondata.core.carbon.datastore.IndexKey;
-import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
-import org.apache.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
-import org.apache.carbondata.core.carbon.datastore.impl.btree.BlockBTreeLeafNode;
-import org.apache.carbondata.core.carbon.path.CarbonTablePath;
+import org.apache.carbondata.core.datastore.DataRefNode;
+import org.apache.carbondata.core.datastore.DataRefNodeFinder;
+import org.apache.carbondata.core.datastore.IndexKey;
+import org.apache.carbondata.core.datastore.block.AbstractIndex;
+import org.apache.carbondata.core.datastore.impl.btree.BTreeDataRefNodeFinder;
+import org.apache.carbondata.core.datastore.impl.btree.BlockBTreeLeafNode;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.update.CarbonUpdateUtil;
-import org.apache.carbondata.core.update.SegmentUpdateDetails;
-import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager;
-import org.apache.carbondata.scan.filter.FilterUtil;
-
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
+import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
+import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * Block level traverser

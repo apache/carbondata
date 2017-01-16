@@ -21,7 +21,7 @@ package org.apache.carbondata.core.cache.dictionary;
 
 import java.io.IOException;
 
-import org.apache.carbondata.core.carbon.ColumnIdentifier;
+import org.apache.carbondata.core.metadata.ColumnIdentifier;
 
 public interface DictionaryCacheLoader {
 

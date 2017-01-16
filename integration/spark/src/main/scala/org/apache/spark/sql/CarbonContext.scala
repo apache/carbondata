@@ -32,8 +32,8 @@ import org.apache.spark.sql.hive._
 import org.apache.spark.sql.optimizer.CarbonOptimizer
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
 
 class CarbonContext(

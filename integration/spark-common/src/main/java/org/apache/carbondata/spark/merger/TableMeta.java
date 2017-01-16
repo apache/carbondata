@@ -21,8 +21,8 @@ package org.apache.carbondata.spark.merger;
 
 import java.io.Serializable;
 
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
 public class TableMeta implements Serializable {
 

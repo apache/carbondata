@@ -19,11 +19,11 @@
 package org.apache.carbondata.lcm.locks;
 
 import mockit.NonStrictExpectations;
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.locks.LockUsage;
-import org.apache.carbondata.locks.ZooKeeperLocking;
-import org.apache.carbondata.locks.ZookeeperInit;
+import org.apache.carbondata.core.locks.LockUsage;
+import org.apache.carbondata.core.locks.ZooKeeperLocking;
+import org.apache.carbondata.core.locks.ZookeeperInit;
 import org.apache.zookeeper.server.ServerConfig;
 import org.apache.zookeeper.server.ZooKeeperServerMain;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;

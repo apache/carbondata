@@ -18,7 +18,7 @@
  */
 package org.apache.carbondata.spark.merger;
 
-import org.apache.carbondata.core.carbon.datastore.block.Distributable;
+import org.apache.carbondata.core.datastore.block.Distributable;
 
 /**
  * Block to Node mapping

@@ -16,8 +16,8 @@
  */
 package org.apache.carbondata.spark.tasks
 
-import org.apache.carbondata.common.factory.CarbonCommonFactory
 import org.apache.carbondata.core.cache.dictionary.Dictionary
+import org.apache.carbondata.core.service.CarbonCommonFactory
 import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
 import org.apache.carbondata.spark.rdd.DictionaryLoadModel
 

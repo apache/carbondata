@@ -19,12 +19,12 @@
 
 package org.apache.carbondata.hadoop.test.util;
 
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
-import org.apache.carbondata.scan.expression.ColumnExpression;
-import org.apache.carbondata.scan.expression.Expression;
-import org.apache.carbondata.scan.expression.LiteralExpression;
-import org.apache.carbondata.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 
 import junit.framework.TestCase;
 import org.junit.Assert;

@@ -21,8 +21,8 @@ package org.apache.carbondata.hadoop;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
-import org.apache.carbondata.core.carbon.datastore.TableSegmentUniqueIdentifier;
-import org.apache.carbondata.core.carbon.datastore.block.SegmentTaskIndexWrapper;
+import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier;
+import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper;
 
 /**
  * CacheClient : Holds all the Cache access clients for Btree, Dictionary

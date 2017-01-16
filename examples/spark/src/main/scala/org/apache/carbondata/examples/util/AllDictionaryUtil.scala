@@ -24,7 +24,7 @@ import scala.collection.mutable.{ArrayBuffer, HashSet}
 import org.apache.spark.SparkContext
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.apache.carbondata.core.datastore.impl.FileFactory
 
 object AllDictionaryUtil {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)

@@ -24,7 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 
-import org.apache.carbondata.core.datastorage.store.impl.DFSFileHolderImpl;
+import org.apache.carbondata.core.datastore.impl.DFSFileHolderImpl;
 
 import mockit.Mock;
 import mockit.MockUp;

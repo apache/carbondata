@@ -24,15 +24,19 @@ import java.util.Date;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonProperties;
 
-import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_DAY;
-import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_HOUR;
-import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_MIN;
-import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_SEC;
+import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp
+    .TimeStampGranularityConstants.TIME_GRAN_DAY;
+import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp
+    .TimeStampGranularityConstants.TIME_GRAN_HOUR;
+import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp
+    .TimeStampGranularityConstants.TIME_GRAN_MIN;
+import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp
+    .TimeStampGranularityConstants.TIME_GRAN_SEC;
 
 /**
  * The class provides the method to generate dictionary key and getting the actual value from

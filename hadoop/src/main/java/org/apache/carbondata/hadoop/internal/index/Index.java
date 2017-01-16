@@ -22,7 +22,7 @@ package org.apache.carbondata.hadoop.internal.index;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.carbondata.scan.filter.resolver.FilterResolverIntf;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 import org.apache.hadoop.mapreduce.JobContext;
 

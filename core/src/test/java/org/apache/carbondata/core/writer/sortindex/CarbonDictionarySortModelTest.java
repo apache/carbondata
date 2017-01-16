@@ -18,7 +18,7 @@
  */
 package org.apache.carbondata.core.writer.sortindex;
 
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 
 import org.junit.Test;
 

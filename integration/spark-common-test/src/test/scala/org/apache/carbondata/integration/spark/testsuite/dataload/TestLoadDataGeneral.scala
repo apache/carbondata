@@ -27,8 +27,9 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.CarbonMetadata
 
 class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
 
@@ -46,8 +47,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
       segmentId: String,
       datbaseName: String,
       tableName: String): Boolean = {
-    val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-      .getCarbonTable(datbaseName + "_" + tableName)
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(datbaseName + "_" + tableName)
     val partitionPath = CarbonStorePath.getCarbonTablePath(storeLocation,
       carbonTable.getCarbonTableIdentifier).getPartitionDir("0")
     val fileType: FileFactory.FileType = FileFactory.getFileType(partitionPath)

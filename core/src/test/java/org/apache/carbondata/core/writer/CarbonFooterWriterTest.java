@@ -26,13 +26,13 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
-import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
+import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.reader.CarbonFooterReader;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
@@ -79,7 +79,7 @@ public class CarbonFooterWriterTest extends TestCase{
 						getDimensionColumn("IMEI4"),
 						getDimensionColumn("IMEI5"),
 						getDimensionColumn("IMEI6")});
-    List<org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema> wrapperColumnSchema = Arrays.asList(new org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema[]{getWrapperDimensionColumn("IMEI1"),
+    List<org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema> wrapperColumnSchema = Arrays.asList(new org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema[]{getWrapperDimensionColumn("IMEI1"),
     	getWrapperDimensionColumn("IMEI2"),
     	getWrapperDimensionColumn("IMEI3"),
     	getWrapperDimensionColumn("IMEI4"),
@@ -111,8 +111,8 @@ public class CarbonFooterWriterTest extends TestCase{
 	    dimColumn.setNum_child(0);
 	    return dimColumn;
 	  }
-  public static org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema getWrapperDimensionColumn(String columnName) {
-   org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema dimColumn = new org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema();
+  public static org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema getWrapperDimensionColumn(String columnName) {
+   org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema dimColumn = new org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema();
    dimColumn.setColumnar(true);
    dimColumn.setColumnName(columnName);
    dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
@@ -141,7 +141,7 @@ public class CarbonFooterWriterTest extends TestCase{
 						getDimensionColumn("IMEI4"),
 						getDimensionColumn("IMEI5"),
 						getDimensionColumn("IMEI6")});
-    List<org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema> wrapperColumnSchema = Arrays.asList(new org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema[]{getWrapperDimensionColumn("IMEI1"),
+    List<org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema> wrapperColumnSchema = Arrays.asList(new org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema[]{getWrapperDimensionColumn("IMEI1"),
     	getWrapperDimensionColumn("IMEI2"),
     	getWrapperDimensionColumn("IMEI3"),
     	getWrapperDimensionColumn("IMEI4"),

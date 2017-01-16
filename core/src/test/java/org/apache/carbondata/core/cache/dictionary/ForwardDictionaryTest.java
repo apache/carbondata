@@ -21,7 +21,7 @@ package org.apache.carbondata.core.cache.dictionary;
 import mockit.Mock;
 import mockit.MockUp;
 
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 
 import org.junit.BeforeClass;
 import org.junit.Test;

@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.spark.merger;
 
-import org.apache.carbondata.core.update.SegmentUpdateDetails;
+import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 
 public final class CarbonDataMergerUtilResult extends SegmentUpdateDetails {
   private boolean compactionStatus;
