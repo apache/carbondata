@@ -17,11 +17,13 @@
 
 package org.apache.carbondata.spark.rdd
 
+import java.nio.ByteBuffer
 import java.util
 import java.util.UUID
 import java.util.concurrent._
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 import scala.util.control.Breaks._
@@ -30,36 +32,35 @@ import org.apache.hadoop.conf.{Configurable, Configuration}
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
-import org.apache.spark.{SparkContext, SparkEnv, SparkException}
+import org.apache.spark.{SparkContext, SparkEnv, SparkException, TaskContext}
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, UpdateCoalescedRDD}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
-import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel, CompactionModel, ExecutionErrors, UpdateTableModel}
+import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, ExecutionErrors, UpdateTableModel}
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.util.SparkUtil
 
+import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier, ColumnarFormatVersion}
+import org.apache.carbondata.core.carbon.{CarbonTableIdentifier, ColumnarFormatVersion}
 import org.apache.carbondata.core.carbon.datastore.block.{Distributable, TableBlockInfo}
-import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.apache.carbondata.core.update.CarbonUpdateUtil
-import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.processing.csvreaderstep.RddInpututilsForUpdate
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
+import org.apache.carbondata.processing.newflow.DataLoadExecutor
+import org.apache.carbondata.processing.newflow.exception.{BadRecordFoundException, CarbonDataLoadingException}
 import org.apache.carbondata.spark._
 import org.apache.carbondata.spark.load._
-import org.apache.carbondata.spark.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionCallable, CompactionType}
-import org.apache.carbondata.spark.partition.api.Partition
+import org.apache.carbondata.spark.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.splits.TableSplit
-import org.apache.carbondata.spark.util.{CarbonQueryUtil, CommonUtil, LoadMetadataUtil}
+import org.apache.carbondata.spark.util.{CarbonQueryUtil, CommonUtil}
 
 /**
  * This is the factory class which can create different RDD depends on user needs.
@@ -715,16 +716,49 @@ object CarbonDataRDDFactory {
               loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
               val rddIteratorKey = CarbonCommonConstants.RDDUTIL_UPDATE_KEY +
                                    UUID.randomUUID().toString
+              if (useKettle) {
+                try {
+                  RddInpututilsForUpdate.put(rddIteratorKey,
+                    new RddIteratorForUpdate(iter, carbonLoadModel))
+                  carbonLoadModel.setRddIteratorKey(rddIteratorKey)
+                  CarbonDataLoadForUpdate
+                    .run(carbonLoadModel, index, storePath, kettleHomePath,
+                      segId, loadMetadataDetails, executionErrors)
+                } finally {
+                  RddInpututilsForUpdate.remove(rddIteratorKey)
+                }
+              } else {
+                try {
+                  val recordReaders = mutable.Buffer[CarbonIterator[Array[AnyRef]]]()
+                  val serializer = SparkEnv.get.closureSerializer.newInstance()
+                  var serializeBuffer: ByteBuffer = null
+                    recordReaders += new NewRddIterator(iter,
+                        carbonLoadModel,
+                        TaskContext.get())
 
-              try {
-                RddInpututilsForUpdate.put(rddIteratorKey,
-                  new RddIteratorForUpdate(iter, carbonLoadModel))
-                carbonLoadModel.setRddIteratorKey(rddIteratorKey)
-                CarbonDataLoadForUpdate
-                  .run(carbonLoadModel, index, storePath, kettleHomePath,
-                    segId, loadMetadataDetails, executionErrors)
-              } finally {
-                RddInpututilsForUpdate.remove(rddIteratorKey)
+                  val loader = new SparkPartitionLoader(carbonLoadModel,
+                    index,
+                    null,
+                    null,
+                    segId,
+                    loadMetadataDetails)
+                  // Intialize to set carbon properties
+                  loader.initialize()
+
+                  loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+                  new DataLoadExecutor()
+                    .execute(carbonLoadModel, loader.storeLocation, recordReaders.toArray)
+
+                } catch {
+                  case e: BadRecordFoundException =>
+                    loadMetadataDetails
+                      .setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+                    LOGGER.info("Bad Record Found")
+                  case e: Exception =>
+                    LOGGER.error(e)
+                    throw e
+                }
+
               }
             } catch {
               case e: Exception =>

@@ -83,7 +83,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
     splitIndex: Int,
     storePath: String,
     kettleHomePath: String,
-    loadCount: Int,
+    loadCount: String,
     loadMetadataDetails: LoadMetadataDetails) {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -239,7 +239,7 @@ class DataFileLoaderRDD[K, V](
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         setModelAndBlocksInfo()
         val loader = new SparkPartitionLoader(model, theSplit.index, storePath,
-          kettleHomePath, loadCount, loadMetadataDetails)
+          kettleHomePath, String.valueOf(loadCount), loadMetadataDetails)
         loader.initialize
         if (model.isRetentionRequest) {
           recreateAggregationTableForRetention
@@ -511,7 +511,7 @@ class DataFrameLoaderRDD[K, V](
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         val loader = new SparkPartitionLoader(carbonLoadModel, theSplit.index, storePath,
-          kettleHomePath, loadCount, loadMetadataDetails)
+          kettleHomePath, String.valueOf(loadCount), loadMetadataDetails)
         loader.initialize
         val rddIteratorKey = UUID.randomUUID().toString
         try {
