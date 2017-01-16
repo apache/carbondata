@@ -53,6 +53,11 @@ object AllDictionaryExample {
            SELECT * FROM t3
            """).show()
 
+    cc.sql("""
+           SELECT replace(country,"br","aa") FROM t3
+           """).show()
+
+
     cc.sql("DROP TABLE IF EXISTS t3")
 
     // clean local dictionary files
