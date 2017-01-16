@@ -53,6 +53,10 @@ object AllDictionaryExample {
            SELECT * FROM t3
            """).show()
 
+    cc.sql("""
+           SELECT * FROM t3 where floatField=3.5
+           """).show()
+
     cc.sql("DROP TABLE IF EXISTS t3")
 
     // clean local dictionary files

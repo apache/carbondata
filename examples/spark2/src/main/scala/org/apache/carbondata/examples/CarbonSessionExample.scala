@@ -138,6 +138,12 @@ object CarbonSessionExample {
         |where t1.stringField = t2.stringField
       """.stripMargin).show
 
+    spark.sql("""
+             SELECT *
+             FROM carbon_table
+             where stringfield = 'spark' and floatField > 2.8
+              """).show
+
     // Drop table
     spark.sql("DROP TABLE IF EXISTS carbon_table")
   }
