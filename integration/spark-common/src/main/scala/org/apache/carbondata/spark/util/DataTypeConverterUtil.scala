@@ -36,26 +36,6 @@ object DataTypeConverterUtil {
       case "date" => DataType.DATE
       case "array" => DataType.ARRAY
       case "struct" => DataType.STRUCT
-      case _ => convertToCarbonTypeForSpark2(dataType)
-    }
-  }
-
-  def convertToCarbonTypeForSpark2(dataType: String): DataType = {
-    dataType.toLowerCase match {
-      case "stringtype" => DataType.STRING
-      case "inttype" => DataType.INT
-      case "integertype" => DataType.INT
-      case "tinyinttype" => DataType.SHORT
-      case "shorttype" => DataType.SHORT
-      case "longtype" => DataType.LONG
-      case "biginttype" => DataType.LONG
-      case "numerictype" => DataType.DOUBLE
-      case "doubletype" => DataType.DOUBLE
-      case "decimaltype" => DataType.DECIMAL
-      case "timestamptype" => DataType.TIMESTAMP
-      case "datetype" => DataType.DATE
-      case "arraytype" => DataType.ARRAY
-      case "structtype" => DataType.STRUCT
       case _ => sys.error(s"Unsupported data type: $dataType")
     }
   }
