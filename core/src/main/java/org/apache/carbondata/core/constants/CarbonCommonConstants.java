@@ -1125,6 +1125,10 @@ public final class CarbonCommonConstants {
    */
   public static final String USE_PREFETCH_WHILE_LOADING_DEFAULT = "false";
 
+  public static final String MINOR = "minor";
+
+  public static final String MAJOR = "major";
+
   private CarbonCommonConstants() {
   }
 }
