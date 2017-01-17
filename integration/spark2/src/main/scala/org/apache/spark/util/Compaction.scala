@@ -19,6 +19,9 @@ package org.apache.spark.util
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.execution.command.{AlterTableCompaction, AlterTableModel}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.spark.merger.CompactionType
+
 /**
  * table compaction api
  */
@@ -28,12 +31,19 @@ object Compaction {
   def compaction(spark: SparkSession, dbName: String, tableName: String,
       compactionType: String): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
-    AlterTableCompaction(AlterTableModel(Some(dbName),
-      tableName,
-      None,
-      compactionType,
-      Some(System.currentTimeMillis()),
-      "")).run(spark)
+    if (compactionType.equalsIgnoreCase(CarbonCommonConstants.MAJOR) ||
+        compactionType.equalsIgnoreCase(CarbonCommonConstants.MINOR)) {
+      AlterTableCompaction(AlterTableModel(Some(dbName),
+        tableName,
+        None,
+        compactionType,
+        Some(System.currentTimeMillis()),
+        "")).run(spark)
+    }
+    else {
+      sys.error("Compaction type is wrong. Please select minor or major.")
+    }
+
   }
 
   def main(args: Array[String]): Unit = {
