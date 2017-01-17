@@ -250,7 +250,7 @@ class CarbonScanRDD(
 
   private def createInputFormat(conf: Configuration): CarbonInputFormat[Object] = {
     val format = new CarbonInputFormat[Object]
-    CarbonInputFormat.setTablePath(conf, identifier.getTablePath)
+    CarbonInputFormat.setTablePath(conf, identifier.appendWithLocalPrefix(identifier.getTablePath))
     CarbonInputFormat.setFilterPredicates(conf, filterExpression)
     CarbonInputFormat.setColumnProjection(conf, columnProjection)
     format
