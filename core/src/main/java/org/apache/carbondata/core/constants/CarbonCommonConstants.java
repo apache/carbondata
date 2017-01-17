@@ -1129,6 +1129,10 @@ public final class CarbonCommonConstants {
 
   public static final String LOCAL_FILE_PREFIX = "file://";
 
+  public static final String USE_KETTLE = "use_kettle";
+
+  public static final String USE_KETTLE_DEFAULT = "false";
+
   private CarbonCommonConstants() {
   }
 }
