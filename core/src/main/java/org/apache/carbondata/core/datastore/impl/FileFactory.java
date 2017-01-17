@@ -460,9 +460,13 @@ public final class FileFactory {
         return filePath;
       case LOCAL:
       default:
-        Path pathWithoutSchemeAndAuthority =
-            Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
-        return pathWithoutSchemeAndAuthority.toString();
+        if (filePath != null && !filePath.isEmpty()) {
+          Path pathWithoutSchemeAndAuthority =
+              Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
+          return pathWithoutSchemeAndAuthority.toString();
+        } else {
+          return filePath;
+        }
     }
   }
 
