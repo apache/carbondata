@@ -175,8 +175,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     }
   }
 
-  public static CarbonTablePath getTablePath(Configuration configuration) {
-    AbsoluteTableIdentifier absIdentifier = getAbsoluteTableIdentifier(configuration);
+  private static CarbonTablePath getTablePath(AbsoluteTableIdentifier absIdentifier) {
     return CarbonStorePath.getCarbonTablePath(absIdentifier);
   }
 
@@ -677,7 +676,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     }
 
     PathFilter inputFilter = getDataFileFilter();
-    CarbonTablePath tablePath = getTablePath(job.getConfiguration());
+    AbsoluteTableIdentifier absIdentifier = getAbsoluteTableIdentifier(job.getConfiguration());
+    CarbonTablePath tablePath = getTablePath(absIdentifier);
 
     // get tokens for all the required FileSystem for table path
     TokenCache.obtainTokensForNamenodes(job.getCredentials(), new Path[] { tablePath },
@@ -689,9 +689,10 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
       for (int j = 0; j < segmentsToConsider.length; ++j) {
         String segmentId = segmentsToConsider[j];
-        Path segmentPath = new Path(tablePath.getCarbonDataDirectoryPath(partition, segmentId));
+        String dataDirectoryPath = absIdentifier
+            .appendWithLocalPrefix(tablePath.getCarbonDataDirectoryPath(partition, segmentId));
+        Path segmentPath = new Path(dataDirectoryPath);
         FileSystem fs = segmentPath.getFileSystem(job.getConfiguration());
-
         RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(segmentPath);
         while (iter.hasNext()) {
           LocatedFileStatus stat = iter.next();

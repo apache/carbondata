@@ -38,6 +38,9 @@ public class AbsoluteTableIdentifier implements Serializable {
    */
   private String storePath;
 
+
+  private boolean isLocalPath;
+
   /**
    * carbon table identifier which will have table name and table database
    * name
@@ -47,6 +50,7 @@ public class AbsoluteTableIdentifier implements Serializable {
   public AbsoluteTableIdentifier(String storePath, CarbonTableIdentifier carbonTableIdentifier) {
     //TODO this should be moved to common place where path handling will be handled
     this.storePath = FileFactory.getUpdatedFilePath(storePath);
+    isLocalPath = storePath.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX);
     this.carbonTableIdentifier = carbonTableIdentifier;
   }
 
@@ -89,6 +93,14 @@ public class AbsoluteTableIdentifier implements Serializable {
   public String getTablePath() {
     return getStorePath() + File.separator + getCarbonTableIdentifier().getDatabaseName() +
         File.separator + getCarbonTableIdentifier().getTableName();
+  }
+
+  public String appendWithLocalPrefix(String path) {
+    if (isLocalPath) {
+      return CarbonCommonConstants.LOCAL_FILE_PREFIX + path;
+    } else {
+      return path;
+    }
   }
 
   /**
