@@ -503,7 +503,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
               val errormsg = "DICTIONARY_EXCLUDE is unsupported for complex datatype column: " +
                              dictExcludeCol
               throw new MalformedCarbonCommandException(errormsg)
-            } else if (!isStringAndTimestampColDictionaryExclude(dataType)) {
+            } else if (!isDataTypeSupportedForDictionary_Exclude(dataType)) {
               val errorMsg = "DICTIONARY_EXCLUDE is unsupported for " + dataType.toLowerCase() +
                              " data type column: " + dictExcludeCol
               throw new MalformedCarbonCommandException(errorMsg)
@@ -588,9 +588,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * detects whether double or decimal column is part of dictionary_exclude
+   * detects whether datatype is part of dictionary_exclude
    */
-  def isStringAndTimestampColDictionaryExclude(columnDataType: String): Boolean = {
+  def isDataTypeSupportedForDictionary_Exclude(columnDataType: String): Boolean = {
     val dataTypes = Array("string")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }

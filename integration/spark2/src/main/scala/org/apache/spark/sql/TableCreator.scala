@@ -37,9 +37,9 @@ object TableCreator {
     dimensionType.exists(x => x.equalsIgnoreCase(dimensionDataType))
   }
 
-  // detects whether double or decimal column is part of dictionary_exclude
-  def isStringAndTimestampColDictionaryExclude(columnDataType: String): Boolean = {
-    val dataTypes = Array("string", "timestamp", "date", "stringtype", "timestamptype", "datetype")
+  // detects whether datatype is part of dictionary_exclude
+  def isDataTypeSupportedForDictionary_Exclude(columnDataType: String): Boolean = {
+    val dataTypes = Array("string")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 
@@ -76,7 +76,7 @@ object TableCreator {
               val errormsg = "DICTIONARY_EXCLUDE is unsupported for complex datatype column: " +
                 dictExcludeCol
               throw new MalformedCarbonCommandException(errormsg)
-            } else if (!isStringAndTimestampColDictionaryExclude(dataType)) {
+            } else if (!isDataTypeSupportedForDictionary_Exclude(dataType)) {
               val errorMsg = "DICTIONARY_EXCLUDE is unsupported for " + dataType.toLowerCase() +
                 " data type column: " + dictExcludeCol
               throw new MalformedCarbonCommandException(errorMsg)
