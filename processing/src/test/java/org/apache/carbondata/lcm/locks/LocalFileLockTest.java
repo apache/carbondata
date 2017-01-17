@@ -26,8 +26,6 @@ import org.pentaho.di.core.util.Assert;
 
 /**
  * Test class to test the functionality of the local file locking.
- *
- * @author Administrator
  */
 public class LocalFileLockTest {
 

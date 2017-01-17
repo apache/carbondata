@@ -26,9 +26,6 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 /**
   * Test Class for filter expression query on String datatypes
-  *
-  * @author N00902756
-  *
   */
 class CountStarTestCase extends QueryTest with BeforeAndAfterAll {
 

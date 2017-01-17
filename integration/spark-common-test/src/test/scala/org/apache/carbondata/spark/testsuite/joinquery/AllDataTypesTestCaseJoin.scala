@@ -23,8 +23,6 @@ import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test Class for join query on multiple datatypes
- * @author N00902756
- *
  */
 
 class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {

@@ -97,8 +97,6 @@ public class TimSort<K, Buffer> {
    * (privately) instantiable; a TimSort instance holds the state of an ongoing
    * sort, assuming the input array is large enough to warrant the full-blown
    * TimSort. Small arrays are sorted in place, using a binary insertion sort.
-   *
-   * @author Josh Bloch
    */
   public void sort(Buffer a, int lo, int hi, Comparator<? super K> c) {
     assert c != null;

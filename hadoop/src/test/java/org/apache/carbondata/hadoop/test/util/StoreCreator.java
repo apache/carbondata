@@ -76,8 +76,6 @@ import java.util.*;
 
 /**
  * This class will create store file based on provided schema
- *
- * @author Administrator
  */
 public class StoreCreator {
 
@@ -489,8 +487,6 @@ public class StoreCreator {
 
   /**
    * This is local model object used inside this class to store information related to data loading
-   *
-   * @author Administrator
    */
   private static class LoadModel {
 
