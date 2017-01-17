@@ -14,20 +14,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.apache.carbondata.processing.store;
-
-import org.apache.carbondata.core.datastore.NodeMeasureDataStore;
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
-import org.apache.carbondata.core.datastore.impl.data.compressed.HeavyCompressedDoubleArrayDataInMemoryStore;
-
-public final class StoreFactory {
-
-  private StoreFactory() {
-  }
-
-  public static NodeMeasureDataStore createDataStore(WriterCompressModel compressionModel) {
-    return new HeavyCompressedDoubleArrayDataInMemoryStore(compressionModel);
-  }
-
-}
