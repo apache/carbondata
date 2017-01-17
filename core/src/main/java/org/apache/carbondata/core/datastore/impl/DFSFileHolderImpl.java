@@ -58,7 +58,7 @@ public class DFSFileHolderImpl implements FileHolder {
     FSDataInputStream fileChannel = fileNameAndStreamCache.get(filePath);
     if (null == fileChannel) {
       Path pt = new Path(filePath);
-      FileSystem fs = FileSystem.get(FileFactory.getConfiguration());
+      FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
       fileChannel = fs.open(pt);
       fileNameAndStreamCache.put(filePath, fileChannel);
     }
