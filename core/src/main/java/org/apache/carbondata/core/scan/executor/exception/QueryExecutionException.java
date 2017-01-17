@@ -20,8 +20,6 @@ import java.util.Locale;
 
 /**
  * Exception class for query execution
- *
- * @author Administrator
  */
 public class QueryExecutionException extends Exception {
 

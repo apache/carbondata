@@ -23,8 +23,6 @@ import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test Class for filter expression query on Integer datatypes
- * @author N00902756
- *
  */
 class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 

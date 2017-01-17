@@ -18,7 +18,6 @@
 /**
  * Project Name  : Carbon
  * Module Name   : CARBON Data Processor
- * Author    : R00903928
  * Created Date  : 15-Sep-2015
  * FileName   : LoadMetadataUtil.java
  * Description   : Kettle step to generate MD Key

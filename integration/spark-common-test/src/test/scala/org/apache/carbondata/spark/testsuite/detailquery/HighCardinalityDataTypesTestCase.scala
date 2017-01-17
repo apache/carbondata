@@ -26,9 +26,6 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 /**
   * Test Class for verifying NO_DICTIONARY_COLUMN feature.
-  *
-  * @author S71955
-  *
   */
 class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
 

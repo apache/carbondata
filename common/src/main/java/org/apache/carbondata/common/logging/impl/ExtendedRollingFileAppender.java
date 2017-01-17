@@ -44,7 +44,7 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
   private static final String DATE_FORMAT_FOR_TRANSFER = "yyyy-MM-dd'_'HH-mm-ss";
   protected int currentLevel = Level.FATAL_INT;
   /**
-   * Added for DTS DTS2011122001074 Now in log file rolling(after file size
+   * Now in log file rolling(after file size
    * exceeded the threshold) and deletion (after file count exceeded the file
    * count threshold) it will print log message
    */
@@ -100,7 +100,7 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
         temp = it.next();
         File deleteFile = temp.getValue();
         // Delete the file
-        // Fixed defect DTS2011122001074 after deletion of log file it
+        // After deletion of log file it
         // will print the log message in ReportService.log
         if (deleteFile.delete()) {
           backupFiles--;

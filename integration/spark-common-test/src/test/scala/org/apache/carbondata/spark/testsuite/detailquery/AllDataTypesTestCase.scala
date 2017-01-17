@@ -22,8 +22,6 @@ import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test Class for detailed query on multiple datatypes
- * @author N00902756
- *
  */
 
 class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {

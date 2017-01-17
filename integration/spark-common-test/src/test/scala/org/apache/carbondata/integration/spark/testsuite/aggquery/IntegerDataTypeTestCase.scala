@@ -25,8 +25,6 @@ import org.scalatest.BeforeAndAfterAll
 /**
  * Test Class for aggregate query on Integer datatypes
  *
- * @author N00902756
- *
  */
 class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
