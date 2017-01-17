@@ -392,7 +392,7 @@ case class LoadTable(
         case _ =>
           val useKettleLocal = System.getProperty("use.kettle")
           if (useKettleLocal == null) {
-            sqlContext.sparkContext.getConf.get("use_kettle_default", "true").toBoolean
+            sqlContext.sparkContext.getConf.get("use_kettle_default", "false").toBoolean
           } else {
             useKettleLocal.toBoolean
           }
