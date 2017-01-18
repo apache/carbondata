@@ -49,7 +49,7 @@ object Spark2TestQueryExecutor {
   val spark = SparkSession
     .builder()
     .master("local[2]")
-    .appName("CarbonExample")
+    .appName("Spark2TestQueryExecutor")
     .enableHiveSupport()
     .config("spark.sql.warehouse.dir", TestQueryExecutor.warehouse)
     .getOrCreateCarbonSession(TestQueryExecutor.storeLocation, TestQueryExecutor.metastoredb)

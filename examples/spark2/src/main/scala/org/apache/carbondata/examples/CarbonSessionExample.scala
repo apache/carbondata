@@ -42,7 +42,7 @@ object CarbonSessionExample {
     val spark = SparkSession
       .builder()
       .master("local")
-      .appName("CarbonExample")
+      .appName("CarbonSessionExample")
       .config("spark.sql.warehouse.dir", warehouse)
       .getOrCreateCarbonSession(storeLocation, metastoredb)
 
