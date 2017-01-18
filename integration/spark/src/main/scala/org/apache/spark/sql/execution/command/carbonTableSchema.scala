@@ -394,7 +394,7 @@ case class LoadTable(
           if (useKettleLocal == null && sqlContext.sparkContext.getConf.contains("use_kettle")) {
             useKettleLocal = sqlContext.sparkContext.getConf.get("use_kettle")
           }
-          if (useKettleLocal == null){
+          if (useKettleLocal == null) {
             useKettleLocal = CarbonProperties.getInstance().
               getProperty(CarbonCommonConstants.USE_KETTLE,
                 CarbonCommonConstants.USE_KETTLE_DEFAULT)
