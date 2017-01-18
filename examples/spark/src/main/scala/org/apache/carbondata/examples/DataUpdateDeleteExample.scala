@@ -42,36 +42,36 @@ object DataUpdateDeleteExample {
            """)
 
     cc.sql(s"""
-           LOAD DATA LOCAL INPATH '$testData' into table t3
+           LOAD DATA LOCAL INPATH '$testData' INTO TABLE t3
            """)
 
     // Query data before update and deletion
     cc.sql("""
-           SELECT * FROM t3
+           SELECT * FROM t3 ORDER BY ID
            """).show()
 
     // Delete data where salary > 15005
     cc.sql("""
-           delete FROM t3 where salary > 15005
+           DELETE FROM t3 WHERE salary > 15005
            """).show()
 
-    // Query data again after delete data where salary > 15005
+    // Query data again after delete data
     cc.sql("""
-           SELECT * FROM t3
+           SELECT * FROM t3 ORDER BY ID
            """).show()
 
     // Update data where salary < 15003
     cc.sql("""
-           update t3 set (t3.country) = ('india') where t3.salary < 15003
+           UPDATE t3 SET (t3.country) = ('india') WHERE t3.salary < 15003
            """).show()
 
     cc.sql("""
-           update t3 set (t3.salary) = (t3.salary + 9) where t3.name = 'aaa1'
+           UPDATE t3 SET (t3.salary) = (t3.salary + 9) WHERE t3.name = 'aaa1'
            """).show()
 
     // Query data again after update data
     cc.sql("""
-           SELECT * FROM t3
+           SELECT * FROM t3 ORDER BY ID
            """).show()
 
     // Drop table
