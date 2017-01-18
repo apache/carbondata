@@ -46,7 +46,7 @@ object SparkSessionExample {
     val spark = SparkSession
         .builder()
         .master("local")
-        .appName("CarbonExample")
+        .appName("SparkSessionExample")
         .enableHiveSupport()
         .config("spark.sql.warehouse.dir", warehouse)
         .config("javax.jdo.option.ConnectionURL",

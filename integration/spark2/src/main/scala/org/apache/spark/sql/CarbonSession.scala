@@ -16,15 +16,17 @@
  */
 package org.apache.spark.sql
 
-import scala.reflect.ClassTag
-import scala.util.control.NonFatal
+import java.io.File
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
 import org.apache.spark.sql.hive.CarbonSessionState
 import org.apache.spark.sql.internal.{SessionState, SharedState}
-import org.apache.spark.util.Utils
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Session implementation for {org.apache.spark.sql.SparkSession}
@@ -62,14 +64,32 @@ object CarbonSession {
 
   implicit class CarbonBuilder(builder: Builder) {
 
+    def getOrCreateCarbonSession(): SparkSession = {
+      getOrCreateCarbonSession(
+        new File(CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL).getCanonicalPath,
+        new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
+    }
 
-    def getOrCreateCarbonSession(): SparkSession = synchronized {
+    def getOrCreateCarbonSession(storePath: String): SparkSession = {
+      getOrCreateCarbonSession(
+        storePath,
+        new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
+    }
 
+    def getOrCreateCarbonSession(storePath: String,
+        metaStorePath: String): SparkSession = synchronized {
+      builder.enableHiveSupport()
       val options =
         getValue("options", builder).asInstanceOf[scala.collection.mutable.HashMap[String, String]]
       val userSuppliedContext: Option[SparkContext] =
         getValue("userSuppliedContext", builder).asInstanceOf[Option[SparkContext]]
-
+      if (options.get(CarbonCommonConstants.HIVE_CONNECTION_URL).isEmpty &&
+          new Configuration().get(CarbonCommonConstants.HIVE_CONNECTION_URL) == null) {
+        val metaStorePathAbsolute = new File(metaStorePath).getCanonicalPath
+        val hiveMetaStoreDB = metaStorePathAbsolute + "/metastore_db"
+        options ++= Map[String, String]((CarbonCommonConstants.HIVE_CONNECTION_URL,
+          s"jdbc:derby:;databaseName=$hiveMetaStoreDB;create=true"))
+      }
       // Get the session from current thread's active session.
       var session: SparkSession = SparkSession.getActiveSession match {
         case Some(sparkSession: CarbonSession) =>
@@ -120,6 +140,9 @@ object CarbonSession {
           }
           sc
         }
+
+        CarbonProperties.getInstance()
+          .addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
         session = new CarbonSession(sparkContext)
         options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
         SparkSession.setDefaultSession(session)
