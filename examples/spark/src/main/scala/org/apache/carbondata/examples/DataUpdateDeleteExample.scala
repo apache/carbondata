@@ -33,7 +33,7 @@ object DataUpdateDeleteExample {
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
     cc.sql("DROP TABLE IF EXISTS t3")
-    cc.sql("DROP TABLE IF EXISTS t33")
+    cc.sql("DROP TABLE IF EXISTS update_table")
 
     // Create table, 6 dimensions, 1 measure
     cc.sql("""
@@ -56,7 +56,6 @@ object DataUpdateDeleteExample {
     cc.sql("""
            UPDATE t3 SET (t3.country) = ('india') WHERE t3.salary < 15003
            """).show()
-    
     cc.sql("""
            UPDATE t3 SET (t3.salary) = (t3.salary + 9) WHERE t3.name = 'aaa1'
            """).show()
@@ -68,19 +67,19 @@ object DataUpdateDeleteExample {
 
     // 2.Update data with subquery result SET
     cc.sql("""
-           CREATE TABLE IF NOT EXISTS t33
+           CREATE TABLE IF NOT EXISTS update_table
            (ID Int, country String,
            name String, phonetype String, serialname char(10), salary Int)
            STORED BY 'carbondata'
            """)
 
     cc.sql(s"""
-           LOAD DATA LOCAL INPATH '$testData1' INTO TABLE t33
+           LOAD DATA LOCAL INPATH '$testData1' INTO TABLE update_table
            """)
 
     cc.sql("""
          UPDATE t3
-         SET (t3.country, t3.name) = (SELECT t33.country,t33.name FROM t33 WHERE t33.id = 5)
+         SET (t3.country, t3.name) = (SELECT u.country, u.name FROM update_table u WHERE u.id = 5)
          WHERE t3.id < 5""").show()
 
     // Query data again after the above update
@@ -92,16 +91,15 @@ object DataUpdateDeleteExample {
     cc.sql("""
          UPDATE t3
          SET (t3.country, t3.salary) =
-         (SELECT d.country,f.salary FROM t33 d FULL JOIN t33 f WHERE d.id = 8 and f.id=6)
-         WHERE t3.id >6 """).show()
+         (SELECT u.country, f.salary FROM update_table u FULL JOIN update_table f
+         WHERE u.id = 8 and f.id=6) WHERE t3.id >6""").show()
 
     // Query data again after the above update
     cc.sql("""
            SELECT * FROM t3 ORDER BY ID
            """).show()
 
-
-    // 4.Delete data where salary > 15005 */
+    // 4.Delete data where salary > 15005
     cc.sql("""
            DELETE FROM t3 WHERE salary > 15005
            """).show()
@@ -113,7 +111,7 @@ object DataUpdateDeleteExample {
 
     // Drop table
     cc.sql("DROP TABLE IF EXISTS t3")
-    cc.sql("DROP TABLE IF EXISTS t33")
+    cc.sql("DROP TABLE IF EXISTS update_table")
   }
 
 }
