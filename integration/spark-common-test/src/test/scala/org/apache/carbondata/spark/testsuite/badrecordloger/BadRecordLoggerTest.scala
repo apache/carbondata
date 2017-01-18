@@ -46,6 +46,7 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
       sql("drop table IF EXISTS emptyColumnValues_false")
       sql("drop table IF EXISTS empty_timestamp")
       sql("drop table IF EXISTS empty_timestamp_false")
+      sql("drop table IF EXISTS dataloadOptionTests")
       sql(
         """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
           actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
@@ -237,6 +238,22 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("test load ddl command") {
+    sql(
+      """CREATE TABLE IF NOT EXISTS dataloadOptionTests(ID BigInt, date Timestamp, country
+           String,
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'
+      """)
+    val csvFilePath = s"$resourcesPath/badrecords/emptyTimeStampValue.csv"
+    try {
+      sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE dataloadOptionTests OPTIONS"
+          + "('bad_records_action'='FORCA', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
+    } catch {
+      case ex: Exception =>
+        assert("option BAD_RECORDS_ACTION can have only either FORCE or IGNORE or REDIRECT"
+          .equals(ex.getMessage))
+    }
+  }
 
   override def afterAll {
     sql("drop table sales")
@@ -248,6 +265,7 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
     sql("drop table emptyColumnValues_false")
     sql("drop table empty_timestamp")
     sql("drop table empty_timestamp_false")
+    sql("drop table dataloadOptionTests")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
