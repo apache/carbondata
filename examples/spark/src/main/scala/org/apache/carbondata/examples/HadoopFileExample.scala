@@ -19,11 +19,8 @@ package org.apache.carbondata.examples
 
 import org.apache.hadoop.conf.Configuration
 
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.examples.util.ExampleUtils
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonProjection}
-import org.apache.carbondata.scan.expression.{ColumnExpression, LiteralExpression}
-import org.apache.carbondata.scan.expression.conditional.GreaterThanExpression
 
 // scalastyle:off println
 object HadoopFileExample {

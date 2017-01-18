@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.processing.newflow.sort.unsafe;
 
 import java.io.DataOutputStream;
@@ -22,8 +23,8 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryBlock;
-import org.apache.carbondata.core.unsafe.CarbonUnsafe;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**

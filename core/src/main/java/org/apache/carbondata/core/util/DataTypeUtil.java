@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.core.util;
@@ -31,10 +29,10 @@ import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 
 import org.apache.spark.unsafe.types.UTF8String;
 
@@ -89,8 +87,11 @@ public final class DataTypeUtil {
             new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
         return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
       case SHORT:
+        Short shortValue = Short.parseShort(msrValue);
+        return shortValue.longValue();
       case INT:
-        return Double.valueOf(msrValue).longValue();
+        Integer intValue = Integer.parseInt(msrValue);
+        return intValue.longValue();
       case LONG:
         return Long.valueOf(msrValue);
       default:
@@ -321,6 +322,9 @@ public final class DataTypeUtil {
     try {
       Object parsedValue = null;
       switch (actualDataType) {
+        case SHORT:
+          parsedValue = Short.parseShort(data);
+          break;
         case INT:
           parsedValue = Integer.parseInt(data);
           break;
@@ -355,6 +359,7 @@ public final class DataTypeUtil {
       switch (dimension.getDataType()) {
         case DECIMAL:
           return parseStringToBigDecimal(value, dimension);
+        case SHORT:
         case INT:
         case LONG:
           parsedValue = normalizeIntAndLongValues(value, dimension.getDataType());

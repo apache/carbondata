@@ -33,7 +33,7 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic
+import org.apache.carbondata.core.stats.QueryStatistic
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.apache.carbondata.spark.{CarbonAliasDecoderRelation, CarbonFilters}
 
@@ -163,17 +163,20 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
             Sort(sort.order, sort.global, child)
           }
         case union: Union
-          if !(union.children.head.isInstanceOf[CarbonDictionaryTempDecoder] ||
-            union.children(1).isInstanceOf[CarbonDictionaryTempDecoder]) =>
+          if !union.children.exists(_.isInstanceOf[CarbonDictionaryTempDecoder]) =>
           val children = union.children.map { child =>
             val condAttrs = new util.HashSet[AttributeReferenceWrapper]
             child.output.foreach(attr =>
-              condAttrs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr))))
+              if (isDictionaryEncoded(attr, attrMap, aliasMap)) {
+                condAttrs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
+              }
+            )
+
             if (hasCarbonRelation(child) && condAttrs.size() > 0 &&
               !child.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
               CarbonDictionaryTempDecoder(condAttrs,
                 new util.HashSet[AttributeReferenceWrapper](),
-                union.children.head)
+                child)
             } else {
               child
             }

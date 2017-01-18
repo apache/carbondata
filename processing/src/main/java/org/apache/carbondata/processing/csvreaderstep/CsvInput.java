@@ -1,20 +1,18 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.processing.csvreaderstep;
@@ -30,11 +28,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.common.logging.impl.StandardLogService;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.load.BlockDetails;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator;
@@ -89,6 +87,8 @@ public class CsvInput extends BaseStep implements StepInterface {
    * If rddIteratorKey is not null, read data from RDD
    */
   private String rddIteratorKey = null;
+
+  private CarbonIterator<CarbonIterator<String[]>> rddIterator;
 
   public CsvInput(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
       TransMeta transMeta, Trans trans) {
@@ -193,28 +193,27 @@ public class CsvInput extends BaseStep implements StepInterface {
   }
 
   class RddScanCallable implements Callable<Void> {
-    List<JavaRddIterator<String[]>> iterList;
-
-    RddScanCallable() {
-      this.iterList = new ArrayList<JavaRddIterator<String[]>>(1000);
-    }
-
-    public void addJavaRddIterator(JavaRddIterator<String[]> iter) {
-      this.iterList.add(iter);
-    }
-
-    @Override
-    public Void call() throws Exception {
-      StandardLogService.setThreadName(("PROCESS_DataFrame_PARTITIONS"),
-          Thread.currentThread().getName());
+    @Override public Void call() throws Exception {
+      StandardLogService
+          .setThreadName(("PROCESS_DataFrame_PARTITIONS"), Thread.currentThread().getName());
       try {
         String[] values = null;
-        for (JavaRddIterator<String[]> iter: iterList) {
-          iter.initialize();
-          while (iter.hasNext()) {
-            values = iter.next();
-            synchronized (putRowLock) {
-              putRow(data.outputRowMeta, values);
+        boolean hasNext = true;
+        CarbonIterator<String[]> iter;
+        boolean isInitialized = false;
+        while (hasNext) {
+          // Inovke getRddIterator to get a RDD[Row] iterator of a partition.
+          // The RDD comes from the sub-query DataFrame in InsertInto statement.
+          iter = getRddIterator(isInitialized);
+          isInitialized = true;
+          if (iter == null) {
+            hasNext = false;
+          } else {
+            while (iter.hasNext()) {
+              values = iter.next();
+              synchronized (putRowLock) {
+                putRow(data.outputRowMeta, values);
+              }
             }
           }
         }
@@ -224,34 +223,34 @@ public class CsvInput extends BaseStep implements StepInterface {
       }
       return null;
     }
-  };
+  }
+
+  private synchronized CarbonIterator<String[]> getRddIterator(boolean isInitialized) {
+    if (!isInitialized) {
+      rddIterator.initialize();
+    }
+    if (rddIterator.hasNext()) {
+      return rddIterator.next();
+    }
+    return null;
+  }
 
   private void scanRddIterator(int numberOfNodes) throws RuntimeException {
-    JavaRddIterator<JavaRddIterator<String[]>> iter = RddInputUtils.getAndRemove(rddIteratorKey);
-    if (iter != null) {
-      iter.initialize();
+    rddIterator = RddInputUtils.getAndRemove(rddIteratorKey);
+    if (rddIterator != null) {
       exec = Executors.newFixedThreadPool(numberOfNodes);
       List<Future<Void>> results = new ArrayList<Future<Void>>(numberOfNodes);
       RddScanCallable[] calls = new RddScanCallable[numberOfNodes];
       for (int i = 0; i < numberOfNodes; i++ ) {
         calls[i] = new RddScanCallable();
-      }
-      int index = 0 ;
-      while (iter.hasNext()) {
-        calls[index].addJavaRddIterator(iter.next());
-        index = index + 1;
-        if (index == numberOfNodes) {
-          index = 0;
-        }
-      }
-      for (RddScanCallable call: calls) {
-        results.add(exec.submit(call));
+        results.add(exec.submit(calls[i]));
       }
       try {
         for (Future<Void> futrue : results) {
           futrue.get();
         }
       } catch (InterruptedException | ExecutionException e) {
+        LOGGER.error(e, "Thread InterruptedException");
         throw new RuntimeException("Thread InterruptedException", e);
       } finally {
         exec.shutdownNow();
@@ -263,7 +262,7 @@ public class CsvInput extends BaseStep implements StepInterface {
     Iterator<String[]> iterator = RddInpututilsForUpdate.getAndRemove(rddIteratorKey);
     if (iterator != null) {
       try{
-        while(iterator.hasNext()){
+        while (iterator.hasNext()) {
           putRow(data.outputRowMeta, iterator.next());
         }
       } catch (KettleException e) {

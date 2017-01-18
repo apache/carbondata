@@ -33,18 +33,17 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, SparkContext, SparkEnv, TaskContext}
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionWrap, RDD}
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.execution.command.Partitioner
 import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
 import org.apache.carbondata.hadoop.csv.CSVInputFormat
 import org.apache.carbondata.hadoop.csv.recorditerator.RecordReaderIterator
-import org.apache.carbondata.processing.csvreaderstep.JavaRddIterator
+import org.apache.carbondata.processing.csvreaderstep.BlockDetails
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.DataLoadExecutor
 import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException
@@ -151,12 +150,15 @@ class NewCarbonDataLoadRDD[K, V](
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
 
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
+        val preFetch = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+          .USE_PREFETCH_WHILE_LOADING, CarbonCommonConstants.USE_PREFETCH_WHILE_LOADING_DEFAULT)
+        carbonLoadModel.setPreFetch(preFetch.toBoolean)
         val recordReaders = getInputIterators
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
           null,
           null,
-          loadCount,
+          String.valueOf(loadCount),
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()
@@ -330,6 +332,7 @@ class NewDataFrameLoaderRDD[K, V](
         carbonLoadModel.setPartitionId(partitionID)
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
+        carbonLoadModel.setPreFetch(false)
 
         val recordReaders = mutable.Buffer[CarbonIterator[Array[AnyRef]]]()
         val partitionIterator = firstParent[DataLoadPartitionWrap[Row]].iterator(theSplit, context)
@@ -344,17 +347,16 @@ class NewDataFrameLoaderRDD[K, V](
             serializeBuffer.rewind()
             serializer.deserialize[RDD[Row]](serializeBuffer)
           }
-          recordReaders += new CarbonIteratorImpl(
-            new NewRddIterator(newInstance.iterator(value.partition, context),
+          recordReaders += new NewRddIterator(newInstance.iterator(value.partition, context),
               carbonLoadModel,
-              context))
+              context)
         }
 
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
           null,
           null,
-          loadCount,
+          String.valueOf(loadCount),
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()
@@ -395,7 +397,7 @@ class NewDataFrameLoaderRDD[K, V](
  */
 class NewRddIterator(rddIter: Iterator[Row],
     carbonLoadModel: CarbonLoadModel,
-    context: TaskContext) extends JavaRddIterator[Array[AnyRef]] {
+    context: TaskContext) extends CarbonIterator[Array[AnyRef]] {
 
   val formatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
     .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
@@ -416,23 +418,8 @@ class NewRddIterator(rddIter: Iterator[Row],
     columns
   }
 
-  def initialize: Unit = {
+  override def initialize: Unit = {
     SparkUtil.setTaskContext(context)
   }
 
-}
-
-class CarbonIteratorImpl(iterator: NewRddIterator)
-  extends CarbonIterator[Array[AnyRef]] {
-  override def initialize(): Unit = iterator.initialize
-
-  override def close(): Unit = {}
-
-  override def next(): Array[AnyRef] = {
-    iterator.next
-  }
-
-  override def hasNext: Boolean = {
-    iterator.hasNext
-  }
 }

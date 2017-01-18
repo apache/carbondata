@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.spark
 
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
  /**

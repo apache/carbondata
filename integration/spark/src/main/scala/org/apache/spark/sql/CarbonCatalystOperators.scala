@@ -107,6 +107,13 @@ case class DropDatabase(dbName: String, isCascade: Boolean, sql: String)
   }
 }
 
+case class UseDatabase(sql: String) extends LogicalPlan with Command {
+  override def children: Seq[LogicalPlan] = Seq.empty
+  override def output: Seq[AttributeReference] = {
+    Seq()
+  }
+}
+
 case class ProjectForUpdate(
     table: UnresolvedRelation,
     columns: List[String],

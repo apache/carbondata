@@ -60,7 +60,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     createDatabase | dropDatabase | loadManagement | describeTable |
-    showLoads | alterTable | updateTable | deleteRecords| createTable
+    showLoads | alterTable | updateTable | deleteRecords | useDatabase | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -77,7 +77,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
           case Token("TOK_CREATEDATABASE", children) =>
             dbName = BaseSemanticAnalyzer.unescapeIdentifier(children(0).getText)
         }
-        CreateDatabase(dbName, createDbSql)
+        CreateDatabase(convertDbNameToLowerCase(dbName), createDbSql)
     }
 
   protected lazy val dropDatabase: Parser[LogicalPlan] =
@@ -98,7 +98,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
               case _ => // Unsupport features
             }
         }
-        DropDatabase(dbName, isCascade, dropDbSql)
+        DropDatabase(convertDbNameToLowerCase(dbName), isCascade, dropDbSql)
     }
 
   protected lazy val alterTable: Parser[LogicalPlan] =
@@ -121,22 +121,22 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
    * For handling the create table DDl systax compatible to Hive syntax
    */
   protected lazy val createTable: Parser[LogicalPlan] =
-  restInput ^^ {
+    restInput ^^ {
 
-    case statement =>
-      try {
-        // DDl will be parsed and we get the AST tree from the HiveQl
-        val node = HiveQlWrapper.getAst(statement)
-        // processing the AST tree
-        nodeToPlan(node)
-      } catch {
-        // MalformedCarbonCommandException need to be throw directly, parser will catch it
-        case ce: MalformedCarbonCommandException =>
-          throw ce
-        case e: Exception =>
-          sys.error("Parsing error") // no need to do anything.
-      }
-  }
+      case statement =>
+        try {
+          // DDl will be parsed and we get the AST tree from the HiveQl
+          val node = HiveQlWrapper.getAst(statement)
+          // processing the AST tree
+          nodeToPlan(node)
+        } catch {
+          // MalformedCarbonCommandException need to be throw directly, parser will catch it
+          case ce: MalformedCarbonCommandException =>
+            throw ce
+          case e: Exception =>
+            sys.error("Parsing error") // no need to do anything.
+        }
+    }
 
   /**
    * This function will traverse the tree and logical plan will be formed using that.
@@ -211,8 +211,10 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
                     f.scale = scale
                     f.dataType = Some("decimal")
                   }
-                  if(f.dataType.getOrElse("").startsWith("char")) {
+                  if (f.dataType.getOrElse("").startsWith("char")) {
                     f.dataType = Some("char")
+                  } else if (f.dataType.getOrElse("").startsWith("float")) {
+                    f.dataType = Some("float")
                   }
                   f.rawSchema = x
                   fields ++= Seq(f)
@@ -254,7 +256,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             case Token("TOK_LIKETABLE", child :: Nil) =>
               likeTableName = child.getChild(0).getText()
             case Token("TOK_ALTERTABLE_BUCKETS",
-            Token("TOK_TABCOLNAME", list)::numberOfBuckets) =>
+            Token("TOK_TABCOLNAME", list) :: numberOfBuckets) =>
               val cols = list.map(_.getText)
               if (cols != null) {
                 bucketFields = Some(BucketFields(cols,
@@ -348,7 +350,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
           validateOptions(optionsList)
         }
         val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
-        LoadTable(databaseNameOp, tableName, filePath, Seq(), optionsMap,
+        LoadTable(convertDbNameToLowerCase(databaseNameOp), tableName, filePath, Seq(), optionsMap,
           isOverwrite.isDefined)
     }
 
@@ -357,7 +359,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
       case ef ~ db ~ tbl =>
         val tblIdentifier = db match {
           case Some(dbName) =>
-            TableIdentifier(tbl.toLowerCase, Some(dbName))
+            TableIdentifier(tbl.toLowerCase, Some(convertDbNameToLowerCase(dbName)))
           case None =>
             TableIdentifier(tbl.toLowerCase, None)
         }
@@ -374,7 +376,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
     (LIMIT ~> numericLit).? <~
     opt(";") ^^ {
       case databaseName ~ tableName ~ limit =>
-        ShowLoadsCommand(databaseName, tableName.toLowerCase(), limit)
+        ShowLoadsCommand(convertDbNameToLowerCase(databaseName), tableName.toLowerCase(), limit)
     }
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
@@ -383,7 +385,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
     opt(";") ^^ {
       case loadids ~ table => table match {
         case databaseName ~ tableName =>
-          DeleteLoadsById(loadids, databaseName, tableName.toLowerCase())
+          DeleteLoadsById(loadids, convertDbNameToLowerCase(databaseName), tableName.toLowerCase())
       }
     }
 
@@ -394,13 +396,17 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
       case schema ~ table ~ condition =>
         condition match {
           case dateField ~ dateValue =>
-            DeleteLoadsByLoadDate(schema, table.toLowerCase(), dateField, dateValue)
+            DeleteLoadsByLoadDate(convertDbNameToLowerCase(schema),
+              table.toLowerCase(),
+              dateField,
+              dateValue)
         }
     }
 
   protected lazy val cleanFiles: Parser[LogicalPlan] =
     CLEAN ~> FILES ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
-      case databaseName ~ tableName => CleanFiles(databaseName, tableName.toLowerCase())
+      case databaseName ~ tableName =>
+        CleanFiles(convertDbNameToLowerCase(databaseName), tableName.toLowerCase())
     }
 
   protected lazy val explainPlan: Parser[LogicalPlan] =
@@ -413,13 +419,13 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
     }
 
   protected lazy val deleteRecords: Parser[LogicalPlan] =
-    (DELETE ~> FROM ~> table) ~ (WHERE ~> restInput).? <~  opt(";") ^^ {
+    (DELETE ~> FROM ~> table) ~ (WHERE ~> restInput).? <~ opt(";") ^^ {
       case table ~ condition =>
         val tableName = getTableName(table.tableIdentifier)
         val alias = table.alias.getOrElse("")
         val stmt = condition match {
           case Some(cond) =>
-            "select tupleId from " + tableName  + " " + alias + " where " + cond
+            "select tupleId from " + tableName + " " + alias + " where " + cond
           case _ =>
             "select tupleId from " + tableName + " " + alias
         }
@@ -428,10 +434,10 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
 
   protected lazy val updateTable: Parser[LogicalPlan] =
     UPDATE ~> table ~
-    (SET ~> "(" ~>  repsep(element, ",") <~ ")") ~
-    ( "=" ~> restInput ) <~ opt(";")  ^^ {
-      case  tab~ columns ~ rest =>
-        val (sel, where ) = splitQuery(rest)
+    (SET ~> "(" ~> repsep(element, ",") <~ ")") ~
+    ("=" ~> restInput) <~ opt(";") ^^ {
+      case tab ~ columns ~ rest =>
+        val (sel, where) = splitQuery(rest)
         val (selectStmt, relation) =
           if (!sel.toLowerCase.startsWith("select ")) {
             if (sel.trim.isEmpty) {
@@ -479,7 +485,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             } else if (ch == '\"') {
               foundDoubleQuotes = !foundDoubleQuotes
             }
-            else if (ch == '(' &&  !foundSingleQuotes && !foundDoubleQuotes) {
+            else if (ch == '(' && !foundSingleQuotes && !foundDoubleQuotes) {
               bracketCount = bracketCount + 1
               stack.push(ch)
             } else if (ch == ')' && !foundSingleQuotes && !foundDoubleQuotes) {
@@ -503,7 +509,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
 
 
   protected lazy val table: Parser[UnresolvedRelation] = {
-    rep1sep(attributeName, ".")  ~  opt(ident)^^ {
+    rep1sep(attributeName, ".") ~ opt(ident) ^^ {
       case tableIdent ~ alias => UnresolvedRelation(tableIdent, alias)
     }
   }
@@ -537,8 +543,12 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
   }
 
   protected lazy val element: Parser[String] =
-    (ident <~ ".").? ~ ident  ^^ {
+    (ident <~ ".").? ~ ident ^^ {
       case table ~ column => column.toLowerCase
     }
 
+  protected lazy val useDatabase: Parser[LogicalPlan] =
+    USE ~> ident <~ opt(";") ^^ {
+      case databaseName => UseDatabase(s"use ${ databaseName.toLowerCase }")
+    }
 }

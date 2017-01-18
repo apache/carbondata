@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.carbondata.processing.newflow.steps;
 
 import java.util.ArrayList;
@@ -55,7 +71,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     Iterator<CarbonRowBatch>[] outIterators = new Iterator[readerIterators.length];
     for (int i = 0; i < outIterators.length; i++) {
       outIterators[i] =
-          new InputProcessorIterator(readerIterators[i], rowParser, batchSize, executorService);
+          new InputProcessorIterator(readerIterators[i], rowParser, batchSize,
+              configuration.isPreFetch(), executorService);
     }
     return outIterators;
   }
@@ -115,17 +132,22 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
     private boolean nextBatch;
 
+    private boolean firstTime;
+
+    private boolean preFetch;
+
     public InputProcessorIterator(List<CarbonIterator<Object[]>> inputIterators,
-        RowParser rowParser, int batchSize, ExecutorService executorService) {
+        RowParser rowParser, int batchSize, boolean preFetch, ExecutorService executorService) {
       this.inputIterators = inputIterators;
       this.batchSize = batchSize;
       this.rowParser = rowParser;
       this.counter = 0;
       // Get the first iterator from the list.
       currentIterator = inputIterators.get(counter++);
-      currentIterator.initialize();
       this.executorService = executorService;
+      this.preFetch = preFetch;
       this.nextBatch = false;
+      this.firstTime = true;
     }
 
     @Override
@@ -134,6 +156,10 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     }
 
     private boolean internalHasNext() {
+      if (firstTime) {
+        firstTime = false;
+        currentIterator.initialize();
+      }
       boolean hasNext = currentIterator.hasNext();
       // If iterator is finished then check for next iterator.
       if (!hasNext) {
@@ -151,6 +177,14 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
     @Override
     public CarbonRowBatch next() {
+      if (preFetch) {
+        return getCarbonRowBatchWithPreFetch();
+      } else {
+        return getBatch();
+      }
+    }
+
+    private CarbonRowBatch getCarbonRowBatchWithPreFetch() {
       CarbonRowBatch result = null;
       if (future == null) {
         future = getCarbonRowBatch();
@@ -174,16 +208,21 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     private Future<CarbonRowBatch> getCarbonRowBatch() {
       return executorService.submit(new Callable<CarbonRowBatch>() {
         @Override public CarbonRowBatch call() throws Exception {
-          // Create batch and fill it.
-          CarbonRowBatch carbonRowBatch = new CarbonRowBatch();
-          int count = 0;
-          while (internalHasNext() && count < batchSize) {
-            carbonRowBatch.addRow(new CarbonRow(rowParser.parseRow(currentIterator.next())));
-            count++;
-          }
-          return carbonRowBatch;
+          return getBatch();
+
         }
       });
+    }
+
+    private CarbonRowBatch getBatch() {
+      // Create batch and fill it.
+      CarbonRowBatch carbonRowBatch = new CarbonRowBatch();
+      int count = 0;
+      while (internalHasNext() && count < batchSize) {
+        carbonRowBatch.addRow(new CarbonRow(rowParser.parseRow(currentIterator.next())));
+        count++;
+      }
+      return carbonRowBatch;
     }
   }
 

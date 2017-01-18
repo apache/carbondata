@@ -22,12 +22,11 @@ import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
-import org.apache.carbondata.processing.model.CarbonLoadModel
+import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
   /**
@@ -62,7 +61,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     extColDictFilePath3 = s"channelsId:${resourcesPath}/channelsId.csv"
     header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC," +
       "locationinfo,proddate,gamePointId,contractNumber"
-    header2 = "deviceInformationId|channelsId|contractNumber"
+    header2 = "deviceInformationId,channelsId,contractNumber"
   }
 
   def buildTable() = {
@@ -145,6 +144,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
       CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+    carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
     carbonLoadModel
   }
 
@@ -230,7 +230,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     try {
       sql(s"""
       LOAD DATA LOCAL INPATH "$complexFilePath1" INTO TABLE loadSqlTest
-      OPTIONS('COLUMNDICT'='gamePointId:$filePath')
+      OPTIONS('FILEHEADER'='$header', 'COLUMNDICT'='gamePointId:$filePath')
       """)
       assert(false)
     } catch {

@@ -25,8 +25,8 @@ import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.datastore.block.Distributable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 

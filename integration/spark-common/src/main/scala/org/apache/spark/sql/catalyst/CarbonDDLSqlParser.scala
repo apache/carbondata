@@ -31,8 +31,8 @@ import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.execution.command._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
@@ -146,6 +146,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val NUMERIC = carbonKeyWord("NUMERIC")
   protected val DECIMAL = carbonKeyWord("DECIMAL")
   protected val DOUBLE = carbonKeyWord("DOUBLE")
+  protected val FLOAT = carbonKeyWord("FLOAT")
   protected val SHORT = carbonKeyWord("SMALLINT")
   protected val INT = carbonKeyWord("INT")
   protected val BIGINT = carbonKeyWord("BIGINT")
@@ -502,7 +503,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
               val errormsg = "DICTIONARY_EXCLUDE is unsupported for complex datatype column: " +
                              dictExcludeCol
               throw new MalformedCarbonCommandException(errormsg)
-            } else if (!isStringAndTimestampColDictionaryExclude(dataType)) {
+            } else if (!isDataTypeSupportedForDictionary_Exclude(dataType)) {
               val errorMsg = "DICTIONARY_EXCLUDE is unsupported for " + dataType.toLowerCase() +
                              " data type column: " + dictExcludeCol
               throw new MalformedCarbonCommandException(errorMsg)
@@ -587,10 +588,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * detects whether double or decimal column is part of dictionary_exclude
+   * detects whether datatype is part of dictionary_exclude
    */
-  def isStringAndTimestampColDictionaryExclude(columnDataType: String): Boolean = {
-    val dataTypes = Array("string", "timestamp")
+  def isDataTypeSupportedForDictionary_Exclude(columnDataType: String): Boolean = {
+    val dataTypes = Array("string")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 
@@ -644,10 +645,33 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         case Token(part, Nil) => cleanIdentifier(part)
       } match {
         case Seq(tableOnly) => (None, tableOnly)
-        case Seq(databaseName, table) => (Some(databaseName), table)
+        case Seq(databaseName, table) => (Some(convertDbNameToLowerCase(databaseName)), table)
       }
 
     (db, tableName)
+  }
+
+  /**
+   * This method will convert the database name to lower case
+   *
+   * @param dbName
+   * @return String
+   */
+  protected def convertDbNameToLowerCase(dbName: String) = {
+    dbName.toLowerCase
+  }
+
+  /**
+   * This method will convert the database name to lower case
+   *
+   * @param dbName
+   * @return Option of String
+   */
+  protected def convertDbNameToLowerCase(dbName: Option[String]): Option[String] = {
+    dbName match {
+      case Some(databaseName) => Some(convertDbNameToLowerCase(databaseName))
+      case None => dbName
+    }
   }
 
   protected def cleanIdentifier(ident: String): String = {
@@ -795,7 +819,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     STRING ^^^ "string" | INTEGER ^^^ "integer" |
     TIMESTAMP ^^^ "timestamp" | NUMERIC ^^^ "numeric" |
     BIGINT ^^^ "bigint" | SHORT ^^^ "smallint" |
-    INT ^^^ "int" | DOUBLE ^^^ "double" | decimalType | DATE ^^^ "date" | charType
+    INT ^^^ "int" | DOUBLE ^^^ "double" | FLOAT ^^^ "double" | decimalType |
+    DATE ^^^ "date" | charType
 
   /**
    * Matching the decimal(10,0) data type and returning the same.
@@ -872,6 +897,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case "double" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
         field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
       )
+      case "float" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
+      )
       case "timestamp" =>
         Field(field.column, Some("Timestamp"), field.name, Some(null),
           field.parent, field.storeType, field.schemaOrdinal,
@@ -937,6 +965,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case "Long" => Field(parentName + "." + field.column, Some("Long"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
       case "Double" => Field(parentName + "." + field.column, Some("Double"),
+        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
+      case "Float" => Field(parentName + "." + field.column, Some("Double"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
       case "Timestamp" => Field(parentName + "." + field.column, Some("Timestamp"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)

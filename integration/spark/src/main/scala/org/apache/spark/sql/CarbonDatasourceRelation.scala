@@ -29,11 +29,11 @@ import org.apache.spark.sql.hive.{CarbonMetaData, CarbonMetastoreTypes}
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{DataType, StructType}
 
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonImplicitDimension
-import org.apache.carbondata.core.carbon.path.CarbonStorePath
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory
-import org.apache.carbondata.core.updatestatus.SegmentStatusManager
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.spark.{CarbonOption, _}
 import org.apache.carbondata.spark.merger.TableMeta
 
@@ -242,6 +242,7 @@ case class CarbonRelation(
               .toLowerCase match {
             case "int" => "long"
             case "short" => "long"
+            case "float" => "double"
             case "decimal" => "decimal(" + x.getPrecision + "," + x.getScale + ")"
             case others => others
           }),
@@ -271,6 +272,7 @@ case class CarbonRelation(
             .toLowerCase match {
             case "int" => "long"
             case "short" => "long"
+            case "float" => "double"
             case "decimal" => "decimal(" + column.getColumnSchema.getPrecision + "," + column
               .getColumnSchema.getScale + ")"
             case others => others
@@ -294,8 +296,7 @@ case class CarbonRelation(
 
   def addDecimalScaleAndPrecision(dimval: CarbonColumn, dataType: String): String = {
     var dType = dataType
-    if (dimval.getDataType
-        == org.apache.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL) {
+    if (dimval.getDataType == org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL) {
       dType +=
           "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema.getScale + ")"
     }

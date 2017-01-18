@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 /**
@@ -26,11 +24,10 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.load.LoadMetadataDetails;
-import org.apache.carbondata.core.update.SegmentUpdateDetails;
-import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 
 public class CarbonLoadModel implements Serializable {
   /**
@@ -64,6 +61,7 @@ public class CarbonLoadModel implements Serializable {
 
   private List<String> factFilesToProcess;
   private String csvHeader;
+  private String[] csvHeaderColumns;
   private String csvDelimiter;
   private String complexDelimiterLevel1;
   private String complexDelimiterLevel2;
@@ -165,6 +163,11 @@ public class CarbonLoadModel implements Serializable {
   private int dictionaryServerPort;
 
   /**
+   * Pre fetch data from csv reader
+   */
+  private boolean preFetch;
+
+  /**
    * get escape char
    * @return
    */
@@ -248,6 +251,14 @@ public class CarbonLoadModel implements Serializable {
 
   public void setCsvHeader(String csvHeader) {
     this.csvHeader = csvHeader;
+  }
+
+  public String[] getCsvHeaderColumns() {
+    return csvHeaderColumns;
+  }
+
+  public void setCsvHeaderColumns(String[] csvHeaderColumns) {
+    this.csvHeaderColumns = csvHeaderColumns;
   }
 
   public void initPredefDictMap() {
@@ -372,6 +383,7 @@ public class CarbonLoadModel implements Serializable {
     copy.useOnePass = useOnePass;
     copy.dictionaryServerHost = dictionaryServerHost;
     copy.dictionaryServerPort = dictionaryServerPort;
+    copy.preFetch = preFetch;
     return copy;
   }
 
@@ -398,6 +410,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.isRetentionRequest = isRetentionRequest;
     copyObj.carbonDataLoadSchema = carbonDataLoadSchema;
     copyObj.csvHeader = header;
+    copyObj.csvHeaderColumns = csvHeaderColumns;
     copyObj.factFilesToProcess = filesForPartition;
     copyObj.isDirectLoad = true;
     copyObj.csvDelimiter = delimiter;
@@ -420,6 +433,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.useOnePass = useOnePass;
     copyObj.dictionaryServerHost = dictionaryServerHost;
     copyObj.dictionaryServerPort = dictionaryServerPort;
+    copyObj.preFetch = preFetch;
     return copyObj;
   }
 
@@ -715,5 +729,13 @@ public class CarbonLoadModel implements Serializable {
 
   public void setDictionaryServerHost(String dictionaryServerHost) {
     this.dictionaryServerHost = dictionaryServerHost;
+  }
+
+  public boolean isPreFetch() {
+    return preFetch;
+  }
+
+  public void setPreFetch(boolean preFetch) {
+    this.preFetch = preFetch;
   }
 }

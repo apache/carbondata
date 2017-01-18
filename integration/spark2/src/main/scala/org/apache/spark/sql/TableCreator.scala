@@ -21,10 +21,10 @@ import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.mutable.{LinkedHashSet, Map}
 
-import org.apache.spark.sql.execution.command.{BucketFields, ColumnProperty, Field, PartitionerField, TableModel}
+import org.apache.spark.sql.execution.command._
 
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
@@ -37,9 +37,9 @@ object TableCreator {
     dimensionType.exists(x => x.equalsIgnoreCase(dimensionDataType))
   }
 
-  // detects whether double or decimal column is part of dictionary_exclude
-  def isStringAndTimestampColDictionaryExclude(columnDataType: String): Boolean = {
-    val dataTypes = Array("string", "timestamp", "date", "stringtype", "timestamptype", "datetype")
+  // detects whether datatype is part of dictionary_exclude
+  def isDataTypeSupportedForDictionary_Exclude(columnDataType: String): Boolean = {
+    val dataTypes = Array("string")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 
@@ -76,7 +76,7 @@ object TableCreator {
               val errormsg = "DICTIONARY_EXCLUDE is unsupported for complex datatype column: " +
                 dictExcludeCol
               throw new MalformedCarbonCommandException(errormsg)
-            } else if (!isStringAndTimestampColDictionaryExclude(dataType)) {
+            } else if (!isDataTypeSupportedForDictionary_Exclude(dataType)) {
               val errorMsg = "DICTIONARY_EXCLUDE is unsupported for " + dataType.toLowerCase() +
                 " data type column: " + dictExcludeCol
               throw new MalformedCarbonCommandException(errorMsg)

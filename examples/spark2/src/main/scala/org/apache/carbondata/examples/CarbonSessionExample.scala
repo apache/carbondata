@@ -75,7 +75,8 @@ object CarbonSessionExample {
          |    timestampField timestamp,
          |    decimalField decimal(18,2),
          |    dateField date,
-         |    charField char(5)
+         |    charField char(5),
+         |    floatField float
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')
@@ -88,7 +89,7 @@ object CarbonSessionExample {
       s"""
          | LOAD DATA LOCAL INPATH '$path'
          | INTO TABLE carbon_table
-         | options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField')
+         | options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField')
        """.stripMargin)
     // scalastyle:on
 
@@ -136,6 +137,12 @@ object CarbonSessionExample {
         |from t1, carbon_table t2
         |where t1.stringField = t2.stringField
       """.stripMargin).show
+
+    spark.sql("""
+             SELECT *
+             FROM carbon_table
+             where stringfield = 'spark' and floatField > 2.8
+              """).show
 
     // Drop table
     spark.sql("DROP TABLE IF EXISTS carbon_table")

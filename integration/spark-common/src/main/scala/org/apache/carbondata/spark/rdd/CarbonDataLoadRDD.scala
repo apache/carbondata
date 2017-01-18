@@ -33,21 +33,21 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.util.SparkUtil
 
+import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
 import org.apache.carbondata.processing.constants.DataProcessorConstants
-import org.apache.carbondata.processing.csvreaderstep.{JavaRddIterator, RddInputUtils}
+import org.apache.carbondata.processing.csvreaderstep.{BlockDetails, RddInputUtils}
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.DataLoadResult
-import org.apache.carbondata.spark.load.{_}
+import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.splits.TableSplit
-import org.apache.carbondata.spark.util.CarbonQueryUtil
-import org.apache.carbondata.spark.util.CarbonScalaUtil
+import org.apache.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil}
 
 /**
  * This partition class use to split by TableSplit
@@ -83,7 +83,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
     splitIndex: Int,
     storePath: String,
     kettleHomePath: String,
-    loadCount: Int,
+    loadCount: String,
     loadMetadataDetails: LoadMetadataDetails) {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -172,7 +172,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
  * @param carbonLoadModel       Carbon load model which contain the load info
  * @param storePath             The store location
  * @param kettleHomePath        The kettle home path
- * @param columinar             whether it is columinar
+ * @param columnar             whether it is columnar
  * @param loadCount             Current load count
  * @param tableCreationTime     Time of creating table
  * @param schemaLastUpdatedTime Time of last schema update
@@ -187,7 +187,7 @@ class DataFileLoaderRDD[K, V](
     carbonLoadModel: CarbonLoadModel,
     storePath: String,
     kettleHomePath: String,
-    columinar: Boolean,
+    columnar: Boolean,
     loadCount: Integer,
     tableCreationTime: Long,
     schemaLastUpdatedTime: Long,
@@ -239,7 +239,7 @@ class DataFileLoaderRDD[K, V](
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         setModelAndBlocksInfo()
         val loader = new SparkPartitionLoader(model, theSplit.index, storePath,
-          kettleHomePath, loadCount, loadMetadataDetails)
+          kettleHomePath, String.valueOf(loadCount), loadMetadataDetails)
         loader.initialize
         if (model.isRetentionRequest) {
           recreateAggregationTableForRetention
@@ -475,7 +475,7 @@ class DataFileLoaderRDD[K, V](
  * @param carbonLoadModel
  * @param storePath
  * @param kettleHomePath
- * @param columinar
+ * @param columnar
  * @param loadCount
  * @param tableCreationTime
  * @param schemaLastUpdatedTime
@@ -489,7 +489,7 @@ class DataFrameLoaderRDD[K, V](
     carbonLoadModel: CarbonLoadModel,
     storePath: String,
     kettleHomePath: String,
-    columinar: Boolean,
+    columnar: Boolean,
     loadCount: Integer,
     tableCreationTime: Long,
     schemaLastUpdatedTime: Long,
@@ -511,7 +511,7 @@ class DataFrameLoaderRDD[K, V](
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         val loader = new SparkPartitionLoader(carbonLoadModel, theSplit.index, storePath,
-          kettleHomePath, loadCount, loadMetadataDetails)
+          kettleHomePath, String.valueOf(loadCount), loadMetadataDetails)
         loader.initialize
         val rddIteratorKey = UUID.randomUUID().toString
         try {
@@ -549,12 +549,12 @@ class DataFrameLoaderRDD[K, V](
 
 class PartitionIterator(partitionIter: Iterator[DataLoadPartitionWrap[Row]],
     carbonLoadModel: CarbonLoadModel,
-    context: TaskContext) extends JavaRddIterator[JavaRddIterator[Array[String]]] {
+    context: TaskContext) extends CarbonIterator[CarbonIterator[Array[String]]] {
   val serializer = SparkEnv.get.closureSerializer.newInstance()
   var serializeBuffer: ByteBuffer = null
   def hasNext: Boolean = partitionIter.hasNext
 
-  def next: JavaRddIterator[Array[String]] = {
+  def next: CarbonIterator[Array[String]] = {
     val value = partitionIter.next
     // The rdd (which come from Hive Table) don't support to read dataframe concurrently.
     // So here will create different rdd instance for each thread.
@@ -569,7 +569,7 @@ class PartitionIterator(partitionIter: Iterator[DataLoadPartitionWrap[Row]],
         carbonLoadModel,
         context)
   }
-  def initialize: Unit = {
+  override def initialize: Unit = {
     SparkUtil.setTaskContext(context)
   }
 }
@@ -583,7 +583,7 @@ class PartitionIterator(partitionIter: Iterator[DataLoadPartitionWrap[Row]],
  */
 class RddIterator(rddIter: Iterator[Row],
                   carbonLoadModel: CarbonLoadModel,
-                  context: TaskContext) extends JavaRddIterator[Array[String]] {
+                  context: TaskContext) extends CarbonIterator[Array[String]] {
 
   val formatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
     .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
@@ -604,7 +604,7 @@ class RddIterator(rddIter: Iterator[Row],
     columns
   }
 
-  def initialize: Unit = {
+  override def initialize: Unit = {
     SparkUtil.setTaskContext(context)
   }
 

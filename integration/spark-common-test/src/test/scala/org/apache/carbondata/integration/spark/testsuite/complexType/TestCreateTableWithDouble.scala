@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.integration.spark.testsuite.complexType
@@ -23,8 +21,8 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 /**
@@ -78,8 +76,8 @@ class TestCreateTableWithDouble extends QueryTest with BeforeAndAfterAll {
     // assert that field 'number' is a dimension
     val tableIdentifier = new CarbonTableIdentifier(
       CarbonCommonConstants.DATABASE_DEFAULT_NAME, "doubleComplex2".toLowerCase(), "uniqueid")
-    val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-      .getCarbonTable(tableIdentifier.getTableUniqueName)
+    val carbonTable =
+      CarbonMetadata.getInstance().getCarbonTable(tableIdentifier.getTableUniqueName)
     val dimExist = carbonTable.getDimensionByTableName("doubleComplex2".toLowerCase()).toArray.
       exists(_.asInstanceOf[CarbonDimension].getColName.equalsIgnoreCase("number"))
     assertResult(dimExist)(true)

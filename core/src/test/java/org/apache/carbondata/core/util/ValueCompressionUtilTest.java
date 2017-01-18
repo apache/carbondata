@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.carbondata.core.util;
 
@@ -23,12 +21,12 @@ import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 
-import org.apache.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
-import org.apache.carbondata.core.datastorage.store.compression.decimal.*;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.*;
-import org.apache.carbondata.core.datastorage.store.compression.none.*;
+import org.apache.carbondata.core.datastore.compression.MeasureMetaDataModel;
+import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
+import org.apache.carbondata.core.datastore.compression.ValueCompressionHolder;
+import org.apache.carbondata.core.datastore.compression.decimal.*;
+import org.apache.carbondata.core.datastore.compression.nondecimal.*;
+import org.apache.carbondata.core.datastore.compression.none.*;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
 import org.junit.Test;
@@ -322,129 +320,129 @@ public class ValueCompressionUtilTest {
   }
 
   @Test public void testToUnCompressNone() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNone(DataType.DATA_BIGINT, DataType.DATA_BIGINT);
-    assertEquals(result.getClass(), UnCompressNoneDefault.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNone(DataType.DATA_BIGINT, DataType.DATA_BIGINT);
+    assertEquals(result.getClass(), CompressionNoneDefault.class);
   }
 
   @Test public void testToUnCompressNoneForByte() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNone(DataType.DATA_BYTE, DataType.DATA_FLOAT);
-    assertEquals(result.getClass(), UnCompressNoneByte.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNone(DataType.DATA_BYTE, DataType.DATA_FLOAT);
+    assertEquals(result.getClass(), CompressionNoneByte.class);
   }
 
   @Test public void testToUnCompressNoneForLong() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNone(DataType.DATA_LONG, DataType.DATA_FLOAT);
-    assertEquals(result.getClass(), UnCompressNoneLong.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNone(DataType.DATA_LONG, DataType.DATA_FLOAT);
+    assertEquals(result.getClass(), CompressionNoneLong.class);
   }
 
   @Test public void testToUnCompressNoneForShort() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNone(DataType.DATA_SHORT, DataType.DATA_FLOAT);
-    assertEquals(result.getClass(), UnCompressNoneShort.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNone(DataType.DATA_SHORT, DataType.DATA_FLOAT);
+    assertEquals(result.getClass(), CompressionNoneShort.class);
   }
 
   @Test public void testToUnCompressNoneForInt() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNone(DataType.DATA_INT, DataType.DATA_FLOAT);
-    assertEquals(result.getClass(), UnCompressNoneInt.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNone(DataType.DATA_INT, DataType.DATA_FLOAT);
+    assertEquals(result.getClass(), CompressionNoneInt.class);
   }
 
   @Test public void testToUnCompressNoneForDouble() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNone(DataType.DATA_DOUBLE, DataType.DATA_FLOAT);
-    assertEquals(result.getClass(), UnCompressNoneDefault.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNone(DataType.DATA_DOUBLE, DataType.DATA_FLOAT);
+    assertEquals(result.getClass(), CompressionNoneDefault.class);
   }
 
   @Test public void testToUnCompressMaxMinForDouble() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressDecimalMaxMin(DataType.DATA_DOUBLE, null);
-    assertEquals(result.getClass(), UnCompressMaxMinDefault.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionDecimalMaxMin(DataType.DATA_DOUBLE, null);
+    assertEquals(result.getClass(), CompressionMaxMinDefault.class);
   }
 
   @Test public void testToUnCompressMaxMinForInt() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressDecimalMaxMin(DataType.DATA_INT, null);
-    assertEquals(result.getClass(), UnCompressMaxMinInt.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionDecimalMaxMin(DataType.DATA_INT, null);
+    assertEquals(result.getClass(), CompressionMaxMinInt.class);
   }
 
   @Test public void testToUnCompressMaxMinForLong() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressDecimalMaxMin(DataType.DATA_LONG, null);
-    assertEquals(result.getClass(), UnCompressMaxMinLong.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionDecimalMaxMin(DataType.DATA_LONG, null);
+    assertEquals(result.getClass(), CompressionMaxMinLong.class);
   }
 
   @Test public void testToUnCompressMaxMinForByte() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressDecimalMaxMin(DataType.DATA_BYTE, null);
-    assertEquals(result.getClass(), UnCompressMaxMinByte.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionDecimalMaxMin(DataType.DATA_BYTE, null);
+    assertEquals(result.getClass(), CompressionMaxMinByte.class);
   }
 
   @Test public void testToUnCompressMaxMinForShort() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressDecimalMaxMin(DataType.DATA_SHORT, null);
-    assertEquals(result.getClass(), UnCompressMaxMinShort.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionDecimalMaxMin(DataType.DATA_SHORT, null);
+    assertEquals(result.getClass(), CompressionMaxMinShort.class);
   }
 
   @Test public void testToUnCompressNonDecimalForDouble() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNonDecimal(DataType.DATA_DOUBLE);
-    assertEquals(result.getClass(), UnCompressNonDecimalDefault.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNonDecimal(DataType.DATA_DOUBLE);
+    assertEquals(result.getClass(), CompressionNonDecimalDefault.class);
   }
 
   @Test public void testToUnCompressNonDecimalForInt() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNonDecimal(DataType.DATA_INT);
-    assertEquals(result.getClass(), UnCompressNonDecimalInt.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNonDecimal(DataType.DATA_INT);
+    assertEquals(result.getClass(), CompressionNonDecimalInt.class);
   }
 
   @Test public void testToUnCompressNonDecimalForLong() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNonDecimal(DataType.DATA_LONG);
-    assertEquals(result.getClass(), UnCompressNonDecimalLong.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNonDecimal(DataType.DATA_LONG);
+    assertEquals(result.getClass(), CompressionNonDecimalLong.class);
   }
 
   @Test public void testToUnCompressNonDecimalForByte() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNonDecimal(DataType.DATA_BYTE);
-    assertEquals(result.getClass(), UnCompressNonDecimalByte.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNonDecimal(DataType.DATA_BYTE);
+    assertEquals(result.getClass(), CompressionNonDecimalByte.class);
   }
 
   @Test public void testToUnCompressNonDecimalForShort() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNonDecimal(DataType.DATA_SHORT);
-    assertEquals(result.getClass(), UnCompressNonDecimalShort.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNonDecimal(DataType.DATA_SHORT);
+    assertEquals(result.getClass(), CompressionNonDecimalShort.class);
   }
 
   @Test public void testToUnCompressNonDecimalMaxMinForDouble() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNonDecimalMaxMin(DataType.DATA_DOUBLE);
-    assertEquals(result.getClass(), UnCompressNonDecimalMaxMinDefault.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNonDecimalMaxMin(DataType.DATA_DOUBLE);
+    assertEquals(result.getClass(), CompressionNonDecimalMaxMinDefault.class);
   }
 
   @Test public void testToUnCompressNonDecimalMaxMinForInt() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNonDecimalMaxMin(DataType.DATA_INT);
-    assertEquals(result.getClass(), UnCompressNonDecimalMaxMinInt.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNonDecimalMaxMin(DataType.DATA_INT);
+    assertEquals(result.getClass(), CompressionNonDecimalMaxMinInt.class);
   }
 
   @Test public void testToUnCompressNonDecimalMaxMinForLong() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNonDecimalMaxMin(DataType.DATA_LONG);
-    assertEquals(result.getClass(), UnCompressNonDecimalMaxMinLong.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNonDecimalMaxMin(DataType.DATA_LONG);
+    assertEquals(result.getClass(), CompressionNonDecimalMaxMinLong.class);
   }
 
   @Test public void testToUnCompressNonDecimalMaxMinForByte() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNonDecimalMaxMin(DataType.DATA_BYTE);
-    assertEquals(result.getClass(), UnCompressNonDecimalMaxMinByte.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNonDecimalMaxMin(DataType.DATA_BYTE);
+    assertEquals(result.getClass(), CompressionNonDecimalMaxMinByte.class);
   }
 
   @Test public void testToUnCompressNonDecimalMaxMinForShort() {
-    ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.getUnCompressNonDecimalMaxMin(DataType.DATA_SHORT);
-    assertEquals(result.getClass(), UnCompressNonDecimalMaxMinShort.class);
+    ValueCompressionHolder result =
+        ValueCompressionUtil.getCompressionNonDecimalMaxMin(DataType.DATA_SHORT);
+    assertEquals(result.getClass(), CompressionNonDecimalMaxMinShort.class);
   }
 
   @Test public void testToConvertToBytesForInt() {

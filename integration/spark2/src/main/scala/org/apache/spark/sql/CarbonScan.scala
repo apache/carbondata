@@ -23,9 +23,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.hive.CarbonRelation
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.scan.model._
+import org.apache.carbondata.core.scan.model._
 import org.apache.carbondata.spark.CarbonFilters
 
 case class CarbonScan(
