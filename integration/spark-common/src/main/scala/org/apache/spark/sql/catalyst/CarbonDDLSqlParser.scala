@@ -34,6 +34,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.processing.constants.LoggerAction
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -779,6 +780,18 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         case ex: NumberFormatException =>
           throw new MalformedCarbonCommandException(
             "option MAXCOLUMNS can only contain integer values")
+      }
+    }
+
+    if (options.exists(_._1.equalsIgnoreCase("BAD_RECORDS_ACTION"))) {
+      val optionValue: String = options.get("bad_records_action").get.head._2
+      try {
+        LoggerAction.valueOf(optionValue.toUpperCase)
+      }
+      catch {
+        case e: IllegalArgumentException =>
+          throw new MalformedCarbonCommandException(
+            "option BAD_RECORDS_ACTION can have only either FORCE or IGNORE or REDIRECT")
       }
     }
 
