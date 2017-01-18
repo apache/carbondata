@@ -29,11 +29,7 @@ import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.filesystem.AlluxioCarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.HDFSCarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.ViewFSCarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.*;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
@@ -91,7 +87,7 @@ public final class FileFactory {
   public static CarbonFile getCarbonFile(String path, FileType fileType) {
     switch (fileType) {
       case LOCAL:
-        return new LocalCarbonFile(path);
+        return new LocalCarbonFile(getUpdatedFilePath(path, fileType));
       case HDFS:
         return new HDFSCarbonFile(path);
       case ALLUXIO:
@@ -99,7 +95,7 @@ public final class FileFactory {
       case VIEWFS:
         return new ViewFSCarbonFile(path);
       default:
-        return new LocalCarbonFile(path);
+        return new LocalCarbonFile(getUpdatedFilePath(path, fileType));
     }
   }
 
@@ -116,6 +112,7 @@ public final class FileFactory {
     InputStream stream;
     switch (fileType) {
       case LOCAL:
+        path = getUpdatedFilePath(path, fileType);
         if (gzip) {
           stream = new GZIPInputStream(new FileInputStream(path));
         } else if (bzip2) {
@@ -171,6 +168,7 @@ public final class FileFactory {
         stream.seek(offset);
         return new DataInputStream(new BufferedInputStream(stream));
       default:
+        path = getUpdatedFilePath(path, fileType);
         FileInputStream fis = new FileInputStream(path);
         long actualSkipSize = 0;
         long skipSize = offset;
@@ -205,6 +203,7 @@ public final class FileFactory {
     path = path.replace("\\", "/");
     switch (fileType) {
       case LOCAL:
+        path = getUpdatedFilePath(path, fileType);
         return new DataOutputStream(
             new BufferedOutputStream(new FileOutputStream(path, append), bufferSize));
       case HDFS:
@@ -226,6 +225,7 @@ public final class FileFactory {
         }
         return stream;
       default:
+        path = getUpdatedFilePath(path, fileType);
         return new DataOutputStream(
             new BufferedOutputStream(new FileOutputStream(path), bufferSize));
     }
@@ -236,6 +236,7 @@ public final class FileFactory {
     path = path.replace("\\", "/");
     switch (fileType) {
       case LOCAL:
+        path = getUpdatedFilePath(path, fileType);
         return new DataOutputStream(
             new BufferedOutputStream(new FileOutputStream(path), bufferSize));
       case HDFS:
@@ -247,6 +248,7 @@ public final class FileFactory {
             fs.create(pt, true, bufferSize, fs.getDefaultReplication(pt), blockSize);
         return stream;
       default:
+        path = getUpdatedFilePath(path, fileType);
         return new DataOutputStream(
             new BufferedOutputStream(new FileOutputStream(path), bufferSize));
     }
@@ -277,6 +279,7 @@ public final class FileFactory {
 
       case LOCAL:
       default:
+        filePath = getUpdatedFilePath(filePath, fileType);
         File defaultFile = new File(filePath);
 
         if (performFileCheck) {
@@ -306,6 +309,7 @@ public final class FileFactory {
 
       case LOCAL:
       default:
+        filePath = getUpdatedFilePath(filePath, fileType);
         File defaultFile = new File(filePath);
         return defaultFile.exists();
     }
@@ -323,6 +327,7 @@ public final class FileFactory {
 
       case LOCAL:
       default:
+        filePath = getUpdatedFilePath(filePath, fileType);
         File file = new File(filePath);
         return file.createNewFile();
     }
@@ -340,6 +345,7 @@ public final class FileFactory {
 
       case LOCAL:
       default:
+        filePath = getUpdatedFilePath(filePath, fileType);
         File file = new File(filePath);
         return deleteAllFilesOfDir(file);
     }
@@ -370,6 +376,7 @@ public final class FileFactory {
         return fs.mkdirs(path);
       case LOCAL:
       default:
+        filePath = getUpdatedFilePath(filePath, fileType);
         File file = new File(filePath);
         return file.mkdirs();
     }
@@ -388,6 +395,7 @@ public final class FileFactory {
     path = path.replace("\\", "/");
     switch (fileType) {
       case LOCAL:
+        path = getUpdatedFilePath(path, fileType);
         return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path, true)));
       case HDFS:
       case ALLUXIO:
@@ -425,6 +433,7 @@ public final class FileFactory {
         return false;
       case LOCAL:
       default:
+        filePath = getUpdatedFilePath(filePath, fileType);
         File file = new File(filePath);
         return file.createNewFile();
     }
@@ -440,10 +449,10 @@ public final class FileFactory {
    * it removes the file:/ from the path
    *
    * @param filePath
+   * @param fileType
    * @return updated file path without url for local
    */
-  public static String getUpdatedFilePath(String filePath) {
-    FileType fileType = getFileType(filePath);
+  private static String getUpdatedFilePath(String filePath, FileType fileType) {
     switch (fileType) {
       case HDFS:
       case ALLUXIO:
@@ -451,10 +460,27 @@ public final class FileFactory {
         return filePath;
       case LOCAL:
       default:
-        Path pathWithoutSchemeAndAuthority =
-            Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
-        return pathWithoutSchemeAndAuthority.toString();
+        if (filePath != null && !filePath.isEmpty()) {
+          Path pathWithoutSchemeAndAuthority =
+              Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
+          return pathWithoutSchemeAndAuthority.toString();
+        } else {
+          return filePath;
+        }
     }
+  }
+
+  /**
+   * below method will be used to update the file path
+   * for local type
+   * it removes the file:/ from the path
+   *
+   * @param filePath
+   * @return updated file path without url for local
+   */
+  public static String getUpdatedFilePath(String filePath) {
+    FileType fileType = getFileType(filePath);
+    return getUpdatedFilePath(filePath, fileType);
   }
 
   /**
@@ -475,6 +501,7 @@ public final class FileFactory {
         return fs.getContentSummary(path).getLength();
       case LOCAL:
       default:
+        filePath = getUpdatedFilePath(filePath, fileType);
         File file = new File(filePath);
         return FileUtils.sizeOfDirectory(file);
     }

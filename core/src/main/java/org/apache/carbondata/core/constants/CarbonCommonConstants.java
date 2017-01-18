@@ -1127,6 +1127,8 @@ public final class CarbonCommonConstants {
 
   public static final String MAJOR = "major";
 
+  public static final String LOCAL_FILE_PREFIX = "file://";
+
   private CarbonCommonConstants() {
   }
 }
