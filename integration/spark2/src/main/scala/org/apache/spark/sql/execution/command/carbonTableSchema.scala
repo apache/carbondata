@@ -385,7 +385,7 @@ case class LoadTable(
       val useKettle = options.get("use_kettle") match {
         case Some(value) => value.toBoolean
         case _ =>
-          var useKettleLocal = System.getProperty("use.kettle")
+          var useKettleLocal = System.getProperty("use_kettle")
           if (useKettleLocal == null && sparkSession.sparkContext.getConf.contains("use_kettle")) {
             useKettleLocal = sparkSession.sparkContext.getConf.get("use_kettle")
           }
