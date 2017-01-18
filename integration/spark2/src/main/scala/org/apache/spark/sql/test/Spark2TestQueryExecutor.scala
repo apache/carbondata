@@ -38,7 +38,6 @@ object Spark2TestQueryExecutor {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   LOGGER.info("use TestQueryExecutorImplV2")
   CarbonProperties.getInstance()
-    .addProperty(CarbonCommonConstants.STORE_LOCATION, TestQueryExecutor.storeLocation)
     .addProperty("carbon.kettle.home", TestQueryExecutor.kettleHome)
     .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
     .addProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
@@ -53,9 +52,7 @@ object Spark2TestQueryExecutor {
     .appName("CarbonExample")
     .enableHiveSupport()
     .config("spark.sql.warehouse.dir", TestQueryExecutor.warehouse)
-    .config("javax.jdo.option.ConnectionURL",
-      s"jdbc:derby:;databaseName=${TestQueryExecutor.metastoredb};create=true")
-    .getOrCreateCarbonSession()
+    .getOrCreateCarbonSession(TestQueryExecutor.storeLocation, TestQueryExecutor.metastoredb)
   spark.sparkContext.setLogLevel("ERROR")
 
 }

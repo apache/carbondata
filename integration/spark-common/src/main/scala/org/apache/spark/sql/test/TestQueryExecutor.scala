@@ -45,7 +45,7 @@ object TestQueryExecutor {
   val resourcesPath = s"$integrationPath/spark-common-test/src/test/resources"
   val storeLocation = s"$integrationPath/spark-common/target/store"
   val warehouse = s"$integrationPath/spark-common/target/warehouse"
-  val metastoredb = s"$integrationPath/spark-common/target/metastore_db"
+  val metastoredb = s"$integrationPath/spark-common/target"
   val kettleHome = s"$projectPath/processing/carbonplugins"
   val timestampFormat = "dd-MM-yyyy"
 
