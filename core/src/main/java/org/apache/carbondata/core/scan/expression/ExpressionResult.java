@@ -526,10 +526,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
                   CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
-          Date date1 = null;
-          Date date2 = null;
-          date1 = parser.parse(this.getString());
-          date2 = parser.parse(o.getString());
+          Date date1 = parser.parse(this.getString());
+          Date date2 = parser.parse(o.getString());
           return date1.compareTo(date2);
         case STRING:
         default:

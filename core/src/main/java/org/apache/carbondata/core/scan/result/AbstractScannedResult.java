@@ -331,7 +331,7 @@ public abstract class AbstractScannedResult {
   }
 
   /**
-   * @param blockletId
+   * @param rowId
    */
   public void setRowId(long rowId) {
     this.rowId = rowId;
@@ -483,14 +483,6 @@ public abstract class AbstractScannedResult {
   public abstract int[] getDictionaryKeyIntegerArray();
 
   /**
-   * Return the dimension data based on dimension ordinal
-   *
-   * @param dimensionOrdinal dimension ordinal
-   * @return dimension data
-   */
-  public abstract byte[] getDimensionKey(int dimensionOrdinal);
-
-  /**
    * Below method will be used to get the complex type key array
    *
    * @return complex type key array
@@ -512,42 +504,6 @@ public abstract class AbstractScannedResult {
    * @return no dictionary key array for all the no dictionary dimension
    */
   public abstract String[] getNoDictionaryKeyStringArray();
-
-  /**
-   * Below method will be used to to check whether measure value
-   * is null or for a measure
-   *
-   * @param ordinal measure ordinal
-   * @return is null or not
-   */
-  public abstract boolean isNullMeasureValue(int ordinal);
-
-  /**
-   * Below method will be used to get the measure value for measure
-   * of long data type
-   *
-   * @param ordinal measure ordinal
-   * @return long value of measure
-   */
-  public abstract long getLongMeasureValue(int ordinal);
-
-  /**
-   * Below method will be used to get the value of measure of double
-   * type
-   *
-   * @param ordinal measure ordinal
-   * @return measure value
-   */
-  public abstract double getDoubleMeasureValue(int ordinal);
-
-  /**
-   * Below method will be used to get the data of big decimal type
-   * of a measure
-   *
-   * @param ordinal measure ordinal
-   * @return measure value
-   */
-  public abstract BigDecimal getBigDecimalMeasureValue(int ordinal);
 
   /**
    *
