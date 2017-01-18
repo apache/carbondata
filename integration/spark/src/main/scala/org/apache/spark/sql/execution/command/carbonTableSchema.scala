@@ -402,7 +402,7 @@ case class LoadTable(
           try {
             useKettleLocal.toBoolean
           } catch {
-            case Exception => CarbonCommonConstants.USE_KETTLE_DEFAULT.toBoolean
+            case e: Exception => CarbonCommonConstants.USE_KETTLE_DEFAULT.toBoolean
           }
       }
 
