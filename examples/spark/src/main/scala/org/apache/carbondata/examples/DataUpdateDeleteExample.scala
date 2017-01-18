@@ -26,12 +26,14 @@ object DataUpdateDeleteExample {
   def main(args: Array[String]) {
     val cc = ExampleUtils.createCarbonContext("DataUpdateDeleteExample")
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
+    val testData1 = ExampleUtils.currentPath + "/src/main/resources/data_update.csv"
 
     // Specify timestamp format based on raw data
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
     cc.sql("DROP TABLE IF EXISTS t3")
+    cc.sql("DROP TABLE IF EXISTS t33")
 
     // Create table, 6 dimensions, 1 measure
     cc.sql("""
@@ -45,12 +47,60 @@ object DataUpdateDeleteExample {
            LOAD DATA LOCAL INPATH '$testData' INTO TABLE t3
            """)
 
-    // Query data before update and deletion
+    /* Update data with simple SET */
     cc.sql("""
            SELECT * FROM t3 ORDER BY ID
            """).show()
 
-    // Delete data where salary > 15005
+    //Update data where salary < 15003
+    cc.sql("""
+           UPDATE t3 SET (t3.country) = ('india') WHERE t3.salary < 15003
+           """).show()
+    cc.sql("""
+           UPDATE t3 SET (t3.salary) = (t3.salary + 9) WHERE t3.name = 'aaa1'
+           """).show()
+
+    //Query data again after the above update
+    cc.sql("""
+           SELECT * FROM t3 ORDER BY ID
+           """).show()
+
+    /* Update data with subquery result SET */
+    cc.sql("""
+           CREATE TABLE IF NOT EXISTS t33
+           (ID Int, country String,
+           name String, phonetype String, serialname char(10), salary Int)
+           STORED BY 'carbondata'
+           """)
+
+    cc.sql(s"""
+           LOAD DATA LOCAL INPATH '$testData1' INTO TABLE t33
+           """)
+
+    cc.sql("""
+         UPDATE t3
+         SET (t3.country, t3.name) = (SELECT t33.country,t33.name FROM t33 WHERE t33.id = 5)
+         WHERE t3.id < 5""").show()
+
+    //Query data again after the above update
+    cc.sql("""
+           SELECT * FROM t3 ORDER BY ID
+           """).show()
+
+    /* Update data with join query result SET */
+    cc.sql("""
+         UPDATE t3
+         SET (t3.country, t3.salary) =
+         (SELECT d.country,f.salary FROM t33 d FULL JOIN t33 f WHERE d.id = 8 and f.id=6)
+         WHERE t3.id >6 """).show()
+
+    //Query data again after the above update
+    cc.sql("""
+           SELECT * FROM t3 ORDER BY ID
+           """).show()
+
+
+    /* Delete data where salary > 15005 */
     cc.sql("""
            DELETE FROM t3 WHERE salary > 15005
            """).show()
@@ -60,22 +110,9 @@ object DataUpdateDeleteExample {
            SELECT * FROM t3 ORDER BY ID
            """).show()
 
-    // Update data where salary < 15003
-    cc.sql("""
-           UPDATE t3 SET (t3.country) = ('india') WHERE t3.salary < 15003
-           """).show()
-
-    cc.sql("""
-           UPDATE t3 SET (t3.salary) = (t3.salary + 9) WHERE t3.name = 'aaa1'
-           """).show()
-
-    // Query data again after update data
-    cc.sql("""
-           SELECT * FROM t3 ORDER BY ID
-           """).show()
-
     // Drop table
     cc.sql("DROP TABLE IF EXISTS t3")
+    cc.sql("DROP TABLE IF EXISTS t33")
   }
 
 }
