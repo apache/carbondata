@@ -445,48 +445,11 @@ public class ValueCompressionUtilTest {
     assertEquals(result.getClass(), CompressionNonDecimalMaxMinShort.class);
   }
 
-  @Test public void testToConvertToBytesForInt() {
-    int[] input = { 120000, 200000, 300000 };
-    byte[] result = ValueCompressionUtil.convertToBytes(input);
-    byte[] expectedResult = { 0, 1, -44 };
-    for (int i = 0; i < input.length; i++) {
-      assertEquals(expectedResult[i], result[i]);
-    }
-  }
-
   @Test public void testToConvertToInt() {
     ByteBuffer byteBuffer = ByteBuffer.allocate(4);
     byteBuffer.putInt(123);
     int[] result = ValueCompressionUtil.convertToIntArray(byteBuffer, 4);
     int[] expectedResult = { 123 };
-    for (int i = 0; i < result.length; i++) {
-      assertEquals(expectedResult[i], result[i]);
-    }
-  }
-
-  @Test public void testToConvertToBytesForFloat() {
-    float[] input = { 120.001f, 200.012f, 300.123f };
-    byte[] result = ValueCompressionUtil.convertToBytes(input);
-    byte[] expectedResult = { 66, -16, 0, -125, 67, 72, 3, 18, 67, -106, 15, -66 };
-    for (int i = 0; i < result.length; i++) {
-      assertEquals(expectedResult[i], result[i]);
-    }
-  }
-
-  @Test public void testToConvertToFloat() {
-    ByteBuffer byteBuffer = ByteBuffer.allocate(4);
-    byteBuffer.putFloat(123.23f);
-    float[] result = ValueCompressionUtil.convertToFloatArray(byteBuffer, 4);
-    float[] expectedResult = { 123.23f };
-    for (int i = 0; i < result.length; i++) {
-      assertEquals(expectedResult[i], result[i],2);
-    }
-  }
-
-  @Test public void testToConvertToBytesForShort() {
-    short[] input = { 20000, -30000, 23 };
-    byte[] result = ValueCompressionUtil.convertToBytes(input);
-    byte[] expectedResult = { 78, 32, -118, -48, 0, 23 };
     for (int i = 0; i < result.length; i++) {
       assertEquals(expectedResult[i], result[i]);
     }
@@ -502,29 +465,11 @@ public class ValueCompressionUtilTest {
     }
   }
 
-  @Test public void testToConvertToBytesForLong() {
-    long[] input = { 2000000, 300654 };
-    byte[] result = ValueCompressionUtil.convertToBytes(input);
-    byte[] expectedResult = { 0, 0, 0, 0, 0, 30, -124, -128, 0, 0, 0, 0, 0, 4, -106, 110 };
-    for (int i = 0; i < result.length; i++) {
-      assertEquals(expectedResult[i], result[i]);
-    }
-  }
-
   @Test public void testToConvertToLong() {
     ByteBuffer byteBuffer = ByteBuffer.allocate(8);
     byteBuffer.putLong(321654987);
     long[] result = ValueCompressionUtil.convertToLongArray(byteBuffer, 8);
     long[] expectedResult = { 321654987 };
-    for (int i = 0; i < result.length; i++) {
-      assertEquals(expectedResult[i], result[i]);
-    }
-  }
-
-  @Test public void testToConvertToBytesForDouble() {
-    double[] input = { 20.236, 30.001 };
-    byte[] result = ValueCompressionUtil.convertToBytes(input);
-    byte[] expectedResult = { 64, 52, 60, 106, 126, -7, -37, 35, 64, 62, 0, 65, -119, 55, 75, -57 };
     for (int i = 0; i < result.length; i++) {
       assertEquals(expectedResult[i], result[i]);
     }
