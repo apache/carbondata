@@ -17,11 +17,14 @@
 
 package org.apache.carbondata.spark.thriftserver
 
+import java.io.File
+
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 object CarbonThriftServer {
@@ -39,14 +42,15 @@ object CarbonThriftServer {
 
     val sparkHome = System.getenv.get("SPARK_HOME")
     if (null != sparkHome) {
-      builder.config("carbon.properties.filepath",
-        sparkHome + '/' + "conf" + '/' + "carbon.properties")
-      System.setProperty("carbon.properties.filepath",
-        sparkHome + '/' + "conf" + '/' + "carbon.properties")
+      val file = new File(sparkHome + '/' + "conf" + '/' + "carbon.properties")
+      if (file.exists()) {
+        builder.config("carbon.properties.filepath", file.getCanonicalPath)
+        System.setProperty("carbon.properties.filepath", file.getCanonicalPath)
+      }
     }
-    CarbonProperties.getInstance().addProperty("carbon.storelocation", args.head)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION, args.head)
 
-    val spark = builder.getOrCreateCarbonSession()
+    val spark = builder.getOrCreateCarbonSession(args.head)
     val warmUpTime = CarbonProperties.getInstance().getProperty("carbon.spark.warmUpTime", "5000")
     try {
       Thread.sleep(Integer.parseInt(warmUpTime))

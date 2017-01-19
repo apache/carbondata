@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.thriftserver
 
+import java.io.File
+
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.CarbonContext
 import org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
@@ -31,9 +33,11 @@ object CarbonThriftServer {
       .setAppName("Carbon Thrift Server")
     val sparkHome = System.getenv.get("SPARK_HOME")
     if (null != sparkHome) {
-      conf.set("carbon.properties.filepath", sparkHome + '/' + "conf" + '/' + "carbon.properties")
-      System.setProperty("carbon.properties.filepath",
-        sparkHome + '/' + "conf" + '/' + "carbon.properties")
+      val file = new File(sparkHome + '/' + "conf" + '/' + "carbon.properties")
+      if (file.exists()) {
+        conf.set("carbon.properties.filepath", file.getCanonicalPath)
+        System.setProperty("carbon.properties.filepath", file.getCanonicalPath)
+      }
     }
     if (org.apache.spark.SPARK_VERSION.startsWith("1.6")) {
       conf.set("spark.sql.hive.thriftServer.singleSession", "true")
