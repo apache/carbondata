@@ -19,7 +19,6 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
-import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -32,19 +31,10 @@ object CarbonSessionExample {
                             + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
-    val metastoredb = s"$rootPath/examples/spark2/target/metastore_db"
-
-    // clean data folder
-    if (true) {
-      val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
-      clean(storeLocation)
-      clean(warehouse)
-      clean(metastoredb)
-    }
+    val metastoredb = s"$rootPath/examples/spark2/target"
 
     CarbonProperties.getInstance()
       .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")
-      .addProperty("carbon.storelocation", storeLocation)
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
     import org.apache.spark.sql.CarbonSession._
@@ -52,16 +42,14 @@ object CarbonSessionExample {
     val spark = SparkSession
       .builder()
       .master("local")
-      .appName("CarbonExample")
-      .enableHiveSupport()
+      .appName("CarbonSessionExample")
       .config("spark.sql.warehouse.dir", warehouse)
-      .config("javax.jdo.option.ConnectionURL",
-    s"jdbc:derby:;databaseName=$metastoredb;create=true")
-      .getOrCreateCarbonSession()
+      .getOrCreateCarbonSession(storeLocation, metastoredb)
 
     spark.sparkContext.setLogLevel("WARN")
 
     spark.sql("DROP TABLE IF EXISTS carbon_table")
+    spark.sql("DROP TABLE IF EXISTS carbon_table1")
 
     // Create table
     spark.sql(
@@ -75,7 +63,25 @@ object CarbonSessionExample {
          |    timestampField timestamp,
          |    decimalField decimal(18,2),
          |    dateField date,
-         |    charField char(5),
+         |    charField string,
+         |    floatField float
+         | )
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')
+       """.stripMargin)
+
+    spark.sql(
+      s"""
+         | CREATE TABLE carbon_table1(
+         |    shortField short,
+         |    intField int,
+         |    bigintField long,
+         |    doubleField double,
+         |    stringField string,
+         |    timestampField timestamp,
+         |    decimalField decimal(18,2),
+         |    dateField date,
+         |    charField string,
          |    floatField float
          | )
          | STORED BY 'carbondata'
@@ -93,59 +99,27 @@ object CarbonSessionExample {
        """.stripMargin)
     // scalastyle:on
 
+//    spark.sql("""
+//             SELECT *
+//             FROM carbon_table
+//              """).show
+//
+//    spark.sql("""select shortField,intField,bigintField,doubleField,ASCII(stringField),timestampField,decimalField,dateField,charField,floatField from carbon_table
+//              """).show
+
     spark.sql("""
-             SELECT *
-             FROM carbon_table
-             where stringfield = 'spark' and decimalField > 40
+             insert into table carbon_table1 select shortField,intField,bigintField,doubleField,ASCII(stringField),
+                timestampField,decimalField,dateField,charField,floatField from carbon_table
               """).show
 
     spark.sql("""
              SELECT *
-             FROM carbon_table where length(stringField) = 5
-              """).show
-
-    spark.sql("""
-             SELECT *
-             FROM carbon_table where date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
-              """).show
-
-    spark.sql("""
-             select count(stringField) from carbon_table
-              """.stripMargin).show
-
-    spark.sql("""
-           SELECT sum(intField), stringField
-           FROM carbon_table
-           GROUP BY stringField
-              """).show
-
-    spark.sql(
-      """
-        |select t1.*, t2.*
-        |from carbon_table t1, carbon_table t2
-        |where t1.stringField = t2.stringField
-      """.stripMargin).show
-
-    spark.sql(
-      """
-        |with t1 as (
-        |select * from carbon_table
-        |union all
-        |select * from carbon_table
-        |)
-        |select t1.*, t2.*
-        |from t1, carbon_table t2
-        |where t1.stringField = t2.stringField
-      """.stripMargin).show
-
-    spark.sql("""
-             SELECT *
-             FROM carbon_table
-             where stringfield = 'spark' and floatField > 2.8
+             FROM carbon_table1
               """).show
 
     // Drop table
     spark.sql("DROP TABLE IF EXISTS carbon_table")
+    spark.sql("DROP TABLE IF EXISTS carbon_table1")
   }
 
 }

@@ -223,7 +223,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         pushedFilters,
         metadata,
         needDecoder,
-        updateRequestedColumns)
+        updateRequestedColumns.asInstanceOf[Seq[Attribute]])
       filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan)
     } else {
       // Don't request columns that are only referenced by pushed filters.
@@ -231,15 +231,16 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       (projectSet ++ filterSet -- handledSet).map(relation.attributeMap).toSeq
       val updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
       val scan = getDataSourceScan(relation,
-        updateRequestedColumns,
+        updateRequestedColumns.asInstanceOf[Seq[Attribute]],
         scanBuilder,
         candidatePredicates,
         pushedFilters,
         metadata,
         needDecoder,
-        updateRequestedColumns)
+        updateRequestedColumns.asInstanceOf[Seq[Attribute]])
       execution.ProjectExec(
-        projects, filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan))
+        updateRequestedColumnsFunc(projects, table, needDecoder).asInstanceOf[Seq[NamedExpression]],
+        filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan))
     }
   }
 
@@ -251,7 +252,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       pushedFilters: Seq[Filter],
       metadata: Map[String, String],
       needDecoder: ArrayBuffer[AttributeReference],
-      updateRequestedColumns: Seq[AttributeReference]): DataSourceScanExec = {
+      updateRequestedColumns: Seq[Attribute]): DataSourceScanExec = {
     val table = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
     if (supportBatchedDataSource(relation.relation.sqlContext, updateRequestedColumns) &&
         needDecoder.isEmpty) {
@@ -272,29 +273,31 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     }
   }
 
-  def updateRequestedColumnsFunc(requestedColumns: Seq[AttributeReference],
+  def updateRequestedColumnsFunc(requestedColumns: Seq[Expression],
       relation: CarbonDatasourceHadoopRelation,
-      needDecoder: ArrayBuffer[AttributeReference]): Seq[AttributeReference] = {
+      needDecoder: ArrayBuffer[AttributeReference]): Seq[Expression] = {
     val map = relation.carbonRelation.metaData.dictionaryMap
-    requestedColumns.map { attr =>
-      if (needDecoder.exists(_.name.equalsIgnoreCase(attr.name))) {
-        attr
-      } else {
-        val dict = map.get(attr.name)
-        if (dict.isDefined && dict.get) {
-          AttributeReference(attr.name,
-            IntegerType,
-            attr.nullable,
-            attr.metadata)(attr.exprId, attr.qualifier)
-        } else {
+    requestedColumns.map {
+      case attr: AttributeReference =>
+        if (needDecoder.exists(_.name.equalsIgnoreCase(attr.name))) {
           attr
+        } else {
+          val dict = map.get(attr.name)
+          if (dict.isDefined && dict.get) {
+            AttributeReference(attr.name,
+              IntegerType,
+              attr.nullable,
+              attr.metadata)(attr.exprId, attr.qualifier)
+          } else {
+            attr
+          }
         }
-      }
+      case others => others
     }
   }
 
   private def getPartitioning(carbonTable: CarbonTable,
-      output: Seq[AttributeReference]): Partitioning = {
+      output: Seq[Attribute]): Partitioning = {
     val info: BucketingInfo = carbonTable.getBucketingInfo(carbonTable.getFactTableName)
     if (info != null) {
       val cols = info.getListOfColumns.asScala
@@ -304,7 +307,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       val bucketColumns = cols.flatMap { n =>
         val attrRef = output.find(_.name.equalsIgnoreCase(n.getColumnName))
         attrRef match {
-          case Some(attr) =>
+          case Some(attr: AttributeReference) =>
             Some(AttributeReference(attr.name,
               CarbonScalaUtil.convertCarbonToSparkDataType(n.getDataType),
               attr.nullable,
