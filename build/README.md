@@ -48,6 +48,7 @@ mvn -DskipTests -Pspark-1.5 -Dspark.version=1.5.2 clean package
  
 mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.1 clean package
 mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.2 clean package
+mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.3 clean package
 
 mvn -DskipTests -Pspark-2.1 -Dspark.version=2.1.0 clean package
 ```

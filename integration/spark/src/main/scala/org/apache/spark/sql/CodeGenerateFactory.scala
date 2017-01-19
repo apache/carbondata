@@ -25,8 +25,8 @@ import org.apache.spark.util.{ScalaCompilerUtil, Utils}
 
 private[sql] class CodeGenerateFactory(version: String) {
 
-  val optimizerFactory = if (version.equals("1.6.2")) {
-    ScalaCompilerUtil.compiledCode(CodeTemplates.spark1_6_2_OptimizerString)
+  val optimizerFactory = if (version.equals("1.6.2") || version.equals("1.6.3")) {
+    ScalaCompilerUtil.compiledCode(CodeTemplates.spark1_6_OptimizerString)
       .asInstanceOf[AbstractCarbonOptimizerFactory]
   } else if (version.startsWith("1.6") || version.startsWith("1.5")) {
     ScalaCompilerUtil.compiledCode(CodeTemplates.defaultOptimizerString)
@@ -90,7 +90,7 @@ object CodeGenerateFactory {
 
 object CodeTemplates {
 
-  val spark1_6_2_OptimizerString =
+  val spark1_6_OptimizerString =
     s"""
        import org.apache.spark.sql._;
        import org.apache.spark.sql.optimizer._;
