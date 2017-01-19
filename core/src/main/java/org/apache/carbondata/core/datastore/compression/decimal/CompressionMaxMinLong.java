@@ -65,14 +65,15 @@ public class CompressionMaxMinLong extends ValueCompressionHolder<long[]> {
 
   }
 
-  @Override
-  public void uncompress(DataType dataType, byte[] compressedData, int offset, int length,
-      int decimalPlaces, Object maxValueObject) {
-    super.unCompress(compressor, dataType, compressedData, offset, length);
-    setUncompressValues(value, maxValueObject);
+  @Override public void uncompress(DataType dataType, byte[] compressedData, int offset, int length,
+      int decimalPlaces, Object maxValueObject, int numberOfRows) {
+    super.unCompress(compressor, dataType, compressedData, offset, length, numberOfRows,
+        maxValueObject, decimalPlaces);
   }
 
-  @Override public long[] getValue() {return this.value; }
+  @Override public long[] getValue() {
+    return this.value;
+  }
 
   @Override public void setValueInBytes(byte[] value) {
     ByteBuffer buffer = ByteBuffer.wrap(value);
@@ -91,21 +92,22 @@ public class CompressionMaxMinLong extends ValueCompressionHolder<long[]> {
 
   @Override public BigDecimal getBigDecimalValue(int index) {
     throw new UnsupportedOperationException(
-      "Big decimal value is not defined for CompressionMaxMinLong");
+        "Big decimal value is not defined for CompressionMaxMinLong");
   }
 
-  private void setUncompressValues(long[] data, Object maxValueObject) {
-    this.measureChunkStore =
-        MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_LONG, data.length);
+  @Override public void freeMemory() {
+    this.measureChunkStore.freeMemory();
+  }
+
+  @Override
+  public void setValue(long[] data, int numberOfRows, Object maxValueObject, int decimalPlaces) {
+    this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
+        .getMeasureDataChunkStore(DataType.DATA_LONG, numberOfRows);
     this.measureChunkStore.putData(data);
     if (maxValueObject instanceof Long) {
       this.maxValue = (long) maxValueObject;
     } else {
       this.maxValue = (double) maxValueObject;
     }
-  }
-
-  @Override public void freeMemory() {
-    this.measureChunkStore.freeMemory();
   }
 }

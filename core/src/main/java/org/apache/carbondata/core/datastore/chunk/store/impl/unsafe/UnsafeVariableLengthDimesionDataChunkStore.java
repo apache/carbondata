@@ -122,42 +122,37 @@ public class UnsafeVariableLengthDimesionDataChunkStore
    * @return row
    */
   @Override public byte[] getRow(int rowId) {
-    byte[] data = null;
-    try {
-      // if column was explicitly sorted we need to get the rowid based inverted index reverse
-      if (isExplicitSorted) {
-        rowId = CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
-            dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + (rowId
-                * CarbonCommonConstants.INT_SIZE_IN_BYTE));
-      }
-      // now to get the row from memory block we need to do following thing
-      // 1. first get the current offset
-      // 2. if it's not a last row- get the next row offset
-      // Subtract the current row offset + 2 bytes(to skip the data length) with next row offset
-      // else subtract the current row offset + 2 bytes(to skip the data length)
-      // with complete data length
-      int currentDataOffset = CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
-          dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + (rowId
+    // if column was explicitly sorted we need to get the rowid based inverted index reverse
+    if (isExplicitSorted) {
+      rowId = CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
+          dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + (rowId
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
-      short length = 0;
-      // calculating the length of data
-      if (rowId < numberOfRows - 1) {
-        int OffsetOfNextdata = CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
-            dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + ((rowId + 1)
-                * CarbonCommonConstants.INT_SIZE_IN_BYTE));
-        length = (short) (OffsetOfNextdata - (currentDataOffset
-            + CarbonCommonConstants.SHORT_SIZE_IN_BYTE));
-      } else {
-        // for last record we need to subtract with data length
-        length = (short) (this.dataLength - currentDataOffset);
-      }
-      data = new byte[length];
-      CarbonUnsafe.unsafe.copyMemory(dataPageMemoryBlock.getBaseObject(),
-          dataPageMemoryBlock.getBaseOffset() + currentDataOffset, data,
-          CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
-    } catch (Throwable t) {
-      System.out.println();
     }
+    // now to get the row from memory block we need to do following thing
+    // 1. first get the current offset
+    // 2. if it's not a last row- get the next row offset
+    // Subtract the current row offset + 2 bytes(to skip the data length) with next row offset
+    // else subtract the current row offset + 2 bytes(to skip the data length)
+    // with complete data length
+    int currentDataOffset = CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
+        dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + (rowId
+            * CarbonCommonConstants.INT_SIZE_IN_BYTE));
+    short length = 0;
+    // calculating the length of data
+    if (rowId < numberOfRows - 1) {
+      int OffsetOfNextdata = CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
+          dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + ((rowId + 1)
+              * CarbonCommonConstants.INT_SIZE_IN_BYTE));
+      length = (short) (OffsetOfNextdata - (currentDataOffset
+          + CarbonCommonConstants.SHORT_SIZE_IN_BYTE));
+    } else {
+      // for last record we need to subtract with data length
+      length = (short) (this.dataLength - currentDataOffset);
+    }
+    byte[] data = new byte[length];
+    CarbonUnsafe.unsafe.copyMemory(dataPageMemoryBlock.getBaseObject(),
+        dataPageMemoryBlock.getBaseOffset() + currentDataOffset, data,
+        CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
     return data;
   }
 

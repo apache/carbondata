@@ -53,19 +53,23 @@ public class CompressionNoneLong extends ValueCompressionHolder<long[]> {
     this.actualDataType = actualDataType;
   }
 
-  @Override public void setValue(long[] value) { this.value = value;  }
+  @Override public void setValue(long[] value) {
+    this.value = value;
+  }
 
-  @Override public long[] getValue() { return this.value; }
+  @Override public long[] getValue() {
+    return this.value;
+  }
 
   @Override public void compress() {
     compressedValue = super.compress(compressor, DataType.DATA_LONG, value);
   }
 
   @Override
-  public void uncompress(DataType dataType, byte[] data, int offset, int length,
-      int decimalPlaces, Object maxValueObject) {
-    super.unCompress(compressor, dataType, data, offset, length);
-    setUncompressedValues(value);
+  public void uncompress(DataType dataType, byte[] data, int offset, int length, int decimalPlaces,
+      Object maxValueObject, int numberOfRows) {
+    super.unCompress(compressor, dataType, data, offset, length, numberOfRows, maxValueObject,
+        decimalPlaces);
   }
 
   @Override public void setValueInBytes(byte[] byteValue) {
@@ -87,11 +91,19 @@ public class CompressionNoneLong extends ValueCompressionHolder<long[]> {
 
   private void setUncompressedValues(long[] data) {
     this.measureChunkStore =
-      MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_LONG, data.length);
+        MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_LONG, data.length);
     this.measureChunkStore.putData(data);
   }
 
   @Override public void freeMemory() {
     this.measureChunkStore.freeMemory();
+  }
+
+  @Override
+  public void setValue(long[] data, int numberOfRows, Object maxValueObject, int decimalPlaces) {
+    this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
+        .getMeasureDataChunkStore(DataType.DATA_LONG, numberOfRows);
+    this.measureChunkStore.putData(data);
+
   }
 }

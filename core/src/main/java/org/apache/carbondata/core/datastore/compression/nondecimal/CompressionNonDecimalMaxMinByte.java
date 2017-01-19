@@ -51,11 +51,10 @@ public class CompressionNonDecimalMaxMinByte extends ValueCompressionHolder<byte
 
   private double divisionFactor;
 
-  @Override
-  public void uncompress(DataType dataType, byte[] compressedData,
-      int offset, int length, int decimalPlaces, Object maxValueObject) {
-    super.unCompress(compressor, dataType, compressedData, offset, length);
-    setUncompressedValues(value, decimalPlaces, maxValueObject );
+  @Override public void uncompress(DataType dataType, byte[] compressedData, int offset, int length,
+      int decimalPlaces, Object maxValueObject, int numberOfRows) {
+    super.unCompress(compressor, dataType, compressedData, offset, length, numberOfRows,
+        maxValueObject, decimalPlaces);
   }
 
   @Override public void compress() {
@@ -72,7 +71,7 @@ public class CompressionNonDecimalMaxMinByte extends ValueCompressionHolder<byte
 
   @Override public long getLongValue(int index) {
     throw new UnsupportedOperationException(
-      "Long value is not defined for CompressionNonDecimalMaxMinByte");
+        "Long value is not defined for CompressionNonDecimalMaxMinByte");
   }
 
   @Override public double getDoubleValue(int index) {
@@ -84,20 +83,23 @@ public class CompressionNonDecimalMaxMinByte extends ValueCompressionHolder<byte
 
   @Override public BigDecimal getBigDecimalValue(int index) {
     throw new UnsupportedOperationException(
-      "Big decimal value is not defined for CompressionNonDecimalMaxMinByte");
-  }
-
-  private void setUncompressedValues(byte[] data, int decimalPlaces, Object maxValueObject) {
-    this.measureChunkStore =
-        MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_BYTE, data.length);
-    this.measureChunkStore.putData(data);
-    this.maxValue = BigDecimal.valueOf((double) maxValueObject);
-    this.divisionFactor = Math.pow(10, decimalPlaces);
+        "Big decimal value is not defined for CompressionNonDecimalMaxMinByte");
   }
 
   @Override public void freeMemory() {
     this.measureChunkStore.freeMemory();
   }
 
-  @Override public byte[] getValue() { return this.value; }
+  @Override public byte[] getValue() {
+    return this.value;
+  }
+
+  @Override
+  public void setValue(byte[] data, int numberOfRows, Object maxValueObject, int decimalPlaces) {
+    this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
+        .getMeasureDataChunkStore(DataType.DATA_BYTE, numberOfRows);
+    this.measureChunkStore.putData(data);
+    this.maxValue = BigDecimal.valueOf((double) maxValueObject);
+    this.divisionFactor = Math.pow(10, decimalPlaces);
+  }
 }

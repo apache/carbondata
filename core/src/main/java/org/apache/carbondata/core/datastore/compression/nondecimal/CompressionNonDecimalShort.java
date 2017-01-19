@@ -53,17 +53,18 @@ public class CompressionNonDecimalShort extends ValueCompressionHolder<short[]> 
     this.value = value;
   }
 
-  @Override public short[] getValue() { return this.value; }
+  @Override public short[] getValue() {
+    return this.value;
+  }
 
   @Override public void compress() {
     compressedValue = super.compress(compressor, DataType.DATA_SHORT, value);
   }
 
-  @Override
-  public void uncompress(DataType dataType, byte[] compressedData,
-      int offset, int length, int decimalPlaces, Object maxValueObject) {
-    super.unCompress(compressor,dataType,compressedData, offset, length);
-    setUncompressedValues(value, decimalPlaces);
+  @Override public void uncompress(DataType dataType, byte[] compressedData, int offset, int length,
+      int decimalPlaces, Object maxValueObject, int numberOfRows) {
+    super.unCompress(compressor, dataType, compressedData, offset, length, numberOfRows,
+        maxValueObject, decimalPlaces);
   }
 
   @Override public void setValueInBytes(byte[] value) {
@@ -73,7 +74,7 @@ public class CompressionNonDecimalShort extends ValueCompressionHolder<short[]> 
 
   @Override public long getLongValue(int index) {
     throw new UnsupportedOperationException(
-      "Long value is not defined for CompressionNonDecimalShort");
+        "Long value is not defined for CompressionNonDecimalShort");
   }
 
   @Override public double getDoubleValue(int index) {
@@ -82,17 +83,18 @@ public class CompressionNonDecimalShort extends ValueCompressionHolder<short[]> 
 
   @Override public BigDecimal getBigDecimalValue(int index) {
     throw new UnsupportedOperationException(
-      "Big decimal value is not defined for CompressionNonDecimalShort");
-  }
-
-  private void setUncompressedValues(short[] data, int decimalPlaces) {
-    this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
-        .getMeasureDataChunkStore(DataType.DATA_SHORT, data.length);
-    this.measureChunkStore.putData(data);
-    this.divisionFactory = Math.pow(10, decimalPlaces);
+        "Big decimal value is not defined for CompressionNonDecimalShort");
   }
 
   @Override public void freeMemory() {
     this.measureChunkStore.freeMemory();
+  }
+
+  @Override
+  public void setValue(short[] data, int numberOfRows, Object maxValueObject, int decimalPlaces) {
+    this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
+        .getMeasureDataChunkStore(DataType.DATA_SHORT, numberOfRows);
+    this.measureChunkStore.putData(data);
+    this.divisionFactory = Math.pow(10, decimalPlaces);
   }
 }

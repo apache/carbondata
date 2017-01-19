@@ -68,7 +68,8 @@ public abstract class AbstractHeavyCompressedDoubleArrayDataStore
     byte[][] returnValue = new byte[values.length][];
     for (int i = 0; i < compressionModel.getValueCompressionHolder().length; i++) {
       values[i] = compressionModel.getValueCompressionHolder()[i];
-      if (type[i] != CarbonCommonConstants.BYTE_VALUE_MEASURE) {
+      if (type[i] != CarbonCommonConstants.BYTE_VALUE_MEASURE
+          && type[i] != CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
         // first perform encoding of the data chunk
         values[i].setValue(
             ValueCompressionUtil.getValueCompressor(compressionModel.getCompressionFinders()[i])

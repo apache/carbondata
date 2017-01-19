@@ -21,8 +21,6 @@ import java.math.BigDecimal;
 
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-
-
 /**
  * ValueCompressionHolder is the base class for handling
  * compression / decompression of the measure data chunk
@@ -36,59 +34,67 @@ public abstract class ValueCompressionHolder<T> {
 
   /**
    * @param compressor the compressor used to decompress the data
-   * @param dataType data type of the data
-   * @param data compressed data
+   * @param dataType   data type of the data
+   * @param data       compressed data
    */
-  public void unCompress(Compressor compressor, DataType dataType, byte[] data,
-      int offset, int length) {
+  protected void unCompress(Compressor compressor, DataType dataType, byte[] data, int offset,
+      int length, int numberOfRows, Object maxValueObject, int decimalPlaces) {
     switch (dataType) {
       case DATA_BYTE:
-        setValue((T)compressor.unCompressByte(data, offset, length));
+        setValue((T) compressor.unCompressByte(data, offset, length), numberOfRows, maxValueObject,
+            decimalPlaces);
         break;
       case DATA_SHORT:
-        setValue((T)compressor.unCompressShort(data, offset, length));
+        setValue((T) compressor.unCompressShort(data, offset, length), numberOfRows, maxValueObject,
+            decimalPlaces);
         break;
       case DATA_INT:
-        setValue((T)compressor.unCompressInt(data, offset, length));
+        setValue((T) compressor.unCompressInt(data, offset, length), numberOfRows, maxValueObject,
+            decimalPlaces);
         break;
       case DATA_LONG:
       case DATA_BIGINT:
-        setValue((T)compressor.unCompressLong(data, offset, length));
+        setValue((T) compressor.unCompressLong(data, offset, length), numberOfRows, maxValueObject,
+            decimalPlaces);
         break;
       case DATA_FLOAT:
-        setValue((T)compressor.unCompressFloat(data, offset, length));
+        setValue((T) compressor.unCompressFloat(data, offset, length), numberOfRows, maxValueObject,
+            decimalPlaces);
         break;
       default:
-        setValue((T)compressor.unCompressDouble(data, offset, length));
+        setValue((T) compressor.unCompressDouble(data, offset, length), numberOfRows,
+            maxValueObject, decimalPlaces);
         break;
     }
   }
 
   /**
    * @param compressor the compressor used to compress the data
-   * @param dataType data type of the data
-   * @param data original data
+   * @param dataType   data type of the data
+   * @param data       original data
    */
   public byte[] compress(Compressor compressor, DataType dataType, Object data) {
     switch (dataType) {
       case DATA_BYTE:
-        return compressor.compressByte((byte[])data);
+        return compressor.compressByte((byte[]) data);
       case DATA_SHORT:
-        return compressor.compressShort((short[])data);
+        return compressor.compressShort((short[]) data);
       case DATA_INT:
-        return compressor.compressInt((int[])data);
+        return compressor.compressInt((int[]) data);
       case DATA_LONG:
       case DATA_BIGINT:
-        return compressor.compressLong((long[])data);
+        return compressor.compressLong((long[]) data);
       case DATA_FLOAT:
-        return compressor.compressFloat((float[])data);
+        return compressor.compressFloat((float[]) data);
       case DATA_DOUBLE:
       default:
-        return compressor.compressDouble((double[])data);
+        return compressor.compressDouble((double[]) data);
     }
   }
 
   public abstract void setValue(T value);
+
+  public abstract void setValue(T data, int numberOfRows, Object maxValueObject, int decimalPlaces);
 
   public abstract T getValue();
 
@@ -96,10 +102,12 @@ public abstract class ValueCompressionHolder<T> {
 
   public abstract void compress();
 
-  public abstract void uncompress(DataType dataType, byte[] compressData, int offset,
-      int length, int decimal, Object maxValueObject);
+  public abstract void uncompress(DataType dataType, byte[] compressData, int offset, int length,
+      int decimal, Object maxValueObject, int numberOfRows);
 
-  public byte[] getCompressedData() { return compressedValue; }
+  public byte[] getCompressedData() {
+    return compressedValue;
+  }
 
   public abstract long getLongValue(int index);
 
@@ -108,6 +116,5 @@ public abstract class ValueCompressionHolder<T> {
   public abstract BigDecimal getBigDecimalValue(int index);
 
   public abstract void freeMemory();
-
 
 }
