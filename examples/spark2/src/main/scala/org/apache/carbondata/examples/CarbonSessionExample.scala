@@ -19,6 +19,7 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -31,10 +32,19 @@ object CarbonSessionExample {
                             + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
-    val metastoredb = s"$rootPath/examples/spark2/target"
+    val metastoredb = s"$rootPath/examples/spark2/target/metastore_db"
+
+    // clean data folder
+    if (true) {
+      val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
+      clean(storeLocation)
+      clean(warehouse)
+      clean(metastoredb)
+    }
 
     CarbonProperties.getInstance()
       .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")
+      .addProperty("carbon.storelocation", storeLocation)
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
     import org.apache.spark.sql.CarbonSession._
@@ -42,9 +52,12 @@ object CarbonSessionExample {
     val spark = SparkSession
       .builder()
       .master("local")
-      .appName("CarbonSessionExample")
+      .appName("CarbonExample")
+      .enableHiveSupport()
       .config("spark.sql.warehouse.dir", warehouse)
-      .getOrCreateCarbonSession(storeLocation, metastoredb)
+      .config("javax.jdo.option.ConnectionURL",
+    s"jdbc:derby:;databaseName=$metastoredb;create=true")
+      .getOrCreateCarbonSession()
 
     spark.sparkContext.setLogLevel("WARN")
 
