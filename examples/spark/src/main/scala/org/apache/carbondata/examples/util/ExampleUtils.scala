@@ -90,7 +90,7 @@ object ExampleUtils {
       .format("carbondata")
       .option("tableName", tableName)
       .option("compress", "true")
-      .option("useKettle", "false")
+      .option("use_kettle", "false")
       .option("tempCSV", "false")
       .mode(mode)
       .save()

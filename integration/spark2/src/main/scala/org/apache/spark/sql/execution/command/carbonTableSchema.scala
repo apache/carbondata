@@ -385,11 +385,19 @@ case class LoadTable(
       val useKettle = options.get("use_kettle") match {
         case Some(value) => value.toBoolean
         case _ =>
-          val useKettleLocal = System.getProperty("use.kettle")
+          var useKettleLocal = System.getProperty("use_kettle")
+          if (useKettleLocal == null && sparkSession.sparkContext.getConf.contains("use_kettle")) {
+            useKettleLocal = sparkSession.sparkContext.getConf.get("use_kettle")
+          }
           if (useKettleLocal == null) {
-            sparkSession.sqlContext.sparkContext.getConf.get("use_kettle_default", "true").toBoolean
-          } else {
+            useKettleLocal = CarbonProperties.getInstance().
+              getProperty(CarbonCommonConstants.USE_KETTLE,
+                CarbonCommonConstants.USE_KETTLE_DEFAULT)
+          }
+          try {
             useKettleLocal.toBoolean
+          } catch {
+            case e: Exception => CarbonCommonConstants.USE_KETTLE_DEFAULT.toBoolean
           }
       }
 
