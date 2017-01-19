@@ -28,6 +28,7 @@ import scala.util.control.Breaks.{break, breakable}
 
 import org.apache.commons.lang3.{ArrayUtils, StringUtils}
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.Accumulator
@@ -648,12 +649,14 @@ object GlobalDictionaryUtil {
    */
   private def validateAllDictionaryPath(allDictionaryPath: String): Boolean = {
     val fileType = FileFactory.getFileType(allDictionaryPath)
-    val filePath = FileFactory.getCarbonFile(allDictionaryPath, fileType)
+    val filePath = new Path(allDictionaryPath)
+    val file = FileFactory.getCarbonFile(filePath.toString, fileType)
+    val parentFile = FileFactory.getCarbonFile(filePath.getParent.toString, fileType)
     // filepath regex, look like "/path/*.dictionary"
     if (filePath.getName.startsWith("*")) {
       val dictExt = filePath.getName.substring(1)
-      if (filePath.getParentFile.exists()) {
-        val listFiles = filePath.getParentFile.listFiles()
+      if (parentFile.exists()) {
+        val listFiles = parentFile.listFiles()
         if (listFiles.exists(file =>
           file.getName.endsWith(dictExt) && file.getSize > 0)) {
           true
@@ -663,12 +666,12 @@ object GlobalDictionaryUtil {
           false
         }
       } else {
-        throw new FileNotFoundException(
-          "The given dictionary file path is not found!")
+        throw new DataLoadingException(
+          s"The given dictionary file path is not found : $allDictionaryPath")
       }
     } else {
-      if (filePath.exists()) {
-        if (filePath.getSize > 0) {
+      if (file.exists()) {
+        if (file.getSize > 0) {
           true
         } else {
           LOGGER.warn("No dictionary files found or empty dictionary files! " +
@@ -676,8 +679,8 @@ object GlobalDictionaryUtil {
           false
         }
       } else {
-        throw new FileNotFoundException(
-          "The given dictionary file path is not found!")
+        throw new DataLoadingException(
+          s"The given dictionary file path is not found : $allDictionaryPath")
       }
     }
   }
