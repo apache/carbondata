@@ -28,7 +28,6 @@ You can find the latest CarbonData document and learn more at:
 
 ## Status
 [![Build Status](https://travis-ci.org/apache/incubator-carbondata.svg?branch=master)](https://travis-ci.org/apache/incubator-carbondata)
-[![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 ## Features
 CarbonData file format is a columnar store in HDFS, it has many features that a modern columnar format has, such as splittable, compression schema ,complex data type etc, and CarbonData has following unique features:
