@@ -17,7 +17,7 @@
     under the License.
 -->
 
-<img src="/docs/images/format/CarbonData_logo.png" width="200" height="40">
+<img src="/docs/images/CarbonData_logo.png" width="200" height="40">
 
 Apache CarbonData(incubating) is an indexed columnar data format for fast analytics on big data platform, e.g.Apache Hadoop, Apache Spark, etc.
 
@@ -36,36 +36,25 @@ CarbonData file format is a columnar store in HDFS, it has many features that a 
 * Operable encoded data :Through supporting efficient compression and global encoding schemes, can query on compressed/encoded data, the data can be converted just before returning the results to the users, which is "late materialized". 
 * Supports for various use cases with one single Data format : like interactive OLAP-style query, Sequential Access (big scan), Random Access (narrow scan). 
 
-## Building CarbonData,using development tools and cluster deployment guide
-Please refer [Building CarbonData and Configuring IDE](https://cwiki.apache.org/confluence/display/CARBONDATA/Building+CarbonData+And+IDE+Configuration)
+## Building CarbonData
+CarbonData is built using Apache Maven, to [build CarbonData](https://github.com/apache/incubator-carbondata/blob/master/build)
 
-Please refer [Cluster Deployment Guide](https://cwiki.apache.org/confluence/display/CARBONDATA/Cluster+deployment+guide)
-
-## Getting Started
-Read the [quick start](https://cwiki.apache.org/confluence/display/CARBONDATA/Quick+Start)
-
-## Usage of CarbonData
- [DDL Operations on CarbonData](https://cwiki.apache.org/confluence/display/CARBONDATA/DDL+operations+on+CarbonData) 
- 
- [DML Operations on CarbonData](https://cwiki.apache.org/confluence/display/CARBONDATA/DML+operations+on+CarbonData)  
- 
- [CarbonData data management](https://cwiki.apache.org/confluence/display/CARBONDATA/Data+Management)  
-
-## CarbonData File Structure and interfaces
-Please refer [CarbonData File Format](https://cwiki.apache.org/confluence/display/CARBONDATA/CarbonData+File+Structure+and+Format)
-
-## CarbonData FAQ 
-[Configurations For Optimizing CarbonData Performance](https://cwiki.apache.org/confluence/display/CARBONDATA/Configurations+For+Optimizing+CarbonData+Performance)
-
-[Suggestion to create CarbonData table]
-(https://cwiki.apache.org/confluence/display/CARBONDATA/Suggestion+to+create+CarbonData+table)
+## Online Documentation
+* [Quick Start](https://github.com/apache/incubator-carbondata/blob/master/docs/quick-start-guide.md)
+* [Data Management](https://github.com/apache/incubator-carbondata/blob/master/docs/data-management.md)
+* [DDL Operations on CarbonData](https://github.com/apache/incubator-carbondata/blob/master/docs/ddl-operation-on-carbondata.md) 
+* [DML Operations on CarbonData](https://github.com/apache/incubator-carbondata/blob/master/docs/dml-operation-on-carbondata.md)  
+* [Cluster Installation](https://github.com/apache/incubator-carbondata/blob/master/docs/installation-guide.md)
+* [FAQ](https://github.com/apache/incubator-carbondata/blob/master/docs/faq.md)
+* [Trouble Shooting](https://github.com/apache/incubator-carbondata/blob/master/docs/troubleshooting.md)
+* [Useful Tips](https://github.com/apache/incubator-carbondata/blob/master/docs/useful-tips-on-carbondata.md)
 
 ## Other Technical Material
 [Apache CarbonData meetup material](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=66850609)
 
 ## Fork and Contribute
 This is an active open source project for everyone, and we are always open to people who want to use this system or contribute to it. 
-This guide document introduce [how to contribute to CarbonData](https://cwiki.apache.org/confluence/display/CARBONDATA/Contributing+to+CarbonData).
+This guide document introduce [how to contribute to CarbonData](https://github.com/apache/incubator-carbondata/blob/master/docs/How-to-contribute-to-Apache-CarbonData.md).
 
 ## Contact us
 To get involved in CarbonData:
