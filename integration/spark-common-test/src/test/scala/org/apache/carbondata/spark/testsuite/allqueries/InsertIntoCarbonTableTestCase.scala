@@ -121,9 +121,9 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE TABLE carbon_table(
-         |    shortField short,
+         |    shortField smallint,
          |    intField int,
-         |    bigintField long,
+         |    bigintField bigint,
          |    doubleField double,
          |    stringField string,
          |    timestampField timestamp,
@@ -139,9 +139,9 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""
          | CREATE TABLE carbon_table1(
-         |    shortField short,
+         |    shortField smallint,
          |    intField int,
-         |    bigintField long,
+         |    bigintField bigint,
          |    doubleField double,
          |    stringField string,
          |    timestampField timestamp,
