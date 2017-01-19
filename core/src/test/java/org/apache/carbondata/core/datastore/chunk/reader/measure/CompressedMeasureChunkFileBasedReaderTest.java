@@ -81,13 +81,8 @@ public class CompressedMeasureChunkFileBasedReaderTest {
   @Test public void readMeasureChunkTest() throws IOException {
     FileHolder fileHolder = new MockUp<FileHolder>() {
       @Mock public byte[] readByteArray(String filePath, long offset, int length) {
-        dataHolder[0] = new CarbonWriteDataHolder();
-        dataHolder[0].initialiseBigDecimalValues(1);
-        dataHolder[0].setWritableBigDecimalValueByIndex(0, new long[]{2L,1L});
-        byte[][] writableMeasureDataArray =
-            new HeavyCompressedDoubleArrayDataInMemoryStore(writerCompressModel)
-                .getWritableMeasureDataArray(dataHolder).clone();
-        return writableMeasureDataArray[0];
+        byte mockedValue[] = { 1, 5, 4, 8, 7 };
+        return mockedValue;
       }
     }.getMockInstance();
 
@@ -103,13 +98,8 @@ public class CompressedMeasureChunkFileBasedReaderTest {
   @Test public void readMeasureChunksTest() throws IOException {
     FileHolder fileHolder = new MockUp<FileHolder>() {
       @Mock public byte[] readByteArray(String filePath, long offset, int length) {
-        dataHolder[0] = new CarbonWriteDataHolder();
-        dataHolder[0].initialiseBigDecimalValues(1);
-        dataHolder[0].setWritableBigDecimalValueByIndex(0, new long[]{2L,1L});
-        byte[][] writableMeasureDataArray =
-            new HeavyCompressedDoubleArrayDataInMemoryStore(writerCompressModel)
-                .getWritableMeasureDataArray(dataHolder).clone();
-        return writableMeasureDataArray[0];
+        byte mockedValue[] = { 1, 5, 4, 8, 7 };
+        return mockedValue;
       }
     }.getMockInstance();
 
