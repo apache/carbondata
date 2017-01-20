@@ -108,7 +108,7 @@ public class CarbonMetadataUtilTest {
     blockletInfoList.add(blockletInfo);
 
     ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
-    valueEncoderMeta.setMantissa(5);
+    valueEncoderMeta.setDecimal(5);
     valueEncoderMeta.setMinValue(objMinArr);
     valueEncoderMeta.setMaxValue(objMaxArr);
     valueEncoderMeta.setUniqueValue(lngObj);

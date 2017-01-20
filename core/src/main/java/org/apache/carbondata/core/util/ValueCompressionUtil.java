@@ -116,9 +116,12 @@ public final class ValueCompressionUtil {
       case 'b':
         return new CompressionFinder(COMPRESSION_TYPE.BIGDECIMAL, DataType.DATA_BYTE,
             DataType.DATA_BYTE, measureStoreType);
-      case 'l':
+      case 'd':
         return getLongCompressorFinder(maxValue, minValue, mantissa, dataTypeSelected,
             measureStoreType);
+      case 'l':
+        return new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE,
+            DataType.DATA_BIGINT, DataType.DATA_BIGINT, measureStoreType);
       case 'n':
         return getDoubleCompressorFinder(maxValue, minValue, mantissa, dataTypeSelected,
             measureStoreType);
@@ -223,7 +226,7 @@ public final class ValueCompressionUtil {
    */
   public static ValueCompressor getValueCompressor(CompressionFinder compressorFinder) {
     switch(compressorFinder.getMeasureStoreType()) {
-      case 'l': return new BigIntCompressor();
+      case 'd': return new BigIntCompressor();
       default : return new DoubleCompressor();
     }
   }
@@ -565,6 +568,7 @@ public final class ValueCompressionUtil {
       case DATA_INT:
         return new CompressionNoneInt(actualDataType);
       case DATA_LONG:
+      case DATA_BIGINT:
         return new CompressionNoneLong(actualDataType);
       default:
         return new CompressionNoneDefault(actualDataType);
@@ -683,7 +687,7 @@ public final class ValueCompressionUtil {
   public static ReaderCompressModel getReaderCompressModel(ValueEncoderMeta meta) {
     ReaderCompressModel compressModel = new ReaderCompressModel();
     CompressionFinder compressFinder =
-        getCompressionFinder(meta.getMaxValue(), meta.getMinValue(), meta.getMantissa(),
+        getCompressionFinder(meta.getMaxValue(), meta.getMinValue(), meta.getDecimal(),
             meta.getType(), meta.getDataTypeSelected());
     compressModel.setValueCompressionHolder(
           ValueCompressionUtil.getValueCompressionHolder(compressFinder));

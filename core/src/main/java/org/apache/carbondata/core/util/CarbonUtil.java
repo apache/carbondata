@@ -749,7 +749,7 @@ public final class CarbonUtil {
       maxValue[i] = valueEncoderMeta.getMaxValue();
       minValue[i] = valueEncoderMeta.getMinValue();
       uniqueValue[i] = valueEncoderMeta.getUniqueValue();
-      decimal[i] = valueEncoderMeta.getMantissa();
+      decimal[i] = valueEncoderMeta.getDecimal();
       type[i] = valueEncoderMeta.getType();
       dataTypeSelected[i] = valueEncoderMeta.getDataTypeSelected();
     }

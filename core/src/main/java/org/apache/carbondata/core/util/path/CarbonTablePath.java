@@ -258,6 +258,10 @@ public class CarbonTablePath extends Path {
 
     CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
+        if(bucketNumber.equals("-1")) {
+          return file.getName().startsWith(taskId) && file.getName()
+              .endsWith(INDEX_FILE_EXT);
+        }
         return file.getName().startsWith(taskId + "-" + bucketNumber) && file.getName()
             .endsWith(INDEX_FILE_EXT);
       }
@@ -455,7 +459,7 @@ public class CarbonTablePath extends Path {
       int endIndex = fileName.indexOf("-", startIndex);
       // to support backward compatibility
       if (startIndex == -1 || endIndex == -1) {
-        return "0";
+        return "-1";
       }
       return fileName.substring(startIndex, endIndex);
     }

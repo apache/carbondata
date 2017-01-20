@@ -52,8 +52,8 @@ public class DataTypeUtilTest {
 
   @Test public void testGetAggType() {
     assertTrue(getAggType(DataType.DECIMAL) == 'b');
-    assertTrue(getAggType(DataType.INT) == 'l');
-    assertTrue(getAggType(DataType.LONG) == 'l');
+    assertTrue(getAggType(DataType.INT) == 'd');
+    assertTrue(getAggType(DataType.LONG) == 'd');
     assertTrue(getAggType(DataType.NULL) == 'n');
 
   }

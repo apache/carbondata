@@ -20,6 +20,8 @@ package org.apache.carbondata.core.metadata;
 import java.io.Serializable;
 
 /**
+ * DO NOT MODIFY THIS CLASS AND PACKAGE NAME, BECAUSE
+ * IT IS SERIALIZE TO STORE
  * It holds Value compression metadata for one data column
  */
 public class ValueEncoderMeta implements Serializable {
@@ -38,7 +40,7 @@ public class ValueEncoderMeta implements Serializable {
    */
   private Object uniqueValue;
 
-  private int mantissa;
+  private int decimal;
 
   private char type;
 
@@ -68,12 +70,12 @@ public class ValueEncoderMeta implements Serializable {
     this.uniqueValue = uniqueValue;
   }
 
-  public int getMantissa() {
-    return mantissa;
+  public int getDecimal() {
+    return decimal;
   }
 
-  public void setMantissa(int mantissa) {
-    this.mantissa = mantissa;
+  public void setDecimal(int decimal) {
+    this.decimal = decimal;
   }
 
   public char getType() {
