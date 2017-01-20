@@ -57,17 +57,19 @@ public class CompressionNoneInt extends ValueCompressionHolder<int[]> {
     this.value = value;
   }
 
-  @Override public int[] getValue() { return this.value; }
+  @Override public int[] getValue() {
+    return this.value;
+  }
 
   @Override public void compress() {
     compressedValue = super.compress(compressor, DataType.DATA_INT, value);
   }
 
   @Override
-  public void uncompress(DataType dataType, byte[] data, int offset, int length,
-      int decimalPlaces, Object maxValueObject) {
-    super.unCompress(compressor, dataType, data, offset, length);
-    setUncompressedValues(value);
+  public void uncompress(DataType dataType, byte[] data, int offset, int length, int decimalPlaces,
+      Object maxValueObject, int numberOfRows) {
+    super.unCompress(compressor, dataType, data, offset, length, numberOfRows, maxValueObject,
+        decimalPlaces);
   }
 
   @Override public void setValueInBytes(byte[] value) {
@@ -84,17 +86,17 @@ public class CompressionNoneInt extends ValueCompressionHolder<int[]> {
   }
 
   @Override public BigDecimal getBigDecimalValue(int index) {
-    throw new UnsupportedOperationException(
-      "Big decimal is not defined for CompressionNoneLong");
-  }
-
-  private void setUncompressedValues(int[] data) {
-    this.measureChunkStore =
-      MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_INT, data.length);
-    this.measureChunkStore.putData(data);
+    throw new UnsupportedOperationException("Big decimal is not defined for CompressionNoneLong");
   }
 
   @Override public void freeMemory() {
     this.measureChunkStore.freeMemory();
+  }
+
+  @Override
+  public void setValue(int[] data, int numberOfRows, Object maxValueObject, int decimalPlaces) {
+    this.measureChunkStore =
+        MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_INT, numberOfRows);
+    this.measureChunkStore.putData(data);
   }
 }

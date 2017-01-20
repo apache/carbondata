@@ -55,16 +55,18 @@ public class CompressionNonDecimalLong extends ValueCompressionHolder<long[]> {
     this.value = value;
   }
 
-  @Override public long[] getValue() { return this.value; }
+  @Override public long[] getValue() {
+    return this.value;
+  }
 
   @Override public void compress() {
     compressedValue = super.compress(compressor, DataType.DATA_LONG, value);
   }
 
-  @Override public void uncompress(DataType dataType, byte[] compressedData, int offset,
-      int length, int decimalPlaces, Object maxValueObject) {
-    super.unCompress(compressor, dataType, compressedData, offset, length);
-    setUncompressedValues(value, decimalPlaces);
+  @Override public void uncompress(DataType dataType, byte[] compressedData, int offset, int length,
+      int decimalPlaces, Object maxValueObject, int numberOfRows) {
+    super.unCompress(compressor, dataType, compressedData, offset, length, numberOfRows,
+        maxValueObject, decimalPlaces);
   }
 
   @Override public void setValueInBytes(byte[] bytes) {
@@ -74,7 +76,7 @@ public class CompressionNonDecimalLong extends ValueCompressionHolder<long[]> {
 
   @Override public long getLongValue(int index) {
     throw new UnsupportedOperationException(
-      "Long value is not defined for CompressionNonDecimalLong");
+        "Long value is not defined for CompressionNonDecimalLong");
   }
 
   @Override public double getDoubleValue(int index) {
@@ -83,17 +85,18 @@ public class CompressionNonDecimalLong extends ValueCompressionHolder<long[]> {
 
   @Override public BigDecimal getBigDecimalValue(int index) {
     throw new UnsupportedOperationException(
-      "Big decimal value is not defined for CompressionNonDecimalLong");
-  }
-
-  private void setUncompressedValues(long[] data, int decimalPlaces) {
-    this.measureChunkStore =
-        MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_LONG, data.length);
-    this.measureChunkStore.putData(data);
-    this.divisionFactory = Math.pow(10, decimalPlaces);
+        "Big decimal value is not defined for CompressionNonDecimalLong");
   }
 
   @Override public void freeMemory() {
     this.measureChunkStore.freeMemory();
+  }
+
+  @Override
+  public void setValue(long[] data, int numberOfRows, Object maxValueObject, int decimalPlaces) {
+    this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
+        .getMeasureDataChunkStore(DataType.DATA_LONG, numberOfRows);
+    this.measureChunkStore.putData(data);
+    this.divisionFactory = Math.pow(10, decimalPlaces);
   }
 }

@@ -29,15 +29,6 @@ public class CarbonWriteDataHolder {
   private long[] longValues;
 
   /**
-   * bigDecimal left part
-   */
-  private long[] bigDecimalLeftValues;
-
-  /**
-   * bigDecimal right part
-   */
-  private long[] bigDecimalRightValues;
-  /**
    * byteValues
    */
   private byte[][] byteValues;
@@ -127,14 +118,6 @@ public class CarbonWriteDataHolder {
     longValues = new long[size];
   }
 
-  public void initialiseBigDecimalValues(int size) {
-    if (size < 1) {
-      throw new IllegalArgumentException("Invalid array size");
-    }
-    bigDecimalLeftValues = new long[size];
-    bigDecimalRightValues = new long[size];
-  }
-
   /**
    * set double value by index
    *
@@ -157,17 +140,6 @@ public class CarbonWriteDataHolder {
     size++;
   }
 
-  /**
-   * set bigdecimal value by index
-   *
-   * @param index
-   * @param value
-   */
-  public void setWritableBigDecimalValueByIndex(int index, long[] value) {
-    bigDecimalLeftValues[index] = value[0];
-    bigDecimalRightValues[index] = value[1];
-    size++;
-  }
   /**
    * set byte array value by index
    *
@@ -252,27 +224,5 @@ public class CarbonWriteDataHolder {
       longValues = temp;
     }
     return longValues;
-  }
-
-  /**
-   * Get Writable bigdecimal Values
-   *
-   * @return
-   */
-  public long[][] getWritableBigDecimalValues() {
-    long[][] bigDecimalValues = new long[2][];
-    if (size < bigDecimalLeftValues.length) {
-      long[] temp = new long[size];
-      System.arraycopy(bigDecimalLeftValues, 0, temp, 0, size);
-      bigDecimalLeftValues = temp;
-    }
-    if (size < bigDecimalRightValues.length) {
-      long[] temp = new long[size];
-      System.arraycopy(bigDecimalRightValues, 0, temp, 0, size);
-      bigDecimalRightValues = temp;
-    }
-    bigDecimalValues[0]= bigDecimalLeftValues;
-    bigDecimalValues[1] = bigDecimalRightValues;
-    return bigDecimalValues;
   }
 }

@@ -18,11 +18,13 @@
 package org.apache.carbondata.core.datastore.chunk.store;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeBigDecimalMeasureChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeByteMeasureChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeDoubleMeasureChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeIntMeasureChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeLongMeasureChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeShortMeasureChunkStore;
+import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeBigDecimalMeasureChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeByteMeasureChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeDoubleMeasureChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeIntMeasureChunkStore;
@@ -73,8 +75,9 @@ public class MeasureChunkStoreFactory {
           return new SafeIntMeasureChunkStore(numberOfRows);
         case DATA_LONG:
           return new SafeLongMeasureChunkStore(numberOfRows);
+        case DATA_BIGDECIMAL:
+          return new SafeBigDecimalMeasureChunkStore(numberOfRows);
         case DATA_DOUBLE:
-          return new SafeDoubleMeasureChunkStore(numberOfRows);
         default:
           return new SafeDoubleMeasureChunkStore(numberOfRows);
       }
@@ -88,8 +91,9 @@ public class MeasureChunkStoreFactory {
           return new UnsafeIntMeasureChunkStore(numberOfRows);
         case DATA_LONG:
           return new UnsafeLongMeasureChunkStore(numberOfRows);
+        case DATA_BIGDECIMAL:
+          return new UnsafeBigDecimalMeasureChunkStore(numberOfRows);
         case DATA_DOUBLE:
-          return new UnsafeDoubleMeasureChunkStore(numberOfRows);
         default:
           return new UnsafeDoubleMeasureChunkStore(numberOfRows);
       }

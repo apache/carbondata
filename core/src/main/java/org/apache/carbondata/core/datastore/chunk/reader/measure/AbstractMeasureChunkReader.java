@@ -29,11 +29,17 @@ public abstract class AbstractMeasureChunkReader implements MeasureColumnChunkRe
   protected String filePath;
 
   /**
+   * number of rows for blocklet
+   */
+  protected int numberOfRows;
+
+  /**
    * Constructor to get minimum parameter to create instance of this class
    *
-   * @param filePath           file from which data will be read
+   * @param filePath file from which data will be read
    */
-  public AbstractMeasureChunkReader(String filePath) {
+  public AbstractMeasureChunkReader(String filePath, int numberOfRows) {
     this.filePath = filePath;
+    this.numberOfRows = numberOfRows;
   }
 }

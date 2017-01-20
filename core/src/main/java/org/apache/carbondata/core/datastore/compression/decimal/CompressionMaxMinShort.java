@@ -63,14 +63,15 @@ public class CompressionMaxMinShort extends ValueCompressionHolder<short[]> {
 
   }
 
-  @Override
-  public void uncompress(DataType dataType, byte[] compressedData, int offset, int length,
-      int decimalPlaces, Object maxValueObject) {
-    super.unCompress(compressor, dataType, compressedData, offset, length);
-    setUncompressedValues(value, maxValueObject);
+  @Override public void uncompress(DataType dataType, byte[] compressedData, int offset, int length,
+      int decimalPlaces, Object maxValueObject, int numberOfRows) {
+    super.unCompress(compressor, dataType, compressedData, offset, length, numberOfRows,
+        maxValueObject, decimalPlaces);
   }
 
-  @Override public short[] getValue() {return this.value; }
+  @Override public short[] getValue() {
+    return this.value;
+  }
 
   @Override public void compress() {
     compressedValue = super.compress(compressor, DataType.DATA_SHORT, value);
@@ -93,21 +94,23 @@ public class CompressionMaxMinShort extends ValueCompressionHolder<short[]> {
 
   @Override public BigDecimal getBigDecimalValue(int index) {
     throw new UnsupportedOperationException(
-      "Big decimal value is not defined for CompressionMaxMinShort");
+        "Big decimal value is not defined for CompressionMaxMinShort");
   }
 
-  private void setUncompressedValues(short[] data, Object maxValueObject) {
+  @Override public void freeMemory() {
+    this.measureChunkStore.freeMemory();
+  }
+
+  @Override
+  public void setValue(short[] data, int numberOfRows, Object maxValueObject, int decimalPlaces) {
     this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
-        .getMeasureDataChunkStore(DataType.DATA_SHORT, data.length);
+        .getMeasureDataChunkStore(DataType.DATA_SHORT, numberOfRows);
     this.measureChunkStore.putData(data);
     if (maxValueObject instanceof Long) {
       this.maxValue = (long) maxValueObject;
     } else {
       this.maxValue = (double) maxValueObject;
     }
-  }
 
-  @Override public void freeMemory() {
-    this.measureChunkStore.freeMemory();
   }
 }

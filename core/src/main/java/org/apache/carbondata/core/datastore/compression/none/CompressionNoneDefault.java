@@ -53,16 +53,20 @@ public class CompressionNoneDefault extends ValueCompressionHolder<double[]> {
     this.actualDataType = actualDataType;
   }
 
-  @Override public void setValue(double[] value) {this.value = value; }
-
-  @Override
-  public void uncompress(DataType dataType, byte[] data, int offset, int length,
-      int decimalPlaces, Object maxValueObject) {
-    super.unCompress(compressor, dataType, data, offset, length);
-    setUncompressedValues(value);
+  @Override public void setValue(double[] value) {
+    this.value = value;
   }
 
-  @Override public double[] getValue() { return this.value; }
+  @Override
+  public void uncompress(DataType dataType, byte[] data, int offset, int length, int decimalPlaces,
+      Object maxValueObject, int numberOfRows) {
+    super.unCompress(compressor, dataType, data, offset, length, numberOfRows, maxValueObject,
+        decimalPlaces);
+  }
+
+  @Override public double[] getValue() {
+    return this.value;
+  }
 
   @Override public void compress() {
     compressedValue = super.compress(compressor, DataType.DATA_DOUBLE, value);
@@ -74,8 +78,7 @@ public class CompressionNoneDefault extends ValueCompressionHolder<double[]> {
   }
 
   @Override public long getLongValue(int index) {
-    throw new UnsupportedOperationException(
-      "Long value is not defined for CompressionNonDefault");
+    throw new UnsupportedOperationException("Long value is not defined for CompressionNonDefault");
   }
 
   @Override public double getDoubleValue(int index) {
@@ -84,17 +87,23 @@ public class CompressionNoneDefault extends ValueCompressionHolder<double[]> {
 
   @Override public BigDecimal getBigDecimalValue(int index) {
     throw new UnsupportedOperationException(
-      "Big decimal is not defined for CompressionNoneDefault");
+        "Big decimal is not defined for CompressionNoneDefault");
   }
 
   private void setUncompressedValues(double[] data) {
     this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
         .getMeasureDataChunkStore(DataType.DATA_DOUBLE, data.length);
     this.measureChunkStore.putData(data);
-
   }
 
   @Override public void freeMemory() {
     this.measureChunkStore.freeMemory();
+  }
+
+  @Override
+  public void setValue(double[] data, int numberOfRows, Object maxValueObject, int decimalPlaces) {
+    this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
+        .getMeasureDataChunkStore(DataType.DATA_DOUBLE, numberOfRows);
+    this.measureChunkStore.putData(data);
   }
 }
