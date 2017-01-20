@@ -322,7 +322,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToUnCompressNone() {
     ValueCompressionHolder result =
         ValueCompressionUtil.getCompressionNone(DataType.DATA_BIGINT, DataType.DATA_BIGINT);
-    assertEquals(result.getClass(), CompressionNoneDefault.class);
+    assertEquals(result.getClass(), CompressionNoneLong.class);
   }
 
   @Test public void testToUnCompressNoneForByte() {

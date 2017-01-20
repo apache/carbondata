@@ -45,7 +45,7 @@ public class ReaderCompressModel {
   }
 
   public int getMantissa() {
-    return valueEncoderMeta.getMantissa();
+    return valueEncoderMeta.getDecimal();
   }
 
   public ValueCompressionHolder getValueCompressionHolder() {
