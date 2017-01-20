@@ -92,7 +92,10 @@ object CarbonScalaUtil {
   }
 
   def getKettleHome(sqlContext: SQLContext): String = {
-    var kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
+    var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
+    if (null == kettleHomePath) {
+      kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
+    }
     if (null == kettleHomePath) {
       val carbonHome = System.getenv("CARBON_HOME")
       if (null != carbonHome) {
