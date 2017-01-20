@@ -271,7 +271,7 @@ public final class ValueCompressionUtil {
       case BIGINT:
         return getCompressionNonDecimal(changedDataType);
       case BIGDECIMAL:
-        return new CompressByteArray(CompressByteArray.ByteArrayType.BIG_DECIMAL);
+        return new CompressByteArray();
       default:
         throw new IllegalArgumentException("unsupported compType: " + compType);
     }
@@ -820,7 +820,8 @@ public final class ValueCompressionUtil {
     DATA_FLOAT(),
     DATA_LONG(),
     DATA_BIGINT(),
-    DATA_DOUBLE();
+    DATA_DOUBLE(),
+    DATA_BIGDECIMAL();
     DataType() {
     }
   }

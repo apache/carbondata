@@ -30,7 +30,6 @@ import org.apache.carbondata.core.datastore.compression.ValueCompressionHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-
 public class CompressionMaxMinDefault extends ValueCompressionHolder<double[]> {
 
   /**
@@ -66,16 +65,18 @@ public class CompressionMaxMinDefault extends ValueCompressionHolder<double[]> {
     this.value = value;
   }
 
-  @Override public double[] getValue() {return this.value; }
+  @Override public double[] getValue() {
+    return this.value;
+  }
 
   @Override public void compress() {
     compressedValue = super.compress(compressor, DataType.DATA_DOUBLE, value);
   }
 
-  @Override public void uncompress(DataType dataType, byte[] compressedData,
-      int offset, int length, int decimalPlaces, Object maxValueObject) {
-    super.unCompress(compressor, dataType, compressedData, offset, length);
-    setUncompressedValues(value, maxValueObject);
+  @Override public void uncompress(DataType dataType, byte[] compressedData, int offset, int length,
+      int decimalPlaces, Object maxValueObject, int numberOfRows) {
+    super.unCompress(compressor, dataType, compressedData, offset, length, numberOfRows,
+        maxValueObject, decimalPlaces);
   }
 
   @Override public void setValueInBytes(byte[] value) {
@@ -85,7 +86,7 @@ public class CompressionMaxMinDefault extends ValueCompressionHolder<double[]> {
 
   @Override public long getLongValue(int index) {
     throw new UnsupportedOperationException(
-      "Long value is not defined for CompressionMaxMinDefault");
+        "Long value is not defined for CompressionMaxMinDefault");
   }
 
   @Override public double getDoubleValue(int index) {
@@ -95,21 +96,23 @@ public class CompressionMaxMinDefault extends ValueCompressionHolder<double[]> {
 
   @Override public BigDecimal getBigDecimalValue(int index) {
     throw new UnsupportedOperationException(
-      "Big decimal value is not defined for CompressionMaxMinDefault");
+        "Big decimal value is not defined for CompressionMaxMinDefault");
   }
 
-  private void setUncompressedValues(double[] data, Object maxValueObject) {
+  @Override public void freeMemory() {
+    this.measureChunkStore.freeMemory();
+  }
+
+  @Override
+  public void setValue(double[] data, int numberOfRows, Object maxValueObject, int decimalPlaces) {
     this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
-            .getMeasureDataChunkStore(DataType.DATA_DOUBLE, data.length);
+        .getMeasureDataChunkStore(DataType.DATA_DOUBLE, numberOfRows);
     this.measureChunkStore.putData(data);
     if (maxValueObject instanceof Long) {
       this.maxValue = (long) maxValueObject;
     } else {
       this.maxValue = (double) maxValueObject;
     }
-  }
 
-  @Override public void freeMemory() {
-    this.measureChunkStore.freeMemory();
   }
 }

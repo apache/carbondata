@@ -476,8 +476,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       } else if (type[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
         max[i] = -Double.MAX_VALUE;
       } else if (type[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        min[i] = new BigDecimal(Double.MAX_VALUE);
-        uniqueValue[i] = new BigDecimal(Double.MIN_VALUE);
+        max[i] = new BigDecimal(0.0);
       } else {
         max[i] = 0.0;
       }
@@ -490,7 +489,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         min[i] = Double.MAX_VALUE;
         uniqueValue[i] = Double.MIN_VALUE;
       } else if (type[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        max[i] = new BigDecimal(0.0);
+        min[i] = new BigDecimal(Double.MAX_VALUE);
+        uniqueValue[i] = new BigDecimal(Double.MIN_VALUE);
       } else {
         min[i] = 0.0;
         uniqueValue[i] = 0.0;
@@ -613,10 +613,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       } else if (type[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
         max[i] = -Double.MAX_VALUE;
       } else if (type[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        Long[] bigdMinVal = new Long[2];
-        bigdMinVal[0] = Long.MIN_VALUE;
-        bigdMinVal[1] = Long.MIN_VALUE;
-        max[i] = bigdMinVal;
+        max[i] = new BigDecimal(0.0);
       } else {
         max[i] = 0.0;
       }
@@ -629,14 +626,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         min[i] = Double.MAX_VALUE;
         uniqueValue[i] = Double.MIN_VALUE;
       } else if (type[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        Long[] bigdMaxVal = new Long[2];
-        bigdMaxVal[0] = Long.MAX_VALUE;
-        bigdMaxVal[1] = Long.MAX_VALUE;
-        min[i] = bigdMaxVal;
-        Long[] bigdUniqueVal = new Long[2];
-        bigdUniqueVal[0] = Long.MIN_VALUE;
-        bigdUniqueVal[1] = Long.MIN_VALUE;
-        uniqueValue[i] = bigdUniqueVal;
+        min[i] = new BigDecimal(Double.MAX_VALUE);
+        uniqueValue[i] = new BigDecimal(Double.MIN_VALUE);
       } else {
         min[i] = 0.0;
         uniqueValue[i] = 0.0;
@@ -1211,10 +1202,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       if (type[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
         uniqueValue[i] = (long) minValue[i] - 1;
       } else if (type[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        Long[] bigdMinVal = (Long[])minValue[i];
-        Long[] bigdUniqVal = (Long[])uniqueValue[i];
-        bigdUniqVal[0] = bigdMinVal[0] -1;
-        bigdUniqVal[1] = bigdMinVal[1] -1;
+        BigDecimal val = (BigDecimal) minValue[i];
+        uniqueValue[i] = (val.subtract(new BigDecimal(1.0)));
       } else {
         uniqueValue[i] = (double) minValue[i] - 1;
       }

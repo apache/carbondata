@@ -61,13 +61,14 @@ public class CompressionMaxMinInt extends ValueCompressionHolder<int[]> {
     this.value = value;
   }
 
-  @Override public int[] getValue() { return this.value; }
+  @Override public int[] getValue() {
+    return this.value;
+  }
 
-  @Override
-  public void uncompress(DataType dataType, byte[] compressedData, int offset, int length,
-      int decimalPlaces, Object maxValueObject) {
-    super.unCompress(compressor, dataType, compressedData, offset, length);
-    setUncompressedValues(value, maxValueObject);
+  @Override public void uncompress(DataType dataType, byte[] compressedData, int offset, int length,
+      int decimalPlaces, Object maxValueObject, int numberOfRows) {
+    super.unCompress(compressor, dataType, compressedData, offset, length, numberOfRows,
+        maxValueObject, decimalPlaces);
   }
 
   @Override public void compress() {
@@ -91,21 +92,22 @@ public class CompressionMaxMinInt extends ValueCompressionHolder<int[]> {
 
   @Override public BigDecimal getBigDecimalValue(int index) {
     throw new UnsupportedOperationException(
-      "Big decimal value is not defined for CompressionMaxMinInt");
+        "Big decimal value is not defined for CompressionMaxMinInt");
   }
 
-  private void setUncompressedValues(int[] data, Object maxValueObject) {
+  @Override public void freeMemory() {
+    this.measureChunkStore.freeMemory();
+  }
+
+  @Override
+  public void setValue(int[] data, int numberOfRows, Object maxValueObject, int decimalPlaces) {
     this.measureChunkStore =
-        MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_INT, data.length);
+        MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_INT, numberOfRows);
     this.measureChunkStore.putData(data);
     if (maxValueObject instanceof Long) {
       this.maxValue = (long) maxValueObject;
     } else {
       this.maxValue = (double) maxValueObject;
     }
-  }
-
-  @Override public void freeMemory() {
-    this.measureChunkStore.freeMemory();
   }
 }

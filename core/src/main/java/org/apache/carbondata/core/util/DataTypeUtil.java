@@ -176,6 +176,19 @@ public final class DataTypeUtil {
   }
 
   /**
+   * This method will convert a byte value back to big decimal value
+   *
+   * @param raw
+   * @return
+   */
+  public static BigDecimal byteToBigDecimal(byte[] raw, int offset, int length) {
+    int scale = (raw[offset] & 0xFF);
+    byte[] unscale = new byte[length - 1];
+    System.arraycopy(raw, offset+1, unscale, 0, unscale.length);
+    BigInteger sig = new BigInteger(unscale);
+    return new BigDecimal(sig, scale);
+  }
+  /**
    * returns the SqlStatement.Type of corresponding string value
    *
    * @param dataTypeStr

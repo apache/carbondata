@@ -57,7 +57,9 @@ public class CompressionNonDecimalMaxMinDefault extends ValueCompressionHolder<d
     this.value = value;
   }
 
-  @Override public double[] getValue() { return this.value; }
+  @Override public double[] getValue() {
+    return this.value;
+  }
 
   @Override public void compress() {
     compressedValue = super.compress(compressor, DataType.DATA_DOUBLE, value);
@@ -68,16 +70,15 @@ public class CompressionNonDecimalMaxMinDefault extends ValueCompressionHolder<d
     this.value = ValueCompressionUtil.convertToDoubleArray(buffer, value.length);
   }
 
-  @Override
-  public void uncompress(DataType dataType, byte[] compressedData,
-      int offset, int length, int decimalPlaces, Object maxValueObject) {
-    super.unCompress(compressor,dataType,compressedData, offset, length);
-    setUncompressedValues(value, decimalPlaces, maxValueObject);
+  @Override public void uncompress(DataType dataType, byte[] compressedData, int offset, int length,
+      int decimalPlaces, Object maxValueObject, int numberOfRows) {
+    super.unCompress(compressor, dataType, compressedData, offset, length, numberOfRows,
+        maxValueObject, decimalPlaces);
   }
 
   @Override public long getLongValue(int index) {
     throw new UnsupportedOperationException(
-      "Long value is not defined for CompressionNonDecimalMaxMinDefault");
+        "Long value is not defined for CompressionNonDecimalMaxMinDefault");
   }
 
   @Override public double getDoubleValue(int index) {
@@ -88,18 +89,19 @@ public class CompressionNonDecimalMaxMinDefault extends ValueCompressionHolder<d
 
   @Override public BigDecimal getBigDecimalValue(int index) {
     throw new UnsupportedOperationException(
-      "Big decimal value is not defined for CompressionNonDecimalMaxMinDefault");
-  }
-
-  private void setUncompressedValues(double[] data, int decimalPlaces, Object maxValueObject) {
-    this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
-        .getMeasureDataChunkStore(DataType.DATA_DOUBLE, data.length);
-    this.measureChunkStore.putData(data);
-    this.maxValue = BigDecimal.valueOf((double) maxValueObject);
-    this.divisionFactor = Math.pow(10, decimalPlaces);
+        "Big decimal value is not defined for CompressionNonDecimalMaxMinDefault");
   }
 
   @Override public void freeMemory() {
     this.measureChunkStore.freeMemory();
+  }
+
+  @Override
+  public void setValue(double[] data, int numberOfRows, Object maxValueObject, int decimalPlaces) {
+    this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
+        .getMeasureDataChunkStore(DataType.DATA_DOUBLE, numberOfRows);
+    this.measureChunkStore.putData(data);
+    this.maxValue = BigDecimal.valueOf((double) maxValueObject);
+    this.divisionFactor = Math.pow(10, decimalPlaces);
   }
 }

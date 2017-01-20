@@ -57,7 +57,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
    */
   public CompressedMeasureChunkFileBasedReaderV2(final BlockletInfo blockletInfo,
       final String filePath) {
-    super(filePath);
+    super(filePath, blockletInfo.getNumberOfRows());
     this.measureColumnChunkOffsets = blockletInfo.getMeasureChunkOffsets();
     this.measureColumnChunkLength = blockletInfo.getMeasureChunksLength();
   }
@@ -166,7 +166,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     // uncompress
     values.uncompress(compressionModel.getConvertedDataType()[0], data,
         copyPoint, measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
-            compressionModel.getMaxValue()[0]);
+            compressionModel.getMaxValue()[0], numberOfRows);
 
     CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values);
 
@@ -217,7 +217,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
       // uncompress
       values.uncompress(compressionModel.getConvertedDataType()[0], data, copyPoint,
               measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
-              compressionModel.getMaxValue()[0]);
+              compressionModel.getMaxValue()[0], numberOfRows);
 
       CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values);
 
