@@ -35,6 +35,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
  */
 public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator {
 
+  private static final int cutOffDate = Integer.MAX_VALUE >> 1;
   private static final long SECONDS_PER_DAY = 60 * 60 * 24L;
   private static final long MILLIS_PER_DAY = SECONDS_PER_DAY * 1000L;
 
@@ -131,7 +132,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
     if (key == 1) {
       return null;
     }
-    return key;
+    return key - cutOffDate;
   }
 
   private int generateDirectSurrogateKeyForNonTimestampType(String memberStr) {
@@ -151,7 +152,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
 
   private int generateKey(long timeValue) {
     long milli = timeValue + threadLocalLocalTimeZone.get().getOffset(timeValue);
-    int key = (int) Math.floor((double) milli / MILLIS_PER_DAY);
+    int key = (int) Math.floor((double) milli / MILLIS_PER_DAY) + cutOffDate;
     return key;
   }
 
