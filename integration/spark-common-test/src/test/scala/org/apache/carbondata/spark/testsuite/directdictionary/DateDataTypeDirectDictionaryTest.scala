@@ -53,7 +53,7 @@ class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll 
       )
 
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd")
+        .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
       val csvFilePath = s"$resourcesPath/datasamplefordate.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable OPTIONS" +
         "('DELIMITER'= ',', 'QUOTECHAR'= '\"')" )
@@ -63,7 +63,7 @@ class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll 
       case x: Throwable =>
         x.printStackTrace()
         CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+        .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "dd-MM-yyyy")
     }
   }
 
@@ -142,7 +142,7 @@ class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll 
     sql("drop table directDictionaryTable")
     sql("drop table directDictionaryTable_hive")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
   }
 }

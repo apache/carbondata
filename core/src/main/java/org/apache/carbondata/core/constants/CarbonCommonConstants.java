@@ -380,6 +380,15 @@ public final class CarbonCommonConstants {
    * CARBON_TIMESTAMP_DEFAULT_FORMAT
    */
   public static final String CARBON_TIMESTAMP_FORMAT = "carbon.timestamp.format";
+
+  /**
+   * CARBON_DATE_DEFAULT_FORMAT
+   */
+  public static final String CARBON_DATE_DEFAULT_FORMAT = "yyyy-MM-dd";
+  /**
+   * CARBON_DATE_DEFAULT_FORMAT
+   */
+  public static final String CARBON_DATE_FORMAT = "carbon.date.format";
   /**
    * STORE_LOCATION_HDFS
    */

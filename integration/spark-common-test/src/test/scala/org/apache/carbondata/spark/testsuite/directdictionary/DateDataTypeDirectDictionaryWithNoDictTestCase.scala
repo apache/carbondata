@@ -47,7 +47,7 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
       )
 
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
+        .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
       val csvFilePath = s"$resourcesPath/datasample.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable OPTIONS"
         + "('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
@@ -55,7 +55,7 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
       case x: Throwable =>
         x.printStackTrace()
         CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+        .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "dd-MM-yyyy")
     }
   }
 
@@ -90,7 +90,7 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
   override def afterAll {
     sql("drop table directDictionaryTable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
   }
 }

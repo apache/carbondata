@@ -18,7 +18,9 @@ package org.apache.carbondata.core.keygenerator.directdictionary.timestamp;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -33,13 +35,17 @@ import org.apache.carbondata.core.util.CarbonProperties;
  */
 public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator {
 
-  static final int cutOffDate = Integer.MAX_VALUE >> 1;
-  static final long SECONDS_PER_DAY = 60 * 60 * 24L;
-  static final long  MILLIS_PER_DAY = SECONDS_PER_DAY * 1000L;
-
+  private static final long SECONDS_PER_DAY = 60 * 60 * 24L;
+  private static final long MILLIS_PER_DAY = SECONDS_PER_DAY * 1000L;
 
   private ThreadLocal<SimpleDateFormat> simpleDateFormatLocal = new ThreadLocal<>();
 
+  //Java TimeZone has no mention of thread safety. Use thread local instance to be safe.
+  private ThreadLocal<TimeZone> threadLocalLocalTimeZone = new ThreadLocal() {
+    @Override protected TimeZone initialValue() {
+      return Calendar.getInstance().getTimeZone();
+    }
+  };
   private String dateFormat;
 
   /**
@@ -48,16 +54,14 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DateDirectDictionaryGenerator.class.getName());
 
-
   public DateDirectDictionaryGenerator(String dateFormat) {
     this.dateFormat = dateFormat;
     initialize();
   }
 
   public DateDirectDictionaryGenerator() {
-    this(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                    CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+    this(CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
   }
 
   /**
@@ -127,7 +131,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
     if (key == 1) {
       return null;
     }
-    return key - cutOffDate;
+    return key;
   }
 
   private int generateDirectSurrogateKeyForNonTimestampType(String memberStr) {
@@ -135,9 +139,8 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
     try {
       timeValue = Long.valueOf(memberStr) / 1000;
     } catch (NumberFormatException e) {
-      LOGGER.debug(
-          "Cannot convert " + memberStr + " Long type value. Value considered as null." + e
-              .getMessage());
+      LOGGER.debug("Cannot convert " + memberStr + " Long type value. Value considered as null." + e
+          .getMessage());
     }
     if (timeValue == -1) {
       return 1;
@@ -147,11 +150,12 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   }
 
   private int generateKey(long timeValue) {
-    int key = (int)Math.floor((double)timeValue / MILLIS_PER_DAY) + cutOffDate;
+    long milli = timeValue + threadLocalLocalTimeZone.get().getOffset(timeValue);
+    int key = (int) Math.floor((double) milli / MILLIS_PER_DAY);
     return key;
   }
 
-  public void initialize(){
+  public void initialize() {
     if (simpleDateFormatLocal.get() == null) {
       simpleDateFormatLocal.set(new SimpleDateFormat(dateFormat));
       simpleDateFormatLocal.get().setLenient(false);

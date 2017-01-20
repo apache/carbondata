@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 /**
@@ -285,9 +284,8 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
               .compare((Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
         case DATE:
         case TIMESTAMP:
-          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          String format = CarbonUtil.getFormatFromProperty(dataType);
+          SimpleDateFormat parser = new SimpleDateFormat(format);
           Date dateToStr;
           Date dictionaryDate;
           dateToStr = parser.parse(memberVal);

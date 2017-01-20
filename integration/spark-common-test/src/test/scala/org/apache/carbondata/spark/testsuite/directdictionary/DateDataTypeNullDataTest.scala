@@ -45,7 +45,7 @@ class DateDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
       )
 
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+        .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
       val csvFilePath = s"$resourcesPath/datasamplenull.csv"
       sql("LOAD DATA LOCAL INPATH '" + csvFilePath + "' INTO TABLE timestampTyeNullData").collect();
 
@@ -53,7 +53,7 @@ class DateDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
       case x: Throwable =>
         x.printStackTrace()
         CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+        .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "dd-MM-yyyy")
     }
   }
 
@@ -74,7 +74,7 @@ class DateDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table timestampTyeNullData")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
   }
 

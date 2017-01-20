@@ -1420,5 +1420,27 @@ public final class CarbonUtil {
     }
     return false;
   }
+
+  /**
+   * Below method will be used to get the format for
+   * date or timestamp data type from property. This
+   * is added to avoid the code duplication
+   *
+   * @param dataType
+   * @return format
+   */
+  public static String getFormatFromProperty(DataType dataType) {
+    switch (dataType) {
+      case DATE:
+        return CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+      case TIMESTAMP:
+        return CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+      default:
+        return null;
+    }
+  }
 }
 

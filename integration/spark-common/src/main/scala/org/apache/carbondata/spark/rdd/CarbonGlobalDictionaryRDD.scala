@@ -161,7 +161,8 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
     lockType: String,
     zooKeeperUrl: String,
     serializationNullFormat: String,
-    defaultTimestampFormat: String) extends Serializable
+    defaultTimestampFormat: String,
+    defaultDateFormat: String) extends Serializable
 
 case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends Serializable
 
@@ -287,7 +288,8 @@ class CarbonBlockDistinctValuesCombineRDD(
       val dimNum = model.dimensions.length
       var row: Row = null
       val rddIter = firstParent[Row].iterator(split, context)
-      val format = new SimpleDateFormat(model.defaultTimestampFormat)
+      val timeStampFormat = new SimpleDateFormat(model.defaultTimestampFormat)
+      val dateFormat = new SimpleDateFormat(model.defaultDateFormat)
       // generate block distinct value set
       while (rddIter.hasNext) {
         row = rddIter.next()
@@ -295,7 +297,11 @@ class CarbonBlockDistinctValuesCombineRDD(
           rowCount += 1
           for (i <- 0 until dimNum) {
             dimensionParsers(i).parseString(CarbonScalaUtil.getString(row.get(i),
-                model.serializationNullFormat, model.delimiters(0), model.delimiters(1), format))
+              model.serializationNullFormat,
+              model.delimiters(0),
+              model.delimiters(1),
+              timeStampFormat,
+              dateFormat))
           }
         }
       }
@@ -340,9 +346,9 @@ class CarbonGlobalDictionaryGenerateRDD(
       val pathService: PathService = CarbonCommonFactory.getPathService
       val carbonTablePath: CarbonTablePath =
         pathService.getCarbonTablePath(model.hdfsLocation, model.table)
-      if (StringUtils.isNotBlank(model.hdfsTempLocation )) {
-         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
-           model.hdfsTempLocation)
+      if (StringUtils.isNotBlank(model.hdfsTempLocation)) {
+        CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
+          model.hdfsTempLocation)
       }
       if (StringUtils.isNotBlank(model.lockType)) {
         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.LOCK_TYPE,
