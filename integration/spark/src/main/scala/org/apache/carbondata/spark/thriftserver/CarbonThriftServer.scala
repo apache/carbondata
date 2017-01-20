@@ -31,13 +31,17 @@ object CarbonThriftServer {
   def main(args: Array[String]): Unit = {
     val conf = new SparkConf()
       .setAppName("Carbon Thrift Server")
-    val sparkHome = System.getenv.get("SPARK_HOME")
-    if (null != sparkHome) {
-      val file = new File(sparkHome + '/' + "conf" + '/' + "carbon.properties")
-      if (file.exists()) {
-        conf.set("carbon.properties.filepath", file.getCanonicalPath)
-        System.setProperty("carbon.properties.filepath", file.getCanonicalPath)
+    if (!conf.contains("carbon.properties.filepath")) {
+      val sparkHome = System.getenv.get("SPARK_HOME")
+      if (sparkHome != null) {
+        val file = new File(sparkHome + '/' + "conf" + '/' + "carbon.properties")
+        if (file.exists()) {
+          conf.set("carbon.properties.filepath", file.getCanonicalPath)
+          System.setProperty("carbon.properties.filepath", file.getCanonicalPath)
+        }
       }
+    } else {
+      System.setProperty("carbon.properties.filepath", conf.get("carbon.properties.filepath"))
     }
     if (org.apache.spark.SPARK_VERSION.startsWith("1.6")) {
       conf.set("spark.sql.hive.thriftServer.singleSession", "true")

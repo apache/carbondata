@@ -40,14 +40,19 @@ object CarbonThriftServer {
       .appName("Carbon Thrift Server(uses CarbonSession)")
       .enableHiveSupport()
 
-    val sparkHome = System.getenv.get("SPARK_HOME")
-    if (null != sparkHome) {
-      val file = new File(sparkHome + '/' + "conf" + '/' + "carbon.properties")
-      if (file.exists()) {
-        builder.config("carbon.properties.filepath", file.getCanonicalPath)
-        System.setProperty("carbon.properties.filepath", file.getCanonicalPath)
+    if (!sparkConf.contains("carbon.properties.filepath")) {
+      val sparkHome = System.getenv.get("SPARK_HOME")
+      if (null != sparkHome) {
+        val file = new File(sparkHome + '/' + "conf" + '/' + "carbon.properties")
+        if (file.exists()) {
+          builder.config("carbon.properties.filepath", file.getCanonicalPath)
+          System.setProperty("carbon.properties.filepath", file.getCanonicalPath)
+        }
       }
+    } else {
+      System.setProperty("carbon.properties.filepath", sparkConf.get("carbon.properties.filepath"))
     }
+
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION, args.head)
 
     val spark = builder.getOrCreateCarbonSession(args.head)
