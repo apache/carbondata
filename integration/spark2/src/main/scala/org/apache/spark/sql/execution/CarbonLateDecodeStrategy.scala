@@ -292,6 +292,23 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
             attr
           }
         }
+      case alias @ Alias(attr: AttributeReference, name) =>
+        if (needDecoder.exists(_.name.equalsIgnoreCase(attr.name))) {
+          alias
+        } else {
+          val dict = map.get(attr.name)
+          if (dict.isDefined && dict.get) {
+            alias.transform {
+              case attrLocal: AttributeReference =>
+                AttributeReference(attr.name,
+                  IntegerType,
+                  attr.nullable,
+                  attr.metadata)(attr.exprId, attr.qualifier)
+            }
+          } else {
+            alias
+          }
+        }
       case others => others
     }
   }

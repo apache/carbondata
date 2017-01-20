@@ -165,6 +165,21 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
               """).show
   }
 
+  test("insert->insert with different names and aliases") {
+    sql("DROP TABLE IF EXISTS uniqdata")
+    sql("DROP TABLE IF EXISTS student")
+
+    // Create table
+    sql(
+      s"""
+         CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ("TABLE_BLOCKSIZE"= "256 MB")
+       """.stripMargin)
+    sql(s"""CREATE TABLE student (CUST_ID2 int,CUST_ADDR String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ("TABLE_BLOCKSIZE"= "256 MB")""")
+
+    sql(s"""LOAD DATA inpath '${resourcesPath + "/data_with_all_types.csv"}' INTO table uniqdata options('DELIMITER'=',', 'FILEHEADER'='CUST_ID, CUST_NAME, ACTIVE_EMUI_VERSION, DOB, DOJ, BIGINT_COLUMN1, BIGINT_COLUMN2, DECIMAL_COLUMN1, DECIMAL_COLUMN2, Double_COLUMN1, Double_COLUMN2, INTEGER_COLUMN1')""")
+    sql("""insert into student select * from uniqdata""")
+  }
+
   test("insert into existing load-pass") {
     val timeStampPropOrig = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
      CarbonProperties.getInstance()
