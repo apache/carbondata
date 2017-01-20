@@ -93,21 +93,21 @@ public abstract class AbstractBlockIndexStoreCache<K, V>
     long requiredMetaSize = CarbonUtil.calculateMetaSize(blockInfo);
     if (requiredMetaSize > 0) {
       tableBlock.setMemorySize(requiredMetaSize);
+      // load table blocks data
+      // getting the data file meta data of the block
+      DataFileFooter footer = CarbonUtil.readMetadatFile(blockInfo);
+      footer.setBlockInfo(new BlockInfo(blockInfo));
+      // building the block
+      tableBlock.buildIndex(Collections.singletonList(footer));
       tableBlock.incrementAccessCount();
       boolean isTableBlockAddedToLruCache = lruCache.put(lruCacheKey, tableBlock, requiredMetaSize);
-      // if column is successfully added to lru cache then only load the
-      // table blocks data
-      if (isTableBlockAddedToLruCache) {
-        // load table blocks data
-        // getting the data file meta data of the block
-        DataFileFooter footer = CarbonUtil.readMetadatFile(blockInfo);
-        footer.setBlockInfo(new BlockInfo(blockInfo));
-        // building the block
-        tableBlock.buildIndex(Collections.singletonList(footer));
-      } else {
+      if (!isTableBlockAddedToLruCache) {
         throw new IndexBuilderException(
             "Cannot load table blocks into memory. Not enough memory available");
       }
+    } else {
+      throw new IndexBuilderException(
+          "Invalid carbon data file: " + blockInfo.getFilePath());
     }
   }
 }
