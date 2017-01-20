@@ -51,8 +51,6 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
 
   private DataInputStream dataInputStream = null;
 
-  private BufferedReader buffReader = null;
-
   private InputStreamReader inputStream = null;
 
   private static final int DEFAULT_BUFFER_SIZE = 258;
@@ -83,7 +81,6 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
     dataInputStream = FileFactory.getDataInputStream(filePath, fileType);
     inputStream = new InputStreamReader(dataInputStream,
         CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT);
-    buffReader = new BufferedReader(inputStream);
     int n = 0;
     while (-1 != (n = inputStream.read(buffer))) {
       sw.write(buffer, 0, n);
@@ -123,27 +120,4 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
 
     return deleteDeltaBlockDetails;
   }
-
-  /**
-   * Returns all deleted records from specified delete delta file
-   *
-   * @return
-   * @throws IOException
-   */
-  public int[] getDeleteDeltaRows() throws IOException {
-    String[] stringRows = read().split(CarbonCommonConstants.COMMA);
-    int[] rows = new int[stringRows.length];
-    int rowsLength = stringRows.length;
-    for (int i = 0; i < rowsLength; i++) {
-      try {
-        rows[i] = Integer.parseInt(stringRows[i]);
-      } catch (NumberFormatException nfe) {
-        LOGGER.error("Invalid row : " + stringRows[i] + nfe.getLocalizedMessage());
-        throw new IOException("Invalid row : " + nfe.getLocalizedMessage());
-      }
-    }
-
-    return rows;
-  }
-
 }
