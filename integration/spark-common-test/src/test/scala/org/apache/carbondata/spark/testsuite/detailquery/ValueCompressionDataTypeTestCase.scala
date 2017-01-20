@@ -22,9 +22,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
 
-/**
- * Created by  on 8/8/2016.
- */
 class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   val tempDirPath = s"$resourcesPath/temp"
 

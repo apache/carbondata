@@ -18,7 +18,6 @@
 /**
  * Project Name  : Carbon
  * Module Name   : CARBON spark interface
- * Author    : R00903928
  * Created Date  : 22-Sep-2015
  * FileName   : DeleteLoadFolders.java
  * Description   : for physical deletion of load folders.

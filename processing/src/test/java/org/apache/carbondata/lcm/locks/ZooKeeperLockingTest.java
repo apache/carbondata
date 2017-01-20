@@ -36,7 +36,7 @@ import java.net.ServerSocket;
 import java.util.Properties;
 
 /**
- * @author Administrator
+ * ZooKeeperLocking Test cases
  */
 public class ZooKeeperLockingTest {
 

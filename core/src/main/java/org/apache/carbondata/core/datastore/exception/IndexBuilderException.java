@@ -22,8 +22,6 @@ import java.util.Locale;
 
 /**
  * Exception class for block builder
- *
- * @author Administrator
  */
 public class IndexBuilderException extends IOException {
   /**

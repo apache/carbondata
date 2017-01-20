@@ -6,9 +6,6 @@ import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test Class for filter query on Float datatypes
- *
- * @author N00902756
- *
  */
 class FloatDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 

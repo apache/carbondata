@@ -58,7 +58,6 @@ public class StandardLogServiceTest_UT extends TestCase {
 
   /**
    * @throws Exception
-   * @Author k00742797
    * @Description : tearDown
    */
   @After public void tearDown() throws Exception {

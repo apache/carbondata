@@ -23,9 +23,6 @@ import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test Class for sort expression query on int datatypes
- *
- * @author N00902756
- *
  */
 class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
