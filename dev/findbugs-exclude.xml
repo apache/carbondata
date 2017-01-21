@@ -26,7 +26,7 @@
 
   <!-- This method creates stream but the caller methods are responsible for closing the stream -->
   <Match>
-    <Class name="org.apache.carbondata.core.datastorage.store.impl.FileFactory"/>
+    <Class name="org.apache.carbondata.core.datastore.impl.FileFactory"/>
     <Or>
       <Method name="getDataInputStream"/>
     </Or>
@@ -34,12 +34,12 @@
   </Match>
 
   <Match>
-    <Class name="org.apache.carbondata.scan.aggregator.impl.BitSet"/>
+    <Class name="org.apache.carbondata.core.scan.aggregator.impl.BitSet"/>
     <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
   </Match>
 
   <Match>
-    <Class name="org.apache.carbondata.scan.expression.ExpressionResult"/>
+    <Class name="org.apache.carbondata.core.scan.expression.ExpressionResult"/>
     <Or>
       <Method name="getBoolean"/>
     </Or>

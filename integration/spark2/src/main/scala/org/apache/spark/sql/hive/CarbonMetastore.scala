@@ -22,11 +22,10 @@ import java.util.{GregorianCalendar, LinkedHashSet, UUID}
 import java.util.concurrent.atomic.AtomicLong
 
 import scala.Array.canBuildFrom
-import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 import scala.util.parsing.combinator.RegexParsers
 
-import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{RuntimeConfig, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{MultiInstanceRelation, NoSuchTableException}
@@ -36,23 +35,23 @@ import org.apache.spark.sql.execution.command.Partitioner
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier
-import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
-import org.apache.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl
-import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
-import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
-import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
+import org.apache.carbondata.core.locks.ZookeeperInit
+import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
+import org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.reader.ThriftReader
+import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants}
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.lcm.locks.ZookeeperInit
-import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.spark.merger.TableMeta
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
@@ -117,7 +116,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
   private val nextId = new AtomicLong(0)
 
   def nextQueryId: String = {
-    s"query_${nextId.getAndIncrement()}"
+    System.nanoTime() + ""
   }
 
   val metadata = loadMetadata(storePath, nextQueryId)
@@ -157,7 +156,6 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
         CarbonRelation(database, tableIdentifier.table,
           CarbonSparkUtil.createSparkMeta(tables.head.carbonTable), tables.head, alias)
       case None =>
-        LOGGER.audit(s"Table Not Found: ${tableIdentifier.table}")
         throw new NoSuchTableException(database, tableIdentifier.table)
     }
   }
@@ -174,6 +172,17 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
     metadata.tablesMeta
       .find(c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
                  c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))
+  }
+
+  def tableExists(
+      table: String,
+      databaseOp: Option[String] = None)(sparkSession: SparkSession): Boolean = {
+    checkSchemasModifiedTimeAndReloadTables()
+    val database = databaseOp.getOrElse(sparkSession.catalog.currentDatabase)
+    val tables = metadata.tablesMeta.filter(
+      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
+           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(table))
+    tables.nonEmpty
   }
 
   def tableExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
@@ -263,9 +272,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
                   wrapperTableInfo
                     .setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath))
                   CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
-                  val carbonTable =
-                    org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-                      .getCarbonTable(tableUniqueName)
+                  val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
                   metaDataBuffer += new TableMeta(carbonTable.getCarbonTableIdentifier, storePath,
                     carbonTable)
                 }
@@ -291,10 +298,10 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
    *
    */
   def createTableFromThrift(
-      tableInfo: org.apache.carbondata.core.carbon.metadata.schema.table.TableInfo,
+      tableInfo: org.apache.carbondata.core.metadata.schema.table.TableInfo,
       dbName: String, tableName: String)
     (sparkSession: SparkSession): String = {
-    if (tableExists(TableIdentifier(tableName, Some(dbName)))(sparkSession)) {
+    if (tableExists(tableName, Some(dbName))(sparkSession)) {
       sys.error(s"Table [$tableName] already exists under Database [$dbName]")
     }
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
@@ -330,7 +337,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
   }
 
   private def updateMetadataByWrapperTable(
-      wrapperTableInfo: org.apache.carbondata.core.carbon.metadata.schema.table.TableInfo): Unit = {
+      wrapperTableInfo: org.apache.carbondata.core.metadata.schema.table.TableInfo): Unit = {
 
     CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
@@ -389,7 +396,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
 
   def isTablePathExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
     val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
-    val tableName = tableIdentifier.table
+    val tableName = tableIdentifier.table.toLowerCase
 
     val tablePath = CarbonStorePath.getCarbonTablePath(this.storePath,
       new CarbonTableIdentifier(dbName, tableName, "")).getPath
@@ -419,10 +426,8 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
       metadataToBeRemoved match {
         case Some(tableMeta) =>
           metadata.tablesMeta -= tableMeta
-          org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-            .removeTable(dbName + "_" + tableName)
-          org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-            .removeTable(dbName + "_" + tableName)
+          CarbonMetadata.getInstance.removeTable(dbName + "_" + tableName)
+          CarbonMetadata.getInstance.removeTable(dbName + "_" + tableName)
           updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
         case None =>
           LOGGER.info(s"Metadata does not contain entry for table $tableName in database $dbName")
@@ -609,6 +614,7 @@ object CarbonMetastoreTypes extends RegexParsers {
     fixedDecimalType |
     "decimal" ^^^ "decimal" ^^^ DecimalType(18, 2) |
     "varchar\\((\\d+)\\)".r ^^^ StringType |
+    "date" ^^^ DateType |
     "timestamp" ^^^ TimestampType
 
   protected lazy val fixedDecimalType: Parser[DataType] =
@@ -668,6 +674,7 @@ object CarbonMetastoreTypes extends RegexParsers {
       case BooleanType => "boolean"
       case DecimalType() => "decimal"
       case TimestampType => "timestamp"
+      case DateType => "date"
     }
   }
 }
@@ -770,7 +777,48 @@ case class CarbonRelation(
         nullable = true)())
   }
 
-  override val output = dimensionsAttr ++ measureAttr
+  override val output = {
+    val columns = tableMeta.carbonTable.getCreateOrderColumn(tableMeta.carbonTable.getFactTableName)
+      .asScala
+    // convert each column to Attribute
+    columns.filter(!_.isInvisible).map { column =>
+      if (column.isDimesion()) {
+        val output: DataType = column.getDataType.toString.toLowerCase match {
+          case "array" =>
+            CarbonMetastoreTypes.toDataType(s"array<${getArrayChildren(column.getColName)}>")
+          case "struct" =>
+            CarbonMetastoreTypes.toDataType(s"struct<${getStructChildren(column.getColName)}>")
+          case dType =>
+            val dataType = addDecimalScaleAndPrecision(column, dType)
+            CarbonMetastoreTypes.toDataType(dataType)
+        }
+        AttributeReference(column.getColName, output, nullable = true )(
+          qualifier = Option(tableName + "." + column.getColName))
+      } else {
+        val output = CarbonMetastoreTypes.toDataType {
+          column.getDataType.toString
+            .toLowerCase match {
+            case "int" => "long"
+            case "short" => "long"
+            case "decimal" => "decimal(" + column.getColumnSchema.getPrecision + "," + column
+              .getColumnSchema.getScale + ")"
+            case others => others
+          }
+        }
+        AttributeReference(column.getColName, output, nullable = true)(
+          qualifier = Option(tableName + "." + column.getColName))
+      }
+    }
+  }
+
+  def addDecimalScaleAndPrecision(dimval: CarbonColumn, dataType: String): String = {
+    var dType = dataType
+    if (dimval.getDataType == DECIMAL) {
+      dType +=
+      "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema.getScale + ")"
+    }
+    dType
+  }
 
   // TODO: Use data from the footers.
   override lazy val statistics = Statistics(sizeInBytes = this.sizeInBytes)
@@ -785,8 +833,7 @@ case class CarbonRelation(
 
   def addDecimalScaleAndPrecision(dimval: CarbonDimension, dataType: String): String = {
     var dType = dataType
-    if (dimval.getDataType
-      == org.apache.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL) {
+    if (dimval.getDataType == DECIMAL) {
       dType +=
         "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema.getScale + ")"
     }

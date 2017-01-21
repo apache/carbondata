@@ -1,0 +1,1363 @@
+[INFO] Scanning for projects...
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for org.apache.carbondata:carbondata-core:jar:0.1.1-incubating-SNAPSHOT
+[WARNING] 'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: org.apache.carbondata:carbondata-format:jar -> duplicate declaration of version ${project.version} @ org.apache.carbondata:carbondata-core:[unknown-version], /home/root1/carbon-merge/incubator-carbondata/core/pom.xml, line 99, column 17
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for org.apache.carbondata:carbondata-assembly:pom:0.1.1-incubating-SNAPSHOT
+[WARNING] 'build.plugins.plugin.version' for org.apache.maven.plugins:maven-shade-plugin is missing. @ org.apache.carbondata:carbondata-assembly:[unknown-version], /home/root1/carbon-merge/incubator-carbondata/assembly/pom.xml, line 79, column 15
+[WARNING] 
+[WARNING] It is highly recommended to fix these problems because they threaten the stability of your build.
+[WARNING] 
+[WARNING] For this reason, future Maven versions might no longer support building such malformed projects.
+[WARNING] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] Apache CarbonData :: Parent
+[INFO] Apache CarbonData :: Common
+[INFO] Apache CarbonData :: Format
+[INFO] Apache CarbonData :: Core
+[INFO] Apache CarbonData :: Processing
+[INFO] Apache CarbonData :: Hadoop
+[INFO] Apache CarbonData :: Spark
+[INFO] Apache CarbonData :: Assembly
+[INFO] Apache CarbonData :: Examples
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building Apache CarbonData :: Parent 0.1.1-incubating-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-dependency-plugin:2.8:tree (default-cli) @ carbondata-parent ---
+[INFO] org.apache.carbondata:carbondata-parent:pom:0.1.1-incubating-SNAPSHOT
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building Apache CarbonData :: Common 0.1.1-incubating-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-dependency-plugin:2.8:tree (default-cli) @ carbondata-common ---
+[INFO] org.apache.carbondata:carbondata-common:jar:0.1.1-incubating-SNAPSHOT
+[INFO] +- log4j:log4j:jar:1.2.12:compile
+[INFO] +- junit:junit:jar:4.11:test
+[INFO] |  \- org.hamcrest:hamcrest-core:jar:1.3:test
+[INFO] +- org.jmockit:jmockit:jar:1.10:test
+[INFO] \- org.apache.hadoop:hadoop-common:jar:2.2.0:compile
+[INFO]    +- org.apache.hadoop:hadoop-annotations:jar:2.2.0:compile
+[INFO]    |  \- jdk.tools:jdk.tools:jar:1.6:system
+[INFO]    +- com.google.guava:guava:jar:11.0.2:compile
+[INFO]    |  \- com.google.code.findbugs:jsr305:jar:1.3.9:compile
+[INFO]    +- commons-cli:commons-cli:jar:1.2:compile
+[INFO]    +- org.apache.commons:commons-math:jar:2.1:compile
+[INFO]    +- xmlenc:xmlenc:jar:0.52:compile
+[INFO]    +- commons-httpclient:commons-httpclient:jar:3.1:compile
+[INFO]    +- commons-codec:commons-codec:jar:1.4:compile
+[INFO]    +- commons-io:commons-io:jar:2.1:compile
+[INFO]    +- commons-net:commons-net:jar:3.1:compile
+[INFO]    +- javax.servlet:servlet-api:jar:2.5:compile
+[INFO]    +- org.mortbay.jetty:jetty:jar:6.1.26:compile
+[INFO]    +- org.mortbay.jetty:jetty-util:jar:6.1.26:compile
+[INFO]    +- com.sun.jersey:jersey-core:jar:1.9:compile
+[INFO]    +- com.sun.jersey:jersey-json:jar:1.9:compile
+[INFO]    |  +- org.codehaus.jettison:jettison:jar:1.1:compile
+[INFO]    |  |  \- stax:stax-api:jar:1.0.1:compile
+[INFO]    |  +- com.sun.xml.bind:jaxb-impl:jar:2.2.3-1:compile
+[INFO]    |  |  \- javax.xml.bind:jaxb-api:jar:2.2.2:compile
+[INFO]    |  |     \- javax.activation:activation:jar:1.1:compile
+[INFO]    |  +- org.codehaus.jackson:jackson-jaxrs:jar:1.8.3:compile
+[INFO]    |  \- org.codehaus.jackson:jackson-xc:jar:1.8.3:compile
+[INFO]    +- com.sun.jersey:jersey-server:jar:1.9:compile
+[INFO]    |  \- asm:asm:jar:3.1:compile
+[INFO]    +- tomcat:jasper-compiler:jar:5.5.23:runtime
+[INFO]    +- tomcat:jasper-runtime:jar:5.5.23:runtime
+[INFO]    +- javax.servlet.jsp:jsp-api:jar:2.1:runtime
+[INFO]    +- commons-el:commons-el:jar:1.0:runtime
+[INFO]    +- commons-logging:commons-logging:jar:1.1.1:compile
+[INFO]    +- net.java.dev.jets3t:jets3t:jar:0.6.1:compile
+[INFO]    +- commons-lang:commons-lang:jar:2.5:compile
+[INFO]    +- commons-configuration:commons-configuration:jar:1.6:compile
+[INFO]    |  +- commons-collections:commons-collections:jar:3.2.1:compile
+[INFO]    |  +- commons-digester:commons-digester:jar:1.8:compile
+[INFO]    |  |  \- commons-beanutils:commons-beanutils:jar:1.7.0:compile
+[INFO]    |  \- commons-beanutils:commons-beanutils-core:jar:1.8.0:compile
+[INFO]    +- org.slf4j:slf4j-api:jar:1.7.5:compile
+[INFO]    +- org.slf4j:slf4j-log4j12:jar:1.7.5:compile
+[INFO]    +- org.codehaus.jackson:jackson-core-asl:jar:1.8.8:compile
+[INFO]    +- org.codehaus.jackson:jackson-mapper-asl:jar:1.8.8:compile
+[INFO]    +- org.apache.avro:avro:jar:1.7.4:compile
+[INFO]    |  +- com.thoughtworks.paranamer:paranamer:jar:2.3:compile
+[INFO]    |  \- org.xerial.snappy:snappy-java:jar:1.0.4.1:compile
+[INFO]    +- com.google.protobuf:protobuf-java:jar:2.5.0:compile
+[INFO]    +- org.apache.hadoop:hadoop-auth:jar:2.2.0:compile
+[INFO]    +- com.jcraft:jsch:jar:0.1.42:compile
+[INFO]    +- org.apache.zookeeper:zookeeper:jar:3.4.5:compile
+[INFO]    \- org.apache.commons:commons-compress:jar:1.4.1:compile
+[INFO]       \- org.tukaani:xz:jar:1.0:compile
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building Apache CarbonData :: Format 0.1.1-incubating-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-dependency-plugin:2.8:tree (default-cli) @ carbondata-format ---
+[INFO] org.apache.carbondata:carbondata-format:jar:0.1.1-incubating-SNAPSHOT
+[INFO] \- org.apache.thrift:libthrift:jar:0.9.3:compile
+[INFO]    +- org.slf4j:slf4j-api:jar:1.7.12:compile
+[INFO]    +- org.apache.httpcomponents:httpclient:jar:4.4.1:compile
+[INFO]    |  +- commons-logging:commons-logging:jar:1.2:compile
+[INFO]    |  \- commons-codec:commons-codec:jar:1.9:compile
+[INFO]    \- org.apache.httpcomponents:httpcore:jar:4.4.1:compile
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building Apache CarbonData :: Core 0.1.1-incubating-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-dependency-plugin:2.8:tree (default-cli) @ carbondata-core ---
+[INFO] org.apache.carbondata:carbondata-core:jar:0.1.1-incubating-SNAPSHOT
+[INFO] +- org.apache.carbondata:carbondata-format:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  \- org.apache.thrift:libthrift:jar:0.9.3:compile
+[INFO] |     +- org.apache.httpcomponents:httpclient:jar:4.4.1:compile
+[INFO] |     \- org.apache.httpcomponents:httpcore:jar:4.4.1:compile
+[INFO] +- org.apache.carbondata:carbondata-common:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  \- log4j:log4j:jar:1.2.12:compile
+[INFO] +- pentaho-kettle:kettle-engine:jar:4.4.0-stable:compile
+[INFO] |  \- xerces:xercesImpl:jar:2.9.1:compile
+[INFO] |     \- xml-apis:xml-apis:jar:1.3.04:compile
+[INFO] +- pentaho-kettle:kettle-core:jar:4.4.0-stable:compile
+[INFO] +- pentaho-kettle:kettle-db:jar:4.4.0-stable:compile
+[INFO] +- com.google.code.gson:gson:jar:2.3.1:compile
+[INFO] +- org.apache.hadoop:hadoop-common:jar:2.2.0:compile
+[INFO] |  +- org.apache.hadoop:hadoop-annotations:jar:2.2.0:compile
+[INFO] |  |  \- jdk.tools:jdk.tools:jar:1.6:system
+[INFO] |  +- com.google.guava:guava:jar:11.0.2:compile
+[INFO] |  |  \- com.google.code.findbugs:jsr305:jar:1.3.9:compile
+[INFO] |  +- commons-cli:commons-cli:jar:1.2:compile
+[INFO] |  +- org.apache.commons:commons-math:jar:2.1:compile
+[INFO] |  +- xmlenc:xmlenc:jar:0.52:compile
+[INFO] |  +- commons-httpclient:commons-httpclient:jar:3.1:compile
+[INFO] |  +- commons-codec:commons-codec:jar:1.4:compile
+[INFO] |  +- commons-io:commons-io:jar:2.1:compile
+[INFO] |  +- commons-net:commons-net:jar:3.1:compile
+[INFO] |  +- javax.servlet:servlet-api:jar:2.5:compile
+[INFO] |  +- org.mortbay.jetty:jetty:jar:6.1.26:compile
+[INFO] |  +- org.mortbay.jetty:jetty-util:jar:6.1.26:compile
+[INFO] |  +- com.sun.jersey:jersey-core:jar:1.9:compile
+[INFO] |  +- com.sun.jersey:jersey-json:jar:1.9:compile
+[INFO] |  |  +- org.codehaus.jettison:jettison:jar:1.1:compile
+[INFO] |  |  |  \- stax:stax-api:jar:1.0.1:compile
+[INFO] |  |  +- com.sun.xml.bind:jaxb-impl:jar:2.2.3-1:compile
+[INFO] |  |  |  \- javax.xml.bind:jaxb-api:jar:2.2.2:compile
+[INFO] |  |  |     \- javax.activation:activation:jar:1.1:compile
+[INFO] |  |  +- org.codehaus.jackson:jackson-jaxrs:jar:1.8.3:compile
+[INFO] |  |  \- org.codehaus.jackson:jackson-xc:jar:1.8.3:compile
+[INFO] |  +- com.sun.jersey:jersey-server:jar:1.9:compile
+[INFO] |  |  \- asm:asm:jar:3.1:compile
+[INFO] |  +- tomcat:jasper-compiler:jar:5.5.23:runtime
+[INFO] |  +- tomcat:jasper-runtime:jar:5.5.23:compile
+[INFO] |  +- javax.servlet.jsp:jsp-api:jar:2.1:compile
+[INFO] |  +- commons-el:commons-el:jar:1.0:compile
+[INFO] |  +- commons-logging:commons-logging:jar:1.1.1:compile
+[INFO] |  +- net.java.dev.jets3t:jets3t:jar:0.6.1:compile
+[INFO] |  +- commons-lang:commons-lang:jar:2.5:compile
+[INFO] |  +- commons-configuration:commons-configuration:jar:1.6:compile
+[INFO] |  |  +- commons-collections:commons-collections:jar:3.2.1:compile
+[INFO] |  |  +- commons-digester:commons-digester:jar:1.8:compile
+[INFO] |  |  |  \- commons-beanutils:commons-beanutils:jar:1.7.0:compile
+[INFO] |  |  \- commons-beanutils:commons-beanutils-core:jar:1.8.0:compile
+[INFO] |  +- org.slf4j:slf4j-api:jar:1.7.5:compile
+[INFO] |  +- org.slf4j:slf4j-log4j12:jar:1.7.5:compile
+[INFO] |  +- org.codehaus.jackson:jackson-core-asl:jar:1.8.8:compile
+[INFO] |  +- org.codehaus.jackson:jackson-mapper-asl:jar:1.8.8:compile
+[INFO] |  +- org.apache.avro:avro:jar:1.7.4:compile
+[INFO] |  |  \- com.thoughtworks.paranamer:paranamer:jar:2.3:compile
+[INFO] |  +- com.google.protobuf:protobuf-java:jar:2.5.0:compile
+[INFO] |  +- org.apache.hadoop:hadoop-auth:jar:2.2.0:compile
+[INFO] |  +- com.jcraft:jsch:jar:0.1.42:compile
+[INFO] |  \- org.apache.commons:commons-compress:jar:1.4.1:compile
+[INFO] |     \- org.tukaani:xz:jar:1.0:compile
+[INFO] +- org.apache.hadoop:hadoop-hdfs:jar:2.2.0:compile
+[INFO] |  \- commons-daemon:commons-daemon:jar:1.0.13:compile
+[INFO] +- org.xerial.snappy:snappy-java:jar:1.1.2.6:compile
+[INFO] +- org.jmockit:jmockit:jar:1.10:test
+[INFO] +- junit:junit:jar:4.11:test
+[INFO] |  \- org.hamcrest:hamcrest-core:jar:1.3:test
+[INFO] +- org.apache.spark:spark-sql_2.10:jar:1.5.2:compile
+[INFO] |  +- org.apache.spark:spark-core_2.10:jar:1.5.2:compile
+[INFO] |  |  +- org.apache.avro:avro-mapred:jar:hadoop2:1.7.7:compile
+[INFO] |  |  |  +- org.apache.avro:avro-ipc:jar:1.7.7:compile
+[INFO] |  |  |  \- org.apache.avro:avro-ipc:jar:tests:1.7.7:compile
+[INFO] |  |  +- com.twitter:chill_2.10:jar:0.5.0:compile
+[INFO] |  |  |  \- com.esotericsoftware.kryo:kryo:jar:2.21:compile
+[INFO] |  |  |     +- com.esotericsoftware.reflectasm:reflectasm:jar:shaded:1.07:compile
+[INFO] |  |  |     +- com.esotericsoftware.minlog:minlog:jar:1.2:compile
+[INFO] |  |  |     \- org.objenesis:objenesis:jar:1.2:compile
+[INFO] |  |  +- com.twitter:chill-java:jar:0.5.0:compile
+[INFO] |  |  +- org.apache.hadoop:hadoop-client:jar:2.2.0:compile
+[INFO] |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-app:jar:2.2.0:compile
+[INFO] |  |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-common:jar:2.2.0:compile
+[INFO] |  |  |  |  |  +- org.apache.hadoop:hadoop-yarn-client:jar:2.2.0:compile
+[INFO] |  |  |  |  |  |  +- com.google.inject:guice:jar:3.0:compile
+[INFO] |  |  |  |  |  |  |  +- javax.inject:javax.inject:jar:1:compile
+[INFO] |  |  |  |  |  |  |  \- aopalliance:aopalliance:jar:1.0:compile
+[INFO] |  |  |  |  |  |  +- com.sun.jersey.jersey-test-framework:jersey-test-framework-grizzly2:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  +- com.sun.jersey.jersey-test-framework:jersey-test-framework-core:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  |  +- javax.servlet:javax.servlet-api:jar:3.0.1:compile
+[INFO] |  |  |  |  |  |  |  |  \- com.sun.jersey:jersey-client:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  \- com.sun.jersey:jersey-grizzly2:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |     |  \- org.glassfish.grizzly:grizzly-framework:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |     |     \- org.glassfish.gmbal:gmbal-api-only:jar:3.0.0-b023:compile
+[INFO] |  |  |  |  |  |  |     |        \- org.glassfish.external:management-api:jar:3.0.0-b012:compile
+[INFO] |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http-server:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |     |  \- org.glassfish.grizzly:grizzly-rcm:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http-servlet:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |     \- org.glassfish:javax.servlet:jar:3.1:compile
+[INFO] |  |  |  |  |  |  \- com.sun.jersey.contribs:jersey-guice:jar:1.9:compile
+[INFO] |  |  |  |  |  \- org.apache.hadoop:hadoop-yarn-server-common:jar:2.2.0:compile
+[INFO] |  |  |  |  \- org.apache.hadoop:hadoop-mapreduce-client-shuffle:jar:2.2.0:compile
+[INFO] |  |  |  +- org.apache.hadoop:hadoop-yarn-api:jar:2.2.0:compile
+[INFO] |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-core:jar:2.2.0:compile
+[INFO] |  |  |  |  \- org.apache.hadoop:hadoop-yarn-common:jar:2.2.0:compile
+[INFO] |  |  |  \- org.apache.hadoop:hadoop-mapreduce-client-jobclient:jar:2.2.0:compile
+[INFO] |  |  +- org.apache.spark:spark-launcher_2.10:jar:1.5.2:compile
+[INFO] |  |  +- org.apache.spark:spark-network-common_2.10:jar:1.5.2:compile
+[INFO] |  |  +- org.apache.spark:spark-network-shuffle_2.10:jar:1.5.2:compile
+[INFO] |  |  +- org.apache.spark:spark-unsafe_2.10:jar:1.5.2:compile
+[INFO] |  |  +- org.apache.curator:curator-recipes:jar:2.4.0:compile
+[INFO] |  |  |  \- org.apache.curator:curator-framework:jar:2.4.0:compile
+[INFO] |  |  +- org.eclipse.jetty.orbit:javax.servlet:jar:3.0.0.v201112011016:compile
+[INFO] |  |  +- org.apache.commons:commons-lang3:jar:3.3.2:compile
+[INFO] |  |  +- org.apache.commons:commons-math3:jar:3.4.1:compile
+[INFO] |  |  +- org.slf4j:jul-to-slf4j:jar:1.7.10:compile
+[INFO] |  |  +- org.slf4j:jcl-over-slf4j:jar:1.7.10:compile
+[INFO] |  |  +- com.ning:compress-lzf:jar:1.0.3:compile
+[INFO] |  |  +- net.jpountz.lz4:lz4:jar:1.3.0:compile
+[INFO] |  |  +- org.roaringbitmap:RoaringBitmap:jar:0.4.5:compile
+[INFO] |  |  +- com.typesafe.akka:akka-remote_2.10:jar:2.3.11:compile
+[INFO] |  |  |  +- com.typesafe.akka:akka-actor_2.10:jar:2.3.11:compile
+[INFO] |  |  |  |  \- com.typesafe:config:jar:1.2.1:compile
+[INFO] |  |  |  \- org.uncommons.maths:uncommons-maths:jar:1.2.2a:compile
+[INFO] |  |  +- com.typesafe.akka:akka-slf4j_2.10:jar:2.3.11:compile
+[INFO] |  |  +- org.scala-lang:scala-library:jar:2.10.4:compile
+[INFO] |  |  +- org.json4s:json4s-jackson_2.10:jar:3.2.10:compile
+[INFO] |  |  |  \- org.json4s:json4s-core_2.10:jar:3.2.10:compile
+[INFO] |  |  |     +- org.json4s:json4s-ast_2.10:jar:3.2.10:compile
+[INFO] |  |  |     \- org.scala-lang:scalap:jar:2.10.0:compile
+[INFO] |  |  |        \- org.scala-lang:scala-compiler:jar:2.10.4:compile
+[INFO] |  |  +- org.apache.mesos:mesos:jar:shaded-protobuf:0.21.1:compile
+[INFO] |  |  +- io.netty:netty-all:jar:4.0.29.Final:compile
+[INFO] |  |  +- com.clearspring.analytics:stream:jar:2.7.0:compile
+[INFO] |  |  +- io.dropwizard.metrics:metrics-core:jar:3.1.2:compile
+[INFO] |  |  +- io.dropwizard.metrics:metrics-jvm:jar:3.1.2:compile
+[INFO] |  |  +- io.dropwizard.metrics:metrics-json:jar:3.1.2:compile
+[INFO] |  |  +- io.dropwizard.metrics:metrics-graphite:jar:3.1.2:compile
+[INFO] |  |  +- com.fasterxml.jackson.module:jackson-module-scala_2.10:jar:2.4.4:compile
+[INFO] |  |  +- org.apache.ivy:ivy:jar:2.4.0:compile
+[INFO] |  |  +- oro:oro:jar:2.0.8:compile
+[INFO] |  |  +- org.tachyonproject:tachyon-client:jar:0.7.1:compile
+[INFO] |  |  |  +- org.apache.curator:curator-client:jar:2.1.0-incubating:compile
+[INFO] |  |  |  +- org.tachyonproject:tachyon-underfs-hdfs:jar:0.7.1:compile
+[INFO] |  |  |  \- org.tachyonproject:tachyon-underfs-local:jar:0.7.1:compile
+[INFO] |  |  +- net.razorvine:pyrolite:jar:4.4:compile
+[INFO] |  |  \- net.sf.py4j:py4j:jar:0.8.2.1:compile
+[INFO] |  +- org.apache.spark:spark-catalyst_2.10:jar:1.5.2:compile
+[INFO] |  |  +- org.scala-lang:scala-reflect:jar:2.10.4:compile
+[INFO] |  |  \- org.codehaus.janino:janino:jar:2.7.8:compile
+[INFO] |  |     \- org.codehaus.janino:commons-compiler:jar:2.7.8:compile
+[INFO] |  +- org.apache.parquet:parquet-column:jar:1.7.0:compile
+[INFO] |  |  +- org.apache.parquet:parquet-common:jar:1.7.0:compile
+[INFO] |  |  \- org.apache.parquet:parquet-encoding:jar:1.7.0:compile
+[INFO] |  |     \- org.apache.parquet:parquet-generator:jar:1.7.0:compile
+[INFO] |  +- org.apache.parquet:parquet-hadoop:jar:1.7.0:compile
+[INFO] |  |  +- org.apache.parquet:parquet-format:jar:2.3.0-incubating:compile
+[INFO] |  |  \- org.apache.parquet:parquet-jackson:jar:1.7.0:compile
+[INFO] |  +- com.fasterxml.jackson.core:jackson-databind:jar:2.4.4:compile
+[INFO] |  |  +- com.fasterxml.jackson.core:jackson-annotations:jar:2.4.0:compile
+[INFO] |  |  \- com.fasterxml.jackson.core:jackson-core:jar:2.4.4:compile
+[INFO] |  \- org.spark-project.spark:unused:jar:1.0.0:compile
+[INFO] \- org.apache.zookeeper:zookeeper:jar:3.4.7:compile
+[INFO]    \- io.netty:netty:jar:3.7.0.Final:compile
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building Apache CarbonData :: Processing 0.1.1-incubating-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-dependency-plugin:2.8:tree (default-cli) @ carbondata-processing ---
+[INFO] org.apache.carbondata:carbondata-processing:jar:0.1.1-incubating-SNAPSHOT
+[INFO] +- org.apache.carbondata:carbondata-common:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  \- log4j:log4j:jar:1.2.12:compile
+[INFO] +- org.apache.carbondata:carbondata-core:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  +- org.apache.carbondata:carbondata-format:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  |  \- org.apache.thrift:libthrift:jar:0.9.3:compile
+[INFO] |  |     +- org.apache.httpcomponents:httpclient:jar:4.4.1:compile
+[INFO] |  |     \- org.apache.httpcomponents:httpcore:jar:4.4.1:compile
+[INFO] |  +- com.google.code.gson:gson:jar:2.3.1:compile
+[INFO] |  +- org.xerial.snappy:snappy-java:jar:1.1.2.6:compile
+[INFO] |  +- org.apache.spark:spark-sql_2.10:jar:1.5.2:compile
+[INFO] |  |  +- org.apache.spark:spark-core_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.apache.avro:avro-mapred:jar:hadoop2:1.7.7:compile
+[INFO] |  |  |  |  +- org.apache.avro:avro-ipc:jar:1.7.7:compile
+[INFO] |  |  |  |  \- org.apache.avro:avro-ipc:jar:tests:1.7.7:compile
+[INFO] |  |  |  +- com.twitter:chill_2.10:jar:0.5.0:compile
+[INFO] |  |  |  |  \- com.esotericsoftware.kryo:kryo:jar:2.21:compile
+[INFO] |  |  |  |     +- com.esotericsoftware.reflectasm:reflectasm:jar:shaded:1.07:compile
+[INFO] |  |  |  |     +- com.esotericsoftware.minlog:minlog:jar:1.2:compile
+[INFO] |  |  |  |     \- org.objenesis:objenesis:jar:1.2:compile
+[INFO] |  |  |  +- com.twitter:chill-java:jar:0.5.0:compile
+[INFO] |  |  |  +- org.apache.hadoop:hadoop-client:jar:2.2.0:compile
+[INFO] |  |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-app:jar:2.2.0:compile
+[INFO] |  |  |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-common:jar:2.2.0:compile
+[INFO] |  |  |  |  |  |  +- org.apache.hadoop:hadoop-yarn-client:jar:2.2.0:compile
+[INFO] |  |  |  |  |  |  |  +- com.google.inject:guice:jar:3.0:compile
+[INFO] |  |  |  |  |  |  |  |  +- javax.inject:javax.inject:jar:1:compile
+[INFO] |  |  |  |  |  |  |  |  \- aopalliance:aopalliance:jar:1.0:compile
+[INFO] |  |  |  |  |  |  |  +- com.sun.jersey.jersey-test-framework:jersey-test-framework-grizzly2:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  |  +- com.sun.jersey.jersey-test-framework:jersey-test-framework-core:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  |  |  +- javax.servlet:javax.servlet-api:jar:3.0.1:compile
+[INFO] |  |  |  |  |  |  |  |  |  \- com.sun.jersey:jersey-client:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  |  \- com.sun.jersey:jersey-grizzly2:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |  |     |  \- org.glassfish.grizzly:grizzly-framework:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |  |     |     \- org.glassfish.gmbal:gmbal-api-only:jar:3.0.0-b023:compile
+[INFO] |  |  |  |  |  |  |  |     |        \- org.glassfish.external:management-api:jar:3.0.0-b012:compile
+[INFO] |  |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http-server:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |  |     |  \- org.glassfish.grizzly:grizzly-rcm:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http-servlet:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |  |     \- org.glassfish:javax.servlet:jar:3.1:compile
+[INFO] |  |  |  |  |  |  |  \- com.sun.jersey.contribs:jersey-guice:jar:1.9:compile
+[INFO] |  |  |  |  |  |  \- org.apache.hadoop:hadoop-yarn-server-common:jar:2.2.0:compile
+[INFO] |  |  |  |  |  \- org.apache.hadoop:hadoop-mapreduce-client-shuffle:jar:2.2.0:compile
+[INFO] |  |  |  |  +- org.apache.hadoop:hadoop-yarn-api:jar:2.2.0:compile
+[INFO] |  |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-core:jar:2.2.0:compile
+[INFO] |  |  |  |  |  \- org.apache.hadoop:hadoop-yarn-common:jar:2.2.0:compile
+[INFO] |  |  |  |  \- org.apache.hadoop:hadoop-mapreduce-client-jobclient:jar:2.2.0:compile
+[INFO] |  |  |  +- org.apache.spark:spark-launcher_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.apache.spark:spark-network-common_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.apache.spark:spark-network-shuffle_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.apache.spark:spark-unsafe_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.apache.curator:curator-recipes:jar:2.4.0:compile
+[INFO] |  |  |  |  \- org.apache.curator:curator-framework:jar:2.4.0:compile
+[INFO] |  |  |  +- org.eclipse.jetty.orbit:javax.servlet:jar:3.0.0.v201112011016:compile
+[INFO] |  |  |  +- org.apache.commons:commons-lang3:jar:3.3.2:compile
+[INFO] |  |  |  +- org.apache.commons:commons-math3:jar:3.4.1:compile
+[INFO] |  |  |  +- org.slf4j:jul-to-slf4j:jar:1.7.10:compile
+[INFO] |  |  |  +- org.slf4j:jcl-over-slf4j:jar:1.7.10:compile
+[INFO] |  |  |  +- com.ning:compress-lzf:jar:1.0.3:compile
+[INFO] |  |  |  +- net.jpountz.lz4:lz4:jar:1.3.0:compile
+[INFO] |  |  |  +- org.roaringbitmap:RoaringBitmap:jar:0.4.5:compile
+[INFO] |  |  |  +- com.typesafe.akka:akka-remote_2.10:jar:2.3.11:compile
+[INFO] |  |  |  |  +- com.typesafe.akka:akka-actor_2.10:jar:2.3.11:compile
+[INFO] |  |  |  |  |  \- com.typesafe:config:jar:1.2.1:compile
+[INFO] |  |  |  |  \- org.uncommons.maths:uncommons-maths:jar:1.2.2a:compile
+[INFO] |  |  |  +- com.typesafe.akka:akka-slf4j_2.10:jar:2.3.11:compile
+[INFO] |  |  |  +- org.scala-lang:scala-library:jar:2.10.4:compile
+[INFO] |  |  |  +- org.json4s:json4s-jackson_2.10:jar:3.2.10:compile
+[INFO] |  |  |  |  \- org.json4s:json4s-core_2.10:jar:3.2.10:compile
+[INFO] |  |  |  |     +- org.json4s:json4s-ast_2.10:jar:3.2.10:compile
+[INFO] |  |  |  |     \- org.scala-lang:scalap:jar:2.10.0:compile
+[INFO] |  |  |  |        \- org.scala-lang:scala-compiler:jar:2.10.4:compile
+[INFO] |  |  |  +- org.apache.mesos:mesos:jar:shaded-protobuf:0.21.1:compile
+[INFO] |  |  |  +- io.netty:netty-all:jar:4.0.29.Final:compile
+[INFO] |  |  |  +- com.clearspring.analytics:stream:jar:2.7.0:compile
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-core:jar:3.1.2:compile
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-jvm:jar:3.1.2:compile
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-json:jar:3.1.2:compile
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-graphite:jar:3.1.2:compile
+[INFO] |  |  |  +- com.fasterxml.jackson.module:jackson-module-scala_2.10:jar:2.4.4:compile
+[INFO] |  |  |  +- org.apache.ivy:ivy:jar:2.4.0:compile
+[INFO] |  |  |  +- oro:oro:jar:2.0.8:compile
+[INFO] |  |  |  +- org.tachyonproject:tachyon-client:jar:0.7.1:compile
+[INFO] |  |  |  |  +- org.apache.curator:curator-client:jar:2.1.0-incubating:compile
+[INFO] |  |  |  |  +- org.tachyonproject:tachyon-underfs-hdfs:jar:0.7.1:compile
+[INFO] |  |  |  |  \- org.tachyonproject:tachyon-underfs-local:jar:0.7.1:compile
+[INFO] |  |  |  +- net.razorvine:pyrolite:jar:4.4:compile
+[INFO] |  |  |  \- net.sf.py4j:py4j:jar:0.8.2.1:compile
+[INFO] |  |  +- org.apache.spark:spark-catalyst_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.scala-lang:scala-reflect:jar:2.10.4:compile
+[INFO] |  |  |  \- org.codehaus.janino:janino:jar:2.7.8:compile
+[INFO] |  |  |     \- org.codehaus.janino:commons-compiler:jar:2.7.8:compile
+[INFO] |  |  +- org.apache.parquet:parquet-column:jar:1.7.0:compile
+[INFO] |  |  |  +- org.apache.parquet:parquet-common:jar:1.7.0:compile
+[INFO] |  |  |  \- org.apache.parquet:parquet-encoding:jar:1.7.0:compile
+[INFO] |  |  |     \- org.apache.parquet:parquet-generator:jar:1.7.0:compile
+[INFO] |  |  +- org.apache.parquet:parquet-hadoop:jar:1.7.0:compile
+[INFO] |  |  |  +- org.apache.parquet:parquet-format:jar:2.3.0-incubating:compile
+[INFO] |  |  |  \- org.apache.parquet:parquet-jackson:jar:1.7.0:compile
+[INFO] |  |  +- com.fasterxml.jackson.core:jackson-databind:jar:2.4.4:compile
+[INFO] |  |  |  +- com.fasterxml.jackson.core:jackson-annotations:jar:2.4.0:compile
+[INFO] |  |  |  \- com.fasterxml.jackson.core:jackson-core:jar:2.4.4:compile
+[INFO] |  |  \- org.spark-project.spark:unused:jar:1.0.0:compile
+[INFO] |  \- org.apache.zookeeper:zookeeper:jar:3.4.7:compile
+[INFO] |     \- io.netty:netty:jar:3.7.0.Final:compile
+[INFO] +- pentaho-kettle:kettle-engine:jar:4.4.0-stable:compile
+[INFO] |  \- xerces:xercesImpl:jar:2.9.1:compile
+[INFO] |     \- xml-apis:xml-apis:jar:1.3.04:compile
+[INFO] +- com.univocity:univocity-parsers:jar:1.5.6:compile
+[INFO] +- pentaho-kettle:kettle-core:jar:4.4.0-stable:compile
+[INFO] +- pentaho-kettle:kettle-db:jar:4.4.0-stable:compile
+[INFO] +- commons-vfs:commons-vfs:jar:1.0:compile
+[INFO] +- org.jmockit:jmockit:jar:1.10:test
+[INFO] +- org.apache.hadoop:hadoop-common:jar:2.2.0:compile
+[INFO] |  +- org.apache.hadoop:hadoop-annotations:jar:2.2.0:compile
+[INFO] |  |  \- jdk.tools:jdk.tools:jar:1.6:system
+[INFO] |  +- com.google.guava:guava:jar:11.0.2:compile
+[INFO] |  |  \- com.google.code.findbugs:jsr305:jar:1.3.9:compile
+[INFO] |  +- commons-cli:commons-cli:jar:1.2:compile
+[INFO] |  +- org.apache.commons:commons-math:jar:2.1:compile
+[INFO] |  +- xmlenc:xmlenc:jar:0.52:compile
+[INFO] |  +- commons-httpclient:commons-httpclient:jar:3.1:compile
+[INFO] |  +- commons-codec:commons-codec:jar:1.4:compile
+[INFO] |  +- commons-io:commons-io:jar:2.1:compile
+[INFO] |  +- commons-net:commons-net:jar:3.1:compile
+[INFO] |  +- javax.servlet:servlet-api:jar:2.5:compile
+[INFO] |  +- org.mortbay.jetty:jetty:jar:6.1.26:compile
+[INFO] |  +- org.mortbay.jetty:jetty-util:jar:6.1.26:compile
+[INFO] |  +- com.sun.jersey:jersey-core:jar:1.9:compile
+[INFO] |  +- com.sun.jersey:jersey-json:jar:1.9:compile
+[INFO] |  |  +- org.codehaus.jettison:jettison:jar:1.1:compile
+[INFO] |  |  |  \- stax:stax-api:jar:1.0.1:compile
+[INFO] |  |  +- com.sun.xml.bind:jaxb-impl:jar:2.2.3-1:compile
+[INFO] |  |  |  \- javax.xml.bind:jaxb-api:jar:2.2.2:compile
+[INFO] |  |  |     \- javax.activation:activation:jar:1.1:compile
+[INFO] |  |  +- org.codehaus.jackson:jackson-jaxrs:jar:1.8.3:compile
+[INFO] |  |  \- org.codehaus.jackson:jackson-xc:jar:1.8.3:compile
+[INFO] |  +- com.sun.jersey:jersey-server:jar:1.9:compile
+[INFO] |  |  \- asm:asm:jar:3.1:compile
+[INFO] |  +- tomcat:jasper-compiler:jar:5.5.23:runtime
+[INFO] |  +- tomcat:jasper-runtime:jar:5.5.23:compile
+[INFO] |  +- javax.servlet.jsp:jsp-api:jar:2.1:compile
+[INFO] |  +- commons-el:commons-el:jar:1.0:compile
+[INFO] |  +- commons-logging:commons-logging:jar:1.1.1:compile
+[INFO] |  +- net.java.dev.jets3t:jets3t:jar:0.6.1:compile
+[INFO] |  +- commons-lang:commons-lang:jar:2.5:compile
+[INFO] |  +- commons-configuration:commons-configuration:jar:1.6:compile
+[INFO] |  |  +- commons-collections:commons-collections:jar:3.2.1:compile
+[INFO] |  |  +- commons-digester:commons-digester:jar:1.8:compile
+[INFO] |  |  |  \- commons-beanutils:commons-beanutils:jar:1.7.0:compile
+[INFO] |  |  \- commons-beanutils:commons-beanutils-core:jar:1.8.0:compile
+[INFO] |  +- org.slf4j:slf4j-api:jar:1.7.5:compile
+[INFO] |  +- org.slf4j:slf4j-log4j12:jar:1.7.5:compile
+[INFO] |  +- org.codehaus.jackson:jackson-core-asl:jar:1.8.8:compile
+[INFO] |  +- org.codehaus.jackson:jackson-mapper-asl:jar:1.8.8:compile
+[INFO] |  +- org.apache.avro:avro:jar:1.7.4:compile
+[INFO] |  |  \- com.thoughtworks.paranamer:paranamer:jar:2.3:compile
+[INFO] |  +- com.google.protobuf:protobuf-java:jar:2.5.0:compile
+[INFO] |  +- org.apache.hadoop:hadoop-auth:jar:2.2.0:compile
+[INFO] |  +- com.jcraft:jsch:jar:0.1.42:compile
+[INFO] |  \- org.apache.commons:commons-compress:jar:1.4.1:compile
+[INFO] |     \- org.tukaani:xz:jar:1.0:compile
+[INFO] +- org.apache.hadoop:hadoop-hdfs:jar:2.2.0:compile
+[INFO] |  \- commons-daemon:commons-daemon:jar:1.0.13:compile
+[INFO] \- junit:junit:jar:4.11:test
+[INFO]    \- org.hamcrest:hamcrest-core:jar:1.3:test
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building Apache CarbonData :: Hadoop 0.1.1-incubating-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-dependency-plugin:2.8:tree (default-cli) @ carbondata-hadoop ---
+[INFO] org.apache.carbondata:carbondata-hadoop:jar:0.1.1-incubating-SNAPSHOT
+[INFO] +- org.apache.carbondata:carbondata-common:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  \- log4j:log4j:jar:1.2.12:compile
+[INFO] +- org.apache.carbondata:carbondata-core:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  +- pentaho-kettle:kettle-engine:jar:4.4.0-stable:compile
+[INFO] |  |  \- xerces:xercesImpl:jar:2.9.1:compile
+[INFO] |  |     \- xml-apis:xml-apis:jar:1.3.04:compile
+[INFO] |  +- pentaho-kettle:kettle-core:jar:4.4.0-stable:compile
+[INFO] |  +- pentaho-kettle:kettle-db:jar:4.4.0-stable:compile
+[INFO] |  +- com.google.code.gson:gson:jar:2.3.1:compile
+[INFO] |  +- org.xerial.snappy:snappy-java:jar:1.1.2.6:compile
+[INFO] |  +- org.apache.spark:spark-sql_2.10:jar:1.5.2:compile
+[INFO] |  |  +- org.apache.spark:spark-core_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.apache.avro:avro-mapred:jar:hadoop2:1.7.7:compile
+[INFO] |  |  |  |  +- org.apache.avro:avro-ipc:jar:1.7.7:compile
+[INFO] |  |  |  |  \- org.apache.avro:avro-ipc:jar:tests:1.7.7:compile
+[INFO] |  |  |  +- com.twitter:chill_2.10:jar:0.5.0:compile
+[INFO] |  |  |  |  \- com.esotericsoftware.kryo:kryo:jar:2.21:compile
+[INFO] |  |  |  |     +- com.esotericsoftware.reflectasm:reflectasm:jar:shaded:1.07:compile
+[INFO] |  |  |  |     +- com.esotericsoftware.minlog:minlog:jar:1.2:compile
+[INFO] |  |  |  |     \- org.objenesis:objenesis:jar:1.2:compile
+[INFO] |  |  |  +- com.twitter:chill-java:jar:0.5.0:compile
+[INFO] |  |  |  +- org.apache.hadoop:hadoop-client:jar:2.2.0:compile
+[INFO] |  |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-app:jar:2.2.0:compile
+[INFO] |  |  |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-common:jar:2.2.0:compile
+[INFO] |  |  |  |  |  |  +- org.apache.hadoop:hadoop-yarn-client:jar:2.2.0:compile
+[INFO] |  |  |  |  |  |  |  +- com.google.inject:guice:jar:3.0:compile
+[INFO] |  |  |  |  |  |  |  |  +- javax.inject:javax.inject:jar:1:compile
+[INFO] |  |  |  |  |  |  |  |  \- aopalliance:aopalliance:jar:1.0:compile
+[INFO] |  |  |  |  |  |  |  +- com.sun.jersey.jersey-test-framework:jersey-test-framework-grizzly2:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  |  +- com.sun.jersey.jersey-test-framework:jersey-test-framework-core:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  |  |  +- javax.servlet:javax.servlet-api:jar:3.0.1:compile
+[INFO] |  |  |  |  |  |  |  |  |  \- com.sun.jersey:jersey-client:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  |  \- com.sun.jersey:jersey-grizzly2:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |  |     |  \- org.glassfish.grizzly:grizzly-framework:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |  |     |     \- org.glassfish.gmbal:gmbal-api-only:jar:3.0.0-b023:compile
+[INFO] |  |  |  |  |  |  |  |     |        \- org.glassfish.external:management-api:jar:3.0.0-b012:compile
+[INFO] |  |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http-server:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |  |     |  \- org.glassfish.grizzly:grizzly-rcm:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http-servlet:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |  |     \- org.glassfish:javax.servlet:jar:3.1:compile
+[INFO] |  |  |  |  |  |  |  \- com.sun.jersey.contribs:jersey-guice:jar:1.9:compile
+[INFO] |  |  |  |  |  |  \- org.apache.hadoop:hadoop-yarn-server-common:jar:2.2.0:compile
+[INFO] |  |  |  |  |  \- org.apache.hadoop:hadoop-mapreduce-client-shuffle:jar:2.2.0:compile
+[INFO] |  |  |  |  +- org.apache.hadoop:hadoop-yarn-api:jar:2.2.0:compile
+[INFO] |  |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-core:jar:2.2.0:compile
+[INFO] |  |  |  |  |  \- org.apache.hadoop:hadoop-yarn-common:jar:2.2.0:compile
+[INFO] |  |  |  |  \- org.apache.hadoop:hadoop-mapreduce-client-jobclient:jar:2.2.0:compile
+[INFO] |  |  |  +- org.apache.spark:spark-launcher_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.apache.spark:spark-network-common_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.apache.spark:spark-network-shuffle_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.apache.spark:spark-unsafe_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.apache.curator:curator-recipes:jar:2.4.0:compile
+[INFO] |  |  |  |  \- org.apache.curator:curator-framework:jar:2.4.0:compile
+[INFO] |  |  |  +- org.eclipse.jetty.orbit:javax.servlet:jar:3.0.0.v201112011016:compile
+[INFO] |  |  |  +- org.apache.commons:commons-math3:jar:3.4.1:compile
+[INFO] |  |  |  +- org.slf4j:jul-to-slf4j:jar:1.7.10:compile
+[INFO] |  |  |  +- org.slf4j:jcl-over-slf4j:jar:1.7.10:compile
+[INFO] |  |  |  +- com.ning:compress-lzf:jar:1.0.3:compile
+[INFO] |  |  |  +- net.jpountz.lz4:lz4:jar:1.3.0:compile
+[INFO] |  |  |  +- org.roaringbitmap:RoaringBitmap:jar:0.4.5:compile
+[INFO] |  |  |  +- com.typesafe.akka:akka-remote_2.10:jar:2.3.11:compile
+[INFO] |  |  |  |  +- com.typesafe.akka:akka-actor_2.10:jar:2.3.11:compile
+[INFO] |  |  |  |  |  \- com.typesafe:config:jar:1.2.1:compile
+[INFO] |  |  |  |  \- org.uncommons.maths:uncommons-maths:jar:1.2.2a:compile
+[INFO] |  |  |  +- com.typesafe.akka:akka-slf4j_2.10:jar:2.3.11:compile
+[INFO] |  |  |  +- org.scala-lang:scala-library:jar:2.10.4:compile
+[INFO] |  |  |  +- org.json4s:json4s-jackson_2.10:jar:3.2.10:compile
+[INFO] |  |  |  |  \- org.json4s:json4s-core_2.10:jar:3.2.10:compile
+[INFO] |  |  |  |     +- org.json4s:json4s-ast_2.10:jar:3.2.10:compile
+[INFO] |  |  |  |     \- org.scala-lang:scalap:jar:2.10.0:compile
+[INFO] |  |  |  |        \- org.scala-lang:scala-compiler:jar:2.10.4:compile
+[INFO] |  |  |  +- org.apache.mesos:mesos:jar:shaded-protobuf:0.21.1:compile
+[INFO] |  |  |  +- io.netty:netty-all:jar:4.0.29.Final:compile
+[INFO] |  |  |  +- com.clearspring.analytics:stream:jar:2.7.0:compile
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-core:jar:3.1.2:compile
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-jvm:jar:3.1.2:compile
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-json:jar:3.1.2:compile
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-graphite:jar:3.1.2:compile
+[INFO] |  |  |  +- com.fasterxml.jackson.module:jackson-module-scala_2.10:jar:2.4.4:compile
+[INFO] |  |  |  +- org.apache.ivy:ivy:jar:2.4.0:compile
+[INFO] |  |  |  +- oro:oro:jar:2.0.8:compile
+[INFO] |  |  |  +- org.tachyonproject:tachyon-client:jar:0.7.1:compile
+[INFO] |  |  |  |  +- org.apache.curator:curator-client:jar:2.1.0-incubating:compile
+[INFO] |  |  |  |  +- org.tachyonproject:tachyon-underfs-hdfs:jar:0.7.1:compile
+[INFO] |  |  |  |  \- org.tachyonproject:tachyon-underfs-local:jar:0.7.1:compile
+[INFO] |  |  |  +- net.razorvine:pyrolite:jar:4.4:compile
+[INFO] |  |  |  \- net.sf.py4j:py4j:jar:0.8.2.1:compile
+[INFO] |  |  +- org.apache.spark:spark-catalyst_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.scala-lang:scala-reflect:jar:2.10.4:compile
+[INFO] |  |  |  \- org.codehaus.janino:janino:jar:2.7.8:compile
+[INFO] |  |  |     \- org.codehaus.janino:commons-compiler:jar:2.7.8:compile
+[INFO] |  |  +- org.apache.parquet:parquet-column:jar:1.7.0:compile
+[INFO] |  |  |  +- org.apache.parquet:parquet-common:jar:1.7.0:compile
+[INFO] |  |  |  \- org.apache.parquet:parquet-encoding:jar:1.7.0:compile
+[INFO] |  |  |     \- org.apache.parquet:parquet-generator:jar:1.7.0:compile
+[INFO] |  |  +- org.apache.parquet:parquet-hadoop:jar:1.7.0:compile
+[INFO] |  |  |  +- org.apache.parquet:parquet-format:jar:2.3.0-incubating:compile
+[INFO] |  |  |  \- org.apache.parquet:parquet-jackson:jar:1.7.0:compile
+[INFO] |  |  +- com.fasterxml.jackson.core:jackson-databind:jar:2.4.4:compile
+[INFO] |  |  |  +- com.fasterxml.jackson.core:jackson-annotations:jar:2.4.0:compile
+[INFO] |  |  |  \- com.fasterxml.jackson.core:jackson-core:jar:2.4.4:compile
+[INFO] |  |  \- org.spark-project.spark:unused:jar:1.0.0:compile
+[INFO] |  \- org.apache.zookeeper:zookeeper:jar:3.4.7:compile
+[INFO] |     \- io.netty:netty:jar:3.7.0.Final:compile
+[INFO] +- org.apache.carbondata:carbondata-format:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  \- org.apache.thrift:libthrift:jar:0.9.3:compile
+[INFO] |     +- org.apache.httpcomponents:httpclient:jar:4.4.1:compile
+[INFO] |     \- org.apache.httpcomponents:httpcore:jar:4.4.1:compile
+[INFO] +- org.apache.carbondata:carbondata-processing:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  +- com.univocity:univocity-parsers:jar:1.5.6:compile
+[INFO] |  \- commons-vfs:commons-vfs:jar:1.0:compile
+[INFO] +- org.apache.hadoop:hadoop-common:jar:2.2.0:compile
+[INFO] |  +- org.apache.hadoop:hadoop-annotations:jar:2.2.0:compile
+[INFO] |  |  \- jdk.tools:jdk.tools:jar:1.6:system
+[INFO] |  +- com.google.guava:guava:jar:11.0.2:compile
+[INFO] |  |  \- com.google.code.findbugs:jsr305:jar:1.3.9:compile
+[INFO] |  +- commons-cli:commons-cli:jar:1.2:compile
+[INFO] |  +- org.apache.commons:commons-math:jar:2.1:compile
+[INFO] |  +- xmlenc:xmlenc:jar:0.52:compile
+[INFO] |  +- commons-httpclient:commons-httpclient:jar:3.1:compile
+[INFO] |  +- commons-codec:commons-codec:jar:1.4:compile
+[INFO] |  +- commons-io:commons-io:jar:2.1:compile
+[INFO] |  +- commons-net:commons-net:jar:3.1:compile
+[INFO] |  +- javax.servlet:servlet-api:jar:2.5:compile
+[INFO] |  +- org.mortbay.jetty:jetty:jar:6.1.26:compile
+[INFO] |  +- org.mortbay.jetty:jetty-util:jar:6.1.26:compile
+[INFO] |  +- com.sun.jersey:jersey-core:jar:1.9:compile
+[INFO] |  +- com.sun.jersey:jersey-json:jar:1.9:compile
+[INFO] |  |  +- org.codehaus.jettison:jettison:jar:1.1:compile
+[INFO] |  |  |  \- stax:stax-api:jar:1.0.1:compile
+[INFO] |  |  +- com.sun.xml.bind:jaxb-impl:jar:2.2.3-1:compile
+[INFO] |  |  |  \- javax.xml.bind:jaxb-api:jar:2.2.2:compile
+[INFO] |  |  |     \- javax.activation:activation:jar:1.1:compile
+[INFO] |  |  +- org.codehaus.jackson:jackson-jaxrs:jar:1.8.3:compile
+[INFO] |  |  \- org.codehaus.jackson:jackson-xc:jar:1.8.3:compile
+[INFO] |  +- com.sun.jersey:jersey-server:jar:1.9:compile
+[INFO] |  |  \- asm:asm:jar:3.1:compile
+[INFO] |  +- tomcat:jasper-compiler:jar:5.5.23:runtime
+[INFO] |  +- tomcat:jasper-runtime:jar:5.5.23:compile
+[INFO] |  +- javax.servlet.jsp:jsp-api:jar:2.1:compile
+[INFO] |  +- commons-el:commons-el:jar:1.0:compile
+[INFO] |  +- commons-logging:commons-logging:jar:1.1.1:compile
+[INFO] |  +- net.java.dev.jets3t:jets3t:jar:0.6.1:compile
+[INFO] |  +- commons-lang:commons-lang:jar:2.5:compile
+[INFO] |  +- commons-configuration:commons-configuration:jar:1.6:compile
+[INFO] |  |  +- commons-collections:commons-collections:jar:3.2.1:compile
+[INFO] |  |  +- commons-digester:commons-digester:jar:1.8:compile
+[INFO] |  |  |  \- commons-beanutils:commons-beanutils:jar:1.7.0:compile
+[INFO] |  |  \- commons-beanutils:commons-beanutils-core:jar:1.8.0:compile
+[INFO] |  +- org.slf4j:slf4j-api:jar:1.7.5:compile
+[INFO] |  +- org.slf4j:slf4j-log4j12:jar:1.7.5:compile
+[INFO] |  +- org.codehaus.jackson:jackson-core-asl:jar:1.8.8:compile
+[INFO] |  +- org.codehaus.jackson:jackson-mapper-asl:jar:1.8.8:compile
+[INFO] |  +- org.apache.avro:avro:jar:1.7.4:compile
+[INFO] |  |  \- com.thoughtworks.paranamer:paranamer:jar:2.3:compile
+[INFO] |  +- com.google.protobuf:protobuf-java:jar:2.5.0:compile
+[INFO] |  +- org.apache.hadoop:hadoop-auth:jar:2.2.0:compile
+[INFO] |  +- com.jcraft:jsch:jar:0.1.42:compile
+[INFO] |  \- org.apache.commons:commons-compress:jar:1.4.1:compile
+[INFO] |     \- org.tukaani:xz:jar:1.0:compile
+[INFO] +- org.apache.hadoop:hadoop-hdfs:jar:2.2.0:compile
+[INFO] |  \- commons-daemon:commons-daemon:jar:1.0.13:compile
+[INFO] +- org.apache.commons:commons-lang3:jar:3.3.2:compile
+[INFO] \- junit:junit:jar:4.11:test
+[INFO]    \- org.hamcrest:hamcrest-core:jar:1.3:test
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building Apache CarbonData :: Spark 0.1.1-incubating-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-dependency-plugin:2.8:tree (default-cli) @ carbondata-spark ---
+[INFO] org.apache.carbondata:carbondata-spark:jar:0.1.1-incubating-SNAPSHOT
+[INFO] +- com.databricks:spark-csv_2.10:jar:1.2.0:compile
+[INFO] |  +- org.apache.commons:commons-csv:jar:1.1:compile
+[INFO] |  \- com.univocity:univocity-parsers:jar:1.5.1:compile
+[INFO] +- org.apache.carbondata:carbondata-common:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  +- log4j:log4j:jar:1.2.12:compile
+[INFO] |  \- org.apache.hadoop:hadoop-common:jar:2.2.0:compile
+[INFO] |     +- org.apache.hadoop:hadoop-annotations:jar:2.2.0:compile
+[INFO] |     |  \- jdk.tools:jdk.tools:jar:1.6:system
+[INFO] |     +- com.google.guava:guava:jar:11.0.2:compile
+[INFO] |     +- commons-cli:commons-cli:jar:1.2:compile
+[INFO] |     +- org.apache.commons:commons-math:jar:2.1:compile
+[INFO] |     +- xmlenc:xmlenc:jar:0.52:compile
+[INFO] |     +- commons-httpclient:commons-httpclient:jar:3.1:compile
+[INFO] |     +- commons-codec:commons-codec:jar:1.4:compile
+[INFO] |     +- commons-io:commons-io:jar:2.1:compile
+[INFO] |     +- commons-net:commons-net:jar:3.1:compile
+[INFO] |     +- javax.servlet:servlet-api:jar:2.5:compile
+[INFO] |     +- org.mortbay.jetty:jetty:jar:6.1.26:compile
+[INFO] |     +- org.mortbay.jetty:jetty-util:jar:6.1.26:compile
+[INFO] |     +- tomcat:jasper-compiler:jar:5.5.23:runtime
+[INFO] |     +- tomcat:jasper-runtime:jar:5.5.23:compile
+[INFO] |     +- javax.servlet.jsp:jsp-api:jar:2.1:compile
+[INFO] |     +- commons-el:commons-el:jar:1.0:compile
+[INFO] |     +- commons-logging:commons-logging:jar:1.1.1:compile
+[INFO] |     +- net.java.dev.jets3t:jets3t:jar:0.6.1:compile
+[INFO] |     +- commons-lang:commons-lang:jar:2.5:compile
+[INFO] |     +- commons-configuration:commons-configuration:jar:1.6:compile
+[INFO] |     |  +- commons-collections:commons-collections:jar:3.2.1:compile
+[INFO] |     |  +- commons-digester:commons-digester:jar:1.8:compile
+[INFO] |     |  |  \- commons-beanutils:commons-beanutils:jar:1.7.0:compile
+[INFO] |     |  \- commons-beanutils:commons-beanutils-core:jar:1.8.0:compile
+[INFO] |     +- org.slf4j:slf4j-api:jar:1.7.5:compile
+[INFO] |     +- org.slf4j:slf4j-log4j12:jar:1.7.5:compile
+[INFO] |     +- org.codehaus.jackson:jackson-core-asl:jar:1.8.8:compile
+[INFO] |     +- org.codehaus.jackson:jackson-mapper-asl:jar:1.8.8:compile
+[INFO] |     +- org.apache.avro:avro:jar:1.7.4:compile
+[INFO] |     |  \- com.thoughtworks.paranamer:paranamer:jar:2.3:compile
+[INFO] |     +- com.google.protobuf:protobuf-java:jar:2.5.0:compile
+[INFO] |     +- org.apache.hadoop:hadoop-auth:jar:2.2.0:compile
+[INFO] |     +- com.jcraft:jsch:jar:0.1.42:compile
+[INFO] |     \- org.apache.commons:commons-compress:jar:1.4.1:compile
+[INFO] |        \- org.tukaani:xz:jar:1.0:compile
+[INFO] +- org.apache.carbondata:carbondata-core:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  +- org.apache.carbondata:carbondata-format:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  |  \- org.apache.thrift:libthrift:jar:0.9.3:compile
+[INFO] |  |     \- org.apache.httpcomponents:httpcore:jar:4.4.1:compile
+[INFO] |  +- pentaho-kettle:kettle-engine:jar:4.4.0-stable:compile
+[INFO] |  |  \- xerces:xercesImpl:jar:2.9.1:compile
+[INFO] |  |     \- xml-apis:xml-apis:jar:1.3.04:compile
+[INFO] |  +- pentaho-kettle:kettle-core:jar:4.4.0-stable:compile
+[INFO] |  +- pentaho-kettle:kettle-db:jar:4.4.0-stable:compile
+[INFO] |  +- com.google.code.gson:gson:jar:2.3.1:compile
+[INFO] |  +- org.apache.hadoop:hadoop-hdfs:jar:2.2.0:compile
+[INFO] |  |  \- commons-daemon:commons-daemon:jar:1.0.13:compile
+[INFO] |  +- org.xerial.snappy:snappy-java:jar:1.1.2.6:compile
+[INFO] |  +- org.apache.spark:spark-sql_2.10:jar:1.5.2:compile
+[INFO] |  |  +- org.apache.spark:spark-catalyst_2.10:jar:1.5.2:compile
+[INFO] |  |  |  \- org.codehaus.janino:janino:jar:2.7.8:compile
+[INFO] |  |  +- org.apache.parquet:parquet-column:jar:1.7.0:compile
+[INFO] |  |  |  +- org.apache.parquet:parquet-common:jar:1.7.0:compile
+[INFO] |  |  |  \- org.apache.parquet:parquet-encoding:jar:1.7.0:compile
+[INFO] |  |  |     \- org.apache.parquet:parquet-generator:jar:1.7.0:compile
+[INFO] |  |  +- org.apache.parquet:parquet-hadoop:jar:1.7.0:compile
+[INFO] |  |  |  +- org.apache.parquet:parquet-format:jar:2.3.0-incubating:compile
+[INFO] |  |  |  \- org.apache.parquet:parquet-jackson:jar:1.7.0:compile
+[INFO] |  |  \- com.fasterxml.jackson.core:jackson-databind:jar:2.4.4:compile
+[INFO] |  |     +- com.fasterxml.jackson.core:jackson-annotations:jar:2.4.0:compile
+[INFO] |  |     \- com.fasterxml.jackson.core:jackson-core:jar:2.4.4:compile
+[INFO] |  \- org.apache.zookeeper:zookeeper:jar:3.4.7:compile
+[INFO] |     \- io.netty:netty:jar:3.7.0.Final:compile
+[INFO] +- org.apache.carbondata:carbondata-processing:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  \- commons-vfs:commons-vfs:jar:1.0:compile
+[INFO] +- org.apache.carbondata:carbondata-hadoop:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  \- org.apache.commons:commons-lang3:jar:3.3.2:compile
+[INFO] +- org.scala-lang:scala-compiler:jar:2.10.4:compile
+[INFO] +- org.scala-lang:scala-reflect:jar:2.10.4:compile
+[INFO] +- org.scala-lang:scala-library:jar:2.10.4:compile
+[INFO] +- org.apache.spark:spark-hive-thriftserver_2.10:jar:1.5.2:compile
+[INFO] |  +- org.apache.spark:spark-hive_2.10:jar:1.5.2:compile
+[INFO] |  |  +- com.twitter:parquet-hadoop-bundle:jar:1.6.0:compile
+[INFO] |  |  +- org.spark-project.hive:hive-exec:jar:1.2.1.spark:compile
+[INFO] |  |  |  +- javolution:javolution:jar:5.5.1:compile
+[INFO] |  |  |  +- log4j:apache-log4j-extras:jar:1.2.17:compile
+[INFO] |  |  |  +- org.antlr:antlr-runtime:jar:3.4:compile
+[INFO] |  |  |  |  +- org.antlr:stringtemplate:jar:3.2.1:compile
+[INFO] |  |  |  |  \- antlr:antlr:jar:2.7.7:compile
+[INFO] |  |  |  +- org.antlr:ST4:jar:4.0.4:compile
+[INFO] |  |  |  +- org.codehaus.groovy:groovy-all:jar:2.1.6:compile
+[INFO] |  |  |  +- com.googlecode.javaewah:JavaEWAH:jar:0.3.2:compile
+[INFO] |  |  |  +- org.iq80.snappy:snappy:jar:0.2:compile
+[INFO] |  |  |  +- org.json:json:jar:20090211:compile
+[INFO] |  |  |  +- stax:stax-api:jar:1.0.1:compile
+[INFO] |  |  |  \- net.sf.opencsv:opencsv:jar:2.3:compile
+[INFO] |  |  +- org.spark-project.hive:hive-metastore:jar:1.2.1.spark:compile
+[INFO] |  |  |  +- com.jolbox:bonecp:jar:0.8.0.RELEASE:compile
+[INFO] |  |  |  +- org.apache.derby:derby:jar:10.10.2.0:compile
+[INFO] |  |  |  +- org.datanucleus:datanucleus-api-jdo:jar:3.2.6:compile
+[INFO] |  |  |  +- org.datanucleus:datanucleus-rdbms:jar:3.2.9:compile
+[INFO] |  |  |  +- commons-pool:commons-pool:jar:1.5.4:compile
+[INFO] |  |  |  +- commons-dbcp:commons-dbcp:jar:1.4:compile
+[INFO] |  |  |  \- javax.jdo:jdo-api:jar:3.0.1:compile
+[INFO] |  |  |     \- javax.transaction:jta:jar:1.1:compile
+[INFO] |  |  +- org.apache.avro:avro-mapred:jar:hadoop2:1.7.7:compile
+[INFO] |  |  |  +- org.apache.avro:avro-ipc:jar:1.7.7:compile
+[INFO] |  |  |  \- org.apache.avro:avro-ipc:jar:tests:1.7.7:compile
+[INFO] |  |  +- org.apache.calcite:calcite-avatica:jar:1.2.0-incubating:compile
+[INFO] |  |  +- org.apache.calcite:calcite-core:jar:1.2.0-incubating:compile
+[INFO] |  |  |  +- org.apache.calcite:calcite-linq4j:jar:1.2.0-incubating:compile
+[INFO] |  |  |  +- net.hydromatic:eigenbase-properties:jar:1.1.5:compile
+[INFO] |  |  |  \- org.codehaus.janino:commons-compiler:jar:2.7.6:compile
+[INFO] |  |  +- org.apache.httpcomponents:httpclient:jar:4.3.2:compile
+[INFO] |  |  +- joda-time:joda-time:jar:2.5:compile
+[INFO] |  |  +- org.jodd:jodd-core:jar:3.5.2:compile
+[INFO] |  |  +- com.google.code.findbugs:jsr305:jar:1.3.9:compile
+[INFO] |  |  +- org.datanucleus:datanucleus-core:jar:3.2.10:compile
+[INFO] |  |  \- org.apache.thrift:libfb303:jar:0.9.2:compile
+[INFO] |  +- org.spark-project.hive:hive-cli:jar:1.2.1.spark:compile
+[INFO] |  |  \- jline:jline:jar:2.12:compile
+[INFO] |  +- org.spark-project.hive:hive-jdbc:jar:1.2.1.spark:compile
+[INFO] |  +- org.spark-project.hive:hive-service:jar:1.2.1.spark:compile
+[INFO] |  |  +- net.sf.jpam:jpam:jar:1.1:compile
+[INFO] |  |  \- org.eclipse.jetty.aggregate:jetty-all:jar:7.6.0.v20120127:compile
+[INFO] |  |     +- org.apache.geronimo.specs:geronimo-jta_1.1_spec:jar:1.1.1:compile
+[INFO] |  |     +- javax.mail:mail:jar:1.4.1:compile
+[INFO] |  |     +- javax.activation:activation:jar:1.1:compile
+[INFO] |  |     +- org.apache.geronimo.specs:geronimo-jaspic_1.0_spec:jar:1.0:compile
+[INFO] |  |     +- org.apache.geronimo.specs:geronimo-annotation_1.0_spec:jar:1.1.1:compile
+[INFO] |  |     \- asm:asm-commons:jar:3.1:compile
+[INFO] |  |        \- asm:asm-tree:jar:3.1:compile
+[INFO] |  +- org.spark-project.hive:hive-beeline:jar:1.2.1.spark:compile
+[INFO] |  |  \- net.sf.supercsv:super-csv:jar:2.2.0:compile
+[INFO] |  +- com.sun.jersey:jersey-core:jar:1.9:compile
+[INFO] |  +- com.sun.jersey:jersey-json:jar:1.9:compile
+[INFO] |  |  +- org.codehaus.jettison:jettison:jar:1.1:compile
+[INFO] |  |  +- com.sun.xml.bind:jaxb-impl:jar:2.2.3-1:compile
+[INFO] |  |  |  \- javax.xml.bind:jaxb-api:jar:2.2.2:compile
+[INFO] |  |  |     \- javax.xml.stream:stax-api:jar:1.0-2:compile
+[INFO] |  |  +- org.codehaus.jackson:jackson-jaxrs:jar:1.8.3:compile
+[INFO] |  |  \- org.codehaus.jackson:jackson-xc:jar:1.8.3:compile
+[INFO] |  +- com.sun.jersey:jersey-server:jar:1.9:compile
+[INFO] |  |  \- asm:asm:jar:3.1:compile
+[INFO] |  \- org.spark-project.spark:unused:jar:1.0.0:compile
+[INFO] +- org.apache.spark:spark-repl_2.10:jar:1.5.2:compile
+[INFO] |  +- org.apache.spark:spark-core_2.10:jar:1.5.2:compile
+[INFO] |  |  +- com.twitter:chill_2.10:jar:0.5.0:compile
+[INFO] |  |  |  \- com.esotericsoftware.kryo:kryo:jar:2.21:compile
+[INFO] |  |  |     +- com.esotericsoftware.reflectasm:reflectasm:jar:shaded:1.07:compile
+[INFO] |  |  |     +- com.esotericsoftware.minlog:minlog:jar:1.2:compile
+[INFO] |  |  |     \- org.objenesis:objenesis:jar:1.2:compile
+[INFO] |  |  +- com.twitter:chill-java:jar:0.5.0:compile
+[INFO] |  |  +- org.apache.hadoop:hadoop-client:jar:2.2.0:compile
+[INFO] |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-app:jar:2.2.0:compile
+[INFO] |  |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-common:jar:2.2.0:compile
+[INFO] |  |  |  |  |  +- org.apache.hadoop:hadoop-yarn-client:jar:2.2.0:compile
+[INFO] |  |  |  |  |  |  +- com.google.inject:guice:jar:3.0:compile
+[INFO] |  |  |  |  |  |  |  +- javax.inject:javax.inject:jar:1:compile
+[INFO] |  |  |  |  |  |  |  \- aopalliance:aopalliance:jar:1.0:compile
+[INFO] |  |  |  |  |  |  +- com.sun.jersey.jersey-test-framework:jersey-test-framework-grizzly2:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  +- com.sun.jersey.jersey-test-framework:jersey-test-framework-core:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  |  +- javax.servlet:javax.servlet-api:jar:3.0.1:compile
+[INFO] |  |  |  |  |  |  |  |  \- com.sun.jersey:jersey-client:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  \- com.sun.jersey:jersey-grizzly2:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |     |  \- org.glassfish.grizzly:grizzly-framework:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |     |     \- org.glassfish.gmbal:gmbal-api-only:jar:3.0.0-b023:compile
+[INFO] |  |  |  |  |  |  |     |        \- org.glassfish.external:management-api:jar:3.0.0-b012:compile
+[INFO] |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http-server:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |     |  \- org.glassfish.grizzly:grizzly-rcm:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http-servlet:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |     \- org.glassfish:javax.servlet:jar:3.1:compile
+[INFO] |  |  |  |  |  |  \- com.sun.jersey.contribs:jersey-guice:jar:1.9:compile
+[INFO] |  |  |  |  |  \- org.apache.hadoop:hadoop-yarn-server-common:jar:2.2.0:compile
+[INFO] |  |  |  |  \- org.apache.hadoop:hadoop-mapreduce-client-shuffle:jar:2.2.0:compile
+[INFO] |  |  |  +- org.apache.hadoop:hadoop-yarn-api:jar:2.2.0:compile
+[INFO] |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-core:jar:2.2.0:compile
+[INFO] |  |  |  |  \- org.apache.hadoop:hadoop-yarn-common:jar:2.2.0:compile
+[INFO] |  |  |  \- org.apache.hadoop:hadoop-mapreduce-client-jobclient:jar:2.2.0:compile
+[INFO] |  |  +- org.apache.spark:spark-launcher_2.10:jar:1.5.2:compile
+[INFO] |  |  +- org.apache.spark:spark-network-common_2.10:jar:1.5.2:compile
+[INFO] |  |  +- org.apache.spark:spark-network-shuffle_2.10:jar:1.5.2:compile
+[INFO] |  |  +- org.apache.spark:spark-unsafe_2.10:jar:1.5.2:compile
+[INFO] |  |  +- org.apache.curator:curator-recipes:jar:2.4.0:compile
+[INFO] |  |  |  \- org.apache.curator:curator-framework:jar:2.4.0:compile
+[INFO] |  |  +- org.eclipse.jetty.orbit:javax.servlet:jar:3.0.0.v201112011016:compile
+[INFO] |  |  +- org.apache.commons:commons-math3:jar:3.4.1:compile
+[INFO] |  |  +- org.slf4j:jcl-over-slf4j:jar:1.7.10:compile
+[INFO] |  |  +- com.ning:compress-lzf:jar:1.0.3:compile
+[INFO] |  |  +- net.jpountz.lz4:lz4:jar:1.3.0:compile
+[INFO] |  |  +- org.roaringbitmap:RoaringBitmap:jar:0.4.5:compile
+[INFO] |  |  +- com.typesafe.akka:akka-remote_2.10:jar:2.3.11:compile
+[INFO] |  |  |  +- com.typesafe.akka:akka-actor_2.10:jar:2.3.11:compile
+[INFO] |  |  |  |  \- com.typesafe:config:jar:1.2.1:compile
+[INFO] |  |  |  \- org.uncommons.maths:uncommons-maths:jar:1.2.2a:compile
+[INFO] |  |  +- com.typesafe.akka:akka-slf4j_2.10:jar:2.3.11:compile
+[INFO] |  |  +- org.json4s:json4s-jackson_2.10:jar:3.2.10:compile
+[INFO] |  |  |  \- org.json4s:json4s-core_2.10:jar:3.2.10:compile
+[INFO] |  |  |     +- org.json4s:json4s-ast_2.10:jar:3.2.10:compile
+[INFO] |  |  |     \- org.scala-lang:scalap:jar:2.10.0:compile
+[INFO] |  |  +- org.apache.mesos:mesos:jar:shaded-protobuf:0.21.1:compile
+[INFO] |  |  +- io.netty:netty-all:jar:4.0.29.Final:compile
+[INFO] |  |  +- com.clearspring.analytics:stream:jar:2.7.0:compile
+[INFO] |  |  +- io.dropwizard.metrics:metrics-core:jar:3.1.2:compile
+[INFO] |  |  +- io.dropwizard.metrics:metrics-jvm:jar:3.1.2:compile
+[INFO] |  |  +- io.dropwizard.metrics:metrics-json:jar:3.1.2:compile
+[INFO] |  |  +- io.dropwizard.metrics:metrics-graphite:jar:3.1.2:compile
+[INFO] |  |  +- com.fasterxml.jackson.module:jackson-module-scala_2.10:jar:2.4.4:compile
+[INFO] |  |  +- org.apache.ivy:ivy:jar:2.4.0:compile
+[INFO] |  |  +- oro:oro:jar:2.0.8:compile
+[INFO] |  |  +- org.tachyonproject:tachyon-client:jar:0.7.1:compile
+[INFO] |  |  |  +- org.apache.curator:curator-client:jar:2.1.0-incubating:compile
+[INFO] |  |  |  +- org.tachyonproject:tachyon-underfs-hdfs:jar:0.7.1:compile
+[INFO] |  |  |  \- org.tachyonproject:tachyon-underfs-local:jar:0.7.1:compile
+[INFO] |  |  +- net.razorvine:pyrolite:jar:4.4:compile
+[INFO] |  |  \- net.sf.py4j:py4j:jar:0.8.2.1:compile
+[INFO] |  +- org.apache.spark:spark-bagel_2.10:jar:1.5.2:runtime
+[INFO] |  +- org.apache.spark:spark-mllib_2.10:jar:1.5.2:runtime
+[INFO] |  |  +- org.apache.spark:spark-streaming_2.10:jar:1.5.2:runtime
+[INFO] |  |  +- org.apache.spark:spark-graphx_2.10:jar:1.5.2:runtime
+[INFO] |  |  |  +- com.github.fommil.netlib:core:jar:1.1.2:runtime
+[INFO] |  |  |  \- net.sourceforge.f2j:arpack_combined_all:jar:0.1:runtime
+[INFO] |  |  +- org.scalanlp:breeze_2.10:jar:0.11.2:runtime
+[INFO] |  |  |  +- org.scalanlp:breeze-macros_2.10:jar:0.11.2:runtime
+[INFO] |  |  |  |  \- org.scalamacros:quasiquotes_2.10:jar:2.0.0-M8:runtime
+[INFO] |  |  |  +- com.github.rwl:jtransforms:jar:2.4.0:runtime
+[INFO] |  |  |  \- org.spire-math:spire_2.10:jar:0.7.4:runtime
+[INFO] |  |  |     \- org.spire-math:spire-macros_2.10:jar:0.7.4:runtime
+[INFO] |  |  \- org.jpmml:pmml-model:jar:1.1.15:runtime
+[INFO] |  |     +- org.jpmml:pmml-agent:jar:1.1.15:runtime
+[INFO] |  |     \- org.jpmml:pmml-schema:jar:1.1.15:runtime
+[INFO] |  +- org.slf4j:jul-to-slf4j:jar:1.7.10:compile
+[INFO] |  \- org.scala-lang:jline:jar:2.10.4:compile
+[INFO] |     \- org.fusesource.jansi:jansi:jar:1.4:compile
+[INFO] +- junit:junit:jar:4.11:test
+[INFO] |  \- org.hamcrest:hamcrest-core:jar:1.3:test
+[INFO] \- org.scalatest:scalatest_2.10:jar:2.2.1:test
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building Apache CarbonData :: Assembly 0.1.1-incubating-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-dependency-plugin:2.8:tree (default-cli) @ carbondata-assembly ---
+[INFO] org.apache.carbondata:carbondata-assembly:pom:0.1.1-incubating-SNAPSHOT
+[INFO] +- org.apache.carbondata:carbondata-common:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  +- log4j:log4j:jar:1.2.12:compile
+[INFO] |  \- org.apache.hadoop:hadoop-common:jar:2.2.0:provided
+[INFO] |     +- org.apache.hadoop:hadoop-annotations:jar:2.2.0:provided
+[INFO] |     |  \- jdk.tools:jdk.tools:jar:1.6:system
+[INFO] |     +- com.google.guava:guava:jar:11.0.2:provided
+[INFO] |     |  \- com.google.code.findbugs:jsr305:jar:1.3.9:provided
+[INFO] |     +- commons-cli:commons-cli:jar:1.2:provided
+[INFO] |     +- org.apache.commons:commons-math:jar:2.1:provided
+[INFO] |     +- xmlenc:xmlenc:jar:0.52:provided
+[INFO] |     +- commons-httpclient:commons-httpclient:jar:3.1:provided
+[INFO] |     +- commons-codec:commons-codec:jar:1.4:compile
+[INFO] |     +- commons-io:commons-io:jar:2.1:provided
+[INFO] |     +- commons-net:commons-net:jar:3.1:provided
+[INFO] |     +- javax.servlet:servlet-api:jar:2.5:provided
+[INFO] |     +- org.mortbay.jetty:jetty:jar:6.1.26:provided
+[INFO] |     +- org.mortbay.jetty:jetty-util:jar:6.1.26:provided
+[INFO] |     +- com.sun.jersey:jersey-core:jar:1.9:provided
+[INFO] |     +- com.sun.jersey:jersey-json:jar:1.9:provided
+[INFO] |     |  +- org.codehaus.jettison:jettison:jar:1.1:provided
+[INFO] |     |  |  \- stax:stax-api:jar:1.0.1:provided
+[INFO] |     |  +- com.sun.xml.bind:jaxb-impl:jar:2.2.3-1:provided
+[INFO] |     |  |  \- javax.xml.bind:jaxb-api:jar:2.2.2:provided
+[INFO] |     |  +- org.codehaus.jackson:jackson-jaxrs:jar:1.8.3:provided
+[INFO] |     |  \- org.codehaus.jackson:jackson-xc:jar:1.8.3:provided
+[INFO] |     +- com.sun.jersey:jersey-server:jar:1.9:provided
+[INFO] |     |  \- asm:asm:jar:3.1:provided
+[INFO] |     +- tomcat:jasper-compiler:jar:5.5.23:provided
+[INFO] |     +- tomcat:jasper-runtime:jar:5.5.23:provided
+[INFO] |     +- javax.servlet.jsp:jsp-api:jar:2.1:provided
+[INFO] |     +- commons-el:commons-el:jar:1.0:provided
+[INFO] |     +- commons-logging:commons-logging:jar:1.1.1:compile
+[INFO] |     +- net.java.dev.jets3t:jets3t:jar:0.6.1:provided
+[INFO] |     +- commons-lang:commons-lang:jar:2.5:provided
+[INFO] |     +- commons-configuration:commons-configuration:jar:1.6:provided
+[INFO] |     |  +- commons-collections:commons-collections:jar:3.2.1:provided
+[INFO] |     |  +- commons-digester:commons-digester:jar:1.8:provided
+[INFO] |     |  |  \- commons-beanutils:commons-beanutils:jar:1.7.0:provided
+[INFO] |     |  \- commons-beanutils:commons-beanutils-core:jar:1.8.0:provided
+[INFO] |     +- org.slf4j:slf4j-api:jar:1.7.5:compile
+[INFO] |     +- org.slf4j:slf4j-log4j12:jar:1.7.5:compile
+[INFO] |     +- org.codehaus.jackson:jackson-core-asl:jar:1.8.8:provided
+[INFO] |     +- org.codehaus.jackson:jackson-mapper-asl:jar:1.8.8:provided
+[INFO] |     +- org.apache.avro:avro:jar:1.7.4:provided
+[INFO] |     |  \- com.thoughtworks.paranamer:paranamer:jar:2.3:provided
+[INFO] |     +- com.google.protobuf:protobuf-java:jar:2.5.0:provided
+[INFO] |     +- org.apache.hadoop:hadoop-auth:jar:2.2.0:provided
+[INFO] |     +- com.jcraft:jsch:jar:0.1.42:provided
+[INFO] |     \- org.apache.commons:commons-compress:jar:1.4.1:provided
+[INFO] |        \- org.tukaani:xz:jar:1.0:provided
+[INFO] +- org.apache.carbondata:carbondata-core:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  +- org.apache.carbondata:carbondata-format:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  |  \- org.apache.thrift:libthrift:jar:0.9.3:compile
+[INFO] |  |     +- org.apache.httpcomponents:httpclient:jar:4.4.1:compile
+[INFO] |  |     \- org.apache.httpcomponents:httpcore:jar:4.4.1:compile
+[INFO] |  +- pentaho-kettle:kettle-engine:jar:4.4.0-stable:compile
+[INFO] |  |  \- xerces:xercesImpl:jar:2.9.1:compile
+[INFO] |  |     \- xml-apis:xml-apis:jar:1.3.04:compile
+[INFO] |  +- pentaho-kettle:kettle-core:jar:4.4.0-stable:compile
+[INFO] |  +- pentaho-kettle:kettle-db:jar:4.4.0-stable:compile
+[INFO] |  +- com.google.code.gson:gson:jar:2.3.1:compile
+[INFO] |  +- org.apache.hadoop:hadoop-hdfs:jar:2.2.0:provided
+[INFO] |  |  \- commons-daemon:commons-daemon:jar:1.0.13:provided
+[INFO] |  +- org.xerial.snappy:snappy-java:jar:1.1.2.6:compile
+[INFO] |  +- org.apache.spark:spark-sql_2.10:jar:1.5.2:provided
+[INFO] |  |  +- org.apache.spark:spark-core_2.10:jar:1.5.2:provided
+[INFO] |  |  |  +- org.apache.avro:avro-mapred:jar:hadoop2:1.7.7:provided
+[INFO] |  |  |  |  +- org.apache.avro:avro-ipc:jar:1.7.7:provided
+[INFO] |  |  |  |  \- org.apache.avro:avro-ipc:jar:tests:1.7.7:provided
+[INFO] |  |  |  +- com.twitter:chill_2.10:jar:0.5.0:provided
+[INFO] |  |  |  |  \- com.esotericsoftware.kryo:kryo:jar:2.21:provided
+[INFO] |  |  |  |     +- com.esotericsoftware.reflectasm:reflectasm:jar:shaded:1.07:provided
+[INFO] |  |  |  |     +- com.esotericsoftware.minlog:minlog:jar:1.2:provided
+[INFO] |  |  |  |     \- org.objenesis:objenesis:jar:1.2:provided
+[INFO] |  |  |  +- com.twitter:chill-java:jar:0.5.0:provided
+[INFO] |  |  |  +- org.apache.hadoop:hadoop-client:jar:2.2.0:provided
+[INFO] |  |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-app:jar:2.2.0:provided
+[INFO] |  |  |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-common:jar:2.2.0:provided
+[INFO] |  |  |  |  |  |  +- org.apache.hadoop:hadoop-yarn-client:jar:2.2.0:provided
+[INFO] |  |  |  |  |  |  |  +- com.google.inject:guice:jar:3.0:provided
+[INFO] |  |  |  |  |  |  |  |  +- javax.inject:javax.inject:jar:1:provided
+[INFO] |  |  |  |  |  |  |  |  \- aopalliance:aopalliance:jar:1.0:provided
+[INFO] |  |  |  |  |  |  |  +- com.sun.jersey.jersey-test-framework:jersey-test-framework-grizzly2:jar:1.9:provided
+[INFO] |  |  |  |  |  |  |  |  +- com.sun.jersey.jersey-test-framework:jersey-test-framework-core:jar:1.9:provided
+[INFO] |  |  |  |  |  |  |  |  |  +- javax.servlet:javax.servlet-api:jar:3.0.1:provided
+[INFO] |  |  |  |  |  |  |  |  |  \- com.sun.jersey:jersey-client:jar:1.9:provided
+[INFO] |  |  |  |  |  |  |  |  \- com.sun.jersey:jersey-grizzly2:jar:1.9:provided
+[INFO] |  |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http:jar:2.1.2:provided
+[INFO] |  |  |  |  |  |  |  |     |  \- org.glassfish.grizzly:grizzly-framework:jar:2.1.2:provided
+[INFO] |  |  |  |  |  |  |  |     |     \- org.glassfish.gmbal:gmbal-api-only:jar:3.0.0-b023:provided
+[INFO] |  |  |  |  |  |  |  |     |        \- org.glassfish.external:management-api:jar:3.0.0-b012:provided
+[INFO] |  |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http-server:jar:2.1.2:provided
+[INFO] |  |  |  |  |  |  |  |     |  \- org.glassfish.grizzly:grizzly-rcm:jar:2.1.2:provided
+[INFO] |  |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http-servlet:jar:2.1.2:provided
+[INFO] |  |  |  |  |  |  |  |     \- org.glassfish:javax.servlet:jar:3.1:provided
+[INFO] |  |  |  |  |  |  |  \- com.sun.jersey.contribs:jersey-guice:jar:1.9:provided
+[INFO] |  |  |  |  |  |  \- org.apache.hadoop:hadoop-yarn-server-common:jar:2.2.0:provided
+[INFO] |  |  |  |  |  \- org.apache.hadoop:hadoop-mapreduce-client-shuffle:jar:2.2.0:provided
+[INFO] |  |  |  |  +- org.apache.hadoop:hadoop-yarn-api:jar:2.2.0:provided
+[INFO] |  |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-core:jar:2.2.0:provided
+[INFO] |  |  |  |  |  \- org.apache.hadoop:hadoop-yarn-common:jar:2.2.0:provided
+[INFO] |  |  |  |  \- org.apache.hadoop:hadoop-mapreduce-client-jobclient:jar:2.2.0:provided
+[INFO] |  |  |  +- org.apache.spark:spark-launcher_2.10:jar:1.5.2:provided
+[INFO] |  |  |  +- org.apache.spark:spark-network-common_2.10:jar:1.5.2:provided
+[INFO] |  |  |  +- org.apache.spark:spark-network-shuffle_2.10:jar:1.5.2:provided
+[INFO] |  |  |  +- org.apache.spark:spark-unsafe_2.10:jar:1.5.2:provided
+[INFO] |  |  |  +- org.apache.curator:curator-recipes:jar:2.4.0:provided
+[INFO] |  |  |  |  \- org.apache.curator:curator-framework:jar:2.4.0:provided
+[INFO] |  |  |  +- org.eclipse.jetty.orbit:javax.servlet:jar:3.0.0.v201112011016:provided
+[INFO] |  |  |  +- org.apache.commons:commons-math3:jar:3.4.1:provided
+[INFO] |  |  |  +- org.slf4j:jcl-over-slf4j:jar:1.7.10:provided
+[INFO] |  |  |  +- com.ning:compress-lzf:jar:1.0.3:provided
+[INFO] |  |  |  +- net.jpountz.lz4:lz4:jar:1.3.0:provided
+[INFO] |  |  |  +- org.roaringbitmap:RoaringBitmap:jar:0.4.5:provided
+[INFO] |  |  |  +- com.typesafe.akka:akka-remote_2.10:jar:2.3.11:provided
+[INFO] |  |  |  |  +- com.typesafe.akka:akka-actor_2.10:jar:2.3.11:provided
+[INFO] |  |  |  |  |  \- com.typesafe:config:jar:1.2.1:provided
+[INFO] |  |  |  |  \- org.uncommons.maths:uncommons-maths:jar:1.2.2a:provided
+[INFO] |  |  |  +- com.typesafe.akka:akka-slf4j_2.10:jar:2.3.11:provided
+[INFO] |  |  |  +- org.json4s:json4s-jackson_2.10:jar:3.2.10:provided
+[INFO] |  |  |  |  \- org.json4s:json4s-core_2.10:jar:3.2.10:provided
+[INFO] |  |  |  |     +- org.json4s:json4s-ast_2.10:jar:3.2.10:provided
+[INFO] |  |  |  |     \- org.scala-lang:scalap:jar:2.10.0:provided
+[INFO] |  |  |  +- org.apache.mesos:mesos:jar:shaded-protobuf:0.21.1:provided
+[INFO] |  |  |  +- io.netty:netty-all:jar:4.0.29.Final:provided
+[INFO] |  |  |  +- com.clearspring.analytics:stream:jar:2.7.0:provided
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-core:jar:3.1.2:provided
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-jvm:jar:3.1.2:provided
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-json:jar:3.1.2:provided
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-graphite:jar:3.1.2:provided
+[INFO] |  |  |  +- com.fasterxml.jackson.module:jackson-module-scala_2.10:jar:2.4.4:provided
+[INFO] |  |  |  +- org.apache.ivy:ivy:jar:2.4.0:provided
+[INFO] |  |  |  +- oro:oro:jar:2.0.8:provided
+[INFO] |  |  |  +- org.tachyonproject:tachyon-client:jar:0.7.1:provided
+[INFO] |  |  |  |  +- org.apache.curator:curator-client:jar:2.1.0-incubating:provided
+[INFO] |  |  |  |  +- org.tachyonproject:tachyon-underfs-hdfs:jar:0.7.1:provided
+[INFO] |  |  |  |  \- org.tachyonproject:tachyon-underfs-local:jar:0.7.1:provided
+[INFO] |  |  |  +- net.razorvine:pyrolite:jar:4.4:provided
+[INFO] |  |  |  \- net.sf.py4j:py4j:jar:0.8.2.1:provided
+[INFO] |  |  +- org.apache.spark:spark-catalyst_2.10:jar:1.5.2:provided
+[INFO] |  |  |  \- org.codehaus.janino:janino:jar:2.7.8:provided
+[INFO] |  |  |     \- org.codehaus.janino:commons-compiler:jar:2.7.8:provided
+[INFO] |  |  +- org.apache.parquet:parquet-column:jar:1.7.0:provided
+[INFO] |  |  |  +- org.apache.parquet:parquet-common:jar:1.7.0:provided
+[INFO] |  |  |  \- org.apache.parquet:parquet-encoding:jar:1.7.0:provided
+[INFO] |  |  |     \- org.apache.parquet:parquet-generator:jar:1.7.0:provided
+[INFO] |  |  +- org.apache.parquet:parquet-hadoop:jar:1.7.0:provided
+[INFO] |  |  |  +- org.apache.parquet:parquet-format:jar:2.3.0-incubating:provided
+[INFO] |  |  |  \- org.apache.parquet:parquet-jackson:jar:1.7.0:provided
+[INFO] |  |  +- com.fasterxml.jackson.core:jackson-databind:jar:2.4.4:provided
+[INFO] |  |  |  +- com.fasterxml.jackson.core:jackson-annotations:jar:2.4.0:provided
+[INFO] |  |  |  \- com.fasterxml.jackson.core:jackson-core:jar:2.4.4:provided
+[INFO] |  |  \- org.spark-project.spark:unused:jar:1.0.0:provided
+[INFO] |  \- org.apache.zookeeper:zookeeper:jar:3.4.7:compile
+[INFO] |     \- io.netty:netty:jar:3.7.0.Final:compile
+[INFO] +- org.apache.carbondata:carbondata-processing:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  +- com.univocity:univocity-parsers:jar:1.5.6:compile
+[INFO] |  \- commons-vfs:commons-vfs:jar:1.0:compile
+[INFO] \- org.apache.carbondata:carbondata-spark:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO]    +- com.databricks:spark-csv_2.10:jar:1.2.0:compile
+[INFO]    |  \- org.apache.commons:commons-csv:jar:1.1:compile
+[INFO]    +- org.apache.carbondata:carbondata-hadoop:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO]    |  \- org.apache.commons:commons-lang3:jar:3.3.2:compile
+[INFO]    +- org.scala-lang:scala-compiler:jar:2.10.4:provided
+[INFO]    +- org.scala-lang:scala-reflect:jar:2.10.4:provided
+[INFO]    +- org.scala-lang:scala-library:jar:2.10.4:provided
+[INFO]    +- org.apache.spark:spark-hive-thriftserver_2.10:jar:1.5.2:provided
+[INFO]    |  +- org.apache.spark:spark-hive_2.10:jar:1.5.2:provided
+[INFO]    |  |  +- com.twitter:parquet-hadoop-bundle:jar:1.6.0:provided
+[INFO]    |  |  +- org.spark-project.hive:hive-exec:jar:1.2.1.spark:provided
+[INFO]    |  |  |  +- javolution:javolution:jar:5.5.1:provided
+[INFO]    |  |  |  +- log4j:apache-log4j-extras:jar:1.2.17:provided
+[INFO]    |  |  |  +- org.antlr:antlr-runtime:jar:3.4:provided
+[INFO]    |  |  |  |  +- org.antlr:stringtemplate:jar:3.2.1:provided
+[INFO]    |  |  |  |  \- antlr:antlr:jar:2.7.7:provided
+[INFO]    |  |  |  +- org.antlr:ST4:jar:4.0.4:provided
+[INFO]    |  |  |  +- org.codehaus.groovy:groovy-all:jar:2.1.6:provided
+[INFO]    |  |  |  +- com.googlecode.javaewah:JavaEWAH:jar:0.3.2:provided
+[INFO]    |  |  |  +- org.iq80.snappy:snappy:jar:0.2:provided
+[INFO]    |  |  |  +- org.json:json:jar:20090211:provided
+[INFO]    |  |  |  \- net.sf.opencsv:opencsv:jar:2.3:provided
+[INFO]    |  |  +- org.spark-project.hive:hive-metastore:jar:1.2.1.spark:provided
+[INFO]    |  |  |  +- com.jolbox:bonecp:jar:0.8.0.RELEASE:provided
+[INFO]    |  |  |  +- org.apache.derby:derby:jar:10.10.2.0:provided
+[INFO]    |  |  |  +- org.datanucleus:datanucleus-api-jdo:jar:3.2.6:provided
+[INFO]    |  |  |  +- org.datanucleus:datanucleus-rdbms:jar:3.2.9:provided
+[INFO]    |  |  |  +- commons-pool:commons-pool:jar:1.5.4:provided
+[INFO]    |  |  |  +- commons-dbcp:commons-dbcp:jar:1.4:provided
+[INFO]    |  |  |  \- javax.jdo:jdo-api:jar:3.0.1:provided
+[INFO]    |  |  |     \- javax.transaction:jta:jar:1.1:provided
+[INFO]    |  |  +- org.apache.calcite:calcite-avatica:jar:1.2.0-incubating:provided
+[INFO]    |  |  +- org.apache.calcite:calcite-core:jar:1.2.0-incubating:provided
+[INFO]    |  |  |  +- org.apache.calcite:calcite-linq4j:jar:1.2.0-incubating:provided
+[INFO]    |  |  |  \- net.hydromatic:eigenbase-properties:jar:1.1.5:provided
+[INFO]    |  |  +- joda-time:joda-time:jar:2.5:provided
+[INFO]    |  |  +- org.jodd:jodd-core:jar:3.5.2:provided
+[INFO]    |  |  +- org.datanucleus:datanucleus-core:jar:3.2.10:provided
+[INFO]    |  |  \- org.apache.thrift:libfb303:jar:0.9.2:provided
+[INFO]    |  +- org.spark-project.hive:hive-cli:jar:1.2.1.spark:provided
+[INFO]    |  |  \- jline:jline:jar:2.12:provided
+[INFO]    |  +- org.spark-project.hive:hive-jdbc:jar:1.2.1.spark:provided
+[INFO]    |  +- org.spark-project.hive:hive-service:jar:1.2.1.spark:provided
+[INFO]    |  |  +- net.sf.jpam:jpam:jar:1.1:provided
+[INFO]    |  |  \- org.eclipse.jetty.aggregate:jetty-all:jar:7.6.0.v20120127:provided
+[INFO]    |  |     +- org.apache.geronimo.specs:geronimo-jta_1.1_spec:jar:1.1.1:provided
+[INFO]    |  |     +- javax.mail:mail:jar:1.4.1:provided
+[INFO]    |  |     +- javax.activation:activation:jar:1.1:provided
+[INFO]    |  |     +- org.apache.geronimo.specs:geronimo-jaspic_1.0_spec:jar:1.0:provided
+[INFO]    |  |     +- org.apache.geronimo.specs:geronimo-annotation_1.0_spec:jar:1.1.1:provided
+[INFO]    |  |     \- asm:asm-commons:jar:3.1:provided
+[INFO]    |  |        \- asm:asm-tree:jar:3.1:provided
+[INFO]    |  \- org.spark-project.hive:hive-beeline:jar:1.2.1.spark:provided
+[INFO]    |     \- net.sf.supercsv:super-csv:jar:2.2.0:provided
+[INFO]    \- org.apache.spark:spark-repl_2.10:jar:1.5.2:provided
+[INFO]       +- org.apache.spark:spark-bagel_2.10:jar:1.5.2:provided
+[INFO]       +- org.apache.spark:spark-mllib_2.10:jar:1.5.2:provided
+[INFO]       |  +- org.apache.spark:spark-streaming_2.10:jar:1.5.2:provided
+[INFO]       |  +- org.apache.spark:spark-graphx_2.10:jar:1.5.2:provided
+[INFO]       |  |  +- com.github.fommil.netlib:core:jar:1.1.2:provided
+[INFO]       |  |  \- net.sourceforge.f2j:arpack_combined_all:jar:0.1:provided
+[INFO]       |  +- org.scalanlp:breeze_2.10:jar:0.11.2:provided
+[INFO]       |  |  +- org.scalanlp:breeze-macros_2.10:jar:0.11.2:provided
+[INFO]       |  |  |  \- org.scalamacros:quasiquotes_2.10:jar:2.0.0-M8:provided
+[INFO]       |  |  +- com.github.rwl:jtransforms:jar:2.4.0:provided
+[INFO]       |  |  \- org.spire-math:spire_2.10:jar:0.7.4:provided
+[INFO]       |  |     \- org.spire-math:spire-macros_2.10:jar:0.7.4:provided
+[INFO]       |  \- org.jpmml:pmml-model:jar:1.1.15:provided
+[INFO]       |     +- org.jpmml:pmml-agent:jar:1.1.15:provided
+[INFO]       |     \- org.jpmml:pmml-schema:jar:1.1.15:provided
+[INFO]       +- org.slf4j:jul-to-slf4j:jar:1.7.10:provided
+[INFO]       \- org.scala-lang:jline:jar:2.10.4:provided
+[INFO]          \- org.fusesource.jansi:jansi:jar:1.4:provided
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building Apache CarbonData :: Examples 0.1.1-incubating-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-dependency-plugin:2.8:tree (default-cli) @ carbondata-examples ---
+[INFO] org.apache.carbondata:carbondata-examples:jar:0.1.1-incubating-SNAPSHOT
+[INFO] +- org.apache.carbondata:carbondata-common:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  +- log4j:log4j:jar:1.2.12:compile
+[INFO] |  \- org.apache.hadoop:hadoop-common:jar:2.2.0:compile
+[INFO] |     +- org.apache.hadoop:hadoop-annotations:jar:2.2.0:compile
+[INFO] |     |  \- jdk.tools:jdk.tools:jar:1.6:system
+[INFO] |     +- com.google.guava:guava:jar:11.0.2:compile
+[INFO] |     +- commons-cli:commons-cli:jar:1.2:compile
+[INFO] |     +- org.apache.commons:commons-math:jar:2.1:compile
+[INFO] |     +- xmlenc:xmlenc:jar:0.52:compile
+[INFO] |     +- commons-httpclient:commons-httpclient:jar:3.1:compile
+[INFO] |     +- commons-codec:commons-codec:jar:1.4:compile
+[INFO] |     +- commons-io:commons-io:jar:2.1:compile
+[INFO] |     +- commons-net:commons-net:jar:3.1:compile
+[INFO] |     +- javax.servlet:servlet-api:jar:2.5:compile
+[INFO] |     +- org.mortbay.jetty:jetty:jar:6.1.26:compile
+[INFO] |     +- org.mortbay.jetty:jetty-util:jar:6.1.26:compile
+[INFO] |     +- tomcat:jasper-compiler:jar:5.5.23:runtime
+[INFO] |     +- tomcat:jasper-runtime:jar:5.5.23:compile
+[INFO] |     +- javax.servlet.jsp:jsp-api:jar:2.1:compile
+[INFO] |     +- commons-el:commons-el:jar:1.0:compile
+[INFO] |     +- commons-logging:commons-logging:jar:1.1.1:compile
+[INFO] |     +- net.java.dev.jets3t:jets3t:jar:0.6.1:compile
+[INFO] |     +- commons-lang:commons-lang:jar:2.5:compile
+[INFO] |     +- commons-configuration:commons-configuration:jar:1.6:compile
+[INFO] |     |  +- commons-collections:commons-collections:jar:3.2.1:compile
+[INFO] |     |  +- commons-digester:commons-digester:jar:1.8:compile
+[INFO] |     |  |  \- commons-beanutils:commons-beanutils:jar:1.7.0:compile
+[INFO] |     |  \- commons-beanutils:commons-beanutils-core:jar:1.8.0:compile
+[INFO] |     +- org.slf4j:slf4j-api:jar:1.7.5:compile
+[INFO] |     +- org.slf4j:slf4j-log4j12:jar:1.7.5:compile
+[INFO] |     +- org.codehaus.jackson:jackson-core-asl:jar:1.8.8:compile
+[INFO] |     +- org.codehaus.jackson:jackson-mapper-asl:jar:1.8.8:compile
+[INFO] |     +- org.apache.avro:avro:jar:1.7.4:compile
+[INFO] |     |  \- com.thoughtworks.paranamer:paranamer:jar:2.3:compile
+[INFO] |     +- com.google.protobuf:protobuf-java:jar:2.5.0:compile
+[INFO] |     +- org.apache.hadoop:hadoop-auth:jar:2.2.0:compile
+[INFO] |     +- com.jcraft:jsch:jar:0.1.42:compile
+[INFO] |     \- org.apache.commons:commons-compress:jar:1.4.1:compile
+[INFO] |        \- org.tukaani:xz:jar:1.0:compile
+[INFO] +- org.apache.carbondata:carbondata-core:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  +- org.apache.carbondata:carbondata-format:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  |  \- org.apache.thrift:libthrift:jar:0.9.3:compile
+[INFO] |  |     \- org.apache.httpcomponents:httpcore:jar:4.4.1:compile
+[INFO] |  +- pentaho-kettle:kettle-engine:jar:4.4.0-stable:compile
+[INFO] |  |  \- xerces:xercesImpl:jar:2.9.1:compile
+[INFO] |  |     \- xml-apis:xml-apis:jar:1.3.04:compile
+[INFO] |  +- pentaho-kettle:kettle-core:jar:4.4.0-stable:compile
+[INFO] |  +- pentaho-kettle:kettle-db:jar:4.4.0-stable:compile
+[INFO] |  +- com.google.code.gson:gson:jar:2.3.1:compile
+[INFO] |  +- org.apache.hadoop:hadoop-hdfs:jar:2.2.0:compile
+[INFO] |  |  \- commons-daemon:commons-daemon:jar:1.0.13:compile
+[INFO] |  +- org.xerial.snappy:snappy-java:jar:1.1.2.6:compile
+[INFO] |  +- org.apache.spark:spark-sql_2.10:jar:1.5.2:compile
+[INFO] |  |  +- org.apache.spark:spark-core_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- com.twitter:chill_2.10:jar:0.5.0:compile
+[INFO] |  |  |  |  \- com.esotericsoftware.kryo:kryo:jar:2.21:compile
+[INFO] |  |  |  |     +- com.esotericsoftware.reflectasm:reflectasm:jar:shaded:1.07:compile
+[INFO] |  |  |  |     +- com.esotericsoftware.minlog:minlog:jar:1.2:compile
+[INFO] |  |  |  |     \- org.objenesis:objenesis:jar:1.2:compile
+[INFO] |  |  |  +- com.twitter:chill-java:jar:0.5.0:compile
+[INFO] |  |  |  +- org.apache.hadoop:hadoop-client:jar:2.2.0:compile
+[INFO] |  |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-app:jar:2.2.0:compile
+[INFO] |  |  |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-common:jar:2.2.0:compile
+[INFO] |  |  |  |  |  |  +- org.apache.hadoop:hadoop-yarn-client:jar:2.2.0:compile
+[INFO] |  |  |  |  |  |  |  +- com.google.inject:guice:jar:3.0:compile
+[INFO] |  |  |  |  |  |  |  |  +- javax.inject:javax.inject:jar:1:compile
+[INFO] |  |  |  |  |  |  |  |  \- aopalliance:aopalliance:jar:1.0:compile
+[INFO] |  |  |  |  |  |  |  +- com.sun.jersey.jersey-test-framework:jersey-test-framework-grizzly2:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  |  +- com.sun.jersey.jersey-test-framework:jersey-test-framework-core:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  |  |  +- javax.servlet:javax.servlet-api:jar:3.0.1:compile
+[INFO] |  |  |  |  |  |  |  |  |  \- com.sun.jersey:jersey-client:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  |  \- com.sun.jersey:jersey-grizzly2:jar:1.9:compile
+[INFO] |  |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |  |     |  \- org.glassfish.grizzly:grizzly-framework:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |  |     |     \- org.glassfish.gmbal:gmbal-api-only:jar:3.0.0-b023:compile
+[INFO] |  |  |  |  |  |  |  |     |        \- org.glassfish.external:management-api:jar:3.0.0-b012:compile
+[INFO] |  |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http-server:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |  |     |  \- org.glassfish.grizzly:grizzly-rcm:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |  |     +- org.glassfish.grizzly:grizzly-http-servlet:jar:2.1.2:compile
+[INFO] |  |  |  |  |  |  |  |     \- org.glassfish:javax.servlet:jar:3.1:compile
+[INFO] |  |  |  |  |  |  |  \- com.sun.jersey.contribs:jersey-guice:jar:1.9:compile
+[INFO] |  |  |  |  |  |  \- org.apache.hadoop:hadoop-yarn-server-common:jar:2.2.0:compile
+[INFO] |  |  |  |  |  \- org.apache.hadoop:hadoop-mapreduce-client-shuffle:jar:2.2.0:compile
+[INFO] |  |  |  |  +- org.apache.hadoop:hadoop-yarn-api:jar:2.2.0:compile
+[INFO] |  |  |  |  +- org.apache.hadoop:hadoop-mapreduce-client-core:jar:2.2.0:compile
+[INFO] |  |  |  |  |  \- org.apache.hadoop:hadoop-yarn-common:jar:2.2.0:compile
+[INFO] |  |  |  |  \- org.apache.hadoop:hadoop-mapreduce-client-jobclient:jar:2.2.0:compile
+[INFO] |  |  |  +- org.apache.spark:spark-launcher_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.apache.spark:spark-network-common_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.apache.spark:spark-network-shuffle_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.apache.spark:spark-unsafe_2.10:jar:1.5.2:compile
+[INFO] |  |  |  +- org.apache.curator:curator-recipes:jar:2.4.0:compile
+[INFO] |  |  |  |  \- org.apache.curator:curator-framework:jar:2.4.0:compile
+[INFO] |  |  |  +- org.eclipse.jetty.orbit:javax.servlet:jar:3.0.0.v201112011016:compile
+[INFO] |  |  |  +- org.apache.commons:commons-math3:jar:3.4.1:compile
+[INFO] |  |  |  +- org.slf4j:jcl-over-slf4j:jar:1.7.10:compile
+[INFO] |  |  |  +- com.ning:compress-lzf:jar:1.0.3:compile
+[INFO] |  |  |  +- net.jpountz.lz4:lz4:jar:1.3.0:compile
+[INFO] |  |  |  +- org.roaringbitmap:RoaringBitmap:jar:0.4.5:compile
+[INFO] |  |  |  +- com.typesafe.akka:akka-remote_2.10:jar:2.3.11:compile
+[INFO] |  |  |  |  +- com.typesafe.akka:akka-actor_2.10:jar:2.3.11:compile
+[INFO] |  |  |  |  |  \- com.typesafe:config:jar:1.2.1:compile
+[INFO] |  |  |  |  \- org.uncommons.maths:uncommons-maths:jar:1.2.2a:compile
+[INFO] |  |  |  +- com.typesafe.akka:akka-slf4j_2.10:jar:2.3.11:compile
+[INFO] |  |  |  +- org.json4s:json4s-jackson_2.10:jar:3.2.10:compile
+[INFO] |  |  |  |  \- org.json4s:json4s-core_2.10:jar:3.2.10:compile
+[INFO] |  |  |  |     +- org.json4s:json4s-ast_2.10:jar:3.2.10:compile
+[INFO] |  |  |  |     \- org.scala-lang:scalap:jar:2.10.0:compile
+[INFO] |  |  |  +- org.apache.mesos:mesos:jar:shaded-protobuf:0.21.1:compile
+[INFO] |  |  |  +- io.netty:netty-all:jar:4.0.29.Final:compile
+[INFO] |  |  |  +- com.clearspring.analytics:stream:jar:2.7.0:compile
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-core:jar:3.1.2:compile
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-jvm:jar:3.1.2:compile
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-json:jar:3.1.2:compile
+[INFO] |  |  |  +- io.dropwizard.metrics:metrics-graphite:jar:3.1.2:compile
+[INFO] |  |  |  +- com.fasterxml.jackson.module:jackson-module-scala_2.10:jar:2.4.4:compile
+[INFO] |  |  |  +- org.apache.ivy:ivy:jar:2.4.0:compile
+[INFO] |  |  |  +- oro:oro:jar:2.0.8:compile
+[INFO] |  |  |  +- org.tachyonproject:tachyon-client:jar:0.7.1:compile
+[INFO] |  |  |  |  +- org.apache.curator:curator-client:jar:2.1.0-incubating:compile
+[INFO] |  |  |  |  +- org.tachyonproject:tachyon-underfs-hdfs:jar:0.7.1:compile
+[INFO] |  |  |  |  \- org.tachyonproject:tachyon-underfs-local:jar:0.7.1:compile
+[INFO] |  |  |  +- net.razorvine:pyrolite:jar:4.4:compile
+[INFO] |  |  |  \- net.sf.py4j:py4j:jar:0.8.2.1:compile
+[INFO] |  |  +- org.apache.spark:spark-catalyst_2.10:jar:1.5.2:compile
+[INFO] |  |  |  \- org.codehaus.janino:janino:jar:2.7.8:compile
+[INFO] |  |  +- org.apache.parquet:parquet-column:jar:1.7.0:compile
+[INFO] |  |  |  +- org.apache.parquet:parquet-common:jar:1.7.0:compile
+[INFO] |  |  |  \- org.apache.parquet:parquet-encoding:jar:1.7.0:compile
+[INFO] |  |  |     \- org.apache.parquet:parquet-generator:jar:1.7.0:compile
+[INFO] |  |  +- org.apache.parquet:parquet-hadoop:jar:1.7.0:compile
+[INFO] |  |  |  +- org.apache.parquet:parquet-format:jar:2.3.0-incubating:compile
+[INFO] |  |  |  \- org.apache.parquet:parquet-jackson:jar:1.7.0:compile
+[INFO] |  |  \- com.fasterxml.jackson.core:jackson-databind:jar:2.4.4:compile
+[INFO] |  |     +- com.fasterxml.jackson.core:jackson-annotations:jar:2.4.0:compile
+[INFO] |  |     \- com.fasterxml.jackson.core:jackson-core:jar:2.4.4:compile
+[INFO] |  \- org.apache.zookeeper:zookeeper:jar:3.4.7:compile
+[INFO] |     \- io.netty:netty:jar:3.7.0.Final:compile
+[INFO] +- org.apache.carbondata:carbondata-processing:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  +- com.univocity:univocity-parsers:jar:1.5.6:compile
+[INFO] |  \- commons-vfs:commons-vfs:jar:1.0:compile
+[INFO] +- org.apache.carbondata:carbondata-spark:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  +- com.databricks:spark-csv_2.10:jar:1.2.0:compile
+[INFO] |  |  \- org.apache.commons:commons-csv:jar:1.1:compile
+[INFO] |  +- org.apache.carbondata:carbondata-hadoop:jar:0.1.1-incubating-SNAPSHOT:compile
+[INFO] |  |  \- org.apache.commons:commons-lang3:jar:3.3.2:compile
+[INFO] |  \- org.apache.spark:spark-repl_2.10:jar:1.5.2:compile
+[INFO] |     +- org.apache.spark:spark-bagel_2.10:jar:1.5.2:runtime
+[INFO] |     +- org.apache.spark:spark-mllib_2.10:jar:1.5.2:runtime
+[INFO] |     |  +- org.apache.spark:spark-streaming_2.10:jar:1.5.2:runtime
+[INFO] |     |  +- org.apache.spark:spark-graphx_2.10:jar:1.5.2:runtime
+[INFO] |     |  |  +- com.github.fommil.netlib:core:jar:1.1.2:runtime
+[INFO] |     |  |  \- net.sourceforge.f2j:arpack_combined_all:jar:0.1:runtime
+[INFO] |     |  +- org.scalanlp:breeze_2.10:jar:0.11.2:runtime
+[INFO] |     |  |  +- org.scalanlp:breeze-macros_2.10:jar:0.11.2:runtime
+[INFO] |     |  |  |  \- org.scalamacros:quasiquotes_2.10:jar:2.0.0-M8:runtime
+[INFO] |     |  |  +- com.github.rwl:jtransforms:jar:2.4.0:runtime
+[INFO] |     |  |  \- org.spire-math:spire_2.10:jar:0.7.4:runtime
+[INFO] |     |  |     \- org.spire-math:spire-macros_2.10:jar:0.7.4:runtime
+[INFO] |     |  \- org.jpmml:pmml-model:jar:1.1.15:runtime
+[INFO] |     |     +- org.jpmml:pmml-agent:jar:1.1.15:runtime
+[INFO] |     |     \- org.jpmml:pmml-schema:jar:1.1.15:runtime
+[INFO] |     +- org.slf4j:jul-to-slf4j:jar:1.7.10:compile
+[INFO] |     \- org.scala-lang:jline:jar:2.10.4:compile
+[INFO] |        \- org.fusesource.jansi:jansi:jar:1.4:compile
+[INFO] +- eigenbase:eigenbase-xom:jar:1.3.4:compile
+[INFO] +- org.scala-lang:scala-compiler:jar:2.10.4:compile
+[INFO] +- org.scala-lang:scala-reflect:jar:2.10.4:compile
+[INFO] +- org.scala-lang:scala-library:jar:2.10.4:compile
+[INFO] \- org.apache.spark:spark-hive-thriftserver_2.10:jar:1.5.2:compile
+[INFO]    +- org.apache.spark:spark-hive_2.10:jar:1.5.2:compile
+[INFO]    |  +- com.twitter:parquet-hadoop-bundle:jar:1.6.0:compile
+[INFO]    |  +- org.spark-project.hive:hive-exec:jar:1.2.1.spark:compile
+[INFO]    |  |  +- javolution:javolution:jar:5.5.1:compile
+[INFO]    |  |  +- log4j:apache-log4j-extras:jar:1.2.17:compile
+[INFO]    |  |  +- org.antlr:antlr-runtime:jar:3.4:compile
+[INFO]    |  |  |  +- org.antlr:stringtemplate:jar:3.2.1:compile
+[INFO]    |  |  |  \- antlr:antlr:jar:2.7.7:compile
+[INFO]    |  |  +- org.antlr:ST4:jar:4.0.4:compile
+[INFO]    |  |  +- org.codehaus.groovy:groovy-all:jar:2.1.6:compile
+[INFO]    |  |  +- com.googlecode.javaewah:JavaEWAH:jar:0.3.2:compile
+[INFO]    |  |  +- org.iq80.snappy:snappy:jar:0.2:compile
+[INFO]    |  |  +- org.json:json:jar:20090211:compile
+[INFO]    |  |  +- stax:stax-api:jar:1.0.1:compile
+[INFO]    |  |  \- net.sf.opencsv:opencsv:jar:2.3:compile
+[INFO]    |  +- org.spark-project.hive:hive-metastore:jar:1.2.1.spark:compile
+[INFO]    |  |  +- com.jolbox:bonecp:jar:0.8.0.RELEASE:compile
+[INFO]    |  |  +- org.apache.derby:derby:jar:10.10.2.0:compile
+[INFO]    |  |  +- org.datanucleus:datanucleus-api-jdo:jar:3.2.6:compile
+[INFO]    |  |  +- org.datanucleus:datanucleus-rdbms:jar:3.2.9:compile
+[INFO]    |  |  +- commons-pool:commons-pool:jar:1.5.4:compile
+[INFO]    |  |  +- commons-dbcp:commons-dbcp:jar:1.4:compile
+[INFO]    |  |  \- javax.jdo:jdo-api:jar:3.0.1:compile
+[INFO]    |  |     \- javax.transaction:jta:jar:1.1:compile
+[INFO]    |  +- org.apache.avro:avro-mapred:jar:hadoop2:1.7.7:compile
+[INFO]    |  |  +- org.apache.avro:avro-ipc:jar:1.7.7:compile
+[INFO]    |  |  \- org.apache.avro:avro-ipc:jar:tests:1.7.7:compile
+[INFO]    |  +- org.apache.calcite:calcite-avatica:jar:1.2.0-incubating:compile
+[INFO]    |  +- org.apache.calcite:calcite-core:jar:1.2.0-incubating:compile
+[INFO]    |  |  +- org.apache.calcite:calcite-linq4j:jar:1.2.0-incubating:compile
+[INFO]    |  |  +- net.hydromatic:eigenbase-properties:jar:1.1.5:compile
+[INFO]    |  |  \- org.codehaus.janino:commons-compiler:jar:2.7.6:compile
+[INFO]    |  +- org.apache.httpcomponents:httpclient:jar:4.3.2:compile
+[INFO]    |  +- joda-time:joda-time:jar:2.5:compile
+[INFO]    |  +- org.jodd:jodd-core:jar:3.5.2:compile
+[INFO]    |  +- com.google.code.findbugs:jsr305:jar:1.3.9:compile
+[INFO]    |  +- org.datanucleus:datanucleus-core:jar:3.2.10:compile
+[INFO]    |  \- org.apache.thrift:libfb303:jar:0.9.2:compile
+[INFO]    +- org.spark-project.hive:hive-cli:jar:1.2.1.spark:compile
+[INFO]    |  \- jline:jline:jar:2.12:compile
+[INFO]    +- org.spark-project.hive:hive-jdbc:jar:1.2.1.spark:compile
+[INFO]    +- org.spark-project.hive:hive-service:jar:1.2.1.spark:compile
+[INFO]    |  +- net.sf.jpam:jpam:jar:1.1:compile
+[INFO]    |  \- org.eclipse.jetty.aggregate:jetty-all:jar:7.6.0.v20120127:compile
+[INFO]    |     +- org.apache.geronimo.specs:geronimo-jta_1.1_spec:jar:1.1.1:compile
+[INFO]    |     +- javax.mail:mail:jar:1.4.1:compile
+[INFO]    |     +- javax.activation:activation:jar:1.1:compile
+[INFO]    |     +- org.apache.geronimo.specs:geronimo-jaspic_1.0_spec:jar:1.0:compile
+[INFO]    |     +- org.apache.geronimo.specs:geronimo-annotation_1.0_spec:jar:1.1.1:compile
+[INFO]    |     \- asm:asm-commons:jar:3.1:compile
+[INFO]    |        \- asm:asm-tree:jar:3.1:compile
+[INFO]    +- org.spark-project.hive:hive-beeline:jar:1.2.1.spark:compile
+[INFO]    |  \- net.sf.supercsv:super-csv:jar:2.2.0:compile
+[INFO]    +- com.sun.jersey:jersey-core:jar:1.9:compile
+[INFO]    +- com.sun.jersey:jersey-json:jar:1.9:compile
+[INFO]    |  +- org.codehaus.jettison:jettison:jar:1.1:compile
+[INFO]    |  +- com.sun.xml.bind:jaxb-impl:jar:2.2.3-1:compile
+[INFO]    |  |  \- javax.xml.bind:jaxb-api:jar:2.2.2:compile
+[INFO]    |  |     \- javax.xml.stream:stax-api:jar:1.0-2:compile
+[INFO]    |  +- org.codehaus.jackson:jackson-jaxrs:jar:1.8.3:compile
+[INFO]    |  \- org.codehaus.jackson:jackson-xc:jar:1.8.3:compile
+[INFO]    +- com.sun.jersey:jersey-server:jar:1.9:compile
+[INFO]    |  \- asm:asm:jar:3.1:compile
+[INFO]    \- org.spark-project.spark:unused:jar:1.0.0:compile
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary:
+[INFO] 
+[INFO] Apache CarbonData :: Parent ........................ SUCCESS [  0.683 s]
+[INFO] Apache CarbonData :: Common ........................ SUCCESS [  0.191 s]
+[INFO] Apache CarbonData :: Format ........................ SUCCESS [  0.030 s]
+[INFO] Apache CarbonData :: Core .......................... SUCCESS [  0.387 s]
+[INFO] Apache CarbonData :: Processing .................... SUCCESS [  0.078 s]
+[INFO] Apache CarbonData :: Hadoop ........................ SUCCESS [  0.075 s]
+[INFO] Apache CarbonData :: Spark ......................... SUCCESS [  0.345 s]
+[INFO] Apache CarbonData :: Assembly ...................... SUCCESS [  0.150 s]
+[INFO] Apache CarbonData :: Examples ...................... SUCCESS [  0.134 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 2.474 s
+[INFO] Finished at: 2016-09-27T20:14:27+05:30
+[INFO] Final Memory: 26M/333M
+[INFO] ------------------------------------------------------------------------

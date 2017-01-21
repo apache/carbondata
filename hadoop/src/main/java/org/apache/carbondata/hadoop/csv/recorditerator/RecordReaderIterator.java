@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.hadoop.csv.recorditerator;
 
 import java.io.IOException;
@@ -60,7 +61,7 @@ public class RecordReaderIterator extends CarbonIterator<Object []> {
         isConsumed = recordReader.nextKeyValue();
         return isConsumed;
       }
-      return isConsumed;
+      return true;
     } catch (Exception e) {
       throw new CarbonDataLoadingException(e);
     }

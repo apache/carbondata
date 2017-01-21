@@ -25,11 +25,10 @@ import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.datastore.block.Distributable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
-import org.apache.carbondata.spark.rdd.SparkCommonEnv
 
 object DistributionUtil {
   @transient
@@ -142,7 +141,9 @@ object DistributionUtil {
     val nodesOfData = nodeMapping.size()
     val confExecutors: Int = getConfiguredExecutors(sparkContext)
     LOGGER.info(s"Executors configured : $confExecutors")
-    val requiredExecutors = if (nodesOfData < 1 || nodesOfData > confExecutors) {
+    val requiredExecutors = if (nodesOfData < 1) {
+      1
+    } else if (nodesOfData > confExecutors) {
       confExecutors
     } else if (confExecutors > nodesOfData) {
       var totalExecutorsToBeRequested = nodesOfData
@@ -231,9 +232,6 @@ object DistributionUtil {
       hostToLocalTaskCount: Map[String, Int] = Map.empty): Boolean = {
     sc.schedulerBackend match {
       case b: CoarseGrainedSchedulerBackend =>
-        LOGGER.info(
-            s"number of required executors are = $requiredExecutors and existing executors are = " +
-            s"${SparkCommonEnv.numExistingExecutors}")
         if (requiredExecutors > 0) {
           LOGGER.info(s"Requesting total executors: $requiredExecutors")
           b.requestTotalExecutors(requiredExecutors, localityAwareTasks, hostToLocalTaskCount)

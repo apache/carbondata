@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql
 
-import java.util.ArrayList
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
@@ -28,10 +26,8 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.LeafNode
 import org.apache.spark.sql.hive.CarbonMetastore
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.scan.model._
 import org.apache.carbondata.hadoop.CarbonProjection
-import org.apache.carbondata.scan.model._
 import org.apache.carbondata.spark.CarbonFilters
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
@@ -50,11 +46,6 @@ case class CarbonScan(
 
   val buildCarbonPlan: CarbonQueryPlan = {
     val plan: CarbonQueryPlan = new CarbonQueryPlan(relationRaw.databaseName, relationRaw.tableName)
-
-    plan.setSortedDimemsions(new ArrayList[QueryDimension])
-
-    plan.setOutLocationPath(
-      CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS))
     plan.setQueryId(ocRaw.getConf("queryId", System.nanoTime() + ""))
     processFilterExpressions(plan)
     plan
@@ -90,6 +81,7 @@ case class CarbonScan(
     }
 
     val columns = carbonTable.getCreateOrderColumn(carbonTable.getFactTableName)
+    columns.addAll(carbonTable.getImplicitDimensionByTableName(carbonTable.getFactTableName))
     val colAttr = new Array[Attribute](columns.size())
     columnProjection.foreach { attr =>
     val column =
@@ -125,7 +117,7 @@ case class CarbonScan(
     selectedMsrs.foreach(plan.addMeasure)
   }
 
-  def inputRdd: CarbonScanRDD[Array[Any]] = {
+  def inputRdd: CarbonScanRDD = {
     val projection = new CarbonProjection
     columnProjection.foreach { attr =>
       projection.addColumn(attr.name)
@@ -152,9 +144,9 @@ case class CarbonScan(
         override def next(): InternalRow = {
           val value = iter.next
           if (outUnsafeRows) {
-            unsafeProjection(new GenericMutableRow(value))
+            unsafeProjection(value)
           } else {
-            new GenericMutableRow(value)
+            value
           }
         }
       }

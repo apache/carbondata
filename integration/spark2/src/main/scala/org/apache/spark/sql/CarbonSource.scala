@@ -17,52 +17,55 @@
 
 package org.apache.spark.sql
 
-import java.io.File
-
 import scala.language.implicitConversions
 
+import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
-import org.apache.spark.sql.execution.command.{CreateTable, Field}
+import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{DecimalType, StructType}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonOption
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 /**
  * Carbon relation provider compliant to data source api.
  * Creates carbon relations
  */
 class CarbonSource extends CreatableRelationProvider
-    with SchemaRelationProvider with DataSourceRegister {
+  with SchemaRelationProvider with DataSourceRegister {
 
   override def shortName(): String = "carbondata"
 
   // called by any write operation like INSERT INTO DDL or DataFrame.write API
   override def createRelation(
-                               sqlContext: SQLContext,
-                               mode: SaveMode,
-                               parameters: Map[String, String],
-                               data: DataFrame): BaseRelation = {
-    CarbonEnv.init(sqlContext)
+      sqlContext: SQLContext,
+      mode: SaveMode,
+      parameters: Map[String, String],
+      data: DataFrame): BaseRelation = {
+    CarbonEnv.init(sqlContext.sparkSession)
     // User should not specify path since only one store is supported in carbon currently,
     // after we support multi-store, we can remove this limitation
     require(!parameters.contains("path"), "'path' should not be specified, " +
-        "the path to store carbon file is the 'storePath' specified when creating CarbonContext")
+                                          "the path to store carbon file is the 'storePath' " +
+                                          "specified when creating CarbonContext")
 
     val options = new CarbonOption(parameters)
-    val storePath = sqlContext.sparkSession.conf.get(CarbonCommonConstants.STORE_LOCATION)
+    val storePath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
     val tablePath = new Path(storePath + "/" + options.dbName + "/" + options.tableName)
     val isExists = tablePath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
-        .exists(tablePath)
+      .exists(tablePath)
     val (doSave, doAppend) = (mode, isExists) match {
       case (SaveMode.ErrorIfExists, true) =>
         sys.error(s"ErrorIfExists mode, path $storePath already exists.")
       case (SaveMode.Overwrite, true) =>
-        sqlContext.sparkSession.sql(s"DROP TABLE IF EXISTS ${options.dbName}.${options.tableName}")
+        sqlContext.sparkSession
+          .sql(s"DROP TABLE IF EXISTS ${ options.dbName }.${ options.tableName }")
         (true, false)
       case (SaveMode.Overwrite, false) | (SaveMode.ErrorIfExists, false) =>
         (true, false)
@@ -84,30 +87,32 @@ class CarbonSource extends CreatableRelationProvider
 
   // called by DDL operation with a USING clause
   override def createRelation(
-                               sqlContext: SQLContext,
-                               parameters: Map[String, String],
-                               dataSchema: StructType): BaseRelation = {
-    CarbonEnv.init(sqlContext)
+      sqlContext: SQLContext,
+      parameters: Map[String, String],
+      dataSchema: StructType): BaseRelation = {
+    CarbonEnv.init(sqlContext.sparkSession)
     addLateDecodeOptimization(sqlContext.sparkSession)
     val path = createTableIfNotExists(sqlContext.sparkSession, parameters, dataSchema)
     CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(path), parameters,
       Option(dataSchema))
-
   }
 
   private def addLateDecodeOptimization(ss: SparkSession): Unit = {
-    ss.sessionState.experimentalMethods.extraStrategies = Seq(new CarbonLateDecodeStrategy)
-    ss.sessionState.experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
+    if (ss.sessionState.experimentalMethods.extraStrategies.isEmpty) {
+      ss.sessionState.experimentalMethods.extraStrategies = Seq(new CarbonLateDecodeStrategy)
+      ss.sessionState.experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
+    }
   }
 
   private def createTableIfNotExists(sparkSession: SparkSession, parameters: Map[String, String],
-                                     dataSchema: StructType): String = {
-    val (dbName, tableName) = parameters.get("path") match {
-      case Some(path) =>
-        val p = path.split(File.separator)
-        ("default", p(p.length - 1))
-      case _ => throw new Exception("do not have dbname and tablename for carbon table")
+      dataSchema: StructType): String = {
+
+    val dbName: String = parameters.getOrElse("dbName", CarbonCommonConstants.DATABASE_DEFAULT_NAME)
+    val tableName: String = parameters.getOrElse("tableName", "default_table")
+    if (StringUtils.isBlank(tableName)) {
+      throw new MalformedCarbonCommandException("The Specified Table Name is Blank")
     }
+    val options = new CarbonOption(parameters)
     try {
       CarbonEnv.get.carbonMetastore.lookupRelation(Option(dbName), tableName)(sparkSession)
       CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
@@ -129,12 +134,27 @@ class CarbonSource extends CreatableRelationProvider
           }
           f
         }
-        val map = scala.collection.mutable.Map[String, String]();
-        parameters.foreach { x => map.put(x._1, x._2) }
-        val cm = TableCreator.prepareTableModel(false, Option(dbName), tableName, fields, Nil, map)
-        CreateTable(cm).run(sparkSession)
+        val map = scala.collection.mutable.Map[String, String]()
+        parameters.foreach { parameter => map.put(parameter._1, parameter._2) }
+        val bucketFields = if (options.isBucketingEnabled) {
+            if (options.bucketNumber.toString.contains("-") ||
+                options.bucketNumber.toString.contains("+") ) {
+              throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED" +
+                                                        options.bucketNumber.toString)
+            }
+            else {
+              Some(BucketFields(options.bucketColumns.split(","), options.bucketNumber))
+            }
+          } else {
+            None
+          }
+
+        val cm = TableCreator.prepareTableModel(false, Option(dbName),
+          tableName, fields, Nil, bucketFields, map)
+        CreateTable(cm, false).run(sparkSession)
         CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
-      case _ => throw new Exception("do not have dbname and tablename for carbon table")
+      case ex: Exception =>
+        throw new Exception("do not have dbname and tablename for carbon table", ex)
     }
   }
 

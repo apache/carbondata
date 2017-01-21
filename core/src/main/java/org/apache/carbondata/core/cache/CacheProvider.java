@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.core.cache;
@@ -22,11 +20,18 @@ package org.apache.carbondata.core.cache;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.cache.dictionary.ForwardDictionaryCache;
 import org.apache.carbondata.core.cache.dictionary.ReverseDictionaryCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.BlockIndexStore;
+import org.apache.carbondata.core.datastore.SegmentTaskIndexStore;
+import org.apache.carbondata.core.datastore.block.AbstractIndex;
+import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * Cache provider class which will create a cache based on given type
@@ -45,15 +50,19 @@ public class CacheProvider {
       new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   /**
-   * a map that will hold the mapping of cache type to LRU cache instance
-   */
-  private Map<CacheType, CarbonLRUCache> cacheTypeToLRUCacheMap =
-      new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
-  /**
    * object lock instance to be used in synchronization block
    */
   private final Object lock = new Object();
+  /**
+   * LRU cache instance
+   */
+  private CarbonLRUCache carbonLRUCache;
+
+  /**
+   * instance for CacheProvider LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CacheProvider.class.getName());
 
   /**
    * private constructor to follow singleton design pattern for this class
@@ -85,7 +94,7 @@ public class CacheProvider {
     if (!dictionaryCacheAlreadyExists(cacheType)) {
       synchronized (lock) {
         if (!dictionaryCacheAlreadyExists(cacheType)) {
-          if (null == cacheTypeToLRUCacheMap.get(cacheType)) {
+          if (null == carbonLRUCache) {
             createLRULevelCacheInstance(cacheType);
           }
           createDictionaryCacheForGivenType(cacheType, carbonStorePath);
@@ -106,11 +115,17 @@ public class CacheProvider {
     if (cacheType.equals(CacheType.REVERSE_DICTIONARY)) {
       cacheObject =
           new ReverseDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonStorePath,
-              cacheTypeToLRUCacheMap.get(cacheType));
+              carbonLRUCache);
     } else if (cacheType.equals(CacheType.FORWARD_DICTIONARY)) {
       cacheObject =
           new ForwardDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonStorePath,
-              cacheTypeToLRUCacheMap.get(cacheType));
+              carbonLRUCache);
+    } else if (cacheType.equals(cacheType.EXECUTOR_BTREE)) {
+      cacheObject = new BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex>(carbonStorePath,
+          carbonLRUCache);
+    } else if (cacheType.equals(cacheType.DRIVER_BTREE)) {
+      cacheObject =
+          new SegmentTaskIndexStore(carbonStorePath, carbonLRUCache);
     }
     cacheTypeToCacheMap.put(cacheType, cacheObject);
   }
@@ -121,15 +136,25 @@ public class CacheProvider {
    * @param cacheType
    */
   private void createLRULevelCacheInstance(CacheType cacheType) {
-    CarbonLRUCache carbonLRUCache = null;
-    // if cache type is dictionary cache, then same lru cache instance has to be shared
-    // between forward and reverse cache
-    if (cacheType.equals(CacheType.REVERSE_DICTIONARY) || cacheType
-        .equals(CacheType.FORWARD_DICTIONARY)) {
-      carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_LEVEL_CACHE_SIZE,
-          CarbonCommonConstants.CARBON_MAX_LEVEL_CACHE_SIZE_DEFAULT);
-      cacheTypeToLRUCacheMap.put(CacheType.REVERSE_DICTIONARY, carbonLRUCache);
-      cacheTypeToLRUCacheMap.put(CacheType.FORWARD_DICTIONARY, carbonLRUCache);
+    boolean isDriver = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "false"));
+    if (isDriver) {
+      carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE,
+          CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
+    } else {
+      // if executor cache size is not configured then driver cache conf will be used
+      String executorCacheSize = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE);
+      if (null != executorCacheSize) {
+        carbonLRUCache =
+            new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE,
+                CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
+      } else {
+        LOGGER.info(
+            "Executor LRU cache size not configured. Initializing with driver LRU cache size.");
+        carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE,
+            CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
+      }
     }
   }
 
@@ -148,7 +173,10 @@ public class CacheProvider {
    * Below method will be used to clear the cache
    */
   public void dropAllCache() {
-    cacheTypeToLRUCacheMap.clear();
+    if(null != carbonLRUCache) {
+      carbonLRUCache.clear();
+      carbonLRUCache= null;
+    }
     cacheTypeToCacheMap.clear();
   }
 }

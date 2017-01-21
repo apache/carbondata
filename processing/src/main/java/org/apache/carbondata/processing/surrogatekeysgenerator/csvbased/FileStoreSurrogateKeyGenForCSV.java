@@ -1,25 +1,24 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.processing.surrogatekeysgenerator.csvbased;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,24 +26,20 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.carbon.ColumnIdentifier;
-import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
-import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.ColumnIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
-import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.core.writer.ByteArrayHolder;
 import org.apache.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
@@ -61,12 +56,6 @@ import org.pentaho.di.core.exception.KettleException;
 public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKeyGen {
 
   /**
-   * LOGGER
-   */
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(FileStoreSurrogateKeyGenForCSV.class.getName());
-
-  /**
    * hierValueWriter
    */
   private Map<String, HierarchyValueWriterForCSV> hierValueWriter;
@@ -77,19 +66,9 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
   private Map<String, KeyGenerator> keyGenerator;
 
   /**
-   * baseStorePath
-   */
-  private String baseStorePath;
-
-  /**
    * LOAD_FOLDER
    */
   private String loadFolderName;
-
-  /**
-   * folderList
-   */
-  private List<CarbonFile> folderList = new ArrayList<CarbonFile>(5);
 
   /**
    * primaryKeyStringArray
@@ -102,7 +81,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
   /**
    * load Id
    */
-  private int segmentId;
+  private String segmentId;
   /**
    * task id, each spark task has a unique id
    */
@@ -110,10 +89,10 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
 
   /**
    * @param columnsInfo
-   * @throws KettleException
+   * @throws IOException
    */
-  public FileStoreSurrogateKeyGenForCSV(ColumnsInfo columnsInfo, String partitionID, int segmentId,
-      String taskNo) throws KettleException {
+  public FileStoreSurrogateKeyGenForCSV(ColumnsInfo columnsInfo, String partitionID,
+      String segmentId, String taskNo) throws IOException {
     super(columnsInfo);
     populatePrimaryKeyarray(dimInsertFileNames, columnsInfo.getPrimaryKeyMap());
     this.partitionID = partitionID;
@@ -121,7 +100,6 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
     this.taskNo = taskNo;
     keyGenerator = new HashMap<String, KeyGenerator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    baseStorePath = columnsInfo.getBaseStoreLocation();
     setStoreFolderWithLoadNumber(
         checkAndCreateLoadFolderNumber(columnsInfo.getDatabaseName(),
             columnsInfo.getTableName()));
@@ -191,13 +169,13 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
   }
 
   private String checkAndCreateLoadFolderNumber(String databaseName,
-      String tableName) throws KettleException {
+      String tableName) throws IOException {
     String carbonDataDirectoryPath = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(databaseName, tableName, taskNo, partitionID, segmentId + "",
             false);
     boolean isDirCreated = new File(carbonDataDirectoryPath).mkdirs();
     if (!isDirCreated) {
-      throw new KettleException("Unable to create data load directory" + carbonDataDirectoryPath);
+      throw new IOException("Unable to create data load directory" + carbonDataDirectoryPath);
     }
     return carbonDataDirectoryPath;
   }
@@ -214,7 +192,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
   /**
    * This method will generate cache for all the global dictionaries during data loading.
    */
-  private void populateCache() throws KettleException {
+  private void populateCache() throws IOException {
     String carbonStorePath =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
     String[] dimColumnNames = columnsInfo.getDimColNames();
@@ -268,7 +246,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
       }
     }
     initDictionaryCacheInfo(dictionaryKeys, dictionaryColumnUniqueIdentifiers,
-        reverseDictionaryCache, carbonStorePath);
+        reverseDictionaryCache);
   }
 
   /**
@@ -277,37 +255,20 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
    * @param dictionaryKeys
    * @param dictionaryColumnUniqueIdentifiers
    * @param reverseDictionaryCache
-   * @param carbonStorePath
    * @throws KettleException
    */
   private void initDictionaryCacheInfo(List<String> dictionaryKeys,
       List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers,
-      Cache reverseDictionaryCache, String carbonStorePath) throws KettleException {
+      Cache reverseDictionaryCache) throws IOException {
     long lruCacheStartTime = System.currentTimeMillis();
-    try {
-      List reverseDictionaries = reverseDictionaryCache.getAll(dictionaryColumnUniqueIdentifiers);
-      for (int i = 0; i < reverseDictionaries.size(); i++) {
-        Dictionary reverseDictionary = (Dictionary) reverseDictionaries.get(i);
-        getDictionaryCaches().put(dictionaryKeys.get(i), reverseDictionary);
-        updateMaxKeyInfo(dictionaryKeys.get(i), reverseDictionary.getDictionaryChunks().getSize());
-      }
-      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordLruCacheLoadTime(
-          (System.currentTimeMillis() - lruCacheStartTime)/1000.0);
-    } catch (CarbonUtilException e) {
-      throw new KettleException(e.getMessage());
+    List reverseDictionaries = reverseDictionaryCache.getAll(dictionaryColumnUniqueIdentifiers);
+    for (int i = 0; i < reverseDictionaries.size(); i++) {
+      Dictionary reverseDictionary = (Dictionary) reverseDictionaries.get(i);
+      getDictionaryCaches().put(dictionaryKeys.get(i), reverseDictionary);
+      updateMaxKeyInfo(dictionaryKeys.get(i), reverseDictionary.getDictionaryChunks().getSize());
     }
-  }
-
-  @Override protected byte[] getHierFromStore(int[] val, String hier, int primaryKey)
-      throws KettleException {
-    byte[] bytes;
-    try {
-      bytes = columnsInfo.getKeyGenerators().get(hier).generateKey(val);
-      hierValueWriter.get(hier).getByteArrayList().add(new ByteArrayHolder(bytes, primaryKey));
-    } catch (KeyGenException e) {
-      throw new KettleException(e);
-    }
-    return bytes;
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordLruCacheLoadTime(
+        (System.currentTimeMillis() - lruCacheStartTime)/1000.0);
   }
 
   @Override protected int getSurrogateFromStore(String value, int index, Object[] properties)
@@ -373,30 +334,6 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
     Dictionary dicCache = dictionaryCaches.get(columnName);
     measureSurrogate = dicCache.getSurrogateKey(tuple);
     return measureSurrogate;
-  }
-
-  @Override public void writeDataToFileAndCloseStreams() throws KettleException, KeyGenException {
-
-    // For closing stream inside hierarchy writer
-
-    for (Entry<String, String> entry : hierInsertFileNames.entrySet()) {
-
-      String hierFileName = hierValueWriter.get(entry.getKey()).getHierarchyName();
-
-      int size = fileManager.size();
-      for (int j = 0; j < size; j++) {
-        FileData fileData = (FileData) fileManager.get(j);
-        String fileName = fileData.getFileName();
-        if (hierFileName.equals(fileName)) {
-          HierarchyValueWriterForCSV hierarchyValueWriter = fileData.getHierarchyValueWriter();
-          hierarchyValueWriter.performRequiredOperation();
-
-          break;
-        }
-
-      }
-    }
-
   }
 
 }

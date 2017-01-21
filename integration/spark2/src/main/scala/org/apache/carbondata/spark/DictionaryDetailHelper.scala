@@ -18,11 +18,11 @@ package org.apache.carbondata.spark
 
 import scala.collection.mutable.HashMap
 
-import org.apache.carbondata.core.carbon.{CarbonTableIdentifier, ColumnIdentifier}
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
-import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
-import org.apache.carbondata.core.datastorage.store.filesystem.{CarbonFile, CarbonFileFilter}
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 
 class DictionaryDetailHelper extends DictionaryDetailService {
   def getDictionaryDetail(dictfolderPath: String, primDimensions: Array[CarbonDimension],

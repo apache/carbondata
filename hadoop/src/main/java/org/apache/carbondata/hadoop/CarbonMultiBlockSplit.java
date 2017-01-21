@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.hadoop;
@@ -25,7 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -42,19 +40,19 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
   private List<CarbonInputSplit> splitList;
 
   /*
-   * The location of all wrapped splits belong to the same node
+   * The locations of all wrapped splits
    */
-  private String location;
+  private String[] locations;
 
   public CarbonMultiBlockSplit() {
     splitList = null;
-    location = null;
+    locations = null;
   }
 
   public CarbonMultiBlockSplit(AbsoluteTableIdentifier identifier, List<CarbonInputSplit> splitList,
-      String location) throws IOException {
+      String[] locations) throws IOException {
     this.splitList = splitList;
-    this.location = location;
+    this.locations = locations;
   }
 
   /**
@@ -76,7 +74,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
 
   @Override
   public String[] getLocations() throws IOException, InterruptedException {
-    return new String[]{location};
+    return locations;
   }
 
   @Override
@@ -86,7 +84,10 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
     for (CarbonInputSplit split: splitList) {
       split.write(out);
     }
-    out.writeUTF(location);
+    out.writeInt(locations.length);
+    for (int i = 0; i < locations.length; i++) {
+      out.writeUTF(locations[i]);
+    }
   }
 
   @Override
@@ -99,7 +100,11 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
       split.readFields(in);
       splitList.add(split);
     }
-    location = in.readUTF();
+    int len = in.readInt();
+    locations = new String[len];
+    for (int i = 0; i < len; i++) {
+      locations[i] = in.readUTF();
+    }
   }
 
 }

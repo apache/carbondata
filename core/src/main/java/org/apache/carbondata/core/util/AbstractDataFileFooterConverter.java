@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.carbondata.core.util;
 
@@ -24,24 +22,21 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
-import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
-import org.apache.carbondata.core.carbon.datastore.block.BlockInfo;
-import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.carbon.metadata.blocklet.SegmentInfo;
-import org.apache.carbondata.core.carbon.metadata.blocklet.compressor.ChunkCompressorMeta;
-import org.apache.carbondata.core.carbon.metadata.blocklet.compressor.CompressionCodec;
-import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
-import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.PresenceMeta;
-import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletBTreeIndex;
-import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
-import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletMinMaxIndex;
-import org.apache.carbondata.core.carbon.metadata.blocklet.sort.SortState;
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
-import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.block.BlockInfo;
+import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
+import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
+import org.apache.carbondata.core.metadata.blocklet.datachunk.PresenceMeta;
+import org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex;
+import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
+import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.format.BlockIndex;
 
@@ -74,7 +69,7 @@ public abstract class AbstractDataFileFooterConverter {
    * @throws IOException problem while reading the index file
    */
   public List<DataFileFooter> getIndexInfo(String filePath, List<TableBlockInfo> tableBlockInfoList)
-      throws IOException, CarbonUtilException {
+      throws IOException {
     CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
     List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
     try {
@@ -200,7 +195,6 @@ public abstract class AbstractDataFileFooterConverter {
     wrapperColumnSchema.setColumnGroup(externalColumnSchema.getColumn_group_id());
     wrapperColumnSchema.setScale(externalColumnSchema.getScale());
     wrapperColumnSchema.setDefaultValue(externalColumnSchema.getDefault_value());
-    wrapperColumnSchema.setAggregateFunction(externalColumnSchema.getAggregate_function());
     return wrapperColumnSchema;
   }
 
@@ -227,23 +221,6 @@ public abstract class AbstractDataFileFooterConverter {
         return Encoding.DIRECT_DICTIONARY;
       default:
         throw new IllegalArgumentException(encoderThrift.toString() + " is not supported");
-    }
-  }
-
-  /**
-   * Below method will be used to convert the thrift compression to wrapper
-   * compression codec
-   *
-   * @param compressionCodecThrift
-   * @return wrapper compression codec
-   */
-  protected CompressionCodec getCompressionCodec(
-      org.apache.carbondata.format.CompressionCodec compressionCodecThrift) {
-    switch (compressionCodecThrift) {
-      case SNAPPY:
-        return CompressionCodec.SNAPPY;
-      default:
-        return CompressionCodec.SNAPPY;
     }
   }
 
@@ -284,23 +261,6 @@ public abstract class AbstractDataFileFooterConverter {
   }
 
   /**
-   * Below method will be used to convert the thrift compression meta to
-   * wrapper chunk compression meta
-   *
-   * @param chunkCompressionMetaThrift
-   * @return chunkCompressionMetaWrapper
-   */
-  protected ChunkCompressorMeta getChunkCompressionMeta(
-      org.apache.carbondata.format.ChunkCompressionMeta chunkCompressionMetaThrift) {
-    ChunkCompressorMeta compressorMeta = new ChunkCompressorMeta();
-    compressorMeta
-        .setCompressor(getCompressionCodec(chunkCompressionMetaThrift.getCompression_codec()));
-    compressorMeta.setCompressedSize(chunkCompressionMetaThrift.getTotal_compressed_size());
-    compressorMeta.setUncompressedSize(chunkCompressionMetaThrift.getTotal_uncompressed_size());
-    return compressorMeta;
-  }
-
-  /**
    * Below method will be used to convert the thrift data type to wrapper data
    * type
    *
@@ -322,6 +282,8 @@ public abstract class AbstractDataFileFooterConverter {
         return DataType.DOUBLE;
       case DECIMAL:
         return DataType.DECIMAL;
+      case DATE:
+        return DataType.DATE;
       case TIMESTAMP:
         return DataType.TIMESTAMP;
       case ARRAY:
@@ -330,22 +292,6 @@ public abstract class AbstractDataFileFooterConverter {
         return DataType.STRUCT;
       default:
         return DataType.STRING;
-    }
-  }
-
-  /**
-   * Below method will be used to convert the thrift object to wrapper object
-   *
-   * @param sortStateThrift
-   * @return wrapper sort state object
-   */
-  protected SortState getSortState(org.apache.carbondata.format.SortState sortStateThrift) {
-    if (sortStateThrift == org.apache.carbondata.format.SortState.SORT_EXPLICIT) {
-      return SortState.SORT_EXPLICT;
-    } else if (sortStateThrift == org.apache.carbondata.format.SortState.SORT_NATIVE) {
-      return SortState.SORT_NATIVE;
-    } else {
-      return SortState.SORT_NONE;
     }
   }
 
@@ -359,7 +305,6 @@ public abstract class AbstractDataFileFooterConverter {
   protected DataChunk getDataChunk(org.apache.carbondata.format.DataChunk datachunkThrift,
       boolean isPresenceMetaPresent) {
     DataChunk dataChunk = new DataChunk();
-    dataChunk.setColumnUniqueIdList(datachunkThrift.getColumn_ids());
     dataChunk.setDataPageLength(datachunkThrift.getData_page_length());
     dataChunk.setDataPageOffset(datachunkThrift.getData_page_offset());
     if (isPresenceMetaPresent) {
@@ -370,13 +315,11 @@ public abstract class AbstractDataFileFooterConverter {
     dataChunk.setRowMajor(datachunkThrift.isRowMajor());
     dataChunk.setRowIdPageLength(datachunkThrift.getRowid_page_length());
     dataChunk.setRowIdPageOffset(datachunkThrift.getRowid_page_offset());
-    dataChunk.setSortState(getSortState(datachunkThrift.getSort_state()));
-    dataChunk.setChunkCompressionMeta(getChunkCompressionMeta(datachunkThrift.getChunk_meta()));
     List<Encoding> encodingList = new ArrayList<Encoding>(datachunkThrift.getEncoders().size());
     for (int i = 0; i < datachunkThrift.getEncoders().size(); i++) {
       encodingList.add(fromExternalToWrapperEncoding(datachunkThrift.getEncoders().get(i)));
     }
-    dataChunk.setEncoderList(encodingList);
+    dataChunk.setEncodingList(encodingList);
     if (encodingList.contains(Encoding.DELTA)) {
       List<ByteBuffer> thriftEncoderMeta = datachunkThrift.getEncoder_meta();
       List<ValueEncoderMeta> encodeMetaList =

@@ -20,16 +20,16 @@ package org.apache.carbondata.spark
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.optimizer.{AttributeReferenceWrapper}
+import org.apache.spark.sql.optimizer.AttributeReferenceWrapper
 import org.apache.spark.sql.sources
 import org.apache.spark.sql.types.StructType
 
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType
-import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn
-import org.apache.carbondata.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
-import org.apache.carbondata.scan.expression.conditional._
-import org.apache.carbondata.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
+import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
+import org.apache.carbondata.core.scan.expression.conditional._
+import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
@@ -83,6 +83,12 @@ object CarbonFilters {
             new ListExpression(
               convertToJavaList(values.map(f => getCarbonLiteralExpression(name, f)).toList))))
 
+        case sources.IsNull(name) =>
+          Some(new EqualToExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, null), true))
+        case sources.IsNotNull(name) =>
+          Some(new NotEqualsExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, null), true))
         case sources.And(lhs, rhs) =>
           (createFilter(lhs) ++ createFilter(rhs)).reduceOption(new AndExpression(_, _))
 
@@ -145,13 +151,13 @@ object CarbonFilters {
         case EqualTo(Literal(v, t), Cast(a: Attribute, _)) =>
           Some(sources.EqualTo(a.name, v))
 
-        case Not(EqualTo(a: Attribute, Literal(v, t))) => new
+        case Not(EqualTo(a: Attribute, Literal(v, t))) =>
             Some(sources.Not(sources.EqualTo(a.name, v)))
-        case Not(EqualTo(Literal(v, t), a: Attribute)) => new
+        case Not(EqualTo(Literal(v, t), a: Attribute)) =>
             Some(sources.Not(sources.EqualTo(a.name, v)))
-        case Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) => new
+        case Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) =>
             Some(sources.Not(sources.EqualTo(a.name, v)))
-        case Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) => new
+        case Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) =>
             Some(sources.Not(sources.EqualTo(a.name, v)))
         case IsNotNull(a: Attribute) => Some(sources.IsNotNull(a.name))
         case IsNull(a: Attribute) => Some(sources.IsNull(a.name))
@@ -215,7 +221,7 @@ object CarbonFilters {
           None
       }
     }
-    filters.flatMap(translate(_, false)).toArray
+    filters.flatMap(translate(_)).toArray
   }
 
   def processExpression(exprs: Seq[Expression],
@@ -225,8 +231,8 @@ object CarbonFilters {
     def transformExpression(expr: Expression, or: Boolean = false): Option[CarbonExpression] = {
       expr match {
         case or@ Or(left, right) =>
-          val leftFilter = transformExpression(left, true)
-          val rightFilter = transformExpression(right, true)
+          val leftFilter = transformExpression(left, or = true)
+          val rightFilter = transformExpression(right, or = true)
           if (leftFilter.isDefined && rightFilter.isDefined) {
             Some(new OrExpression(leftFilter.get, rightFilter.get))
           } else {
@@ -241,22 +247,22 @@ object CarbonFilters {
           (transformExpression(left) ++ transformExpression(right)).reduceOption(new
               AndExpression(_, _))
 
-        case EqualTo(a: Attribute, l@Literal(v, t)) => new
+        case EqualTo(a: Attribute, l@Literal(v, t)) =>
             Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-        case EqualTo(l@Literal(v, t), a: Attribute) => new
+        case EqualTo(l@Literal(v, t), a: Attribute) =>
             Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-        case EqualTo(Cast(a: Attribute, _), l@Literal(v, t)) => new
+        case EqualTo(Cast(a: Attribute, _), l@Literal(v, t)) =>
             Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-        case EqualTo(l@Literal(v, t), Cast(a: Attribute, _)) => new
+        case EqualTo(l@Literal(v, t), Cast(a: Attribute, _)) =>
             Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
 
-        case Not(EqualTo(a: Attribute, l@Literal(v, t))) => new
+        case Not(EqualTo(a: Attribute, l@Literal(v, t))) =>
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case Not(EqualTo(l@Literal(v, t), a: Attribute)) => new
+        case Not(EqualTo(l@Literal(v, t), a: Attribute)) =>
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case Not(EqualTo(Cast(a: Attribute, _), l@Literal(v, t))) => new
+        case Not(EqualTo(Cast(a: Attribute, _), l@Literal(v, t))) =>
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case Not(EqualTo(l@Literal(v, t), Cast(a: Attribute, _))) => new
+        case Not(EqualTo(l@Literal(v, t), Cast(a: Attribute, _))) =>
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
         case IsNotNull(child: Attribute) =>
             Some(new NotEqualsExpression(transformExpression(child).get,
@@ -351,7 +357,7 @@ object CarbonFilters {
           None
       }
     }
-    exprs.flatMap(transformExpression(_, false)).reduceOption(new AndExpression(_, _))
+    exprs.flatMap(transformExpression(_)).reduceOption(new AndExpression(_, _))
   }
   private def isNullLiteral(exp: Expression): Boolean = {
     if (null != exp

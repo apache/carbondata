@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License; Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing;
- * software distributed under the License is distributed on an
- * "AS IS" BASIS; WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND; either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.processing.store;
@@ -25,17 +23,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
-import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.carbon.path.CarbonStorePath;
-import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
@@ -68,10 +66,6 @@ public class CarbonFactDataHandlerModel {
    */
   private int blockSize;
   /**
-   * flag to check whether to group the similar data
-   */
-  private boolean isGroupByEnabled;
-  /**
    * total count of measures in table
    */
   private int measureCount;
@@ -103,10 +97,6 @@ public class CarbonFactDataHandlerModel {
    * flag to check whether to merge data based on custom aggregator
    */
   private boolean isMergingRequestForCustomAgg;
-  /**
-   * flag to check whether the request is for updating a member
-   */
-  private boolean isUpdateMemberRequest;
   /**
    * flag to check whether use inverted index
    */
@@ -186,13 +176,15 @@ public class CarbonFactDataHandlerModel {
    */
   private boolean useKettle = true;
 
+  private int bucketId = 0;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    * @param configuration
    * @return CarbonFactDataHandlerModel
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
-      CarbonDataLoadConfiguration configuration, String storeLocation) {
+      CarbonDataLoadConfiguration configuration, String storeLocation, int bucketId) {
 
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
@@ -291,6 +283,7 @@ public class CarbonFactDataHandlerModel {
     } else {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount);
     }
+    carbonFactDataHandlerModel.bucketId = bucketId;
     return carbonFactDataHandlerModel;
   }
 
@@ -346,10 +339,6 @@ public class CarbonFactDataHandlerModel {
     this.tableName = tableName;
   }
 
-  public boolean isGroupByEnabled() {
-    return isGroupByEnabled;
-  }
-
   public int getMeasureCount() {
     return measureCount;
   }
@@ -374,22 +363,6 @@ public class CarbonFactDataHandlerModel {
     this.mdKeyIndex = mdKeyIndex;
   }
 
-  public String[] getAggregators() {
-    return aggregators;
-  }
-
-  public void setAggregators(String[] aggregators) {
-    this.aggregators = aggregators;
-  }
-
-  public String[] getAggregatorClass() {
-    return aggregatorClass;
-  }
-
-  public void setAggregatorClass(String[] aggregatorClass) {
-    this.aggregatorClass = aggregatorClass;
-  }
-
   public String getStoreLocation() {
     return storeLocation;
   }
@@ -398,24 +371,8 @@ public class CarbonFactDataHandlerModel {
     this.storeLocation = storeLocation;
   }
 
-  public int[] getFactDimLens() {
-    return factDimLens;
-  }
-
   public void setFactDimLens(int[] factDimLens) {
     this.factDimLens = factDimLens;
-  }
-
-  public boolean isMergingRequestForCustomAgg() {
-    return isMergingRequestForCustomAgg;
-  }
-
-  public void setMergingRequestForCustomAgg(boolean mergingRequestForCustomAgg) {
-    isMergingRequestForCustomAgg = mergingRequestForCustomAgg;
-  }
-
-  public boolean isUpdateMemberRequest() {
-    return isUpdateMemberRequest;
   }
 
   public int[] getDimLens() {
@@ -424,26 +381,6 @@ public class CarbonFactDataHandlerModel {
 
   public void setDimLens(int[] dimLens) {
     this.dimLens = dimLens;
-  }
-
-  public String[] getFactLevels() {
-    return factLevels;
-  }
-
-  public void setFactLevels(String[] factLevels) {
-    this.factLevels = factLevels;
-  }
-
-  public String[] getAggLevels() {
-    return aggLevels;
-  }
-
-  public void setAggLevels(String[] aggLevels) {
-    this.aggLevels = aggLevels;
-  }
-
-  public boolean isDataWritingRequest() {
-    return isDataWritingRequest;
   }
 
   public void setDataWritingRequest(boolean dataWritingRequest) {
@@ -557,6 +494,10 @@ public class CarbonFactDataHandlerModel {
 
   public void setUseKettle(boolean useKettle) {
     this.useKettle = useKettle;
+  }
+
+  public int getBucketId() {
+    return bucketId;
   }
 }
 

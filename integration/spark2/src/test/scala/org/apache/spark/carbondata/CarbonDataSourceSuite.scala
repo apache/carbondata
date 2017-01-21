@@ -17,30 +17,17 @@
 
 package org.apache.spark.carbondata
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.apache.spark.sql.common.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
-class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
-  var spark: SparkSession = null
+class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
-    spark = SparkSession
-      .builder()
-      .master("local")
-      .appName("CarbonExample")
-      .enableHiveSupport()
-      .config(CarbonCommonConstants.STORE_LOCATION,
-        s"examples/spark2/target/store")
-      .getOrCreate()
-    spark.sparkContext.setLogLevel("WARN")
-
-    CarbonEnv.init(spark.sqlContext)
-    CarbonEnv.get.carbonMetastore.cleanStore()
-
     // Drop table
-    spark.sql("DROP TABLE IF EXISTS carbon_testtable")
+    sql("DROP TABLE IF EXISTS carbon_testtable")
+    sql("DROP TABLE IF EXISTS csv_table")
+
     // Create table
-    spark.sql(
+    sql(
       s"""
          | CREATE TABLE carbon_testtable(
          |    shortField short,
@@ -53,7 +40,7 @@ class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
          | USING org.apache.spark.sql.CarbonSource
        """.stripMargin)
 
-    spark.sql(
+    sql(
       s"""
          | CREATE TABLE csv_table
          | (  shortField short,
@@ -68,20 +55,19 @@ class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   override def afterAll(): Unit = {
-    spark.sql("drop table carbon_testtable")
-    spark.sparkContext.stop()
-    spark = null
+    sql("drop table carbon_testtable")
+    sql("DROP TABLE IF EXISTS csv_table")
   }
 
   test("project") {
-    spark.sql("select * from carbon_testtable").collect()
+    sql("select * from carbon_testtable").collect()
   }
 
   test("agg") {
-    spark.sql("select stringField, sum(intField) , sum(decimalField) " +
+    sql("select stringField, sum(intField) , sum(decimalField) " +
       "from carbon_testtable group by stringField").collect()
 
-    spark.sql(
+    sql(
       s"""
          | INSERT INTO TABLE carbon_testtable
          | SELECT shortField, intField, bigintField, doubleField, stringField,

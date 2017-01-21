@@ -1,21 +1,18 @@
 /*
-
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.processing.graphgenerator;
@@ -37,21 +34,21 @@ import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema;
-import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
-import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
-import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.load.BlockDetails;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.api.dataloader.DataLoadModel;
 import org.apache.carbondata.processing.api.dataloader.SchemaInfo;
+import org.apache.carbondata.processing.csvreaderstep.BlockDetails;
 import org.apache.carbondata.processing.csvreaderstep.CsvInputMeta;
 import org.apache.carbondata.processing.graphgenerator.configuration.GraphConfigurationInfo;
 import org.apache.carbondata.processing.mdkeygen.MDKeyGenStepMeta;
 import org.apache.carbondata.processing.merger.step.CarbonSliceMergerStepMeta;
+import org.apache.carbondata.processing.model.CarbonDataLoadSchema;
 import org.apache.carbondata.processing.schema.metadata.TableOptionWrapper;
 import org.apache.carbondata.processing.sortandgroupby.sortdatastep.SortKeyStepMeta;
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedSeqGenMeta;
@@ -207,16 +204,13 @@ public class GraphGenerator {
 
   private String rddIteratorKey;
 
-  public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
-      String factStoreLocation, int allocate,
+  public GraphGenerator(DataLoadModel dataLoadModel, String partitionID, String factStoreLocation,
       CarbonDataLoadSchema carbonDataLoadSchema, String segmentId) {
     CarbonMetadata.getInstance().addCarbonTable(carbonDataLoadSchema.getCarbonTable());
     this.schemaInfo = dataLoadModel.getSchemaInfo();
     this.tableName = dataLoadModel.getTableName();
     this.isCSVLoad = dataLoadModel.isCsvLoad();
-    this.modifiedDimension = dataLoadModel.getModifiedDimesion();
     this.isAutoAggRequest = schemaInfo.isAutoAggregateRequest();
-    //this.schema = schema;
     this.carbonDataLoadSchema = carbonDataLoadSchema;
     this.databaseName = carbonDataLoadSchema.getCarbonTable().getDatabaseName();
     this.partitionID = partitionID;
@@ -235,11 +229,9 @@ public class GraphGenerator {
     LOGGER.info("************* Is Columnar Storage" + isColumnar);
   }
 
-  public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
-      String factStoreLocation, int allocate, CarbonDataLoadSchema carbonDataLoadSchema,
-      String segmentId, String outputLocation) {
-    this(dataLoadModel, isHDFSReadMode, partitionID, factStoreLocation, allocate,
-        carbonDataLoadSchema, segmentId);
+  public GraphGenerator(DataLoadModel dataLoadModel, String partitionID, String factStoreLocation,
+      CarbonDataLoadSchema carbonDataLoadSchema, String segmentId, String outputLocation) {
+    this(dataLoadModel, partitionID, factStoreLocation, carbonDataLoadSchema, segmentId);
     this.outputLocation = outputLocation;
     this.rddIteratorKey = dataLoadModel.getRddIteratorKey();
   }
@@ -561,7 +553,6 @@ public class GraphGenerator {
     seqMeta.setDatabaseName(schemaInfo.getDatabaseName());
     seqMeta.setComplexDelimiterLevel1(schemaInfo.getComplexDelimiterLevel1());
     seqMeta.setComplexDelimiterLevel2(schemaInfo.getComplexDelimiterLevel2());
-    seqMeta.setCarbonMetaHier(graphConfiguration.getMetaHeirString());
     seqMeta.setCarbonmsr(graphConfiguration.getMeasuresString());
     seqMeta.setCarbonProps(graphConfiguration.getPropertiesString());
     seqMeta.setCarbonhier(graphConfiguration.getHiersString());
@@ -823,7 +814,7 @@ public class GraphGenerator {
     graphConfiguration.setNoDictionaryDims(noDictionarydimString.toString());
 
     String tableString =
-        CarbonSchemaParser.getTableNameString(factTableName, dimensions, carbonDataLoadSchema);
+        CarbonSchemaParser.getTableNameString(dimensions, carbonDataLoadSchema);
     String dimensionColumnIds = CarbonSchemaParser.getColumnIdString(dimensions);
     graphConfiguration.setDimensionTableNames(tableString);
     graphConfiguration.setDimensionString(dimString.toString());
@@ -889,9 +880,6 @@ public class GraphGenerator {
     // check quotes required in query or Not
     boolean isQuotesRequired = true;
     String quote = CarbonSchemaParser.QUOTES;
-    if (null != schemaInfo.getSrcDriverName()) {
-      quote = getQuoteType(schemaInfo);
-    }
     graphConfiguration.setTableInputSqlQuery(CarbonSchemaParser
         .getTableInputSQLQuery(dimensions, measures,
             carbonDataLoadSchema.getCarbonTable().getFactTableName(), isQuotesRequired,
@@ -908,10 +896,6 @@ public class GraphGenerator {
 
     graphConfiguration.setMeasures(CarbonSchemaParser.getMeasures(measures));
     graphConfiguration.setAGG(false);
-    graphConfiguration.setUsername(schemaInfo.getSrcUserName());
-    graphConfiguration.setPassword(schemaInfo.getSrcPwd());
-    graphConfiguration.setDriverclass(schemaInfo.getSrcDriverName());
-    graphConfiguration.setConnectionUrl(schemaInfo.getSrcConUrl());
     return graphConfiguration;
   }
 
@@ -928,25 +912,6 @@ public class GraphGenerator {
     return tableOptionWrapper;
   }
 
-  private String getQuoteType(SchemaInfo schemaInfo) throws GraphGeneratorException {
-    String driverClass = schemaInfo.getSrcDriverName();
-    String type = DRIVERS.get(driverClass);
-
-    if (null == type) {
-      LOGGER.error("Driver : \"" + driverClass + " \"Not Supported.");
-      throw new GraphGeneratorException("Driver : \"" + driverClass + " \"Not Supported.");
-    }
-
-    if (type.equals(CarbonCommonConstants.TYPE_ORACLE) || type
-        .equals(CarbonCommonConstants.TYPE_MSSQL)) {
-      return CarbonSchemaParser.QUOTES;
-    } else if (type.equals(CarbonCommonConstants.TYPE_MYSQL)) {
-      return CarbonSchemaParser.QUOTES;
-    }
-
-    return CarbonSchemaParser.QUOTES;
-  }
-
   public CarbonTable getTable() {
     return carbonDataLoadSchema.getCarbonTable();
   }
@@ -959,7 +924,6 @@ public class GraphGenerator {
    */
   private void prepareNoDictionaryMapping(List<CarbonDimension> dims,
       GraphConfigurationInfo graphConfig) {
-    // boolean[] NoDictionaryMapping = new boolean[dims.size()];
     List<Boolean> noDictionaryMapping = new ArrayList<Boolean>();
     for (CarbonDimension dimension : dims) {
       // for  complex type need to break the loop

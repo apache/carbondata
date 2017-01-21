@@ -44,5 +44,14 @@ class CarbonOption(options: Map[String, String]) {
 
   def compress: Boolean = options.getOrElse("compress", "false").toBoolean
 
-  def useKettle: Boolean = options.getOrElse("useKettle", "true").toBoolean
+  def useKettle: Boolean = options.getOrElse("use_kettle", "false").toBoolean
+
+  def bucketNumber: Int = options.getOrElse("bucketnumber", "0").toInt
+
+  def bucketColumns: String = options.getOrElse("bucketcolumns", "")
+
+  def isBucketingEnabled: Boolean = options.contains("bucketcolumns") &&
+                                    options.contains("bucketnumber")
+
+  def toMap: Map[String, String] = options
 }

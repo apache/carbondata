@@ -1,27 +1,25 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.carbondata.processing.store.writer;
 
 import java.util.List;
 
-import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.processing.mdkeygen.file.IFileManagerComposite;
 import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
 
@@ -66,6 +64,8 @@ public class CarbonDataWriterVo {
 
   private int tableBlocksize;
 
+  private int bucketNumber;
+
   /**
    * @return the storeLocation
    */
@@ -92,13 +92,6 @@ public class CarbonDataWriterVo {
    */
   public void setMeasureCount(int measureCount) {
     this.measureCount = measureCount;
-  }
-
-  /**
-   * @return the mdKeyLength
-   */
-  public int getMdKeyLength() {
-    return mdKeyLength;
   }
 
   /**
@@ -235,20 +228,6 @@ public class CarbonDataWriterVo {
   }
 
   /**
-   * @return the numberOfNoDictionaryColumn
-   */
-  public int getNumberOfNoDictionaryColumn() {
-    return numberOfNoDictionaryColumn;
-  }
-
-  /**
-   * @param numberOfNoDictionaryColumn the numberOfNoDictionaryColumn to set
-   */
-  public void setNumberOfNoDictionaryColumn(int numberOfNoDictionaryColumn) {
-    this.numberOfNoDictionaryColumn = numberOfNoDictionaryColumn;
-  }
-
-  /**
    * @return the isDictionaryColumn
    */
   public boolean[] getIsDictionaryColumn() {
@@ -318,4 +297,11 @@ public class CarbonDataWriterVo {
     this.tableBlocksize = tableBlocksize;
   }
 
+  public int getBucketNumber() {
+    return bucketNumber;
+  }
+
+  public void setBucketNumber(int bucketNumber) {
+    this.bucketNumber = bucketNumber;
+  }
 }

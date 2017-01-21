@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.core.keygenerator.columnar.impl;
@@ -22,6 +20,7 @@ package org.apache.carbondata.core.keygenerator.columnar.impl;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -39,18 +38,9 @@ import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerat
 public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLengthGenerator
     implements ColumnarSplitter {
 
-  /**
-   *
-   */
   private static final long serialVersionUID = -7767757692821917570L;
 
   private byte dimensionsToSplit;
-
-  private int[][] splitDimArray;
-
-  private int[][] dimBlockArray;
-
-  private int[][][] byteRangesForDims;
 
   private int[] blockKeySize;
 
@@ -89,17 +79,17 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
       splits[i++] = range;
     }
     for (int j = 1; j < splits.length; j++) {
-      if (splits[j - 1].get(splits[j - 1].size() - 1) == splits[j].get(0)) {
+      if (Objects.equals(splits[j - 1].get(splits[j - 1].size() - 1), splits[j].get(0))) {
         splits[j].remove(0);
       }
     }
-    splitDimArray = new int[splits.length][];
+    int[][] splitDimArray = new int[splits.length][];
     for (int j = 0; j < splits.length; j++) {
       int[] a = convertToArray(splits[j]);
       splitDimArray[j] = a.length > 0 ? new int[] { a[0], a[a.length - 1] } : a;
     }
 
-    dimBlockArray = new int[byteRangesForKeys.length][];
+    int[][] dimBlockArray = new int[byteRangesForKeys.length][];
     Set<Integer>[] dimBlockSet = new Set[dimBlockArray.length];
     for (int k = 0; k < byteRangesForKeys.length; k++) {
       int[] dimRange = byteRangesForKeys[k];
@@ -127,7 +117,7 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
           new int[0];
     }
 
-    byteRangesForDims = new int[byteRangesForKeys.length][][];
+    int[][][] byteRangesForDims = new int[byteRangesForKeys.length][][];
     for (int j = 0; j < byteRangesForKeys.length; j++) {
       if (dimBlockArray[j].length > 1) {
         int[] bArray1 = splitDimArrayLocalIndexes[dimBlockArray[j][0]];
@@ -205,14 +195,6 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
       copyIndex += key[i].length;
     }
     return fullKey;
-  }
-
-  @Override public byte[] getKeyByteArray(byte[][] key, int[] columnIndexes) {
-    return null;
-  }
-
-  @Override public long[] getKeyArray(byte[][] key, int[] columnIndexes) {
-    return null;
   }
 
   public int[] getBlockKeySize() {

@@ -1,27 +1,25 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.processing.store.writer;
 
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
+import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 
 public class NodeHolder {
   /**
@@ -244,34 +242,6 @@ public class NodeHolder {
   }
 
   /**
-   * @return the dataAfterCompression
-   */
-  public short[][] getDataAfterCompression() {
-    return dataAfterCompression;
-  }
-
-  /**
-   * @param dataAfterCompression the dataAfterCompression to set
-   */
-  public void setDataAfterCompression(short[][] dataAfterCompression) {
-    this.dataAfterCompression = dataAfterCompression;
-  }
-
-  /**
-   * @return the indexMap
-   */
-  public short[][] getIndexMap() {
-    return indexMap;
-  }
-
-  /**
-   * @param indexMap the indexMap to set
-   */
-  public void setIndexMap(short[][] indexMap) {
-    this.indexMap = indexMap;
-  }
-
-  /**
    * @return the keyBlockIndexLength
    */
   public int[] getKeyBlockIndexLength() {
@@ -339,20 +309,6 @@ public class NodeHolder {
   }
 
   /**
-   * @return the dataIndexMapOffsets
-   */
-  public int[] getDataIndexMapOffsets() {
-    return dataIndexMapOffsets;
-  }
-
-  /**
-   * @param dataIndexMapOffsets the dataIndexMapOffsets to set
-   */
-  public void setDataIndexMapOffsets(int[] dataIndexMapOffsets) {
-    this.dataIndexMapOffsets = dataIndexMapOffsets;
-  }
-
-  /**
    * @return the dataIndexMapLength
    */
   public int[] getDataIndexMapLength() {
@@ -406,34 +362,6 @@ public class NodeHolder {
    */
   public void setAggBlocks(boolean[] aggBlocks) {
     this.aggBlocks = aggBlocks;
-  }
-
-  /**
-   * @return the allMaxValue
-   */
-  public byte[][] getAllMaxValue() {
-    return allMaxValue;
-  }
-
-  /**
-   * @param allMaxValue the allMaxValue to set
-   */
-  public void setAllMaxValue(byte[][] allMaxValue) {
-    this.allMaxValue = allMaxValue;
-  }
-
-  /**
-   * @return the allMinValue
-   */
-  public byte[][] getAllMinValue() {
-    return allMinValue;
-  }
-
-  /**
-   * @param allMinValue the allMinValue to set
-   */
-  public void setAllMinValue(byte[][] allMinValue) {
-    this.allMinValue = allMinValue;
   }
 
   /**

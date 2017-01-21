@@ -1,23 +1,22 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.carbondata.spark.merger;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,23 +27,23 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.carbon.datastore.block.TaskBlockInfo;
-import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.datastore.block.TaskBlockInfo;
+import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.scan.executor.QueryExecutor;
+import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
+import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
+import org.apache.carbondata.core.scan.model.QueryDimension;
+import org.apache.carbondata.core.scan.model.QueryMeasure;
+import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.scan.result.BatchResult;
+import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.scan.executor.QueryExecutor;
-import org.apache.carbondata.scan.executor.QueryExecutorFactory;
-import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
-import org.apache.carbondata.scan.model.QueryDimension;
-import org.apache.carbondata.scan.model.QueryMeasure;
-import org.apache.carbondata.scan.model.QueryModel;
-import org.apache.carbondata.scan.result.BatchResult;
-import org.apache.carbondata.scan.result.iterator.RawResultIterator;
 
 /**
  * Executor class for executing the query on the selected segments to be merged.
@@ -56,41 +55,23 @@ public class CarbonCompactionExecutor {
       LogServiceFactory.getLogService(CarbonCompactionExecutor.class.getName());
   private final Map<String, List<DataFileFooter>> dataFileMetadataSegMapping;
   private final SegmentProperties destinationSegProperties;
-  private final String databaseName;
-  private final String factTableName;
   private final Map<String, TaskBlockInfo> segmentMapping;
-  private final String storePath;
   private QueryExecutor queryExecutor;
   private CarbonTable carbonTable;
   private QueryModel queryModel;
 
   /**
    * Constructor
-   *
-   * @param segmentMapping
+   *  @param segmentMapping
    * @param segmentProperties
-   * @param databaseName
-   * @param factTableName
-   * @param storePath
    * @param carbonTable
    */
   public CarbonCompactionExecutor(Map<String, TaskBlockInfo> segmentMapping,
-      SegmentProperties segmentProperties, String databaseName, String factTableName,
-      String storePath, CarbonTable carbonTable,
+      SegmentProperties segmentProperties, CarbonTable carbonTable,
       Map<String, List<DataFileFooter>> dataFileMetadataSegMapping) {
-
     this.segmentMapping = segmentMapping;
-
     this.destinationSegProperties = segmentProperties;
-
-    this.databaseName = databaseName;
-
-    this.factTableName = factTableName;
-
-    this.storePath = storePath;
-
     this.carbonTable = carbonTable;
-
     this.dataFileMetadataSegMapping = dataFileMetadataSegMapping;
   }
 
@@ -99,7 +80,7 @@ public class CarbonCompactionExecutor {
    *
    * @return List of Carbon iterators
    */
-  public List<RawResultIterator> processTableBlocks() throws QueryExecutionException {
+  public List<RawResultIterator> processTableBlocks() throws QueryExecutionException, IOException {
 
     List<RawResultIterator> resultList =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -142,19 +123,10 @@ public class CarbonCompactionExecutor {
    * @return
    */
   private CarbonIterator<BatchResult> executeBlockList(List<TableBlockInfo> blockList)
-      throws QueryExecutionException {
-
+      throws QueryExecutionException, IOException {
     queryModel.setTableBlockInfos(blockList);
-    this.queryExecutor = QueryExecutorFactory.getQueryExecutor();
-    CarbonIterator<BatchResult> iter = null;
-    try {
-      iter = queryExecutor.execute(queryModel);
-    } catch (QueryExecutionException e) {
-      LOGGER.error(e.getMessage());
-      throw e;
-    }
-
-    return iter;
+    this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
+    return queryExecutor.execute(queryModel);
   }
 
   /**
@@ -191,13 +163,9 @@ public class CarbonCompactionExecutor {
    * @param blockList
    * @return
    */
-  public QueryModel prepareQueryModel(List<TableBlockInfo> blockList) {
-
+  private QueryModel prepareQueryModel(List<TableBlockInfo> blockList) {
     QueryModel model = new QueryModel();
-
     model.setTableBlockInfos(blockList);
-    model.setCountStarQuery(false);
-    model.setDetailQuery(true);
     model.setForcedDetailRawQuery(true);
     model.setFilterExpressionResolverTree(null);
 
@@ -215,18 +183,9 @@ public class CarbonCompactionExecutor {
       msrs.add(queryMeasure);
     }
     model.setQueryMeasures(msrs);
-
     model.setQueryId(System.nanoTime() + "");
-
     model.setAbsoluteTableIdentifier(carbonTable.getAbsoluteTableIdentifier());
-
-    model.setAggTable(false);
-    model.setLimit(-1);
-
     model.setTable(carbonTable);
-
-    model.setInMemoryRecordSize(CarbonCommonConstants.COMPACTION_INMEMORY_RECORD_SIZE);
-
     return model;
   }
 

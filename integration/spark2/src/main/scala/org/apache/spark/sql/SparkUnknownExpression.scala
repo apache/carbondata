@@ -22,13 +22,13 @@ import java.util.{ArrayList, List}
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericMutableRow}
+import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericInternalRow}
 
-import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
-import org.apache.carbondata.scan.expression.{ColumnExpression, ExpressionResult, UnknownExpression}
-import org.apache.carbondata.scan.expression.conditional.ConditionalExpression
-import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException
-import org.apache.carbondata.scan.filter.intf.{ExpressionType, RowIntf}
+import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.scan.expression.{ColumnExpression, ExpressionResult, UnknownExpression}
+import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpression
+import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException
+import org.apache.carbondata.core.scan.filter.intf.{ExpressionType, RowIntf}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 class SparkUnknownExpression(var sparkExp: SparkExpression)
@@ -48,7 +48,7 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
     }
     try {
       val result = evaluateExpression(
-        new GenericMutableRow(values.map(a => a.asInstanceOf[Any]).toArray))
+        new GenericInternalRow(values.map(a => a.asInstanceOf[Any]).toArray))
       val sparkRes = if (isExecutor) {
         result.asInstanceOf[InternalRow].get(0, sparkExp.dataType)
       } else {

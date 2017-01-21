@@ -23,7 +23,7 @@ import java.text.SimpleDateFormat
 import java.util.regex.Pattern
 
 import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
+import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
 
 import au.com.bytecode.opencsv.CSVReader
@@ -32,19 +32,20 @@ import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 
-import org.apache.carbondata.common.factory.CarbonCommonFactory
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.{CarbonTableIdentifier, ColumnIdentifier}
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.cache.dictionary.Dictionary
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.service.{CarbonCommonFactory, PathService}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
-import org.apache.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.tasks.{DictionaryWriterTask, SortIndexWriterTask}
-import org.apache.carbondata.spark.util.CarbonScalaUtil
-import org.apache.carbondata.spark.util.GlobalDictionaryUtil
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
 
 /**
  * A partitioner partition by column.
@@ -70,9 +71,9 @@ case class DictionaryStats(distinctValues: java.util.List[String],
     dictWriteTime: Long, sortIndexWriteTime: Long)
 
 case class PrimitiveParser(dimension: CarbonDimension,
-    setOpt: Option[HashSet[String]]) extends GenericParser {
-  val (hasDictEncoding, set: HashSet[String]) = setOpt match {
-    case None => (false, new HashSet[String])
+    setOpt: Option[mutable.HashSet[String]]) extends GenericParser {
+  val (hasDictEncoding, set: mutable.HashSet[String]) = setOpt match {
+    case None => (false, new mutable.HashSet[String])
     case Some(x) => (true, x)
   }
 
@@ -159,7 +160,9 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
     hdfsTempLocation: String,
     lockType: String,
     zooKeeperUrl: String,
-    serializationNullFormat: String) extends Serializable
+    serializationNullFormat: String,
+    defaultTimestampFormat: String,
+    defaultDateFormat: String) extends Serializable
 
 case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends Serializable
 
@@ -183,7 +186,7 @@ class CarbonAllDictionaryCombineRDD(
   ): Iterator[(Int, ColumnDistinctValues)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
-    val distinctValuesList = new ArrayBuffer[(Int, HashSet[String])]
+    val distinctValuesList = new ArrayBuffer[(Int, mutable.HashSet[String])]
     /*
      * for all dictionary, all columns need to encoding and checking
      * isHighCardinalityColumn, so no need to calculate rowcount
@@ -194,7 +197,7 @@ class CarbonAllDictionaryCombineRDD(
         GlobalDictionaryUtil.createDimensionParsers(model, distinctValuesList)
       val dimNum = model.dimensions.length
       // Map[dimColName -> dimColNameIndex]
-      val columnIndexMap = new HashMap[String, Int]()
+      val columnIndexMap = new mutable.HashMap[String, Int]()
       for (j <- 0 until dimNum) {
         columnIndexMap.put(model.dimensions(j).getColName, j)
       }
@@ -227,6 +230,36 @@ class CarbonAllDictionaryCombineRDD(
   }
 }
 
+class StringArrayRow(var values: Array[String]) extends Row {
+
+  override def length: Int = values.length
+
+  override def get(i: Int): Any = values(i)
+
+  override def getString(i: Int): String = values(i)
+
+  private def reset(): Unit = {
+    for (i <- 0 until values.length) {
+      values(i) = null
+    }
+  }
+
+  override def copy(): Row = {
+    val tmpValues = new Array[String](values.length)
+    System.arraycopy(values, 0, tmpValues, 0, values.length)
+    new StringArrayRow(tmpValues)
+  }
+
+  def setValues(values: Array[String]): StringArrayRow = {
+    reset()
+    if (values != null) {
+      val minLength = Math.min(this.values.length, values.length)
+      System.arraycopy(values, 0, this.values, 0, minLength)
+    }
+    this
+  }
+}
+
 /**
  * A RDD to combine distinct values in block.
  *
@@ -244,8 +277,10 @@ class CarbonBlockDistinctValuesCombineRDD(
   override def compute(split: Partition,
       context: TaskContext): Iterator[(Int, ColumnDistinctValues)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION,
+      model.hdfsLocation)
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordLoadCsvfilesToDfTime()
-    val distinctValuesList = new ArrayBuffer[(Int, HashSet[String])]
+    val distinctValuesList = new ArrayBuffer[(Int, mutable.HashSet[String])]
     var rowCount = 0L
     try {
       val dimensionParsers =
@@ -253,9 +288,8 @@ class CarbonBlockDistinctValuesCombineRDD(
       val dimNum = model.dimensions.length
       var row: Row = null
       val rddIter = firstParent[Row].iterator(split, context)
-      val formatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-          .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-      val format = new SimpleDateFormat(formatString)
+      val timeStampFormat = new SimpleDateFormat(model.defaultTimestampFormat)
+      val dateFormat = new SimpleDateFormat(model.defaultDateFormat)
       // generate block distinct value set
       while (rddIter.hasNext) {
         row = rddIter.next()
@@ -263,7 +297,11 @@ class CarbonBlockDistinctValuesCombineRDD(
           rowCount += 1
           for (i <- 0 until dimNum) {
             dimensionParsers(i).parseString(CarbonScalaUtil.getString(row.get(i),
-                model.serializationNullFormat, model.delimiters(0), model.delimiters(1), format))
+              model.serializationNullFormat,
+              model.delimiters(0),
+              model.delimiters(1),
+              timeStampFormat,
+              dateFormat))
           }
         }
       }
@@ -297,18 +335,20 @@ class CarbonGlobalDictionaryGenerateRDD(
 
   override def compute(split: Partition, context: TaskContext): Iterator[(Int, String, Boolean)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    var status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION,
+      model.hdfsLocation)
+    val status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
     var isHighCardinalityColumn = false
     val iter = new Iterator[(Int, String, Boolean)] {
-      var dictionaryForDistinctValueLookUp:
-      org.apache.carbondata.core.cache.dictionary.Dictionary = _
-      var dictionaryForSortIndexWriting: org.apache.carbondata.core.cache.dictionary.Dictionary = _
+      var dictionaryForDistinctValueLookUp: Dictionary = _
+      var dictionaryForSortIndexWriting: Dictionary = _
       var dictionaryForDistinctValueLookUpCleared: Boolean = false
-      val pathService = CarbonCommonFactory.getPathService
-      val carbonTablePath = pathService.getCarbonTablePath(model.hdfsLocation, model.table)
-      if (StringUtils.isNotBlank(model.hdfsTempLocation )) {
-         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
-           model.hdfsTempLocation)
+      val pathService: PathService = CarbonCommonFactory.getPathService
+      val carbonTablePath: CarbonTablePath =
+        pathService.getCarbonTablePath(model.hdfsLocation, model.table)
+      if (StringUtils.isNotBlank(model.hdfsTempLocation)) {
+        CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
+          model.hdfsTempLocation)
       }
       if (StringUtils.isNotBlank(model.lockType)) {
         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.LOCK_TYPE,
@@ -538,8 +578,8 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
         }
       }
     }
-    val mapIdWithSet = new HashMap[String, HashSet[String]]
-    val columnValues = new HashSet[String]
+    val mapIdWithSet = new mutable.HashMap[String, mutable.HashSet[String]]
+    val columnValues = new mutable.HashSet[String]
     val distinctValues = (theSplit.index, columnValues)
     mapIdWithSet.put(primDimension.getColumnId, columnValues)
     // use parser to generate new dict value

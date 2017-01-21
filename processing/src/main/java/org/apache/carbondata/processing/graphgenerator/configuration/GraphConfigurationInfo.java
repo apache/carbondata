@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.processing.graphgenerator.configuration;
@@ -228,31 +226,10 @@ public class GraphConfigurationInfo {
   }
 
   /**
-   * @return the connectionName
-   */
-  public String getConnectionName() {
-    return connectionName;
-  }
-
-  /**
    * @param connectionName the connectionName to set
    */
   public void setConnectionName(String connectionName) {
     this.connectionName = connectionName;
-  }
-
-  /**
-   * @return the dbType
-   */
-  public String getDbType() {
-    return dbType;
-  }
-
-  /**
-   * @param dbType the dbType to set
-   */
-  public void setDbType(String dbType) {
-    this.dbType = dbType;
   }
 
   /**
@@ -267,13 +244,6 @@ public class GraphConfigurationInfo {
    */
   public void setNumberOfCores(String numberOfCores) {
     this.numberOfCores = numberOfCores;
-  }
-
-  /**
-   * @return the storeLocation
-   */
-  public String getStoreLocation() {
-    return storeLocation;
   }
 
   /**
@@ -306,24 +276,10 @@ public class GraphConfigurationInfo {
   }
 
   /**
-   * @return the blockletSize
-   */
-  public String getBlockletSize() {
-    return blockletSize;
-  }
-
-  /**
    * @param blockletSize the blockletSize to set
    */
   public void setBlockletSize(String blockletSize) {
     this.blockletSize = blockletSize;
-  }
-
-  /**
-   * @return the maxBlockletInFile
-   */
-  public String getMaxBlockletInFile() {
-    return maxBlockletInFile;
   }
 
   /**
@@ -413,15 +369,6 @@ public class GraphConfigurationInfo {
   }
 
   /**
-   * setNormHiers
-   *
-   * @param normHiers void
-   */
-  public void setNormHiers(String normHiers) {
-    this.normHiers = normHiers;
-  }
-
-  /**
    * @return the hiersString
    */
   public String getHiersString() {
@@ -457,27 +404,6 @@ public class GraphConfigurationInfo {
   }
 
   /**
-   * @param propertiesString the propertiesString to set
-   */
-  public void setPropertiesString(String propertiesString) {
-    this.propertiesString = propertiesString;
-  }
-
-  /**
-   * @return the timeHeirString
-   */
-  public String getTimeHeirString() {
-    return timeHeirString;
-  }
-
-  /**
-   * @param timeHeirString the timeHeirString to set
-   */
-  public void setTimeHeirString(String timeHeirString) {
-    this.timeHeirString = timeHeirString;
-  }
-
-  /**
    * @return the metaHeirString
    */
   public String getMetaHeirString() {
@@ -489,48 +415,6 @@ public class GraphConfigurationInfo {
    */
   public void setMetaHeirString(String metaHeirString) {
     this.metaHeirString = metaHeirString;
-  }
-
-  /**
-   * @return the metaHeirQueryString
-   */
-  public String getMetaHeirQueryString() {
-    return metaHeirQueryString;
-  }
-
-  /**
-   * @param metaHeirQueryString the metaHeirQueryString to set
-   */
-  public void setMetaHeirQueryString(String metaHeirQueryString) {
-    this.metaHeirQueryString = metaHeirQueryString;
-  }
-
-  /**
-   * @return the jndiName
-   */
-  public String getJndiName() {
-    return jndiName;
-  }
-
-  /**
-   * @param jndiName the jndiName to set
-   */
-  public void setJndiName(String jndiName) {
-    this.jndiName = jndiName;
-  }
-
-  /**
-   * @return the tableMeasuresAndDataTypeMap
-   */
-  public Map<String, String> getTableMeasuresAndDataTypeMap() {
-    return tableMeasuresAndDataTypeMap;
-  }
-
-  /**
-   * @param tableMeasuresAndDataTypeMap the tableMeasuresAndDataTypeMap to set
-   */
-  public void setTableMeasuresAndDataTypeMap(Map<String, String> tableMeasuresAndDataTypeMap) {
-    this.tableMeasuresAndDataTypeMap = tableMeasuresAndDataTypeMap;
   }
 
   /**
@@ -559,13 +443,6 @@ public class GraphConfigurationInfo {
    */
   public void setDimensionSqlQuery(String dimensionSqlQuery) {
     this.dimensionSqlQuery = dimensionSqlQuery;
-  }
-
-  /**
-   * @return the sortSize
-   */
-  public String getSortSize() {
-    return sortSize;
   }
 
   /**
@@ -756,13 +633,6 @@ public class GraphConfigurationInfo {
   }
 
   /**
-   * @return Returns the forignKey.
-   */
-  public String[] getForignKey() {
-    return forignKey;
-  }
-
-  /**
    * @param forignKey The forignKey to set.
    */
   public void setForignKey(String[] forignKey) {
@@ -889,10 +759,6 @@ public class GraphConfigurationInfo {
     return columnAndTableNameColumnMapForAgg;
   }
 
-  public void setColumnAndTableNameColumnMapForAgg(String columnAndTableNameColumnMapForAgg) {
-    this.columnAndTableNameColumnMapForAgg = columnAndTableNameColumnMapForAgg;
-  }
-
   /**
    * @return Returns the denormColumns.
    */
@@ -915,31 +781,10 @@ public class GraphConfigurationInfo {
   }
 
   /**
-   * @param aggClass the aggClass to set
-   */
-  public void setAggClass(String[] aggClass) {
-    this.aggClass = aggClass;
-  }
-
-  /**
-   * @return the measureUniqueColumnNamesString
-   */
-  public String getMeasureUniqueColumnNamesString() {
-    return measureUniqueColumnNamesString;
-  }
-
-  /**
    * @param measureUniqueColumnNamesString the measureUniqueColumnNamesString to set
    */
   public void setMeasureUniqueColumnNamesString(String measureUniqueColumnNamesString) {
     this.measureUniqueColumnNamesString = measureUniqueColumnNamesString;
-  }
-
-  /**
-   * @return the type
-   */
-  public char[] getType() {
-    return type;
   }
 
   /**

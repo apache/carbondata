@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 /**
@@ -26,9 +24,10 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.load.LoadMetadataDetails;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 
 public class CarbonLoadModel implements Serializable {
   /**
@@ -62,17 +61,20 @@ public class CarbonLoadModel implements Serializable {
 
   private List<String> factFilesToProcess;
   private String csvHeader;
+  private String[] csvHeaderColumns;
   private String csvDelimiter;
   private String complexDelimiterLevel1;
   private String complexDelimiterLevel2;
 
   private boolean isDirectLoad;
   private List<LoadMetadataDetails> loadMetadataDetails;
+  private transient List<SegmentUpdateDetails> segmentUpdateDetails;
+  private transient SegmentUpdateStatusManager segmentUpdateStatusManager;
 
   private String blocksID;
 
   /**
-   *  Map from carbon dimension to pre defined dict file path
+   * Map from carbon dimension to pre defined dict file path
    */
   private HashMap<CarbonDimension, String> predefDictMap;
 
@@ -108,6 +110,10 @@ public class CarbonLoadModel implements Serializable {
 
   private String dateFormat;
 
+  private String defaultTimestampFormat;
+
+  private String defaultDateFormat;
+
   /**
    * defines the string that should be treated as null while loadind data
    */
@@ -133,8 +139,39 @@ public class CarbonLoadModel implements Serializable {
    */
   private String rddIteratorKey;
 
+  private String carbondataFileName = "";
+
+  public String getCarbondataFileName() {
+    return carbondataFileName;
+  }
+
+  public void setCarbondataFileName(String carbondataFileName) {
+    this.carbondataFileName = carbondataFileName;
+  }
+
+  /**
+   * Use one pass to generate dictionary
+   */
+  private boolean useOnePass;
+
+  /**
+   * dictionary server host
+   */
+  private String dictionaryServerHost;
+
+  /**
+   * dictionary sever port
+   */
+  private int dictionaryServerPort;
+
+  /**
+   * Pre fetch data from csv reader
+   */
+  private boolean preFetch;
+
   /**
    * get escape char
+   *
    * @return
    */
   public String getEscapeChar() {
@@ -143,6 +180,7 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * set escape char
+   *
    * @param escapeChar
    */
   public void setEscapeChar(String escapeChar) {
@@ -211,16 +249,20 @@ public class CarbonLoadModel implements Serializable {
     return factFilesToProcess;
   }
 
-  public void setFactFilesToProcess(List<String> factFilesToProcess) {
-    this.factFilesToProcess = factFilesToProcess;
-  }
-
   public String getCsvHeader() {
     return csvHeader;
   }
 
   public void setCsvHeader(String csvHeader) {
     this.csvHeader = csvHeader;
+  }
+
+  public String[] getCsvHeaderColumns() {
+    return csvHeaderColumns;
+  }
+
+  public void setCsvHeaderColumns(String[] csvHeaderColumns) {
+    this.csvHeaderColumns = csvHeaderColumns;
   }
 
   public void initPredefDictMap() {
@@ -292,7 +334,6 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   *
    * @return external column dictionary file path
    */
   public String getColDictFilePath() {
@@ -301,26 +342,11 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * set external column dictionary file path
+   *
    * @param colDictFilePath
    */
   public void setColDictFilePath(String colDictFilePath) {
     this.colDictFilePath = colDictFilePath;
-  }
-
-  /**
-   * @return the dimFolderPath
-   */
-  public String getDimFolderPath() {
-    return dimFolderPath;
-  }
-
-  //TODO SIMIAN
-
-  /**
-   * @param dimFolderPath the dimFolderPath to set
-   */
-  public void setDimFolderPath(String dimFolderPath) {
-    this.dimFolderPath = dimFolderPath;
   }
 
   /**
@@ -332,7 +358,6 @@ public class CarbonLoadModel implements Serializable {
   public CarbonLoadModel getCopyWithPartition(String uniqueId) {
     CarbonLoadModel copy = new CarbonLoadModel();
     copy.tableName = tableName;
-    copy.dimFolderPath = dimFolderPath;
     copy.factFilePath = factFilePath + '/' + uniqueId;
     copy.databaseName = databaseName;
     copy.partitionId = uniqueId;
@@ -354,8 +379,14 @@ public class CarbonLoadModel implements Serializable {
     copy.escapeChar = escapeChar;
     copy.quoteChar = quoteChar;
     copy.commentChar = commentChar;
+    copy.dateFormat = dateFormat;
+    copy.defaultTimestampFormat = defaultTimestampFormat;
     copy.maxColumns = maxColumns;
     copy.storePath = storePath;
+    copy.useOnePass = useOnePass;
+    copy.dictionaryServerHost = dictionaryServerHost;
+    copy.dictionaryServerPort = dictionaryServerPort;
+    copy.preFetch = preFetch;
     return copy;
   }
 
@@ -372,7 +403,6 @@ public class CarbonLoadModel implements Serializable {
       String header, String delimiter) {
     CarbonLoadModel copyObj = new CarbonLoadModel();
     copyObj.tableName = tableName;
-    copyObj.dimFolderPath = dimFolderPath;
     copyObj.factFilePath = null;
     copyObj.databaseName = databaseName;
     copyObj.partitionId = uniqueId;
@@ -383,6 +413,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.isRetentionRequest = isRetentionRequest;
     copyObj.carbonDataLoadSchema = carbonDataLoadSchema;
     copyObj.csvHeader = header;
+    copyObj.csvHeaderColumns = csvHeaderColumns;
     copyObj.factFilesToProcess = filesForPartition;
     copyObj.isDirectLoad = true;
     copyObj.csvDelimiter = delimiter;
@@ -399,8 +430,13 @@ public class CarbonLoadModel implements Serializable {
     copyObj.quoteChar = quoteChar;
     copyObj.commentChar = commentChar;
     copyObj.dateFormat = dateFormat;
+    copyObj.defaultTimestampFormat = defaultTimestampFormat;
     copyObj.maxColumns = maxColumns;
     copyObj.storePath = storePath;
+    copyObj.useOnePass = useOnePass;
+    copyObj.dictionaryServerHost = dictionaryServerHost;
+    copyObj.dictionaryServerPort = dictionaryServerPort;
+    copyObj.preFetch = preFetch;
     return copyObj;
   }
 
@@ -416,13 +452,6 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setPartitionId(String partitionId) {
     this.partitionId = partitionId;
-  }
-
-  /**
-   * @return the aggTables
-   */
-  public String[] getAggTables() {
-    return aggTables;
   }
 
   /**
@@ -484,13 +513,6 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * @param isRetentionRequest
-   */
-  public void setRetentionRequest(boolean isRetentionRequest) {
-    this.isRetentionRequest = isRetentionRequest;
-  }
-
-  /**
    * getLoadMetadataDetails.
    *
    * @return
@@ -506,6 +528,42 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setLoadMetadataDetails(List<LoadMetadataDetails> loadMetadataDetails) {
     this.loadMetadataDetails = loadMetadataDetails;
+  }
+
+  /**
+   * getSegmentUpdateDetails
+   *
+   * @return
+   */
+  public List<SegmentUpdateDetails> getSegmentUpdateDetails() {
+    return segmentUpdateDetails;
+  }
+
+  /**
+   * setSegmentUpdateDetails
+   *
+   * @param segmentUpdateDetails
+   */
+  public void setSegmentUpdateDetails(List<SegmentUpdateDetails> segmentUpdateDetails) {
+    this.segmentUpdateDetails = segmentUpdateDetails;
+  }
+
+  /**
+   * getSegmentUpdateStatusManager
+   *
+   * @return
+   */
+  public SegmentUpdateStatusManager getSegmentUpdateStatusManager() {
+    return segmentUpdateStatusManager;
+  }
+
+  /**
+   * setSegmentUpdateStatusManager
+   *
+   * @param segmentUpdateStatusManager
+   */
+  public void setSegmentUpdateStatusManager(SegmentUpdateStatusManager segmentUpdateStatusManager) {
+    this.segmentUpdateStatusManager = segmentUpdateStatusManager;
   }
 
   /**
@@ -532,8 +590,8 @@ public class CarbonLoadModel implements Serializable {
   /**
    * @param factTimeStamp
    */
-  public void setFactTimeStamp(String factTimeStamp) {
-    this.factTimeStamp = factTimeStamp;
+  public void setFactTimeStamp(long factTimeStamp) {
+    this.factTimeStamp = factTimeStamp + "";
   }
 
   public String[] getDelimiters() {
@@ -556,6 +614,7 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * the method returns the value to be treated as null while data load
+   *
    * @return
    */
   public String getSerializationNullFormat() {
@@ -564,6 +623,7 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * the method sets the value to be treated as null while data load
+   *
    * @param serializationNullFormat
    */
   public void setSerializationNullFormat(String serializationNullFormat) {
@@ -572,6 +632,7 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * returns the string to enable bad record logger
+   *
    * @return
    */
   public String getBadRecordsLoggerEnable() {
@@ -580,6 +641,7 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * method sets the string to specify whether to enable or dissable the badrecord logger.
+   *
    * @param badRecordsLoggerEnable
    */
   public void setBadRecordsLoggerEnable(String badRecordsLoggerEnable) {
@@ -602,9 +664,21 @@ public class CarbonLoadModel implements Serializable {
     this.commentChar = commentChar;
   }
 
-  public String getDateFormat() { return dateFormat; }
+  public String getDateFormat() {
+    return dateFormat;
+  }
 
-  public void setDateFormat(String dateFormat) { this.dateFormat = dateFormat; }
+  public void setDateFormat(String dateFormat) {
+    this.dateFormat = dateFormat;
+  }
+
+  public String getDefaultTimestampFormat() {
+    return defaultTimestampFormat;
+  }
+
+  public void setDefaultTimestampFormat(String defaultTimestampFormat) {
+    this.defaultTimestampFormat = defaultTimestampFormat;
+  }
 
   /**
    * @return
@@ -621,7 +695,8 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   *  returns option to specify the bad record logger action
+   * returns option to specify the bad record logger action
+   *
    * @return
    */
   public String getBadRecordsAction() {
@@ -630,6 +705,7 @@ public class CarbonLoadModel implements Serializable {
 
   /**
    * set option to specify the bad record logger action
+   *
    * @param badRecordsAction
    */
   public void setBadRecordsAction(String badRecordsAction) {
@@ -643,5 +719,45 @@ public class CarbonLoadModel implements Serializable {
   public void setRddIteratorKey(String rddIteratorKey) {
     this.rddIteratorKey = rddIteratorKey;
 
+  }
+
+  public boolean getUseOnePass() {
+    return useOnePass;
+  }
+
+  public void setUseOnePass(boolean useOnePass) {
+    this.useOnePass = useOnePass;
+  }
+
+  public int getDictionaryServerPort() {
+    return dictionaryServerPort;
+  }
+
+  public void setDictionaryServerPort(int dictionaryServerPort) {
+    this.dictionaryServerPort = dictionaryServerPort;
+  }
+
+  public String getDictionaryServerHost() {
+    return dictionaryServerHost;
+  }
+
+  public void setDictionaryServerHost(String dictionaryServerHost) {
+    this.dictionaryServerHost = dictionaryServerHost;
+  }
+
+  public boolean isPreFetch() {
+    return preFetch;
+  }
+
+  public void setPreFetch(boolean preFetch) {
+    this.preFetch = preFetch;
+  }
+
+  public String getDefaultDateFormat() {
+    return defaultDateFormat;
+  }
+
+  public void setDefaultDateFormat(String defaultDateFormat) {
+    this.defaultDateFormat = defaultDateFormat;
   }
 }

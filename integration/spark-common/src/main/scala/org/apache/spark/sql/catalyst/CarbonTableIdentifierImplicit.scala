@@ -21,7 +21,7 @@ package org.apache.spark.sql.catalyst
  * Implicit functions for [TableIdentifier]
  */
 object CarbonTableIdentifierImplicit {
-  def apply(tableName: String): TableIdentifier = new TableIdentifier(tableName)
+  def apply(tableName: String): TableIdentifier = TableIdentifier(tableName)
 
   implicit def toTableIdentifier(tableIdentifier: Seq[String]): TableIdentifier = {
     tableIdentifier match {
@@ -35,6 +35,13 @@ object CarbonTableIdentifierImplicit {
     tableIdentifier.database match {
       case Some(dbName) => Seq(dbName, tableIdentifier.table)
       case _ => Seq(tableIdentifier.table)
+    }
+  }
+
+  implicit def toOptionalSequence(alias: Option[String]): Option[Seq[String]] = {
+    alias match {
+      case Some(alias) => Some(Seq(alias))
+      case _ => None
     }
   }
 }

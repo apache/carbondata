@@ -1,24 +1,23 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.core.cache.dictionary;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -31,7 +30,6 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
-import org.apache.carbondata.core.util.CarbonUtilException;
 
 /**
  * This class implements methods to create dictionary cache which will hold
@@ -62,10 +60,10 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
    * @param dictionaryColumnUniqueIdentifier unique identifier which contains dbName,
    *                                         tableName and columnIdentifier
    * @return dictionary
-   * @throws CarbonUtilException in case memory is not sufficient to load dictionary into memory
+   * @throws IOException in case memory is not sufficient to load dictionary into memory
    */
   @Override public Dictionary get(DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier)
-      throws CarbonUtilException {
+      throws IOException {
     return getDictionary(dictionaryColumnUniqueIdentifier);
   }
 
@@ -76,11 +74,11 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
    * @param dictionaryColumnUniqueIdentifiers unique identifier which contains dbName,
    *                                          tableName and columnIdentifier
    * @return list of dictionary
-   * @throws CarbonUtilException in case memory is not sufficient to load dictionary into memory
+   * @throws IOException in case memory is not sufficient to load dictionary into memory
    */
   @Override public List<Dictionary> getAll(
       List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers)
-      throws CarbonUtilException {
+      throws IOException {
     boolean exceptionOccurredInDictionaryLoading = false;
     String exceptionMessage = "";
     List<Dictionary> reverseDictionaryObjectList =
@@ -90,7 +88,7 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
     ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
     for (final DictionaryColumnUniqueIdentifier uniqueIdent : dictionaryColumnUniqueIdentifiers) {
       taskSubmitList.add(executorService.submit(new Callable<Dictionary>() {
-        @Override public Dictionary call() throws CarbonUtilException {
+        @Override public Dictionary call() throws IOException {
           Dictionary dictionary = getDictionary(uniqueIdent);
           return dictionary;
         }
@@ -114,7 +112,7 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
     if (exceptionOccurredInDictionaryLoading) {
       clearDictionary(reverseDictionaryObjectList);
       LOGGER.error(exceptionMessage);
-      throw new CarbonUtilException(exceptionMessage);
+      throw new IOException(exceptionMessage);
     }
     return reverseDictionaryObjectList;
   }
@@ -161,19 +159,14 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
    * @param dictionaryColumnUniqueIdentifier unique identifier which contains dbName,
    *                                         tableName and columnIdentifier
    * @return dictionary
-   * @throws CarbonUtilException in case memory is not sufficient to load dictionary into memory
+   * @throws IOException in case memory is not sufficient to load dictionary into memory
    */
   private Dictionary getDictionary(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier)
-      throws CarbonUtilException {
+      throws IOException {
     Dictionary reverseDictionary = null;
-    // create column dictionary info object only if dictionary and its
-    // metadata file exists for a given column identifier
-    if (!isFileExistsForGivenColumn(dictionaryColumnUniqueIdentifier)) {
-      throw new CarbonUtilException(
-          "Either dictionary or its metadata does not exist for column identifier :: "
-              + dictionaryColumnUniqueIdentifier.getColumnIdentifier());
-    }
+    // dictionary is only for primitive data type
+    assert(!dictionaryColumnUniqueIdentifier.getDataType().isComplexType());
     String columnIdentifier = dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId();
     ColumnReverseDictionaryInfo columnReverseDictionaryInfo =
         getColumnReverseDictionaryInfo(dictionaryColumnUniqueIdentifier, columnIdentifier);
@@ -207,5 +200,14 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
       }
     }
     return columnReverseDictionaryInfo;
+  }
+
+  @Override public void clearAccessCount(List<DictionaryColumnUniqueIdentifier> keys) {
+    for (DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier : keys) {
+      Dictionary cacheable = (Dictionary) carbonLRUCache.get(
+          getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
+              CacheType.REVERSE_DICTIONARY));
+      cacheable.clear();
+    }
   }
 }

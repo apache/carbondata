@@ -17,12 +17,12 @@
 
 package org.apache.carbondata.spark.util
 
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.DataType
 
 object DataTypeConverterUtil {
   def convertToCarbonType(dataType: String): DataType = {
     dataType.toLowerCase match {
-      case "string" => DataType.STRING
+      case "string" | "char" => DataType.STRING
       case "int" => DataType.INT
       case "integer" => DataType.INT
       case "tinyint" => DataType.SHORT
@@ -31,8 +31,10 @@ object DataTypeConverterUtil {
       case "bigint" => DataType.LONG
       case "numeric" => DataType.DOUBLE
       case "double" => DataType.DOUBLE
+      case "float" => DataType.DOUBLE
       case "decimal" => DataType.DECIMAL
       case "timestamp" => DataType.TIMESTAMP
+      case "date" => DataType.DATE
       case "array" => DataType.ARRAY
       case "struct" => DataType.STRUCT
       case _ => convertToCarbonTypeForSpark2(dataType)
@@ -50,8 +52,10 @@ object DataTypeConverterUtil {
       case "biginttype" => DataType.LONG
       case "numerictype" => DataType.DOUBLE
       case "doubletype" => DataType.DOUBLE
+      case "floattype" => DataType.DOUBLE
       case "decimaltype" => DataType.DECIMAL
       case "timestamptype" => DataType.TIMESTAMP
+      case "datetype" => DataType.DATE
       case "arraytype" => DataType.ARRAY
       case "structtype" => DataType.STRUCT
       case _ => sys.error(s"Unsupported data type: $dataType")
@@ -65,8 +69,10 @@ object DataTypeConverterUtil {
       case DataType.INT => "int"
       case DataType.LONG => "bigint"
       case DataType.DOUBLE => "double"
+      case DataType.FLOAT => "double"
       case DataType.DECIMAL => "decimal"
       case DataType.TIMESTAMP => "timestamp"
+      case DataType.DATE => "date"
       case DataType.ARRAY => "array"
       case DataType.STRUCT => "struct"
     }

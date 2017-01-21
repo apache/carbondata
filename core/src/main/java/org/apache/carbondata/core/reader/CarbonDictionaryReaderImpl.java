@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.core.reader;
@@ -25,12 +23,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.carbondata.common.factory.CarbonCommonFactory;
 import org.apache.carbondata.core.cache.dictionary.ColumnDictionaryChunkIterator;
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.carbon.ColumnIdentifier;
-import org.apache.carbondata.core.carbon.path.CarbonTablePath;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.ColumnIdentifier;
+import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.PathService;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.ColumnDictionaryChunk;
 
 import org.apache.thrift.TBase;
@@ -137,9 +135,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
         readDictionaryMetadataFile();
     List<ColumnDictionaryChunk> columnDictionaryChunks =
         read(carbonDictionaryColumnMetaChunks, startOffset, endOffset);
-    Iterator<byte[]> columnDictionaryChunkWrapper =
-        new ColumnDictionaryChunkIterator(columnDictionaryChunks);
-    return columnDictionaryChunkWrapper;
+    return (Iterator<byte[]>) new ColumnDictionaryChunkIterator(columnDictionaryChunks);
   }
 
   /**
@@ -174,9 +170,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
     // open dictionary file thrift reader
     openThriftReader();
     // read the required number of chunks from dictionary file
-    List<ColumnDictionaryChunk> columnDictionaryChunks =
-        readDictionaryFile(startOffset, dictionaryChunkCountsToBeRead);
-    return columnDictionaryChunks;
+    return readDictionaryFile(startOffset, dictionaryChunkCountsToBeRead);
   }
 
   /**

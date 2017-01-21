@@ -16,14 +16,14 @@
  */
 package org.apache.carbondata.spark
 
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
  /**
   * Carbon column validator
   */
 class CarbonColumnValidator extends ColumnValidator {
-  def validateColumns(allColumns: Seq[ColumnSchema]) {
+  def validateColumns(allColumns: Seq[ColumnSchema]): Unit = {
     allColumns.foreach { columnSchema =>
       val colWithSameId = allColumns.filter { x =>
         x.getColumnUniqueId.equals(columnSchema.getColumnUniqueId)

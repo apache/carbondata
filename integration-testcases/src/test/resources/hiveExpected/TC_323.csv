@@ -1,7 +1,0 @@
-ActiveCountry StringType,ActiveDistrict StringType,deliveryCity StringType,Sum_Latest_YEAR LongType
-Chinese,hongshan,zhuzhou,2015
-Chinese,longgang,zhuzhou,6045
-Chinese,longhua,zhuzhou,6045
-Chinese,tianyuan,zhuzhou,6045
-Chinese,yichang,zhuzhou,2015
-Chinese,yuhua,zhuzhou,8060

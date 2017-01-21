@@ -1,0 +1,148 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.carbondata.spark.testsuite.directdictionary
+
+import java.sql.Date
+
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.hive.HiveContext
+import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
+/**
+  * Test Class for detailed query on timestamp datatypes
+  *
+  *
+  */
+class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll {
+  var hiveContext: HiveContext = _
+
+  override def beforeAll {
+    try {
+      CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "true")
+      sql("drop table if exists directDictionaryTable ")
+      sql("drop table if exists directDictionaryTable_hive ")
+      sql(
+        "CREATE TABLE if not exists directDictionaryTable (empno int,doj date, " +
+          "salary int) " +
+          "STORED BY 'org.apache.carbondata.format'"
+      )
+
+      sql(
+        "CREATE TABLE if not exists directDictionaryTable_hive (empno int,doj date, " +
+          "salary int) " +
+          "row format delimited fields terminated by ','"
+      )
+
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+      val csvFilePath = s"$resourcesPath/datasamplefordate.csv"
+      sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable OPTIONS" +
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')" )
+      sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable_hive")
+      sql("select * from directDictionaryTable_hive").show(false)
+    } catch {
+      case x: Throwable =>
+        x.printStackTrace()
+        CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "dd-MM-yyyy")
+    }
+  }
+
+  test("test direct dictionary for not null condition") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj is not null"),
+      Seq(Row(Date.valueOf("2016-03-14")),
+        Row(Date.valueOf("2016-04-14"))
+      )
+    )
+  }
+
+  test("test direct dictionary for getting all the values") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable"),
+      Seq(Row(Date.valueOf("2016-03-14")),
+        Row(Date.valueOf("2016-04-14")),
+        Row(null)
+      )
+    )
+  }
+
+  test("test direct dictionary for not equals condition") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj != '2016-04-14 00:00:00'"),
+      Seq(Row(Date.valueOf("2016-03-14"))
+      )
+    )
+  }
+
+  test("test direct dictionary for null condition") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj is null"),
+      Seq(Row(null)
+      )
+    )
+  }
+
+  test("select doj from directDictionaryTable with equals filter") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj = '2016-03-14 00:00:00'"),
+      Seq(Row(Date.valueOf("2016-03-14")))
+    )
+
+  }
+
+  test("select doj from directDictionaryTable with regexp_replace equals filter") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where regexp_replace(doj, '-', '/') = '2016/03/14'"),
+      Seq(Row(Date.valueOf("2016-03-14")))
+    )
+  }
+
+  test("select doj from directDictionaryTable with regexp_replace NOT IN filter") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14')"),
+      sql("select doj from directDictionaryTable_hive where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14')")
+    )
+  }
+
+  test("select doj from directDictionaryTable with greater than filter") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj > '2016-03-14 00:00:00'"),
+      Seq(Row(Date.valueOf("2016-04-14")))
+    )
+  }
+
+  test("select count(doj) from directDictionaryTable") {
+    checkAnswer(
+      sql("select count(doj) from directDictionaryTable"),
+      Seq(Row(2))
+    )
+  }
+
+  override def afterAll {
+    sql("drop table directDictionaryTable")
+    sql("drop table directDictionaryTable_hive")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "dd-MM-yyyy")
+    CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
+  }
+}

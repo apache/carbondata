@@ -18,6 +18,7 @@
 package org.apache.spark.sql
 
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
 import org.apache.spark.sql.hive.HiveContext
@@ -104,6 +105,36 @@ case class DropDatabase(dbName: String, isCascade: Boolean, sql: String)
   override def output: Seq[AttributeReference] = {
     Seq()
   }
+}
+
+case class UseDatabase(sql: String) extends LogicalPlan with Command {
+  override def children: Seq[LogicalPlan] = Seq.empty
+  override def output: Seq[AttributeReference] = {
+    Seq()
+  }
+}
+
+case class ProjectForUpdate(
+    table: UnresolvedRelation,
+    columns: List[String],
+    children: Seq[LogicalPlan] ) extends LogicalPlan with Command {
+  override def output: Seq[AttributeReference] = Seq.empty
+}
+
+case class UpdateTable(
+    table: UnresolvedRelation,
+    columns: List[String],
+    selectStmt: String,
+    filer: String) extends LogicalPlan {
+  override def children: Seq[LogicalPlan] = Seq.empty
+  override def output: Seq[AttributeReference] = Seq.empty
+}
+
+case class DeleteRecords(
+    statement: String,
+    table: UnresolvedRelation) extends LogicalPlan {
+  override def children: Seq[LogicalPlan] = Seq.empty
+  override def output: Seq[AttributeReference] = Seq.empty
 }
 
 /**

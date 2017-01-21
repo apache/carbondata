@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.core.metadata;
@@ -22,6 +20,8 @@ package org.apache.carbondata.core.metadata;
 import java.io.Serializable;
 
 /**
+ * DO NOT MODIFY THIS CLASS AND PACKAGE NAME, BECAUSE
+ * IT IS SERIALIZE TO STORE
  * It holds Value compression metadata for one data column
  */
 public class ValueEncoderMeta implements Serializable {
@@ -40,7 +40,7 @@ public class ValueEncoderMeta implements Serializable {
    */
   private Object uniqueValue;
 
-  private int mantissa;
+  private int decimal;
 
   private char type;
 
@@ -70,12 +70,12 @@ public class ValueEncoderMeta implements Serializable {
     this.uniqueValue = uniqueValue;
   }
 
-  public int getMantissa() {
-    return mantissa;
+  public int getDecimal() {
+    return decimal;
   }
 
-  public void setMantissa(int mantissa) {
-    this.mantissa = mantissa;
+  public void setDecimal(int decimal) {
+    this.decimal = decimal;
   }
 
   public char getType() {

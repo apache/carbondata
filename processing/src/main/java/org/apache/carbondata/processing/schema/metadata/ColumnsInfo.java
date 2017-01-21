@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.processing.schema.metadata;
@@ -216,35 +214,14 @@ public class ColumnsInfo {
   }
 
   /**
-   * @return Returns the batchSize.
-   */
-  public int getBatchSize() {
-    return batchSize;
-  }
-
-  /**
    * @param batchSize The batchSize to set.
    */
   public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
   }
 
-  /**
-   * @return Returns the isInitialLoad.
-   */
-  public boolean isAggregateLoad() {
-    return isAggregateLoad;
-  }
-
   public void setAggregateLoad(boolean isAggregateLoad) {
     this.isAggregateLoad = isAggregateLoad;
-  }
-
-  /**
-   * @return Returns the storeType.
-   */
-  public String getStoreType() {
-    return storeType;
   }
 
   /**
@@ -297,13 +274,6 @@ public class ColumnsInfo {
   }
 
   /**
-   * @return Returns the propColumns.
-   */
-  public List<String>[] getPropColumns() {
-    return propColumns;
-  }
-
-  /**
    * @param propColumns The propColumns to set.
    */
   public void setPropColumns(List<String>[] propColumns) {
@@ -332,13 +302,6 @@ public class ColumnsInfo {
   }
 
   /**
-   * @param timDimIndexEnd The timDimIndexEnd to set.
-   */
-  public void setTimDimIndexEnd(int timDimIndexEnd) {
-    this.timDimIndexEnd = timDimIndexEnd;
-  }
-
-  /**
    * @return Returns the timeOrdinalIndices.
    */
   public int[] getTimeOrdinalIndices() {
@@ -353,24 +316,10 @@ public class ColumnsInfo {
   }
 
   /**
-   * @return Returns the timeOrdinalCols.
-   */
-  public String[] getTimeOrdinalCols() {
-    return timeOrdinalCols;
-  }
-
-  /**
    * @param timeOrdinalCols The timeOrdinalCols to set.
    */
   public void setTimeOrdinalCols(String[] timeOrdinalCols) {
     this.timeOrdinalCols = timeOrdinalCols;
-  }
-
-  /**
-   * @return Returns the propTypes.
-   */
-  public List<String>[] getPropTypes() {
-    return propTypes;
   }
 
   /**
@@ -392,13 +341,6 @@ public class ColumnsInfo {
    */
   public void setBaseStoreLocation(String baseStoreLocation) {
     this.baseStoreLocation = baseStoreLocation;
-  }
-
-  /**
-   * @return Returns the dimHierRel.
-   */
-  public String[] getDimHierRel() {
-    return dimHierRel;
   }
 
   /**
@@ -429,22 +371,6 @@ public class ColumnsInfo {
    */
   public boolean[] getDimsPresent() {
     return dimsPresent;
-  }
-
-  /**
-   * setDimsPresent
-   *
-   * @param dimsPresent
-   */
-  public void setDimsPresent(boolean[] dimsPresent) {
-    this.dimsPresent = dimsPresent;
-  }
-
-  /**
-   * @return Returns the measureColumns.
-   */
-  public String[] getMeasureColumns() {
-    return measureColumns;
   }
 
   /**

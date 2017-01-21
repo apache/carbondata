@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.processing.surrogatekeysgenerator.csvbased;
@@ -32,11 +30,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.mdkeygen.file.IFileManagerComposite;
@@ -70,7 +67,6 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
    * columnsInfo
    */
   protected ColumnsInfo columnsInfo;
-  protected IFileManagerComposite measureFilemanager;
   /**
    * primary key max surrogate key map
    */
@@ -227,20 +223,6 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
       connection.close();
     }
   }
-
-  public abstract void writeDataToFileAndCloseStreams() throws KettleException, KeyGenException;
-
-  /**
-   * Search entry and insert if not found in store.
-   *
-   * @param val
-   * @param hier
-   * @return
-   * @throws KeyGenException
-   * @throws KettleException
-   */
-  protected abstract byte[] getHierFromStore(int[] val, String hier, int primaryKey)
-      throws KettleException;
 
   /**
    * Search entry and insert if not found in store.

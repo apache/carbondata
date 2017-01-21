@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.core.cache.dictionary;
@@ -22,21 +20,19 @@ package org.apache.carbondata.core.cache.dictionary;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.carbondata.common.factory.CarbonCommonFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
-import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReader;
+import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.DictionaryService;
 import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CarbonUtilException;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * Abstract class which implements methods common to reverse and forward dictionary cache
@@ -82,30 +78,6 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
     } catch (NumberFormatException e) {
       thread_pool_size = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
     }
-  }
-
-  /**
-   * This method will check if dictionary and its metadata file exists for a given column
-   *
-   * @param dictionaryColumnUniqueIdentifier unique identifier which contains dbName,
-   *                                         tableName and columnIdentifier
-   * @return
-   */
-  protected boolean isFileExistsForGivenColumn(
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
-    PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
-            dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
-
-    String dictionaryFilePath =
-        carbonTablePath.getDictionaryFilePath(dictionaryColumnUniqueIdentifier
-            .getColumnIdentifier().getColumnId());
-    String dictionaryMetadataFilePath =
-        carbonTablePath.getDictionaryMetaFilePath(dictionaryColumnUniqueIdentifier
-            .getColumnIdentifier().getColumnId());
-    // check if both dictionary and its metadata file exists for a given column
-    return CarbonUtil.isFileExists(dictionaryFilePath) && CarbonUtil
-        .isFileExists(dictionaryMetadataFilePath);
   }
 
   /**
@@ -162,8 +134,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
         carbonTablePath.getDictionaryMetaFilePath(dictionaryColumnUniqueIdentifier
             .getColumnIdentifier().getColumnId());
     FileFactory.FileType fileType = FileFactory.getFileType(dictionaryFilePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(dictionaryFilePath, fileType);
-    return carbonFile;
+    return FileFactory.getCarbonFile(dictionaryFilePath, fileType);
   }
 
   /**
@@ -174,65 +145,62 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
    *                                         tableName and columnIdentifier
    * @param dictionaryInfo
    * @param lruCacheKey
-   * @param loadSortIndex                    read and load sort index file in memory
-   * @throws CarbonUtilException in case memory is not sufficient to load dictionary into memory
+   * @throws IOException                    in case memory is not sufficient to load dictionary
+   *                                        into memory
    */
   protected void checkAndLoadDictionaryData(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
       DictionaryInfo dictionaryInfo, String lruCacheKey, boolean loadSortIndex)
-      throws CarbonUtilException {
-    try {
-      // read last segment dictionary meta chunk entry to get the end offset of file
-      CarbonFile carbonFile = getDictionaryMetaCarbonFile(dictionaryColumnUniqueIdentifier);
-      boolean dictionaryMetaFileModified =
-          isDictionaryMetaFileModified(carbonFile, dictionaryInfo.getFileTimeStamp(),
-              dictionaryInfo.getDictionaryMetaFileLength());
-      // if dictionary metadata file is modified then only read the last entry from dictionary
-      // meta file
-      if (dictionaryMetaFileModified) {
-        synchronized (dictionaryInfo) {
-          carbonFile = getDictionaryMetaCarbonFile(dictionaryColumnUniqueIdentifier);
-          dictionaryMetaFileModified =
-              isDictionaryMetaFileModified(carbonFile, dictionaryInfo.getFileTimeStamp(),
-                  dictionaryInfo.getDictionaryMetaFileLength());
-          // Double Check :
-          // if dictionary metadata file is modified then only read the last entry from dictionary
-          // meta file
-          if (dictionaryMetaFileModified) {
-            CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk =
-                readLastChunkFromDictionaryMetadataFile(dictionaryColumnUniqueIdentifier);
-            // required size will be size total size of file - offset till file is
-            // already read
-            long requiredSize =
-                carbonDictionaryColumnMetaChunk.getEnd_offset() - dictionaryInfo.getMemorySize();
-            if (requiredSize > 0) {
-              boolean columnAddedToLRUCache =
-                  carbonLRUCache.put(lruCacheKey, dictionaryInfo, requiredSize);
-              // if column is successfully added to lru cache then only load the
-              // dictionary data
-              if (columnAddedToLRUCache) {
-                // load dictionary data
-                loadDictionaryData(dictionaryInfo, dictionaryColumnUniqueIdentifier,
-                    dictionaryInfo.getMemorySize(), carbonDictionaryColumnMetaChunk.getEnd_offset(),
-                    loadSortIndex);
-                // set the end offset till where file is read
-                dictionaryInfo
-                    .setOffsetTillFileIsRead(carbonDictionaryColumnMetaChunk.getEnd_offset());
-                dictionaryInfo.setFileTimeStamp(carbonFile.getLastModifiedTime());
-                dictionaryInfo.setDictionaryMetaFileLength(carbonFile.getSize());
-              } else {
-                throw new CarbonUtilException(
-                    "Cannot load dictionary into memory. Not enough memory available");
-              }
+      throws IOException {
+    // read last segm
+    // ent dictionary meta chunk entry to get the end offset of file
+    CarbonFile carbonFile = getDictionaryMetaCarbonFile(dictionaryColumnUniqueIdentifier);
+    boolean dictionaryMetaFileModified =
+        isDictionaryMetaFileModified(carbonFile, dictionaryInfo.getFileTimeStamp(),
+            dictionaryInfo.getDictionaryMetaFileLength());
+    // if dictionary metadata file is modified then only read the last entry from dictionary
+    // meta file
+    if (dictionaryMetaFileModified) {
+      synchronized (dictionaryInfo) {
+        carbonFile = getDictionaryMetaCarbonFile(dictionaryColumnUniqueIdentifier);
+        dictionaryMetaFileModified =
+            isDictionaryMetaFileModified(carbonFile, dictionaryInfo.getFileTimeStamp(),
+                dictionaryInfo.getDictionaryMetaFileLength());
+        // Double Check :
+        // if dictionary metadata file is modified then only read the last entry from dictionary
+        // meta file
+        if (dictionaryMetaFileModified) {
+          CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk =
+              readLastChunkFromDictionaryMetadataFile(dictionaryColumnUniqueIdentifier);
+          // required size will be size total size of file - offset till file is
+          // already read
+          long requiredSize =
+              carbonDictionaryColumnMetaChunk.getEnd_offset() - dictionaryInfo.getMemorySize();
+          if (requiredSize > 0) {
+            boolean columnAddedToLRUCache =
+                carbonLRUCache.put(lruCacheKey, dictionaryInfo, requiredSize);
+            // if column is successfully added to lru cache then only load the
+            // dictionary data
+            if (columnAddedToLRUCache) {
+              // load dictionary data
+              loadDictionaryData(dictionaryInfo, dictionaryColumnUniqueIdentifier,
+                  dictionaryInfo.getMemorySize(), carbonDictionaryColumnMetaChunk.getEnd_offset(),
+                  loadSortIndex);
+              // set the end offset till where file is read
+              dictionaryInfo
+                  .setOffsetTillFileIsRead(carbonDictionaryColumnMetaChunk.getEnd_offset());
+              dictionaryInfo.setFileTimeStamp(carbonFile.getLastModifiedTime());
+              dictionaryInfo.setDictionaryMetaFileLength(carbonFile.getSize());
+            } else {
+              throw new DictionaryBuilderException(
+                  "Cannot load dictionary into memory. Not enough memory available");
             }
           }
         }
       }
-      // increment the column access count
-      incrementDictionaryAccessCount(dictionaryInfo);
-    } catch (IOException e) {
-      throw new CarbonUtilException(e.getMessage());
     }
+    // increment the column access count
+    incrementDictionaryAccessCount(dictionaryInfo);
   }
 
   /**
@@ -242,9 +210,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
    * @return
    */
   protected String getLruCacheKey(String columnIdentifier, CacheType cacheType) {
-    String lruCacheKey =
-        columnIdentifier + CarbonCommonConstants.UNDERSCORE + cacheType.getCacheName();
-    return lruCacheKey;
+    return columnIdentifier + CarbonCommonConstants.UNDERSCORE + cacheType.getCacheName();
   }
 
   /**

@@ -1,30 +1,27 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.core.keygenerator.mdkey;
 
-import org.junit.Test;
-
-import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+
+import org.junit.Test;
 
 public class NumberCompressorUnitTest {
 
@@ -75,7 +72,7 @@ public class NumberCompressorUnitTest {
     numberCompressor = new NumberCompressor(cardinality);
     int[] expected_result = new int[] { 6, 4, 0, 2 };
     byte[] keys = new byte[] { 100, 2 };
-    int[] result = numberCompressor.unCompress(keys);
+    int[] result = numberCompressor.unCompress(keys, 0, keys.length);
     assertThat(result, is(equalTo(expected_result)));
   }
 
@@ -85,7 +82,7 @@ public class NumberCompressorUnitTest {
     int[] expected_result =
         new int[] { 0, 10, 0, 2, 0, 10, 0, 2, 0, 10, 0, 2, 0, 10, 0, 2, 0, 10, 0, 2 };
     byte[] keys = new byte[] { 10, 2, 10, 2, 10, 2, 10, 2, 10, 2 };
-    int[] result = numberCompressor.unCompress(keys);
+    int[] result = numberCompressor.unCompress(keys, 0, keys.length);
     System.out.println(result);
     assertThat(result, is(equalTo(expected_result)));
   }
@@ -95,7 +92,7 @@ public class NumberCompressorUnitTest {
     numberCompressor = new NumberCompressor(cardinality);
     int[] expected_result = new int[] { 16, 4, 10, 1, 2, 64, 32, 80, 8, 20, 11 };
     byte[] keys = new byte[] { 100, 2, 10, 2, 10, 2, 10, 2, 10, 11 };
-    int[] result = numberCompressor.unCompress(keys);
+    int[] result = numberCompressor.unCompress(keys, 0, keys.length);
     assertThat(result, is(equalTo(expected_result)));
   }
 

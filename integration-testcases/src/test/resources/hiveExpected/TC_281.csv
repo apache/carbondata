@@ -1,8 +1,0 @@
-Activecity StringType,ActiveCountry StringType,ActiveDistrict StringType,Min_imei StringType,Max_imei StringType
-changsha,Chinese,yuhua,1AA1000,1AA10008
-guangzhou,Chinese,longhua,1AA1,1AA100075
-shenzhen,Chinese,longgang,1AA100013,1AA100083
-wuhan,Chinese,hongshan,1AA10,1AA100078
-xiangtan,Chinese,xiangtan,1AA10000,1AA100084
-yichang,Chinese,yichang,1AA100,1AA100076
-zhuzhou,Chinese,tianyuan,1AA100002,1AA100081

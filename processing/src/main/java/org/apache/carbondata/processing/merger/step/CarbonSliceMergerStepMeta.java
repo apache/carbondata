@@ -1,28 +1,24 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.carbondata.processing.merger.step;
 
 import java.util.List;
 import java.util.Map;
-
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
@@ -357,15 +353,6 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
   }
 
   /**
-   * This method will return mdkey size
-   *
-   * @return mdkey size
-   */
-  public String getMdkeySize() {
-    return mdkeySize;
-  }
-
-  /**
    * This method will be used to set the mdkey
    *
    * @param mdkeySize
@@ -375,30 +362,12 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
   }
 
   /**
-   * This method will be used to get the measure count
-   *
-   * @return measure count
-   */
-  public String getMeasureCount() {
-    return measureCount;
-  }
-
-  /**
    * This method will be used to set the measure count
    *
    * @param measureCount
    */
   public void setMeasureCount(String measureCount) {
     this.measureCount = measureCount;
-  }
-
-  /**
-   * This method will be used to get the heir and its key suze string
-   *
-   * @return heirAndKeySize
-   */
-  public String getHeirAndKeySize() {
-    return heirAndKeySize;
   }
 
   /**
@@ -439,38 +408,10 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
   }
 
   /**
-   * @return the isGroupByEnabled
-   */
-  public boolean isGroupByEnabled() {
-    return Boolean.parseBoolean(groupByEnabled);
-  }
-
-  /**
    * @param isGroupByEnabled the isGroupByEnabled to set
    */
   public void setGroupByEnabled(String isGroupByEnabled) {
     this.groupByEnabled = isGroupByEnabled;
-  }
-
-  /**
-   * @return the aggregators
-   */
-  public String[] getAggregators() {
-    return aggregatorString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
-  }
-
-  /**
-   * @return the aggregatorClass
-   */
-  public String[] getAggregatorClass() {
-    return aggregatorClassString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
-  }
-
-  /**
-   * @return the aggregatorString
-   */
-  public String getAggregatorString() {
-    return aggregatorString;
   }
 
   /**
@@ -481,24 +422,10 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
   }
 
   /**
-   * @return the aggregatorClassString
-   */
-  public String getAggregatorClassString() {
-    return aggregatorClassString;
-  }
-
-  /**
    * @param aggregatorClassString the aggregatorClassString to set
    */
   public void setAggregatorClassString(String aggregatorClassString) {
     this.aggregatorClassString = aggregatorClassString;
-  }
-
-  /**
-   * @return the factDimLensString
-   */
-  public String getFactDimLensString() {
-    return factDimLensString;
   }
 
   /**
@@ -508,19 +435,8 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
     this.factDimLensString = factDimLensString1;
   }
 
-  public String getLevelAnddataTypeString() {
-    return levelAnddataTypeString;
-  }
-
   public void setLevelAnddataTypeString(String levelAnddataTypeString) {
     this.levelAnddataTypeString = levelAnddataTypeString;
-  }
-
-  /**
-   * @return partitionId
-   */
-  public String getPartitionID() {
-    return partitionID;
   }
 
   /**
@@ -528,14 +444,6 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
    */
   public void setPartitionID(String partitionID) {
     this.partitionID = partitionID;
-  }
-
-  /**
-   * return segmentId
-   * @return
-   */
-  public int getSegmentId() {
-    return Integer.parseInt(segmentId);
   }
 
   /**

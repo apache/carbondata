@@ -1,8 +1,0 @@
-ActiveCountry StringType,Activecity StringType,DistinctCount_AMSize LongType,Sum_deviceInformationId LongType,Sum_gamePointId DoubleType
-Chinese,changsha,8,22233876,400170.0
-Chinese,guangzhou,7,7502602,145725.62
-Chinese,shenzhen,7,13926989,229691.0
-Chinese,wuhan,8,16157023,336299.96999999986
-Chinese,xiangtan,7,46110689,475170.0
-Chinese,yichang,6,14806699,157375.0
-Chinese,zhuzhou,6,9544129,188323.0

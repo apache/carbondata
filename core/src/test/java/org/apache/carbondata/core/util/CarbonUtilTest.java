@@ -1,43 +1,41 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.carbondata.core.util;
 
 import mockit.Mock;
 import mockit.MockUp;
 
-import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
-import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
-import org.apache.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
-import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
-import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.datastorage.store.columnar.ColumnGroupModel;
-import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
-import org.apache.carbondata.core.datastorage.store.filesystem.LocalCarbonFile;
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
+import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
+import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
+import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
-import org.apache.carbondata.scan.model.QueryDimension;
+import org.apache.carbondata.core.scan.model.QueryDimension;
+
 import org.apache.hadoop.security.UserGroupInformation;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -57,12 +55,9 @@ import static org.hamcrest.CoreMatchers.is;
 
 public class CarbonUtilTest {
 
-  private static DimensionChunkAttributes chunkAttribute;
-
   @BeforeClass public static void setUp() throws Exception {
     new File("../core/src/test/resources/testFile.txt").createNewFile();
     new File("../core/src/test/resources/testDatabase").mkdirs();
-    chunkAttribute = new DimensionChunkAttributes();
   }
 
   @Test public void testGetBitLengthForDimensionGiveProperValue() {
@@ -121,15 +116,15 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToDeleteFolderForValidPath()
-      throws CarbonUtilException, InterruptedException {
+      throws InterruptedException, IOException {
     File testDir = new File("../core/src/test/resources/testDir");
     testDir.mkdirs();
     CarbonUtil.deleteFoldersAndFiles(testDir);
     assertTrue(!testDir.isDirectory());
   }
 
-  @Test(expected = CarbonUtilException.class) public void testToDeleteFolderWithIOException()
-      throws CarbonUtilException, InterruptedException {
+  @Test(expected = IOException.class) public void testToDeleteFolderWithIOException()
+      throws InterruptedException, IOException {
     File testDir = new File("../core/src/test/resources/testDir");
     new MockUp<UserGroupInformation>() {
       @SuppressWarnings("unused") @Mock public UserGroupInformation getLoginUser()
@@ -140,9 +135,9 @@ public class CarbonUtilTest {
     CarbonUtil.deleteFoldersAndFiles(testDir);
   }
 
-  @Test(expected = CarbonUtilException.class)
+  @Test(expected = InterruptedException.class)
   public void testToDeleteFolderWithInterruptedException()
-      throws CarbonUtilException, InterruptedException {
+      throws InterruptedException, IOException {
     File testDir = new File("../core/src/test/resources/testDir");
     new MockUp<UserGroupInformation>() {
       @SuppressWarnings("unused") @Mock public UserGroupInformation getLoginUser()
@@ -154,7 +149,7 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToDeleteFileForValidPath()
-      throws CarbonUtilException, InterruptedException {
+      throws InterruptedException, IOException {
     File testDir = new File("../core/src/test/resources/testDir/testFile.csv");
     testDir.mkdirs();
     CarbonUtil.deleteFoldersAndFiles(testDir);
@@ -162,7 +157,7 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToDeleteFoldersAndFilesForValidFolder()
-      throws CarbonUtilException, InterruptedException {
+      throws InterruptedException, IOException {
     String folderPath = "../core/src/test/resources/testDir/carbonDir";
     new File(folderPath).mkdirs();
     LocalCarbonFile testDir = new LocalCarbonFile(folderPath);
@@ -170,8 +165,8 @@ public class CarbonUtilTest {
     assertTrue(!testDir.exists());
   }
 
-  @Test(expected = CarbonUtilException.class) public void testToDeleteFoldersAndFilesWithIOException()
-      throws CarbonUtilException, InterruptedException {
+  @Test(expected = IOException.class) public void testToDeleteFoldersAndFilesWithIOException()
+      throws InterruptedException, IOException {
     LocalCarbonFile testDir = new LocalCarbonFile("../core/src/test/resources/testDir/carbonDir");
     new MockUp<UserGroupInformation>() {
       @SuppressWarnings("unused") @Mock public UserGroupInformation getLoginUser()
@@ -182,8 +177,8 @@ public class CarbonUtilTest {
     CarbonUtil.deleteFoldersAndFiles(testDir);
   }
 
-  @Test(expected = CarbonUtilException.class) public void testToDeleteFoldersAndFilesWithInterruptedException()
-      throws CarbonUtilException, InterruptedException {
+  @Test(expected = InterruptedException.class) public void testToDeleteFoldersAndFilesWithInterruptedException()
+      throws InterruptedException, IOException {
     LocalCarbonFile testDir = new LocalCarbonFile("../core/src/test/resources/testDir/carbonDir");
     new MockUp<UserGroupInformation>() {
       @SuppressWarnings("unused") @Mock public UserGroupInformation getLoginUser()
@@ -195,7 +190,7 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToDeleteFoldersAndFilesForValidCarbonFile()
-      throws CarbonUtilException, InterruptedException {
+      throws InterruptedException, IOException {
     LocalCarbonFile testDir =
         new LocalCarbonFile("../core/src/test/resources/testDir/testCarbonFile");
     testDir.createNewFile();
@@ -203,27 +198,27 @@ public class CarbonUtilTest {
     assertTrue(!testDir.exists());
   }
 
-  @Test public void testToGetBadLogPath() throws CarbonUtilException, InterruptedException {
+  @Test public void testToGetBadLogPath() throws InterruptedException {
     new MockUp<CarbonProperties>() {
       @SuppressWarnings("unused") @Mock public String getProperty(String key) {
         return "../unibi-solutions/system/carbon/badRecords";
       }
     };
     String badLogStoreLocation = CarbonUtil.getBadLogPath("badLogPath");
-    assertEquals(badLogStoreLocation, "../unibi-solutions/system/carbon/badRecords/badLogPath");
+    assertEquals(badLogStoreLocation.replace("\\", "/"), "../unibi-solutions/system/carbon/badRecords/badLogPath");
   }
 
   @Test public void testToDeleteFoldersAndFilesForCarbonFileSilently()
-      throws CarbonUtilException, InterruptedException {
+      throws IOException, InterruptedException {
     LocalCarbonFile testDir = new LocalCarbonFile("../core/src/test/resources/testDir");
     testDir.createNewFile();
     CarbonUtil.deleteFoldersAndFilesSilent(testDir);
     assertTrue(!testDir.exists());
   }
 
-  @Test(expected = CarbonUtilException.class)
+  @Test(expected = IOException.class)
   public void testToDeleteFoldersAndFilesSintlyWithIOException()
-      throws CarbonUtilException, IOException {
+      throws IOException, InterruptedException {
     new MockUp<UserGroupInformation>() {
       @SuppressWarnings("unused") @Mock public UserGroupInformation getLoginUser()
           throws IOException {
@@ -235,9 +230,9 @@ public class CarbonUtilTest {
     CarbonUtil.deleteFoldersAndFilesSilent(testDir);
   }
 
-  @Test(expected = CarbonUtilException.class)
+  @Test(expected = InterruptedException.class)
   public void testToDeleteFoldersAndFilesSintlyWithInterruptedException()
-      throws CarbonUtilException, IOException {
+      throws IOException, InterruptedException {
     new MockUp<UserGroupInformation>() {
       @SuppressWarnings("unused") @Mock public UserGroupInformation getLoginUser()
           throws InterruptedException {
@@ -249,7 +244,7 @@ public class CarbonUtilTest {
     CarbonUtil.deleteFoldersAndFilesSilent(testDir);
   }
 
-  @Test public void testToDeleteFiles() throws IOException, CarbonUtilException {
+  @Test public void testToDeleteFiles() throws IOException {
     String baseDirectory = "../core/src/test/resources/";
     File file1 = new File(baseDirectory + "File1.txt");
     File file2 = new File(baseDirectory + "File2.txt");
@@ -262,51 +257,30 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToGetNextLesserValue() {
-    byte[] dataChunks = { new Byte("5"), new Byte("15"), new Byte("30"), new Byte("50") };
-    byte[] compareValues = { new Byte("5"), new Byte("15"), new Byte("30") };
-    new MockUp<ByteUtil.UnsafeComparer>() {
-      @SuppressWarnings("unused") @Mock
-      public int compareTo(byte[] buffer1, int offset1, int length1, byte[] buffer2, int offset2,
-          int length2) {
-        return -1;
-      }
-    };
+    byte[] dataChunks = { 5, 6, 7, 8, 9 };
+    byte[] compareValues = { 7 };
     FixedLengthDimensionDataChunk fixedLengthDataChunk =
-        new FixedLengthDimensionDataChunk(dataChunks, chunkAttribute);
-    int result = CarbonUtil.nextLesserValueToTarget(1, fixedLengthDataChunk, compareValues);
-    assertEquals(result, 0);
+        new FixedLengthDimensionDataChunk(dataChunks, null, null, 5, 1);
+    int result = CarbonUtil.nextLesserValueToTarget(2, fixedLengthDataChunk, compareValues);
+    assertEquals(result, 1);
   }
 
   @Test public void testToGetNextLesserValueToTarget() {
-    byte[] dataChunks = { new Byte("5"), new Byte("15"), new Byte("30"), new Byte("50") };
-    byte[] compareValues = { new Byte("5"), new Byte("15"), new Byte("30") };
-    new MockUp<ByteUtil.UnsafeComparer>() {
-      @SuppressWarnings("unused") @Mock
-      public int compareTo(byte[] buffer1, int offset1, int length1, byte[] buffer2, int offset2,
-          int length2) {
-        return 1;
-      }
-    };
+    byte[] dataChunks = { 7, 7, 7, 8, 9 };
+    byte[] compareValues = { 7 };
     FixedLengthDimensionDataChunk fixedLengthDataChunk =
-        new FixedLengthDimensionDataChunk(dataChunks, chunkAttribute);
-    int result = CarbonUtil.nextLesserValueToTarget(1, fixedLengthDataChunk, compareValues);
+        new FixedLengthDimensionDataChunk(dataChunks, null, null, 5, 1);
+    int result = CarbonUtil.nextLesserValueToTarget(2, fixedLengthDataChunk, compareValues);
     assertEquals(result, -1);
   }
 
   @Test public void testToGetnextGreaterValue() {
-    byte[] dataChunks = { new Byte("5"), new Byte("15"), new Byte("30"), new Byte("50") };
-    byte[] compareValues = { new Byte("5"), new Byte("15"), new Byte("30") };
-    new MockUp<ByteUtil.UnsafeComparer>() {
-      @SuppressWarnings("unused") @Mock
-      public int compareTo(byte[] buffer1, int offset1, int length1, byte[] buffer2, int offset2,
-          int length2) {
-        return 1;
-      }
-    };
+    byte[] dataChunks = { 5, 6, 7, 8, 9 };
+    byte[] compareValues = { 7 };
     FixedLengthDimensionDataChunk fixedLengthDataChunk =
-        new FixedLengthDimensionDataChunk(dataChunks, chunkAttribute);
-    int result = CarbonUtil.nextGreaterValueToTarget(1, fixedLengthDataChunk, compareValues, 4);
-    assertEquals(result, 2);
+        new FixedLengthDimensionDataChunk(dataChunks, null, null, 5, 1);
+    int result = CarbonUtil.nextGreaterValueToTarget(2, fixedLengthDataChunk, compareValues, 5);
+    assertEquals(result, 3);
   }
 
   @Test public void testToConvertToIntegerList() {
@@ -318,19 +292,12 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToGetnextGreaterValueToTarget() {
-    byte[] dataChunks = { new Byte("5"), new Byte("15"), new Byte("30"), new Byte("50") };
-    byte[] compareValues = { new Byte("5"), new Byte("15"), new Byte("30") };
-    new MockUp<ByteUtil.UnsafeComparer>() {
-      @SuppressWarnings("unused") @Mock
-      public int compareTo(byte[] buffer1, int offset1, int length1, byte[] buffer2, int offset2,
-          int length2) {
-        return 0;
-      }
-    };
+    byte[] dataChunks = { 5, 6, 7, 7, 7 };
+    byte[] compareValues = { 7 };
     FixedLengthDimensionDataChunk fixedLengthDataChunk =
-        new FixedLengthDimensionDataChunk(dataChunks, chunkAttribute);
-    int result = CarbonUtil.nextGreaterValueToTarget(1, fixedLengthDataChunk, compareValues, 4);
-    assertEquals(result, 4);
+        new FixedLengthDimensionDataChunk(dataChunks, null, null, 5, 1);
+    int result = CarbonUtil.nextGreaterValueToTarget(2, fixedLengthDataChunk, compareValues, 5);
+    assertEquals(result, 5);
   }
 
   @Test public void testToWriteLevelCardinalityFile() throws KettleException {
@@ -341,7 +308,8 @@ public class CarbonUtilTest {
         .exists());
   }
 
-  @Test public void testToGetCardinalityFromLevelMetadataFile() throws CarbonUtilException {
+  @Test public void testToGetCardinalityFromLevelMetadataFile()
+      throws IOException, InterruptedException {
     int[] cardinality = CarbonUtil.getCardinalityFromLevelMetadataFile(
         "../core/src/test/resources/testDatabase/levelmetadata_testTable.metadata");
     int[] expectedCardinality = { 10, 20, 30, 40 };
@@ -351,7 +319,7 @@ public class CarbonUtilTest {
   }
 
   @Test public void testToGetCardinalityFromLevelMetadataFileForInvalidPath()
-      throws CarbonUtilException {
+      throws IOException, InterruptedException {
     int[] cardinality = CarbonUtil.getCardinalityFromLevelMetadataFile("");
     assertEquals(cardinality, null);
   }
@@ -550,7 +518,7 @@ public class CarbonUtilTest {
     }
   }
 
-  @Test public void testToReadMetadatFile() throws CarbonUtilException {
+  @Test public void testToReadMetadatFile() throws IOException {
     new MockUp<DataFileFooterConverter>() {
       @SuppressWarnings("unused") @Mock
       public DataFileFooter readDataFileFooter(TableBlockInfo info) {
@@ -559,14 +527,17 @@ public class CarbonUtilTest {
         return fileFooter;
       }
     };
-    TableBlockInfo info = new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1);
-    
+    TableBlockInfo info =
+        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1);
+
     assertEquals(CarbonUtil.readMetadatFile(info).getVersionId().number(), 1);
   }
 
-  @Test(expected = CarbonUtilException.class) public void testToReadMetadatFileWithException()
+  @Test(expected = IOException.class)
+  public void testToReadMetadatFileWithException()
       throws Exception {
-	TableBlockInfo info = new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1);
+    TableBlockInfo info =
+        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1);
     CarbonUtil.readMetadatFile(info);
   }
 
@@ -632,7 +603,8 @@ public class CarbonUtilTest {
     file.deleteOnExit();
   }
 
-  @Test public void testToReadHeaderWithFileNotFoundException() throws IOException {
+  @Test(expected = IOException.class)
+  public void testToReadHeaderWithFileNotFoundException() throws IOException {
     new MockUp<FileFactory>() {
       @SuppressWarnings("unused") @Mock
       public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType)
@@ -644,7 +616,8 @@ public class CarbonUtilTest {
     assertEquals(null, result);
   }
 
-  @Test public void testToReadHeaderWithIOException() throws IOException {
+  @Test(expected = IOException.class)
+  public void testToReadHeaderWithIOException() throws IOException {
     new MockUp<FileFactory>() {
       @SuppressWarnings("unused") @Mock
       public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType)
@@ -688,7 +661,7 @@ public class CarbonUtilTest {
 
     List<Encoding> encodingList = new ArrayList<>();
     encodingList.add(Encoding.DELTA);
-    dataChunk.setEncoderList(encodingList);
+    dataChunk.setEncodingList(encodingList);
 
     List<ValueEncoderMeta> valueEncoderMetas = new ArrayList<>();
     ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
@@ -743,72 +716,53 @@ public class CarbonUtilTest {
     column3Schema.setColumnName("Column3");
     column3Schema.setColumnar(true);
     column3Schema.setEncodingList(Arrays.asList(Encoding.DELTA, Encoding.INVERTED_INDEX));
-    CarbonDimension carbonDimension = new CarbonDimension(column1Schema,1,1,1,1);
-    CarbonDimension carbonDimension2 = new CarbonDimension(column2Schema,2,2,2,2);
-    CarbonDimension carbonDimension3 = new CarbonDimension(column3Schema,3,3,3,3);
-    List<CarbonDimension> carbonDimensions = Arrays.asList(carbonDimension, carbonDimension2, carbonDimension3);
+    CarbonDimension carbonDimension = new CarbonDimension(column1Schema, 1, 1, 1, 1);
+    CarbonDimension carbonDimension2 = new CarbonDimension(column2Schema, 2, 2, 2, 2);
+    CarbonDimension carbonDimension3 = new CarbonDimension(column3Schema, 3, 3, 3, 3);
+    List<CarbonDimension> carbonDimensions =
+        Arrays.asList(carbonDimension, carbonDimension2, carbonDimension3);
     boolean[] result = CarbonUtil.identifyDimensionType(carbonDimensions);
-    assertThat(result, is(equalTo(new boolean[]{true, true, false})));
+    assertThat(result, is(equalTo(new boolean[] { true, true, false })));
   }
 
   @Test public void testToGetFirstIndexUsingBinarySearchWithCompareTo1() {
-    DimensionChunkAttributes dimensionChunkAttributes = new DimensionChunkAttributes();
-    new MockUp<ByteUtil.UnsafeComparer>() {
-      @SuppressWarnings("unused") @Mock public int compareTo(byte[] buffer1, int offset1, int length1, byte[] buffer2, int offset2,
-          int length2) {
-        return 1;
-      }
-    };
-    byte[] dataChunks = {10,20,30};
-    byte[] compareValue = {1,20,30};
-    FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk = new FixedLengthDimensionDataChunk(dataChunks, dimensionChunkAttributes);
-    int result = CarbonUtil.getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk,1, 3, compareValue, false);
+    byte[] dataChunks = { 10, 20, 30, 40, 50, 60 };
+    byte[] compareValue = { 5 };
+    FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk =
+        new FixedLengthDimensionDataChunk(dataChunks, null, null, 6, 1);
+    int result = CarbonUtil
+        .getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 1, 3, compareValue, false);
     assertEquals(-2, result);
   }
 
   @Test public void testToGetFirstIndexUsingBinarySearchWithCompareToLessThan0() {
-    DimensionChunkAttributes dimensionChunkAttributes = new DimensionChunkAttributes();
-    new MockUp<ByteUtil.UnsafeComparer>() {
-      @SuppressWarnings("unused") @Mock public int compareTo(byte[] buffer1, int offset1, int length1, byte[] buffer2, int offset2,
-          int length2) {
-        return -1;
-      }
-    };
-    byte[] dataChunks = {10,20,30};
-    byte[] compareValue = {1,20,30};
-    FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk = new FixedLengthDimensionDataChunk(dataChunks, dimensionChunkAttributes);
-    int result = CarbonUtil.getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk,1, 3, compareValue, false);
-    assertEquals(-5, result);
+    byte[] dataChunks = { 10, 20, 30, 40, 50, 60 };
+    byte[] compareValue = { 30 };
+    FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk =
+        new FixedLengthDimensionDataChunk(dataChunks, null, null, 6, 1);
+    int result = CarbonUtil
+        .getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 1, 3, compareValue, false);
+    assertEquals(2, result);
   }
 
   @Test public void testToGetFirstIndexUsingBinarySearchWithCompareTo0() {
-    DimensionChunkAttributes dimensionChunkAttributes = new DimensionChunkAttributes();
-    new MockUp<ByteUtil.UnsafeComparer>() {
-      @SuppressWarnings("unused") @Mock public int compareTo(byte[] buffer1, int offset1, int length1, byte[] buffer2, int offset2,
-          int length2) {
-        return 0;
-      }
-    };
-    byte[] dataChunks = {10,20,30};
-    byte[] compareValue = {1,20,30};
-    FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk = new FixedLengthDimensionDataChunk(dataChunks, dimensionChunkAttributes);
-    int result = CarbonUtil.getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk,1, 3, compareValue, false);
+    byte[] dataChunks = { 10, 10, 10, 40, 50, 60 };
+    byte[] compareValue = { 10 };
+    FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk =
+        new FixedLengthDimensionDataChunk(dataChunks, null, null, 6, 1);
+    int result = CarbonUtil
+        .getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 1, 3, compareValue, false);
     assertEquals(0, result);
   }
 
   @Test public void testToGetFirstIndexUsingBinarySearchWithMatchUpLimitTrue() {
-    DimensionChunkAttributes dimensionChunkAttributes = new DimensionChunkAttributes();
-    new MockUp<ByteUtil.UnsafeComparer>() {
-      @SuppressWarnings("unused") @Mock public int compareTo(byte[] buffer1, int offset1, int length1, byte[] buffer2, int offset2,
-          int length2) {
-        return 0;
-      }
-    };
-    byte[] dataChunks = {10,20,30};
-    byte[] compareValue = {1,20,30};
-    FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk = new FixedLengthDimensionDataChunk(dataChunks, dimensionChunkAttributes);
-    int result = CarbonUtil.getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk,1, 3, compareValue, true);
-    assertEquals(3, result);
+    byte[] dataChunks = { 10, 10, 10, 40, 50, 60 };
+    byte[] compareValue = { 10 };
+    FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk =
+        new FixedLengthDimensionDataChunk(dataChunks, null, null, 6, 1);
+    int result = CarbonUtil
+        .getFirstIndexUsingBinarySearch(fixedLengthDimensionDataChunk, 1, 3, compareValue, true);
+    assertEquals(2, result);
   }
 
   @AfterClass public static void testcleanUp() {

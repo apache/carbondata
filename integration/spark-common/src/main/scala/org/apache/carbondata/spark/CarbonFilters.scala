@@ -24,12 +24,12 @@ import org.apache.spark.sql.optimizer.AttributeReferenceWrapper
 import org.apache.spark.sql.sources
 import org.apache.spark.sql.types.StructType
 
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType
-import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn
-import org.apache.carbondata.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
-import org.apache.carbondata.scan.expression.conditional._
-import org.apache.carbondata.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
+import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
+import org.apache.carbondata.core.scan.expression.conditional._
+import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
@@ -82,6 +82,13 @@ object CarbonFilters {
           Some(new NotInExpression(getCarbonExpression(name),
             new ListExpression(
               convertToJavaList(values.map(f => getCarbonLiteralExpression(name, f)).toList))))
+
+        case sources.IsNull(name) =>
+          Some(new EqualToExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, null), true))
+        case sources.IsNotNull(name) =>
+          Some(new NotEqualsExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, null), true))
 
         case sources.And(lhs, rhs) =>
           (createFilter(lhs) ++ createFilter(rhs)).reduceOption(new AndExpression(_, _))
@@ -144,31 +151,30 @@ object CarbonFilters {
           Some(sources.EqualTo(a.name, v))
         case EqualTo(Literal(v, t), Cast(a: Attribute, _)) =>
           Some(sources.EqualTo(a.name, v))
-
-        case Not(EqualTo(a: Attribute, Literal(v, t))) => new
-            Some(sources.Not(sources.EqualTo(a.name, v)))
-        case Not(EqualTo(Literal(v, t), a: Attribute)) => new
-            Some(sources.Not(sources.EqualTo(a.name, v)))
-        case Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) => new
-            Some(sources.Not(sources.EqualTo(a.name, v)))
-        case Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) => new
-            Some(sources.Not(sources.EqualTo(a.name, v)))
-        case IsNotNull(a: Attribute) => Some(sources.IsNotNull(a.name))
-        case IsNull(a: Attribute) => Some(sources.IsNull(a.name))
+        case Not(EqualTo(a: Attribute, Literal(v, t))) =>
+          Some(sources.Not(sources.EqualTo(a.name, v)))
+        case Not(EqualTo(Literal(v, t), a: Attribute)) =>
+          Some(sources.Not(sources.EqualTo(a.name, v)))
+        case Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) =>
+          Some(sources.Not(sources.EqualTo(a.name, v)))
+        case Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) =>
+          Some(sources.Not(sources.EqualTo(a.name, v)))
+        case IsNotNull(a: Attribute) =>
+          Some(sources.IsNotNull(a.name))
+        case IsNull(a: Attribute) =>
+          Some(sources.IsNull(a.name))
         case Not(In(a: Attribute, list)) if !list.exists(!_.isInstanceOf[Literal]) =>
           val hSet = list.map(e => e.eval(EmptyRow))
           Some(sources.Not(sources.In(a.name, hSet.toArray)))
         case In(a: Attribute, list) if !list.exists(!_.isInstanceOf[Literal]) =>
           val hSet = list.map(e => e.eval(EmptyRow))
           Some(sources.In(a.name, hSet.toArray))
-        case Not(In(Cast(a: Attribute, _), list))
-          if !list.exists(!_.isInstanceOf[Literal]) =>
+        case Not(In(Cast(a: Attribute, _), list)) if !list.exists(!_.isInstanceOf[Literal]) =>
           val hSet = list.map(e => e.eval(EmptyRow))
           Some(sources.Not(sources.In(a.name, hSet.toArray)))
         case In(Cast(a: Attribute, _), list) if !list.exists(!_.isInstanceOf[Literal]) =>
           val hSet = list.map(e => e.eval(EmptyRow))
           Some(sources.In(a.name, hSet.toArray))
-
         case GreaterThan(a: Attribute, Literal(v, t)) =>
           Some(sources.GreaterThan(a.name, v))
         case GreaterThan(Literal(v, t), a: Attribute) =>
@@ -177,7 +183,6 @@ object CarbonFilters {
           Some(sources.GreaterThan(a.name, v))
         case GreaterThan(Literal(v, t), Cast(a: Attribute, _)) =>
           Some(sources.LessThan(a.name, v))
-
         case LessThan(a: Attribute, Literal(v, t)) =>
           Some(sources.LessThan(a.name, v))
         case LessThan(Literal(v, t), a: Attribute) =>
@@ -186,7 +191,6 @@ object CarbonFilters {
           Some(sources.LessThan(a.name, v))
         case LessThan(Literal(v, t), Cast(a: Attribute, _)) =>
           Some(sources.GreaterThan(a.name, v))
-
         case GreaterThanOrEqual(a: Attribute, Literal(v, t)) =>
           Some(sources.GreaterThanOrEqual(a.name, v))
         case GreaterThanOrEqual(Literal(v, t), a: Attribute) =>
@@ -195,7 +199,6 @@ object CarbonFilters {
           Some(sources.GreaterThanOrEqual(a.name, v))
         case GreaterThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
           Some(sources.LessThanOrEqual(a.name, v))
-
         case LessThanOrEqual(a: Attribute, Literal(v, t)) =>
           Some(sources.LessThanOrEqual(a.name, v))
         case LessThanOrEqual(Literal(v, t), a: Attribute) =>
@@ -241,23 +244,63 @@ object CarbonFilters {
           (transformExpression(left) ++ transformExpression(right)).reduceOption(new
               AndExpression(_, _))
 
-        case EqualTo(a: Attribute, l@Literal(v, t)) => new
-            Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-        case EqualTo(l@Literal(v, t), a: Attribute) => new
-            Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-        case EqualTo(Cast(a: Attribute, _), l@Literal(v, t)) => new
-            Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-        case EqualTo(l@Literal(v, t), Cast(a: Attribute, _)) => new
-            Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
+        case EqualTo(a: Attribute, l@Literal(v, t)) =>
+          Some(
+            new EqualToExpression(
+              transformExpression(a).get,
+              transformExpression(l).get
+            )
+          )
+        case EqualTo(l@Literal(v, t), a: Attribute) =>
+          Some(
+            new EqualToExpression(
+              transformExpression(a).get,
+              transformExpression(l).get
+            )
+          )
+        case EqualTo(Cast(a: Attribute, _), l@Literal(v, t)) =>
+          Some(
+            new EqualToExpression(
+              transformExpression(a).get,
+              transformExpression(l).get
+            )
+          )
+        case EqualTo(l@Literal(v, t), Cast(a: Attribute, _)) =>
+          Some(
+            new EqualToExpression(
+              transformExpression(a).get,
+              transformExpression(l).get
+            )
+          )
 
-        case Not(EqualTo(a: Attribute, l@Literal(v, t))) => new
-            Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case Not(EqualTo(l@Literal(v, t), a: Attribute)) => new
-            Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case Not(EqualTo(Cast(a: Attribute, _), l@Literal(v, t))) => new
-            Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case Not(EqualTo(l@Literal(v, t), Cast(a: Attribute, _))) => new
-            Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
+        case Not(EqualTo(a: Attribute, l@Literal(v, t))) =>
+          Some(
+            new NotEqualsExpression(
+              transformExpression(a).get,
+              transformExpression(l).get
+            )
+          )
+        case Not(EqualTo(l@Literal(v, t), a: Attribute)) =>
+          Some(
+            new NotEqualsExpression(
+              transformExpression(a).get,
+              transformExpression(l).get
+            )
+          )
+        case Not(EqualTo(Cast(a: Attribute, _), l@Literal(v, t))) =>
+          Some(
+            new NotEqualsExpression(
+              transformExpression(a).get,
+              transformExpression(l).get
+            )
+          )
+        case Not(EqualTo(l@Literal(v, t), Cast(a: Attribute, _))) =>
+          Some(
+            new NotEqualsExpression(
+              transformExpression(a).get,
+              transformExpression(l).get
+            )
+          )
         case IsNotNull(child: Attribute) =>
             Some(new NotEqualsExpression(transformExpression(child).get,
              transformExpression(Literal(null)).get, true))

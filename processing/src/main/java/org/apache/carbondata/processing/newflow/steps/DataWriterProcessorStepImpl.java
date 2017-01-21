@@ -1,32 +1,31 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.carbondata.processing.newflow.steps;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.constants.IgnoreDictionary;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
@@ -53,8 +52,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private KeyGenerator keyGenerator;
 
-  private CarbonFactHandler dataHandler;
-
   private int noDictionaryCount;
 
   private int complexDimensionCount;
@@ -71,57 +68,66 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private int dimsArrayIndex = IgnoreDictionary.DIMENSION_INDEX_IN_ROW.getIndex();
 
-  private String storeLocation;
-
   public DataWriterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     super(configuration, child);
   }
 
-  @Override
-  public DataField[] getOutput() {
+  @Override public DataField[] getOutput() {
     return child.getOutput();
   }
 
-  @Override
-  public void initialize() throws CarbonDataLoadingException {
+  @Override public void initialize() throws IOException {
     child.initialize();
-    CarbonTableIdentifier tableIdentifier =
-        configuration.getTableIdentifier().getCarbonTableIdentifier();
-
-    storeLocation = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
-            tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()),
-            configuration.getPartitionId(), configuration.getSegmentId() + "", false);
-
-    if (!(new File(storeLocation).mkdirs())) {
-      LOGGER.error("Local data load folder location does not exist: " + storeLocation);
-      return;
-    }
   }
 
-  @Override
-  public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
+  private String getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
+    String storeLocation = CarbonDataProcessorUtil
+        .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
+            tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()), partitionId,
+            configuration.getSegmentId() + "", false);
+    new File(storeLocation).mkdirs();
+    return storeLocation;
+  }
+
+  @Override public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
     Iterator<CarbonRowBatch>[] iterators = child.execute();
-    String tableName = configuration.getTableIdentifier().getCarbonTableIdentifier().getTableName();
+    CarbonTableIdentifier tableIdentifier =
+        configuration.getTableIdentifier().getCarbonTableIdentifier();
+    String tableName = tableIdentifier.getTableName();
     try {
-      CarbonFactDataHandlerModel dataHandlerModel =
-          CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(configuration, storeLocation);
+      CarbonFactDataHandlerModel dataHandlerModel = CarbonFactDataHandlerModel
+          .createCarbonFactDataHandlerModel(configuration,
+              getStoreLocation(tableIdentifier, String.valueOf(0)), 0);
       noDictionaryCount = dataHandlerModel.getNoDictionaryCount();
       complexDimensionCount = configuration.getComplexDimensionCount();
       measureCount = dataHandlerModel.getMeasureCount();
       segmentProperties = dataHandlerModel.getSegmentProperties();
       keyGenerator = segmentProperties.getDimensionKeyGenerator();
-      dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(dataHandlerModel,
-          CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
-      dataHandler.initialise();
+
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
           .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
               System.currentTimeMillis());
+      int i = 0;
       for (Iterator<CarbonRowBatch> iterator : iterators) {
+        String storeLocation = getStoreLocation(tableIdentifier, String.valueOf(i));
+        CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
+            .createCarbonFactDataHandlerModel(configuration, storeLocation, i);
+        CarbonFactHandler dataHandler = null;
+        boolean rowsNotExist = true;
         while (iterator.hasNext()) {
-          processBatch(iterator.next());
+          if (rowsNotExist) {
+            rowsNotExist = false;
+            dataHandler = CarbonFactHandlerFactory
+                .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
+            dataHandler.initialise();
+          }
+          processBatch(iterator.next(), dataHandler);
         }
+        if (!rowsNotExist) {
+          finish(tableName, dataHandler);
+        }
+        i++;
       }
 
     } catch (CarbonDataWriterException e) {
@@ -135,9 +141,11 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return null;
   }
 
-  @Override
-  public void close() {
-    String tableName = configuration.getTableIdentifier().getCarbonTableIdentifier().getTableName();
+  @Override public void close() {
+
+  }
+
+  private void finish(String tableName, CarbonFactHandler dataHandler) {
     try {
       dataHandler.finish();
     } catch (Exception e) {
@@ -149,7 +157,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
             + writeCounter;
     LOGGER.info(logMessage);
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordTotalRecords(writeCounter);
-    processingComplete();
+    processingComplete(dataHandler);
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
         .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
             System.currentTimeMillis());
@@ -157,7 +165,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
         .recordMdkGenerateTotalTime(configuration.getPartitionId(), System.currentTimeMillis());
   }
 
-  private void processingComplete() throws CarbonDataLoadingException {
+  private void processingComplete(CarbonFactHandler dataHandler) throws CarbonDataLoadingException {
     if (null != dataHandler) {
       try {
         dataHandler.closeHandler();
@@ -171,7 +179,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     }
   }
 
-  private void processBatch(CarbonRowBatch batch) throws CarbonDataLoadingException {
+  private void processBatch(CarbonRowBatch batch, CarbonFactHandler dataHandler)
+      throws CarbonDataLoadingException {
     Iterator<CarbonRow> iterator = batch.getBatchIterator();
     try {
       while (iterator.hasNext()) {
@@ -208,8 +217,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     }
   }
 
-  @Override
-  protected CarbonRow processRow(CarbonRow row) {
+  @Override protected CarbonRow processRow(CarbonRow row) {
     return null;
   }
 

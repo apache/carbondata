@@ -28,10 +28,9 @@
   <groupId>org.apache.carbondata</groupId>
   <artifactId>carbondata-parent</artifactId>
   <name>Apache CarbonData :: Parent</name>
-  <description>CarbonData is a new Apache Hadoop native file format for faster
-    interactive query using advanced columnar storage, index, compression
-    and encoding techniques to improve computing efficiency, in turn it will
-    help speedup queries an order of magnitude faster over PetaBytes of data.</description>
+  <description>Apache CarbonData(incubating) is an indexed columnar data format for fast analytics
+    on big data platform, e.g.Apache Hadoop, Apache Spark, etc.
+  </description>
   <url>http://carbondata.incubator.apache.org</url>
   <inceptionYear>2016</inceptionYear>
   <packaging>pom</packaging>
@@ -50,6 +49,7 @@
     <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-carbondata.git</connection>
     <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-carbondata.git</developerConnection>
     <url>https://git-wip-us.apache.org/repos/asf/incubator-carbondata.git</url>
+    <tag>HEAD</tag>
   </scm>
 
   <issueManagement>
@@ -97,12 +97,12 @@
     <module>processing</module>
     <module>hadoop</module>
     <module>integration/spark-common</module>
+    <module>integration/spark-common-test</module>
     <module>assembly</module>
   </modules>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <spark.csv.version>1.2.0</spark.csv.version>
     <snappy.version>1.1.2.6</snappy.version>
     <hadoop.version>2.2.0</hadoop.version>
     <kettle.version>4.4.0-stable</kettle.version>
@@ -242,17 +242,16 @@
         <version>2.17</version>
         <configuration>
           <configLocation>${dev.path}/javastyle-config.xml</configLocation>
+          <suppressionsLocation>${dev.path}/javastyle-suppressions.xml</suppressionsLocation>
+          <headerLocation>${dev.path}/java.header</headerLocation>
           <consoleOutput>true</consoleOutput>
           <failsOnError>true</failsOnError>
           <linkXRef>false</linkXRef>
-          <verbose>false</verbose>
           <failOnViolation>true</failOnViolation>
           <includeTestSourceDirectory>false</includeTestSourceDirectory>
           <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
           <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
           <outputFile>${basedir}/target/checkstyle-output.xml</outputFile>
-          <inputEncoding>${project.build.sourceEncoding}</inputEncoding>
-          <outputEncoding>${project.build.sourceEncoding}</outputEncoding>
         </configuration>
         <executions>
           <execution>
@@ -290,9 +289,29 @@
 
   <profiles>
     <profile>
+      <!--This profile does not build spark module, so user should explicitly give spark profile also like spark-1.6 -->
       <id>build-with-format</id>
       <modules>
         <module>format</module>
+      </modules>
+    </profile>
+    <profile>
+      <!-- This profile only should be used for release prepare to cover all the modules -->
+      <id>build-all</id>
+      <properties>
+        <spark.version>1.6.2</spark.version>
+        <scala.binary.version>2.10</scala.binary.version>
+        <scala.version>2.10.4</scala.version>
+        <maven.test.skip>true</maven.test.skip>
+        <flink.version>1.1.4</flink.version>
+      </properties>
+      <modules>
+        <module>format</module>
+        <module>integration/spark</module>
+        <module>examples/spark</module>
+        <module>integration/spark2</module>
+        <module>examples/spark2</module>
+        <module>examples/flink</module>
       </modules>
     </profile>
     <profile>
@@ -310,9 +329,6 @@
     </profile>
     <profile>
       <id>spark-1.5</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <properties>
         <spark.version>1.5.2</spark.version>
         <scala.binary.version>2.10</scala.binary.version>
@@ -325,6 +341,9 @@
     </profile>
     <profile>
       <id>spark-1.6</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
         <spark.version>1.6.2</spark.version>
         <scala.binary.version>2.10</scala.binary.version>
@@ -336,9 +355,9 @@
       </modules>
     </profile>
     <profile>
-      <id>spark-2.0</id>
+      <id>spark-2.1</id>
       <properties>
-        <spark.version>2.0.2</spark.version>
+        <spark.version>2.1.0</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.8</scala.version>
       </properties>
@@ -348,9 +367,13 @@
       </modules>
     </profile>
     <profile>
-      <id>integration-test</id>
+      <id>flink</id>
+      <properties>
+        <flink.version>1.1.4</flink.version>
+        <scala.binary.version>2.10</scala.binary.version>
+      </properties>
       <modules>
-        <module>integration-testcases</module>
+        <module>examples/flink</module>
       </modules>
     </profile>
     <profile>
@@ -380,9 +403,6 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
-      <id>provided</id>
     </profile>
     <profile>
       <id>include-all</id>
@@ -418,15 +438,21 @@
                 <exclude>**/*.csv</exclude>
                 <exclude>**/*.dictionary</exclude>
                 <exclude>**/*.ktr</exclude>
+                <exclude>**/*.rat</exclude>
                 <exclude>**/_SUCCESS</exclude>
                 <exclude>**/non-csv</exclude>
                 <exclude>**/.invisibilityfile</exclude>
                 <exclude>**/noneCsvFormat.cs</exclude>
                 <exclude>**/org.apache.spark.sql.sources.DataSourceRegister</exclude>
+                <exclude>**/org.apache.spark.sql.test.TestQueryExecutorRegister</exclude>
                 <exclude>**/derby.log</exclude>
                 <exclude>**/meta.lock</exclude>
                 <exclude>**/loadmetadata.metadata</exclude>
                 <exclude>**/modifiedTime.mdt</exclude>
+                <exclude>**/PULL_REQUEST_TEMPLATE.md</exclude>
+                <exclude>**/dict.txt</exclude>
+                <exclude>**/sample</exclude>
+                <exclude>**/test.json</exclude>
               </excludes>
             </configuration>
           </plugin>

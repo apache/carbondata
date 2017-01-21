@@ -18,13 +18,14 @@
 package org.apache.carbondata.spark
 
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql._
 import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonType}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonType}
 
 class CarbonDataFrameWriter(val dataFrame: DataFrame) {
 
@@ -103,17 +104,38 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
   }
 
   private def writeToTempCSVFile(tempCSVFolder: String, options: CarbonOption): Unit = {
-    var writer: DataFrameWriter =
-      dataFrame.write
-        .format(csvPackage)
-        .option("header", "false")
-        .mode(SaveMode.Overwrite)
 
-    if (options.compress) {
-      writer = writer.option("codec", "gzip")
+    val strRDD = dataFrame.rdd.mapPartitions { case iter =>
+      new Iterator[String] {
+        override def hasNext = iter.hasNext
+
+        def convertToCSVString(seq: Seq[Any]): String = {
+          val build = new java.lang.StringBuilder()
+          if (seq.head != null) {
+            build.append(seq.head.toString)
+          }
+          val itemIter = seq.tail.iterator
+          while (itemIter.hasNext) {
+            build.append(CarbonCommonConstants.COMMA)
+            val value = itemIter.next()
+            if (value != null) {
+              build.append(value.toString)
+            }
+          }
+          build.toString
+        }
+
+        override def next: String = {
+          convertToCSVString(iter.next.toSeq)
+        }
+      }
     }
 
-    writer.save(tempCSVFolder)
+    if (options.compress) {
+      strRDD.saveAsTextFile(tempCSVFolder, classOf[GzipCodec])
+    } else {
+      strRDD.saveAsTextFile(tempCSVFolder)
+    }
   }
 
   /**
@@ -128,13 +150,12 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
       options.tableName,
       null,
       Seq(),
-      Map("fileheader" -> header),
+      Map("fileheader" -> header) ++ options.toMap,
       isOverwriteExist = false,
       null,
-      Some(dataFrame)).run(cc)
+      Some(dataFrame),
+      None).run(cc)
   }
-
-  private def csvPackage: String = "com.databricks.spark.csv.newapi"
 
   private def convertToCarbonType(sparkType: DataType): String = {
     sparkType match {
@@ -147,6 +168,7 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
       case DoubleType => CarbonType.DOUBLE.getName
       case BooleanType => CarbonType.DOUBLE.getName
       case TimestampType => CarbonType.TIMESTAMP.getName
+      case DateType => CarbonType.DATE.getName
       case other => sys.error(s"unsupported type: $other")
     }
   }
@@ -167,7 +189,7 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
       s"""
           LOAD DATA INPATH '$csvFolder'
           INTO TABLE ${options.dbName}.${options.tableName}
-          OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}')
+          OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}', 'USE_KETTLE' = 'true')
       """
     } else {
       s"""

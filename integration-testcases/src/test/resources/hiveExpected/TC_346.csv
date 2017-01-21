@@ -1,5 +1,0 @@
-gamepointid DoubleType,deviceinformationid IntegerType,latest_year IntegerType,series StringType,imei StringType,deliverycity StringType
-1080.0,100031,2015,7Series,1AA100031,yichang
-1053.0,100032,2015,1Series,1AA100032,shenzhen
-1015.0,100037,2015,7Series,1AA100037,xiangtan
-1077.0,100046,2015,3Series,1AA100046,guangzhou

@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.carbondata.spark.merger;
 
@@ -30,20 +28,23 @@ import java.util.PriorityQueue;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
-import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.carbon.path.CarbonStorePath;
-import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
+import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
+import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.merger.exeception.SliceMergerException;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
@@ -52,8 +53,6 @@ import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.apache.carbondata.scan.result.iterator.RawResultIterator;
-import org.apache.carbondata.scan.wrappers.ByteArrayWrapper;
 
 /**
  * This is the Merger class responsible for the merging of the segments.
@@ -63,7 +62,6 @@ public class RowResultMerger {
   private final String databaseName;
   private final String tableName;
   private final String tempStoreLocation;
-  private final int measureCount;
   private final String factStoreLocation;
   private CarbonFactHandler dataHandler;
   private List<RawResultIterator> rawResultIteratorList =
@@ -81,7 +79,9 @@ public class RowResultMerger {
 
   public RowResultMerger(List<RawResultIterator> iteratorList, String databaseName,
       String tableName, SegmentProperties segProp, String tempStoreLocation,
-      CarbonLoadModel loadModel, int[] colCardinality) {
+      CarbonLoadModel loadModel, int[] colCardinality, CompactionType compactionType) {
+
+    CarbonDataFileAttributes carbonDataFileAttributes;
 
     this.rawResultIteratorList = iteratorList;
     // create the List of RawResultIterator.
@@ -101,15 +101,29 @@ public class RowResultMerger {
     this.databaseName = databaseName;
     this.tableName = tableName;
 
-    this.measureCount = segprop.getMeasures().size();
+    int measureCount = segprop.getMeasures().size();
     CarbonTable carbonTable = CarbonMetadata.getInstance()
             .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     CarbonFactDataHandlerModel carbonFactDataHandlerModel =
         getCarbonFactDataHandlerModel(loadModel);
     carbonFactDataHandlerModel.setPrimitiveDimLens(segprop.getDimColumnsCardinality());
-    CarbonDataFileAttributes carbonDataFileAttributes =
-        new CarbonDataFileAttributes(Integer.parseInt(loadModel.getTaskNo()),
-            loadModel.getFactTimeStamp());
+
+    if (compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
+      int taskNo = CarbonUpdateUtil.getLatestTaskIdForSegment(loadModel.getSegmentId(),
+          CarbonStorePath.getCarbonTablePath(loadModel.getStorePath(),
+              carbonTable.getCarbonTableIdentifier()));
+
+      // Increase the Task Index as in IUD_UPDDEL_DELTA_COMPACTION the new file will
+      // be written in same segment. So the TaskNo should be incremented by 1 from max val.
+      int index = taskNo + 1;
+      carbonDataFileAttributes = new CarbonDataFileAttributes(index, loadModel.getFactTimeStamp());
+    }
+    else {
+      carbonDataFileAttributes =
+          new CarbonDataFileAttributes(Integer.parseInt(loadModel.getTaskNo()),
+              loadModel.getFactTimeStamp());
+    }
+
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
     if (segProp.getNumberOfNoDictionaryDimension() > 0
         || segProp.getComplexDimensions().size() > 0) {
@@ -131,9 +145,8 @@ public class RowResultMerger {
   public boolean mergerSlice() {
     boolean mergeStatus = false;
     int index = 0;
+    boolean isDataPresent = false;
     try {
-
-      dataHandler.initialise();
 
       // add all iterators to the queue
       for (RawResultIterator leaftTupleIterator : this.rawResultIteratorList) {
@@ -146,7 +159,12 @@ public class RowResultMerger {
         iterator = this.recordHolderHeap.poll();
         Object[] convertedRow = iterator.next();
         if(null == convertedRow){
-          throw new SliceMergerException("Unable to generate mdkey during compaction.");
+          index--;
+          continue;
+        }
+        if (!isDataPresent) {
+          dataHandler.initialise();
+          isDataPresent = true;
         }
         // get the mdkey
         addRow(convertedRow);
@@ -165,7 +183,12 @@ public class RowResultMerger {
       while (true) {
         Object[] convertedRow = iterator.next();
         if(null == convertedRow){
-          throw new SliceMergerException("Unable to generate mdkey during compaction.");
+          break;
+        }
+        // do it only once
+        if (!isDataPresent) {
+          dataHandler.initialise();
+          isDataPresent = true;
         }
         addRow(convertedRow);
         // check if leaf contains no record
@@ -173,14 +196,19 @@ public class RowResultMerger {
           break;
         }
       }
-      this.dataHandler.finish();
+      if(isDataPresent)
+      {
+        this.dataHandler.finish();
+      }
       mergeStatus = true;
     } catch (Exception e) {
       LOGGER.error("Exception in compaction merger " + e.getMessage());
       mergeStatus = false;
     } finally {
       try {
-        this.dataHandler.closeHandler();
+        if(isDataPresent) {
+          this.dataHandler.closeHandler();
+        }
       } catch (CarbonDataWriterException e) {
         LOGGER.error("Exception while closing the handler in compaction merger " + e.getMessage());
         mergeStatus = false;
@@ -195,7 +223,7 @@ public class RowResultMerger {
    *
    * @throws SliceMergerException
    */
-  protected void addRow(Object[] carbonTuple) throws SliceMergerException {
+  private void addRow(Object[] carbonTuple) throws SliceMergerException {
     Object[] rowInWritableFormat;
 
     rowInWritableFormat = tupleConvertor.getObjectArray(carbonTuple);
@@ -270,12 +298,11 @@ public class RowResultMerger {
    */
   private String checkAndCreateCarbonStoreLocation(String factStoreLocation, String databaseName,
       String tableName, String partitionId, String segmentId) {
-    String carbonStorePath = factStoreLocation;
     CarbonTable carbonTable = CarbonMetadata.getInstance()
         .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+        CarbonStorePath.getCarbonTablePath(factStoreLocation, carbonTableIdentifier);
     String carbonDataDirectoryPath =
         carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
     CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);

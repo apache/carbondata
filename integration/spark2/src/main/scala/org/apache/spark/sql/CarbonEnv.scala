@@ -17,13 +17,12 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.hive.CarbonMetastore
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.hadoop.readsupport.impl.RawDataReadSupport
-import org.apache.carbondata.spark.rdd.SparkCommonEnv
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
 /**
@@ -37,32 +36,26 @@ object CarbonEnv {
 
   @volatile private var carbonEnv: CarbonEnv = _
 
+  // set readsupport class global so that the executor can get it.
+  SparkReadSupport.readSupportClass = classOf[SparkRowReadSupportImpl]
+
   var initialized = false
 
-  def init(sqlContext: SQLContext): Unit = {
+  def init(sparkSession: SparkSession): Unit = {
     if (!initialized) {
       val catalog = {
-        val storePath = sqlContext.sparkSession.conf.get(
-        CarbonCommonConstants.STORE_LOCATION, "/user/hive/warehouse/carbonstore")
+        val storePath =
+          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
         LOGGER.info(s"carbon env initial: $storePath")
-        new CarbonMetastore(sqlContext.sparkSession.conf, storePath)
+        new CarbonMetastore(sparkSession.conf, storePath)
       }
       carbonEnv = CarbonEnv(catalog)
-      setSparkCommonEnv(sqlContext)
       initialized = true
     }
   }
 
   def get: CarbonEnv = {
     carbonEnv
-  }
-
-  private def setSparkCommonEnv(sqlContext: SQLContext): Unit = {
-    SparkCommonEnv.readSupportClass = classOf[SparkRowReadSupportImpl]
-    SparkCommonEnv.numExistingExecutors = sqlContext.sparkContext.schedulerBackend match {
-      case b: CoarseGrainedSchedulerBackend => b.getExecutorIds().length
-      case _ => 0
-    }
   }
 }
 
