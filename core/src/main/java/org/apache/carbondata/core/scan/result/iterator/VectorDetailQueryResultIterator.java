@@ -36,7 +36,7 @@ public class VectorDetailQueryResultIterator extends AbstractDetailQueryResultIt
   }
 
   @Override public Object next() {
-    throw new UnsupportedOperationException("call processNextBatch instaed");
+    throw new UnsupportedOperationException("call processNextBatch instead");
   }
 
   public void processNextBatch(CarbonColumnarBatch columnarBatch) {
