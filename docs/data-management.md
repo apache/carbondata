@@ -73,7 +73,7 @@ This tutorial is going to introduce you to the conceptual details of data manage
    
    * Delete by Segment ID
       
-      After you get the segment ID of the segment that you want to delete, execute the [DELETE](dml-operation-on-carbondata.md ) command for the selected segment.
+      After you get the segment ID of the segment that you want to delete, execute the delete command for the selected segment.
       The status of deleted segment is updated to Marked for delete / Marked for Update.
       
 | SegmentSequenceId | Status            | Load Start Time      | Load End Time        |

@@ -70,24 +70,22 @@ val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession(
 ##### Creating a Table
 
 ```
-scala>carbon.sql("create table if not exists test_table
-                (id string, name string, city string, age Int)
-                STORED BY 'carbondata'")
+scala>carbon.sql("create table if not exists test_table(id string, name string, city string, age Int)STORED BY 'carbondata'")
 ```
 
 ##### Loading Data to a Table
 
 ```
-scala>carbon.sql("load data inpath 'sample.csv file's path' into table test_table")
+scala>carbon.sql("load data inpath 'sample.csv file path' into table test_table")
 ```
 NOTE:Please provide the real file path of sample.csv for the above script.
 
 ###### Query Data from a Table
 
 ```
-scala>spark.sql("select * from test_table").show()
+scala>carbon.sql("select * from test_table").show()
 
-scala>spark.sql("select city, avg(age), sum(age) from test_table group by city").show()
+scala>carbon.sql("select city, avg(age), sum(age) from test_table group by city").show()
 ```
 
 ## Interactive Analysis with Spark Shell
@@ -133,7 +131,7 @@ scala>cc.sql("show tables").show()
 ##### Loading Data to a Table
 
 ```
-scala>cc.sql("load data inpath 'sample.csv file's path' into table test_table")
+scala>cc.sql("load data inpath 'sample.csv file path' into table test_table")
 ```
 NOTE:Please provide the real file path of sample.csv for the above script.
 
