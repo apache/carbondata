@@ -70,24 +70,22 @@ val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession(
 ##### Creating a Table
 
 ```
-scala>carbon.sql("create table if not exists test_table
-                (id string, name string, city string, age Int)
-                STORED BY 'carbondata'")
+scala>carbon.sql("CREATE TABLE IF NOT EXISTS test_table(id string, name string, city string, age Int) STORED BY 'carbondata'")
 ```
 
 ##### Loading Data to a Table
 
 ```
-scala>carbon.sql("load data inpath 'sample.csv file's path' into table test_table")
+scala>carbon.sql("LOAD DATA INPATH 'sample.csv file path' INTO TABLE test_table")
 ```
 NOTE:Please provide the real file path of sample.csv for the above script.
 
 ###### Query Data from a Table
 
 ```
-scala>spark.sql("select * from test_table").show()
+scala>carbon.sql("SELECT * FROM test_table").show()
 
-scala>spark.sql("select city, avg(age), sum(age) from test_table group by city").show()
+scala>carbon.sql("SELECT city, avg(age), sum(age) FROM test_table GROUP BY city").show()
 ```
 
 ## Interactive Analysis with Spark Shell
@@ -122,24 +120,24 @@ NOTE: By default store location is pointed to "../carbon.store", user can provid
 ##### Creating a Table
 
 ```
-scala>cc.sql("create table if not exists test_table (id string, name string, city string, age Int) STORED BY 'carbondata'")
+scala>cc.sql("CREATE TABLE IF NOT EXISTS test_table (id string, name string, city string, age Int) STORED BY 'carbondata'")
 ```
 To see the table created :
 
 ```
-scala>cc.sql("show tables").show()
+scala>cc.sql("SHOW TABLES").show()
 ```
 
 ##### Loading Data to a Table
 
 ```
-scala>cc.sql("load data inpath 'sample.csv file's path' into table test_table")
+scala>cc.sql("LOAD DATA INPATH 'sample.csv file path' INTO TABLE test_table")
 ```
 NOTE:Please provide the real file path of sample.csv for the above script.
 
 ##### Query Data from a Table
 
 ```
-scala>cc.sql("select * from test_table").show()
-scala>cc.sql("select city, avg(age), sum(age) from test_table group by city").show()
+scala>cc.sql("SELECT * FROM test_table").show()
+scala>cc.sql("SELECT city, avg(age), sum(age) FROM test_table GROUP BY city").show()
 ```
