@@ -696,46 +696,6 @@ public final class ValueCompressionUtil {
     return compressModel;
   }
 
-  public static byte[] convertToBytes(short[] values) {
-    ByteBuffer buffer = ByteBuffer.allocate(values.length * 2);
-    for (short val : values) {
-      buffer.putShort(val);
-    }
-    return buffer.array();
-  }
-
-  public static byte[] convertToBytes(int[] values) {
-    ByteBuffer buffer = ByteBuffer.allocate(values.length * 4);
-    for (int val : values) {
-      buffer.putInt(val);
-    }
-    return buffer.array();
-  }
-
-  public static byte[] convertToBytes(float[] values) {
-    ByteBuffer buffer = ByteBuffer.allocate(values.length * 4);
-    for (float val : values) {
-      buffer.putFloat(val);
-    }
-    return buffer.array();
-  }
-
-  public static byte[] convertToBytes(long[] values) {
-    ByteBuffer buffer = ByteBuffer.allocate(values.length * 8);
-    for (long val : values) {
-      buffer.putLong(val);
-    }
-    return buffer.array();
-  }
-
-  public static byte[] convertToBytes(double[] values) {
-    ByteBuffer buffer = ByteBuffer.allocate(values.length * 8);
-    for (double val : values) {
-      buffer.putDouble(val);
-    }
-    return buffer.array();
-  }
-
   public static short[] convertToShortArray(ByteBuffer buffer, int length) {
     buffer.rewind();
     short[] values = new short[length / 2];
@@ -752,16 +712,6 @@ public final class ValueCompressionUtil {
 
     for (int i = 0; i < values.length; i++) {
       values[i] = buffer.getInt();
-    }
-    return values;
-  }
-
-  public static float[] convertToFloatArray(ByteBuffer buffer, int length) {
-    buffer.rewind();
-    float[] values = new float[length / 4];
-
-    for (int i = 0; i < values.length; i++) {
-      values[i] = buffer.getFloat();
     }
     return values;
   }

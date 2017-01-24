@@ -16,8 +16,6 @@
  */
 package org.apache.carbondata.core.scan.result.impl;
 
-import java.math.BigDecimal;
-
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
 
@@ -86,59 +84,6 @@ public class NonFilterQueryScannedResult extends AbstractScannedResult {
    */
   @Override public int getCurrenrRowId() {
     return currentRow;
-  }
-
-  /**
-   * Return the dimension data based on dimension ordinal
-   *
-   * @param dimensionOrdinal dimension ordinal
-   * @return dimension data
-   */
-  @Override public byte[] getDimensionKey(int dimensionOrdinal) {
-    return getDimensionData(dimensionOrdinal, currentRow);
-  }
-
-  /**
-   * Below method will be used to to check whether measure value is null or
-   * for a measure
-   *
-   * @param ordinal measure ordinal
-   * @return is null or not
-   */
-  @Override public boolean isNullMeasureValue(int ordinal) {
-    return isNullMeasureValue(ordinal, currentRow);
-  }
-
-  /**
-   * Below method will be used to get the measure value for measure of long
-   * data type
-   *
-   * @param ordinal measure ordinal
-   * @return long value of measure
-   */
-  @Override public long getLongMeasureValue(int ordinal) {
-    return getLongMeasureValue(ordinal, currentRow);
-  }
-
-  /**
-   * Below method will be used to get the value of measure of double type
-   *
-   * @param ordinal measure ordinal
-   * @return measure value
-   */
-  @Override public double getDoubleMeasureValue(int ordinal) {
-    return getDoubleMeasureValue(ordinal, currentRow);
-  }
-
-  /**
-   * Below method will be used to get the data of big decimal type of a
-   * measure
-   *
-   * @param ordinal measure ordinal
-   * @return measure value
-   */
-  @Override public BigDecimal getBigDecimalMeasureValue(int ordinal) {
-    return getBigDecimalMeasureValue(ordinal, currentRow);
   }
 
 }

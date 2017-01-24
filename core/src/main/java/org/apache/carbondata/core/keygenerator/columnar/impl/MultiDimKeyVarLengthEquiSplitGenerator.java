@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.keygenerator.columnar.impl;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -143,8 +142,9 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
 
   private int[] convertToArray(List<Integer> list) {
     int[] ints = new int[list.size()];
-    for (int i = 0; i < ints.length; i++) {
-      ints[i] = list.get(i);
+    int i = 0;
+    for (Integer ii : list) {
+      ints[i++] = ii;
     }
     return ints;
   }
@@ -152,8 +152,8 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
   private int[] convertToArray(Set<Integer> set) {
     int[] ints = new int[set.size()];
     int i = 0;
-    for (Iterator iterator = set.iterator(); iterator.hasNext(); ) {
-      ints[i++] = (Integer) iterator.next();
+    for (Integer ii: set) {
+      ints[i++] = ii;
     }
     return ints;
   }

@@ -522,12 +522,11 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           return val1.compareTo(val2);
         case DATE:
         case TIMESTAMP:
+
           String format= CarbonUtil.getFormatFromProperty(o.dataType);
           SimpleDateFormat parser = new SimpleDateFormat(format);
-          Date date1 = null;
-          Date date2 = null;
-          date1 = parser.parse(this.getString());
-          date2 = parser.parse(o.getString());
+          Date date1 = parser.parse(this.getString());
+          Date date2 = parser.parse(o.getString());
           return date1.compareTo(date2);
         case STRING:
         default:
