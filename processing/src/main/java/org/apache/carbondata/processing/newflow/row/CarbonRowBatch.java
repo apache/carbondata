@@ -36,5 +36,8 @@ public class CarbonRowBatch {
     return rowBatch.iterator();
   }
 
+  public int getSize() {
+    return rowBatch.size();
+  }
 
 }

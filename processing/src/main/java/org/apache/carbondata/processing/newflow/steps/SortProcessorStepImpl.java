@@ -59,15 +59,13 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
         .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
             CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT));
     if (offheapsort) {
-      sorter = new UnsafeParallelReadMergeSorterImpl(child.getOutput());
+      sorter = new UnsafeParallelReadMergeSorterImpl(rowCounter);
     } else {
-      sorter = new ParallelReadMergeSorterImpl(child.getOutput());
+      sorter = new ParallelReadMergeSorterImpl(rowCounter);
     }
     if (configuration.getBucketingInfo() != null) {
-      sorter = new ParallelReadMergeSorterWithBucketingImpl(child.getOutput(),
+      sorter = new ParallelReadMergeSorterWithBucketingImpl(rowCounter,
           configuration.getBucketingInfo());
-    } else {
-      sorter = new ParallelReadMergeSorterImpl(child.getOutput());
     }
     sorter.initialize(sortParameters);
   }
@@ -87,7 +85,11 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   @Override
   public void close() {
+    super.close();
     sorter.close();
   }
 
+  @Override protected String getStepName() {
+    return "Sort Processor";
+  }
 }

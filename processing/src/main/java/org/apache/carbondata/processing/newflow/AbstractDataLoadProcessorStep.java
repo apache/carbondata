@@ -19,8 +19,11 @@ package org.apache.carbondata.processing.newflow;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
@@ -36,14 +39,37 @@ import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
  */
 public abstract class AbstractDataLoadProcessorStep {
 
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(AbstractDataLoadProcessorStep.class.getName());
+
   protected CarbonDataLoadConfiguration configuration;
 
   protected AbstractDataLoadProcessorStep child;
+
+  protected AtomicLong rowCounter;
+
+  private boolean closed;
 
   public AbstractDataLoadProcessorStep(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     this.configuration = configuration;
     this.child = child;
+    this.rowCounter = new AtomicLong();
+    this.closed = false;
+
+    new Thread() {
+      @Override public void run() {
+        while (!closed) {
+          try {
+            LOGGER.info("Rows processed in step "+getStepName() +" : " + rowCounter.get());
+            Thread.sleep(10000);
+          } catch (InterruptedException e) {
+            //ignore
+            LOGGER.error(e.getMessage());
+          }
+        }
+      }
+    }.start();
   }
 
   /**
@@ -115,12 +141,19 @@ public abstract class AbstractDataLoadProcessorStep {
    */
   protected abstract CarbonRow processRow(CarbonRow row);
 
+  /**
+   * Get the step name for logging purpose.
+   * @return Step name
+   */
+  protected abstract String getStepName();
+
 
   /**
    * Close all resources.This method is called after execute() is finished.
    * It will be called in both success and failure cases.
    */
   public void close() {
+    closed = true;
     if (child != null) {
       child.close();
     }

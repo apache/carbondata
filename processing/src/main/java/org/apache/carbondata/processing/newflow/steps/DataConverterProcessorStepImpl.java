@@ -94,6 +94,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     while (batchIterator.hasNext()) {
       newBatch.addRow(localConverter.convert(batchIterator.next()));
     }
+    rowCounter.getAndAdd(newBatch.getSize());
     return newBatch;
   }
 
@@ -156,5 +157,9 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     if (converter != null) {
       converter.finish();
     }
+  }
+
+  @Override protected String getStepName() {
+    return "Data Converter";
   }
 }

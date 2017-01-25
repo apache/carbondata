@@ -68,14 +68,14 @@ public class UnsafeMemoryManager {
     this.totalMemory = totalMemory;
     this.allocator = allocator;
     minimumMemory = (long) (totalMemory * ((double) 10 / 100));
-    LOGGER.audit("Memory manager is created with size " + totalMemory + " with " + allocator
+    LOGGER.info("Memory manager is created with size " + totalMemory + " with " + allocator
         + " and minimum reserve memory " + minimumMemory);
   }
   public synchronized MemoryBlock allocateMemory(long memoryRequested) {
     if (memoryUsed + memoryRequested <= totalMemory) {
       MemoryBlock allocate = allocator.allocate(memoryRequested);
       memoryUsed += allocate.size();
-      LOGGER.audit("Memory block is created with size "  + allocate.size() +
+      LOGGER.info("Memory block is created with size "  + allocate.size() +
           " Total memory used " + memoryUsed + " memory left " + (getAvailableMemory()));
       return allocate;
     }
@@ -86,7 +86,7 @@ public class UnsafeMemoryManager {
     allocator.free(memoryBlock);
     memoryUsed -= memoryBlock.size();
     memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
-    LOGGER.audit(
+    LOGGER.info(
         "Memory released, memory used " + memoryUsed + " memory left " + (getAvailableMemory()));
   }
 

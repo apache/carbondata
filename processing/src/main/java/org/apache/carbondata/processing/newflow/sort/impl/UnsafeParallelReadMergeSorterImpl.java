@@ -23,6 +23,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
@@ -62,7 +63,10 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
 
   private UnsafeSingleThreadFinalSortFilesMerger finalMerger;
 
-  public UnsafeParallelReadMergeSorterImpl(DataField[] inputDataFields) {
+  private AtomicLong rowCounter;
+
+  public UnsafeParallelReadMergeSorterImpl(AtomicLong rowCounter) {
+    this.rowCounter = rowCounter;
   }
 
   @Override public void initialize(SortParameters sortParameters) {
@@ -93,7 +97,7 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
     try {
       for (int i = 0; i < iterators.length; i++) {
         executorService
-            .submit(new SortIteratorThread(iterators[i], sortDataRow, sortParameters, batchSize));
+            .submit(new SortIteratorThread(iterators[i], sortDataRow, batchSize, rowCounter));
       }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
@@ -177,11 +181,14 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
 
     private Object[][] buffer;
 
-    public SortIteratorThread(Iterator<CarbonRowBatch> iterator, UnsafeSortDataRows sortDataRows,
-        SortParameters parameters, int batchSize) {
+    private AtomicLong rowCounter;
+
+    public SortIteratorThread(Iterator<CarbonRowBatch> iterator,
+        UnsafeSortDataRows sortDataRows, int batchSize, AtomicLong rowCounter) {
       this.iterator = iterator;
       this.sortDataRows = sortDataRows;
       this.buffer = new Object[batchSize][];
+      this.rowCounter = rowCounter;
     }
 
     @Override public Void call() throws CarbonDataLoadingException {
@@ -198,6 +205,7 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
           }
           if (i > 0) {
             sortDataRows.addRowBatch(buffer, i);
+            rowCounter.getAndAdd(i);
           }
         }
       } catch (Exception e) {

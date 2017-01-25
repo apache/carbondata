@@ -121,6 +121,7 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
       convertRow.bucketNumber = (short) partitioner.getPartition(next.getData());
       newBatch.addRow(convertRow);
     }
+    rowCounter.getAndAdd(newBatch.getSize());
     return newBatch;
   }
 
@@ -183,5 +184,9 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
     if (converter != null) {
       converter.finish();
     }
+  }
+
+  @Override protected String getStepName() {
+    return "Data Converter with Bucketing";
   }
 }
