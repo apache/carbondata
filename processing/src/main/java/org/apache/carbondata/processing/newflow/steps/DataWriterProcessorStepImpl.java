@@ -60,8 +60,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private long readCounter;
 
-  private long writeCounter;
-
   private int measureIndex = IgnoreDictionary.MEASURES_INDEX_IN_ROW.getIndex();
 
   private int noDimByteArrayIndex = IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex();
@@ -141,8 +139,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return null;
   }
 
-  @Override public void close() {
-
+  @Override protected String getStepName() {
+    return "Data Writer";
   }
 
   private void finish(String tableName, CarbonFactHandler dataHandler) {
@@ -154,9 +152,9 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     LOGGER.info("Record Processed For table: " + tableName);
     String logMessage =
         "Finished Carbon DataWriterProcessorStepImpl: Read: " + readCounter + ": Write: "
-            + writeCounter;
+            + rowCounter.get();
     LOGGER.info(logMessage);
-    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordTotalRecords(writeCounter);
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordTotalRecords(rowCounter.get());
     processingComplete(dataHandler);
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
         .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
@@ -210,11 +208,11 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
         outputRow[outputRow.length - 1] = keyGenerator.generateKey(highCardExcludedRows);
         dataHandler.addDataToStore(outputRow);
-        writeCounter++;
       }
     } catch (Exception e) {
       throw new CarbonDataLoadingException("unable to generate the mdkey", e);
     }
+    rowCounter.getAndAdd(batch.getSize());
   }
 
   @Override protected CarbonRow processRow(CarbonRow row) {

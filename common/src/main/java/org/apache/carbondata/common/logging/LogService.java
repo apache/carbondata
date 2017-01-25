@@ -42,4 +42,10 @@ public interface LogService {
    * @param message statistic message
    */
   void statistic(String message);
+
+  boolean isDebugEnabled();
+
+  boolean isWarnEnabled();
+
+  boolean isInfoEnabled();
 }

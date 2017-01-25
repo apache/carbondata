@@ -49,6 +49,10 @@ public class DummyClassForTest extends AbstractDataLoadProcessorStep {
 
   }
 
+  @Override protected String getStepName() {
+    return "Dummy";
+  }
+
   @Override public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
     Iterator<CarbonRowBatch>[] iterators = child.execute();
     this.executorService = Executors.newFixedThreadPool(iterators.length);
