@@ -39,7 +39,7 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
   public DataBlockIteratorImpl(BlockExecutionInfo blockExecutionInfo, FileHolder fileReader,
       int batchSize, QueryStatisticsModel queryStatisticsModel,
       BlocksChunkHolder blockChunkHolder, ExecutorService executorService) {
-    super(blockExecutionInfo, fileReader, batchSize, queryStatisticsModel, blockChunkHolder, executorService);
+    super(blockExecutionInfo, fileReader, batchSize, queryStatisticsModel, executorService);
   }
 
   /**

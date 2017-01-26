@@ -117,7 +117,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     if (scannedResult != null && scannedResult.hasNext()) {
       return true;
     } else {
-      return dataBlockIterator.hasNext();
+      return dataBlockIterator.hasNext() || nextResult;
     }
   }
 
@@ -133,6 +133,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
           }
           scannedResult = getNextScannedResult();
         }
+        nextResult = false;
         return false;
       }
     } catch (Exception ex) {
