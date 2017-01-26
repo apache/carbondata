@@ -154,7 +154,7 @@ public class CarbonDeleteFilesDataReader {
       try {
         List<DeleteDeltaBlockletDetails> blockletDetails =
             taskSubmitList.get(i).get().getBlockletDetails();
-        for(DeleteDeltaBlockletDetails blocklet : blockletDetails ) {
+        for (DeleteDeltaBlockletDetails blocklet : blockletDetails) {
           deleteDeltaResultSet.addBlockletDetails(blocklet);
         }
       } catch (Throwable e) {

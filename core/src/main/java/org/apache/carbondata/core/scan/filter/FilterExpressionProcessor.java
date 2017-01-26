@@ -314,7 +314,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
         }
         break;
       default:
-        if(expression instanceof ConditionalExpression) {
+        if (expression instanceof ConditionalExpression) {
           condExpression = (ConditionalExpression) expression;
           if (condExpression.isSingleDimension()
                   && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()

@@ -36,7 +36,7 @@ public class HashPartitionerImpl implements Partitioner<Object[]> {
     this.numberOfBuckets = numberOfBuckets;
     hashes = new Hash[indexes.size()];
     for (int i = 0; i < indexes.size(); i++) {
-      switch(columnSchemas.get(i).getDataType()) {
+      switch (columnSchemas.get(i).getDataType()) {
         case SHORT:
         case INT:
         case LONG:

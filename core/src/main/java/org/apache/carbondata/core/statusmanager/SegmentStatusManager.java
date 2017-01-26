@@ -255,7 +255,7 @@ public class SegmentStatusManager {
           updateDeletionStatus(loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
           if (invalidLoadIds.isEmpty()) {
             // All or None , if anything fails then dont write
-            if(carbonTableStatusLock.lockWithRetries()) {
+            if (carbonTableStatusLock.lockWithRetries()) {
               LOG.info("Table status lock has been successfully acquired");
               // To handle concurrency scenarios, always take latest metadata before writing
               // into status file.
@@ -338,7 +338,7 @@ public class SegmentStatusManager {
           updateDeletionStatus(loadDate, listOfLoadFolderDetailsArray, invalidLoadTimestamps,
               loadStartTime);
           if (invalidLoadTimestamps.isEmpty()) {
-            if(carbonTableStatusLock.lockWithRetries()) {
+            if (carbonTableStatusLock.lockWithRetries()) {
               LOG.info("Table status lock has been successfully acquired.");
               // To handle concurrency scenarios, always take latest metadata before writing
               // into status file.
@@ -568,11 +568,11 @@ public class SegmentStatusManager {
    * @return
    */
   public String getUpdateStatusFileName(LoadMetadataDetails[] segmentList) {
-    if(segmentList.length == 0) {
+    if (segmentList.length == 0) {
       return "";
     }
     else {
-      for(LoadMetadataDetails eachSeg : segmentList) {
+      for (LoadMetadataDetails eachSeg : segmentList) {
         // file name stored in 0th segment.
         if (eachSeg.getLoadName().equalsIgnoreCase("0")) {
           return eachSeg.getUpdateStatusFileName();

@@ -213,7 +213,7 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
   }
 
   @Override public boolean equals(Object obj) {
-    if(!(obj instanceof MultiDimKeyVarLengthEquiSplitGenerator)) {
+    if (!(obj instanceof MultiDimKeyVarLengthEquiSplitGenerator)) {
       return false;
     }
     MultiDimKeyVarLengthEquiSplitGenerator o = (MultiDimKeyVarLengthEquiSplitGenerator)obj;

@@ -204,7 +204,7 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
                               DictionaryService dictionaryService,
                               CarbonTableIdentifier tableIdentifier,
                               ColumnIdentifier columnIdentifier,
-                              String storePath) throws IOException{
+                              String storePath) throws IOException {
     CarbonDictionarySortIndexWriter carbonDictionarySortIndexWriter = null;
     try {
       CarbonDictionarySortInfoPreparator preparator = new CarbonDictionarySortInfoPreparator();
@@ -230,7 +230,7 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
    * @param dictionaryWriter
    * @throws IOException
    */
-  private void updateMetaData(CarbonDictionaryWriter dictionaryWriter) throws IOException{
+  private void updateMetaData(CarbonDictionaryWriter dictionaryWriter) throws IOException {
     if (null != dictionaryWriter) {
       dictionaryWriter.commit();
     }

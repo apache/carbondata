@@ -19,7 +19,7 @@ package org.apache.carbondata.core.stats;
 /**
  * Class will be used to record and log the query statistics
  */
-public class DriverQueryStatisticsRecorderDummy implements QueryStatisticsRecorder{
+public class DriverQueryStatisticsRecorderDummy implements QueryStatisticsRecorder {
 
   private DriverQueryStatisticsRecorderDummy() {
 

@@ -78,7 +78,7 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
     intermediateFileMerger = new SortIntermediateFileMerger(sortParameters);
     int buffer = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.SORT_SIZE, CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
-    sortBufferSize = buffer/bucketingInfo.getNumberOfBuckets();
+    sortBufferSize = buffer / bucketingInfo.getNumberOfBuckets();
     if (sortBufferSize < 100) {
       sortBufferSize = 100;
     }

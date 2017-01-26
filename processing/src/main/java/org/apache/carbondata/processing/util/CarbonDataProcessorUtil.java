@@ -164,7 +164,7 @@ public final class CarbonDataProcessorUtil {
           LOGGER.error("Unable to delete File : " + badFiles.getName());
         }
       }
-    }// CHECKSTYLE:ON
+    } // CHECKSTYLE:ON
   }
 
   public static void checkResult(List<CheckResultInterface> remarks, StepMeta stepMeta,
@@ -223,7 +223,7 @@ public final class CarbonDataProcessorUtil {
     if (file.exists()) {
       try {
         CarbonUtil.deleteFoldersAndFiles(file);
-      } catch (IOException | InterruptedException e ) {
+      } catch (IOException | InterruptedException e) {
         LOGGER.error(e);
       }
     }
@@ -288,7 +288,7 @@ public final class CarbonDataProcessorUtil {
     for (DataField field : fields) {
       if (field.getColumn().isUseInvertedIndex() && field.getColumn().isDimesion()) {
         isUseInvertedIndexList.add(true);
-      } else if(field.getColumn().isDimesion()){
+      } else if (field.getColumn().isDimesion()) {
         isUseInvertedIndexList.add(false);
       }
     }

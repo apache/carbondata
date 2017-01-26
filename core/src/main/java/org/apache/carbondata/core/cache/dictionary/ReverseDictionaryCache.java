@@ -166,7 +166,7 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
       throws IOException {
     Dictionary reverseDictionary = null;
     // dictionary is only for primitive data type
-    assert(!dictionaryColumnUniqueIdentifier.getDataType().isComplexType());
+    assert (!dictionaryColumnUniqueIdentifier.getDataType().isComplexType());
     String columnIdentifier = dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId();
     ColumnReverseDictionaryInfo columnReverseDictionaryInfo =
         getColumnReverseDictionaryInfo(dictionaryColumnUniqueIdentifier, columnIdentifier);

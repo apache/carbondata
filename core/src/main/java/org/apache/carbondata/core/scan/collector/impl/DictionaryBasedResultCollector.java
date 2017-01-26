@@ -58,8 +58,8 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     QueryDimension[] queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
     List<Integer> dictionaryIndexes = new ArrayList<Integer>();
     for (int i = 0; i < queryDimensions.length; i++) {
-      if(queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY) ||
-          queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY) ) {
+      if (queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY) || queryDimensions[i]
+          .getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         dictionaryIndexes.add(queryDimensions[i].getDimension().getOrdinal());
       }
     }
@@ -69,10 +69,10 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     int[] actualIndexInSurrogateKey = new int[dictionaryIndexes.size()];
     int index = 0;
     for (int i = 0; i < queryDimensions.length; i++) {
-      if(queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY) ||
-          queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY) ) {
-        actualIndexInSurrogateKey[index++] = Arrays.binarySearch(primitive,
-            queryDimensions[i].getDimension().getOrdinal());
+      if (queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY) || queryDimensions[i]
+          .getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        actualIndexInSurrogateKey[index++] =
+            Arrays.binarySearch(primitive, queryDimensions[i].getDimension().getOrdinal());
       }
     }
 

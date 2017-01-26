@@ -74,9 +74,13 @@ public class SegmentUpdateDetails implements Serializable {
     this.deleteDeltaStartTimestamp = deleteDeltaStartTimestamp;
   }
 
-  public void setStatus(String status) { this.status = status;}
+  public void setStatus(String status) {
+    this.status = status;
+  }
 
-  public String getStatus() {return this.status;}
+  public String getStatus() {
+    return this.status;
+  }
 
   @Override public int hashCode() {
     final int prime = 31;

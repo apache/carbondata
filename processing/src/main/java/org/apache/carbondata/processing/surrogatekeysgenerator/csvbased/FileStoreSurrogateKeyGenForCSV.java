@@ -268,7 +268,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
       updateMaxKeyInfo(dictionaryKeys.get(i), reverseDictionary.getDictionaryChunks().getSize());
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordLruCacheLoadTime(
-        (System.currentTimeMillis() - lruCacheStartTime)/1000.0);
+        (System.currentTimeMillis() - lruCacheStartTime) / 1000.0);
   }
 
   @Override protected int getSurrogateFromStore(String value, int index, Object[] properties)

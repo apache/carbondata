@@ -113,7 +113,7 @@ public class BigIntCompressor extends ValueCompressor {
             intResult[j] = (int) (maxValue - value[j]);
           }
         } else {
-          for (int j=0; j < value.length; j++) {
+          for (int j = 0; j < value.length; j++) {
             intResult[j] = (int) value[j];
           }
         }

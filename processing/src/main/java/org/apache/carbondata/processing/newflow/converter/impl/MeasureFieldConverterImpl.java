@@ -62,7 +62,7 @@ public class MeasureFieldConverterImpl implements FieldConverter {
           "The value " + " \"" + value + "\"" + " with column name " + measure.getColName()
               + " and column data type " + dataType + " is not a valid " + dataType + " type.");
       row.update(null, index);
-    } else if(value.equals(nullformat)) {
+    } else if (value.equals(nullformat)) {
       row.update(null, index);
     } else {
       try {

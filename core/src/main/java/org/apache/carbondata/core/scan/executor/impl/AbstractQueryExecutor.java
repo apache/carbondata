@@ -475,7 +475,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   @Override public void finish() throws QueryExecutionException {
     CarbonUtil.clearBlockCache(queryProperties.dataBlocks);
-    if(null != queryIterator) {
+    if (null != queryIterator) {
       queryIterator.close();
     }
     if (null != queryProperties.executorService) {

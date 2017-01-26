@@ -258,9 +258,8 @@ public class CarbonTablePath extends Path {
 
     CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
-        if(bucketNumber.equals("-1")) {
-          return file.getName().startsWith(taskId) && file.getName()
-              .endsWith(INDEX_FILE_EXT);
+        if (bucketNumber.equals("-1")) {
+          return file.getName().startsWith(taskId) && file.getName().endsWith(INDEX_FILE_EXT);
         }
         return file.getName().startsWith(taskId + "-" + bucketNumber) && file.getName()
             .endsWith(INDEX_FILE_EXT);

@@ -158,7 +158,7 @@ public class NumberCompressor {
       }
       for (int j = ls; j < m; j++) {
         l <<= BYTE_LENGTH;
-        l ^= key[offset+j] & 0xFF;
+        l ^= key[offset + j] & 0xFF;
       }
       words[i] = l;
     }

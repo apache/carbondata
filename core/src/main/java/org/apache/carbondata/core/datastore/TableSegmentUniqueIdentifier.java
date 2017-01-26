@@ -106,7 +106,7 @@ public class TableSegmentUniqueIdentifier {
             + carbonTableIdentifier.getTableId() + CarbonCommonConstants.FILE_SEPARATOR + segmentId;
   }
   public void setIsSegmentUpdated(boolean isSegmentUpdated) {
-    this.isSegmentUpdated=isSegmentUpdated;
+    this.isSegmentUpdated = isSegmentUpdated;
   }
 
   public boolean isSegmentUpdated() {

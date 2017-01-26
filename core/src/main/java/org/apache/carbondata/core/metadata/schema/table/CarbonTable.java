@@ -270,7 +270,7 @@ public class CarbonTable implements Serializable {
   private void addImplicitDimension(int dimensionOrdinal, List<CarbonDimension> dimensions) {
     dimensions.add(new CarbonImplicitDimension(dimensionOrdinal,
         CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_POSITIONID));
-    dimensions.add(new CarbonImplicitDimension(dimensionOrdinal+1,
+    dimensions.add(new CarbonImplicitDimension(dimensionOrdinal + 1,
         CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID));
   }
 

@@ -144,10 +144,9 @@ public class CarbonUpdateUtil {
           if (index != -1) {
             // update the element in existing list.
             SegmentUpdateDetails blockDetail = oldList.get(index);
-            if(blockDetail.getDeleteDeltaStartTimestamp().isEmpty() ||
-                    (isCompaction == true)) {
+            if (blockDetail.getDeleteDeltaStartTimestamp().isEmpty() || (isCompaction == true)) {
               blockDetail
-                      .setDeleteDeltaStartTimestamp(newBlockEntry.getDeleteDeltaStartTimestamp());
+                  .setDeleteDeltaStartTimestamp(newBlockEntry.getDeleteDeltaStartTimestamp());
             }
             blockDetail.setDeleteDeltaEndTimestamp(newBlockEntry.getDeleteDeltaEndTimestamp());
             blockDetail.setStatus(newBlockEntry.getStatus());
@@ -309,7 +308,7 @@ public class CarbonUpdateUtil {
     String partitionDir = carbonTablePath.getPartitionDir(partitionId);
     CarbonFile file =
             FileFactory.getCarbonFile(partitionDir, FileFactory.getFileType(partitionDir));
-    if(!file.exists()) {
+    if (!file.exists()) {
       return;
     }
     for (CarbonFile eachDir : file.listFiles()) {
@@ -735,9 +734,9 @@ public class CarbonUpdateUtil {
    * @param segmentBlockCount
    * @return
    */
-  public static List<String> getListOfSegmentsToMarkDeleted( Map<String, Long> segmentBlockCount) {
+  public static List<String> getListOfSegmentsToMarkDeleted(Map<String, Long> segmentBlockCount) {
     List<String> segmentsToBeDeleted =
-            new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     for (Map.Entry<String, Long> eachSeg : segmentBlockCount.entrySet()) {
 

@@ -98,7 +98,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             return (int) (((Timestamp) value).getTime());
           } else {
             if (isLiteral) {
-              Long l = (Long) value /1000;
+              Long l = (Long) value / 1000;
               return l.intValue();
             }
             return (Integer) value;
@@ -150,7 +150,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             return (short) (((Timestamp) value).getTime());
           } else {
             if (isLiteral) {
-              Long l = ((long)value/1000);
+              Long l = ((long) value / 1000);
               return l.shortValue();
             }
             return (Short) value;
@@ -183,7 +183,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             return parser.format((java.sql.Date) value);
           } else if (value instanceof Long) {
             if (isLiteral) {
-              return parser.format(new Timestamp((long) value/1000));
+              return parser.format(new Timestamp((long) value / 1000));
             }
             return parser.format(new Timestamp((long) value));
           } else if (value instanceof Integer) {
@@ -230,7 +230,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             return (double) ((Timestamp) value).getTime();
           } else {
             if (isLiteral) {
-              Long l = (Long) value/1000;
+              Long l = (Long) value / 1000;
               return l.doubleValue();
             }
             return (Double) (value);
@@ -322,7 +322,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             return new BigDecimal(((Timestamp) value).getTime());
           } else {
             if (isLiteral) {
-              return new BigDecimal((long)value/1000);
+              return new BigDecimal((long) value / 1000);
             }
             return new BigDecimal((long) value);
           }
@@ -376,7 +376,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             return ((Timestamp) value).getTime();
           } else {
             if (isLiteral) {
-              return (Long) value/1000;
+              return (Long) value / 1000;
             }
             return (Long) value;
           }
@@ -522,8 +522,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           return val1.compareTo(val2);
         case DATE:
         case TIMESTAMP:
-
-          String format= CarbonUtil.getFormatFromProperty(o.dataType);
+          String format = CarbonUtil.getFormatFromProperty(o.dataType);
           SimpleDateFormat parser = new SimpleDateFormat(format);
           Date date1 = parser.parse(this.getString());
           Date date2 = parser.parse(o.getString());

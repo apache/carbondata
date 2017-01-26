@@ -67,7 +67,7 @@ public class ColumnWithIntIndex implements Comparable<ColumnWithIntIndex> {
   }
 
   @Override public boolean equals(Object obj) {
-    if(obj == null || getClass() != obj.getClass()) {
+    if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
     ColumnWithIntIndex o = (ColumnWithIntIndex)obj;

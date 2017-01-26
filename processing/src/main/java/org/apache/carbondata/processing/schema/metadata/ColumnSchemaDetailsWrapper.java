@@ -71,7 +71,7 @@ public class ColumnSchemaDetailsWrapper {
   public ColumnSchemaDetailsWrapper(String input) {
     columnSchemaDetailsMap = new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     String[] split = input.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
-    for (int i=0 ; i< split.length ;i++) {
+    for (int i = 0; i < split.length; i++) {
       String key = split[i++];
       ColumnSchemaDetails details = new ColumnSchemaDetails(split[i]);
       columnSchemaDetailsMap.put(key, details);

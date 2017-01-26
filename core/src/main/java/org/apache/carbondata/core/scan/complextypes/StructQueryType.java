@@ -89,7 +89,7 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     ByteBuffer byteArray = ByteBuffer.wrap(input);
     int childElement = byteArray.getInt();
     dataOutputStream.writeInt(childElement);
-    if (childElement > 0){
+    if (childElement > 0) {
       for (int i = 0; i < childElement; i++) {
         children.get(i)
             .parseBlocksAndReturnComplexColumnByteArray(dimensionColumnDataChunks, rowNumber,

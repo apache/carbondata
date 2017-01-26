@@ -38,7 +38,7 @@ public class BlockletInfos implements Serializable {
   /**
    * default constructor
    */
-  public BlockletInfos(){
+  public BlockletInfos() {
   }
   /**
    * constructor to initialize the blockletinfo

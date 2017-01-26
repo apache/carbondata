@@ -523,7 +523,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     segmentId = "";
     taskNo = "";
     columnSchemaDetails = "";
-    columnsDataTypeString="";
+    columnsDataTypeString = "";
     tableOption = "";
     dateFormat = "";
   }
@@ -670,7 +670,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     tableOptionWrapper.populateTableOptions(tableOption);
 
     updateDimensions(carbondim, carbonmsr, noDictionaryDims);
-    dimColDataTypes=RemoveDictionaryUtil.extractDimColsDataTypeValues(columnsDataTypeString);
+    dimColDataTypes = RemoveDictionaryUtil.extractDimColsDataTypeValues(columnsDataTypeString);
     if (null != complexTypeString) {
       complexTypes = getComplexTypesMap(complexTypeString);
     } else {

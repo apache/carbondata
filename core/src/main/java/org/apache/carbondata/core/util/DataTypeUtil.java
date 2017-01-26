@@ -193,7 +193,7 @@ public final class DataTypeUtil {
   public static BigDecimal byteToBigDecimal(byte[] raw, int offset, int length) {
     int scale = (raw[offset] & 0xFF);
     byte[] unscale = new byte[length - 1];
-    System.arraycopy(raw, offset+1, unscale, 0, unscale.length);
+    System.arraycopy(raw, offset + 1, unscale, 0, unscale.length);
     BigInteger sig = new BigInteger(unscale);
     return new BigDecimal(sig, scale);
   }
@@ -367,7 +367,7 @@ public final class DataTypeUtil {
         default:
           return data;
       }
-      if(null != parsedValue) {
+      if (null != parsedValue) {
         return data;
       }
       return null;

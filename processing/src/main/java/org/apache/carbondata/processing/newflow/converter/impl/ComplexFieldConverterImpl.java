@@ -48,7 +48,7 @@ public class ComplexFieldConverterImpl extends AbstractDictionaryFieldConverterI
       dataOutputStream.close();
       row.update(byteArray.toByteArray(), index);
     } catch (Exception e) {
-      throw new CarbonDataLoadingException(object+"", e);
+      throw new CarbonDataLoadingException(object + "", e);
     }
   }
 

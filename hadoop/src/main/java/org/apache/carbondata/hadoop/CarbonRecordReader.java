@@ -64,7 +64,7 @@ public class CarbonRecordReader<T> extends RecordReader<Void, T> {
     if (inputSplit instanceof CarbonInputSplit) {
       splitList = new ArrayList<>(1);
       splitList.add((CarbonInputSplit) inputSplit);
-    } else if (inputSplit instanceof CarbonMultiBlockSplit){
+    } else if (inputSplit instanceof CarbonMultiBlockSplit) {
       // contains multiple blocks, this is an optimization for concurrent query.
       CarbonMultiBlockSplit multiBlockSplit = (CarbonMultiBlockSplit) inputSplit;
       splitList = multiBlockSplit.getAllSplits();

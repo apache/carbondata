@@ -34,7 +34,7 @@ public class ColumnWithIntIndexForHighCard extends ColumnWithIntIndex
   }
 
   @Override public boolean equals(Object obj) {
-    if(obj == null || getClass() != obj.getClass()) {
+    if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
     ColumnWithIntIndexForHighCard o = (ColumnWithIntIndexForHighCard)obj;

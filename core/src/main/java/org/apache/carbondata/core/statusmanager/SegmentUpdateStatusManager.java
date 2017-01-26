@@ -92,7 +92,7 @@ public class SegmentUpdateStatusManager {
    */
   private void populateMap() {
     blockAndDetailsMap = new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    for(SegmentUpdateDetails blockDetails : updateDetails) {
+    for (SegmentUpdateDetails blockDetails : updateDetails) {
 
       String blockIdentifier = CarbonUpdateUtil
           .getSegmentBlockNameKey(blockDetails.getSegmentName(), blockDetails.getActualBlockName());
@@ -355,7 +355,7 @@ public class SegmentUpdateStatusManager {
           .equalsIgnoreCase(segment) && !CarbonUpdateUtil.isBlockInvalid(block.getStatus())) {
         final long deltaStartTimestamp = getStartTimeOfDeltaFile(extension, block);
         // If there is no delete delete file , then return null
-        if(deltaStartTimestamp == 0) {
+        if (deltaStartTimestamp == 0) {
           return deleteFileList;
         }
         final long deltaEndTimeStamp = getEndTimeOfDeltaFile(extension, block);
@@ -383,9 +383,9 @@ public class SegmentUpdateStatusManager {
           long timestamp = Long.parseLong(firstPart
               .substring(firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1,
                   firstPart.length()));
-          if (blockNameFromTuple.equals(blockName) && ((
-              Long.compare(timestamp, deltaEndTimeStamp ) <= 0) && (
-              Long.compare(timestamp, deltaStartTimestamp) >= 0))) {
+          if (blockNameFromTuple.equals(blockName) && (
+              (Long.compare(timestamp, deltaEndTimeStamp) <= 0) && (
+                  Long.compare(timestamp, deltaStartTimestamp) >= 0))) {
             return true;
           }
         }
@@ -394,7 +394,7 @@ public class SegmentUpdateStatusManager {
     });
 
     for (CarbonFile cfile : files) {
-      if(null == deleteFileList) {
+      if (null == deleteFileList) {
         deleteFileList = new ArrayList<String>(files.length);
       }
       deleteFileList.add(cfile.getCanonicalPath());
@@ -592,7 +592,7 @@ public class SegmentUpdateStatusManager {
 
             boolean validBlock = true;
 
-            for(SegmentUpdateDetails blockDetails : getUpdateStatusDetails()) {
+            for (SegmentUpdateDetails blockDetails : getUpdateStatusDetails()) {
               if (blockDetails.getActualBlockName().equalsIgnoreCase(eachFile.getName())
                   && CarbonUpdateUtil.isBlockInvalid(blockDetails.getStatus())) {
                 validBlock = false;
@@ -667,7 +667,7 @@ public class SegmentUpdateStatusManager {
     // get the updated status file identifier from the table status.
     String tableUpdateStatusIdentifier = getUpdatedStatusIdentifier();
 
-    if(null == tableUpdateStatusIdentifier) {
+    if (null == tableUpdateStatusIdentifier) {
       return new SegmentUpdateDetails[0];
     }
 
@@ -836,7 +836,7 @@ public class SegmentUpdateStatusManager {
     String startTimestampOfUpdate = "" ;
     String endTimestampOfUpdate = "";
 
-    for(LoadMetadataDetails segment : segmentDetails){
+    for (LoadMetadataDetails segment : segmentDetails) {
       // find matching segment and return timestamp.
       if (segment.getLoadName().equalsIgnoreCase(segmentId)) {
         timestampOfOriginalFacts = segment.getLoadStartTime();
@@ -889,7 +889,7 @@ public class SegmentUpdateStatusManager {
     });
 
     // gather the task numbers.
-    for(CarbonFile updateFiles : files) {
+    for (CarbonFile updateFiles : files) {
       listOfInvalidBlocks.add(updateFiles.getName());
     }
 

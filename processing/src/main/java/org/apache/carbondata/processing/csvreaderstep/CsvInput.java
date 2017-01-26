@@ -182,7 +182,7 @@ public class CsvInput extends BaseStep implements StepInterface {
       LOGGER.info("*****************Completed all csv reading***********");
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordCsvInputStepTime(
               meta.getPartitionID(), System.currentTimeMillis());
-    } else if(rddIteratorKey.startsWith(CarbonCommonConstants.RDDUTIL_UPDATE_KEY)) {
+    } else if (rddIteratorKey.startsWith(CarbonCommonConstants.RDDUTIL_UPDATE_KEY)) {
       scanRddIteratorForUpdate();
     }
     else {
@@ -241,7 +241,7 @@ public class CsvInput extends BaseStep implements StepInterface {
       exec = Executors.newFixedThreadPool(numberOfNodes);
       List<Future<Void>> results = new ArrayList<Future<Void>>(numberOfNodes);
       RddScanCallable[] calls = new RddScanCallable[numberOfNodes];
-      for (int i = 0; i < numberOfNodes; i++ ) {
+      for (int i = 0; i < numberOfNodes; i++) {
         calls[i] = new RddScanCallable();
         results.add(exec.submit(calls[i]));
       }
@@ -261,7 +261,7 @@ public class CsvInput extends BaseStep implements StepInterface {
   private void scanRddIteratorForUpdate() throws RuntimeException {
     Iterator<String[]> iterator = RddInpututilsForUpdate.getAndRemove(rddIteratorKey);
     if (iterator != null) {
-      try{
+      try {
         while (iterator.hasNext()) {
           putRow(data.outputRowMeta, iterator.next());
         }
@@ -354,7 +354,7 @@ public class CsvInput extends BaseStep implements StepInterface {
     csvParserVo.setQuoteCharacter(meta.getQuoteCharacter());
     csvParserVo.setCommentCharacter(meta.getCommentCharacter());
     String maxColumns = meta.getMaxColumns();
-    if(null != maxColumns) {
+    if (null != maxColumns) {
       csvParserVo.setMaxColumns(Integer.parseInt(maxColumns));
     }
     return csvParserVo;

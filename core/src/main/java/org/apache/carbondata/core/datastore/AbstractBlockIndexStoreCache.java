@@ -73,7 +73,7 @@ public abstract class AbstractBlockIndexStoreCache<K, V>
     this.carbonStorePath = carbonStorePath;
     this.lruCache = lruCache;
     blockInfoLock = new ConcurrentHashMap<BlockInfo, Object>();
-    segmentIDLock= new ConcurrentHashMap<String, Object>();
+    segmentIDLock = new ConcurrentHashMap<String, Object>();
     segmentIdToBlockListMap = new ConcurrentHashMap<>();
   }
 

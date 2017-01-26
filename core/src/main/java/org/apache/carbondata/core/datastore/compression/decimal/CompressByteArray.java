@@ -72,12 +72,11 @@ public class CompressByteArray extends ValueCompressionHolder<byte[]> {
     int length = 0;
     byte[] actualValue = null;
     //CHECKSTYLE:OFF    Approval No:Approval-367
-    while (buffer.hasRemaining()) {//CHECKSTYLE:ON
+    while (buffer.hasRemaining()) { //CHECKSTYLE:ON
       length = buffer.getInt();
       actualValue = new byte[length];
       buffer.get(actualValue);
       valsList.add(actualValue);
-
     }
     return valsList.get(0);
   }

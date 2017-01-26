@@ -68,8 +68,8 @@ public class InMemBiDictionary<K, V> extends GeneratingBiDictionary<K, V> {
   @Override
   protected void put(K key, V value) {
     // dictionary is immutable, it is append only
-    assert(!biMap.containsKey(key));
-    assert(!biMap.containsValue(value));
+    assert (!biMap.containsKey(key));
+    assert (!biMap.containsValue(value));
     biMap.put(key, value);
   }
 
