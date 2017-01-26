@@ -43,25 +43,30 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
   @Override public BatchResult next() {
     BatchResult result;
     long startTime = System.currentTimeMillis();
-    try {
-      if (future == null) {
-        future = execute();
-      }
-      result = future.get();
-      nextBatch = false;
-      if (hasNext()) {
-        nextBatch = true;
-        future = execute();
-      } else {
-        fileReader.finish();
-      }
-      totalScanTime += System.currentTimeMillis() - startTime;
-    } catch (Exception ex) {
+    if (false) {
       try {
-        fileReader.finish();
-      } finally {
-        throw new RuntimeException(ex);
+        if (future == null) {
+          future = execute();
+        }
+        result = future.get();
+        nextBatch = false;
+        if (hasNext()) {
+          nextBatch = true;
+          future = execute();
+        } else {
+          fileReader.finish();
+        }
+        totalScanTime += System.currentTimeMillis() - startTime;
+      } catch (Exception ex) {
+        try {
+          fileReader.finish();
+        } finally {
+          throw new RuntimeException(ex);
+        }
       }
+    }
+    else {
+      result = getBatchResult();
     }
     return result;
   }
@@ -69,15 +74,19 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
   private Future<BatchResult> execute() {
     return execService.submit(new Callable<BatchResult>() {
       @Override public BatchResult call() {
-        BatchResult batchResult = new BatchResult();
-        synchronized (lock) {
-          updateDataBlockIterator();
-          if (dataBlockIterator != null) {
-            batchResult.setRows(dataBlockIterator.next());
-          }
-        }
-        return batchResult;
+        return getBatchResult();
       }
     });
+  }
+
+  private BatchResult getBatchResult() {
+    BatchResult batchResult = new BatchResult();
+    synchronized (lock) {
+      updateDataBlockIterator();
+      if (dataBlockIterator != null) {
+        batchResult.setRows(dataBlockIterator.next());
+      }
+    }
+    return batchResult;
   }
 }
