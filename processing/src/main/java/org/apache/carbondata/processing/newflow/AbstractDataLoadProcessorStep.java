@@ -61,7 +61,7 @@ public abstract class AbstractDataLoadProcessorStep {
       @Override public void run() {
         while (!closed) {
           try {
-            LOGGER.info("Rows processed in step "+getStepName() +" : " + rowCounter.get());
+            LOGGER.info("Rows processed in step " + getStepName() + " : " + rowCounter.get());
             Thread.sleep(10000);
           } catch (InterruptedException e) {
             //ignore
