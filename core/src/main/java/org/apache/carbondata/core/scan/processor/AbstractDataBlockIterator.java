@@ -16,10 +16,8 @@
  */
 package org.apache.carbondata.core.scan.processor;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -33,7 +31,6 @@ import org.apache.carbondata.core.scan.collector.impl.DictionaryBasedResultColle
 import org.apache.carbondata.core.scan.collector.impl.DictionaryBasedVectorResultCollector;
 import org.apache.carbondata.core.scan.collector.impl.RawBasedResultCollector;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
-import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.scan.scanner.BlockletScanner;
@@ -151,7 +148,12 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
         blocksChunkHolder.setDataBlock(dataBlockIterator.next());
         future = execute(blocksChunkHolder);
       }
+      long l = System.currentTimeMillis();
       result = future.get();
+      long r = System.currentTimeMillis()-l;
+      if (r > 2) {
+        LOGGER.info("++++++++++++ time : " +r);
+      }
       nextResult = false;
       if (dataBlockIterator.hasNext()) {
         nextResult = true;
@@ -168,7 +170,15 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
   private Future<AbstractScannedResult> execute(final BlocksChunkHolder blocksChunkHolder) {
     return executorService.submit(new Callable<AbstractScannedResult>() {
       @Override public AbstractScannedResult call() throws Exception {
-        return blockletScanner.scanBlocklet(blocksChunkHolder);
+        long l = System.currentTimeMillis();
+        AbstractScannedResult abstractScannedResult =
+            blockletScanner.scanBlocklet(blocksChunkHolder);
+        long r = System.currentTimeMillis()-l;
+        if (r > 2) {
+          LOGGER.info("++++++++++++ abstractScannedResult : " +r);
+        }
+
+        return abstractScannedResult;
       }
     });
   }
