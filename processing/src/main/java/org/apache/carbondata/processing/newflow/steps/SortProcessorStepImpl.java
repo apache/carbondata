@@ -85,8 +85,10 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   @Override
   public void close() {
-    super.close();
-    sorter.close();
+    if (!closed) {
+      super.close();
+      sorter.close();
+    }
   }
 
   @Override protected String getStepName() {

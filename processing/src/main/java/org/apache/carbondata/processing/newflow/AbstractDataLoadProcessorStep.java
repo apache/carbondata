@@ -48,7 +48,7 @@ public abstract class AbstractDataLoadProcessorStep {
 
   protected AtomicLong rowCounter;
 
-  private boolean closed;
+  protected boolean closed;
 
   public AbstractDataLoadProcessorStep(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
@@ -156,9 +156,11 @@ public abstract class AbstractDataLoadProcessorStep {
    * It will be called in both success and failure cases.
    */
   public void close() {
-    closed = true;
-    if (child != null) {
-      child.close();
+    if (!closed) {
+      closed = true;
+      if (child != null) {
+        child.close();
+      }
     }
   }
 

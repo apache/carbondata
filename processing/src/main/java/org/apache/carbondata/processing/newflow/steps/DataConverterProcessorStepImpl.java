@@ -153,9 +153,11 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
 
   @Override
   public void close() {
-    super.close();
-    if (converter != null) {
-      converter.finish();
+    if (!closed) {
+      super.close();
+      if (converter != null) {
+        converter.finish();
+      }
     }
   }
 
