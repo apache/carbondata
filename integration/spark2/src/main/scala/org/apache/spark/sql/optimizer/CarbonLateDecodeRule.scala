@@ -195,21 +195,12 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
           agg.aggregateExpressions.map {
             case attr: AttributeReference =>
             case a@Alias(attr: AttributeReference, name) =>
-            case a@Alias(aggExp: AggregateExpression, _) =>
-              if (!aggExp.aggregateFunction.isInstanceOf[Count]) {
-                aggExp.transform {
-                  case aggExp: AggregateExpression =>
-                    collectDimensionAggregates(aggExp, attrsOndimAggs, aliasMap, attrMap)
-                    aggExp
-                }
-              }
+            case Alias(AggregateExpression(Count(Seq(attr: AttributeReference)), _, _, _), _) =>
             case aggExp: AggregateExpression =>
-              if (!aggExp.aggregateFunction.isInstanceOf[Count]) {
-                aggExp.transform {
-                  case aggExp: AggregateExpression =>
-                    collectDimensionAggregates(aggExp, attrsOndimAggs, aliasMap, attrMap)
-                    aggExp
-                }
+              aggExp.transform {
+                case aggExp: AggregateExpression =>
+                  collectDimensionAggregates(aggExp, attrsOndimAggs, aliasMap, attrMap)
+                  aggExp
               }
             case others =>
               others.collect {
