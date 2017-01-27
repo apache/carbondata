@@ -408,12 +408,6 @@
       <id>include-all</id>
     </profile>
     <profile>
-      <id>with-kettle</id>
-      <properties>
-        <use.kettle>true</use.kettle>
-      </properties>
-    </profile>
-    <profile>
       <id>rat</id>
       <build>
         <plugins>
