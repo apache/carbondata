@@ -57,19 +57,22 @@ public abstract class AbstractDataLoadProcessorStep {
     this.rowCounter = new AtomicLong();
     this.closed = false;
 
-    new Thread() {
-      @Override public void run() {
-        while (!closed) {
-          try {
-            LOGGER.info("Rows processed in step " + getStepName() + " : " + rowCounter.get());
-            Thread.sleep(10000);
-          } catch (InterruptedException e) {
-            //ignore
-            LOGGER.error(e.getMessage());
+    if (LOGGER.isInfoEnabled()) {
+      // This thread prints the rows processed in each step for every 10 seconds.
+      new Thread() {
+        @Override public void run() {
+          while (!closed) {
+            try {
+              LOGGER.info("Rows processed in step " + getStepName() + " : " + rowCounter.get());
+              Thread.sleep(10000);
+            } catch (InterruptedException e) {
+              //ignore
+              LOGGER.error(e.getMessage());
+            }
           }
         }
-      }
-    }.start();
+      }.start();
+    }
   }
 
   /**
