@@ -156,7 +156,7 @@
           </environmentVariables>
           <systemProperties>
             <java.awt.headless>true</java.awt.headless>
-            <use.kettle>${use.kettle}</use.kettle>
+            <use_kettle>${use.kettle}</use_kettle>
           </systemProperties>
         </configuration>
         <executions>

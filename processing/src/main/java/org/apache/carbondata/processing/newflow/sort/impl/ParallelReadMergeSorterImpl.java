@@ -22,6 +22,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
@@ -29,7 +30,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
-import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
@@ -60,7 +60,10 @@ public class ParallelReadMergeSorterImpl implements Sorter {
 
   private SingleThreadFinalSortFilesMerger finalMerger;
 
-  public ParallelReadMergeSorterImpl(DataField[] inputDataFields) {
+  private AtomicLong rowCounter;
+
+  public ParallelReadMergeSorterImpl(AtomicLong rowCounter) {
+    this.rowCounter = rowCounter;
   }
 
   @Override
@@ -98,7 +101,7 @@ public class ParallelReadMergeSorterImpl implements Sorter {
     try {
       for (int i = 0; i < iterators.length; i++) {
         executorService.submit(
-            new SortIteratorThread(iterators[i], sortDataRow, sortParameters, batchSize));
+            new SortIteratorThread(iterators[i], sortDataRow, batchSize, rowCounter));
       }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
@@ -182,11 +185,14 @@ public class ParallelReadMergeSorterImpl implements Sorter {
 
     private Object[][] buffer;
 
-    public SortIteratorThread(Iterator<CarbonRowBatch> iterator, SortDataRows sortDataRows,
-        SortParameters parameters, int batchSize) {
+    private AtomicLong rowCounter;
+
+    public SortIteratorThread(Iterator<CarbonRowBatch> iterator,
+        SortDataRows sortDataRows, int batchSize, AtomicLong rowCounter) {
       this.iterator = iterator;
       this.sortDataRows = sortDataRows;
       this.buffer = new Object[batchSize][];
+      this.rowCounter = rowCounter;
     }
 
     @Override
@@ -204,6 +210,7 @@ public class ParallelReadMergeSorterImpl implements Sorter {
           }
           if (i > 0) {
             sortDataRows.addRowBatch(buffer, i);
+            rowCounter.getAndAdd(i);
           }
         }
       } catch (Exception e) {

@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -72,7 +73,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     for (int i = 0; i < outIterators.length; i++) {
       outIterators[i] =
           new InputProcessorIterator(readerIterators[i], rowParser, batchSize,
-              configuration.isPreFetch(), executorService);
+              configuration.isPreFetch(), executorService, rowCounter);
     }
     return outIterators;
   }
@@ -104,10 +105,17 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
   }
 
   @Override public void close() {
-    executorService.shutdown();
-    for (CarbonIterator inputIterator : inputIterators) {
-      inputIterator.close();
+    if (!closed) {
+      super.close();
+      executorService.shutdown();
+      for (CarbonIterator inputIterator : inputIterators) {
+        inputIterator.close();
+      }
     }
+  }
+
+  @Override protected String getStepName() {
+    return "Input Processor";
   }
 
   /**
@@ -136,8 +144,11 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
     private boolean preFetch;
 
+    private AtomicLong rowCounter;
+
     public InputProcessorIterator(List<CarbonIterator<Object[]>> inputIterators,
-        RowParser rowParser, int batchSize, boolean preFetch, ExecutorService executorService) {
+        RowParser rowParser, int batchSize, boolean preFetch, ExecutorService executorService,
+        AtomicLong rowCounter) {
       this.inputIterators = inputIterators;
       this.batchSize = batchSize;
       this.rowParser = rowParser;
@@ -145,6 +156,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
       // Get the first iterator from the list.
       currentIterator = inputIterators.get(counter++);
       this.executorService = executorService;
+      this.rowCounter = rowCounter;
       this.preFetch = preFetch;
       this.nextBatch = false;
       this.firstTime = true;
@@ -222,6 +234,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
         carbonRowBatch.addRow(new CarbonRow(rowParser.parseRow(currentIterator.next())));
         count++;
       }
+      rowCounter.getAndAdd(carbonRowBatch.getSize());
       return carbonRowBatch;
     }
   }

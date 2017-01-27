@@ -36,6 +36,7 @@ import org.apache.spark.sql.types.{AtomicType, IntegerType}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.BucketingInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.spark.util.CarbonScalaUtil
@@ -481,15 +482,17 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   }
 
   def supportBatchedDataSource(sqlContext: SQLContext, cols: Seq[Attribute]): Boolean = {
-    val enableReader = {
+    val vectorizedReader = {
       if (sqlContext.sparkSession.conf.contains(CarbonCommonConstants.ENABLE_VECTOR_READER)) {
         sqlContext.sparkSession.conf.get(CarbonCommonConstants.ENABLE_VECTOR_READER)
+      } else if (System.getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER) != null) {
+        System.getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER)
       } else {
-        System.getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
           CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
       }
     }
-    sqlContext.conf.wholeStageEnabled && enableReader.toBoolean &&
+    sqlContext.conf.wholeStageEnabled && vectorizedReader.toBoolean &&
       cols.forall(_.dataType.isInstanceOf[AtomicType])
   }
 }

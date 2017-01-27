@@ -22,6 +22,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
@@ -30,7 +31,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
-import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
@@ -63,13 +63,13 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
 
   private BucketingInfo bucketingInfo;
 
-  private DataField[] inputDataFields;
-
   private int sortBufferSize;
 
-  public ParallelReadMergeSorterWithBucketingImpl(DataField[] inputDataFields,
+  private AtomicLong rowCounter;
+
+  public ParallelReadMergeSorterWithBucketingImpl(AtomicLong rowCounter,
       BucketingInfo bucketingInfo) {
-    this.inputDataFields = inputDataFields;
+    this.rowCounter = rowCounter;
     this.bucketingInfo = bucketingInfo;
   }
 
@@ -103,7 +103,7 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
     final int batchSize = CarbonProperties.getInstance().getBatchSize();
     try {
       for (int i = 0; i < iterators.length; i++) {
-        executorService.submit(new SortIteratorThread(iterators[i], sortDataRows));
+        executorService.submit(new SortIteratorThread(iterators[i], sortDataRows, rowCounter));
       }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
@@ -196,9 +196,13 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
 
     private SortDataRows[] sortDataRows;
 
-    public SortIteratorThread(Iterator<CarbonRowBatch> iterator, SortDataRows[] sortDataRows) {
+    private AtomicLong rowCounter;
+
+    public SortIteratorThread(Iterator<CarbonRowBatch> iterator, SortDataRows[] sortDataRows,
+        AtomicLong rowCounter) {
       this.iterator = iterator;
       this.sortDataRows = sortDataRows;
+      this.rowCounter = rowCounter;
     }
 
     @Override public Void call() throws CarbonDataLoadingException {
@@ -213,6 +217,7 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
               SortDataRows sortDataRow = sortDataRows[row.bucketNumber];
               synchronized (sortDataRow) {
                 sortDataRow.addRow(row.getData());
+                rowCounter.getAndAdd(1);
               }
             }
           }
