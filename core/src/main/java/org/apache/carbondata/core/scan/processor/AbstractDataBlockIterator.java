@@ -148,12 +148,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
         blocksChunkHolder.setDataBlock(dataBlockIterator.next());
         future = execute(blocksChunkHolder);
       }
-      long l = System.currentTimeMillis();
       result = future.get();
-      long r = System.currentTimeMillis()-l;
-      if (r > 2) {
-        LOGGER.info("++++++++++++ time : " +r);
-      }
       nextResult = false;
       if (dataBlockIterator.hasNext()) {
         nextResult = true;
@@ -170,15 +165,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
   private Future<AbstractScannedResult> execute(final BlocksChunkHolder blocksChunkHolder) {
     return executorService.submit(new Callable<AbstractScannedResult>() {
       @Override public AbstractScannedResult call() throws Exception {
-        long l = System.currentTimeMillis();
-        AbstractScannedResult abstractScannedResult =
-            blockletScanner.scanBlocklet(blocksChunkHolder);
-        long r = System.currentTimeMillis()-l;
-        if (r > 2) {
-          LOGGER.info("++++++++++++ abstractScannedResult : " +r);
-        }
-
-        return abstractScannedResult;
+        return blockletScanner.scanBlocklet(blocksChunkHolder);
       }
     });
   }
