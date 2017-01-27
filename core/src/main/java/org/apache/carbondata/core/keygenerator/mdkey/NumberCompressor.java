@@ -48,12 +48,12 @@ public class NumberCompressor {
     }
   }
 
-//  public byte[] compress(int[] keys) {
-//    int[] sizes = getWordsAndByteSize(keys.length);
-//    long[] words = get(keys, sizes[0]);
-//
-//    return getByteValues(sizes, words);
-//  }
+  //  public byte[] compress(int[] keys) {
+  //    int[] sizes = getWordsAndByteSize(keys.length);
+  //    long[] words = get(keys, sizes[0]);
+  //
+  //    return getByteValues(sizes, words);
+  //  }
 
   public byte[] compress(int[] keys) {
     int length = keys.length;
@@ -62,7 +62,7 @@ public class NumberCompressor {
     int offset = 0;
     for (int k = 0; k < length; k++) {
       int val = keys[k];
-      for(int i= offset + bytesPerKey-1; i > offset; i--) {
+      for (int i = offset + bytesPerKey - 1; i > offset; i--) {
         b[i] = (byte) val;
         val >>>= 8;
       }
@@ -161,13 +161,13 @@ public class NumberCompressor {
     return words;
   }
 
-//  public int[] unCompress(byte[] key, int offset, int length) {
-//    int ls = length;
-//    int arrayLength = (ls * BYTE_LENGTH) / bitsLength;
-//    long[] words = new long[getWordsSizeFromBytesSize(ls)];
-//    unCompressVal(key, ls, words, offset);
-//    return getArray(words, arrayLength);
-//  }
+  //  public int[] unCompress(byte[] key, int offset, int length) {
+  //    int ls = length;
+  //    int arrayLength = (ls * BYTE_LENGTH) / bitsLength;
+  //    long[] words = new long[getWordsSizeFromBytesSize(ls)];
+  //    unCompressVal(key, ls, words, offset);
+  //    return getArray(words, arrayLength);
+  //  }
 
   public int[] unCompress(byte[] key, int offset, int length) {
     int len = length / bytesPerKey;
