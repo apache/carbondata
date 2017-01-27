@@ -65,9 +65,6 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
   public void processNextBatch(CarbonColumnarBatch columnarBatch) {
     if (updateScanner()) {
       this.scannerResultAggregator.collectVectorBatch(scannedResult, columnarBatch);
-      while (columnarBatch.getActualSize() < columnarBatch.getBatchSize() && updateScanner()) {
-        this.scannerResultAggregator.collectVectorBatch(scannedResult, columnarBatch);
-      }
     }
   }
 
