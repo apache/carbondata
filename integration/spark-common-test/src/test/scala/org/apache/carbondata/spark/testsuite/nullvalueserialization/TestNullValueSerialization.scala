@@ -59,10 +59,6 @@ class TestNullValueSerialization extends QueryTest with BeforeAndAfterAll {
 
 
   test("test detail query on column having null values") {
-    System.out.println("Carbon Table")
-    sql("select * from carbonTable").show()
-    System.out.println("Hive Table")
-    sql("select * from hiveTable").show()
     checkAnswer(
       sql("select * from carbonTable"),
       sql("select * from hiveTable")

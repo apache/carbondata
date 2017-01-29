@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.spark.testsuite.aggquery
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -98,6 +99,12 @@ class AverageQueryTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("SELECT sum(distinct country)+10 FROM carbonTable"),
       sql("SELECT sum(distinct country)+10 FROM hiveTable"))
+  }
+
+  test("group by with having") {
+    checkAnswer(
+      sql("select country,count(*) from carbonTable group by country having count(*)>5"),
+      Seq(Row("china", 9)))
   }
 
   override def afterAll {

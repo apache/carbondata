@@ -43,7 +43,7 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
            USING org.apache.spark.sql.CarbonSource
           OPTIONS("tableName"="vectorreader")
       """)
-    LoadTable(Some("default"), "vectorreader", s"$resourcesPath/dataDiff.csv", Nil,
+    LoadTable(Some("default"), "vectorreader", s"$resourcesPath/source.csv", Nil,
       Map(("use_kettle", "false"))).run(sqlContext.sparkSession)
   }
 
@@ -71,8 +71,8 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test vector reader for random measure selection") {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
-    checkAnswer(sql("""select salary, ID from vectorreader where ID=394""".stripMargin),
-      Seq(Row(15393, 394)))
+    checkAnswer(sql("""select salary, ID from vectorreader where ID = 94""".stripMargin),
+      Seq(Row(15093, 94)))
   }
 
   override def afterAll {

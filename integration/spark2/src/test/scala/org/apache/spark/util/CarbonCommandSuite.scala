@@ -32,6 +32,7 @@ class CarbonCommandSuite extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
     dropTable("csv_table")
+    dropTable("carbon_table")
     createAndLoadInputTable("csv_table", s"$resourcesPath/data_alltypes.csv")
     createAndLoadTestTable("carbon_table", "csv_table")
   }

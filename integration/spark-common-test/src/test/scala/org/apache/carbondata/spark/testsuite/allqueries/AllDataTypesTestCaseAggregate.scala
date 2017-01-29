@@ -52,7 +52,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists Carbon_automation_hive")
     sql("drop table if exists Carbon_automation_test_hive")
   }
-  
+
   override def afterAll {
     clean
     CarbonProperties.getInstance()

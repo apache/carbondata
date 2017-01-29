@@ -23,6 +23,9 @@ import java.util.concurrent.{Callable, Executors}
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 /**
  * This class contains DataRetention concurrency test cases
  */
@@ -31,7 +34,7 @@ class DataRetentionConcurrencyTestCase extends QueryTest with BeforeAndAfterAll 
   private val executorService = Executors.newFixedThreadPool(10)
 
   override def beforeAll {
-
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK, "1")
     sql("drop table if exists concurrent")
     sql(
       "create table concurrent (ID int, date String, country String, name " +
@@ -61,8 +64,6 @@ class DataRetentionConcurrencyTestCase extends QueryTest with BeforeAndAfterAll 
       val res = results.get(i).get
       assert("PASS".equals(res))
     }
-    sql("show segments for table concurrent").show()
-
   }
 
   test("DataRetention_Concurrency_load_date") {
@@ -83,8 +84,6 @@ class DataRetentionConcurrencyTestCase extends QueryTest with BeforeAndAfterAll 
       val res = results.get(i).get
       assert("PASS".equals(res))
     }
-    sql("show segments for table concurrent").show()
-
   }
 
   class QueryTask(query: String) extends Callable[String] {

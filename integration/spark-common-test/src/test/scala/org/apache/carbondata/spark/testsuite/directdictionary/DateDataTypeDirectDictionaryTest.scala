@@ -58,7 +58,6 @@ class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll 
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable OPTIONS" +
         "('DELIMITER'= ',', 'QUOTECHAR'= '\"')" )
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable_hive")
-      sql("select * from directDictionaryTable_hive").show(false)
     } catch {
       case x: Throwable =>
         x.printStackTrace()

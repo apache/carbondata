@@ -40,7 +40,7 @@ class TestLoadDataWithSinglePass extends QueryTest with BeforeAndAfterAll {
 
     sql(
       s"""
-        |LOAD DATA local inpath '$resourcesPath/dataDiff.csv' INTO TABLE table_two_pass
+        |LOAD DATA local inpath '$resourcesPath/source.csv' INTO TABLE table_two_pass
         |OPTIONS('DELIMITER'= ',', 'USE_KETTLE'='false', 'SINGLE_PASS'='false')
       """.stripMargin)
 
@@ -53,7 +53,7 @@ class TestLoadDataWithSinglePass extends QueryTest with BeforeAndAfterAll {
 
     sql(
       s"""
-        |LOAD DATA local inpath '$resourcesPath/dataDiff.csv' INTO TABLE table_one_pass
+        |LOAD DATA local inpath '$resourcesPath/source.csv' INTO TABLE table_one_pass
         |OPTIONS('DELIMITER'= ',', 'USE_KETTLE'='false', 'SINGLE_PASS'='true')
       """.stripMargin)
   }
@@ -74,7 +74,7 @@ class TestLoadDataWithSinglePass extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql(
       s"""
-        |LOAD DATA local inpath '$resourcesPath/dataDiff.csv' INTO TABLE table_one_pass_2
+        |LOAD DATA local inpath '$resourcesPath/source.csv' INTO TABLE table_one_pass_2
         |OPTIONS('DELIMITER'= ',', 'USE_KETTLE'='false', 'SINGLE_PASS'='true', 'COLUMNDICT'=
         |'country:$resourcesPath/columndictionary/country.csv, name:$resourcesPath/columndictionary/name.csv')
       """.stripMargin)
