@@ -93,12 +93,12 @@ public class DictionaryClientTest {
 
     // Start the server for testing the client
     server = new DictionaryServer();
-    server.startServer(5678);
+    server.startServer(5679);
   }
 
   @Test public void testClient() throws Exception {
     DictionaryClient client = new DictionaryClient();
-    client.startClient("localhost", 5678);
+    client.startClient("localhost", 5679);
 
     // Create a dictionary key
     DictionaryKey empKey = new DictionaryKey();
@@ -127,6 +127,8 @@ public class DictionaryClientTest {
     File dictPath = new File(storePath + "/test/TestTable/Metadata/");
     dictPath.mkdirs();
     File empDictionaryFile = new File(dictPath, empColumnSchema.getColumnName() + ".dict");
+    empKey.setType("SHUTDOWN");
+
     assertTrue(empDictionaryFile.exists());
 
     client.shutDown();
@@ -142,7 +144,7 @@ public class DictionaryClientTest {
     }
 
     // Cleanup created files
-    cleanUpDirectory(new File(storePath));
+    //    cleanUpDirectory(new File(storePath));
   }
 
   private void cleanUpDirectory(File path) {
