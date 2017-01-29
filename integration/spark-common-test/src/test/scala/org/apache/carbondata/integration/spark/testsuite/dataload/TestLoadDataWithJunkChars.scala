@@ -33,9 +33,9 @@ class TestLoadDataWithJunkChars extends QueryTest with BeforeAndAfterAll {
     val writer = new BufferedWriter(new FileWriter(file))
     writer.write("c1,c2\n")
     val random = new Random
-    for (i <- 1 until 1000000) {
+    for (i <- 1 until 1000) {
       writer.write("a" + i + "," + junkchars + "\n")
-      if ( i % 10000 == 0) {
+      if ( i % 100 == 0) {
         writer.flush()
       }
     }
@@ -50,8 +50,7 @@ class TestLoadDataWithJunkChars extends QueryTest with BeforeAndAfterAll {
              (c1 string, c2 string)
              STORED BY 'org.apache.carbondata.format'""")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table junkcharsdata").show
-    sql("select * from junkcharsdata").show(20,false)
-    checkAnswer(sql("select count(*) from junkcharsdata"), Seq(Row(1000000)))
+    checkAnswer(sql("select count(*) from junkcharsdata"), Seq(Row(1000)))
     sql("drop table if exists junkcharsdata")
     new File(filePath).delete()
   }

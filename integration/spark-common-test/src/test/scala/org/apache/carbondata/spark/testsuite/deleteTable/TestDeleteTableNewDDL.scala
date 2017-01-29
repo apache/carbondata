@@ -141,7 +141,6 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE dropTableTest1 " +
       "OPTIONS('DELIMITER' =  ',')")
-    sql("select * from dropTableTest1")
     sql("drop table dropTableTest1")
 
     sql(
@@ -153,8 +152,6 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE dropTableTest1 " +
       "OPTIONS('DELIMITER' =  ',')")
-
-    sql("select * from dropTableTest1")
 
   }
 
@@ -170,7 +167,6 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE dropTableTest2 " +
       "OPTIONS('DELIMITER' =  ',')")
-    sql("select * from dropTableTest2")
     sql("drop table dropTableTest2")
     sql(
       "CREATE table dropTableTest2 (ID int, date String, country String, name " +
@@ -181,7 +177,6 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE dropTableTest2 " +
       "OPTIONS('DELIMITER' =  ',')")
-    sql("select * from dropTableTest2")
 
   }
 
@@ -192,13 +187,11 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
         "CREATE table test.dropTableTest3 (ID int, date String, country String, name " +
         "String," +
         "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' " +
-
         "TBLPROPERTIES('DICTIONARY_INCLUDE'='salary')"
       )
       sql(
         s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE test.dropTableTest3 " +
         "OPTIONS('DELIMITER' =  ',')")
-      sql("select * from test.dropTableTest3")
       sql("drop table test.dropTableTest3")
       sql(
         "CREATE table test.dropTableTest3 (ID int, date String, country String, name " +
@@ -209,7 +202,6 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       sql(
         s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE test.dropTableTest3 " +
         "OPTIONS('DELIMITER' =  ',')")
-      sql("select * from test.dropTableTest3")
     } finally {
       sql("drop table test.dropTableTest3")
       sql("drop database test")
@@ -228,7 +220,6 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       s"LOAD DATA INPATH '$resourcesPath/big_int_Decimal.csv'  INTO TABLE dropTableTest4 " +
       "options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$'," +
       "'COMPLEX_DELIMITER_LEVEL_2'=':', 'FILEHEADER'= '')")
-    sql("select * from dropTableTest4")
     sql("drop table dropTableTest4")
     sql(
       "CREATE table dropTableTest4 (ID int, date String, country String, name " +
@@ -240,7 +231,6 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE dropTableTest4 " +
       "OPTIONS('DELIMITER' =  ',')")
-    sql("select * from dropTableTest4")
 
   }
 

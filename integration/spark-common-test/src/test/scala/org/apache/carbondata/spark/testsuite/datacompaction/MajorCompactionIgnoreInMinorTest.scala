@@ -78,7 +78,6 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
   test("delete merged folder and check segments") {
     // delete merged segments
     sql("clean files for table ignoremajor")
-    sql("select * from ignoremajor").show()
     val identifier = new AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
           new CarbonTableIdentifier(
