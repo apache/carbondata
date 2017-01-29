@@ -64,8 +64,6 @@ class DataRetentionConcurrencyTestCase extends QueryTest with BeforeAndAfterAll 
       val res = results.get(i).get
       assert("PASS".equals(res))
     }
-    sql("show segments for table concurrent").show()
-
   }
 
   test("DataRetention_Concurrency_load_date") {
@@ -86,8 +84,6 @@ class DataRetentionConcurrencyTestCase extends QueryTest with BeforeAndAfterAll 
       val res = results.get(i).get
       assert("PASS".equals(res))
     }
-    sql("show segments for table concurrent").show()
-
   }
 
   class QueryTask(query: String) extends Callable[String] {

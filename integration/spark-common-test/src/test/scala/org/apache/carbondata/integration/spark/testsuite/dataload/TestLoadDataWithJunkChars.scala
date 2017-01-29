@@ -49,7 +49,7 @@ class TestLoadDataWithJunkChars extends QueryTest with BeforeAndAfterAll {
     sql("""create table if not exists junkcharsdata
              (c1 string, c2 string)
              STORED BY 'org.apache.carbondata.format'""")
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' into table junkcharsdata").show
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' into table junkcharsdata")
     checkAnswer(sql("select count(*) from junkcharsdata"), Seq(Row(1000)))
     sql("drop table if exists junkcharsdata")
     new File(filePath).delete()

@@ -88,9 +88,9 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
       val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
 
       val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
-      segments.foreach(seg =>
-        System.out.println( "valid segment is =" + seg)
-      )
+//      segments.foreach(seg =>
+//        System.out.println( "valid segment is =" + seg)
+//      )
 
       if (!segments.contains(requiredSeg)) {
         // wait for 2 seconds for compaction to complete.

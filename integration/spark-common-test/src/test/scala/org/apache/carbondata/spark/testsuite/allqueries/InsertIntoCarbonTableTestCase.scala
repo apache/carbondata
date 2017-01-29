@@ -162,7 +162,7 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
     sql("""insert into table carbon_table1 select shortField,intField,bigintField,doubleField,ASCII(stringField),
                 timestampField,decimalField,dateField,charField,floatField from carbon_table
-              """).show
+              """)
   }
 
   test("insert->insert with different names and aliases") {

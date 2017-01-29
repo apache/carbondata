@@ -34,6 +34,9 @@ public final class StandardLogService implements LogService {
 
   private static final String PARTITION_ID = "[partitionID:";
   private Logger logger;
+  private String hostName = "";
+  private String username = "unknown";
+  private String threadid = "unknown";
 
   /**
    * Constructor.
@@ -42,6 +45,17 @@ public final class StandardLogService implements LogService {
    */
   public StandardLogService(String clazzName) {
     logger = Logger.getLogger(clazzName);
+    try {
+      hostName = InetAddress.getLocalHost().getHostName();
+    } catch (UnknownHostException e) {
+      hostName = "localhost";
+    }
+    try {
+      threadid = Thread.currentThread().getId() + "";
+      username = UserGroupInformation.getCurrentUser().getShortUserName();
+    } catch (IOException e) {
+      username = "unknown";
+    }
   }
 
   public StandardLogService() {
@@ -191,21 +205,6 @@ public final class StandardLogService implements LogService {
    * @param msg audit log message
    */
   @Override public void audit(String msg) {
-    String hostName = "";
-
-    try {
-      hostName = InetAddress.getLocalHost().getHostName();
-    } catch (UnknownHostException e) {
-      hostName = "localhost";
-    }
-    String username = "unknown";
-    String threadid = "unknown";
-    try {
-      threadid = Thread.currentThread().getId() + "";
-      username = UserGroupInformation.getCurrentUser().getShortUserName();
-    } catch (IOException e) {
-      username = "unknown";
-    }
     logger.log(AuditLevel.AUDIT,
         "[" + hostName + "]" + "[" + username + "]" + "[Thread-" + threadid + "]" + msg);
   }
