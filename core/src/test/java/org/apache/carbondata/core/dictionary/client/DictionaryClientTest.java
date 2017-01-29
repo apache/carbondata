@@ -112,14 +112,16 @@ public class DictionaryClientTest {
     client.getDictionary(empKey);
 
     // Test dictionary generation
-    empKey.setType("DICTIONARY_GENERATION");
-    DictionaryKey val = client.getDictionary(empKey);
-    Assert.assertEquals(new Integer(2), val.getData());
-
+    for (int count = 2; count <= 10000; count++) {
+      empKey.setType("DICTIONARY_GENERATION");
+      DictionaryKey val = client.getDictionary(empKey);
+      empKey.setData("FirstKey" + count);
+      Assert.assertEquals(new Integer(count), val.getData());
+    }
     // Test size function
     empKey.setType("SIZE");
-    val = client.getDictionary(empKey);
-    Assert.assertEquals(new Integer(2), val.getData());
+    DictionaryKey val = client.getDictionary(empKey);
+    Assert.assertEquals(new Integer(10000), val.getData());
 
     // Test writing dictionary call
     empKey.setType("WRITE_DICTIONARY");
@@ -127,24 +129,24 @@ public class DictionaryClientTest {
     File dictPath = new File(storePath + "/test/TestTable/Metadata/");
     dictPath.mkdirs();
     File empDictionaryFile = new File(dictPath, empColumnSchema.getColumnName() + ".dict");
-    empKey.setType("SHUTDOWN");
+    empKey.setType("DICTIONARY_GENERATION");
+    client.shutDown();
+    server.shutdown();
 
     assertTrue(empDictionaryFile.exists());
-
-    client.shutDown();
   }
 
   @After public void tearDown() {
     try {
 
       // Shutdown the server
-      server.shutdown();
+
     } catch (Exception e) {
       e.printStackTrace();
     }
 
     // Cleanup created files
-    //    cleanUpDirectory(new File(storePath));
+    cleanUpDirectory(new File(storePath));
   }
 
   private void cleanUpDirectory(File path) {
