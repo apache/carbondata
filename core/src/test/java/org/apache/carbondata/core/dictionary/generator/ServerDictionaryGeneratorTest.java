@@ -212,5 +212,6 @@ public class ServerDictionaryGeneratorTest {
       else file.delete();
     }
     path.delete();
+    CarbonMetadata.getInstance().removeTable(tableInfo.getTableUniqueName());
   }
 }
