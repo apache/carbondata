@@ -151,7 +151,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
               filterValues[i], true);
       if (start < 0) {
         start = -(start + 1);
-        if (start == numerOfRows) {
+        if (start >= numerOfRows) {
           start = start - 1;
         }
         // Method will compare the tentative index value after binary search, this tentative
@@ -218,7 +218,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
             filterValues[k], true);
         if (start < 0) {
           start = -(start + 1);
-          if (start == numerOfRows) {
+          if (start >= numerOfRows) {
             start = start - 1;
           }
           // Method will compare the tentative index value after binary search, this tentative
