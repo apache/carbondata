@@ -31,9 +31,9 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 /**
- * Its an abstract class provides necessary information to decode dictionary data
+ *  This is the class to decode dictionary encoded column data back to its original value.
  */
-public abstract class AbstractDictionaryDecodedReadSupport<T> implements CarbonReadSupport<T> {
+public class DictionaryDecodeReadSupport<T> implements CarbonReadSupport<T> {
 
   protected Dictionary[] dictionaries;
 
@@ -44,11 +44,11 @@ public abstract class AbstractDictionaryDecodedReadSupport<T> implements CarbonR
   protected CarbonColumn[] carbonColumns;
 
   /**
-   * It would be instantiated in side the task so the dictionary would be loaded inside every mapper
-   * instead of driver.
+   * This initialization is done inside executor task
+   * for column dictionary involved in decoding.
    *
-   * @param carbonColumns
-   * @param absoluteTableIdentifier
+   * @param carbonColumns column list
+   * @param absoluteTableIdentifier table identifier
    */
   @Override public void initialize(CarbonColumn[] carbonColumns,
       AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException {
@@ -71,10 +71,20 @@ public abstract class AbstractDictionaryDecodedReadSupport<T> implements CarbonR
     }
   }
 
+  @Override public T readRow(Object[] data) {
+    assert (data.length == dictionaries.length);
+    for (int i = 0; i < dictionaries.length; i++) {
+      if (dictionaries[i] != null) {
+        data[i] = dictionaries[i].getDictionaryValueForKey((int) data[i]);
+      }
+    }
+    return (T)data;
+  }
+
   /**
-   * This method iwll be used to clear the dictionary cache and update access count for each
-   * column involved which will be used during eviction of columns from LRU cache if memory
-   * reaches threshold
+   * to book keep the dictionary cache or update access count for each
+   * column involved during decode, to facilitate LRU cache policy if memory
+   * threshold is reached
    */
   @Override public void close() {
     for (int i = 0; i < dictionaries.length; i++) {
