@@ -78,6 +78,13 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
     }
     int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
         .get(dimColEvaluatorInfoList.get(0).getColumnIndex());
+    int compare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterRangeValues[0],
+        blockChunkHolder.getDataBlock().getColumnsMinValue()[blockIndex]);
+    if (compare < 0) {
+      BitSet bitSet = new BitSet(blockChunkHolder.getDataBlock().nodeSize());
+      bitSet.flip(0, blockChunkHolder.getDataBlock().nodeSize());
+      return bitSet;
+    }
     if (null == blockChunkHolder.getDimensionDataChunk()[blockIndex]) {
       blockChunkHolder.getDimensionDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
           .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
