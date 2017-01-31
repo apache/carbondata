@@ -824,8 +824,8 @@ public final class CarbonUtil {
   public static byte[] getDirectDictionaryEncodingArrayIndex(QueryDimension[] queryDimensions) {
     byte[] dictionaryEncodingArray = new byte[queryDimensions.length];
     for (int i = 0; i < queryDimensions.length; i++) {
-      if(queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-        if(queryDimensions[i].getDimension().getDataType()==DataType.TIMESTAMP) {
+      if (queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        if (queryDimensions[i].getDimension().getDataType() == DataType.TIMESTAMP) {
           dictionaryEncodingArray[i] = 1;
         } else {
           dictionaryEncodingArray[i] = 2;
