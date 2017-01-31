@@ -51,6 +51,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -72,9 +73,6 @@ import org.apache.carbondata.processing.schema.metadata.ColumnsInfo;
 import org.apache.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
-import static org.apache.carbondata.processing.constants.TableOptionConstant.BAD_RECORDS_ACTION;
-import static org.apache.carbondata.processing.constants.TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE;
-import static org.apache.carbondata.processing.constants.TableOptionConstant.SERIALIZATION_NULL_FORMAT;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -86,6 +84,10 @@ import org.pentaho.di.trans.step.BaseStep;
 import org.pentaho.di.trans.step.StepDataInterface;
 import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.step.StepMetaInterface;
+
+import static org.apache.carbondata.processing.constants.TableOptionConstant.BAD_RECORDS_ACTION;
+import static org.apache.carbondata.processing.constants.TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE;
+import static org.apache.carbondata.processing.constants.TableOptionConstant.SERIALIZATION_NULL_FORMAT;
 
 public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
@@ -1935,7 +1937,10 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       dimListExcludingNoDictionaryColumn =
           new ArrayList<>(dimensionsList.size() - meta.noDictionaryCols.length);
       for (CarbonDimension dimension : dimensionsList) {
-        if (!dimension.getEncoder().isEmpty()) {
+        // Here if dimension.getEncoder() only contains Encoding.INVERTED_INDEX, it
+        // means that NoDicColumn using InvertedIndex, so not put it into dic dims list.
+        if (!dimension.getEncoder().isEmpty() && !((1 == dimension.getEncoder().size()) && dimension
+            .getEncoder().contains(Encoding.INVERTED_INDEX))) {
           dimListExcludingNoDictionaryColumn.add(dimension);
         }
       }
