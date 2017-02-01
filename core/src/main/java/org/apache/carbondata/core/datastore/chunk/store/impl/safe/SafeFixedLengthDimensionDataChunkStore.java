@@ -66,13 +66,30 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
     }
     // below part is to convert the byte array to surrogate value
     int startOffsetOfData = index * columnValueSize;
-    int surrogate = 0;
-    for (int i = 0; i < columnValueSize; i++) {
-      surrogate <<= 8;
-      surrogate ^= data[startOffsetOfData] & 0xFF;
-      startOffsetOfData++;
+    return getSurrogateInternal(startOffsetOfData);
+  }
+
+  private int getSurrogateInternal(int startOffsetOfData) {
+    byte defaultValue = 0;
+    switch (columnValueSize) {
+      case 1:
+        return makeInt(data[startOffsetOfData], defaultValue, defaultValue, defaultValue);
+      case 2:
+        return makeInt(data[startOffsetOfData], data[startOffsetOfData + 1], defaultValue,
+            defaultValue);
+      case 3:
+        return makeInt(data[startOffsetOfData], data[startOffsetOfData + 1],
+            data[startOffsetOfData + 2], defaultValue);
+      case 4:
+        return makeInt(data[startOffsetOfData], data[startOffsetOfData + 1],
+            data[startOffsetOfData + 2], data[startOffsetOfData + 3]);
+      default:
+        throw new IllegalArgumentException("Int cannot me more than 4 bytes");
     }
-    return surrogate;
+  }
+
+  private int makeInt(byte b3, byte b2, byte b1, byte b0) {
+    return (((b3) << 24) | ((b2 & 0xff) << 16) | ((b1 & 0xff) << 8) | ((b0 & 0xff)));
   }
 
   /**

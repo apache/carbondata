@@ -91,6 +91,16 @@ public final class FilterUtil {
 
   }
 
+  public static void printEvaluatorTree(FilterResolverIntf filterExpressionResolverTree) {
+    if (null == filterExpressionResolverTree) {
+      return;
+    }
+    printEvaluatorTree(filterExpressionResolverTree.getLeft());
+    LOGGER.error("******************** Filter Tree is: " + filterExpressionResolverTree.getClass()
+        .getName());
+    printEvaluatorTree(filterExpressionResolverTree.getRight());
+  }
+
   /**
    * Pattern used : Visitor Pattern
    * Method will create filter executer tree based on the filter resolved tree,
@@ -127,8 +137,7 @@ public final class FilterUtil {
                   complexDimensionInfoMap));
         case RESTRUCTURE:
           return new RestructureFilterExecuterImpl(
-              filterExpressionResolverTree.getDimColResolvedFilterInfo(),
-              segmentProperties);
+              filterExpressionResolverTree.getDimColResolvedFilterInfo(), segmentProperties);
         case ROWLEVEL_LESSTHAN:
         case ROWLEVEL_LESSTHAN_EQUALTO:
         case ROWLEVEL_GREATERTHAN_EQUALTO:
@@ -250,6 +259,7 @@ public final class FilterUtil {
     }
     return false;
   }
+
   /**
    * This method will check if a given expression contains a column expression
    * recursively.
@@ -827,8 +837,7 @@ public final class FilterUtil {
   }
 
   public static void getEndKey(Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter,
-      long[] endKey, SegmentProperties segmentProperties,
-      List<long[]> endKeyList) {
+      long[] endKey, SegmentProperties segmentProperties, List<long[]> endKeyList) {
 
     List<CarbonDimension> updatedDimListBasedOnKeyGenerator =
         getCarbonDimsMappedToKeyGenerator(segmentProperties.getDimensions());
@@ -1123,8 +1132,7 @@ public final class FilterUtil {
     List<long[]> startKeyList = new ArrayList<long[]>();
     List<long[]> endKeyList = new ArrayList<long[]>();
     traverseResolverTreeAndPopulateStartAndEndKeys(filterResolver, segmentProperties, startKey,
-        setOfStartKeyByteArray, endKey, setOfEndKeyByteArray,
-        startKeyList, endKeyList);
+        setOfStartKeyByteArray, endKey, setOfEndKeyByteArray, startKeyList, endKeyList);
     if (endKeyList.size() > 0) {
       //get the new end key from list
       for (int i = 0; i < endKey.length; i++) {
@@ -1293,16 +1301,13 @@ public final class FilterUtil {
     if (null == filterResolverTree) {
       return;
     }
-    traverseResolverTreeAndPopulateStartAndEndKeys(filterResolverTree.getLeft(),
-        segmentProperties, startKeys, setOfStartKeyByteArray, endKeys, setOfEndKeyByteArray,
-        startKeyList, endKeyList);
+    traverseResolverTreeAndPopulateStartAndEndKeys(filterResolverTree.getLeft(), segmentProperties,
+        startKeys, setOfStartKeyByteArray, endKeys, setOfEndKeyByteArray, startKeyList, endKeyList);
     filterResolverTree.getStartKey(startKeys, setOfStartKeyByteArray, startKeyList);
-    filterResolverTree.getEndKey(segmentProperties, endKeys, setOfEndKeyByteArray,
-        endKeyList);
+    filterResolverTree.getEndKey(segmentProperties, endKeys, setOfEndKeyByteArray, endKeyList);
 
-    traverseResolverTreeAndPopulateStartAndEndKeys(filterResolverTree.getRight(),
-        segmentProperties, startKeys, setOfStartKeyByteArray, endKeys, setOfEndKeyByteArray,
-        startKeyList, endKeyList);
+    traverseResolverTreeAndPopulateStartAndEndKeys(filterResolverTree.getRight(), segmentProperties,
+        startKeys, setOfStartKeyByteArray, endKeys, setOfEndKeyByteArray, startKeyList, endKeyList);
   }
 
   /**
@@ -1314,9 +1319,8 @@ public final class FilterUtil {
    * @return
    */
   public static boolean isExpressionNeedsToResolved(Expression rightExp, boolean isIncludeFilter) {
-    if (!isIncludeFilter && rightExp instanceof LiteralExpression && (
-        DataType.NULL == ((LiteralExpression) rightExp)
-            .getLiteralExpDataType())) {
+    if (!isIncludeFilter && rightExp instanceof LiteralExpression && (DataType.NULL
+        == ((LiteralExpression) rightExp).getLiteralExpDataType())) {
       return true;
     }
     for (Expression child : rightExp.getChildren()) {
