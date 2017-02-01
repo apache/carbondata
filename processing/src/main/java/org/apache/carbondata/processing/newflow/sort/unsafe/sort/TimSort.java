@@ -438,8 +438,8 @@ public class TimSort<K, Buffer> {
     private void mergeCollapse() {
       while (stackSize > 1) {
         int n = stackSize - 2;
-        if ((n >= 1 && runLen[n-1] <= runLen[n] + runLen[n+1])
-            || (n >= 2 && runLen[n-2] <= runLen[n] + runLen[n-1])) {
+        if ((n >= 1 && runLen[n - 1] <= runLen[n] + runLen[n + 1])
+            || (n >= 2 && runLen[n - 2] <= runLen[n] + runLen[n - 1])) {
           if (runLen[n - 1] < runLen[n + 1]) {
             n--;
           }
