@@ -191,6 +191,20 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     assert(shuffleExists, "shuffle should exist on non bucket tables")
   }
 
+  test("test scalar subquery with equal") {
+    sql(
+      """select sum(salary) from t4 t1
+        |where ID = (select sum(ID) from t4 t2 where t1.name = t2.name)""".stripMargin)
+      .count()
+  }
+
+  test("test scalar subquery with lessthan") {
+    sql(
+      """select sum(salary) from t4 t1
+        |where ID < (select sum(ID) from t4 t2 where t1.name = t2.name)""".stripMargin)
+      .count()
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS t3")
     sql("DROP TABLE IF EXISTS t4")
