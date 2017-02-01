@@ -56,8 +56,6 @@ class TestAndEqualFilterEmptyOperandValue extends QueryTest with BeforeAndAfterA
   }
 
   test("select * from carbonTable where country='' and salary='')") {
-    sql("select * from carbonTable where country='' and salary=''").show()
-    sql("select * from hiveTable where country='' and salary=''").show()
     checkAnswer(
       sql("select * from carbonTable where country='' and salary=''"),
       sql("select * from hiveTable where country='' and salary=''")
@@ -65,8 +63,6 @@ class TestAndEqualFilterEmptyOperandValue extends QueryTest with BeforeAndAfterA
   }
 
   test("select * from carbonTable where date='' and salary='')") {
-    sql("select * from carbonTable where date='' and salary=''").show()
-    sql("select * from hiveTable where date='' and salary=''").show()
     checkAnswer(
       sql("select * from carbonTable where date='' and salary=''"),
       sql("select * from hiveTable where date='' and salary=''")

@@ -73,8 +73,6 @@ class DataCompactionBlockletBoundryTest extends QueryTest with BeforeAndAfterAll
   }
 
   test("select country,count(*) as a from blocklettest")({
-    sql("select country,count(*) as a from Carbon_automation_hive group by country").show()
-    sql("select *  from Carbon_automation_hive").show
     checkAnswer(
       sql("select country,count(*) as a from blocklettest group by country"),
       sql("select country,count(*) as a from Carbon_automation_hive group by country")

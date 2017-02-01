@@ -157,7 +157,6 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("select count(*) from sales") {
-    sql("select count(*) from sales").show()
     checkAnswer(
       sql("select count(*) from sales"),
       Seq(Row(2)
@@ -166,7 +165,6 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("select count(*) from serializable_values") {
-    sql("select count(*) from serializable_values").show()
     checkAnswer(
       sql("select count(*) from serializable_values"),
       Seq(Row(2)
@@ -175,7 +173,6 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("select count(*) from serializable_values_false") {
-    sql("select count(*) from serializable_values_false").show()
     checkAnswer(
       sql("select count(*) from serializable_values_false"),
       Seq(Row(2)
@@ -184,7 +181,6 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("select count(*) from empty_timestamp") {
-    sql("select count(*) from empty_timestamp").show()
     checkAnswer(
       sql("select count(*) from empty_timestamp"),
       Seq(Row(1)
@@ -193,7 +189,6 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("select count(*) from insufficientColumn") {
-    sql("select count(*) from insufficientColumn").show()
     checkAnswer(
       sql("select count(*) from insufficientColumn"),
       Seq(Row(1)
@@ -202,7 +197,6 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("select count(*) from insufficientColumn_false") {
-    sql("select count(*) from insufficientColumn_false").show()
     checkAnswer(
       sql("select count(*) from insufficientColumn_false"),
       Seq(Row(3)
@@ -212,7 +206,6 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
 
 
   test("select count(*) from emptyColumnValues") {
-    sql("select count(*) from emptyColumnValues").show()
     checkAnswer(
       sql("select count(*) from emptyColumnValues"),
       Seq(Row(2)
@@ -221,7 +214,6 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("select count(*) from emptyColumnValues_false") {
-    sql("select count(*) from emptyColumnValues_false").show()
     checkAnswer(
       sql("select count(*) from emptyColumnValues_false"),
       Seq(Row(7)
@@ -230,7 +222,6 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("select count(*) from empty_timestamp_false") {
-    sql("select count(*) from empty_timestamp_false").show()
     checkAnswer(
       sql("select count(*) from empty_timestamp_false"),
       Seq(Row(7)

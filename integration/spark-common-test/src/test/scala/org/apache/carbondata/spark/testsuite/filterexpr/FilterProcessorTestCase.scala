@@ -65,7 +65,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(
-      s"LOAD DATA local inpath '$resourcesPath/dataDiff.csv' INTO TABLE filtertestTables " +
+      s"LOAD DATA local inpath '$resourcesPath/source.csv' INTO TABLE filtertestTables " +
         s"OPTIONS('DELIMITER'= ',', " +
         s"'FILEHEADER'= '')"
     )
@@ -76,7 +76,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
       "STORED BY 'org.apache.carbondata.format'"
     )
     sql(
-      s"LOAD DATA LOCAL INPATH '$resourcesPath/dataDiff.csv' INTO TABLE " +
+      s"LOAD DATA LOCAL INPATH '$resourcesPath/source.csv' INTO TABLE " +
         s"filtertestTablesWithDecimal " +
         s"OPTIONS('DELIMITER'= ',', " +
         s"'FILEHEADER'= '')"
@@ -156,47 +156,47 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("Greater Than Filter") {
     checkAnswer(
-      sql("select id from filtertestTables " + "where id >999"),
-      Seq(Row(1000))
+      sql("select id from filtertestTables " + "where id > 99"),
+      Seq(Row(100))
     )
   }
   test("Greater Than Filter with decimal") {
     checkAnswer(
-      sql("select id from filtertestTablesWithDecimal " + "where id >999"),
-      Seq(Row(1000))
+      sql("select id from filtertestTablesWithDecimal " + "where id > 99"),
+      Seq(Row(100))
     )
   }
 
   test("Greater Than equal to Filter") {
     checkAnswer(
-      sql("select id from filtertestTables " + "where id >=999"),
-      Seq(Row(999), Row(1000))
+      sql("select id from filtertestTables " + "where id >= 99"),
+      Seq(Row(99), Row(100))
     )
   }
   
     test("Greater Than equal to Filter with limit") {
     checkAnswer(
-      sql("select id from filtertestTables " + "where id >=999 order by id desc limit 1"),
-      Seq(Row(1000))
+      sql("select id from filtertestTables " + "where id >= 99 order by id desc limit 1"),
+      Seq(Row(100))
     )
   }
 
       test("Greater Than equal to Filter with aggregation limit") {
     checkAnswer(
-      sql("select count(id),country from filtertestTables " + "where id >=999 group by country limit 1"),
+      sql("select count(id),country from filtertestTables " + "where id >= 99 group by country limit 1"),
       Seq(Row(2,"china"))
     )
   }
   test("Greater Than equal to Filter with decimal") {
     checkAnswer(
-      sql("select id from filtertestTables " + "where id >=999"),
-      Seq(Row(999), Row(1000))
+      sql("select id from filtertestTables " + "where id >= 99"),
+      Seq(Row(99), Row(100))
     )
   }
   test("Include Filter") {
     checkAnswer(
-      sql("select id from filtertestTables " + "where id =999"),
-      Seq(Row(999))
+      sql("select id from filtertestTables " + "where id = 99"),
+      Seq(Row(99))
     )
   }
   test("In Filter") {

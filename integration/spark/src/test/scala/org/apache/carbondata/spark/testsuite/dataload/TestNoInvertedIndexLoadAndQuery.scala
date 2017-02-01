@@ -32,7 +32,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
 
   val testData1 = s"$resourcesPath/dimSample.csv"
-  val testData2 = s"$resourcesPath/example-data.csv"
+  val testData2 = s"$resourcesPath/source.csv"
 
   override def beforeAll {
     sql("DROP TABLE IF EXISTS index1")
@@ -83,7 +83,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
            WHERE country IN ('china','france')
            GROUP BY country
           """),
-      Seq(Row("china", 849), Row("france", 101))
+      Seq(Row("china", 96), Row("france", 1))
     )
 
   }

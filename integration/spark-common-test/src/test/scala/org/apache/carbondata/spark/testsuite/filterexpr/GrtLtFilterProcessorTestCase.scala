@@ -106,7 +106,6 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Greater Than equal to Filter") {
-    sql("select count (empid) from a12 where dob >= '2014-07-01 12:07:28'").show()
     checkAnswer(
       sql("select count (empid) from a12 where dob >= '2014-07-01 12:07:28'"),
       Seq(Row(5))
@@ -157,8 +156,7 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  test("Les Than equal Filter no null") {
-    sql("select empid from a12_no_null where dob <= '2014-07-01 12:07:28'").show()
+  test("Less Than equal Filter no null") {
     checkAnswer(
       sql("select count(empid) from a12_no_null where dob <= '2014-07-01 12:07:28'"),
       Seq(Row(4))

@@ -30,14 +30,12 @@ import org.apache.carbondata.core.util.CarbonProperties
 class WindowsExprTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-
     sql("CREATE TABLE IF NOT EXISTS windowstable (ID double, date Timestamp, country String,name String, phonetype String, serialname String, salary double) STORED BY 'carbondata'")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,"dd-MM-yyyy")
-    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/windows.csv' INTO table windowstable options('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'ID,date,country,name,phonetype,serialname,salary')""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' INTO table windowstable options('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'ID,date,country,name,phonetype,serialname,salary')""")
     sql("CREATE TABLE IF NOT EXISTS hivewindowstable (ID double, date Timestamp, country String,name String, phonetype String, serialname String, salary double) row format delimited fields terminated by ','")
-    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/windows.csv' INTO table hivewindowstable""")
-
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' INTO table hivewindowstable""")
   }
 
   override def afterAll {

@@ -191,21 +191,19 @@ public final class StandardLogService implements LogService {
    * @param msg audit log message
    */
   @Override public void audit(String msg) {
-    String hostName = "";
-
+    String hostName;
+    String username;
     try {
       hostName = InetAddress.getLocalHost().getHostName();
     } catch (UnknownHostException e) {
       hostName = "localhost";
     }
-    String username = "unknown";
-    String threadid = "unknown";
     try {
-      threadid = Thread.currentThread().getId() + "";
       username = UserGroupInformation.getCurrentUser().getShortUserName();
     } catch (IOException e) {
       username = "unknown";
     }
+    String threadid = Thread.currentThread().getId() + "";
     logger.log(AuditLevel.AUDIT,
         "[" + hostName + "]" + "[" + username + "]" + "[Thread-" + threadid + "]" + msg);
   }
