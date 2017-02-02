@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.spark.carbondata.scalarsubquery
+package org.apache.spark.carbondata.vectorreader
 
 import org.apache.spark.sql.common.util.QueryTest
-import org.apache.spark.sql.execution.command.LoadTable
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
