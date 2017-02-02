@@ -38,11 +38,9 @@ class ScalarSubqueryTestCase extends QueryTest with BeforeAndAfterAll {
            CREATE TABLE scalarsubquery
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
-           USING org.apache.spark.sql.CarbonSource
-          OPTIONS("tableName"="scalarsubquery")
+           STORED BY 'org.apache.carbondata.format'
       """)
-    LoadTable(Some("default"), "scalarsubquery", s"$resourcesPath/dataDiff.csv", Nil,
-      Map(("use_kettle", "false"))).run(sqlContext.sparkSession)
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/dataDiff.csv' INTO table scalarsubquery")
   }
 
   test("test scalar subquery with equal") {
