@@ -17,7 +17,6 @@
 package org.apache.carbondata.core.scan.scanner.impl;
 
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
-import org.apache.carbondata.core.scan.result.impl.NonFilterQueryScannedResult;
 import org.apache.carbondata.core.scan.scanner.AbstractBlockletScanner;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
 
@@ -31,8 +30,6 @@ public class NonFilterScanner extends AbstractBlockletScanner {
   public NonFilterScanner(BlockExecutionInfo blockExecutionInfo,
                           QueryStatisticsModel queryStatisticsModel) {
     super(blockExecutionInfo);
-    // as its a non filter query creating a non filter query scanned result object
-    scannedResult = new NonFilterQueryScannedResult(blockExecutionInfo);
     super.queryStatisticsModel = queryStatisticsModel;
   }
 }

@@ -21,7 +21,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 
 import org.apache.spark.sql.types.DataType;
@@ -40,8 +40,8 @@ public interface GenericQueryType {
 
   int getColsCount();
 
-  void parseBlocksAndReturnComplexColumnByteArray(DimensionColumnDataChunk[] dimensionDataChunks,
-      int rowNumber, DataOutputStream dataOutputStream) throws IOException;
+  void parseBlocksAndReturnComplexColumnByteArray(DimensionRawColumnChunk[] rawColumnChunks,
+      int rowNumber, int pageNumber, DataOutputStream dataOutputStream) throws IOException;
 
   DataType getSchemaType();
 

@@ -21,12 +21,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 
-import org.apache.spark.sql.catalyst.util.*;
-import org.apache.spark.sql.types.*;
+import org.apache.spark.sql.catalyst.util.GenericArrayData;
+import org.apache.spark.sql.types.ArrayType;
+import org.apache.spark.sql.types.DataType;
 
 public class ArrayQueryType extends ComplexQueryType implements GenericQueryType {
 
@@ -61,11 +62,10 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
 
   }
 
-  public void parseBlocksAndReturnComplexColumnByteArray(
-      DimensionColumnDataChunk[] dimensionColumnDataChunks, int rowNumber,
-      DataOutputStream dataOutputStream) throws IOException {
+  public void parseBlocksAndReturnComplexColumnByteArray(DimensionRawColumnChunk[] rawColumnChunks,
+      int rowNumber, int pageNumber, DataOutputStream dataOutputStream) throws IOException {
     byte[] input = new byte[8];
-    copyBlockDataChunk(dimensionColumnDataChunks, rowNumber, input);
+    copyBlockDataChunk(rawColumnChunks, rowNumber, pageNumber, input);
     ByteBuffer byteArray = ByteBuffer.wrap(input);
     int dataLength = byteArray.getInt();
     dataOutputStream.writeInt(dataLength);
@@ -73,7 +73,7 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
       int columnIndex = byteArray.getInt();
       for (int i = 0; i < dataLength; i++) {
         children
-            .parseBlocksAndReturnComplexColumnByteArray(dimensionColumnDataChunks, columnIndex++,
+            .parseBlocksAndReturnComplexColumnByteArray(rawColumnChunks, columnIndex++, pageNumber,
                 dataOutputStream);
       }
     }

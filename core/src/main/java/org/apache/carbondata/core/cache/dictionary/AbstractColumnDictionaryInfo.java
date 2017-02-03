@@ -240,9 +240,25 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
     byte[] dictionaryValueInBytes = getDictionaryBytesFromSurrogate(surrogateKey);
     if (null != dictionaryValueInBytes) {
       dictionaryValue = new String(dictionaryValueInBytes,
-          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
     }
     return dictionaryValue;
+  }
+
+  /**
+   * This method will find and return the dictionary value for a given surrogate key.
+   * Applicable scenarios:
+   * 1. Query final result preparation : While convert the final result which will
+   * be surrogate key back to original dictionary values this method will be used
+   *
+   * @param surrogateKey a unique ID for a dictionary value
+   * @return value if found else null
+   */
+  @Override public byte[] getDictionaryValueForKeyInBytes(int surrogateKey) {
+    if (surrogateKey < MINIMUM_SURROGATE_KEY) {
+      return null;
+    }
+    return getDictionaryBytesFromSurrogate(surrogateKey);
   }
 
   /**

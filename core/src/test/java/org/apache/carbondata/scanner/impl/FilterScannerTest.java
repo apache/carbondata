@@ -117,7 +117,7 @@ public class FilterScannerTest {
 //    DimensionChunkAttributes dimensionChunkAttributes = new DimensionChunkAttributes();
 //    DimensionColumnDataChunk dimensionColumnDataChunk =
 //        new FixedLengthDimensionDataChunk(new byte[] { 0, 1 }, dimensionChunkAttributes);
-//    blocksChunkHolder.setDimensionDataChunk(new DimensionColumnDataChunk[]
+//    blocksChunkHolder.setDimensionRawDataChunk(new DimensionColumnDataChunk[]
 //
 //        { dimensionColumnDataChunk });
 //    MeasureColumnDataChunk measureColumnDataChunk = new MeasureColumnDataChunk();

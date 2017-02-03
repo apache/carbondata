@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.constants;
 
+import java.nio.charset.Charset;
+
 public final class CarbonCommonConstants {
   /**
    * integer size in bytes
@@ -586,10 +588,11 @@ public final class CarbonCommonConstants {
    */
   public static final String TABLEUPDATESTATUS_FILENAME = "tableupdatestatus";
   /**
-   * INMEMORY_REOCRD_SIZE
+   * The batch size of records which returns to client.
    */
   public static final String DETAIL_QUERY_BATCH_SIZE = "carbon.detail.batch.size";
-  public static final int DETAIL_QUERY_BATCH_SIZE_DEFAULT = 10000;
+
+  public static final int DETAIL_QUERY_BATCH_SIZE_DEFAULT = 100;
   /**
    * SPILL_OVER_DISK_PATH
    */
@@ -709,6 +712,11 @@ public final class CarbonCommonConstants {
    * default charset to be used for reading and writing
    */
   public static final String DEFAULT_CHARSET = "UTF-8";
+
+  /**
+   * default charset class to be used for reading and writing
+   */
+  public static final Charset DEFAULT_CHARSET_CLASS = Charset.forName(DEFAULT_CHARSET);
 
   /**
    * surrogate key that will be sent whenever in the dictionary chunks

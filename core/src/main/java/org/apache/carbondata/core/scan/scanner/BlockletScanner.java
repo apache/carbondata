@@ -29,6 +29,14 @@ import org.apache.carbondata.core.scan.result.AbstractScannedResult;
 public interface BlockletScanner {
 
   /**
+   * Checks whether this blocklet required to scan or not based on min max of each blocklet.
+   * @param blocksChunkHolder
+   * @return
+   * @throws IOException
+   */
+  boolean isScanRequired(BlocksChunkHolder blocksChunkHolder) throws IOException;
+
+  /**
    * Below method will used to process the block data and get the scanned result
    *
    * @param blocksChunkHolder block chunk which holds the block data
@@ -37,4 +45,16 @@ public interface BlockletScanner {
    */
   AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
       throws IOException, FilterUnsupportedException;
+
+  /**
+   * Just reads the blocklet from file, does not uncompress it.
+   * @param blocksChunkHolder
+   */
+  void readBlocklet(BlocksChunkHolder blocksChunkHolder) throws IOException;
+
+  /**
+   * In case if there is no filter satisfies.
+   * @return AbstractScannedResult
+   */
+  AbstractScannedResult createEmptyResult();
 }

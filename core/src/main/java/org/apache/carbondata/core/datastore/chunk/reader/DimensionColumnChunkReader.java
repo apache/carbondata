@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 
 /**
  * Interface for reading the data chunk
@@ -32,19 +33,30 @@ public interface DimensionColumnChunkReader {
    * Below method will be used to read the chunk based on block indexes
    *
    * @param fileReader   file reader to read the blocks from file
-   * @param blockIndexes blocks to be read
+   * @param blockletIndexes blocklets to be read
    * @return dimension column chunks
    */
-  DimensionColumnDataChunk[] readDimensionChunks(FileHolder fileReader, int[][] blockIndexes)
+  DimensionRawColumnChunk[] readRawDimensionChunks(FileHolder fileReader, int[][] blockletIndexes)
       throws IOException;
 
   /**
    * Below method will be used to read the chunk based on block index
    *
    * @param fileReader file reader to read the blocks from file
-   * @param blockIndex block to be read
+   * @param blockletIndex block to be read
    * @return dimension column chunk
    */
-  DimensionColumnDataChunk readDimensionChunk(FileHolder fileReader, int blockIndex)
+  DimensionRawColumnChunk readRawDimensionChunk(FileHolder fileReader, int blockletIndex)
       throws IOException;
+
+  /**
+   * Converts the raw data chunk to processed chunk based on blocklet indexes and page numbers
+   *
+   * @param dimensionRawColumnChunk raw data chunk
+   * @param pageNumber page number to be processed
+   * @return
+   * @throws IOException
+   */
+  DimensionColumnDataChunk convertToDimensionChunk(DimensionRawColumnChunk dimensionRawColumnChunk,
+      int pageNumber) throws IOException;
 }
