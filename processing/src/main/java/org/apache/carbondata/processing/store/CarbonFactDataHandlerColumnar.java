@@ -1540,6 +1540,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         blockletDataHolder.put(nodeHolder, indexInNodeHolderArray);
         return null;
       } catch (Throwable throwable) {
+        LOGGER.error(throwable, "Error in producer");
         consumerExecutorService.shutdownNow();
         resetBlockletProcessingCount();
         throw new CarbonDataWriterException(throwable.getMessage(), throwable);
