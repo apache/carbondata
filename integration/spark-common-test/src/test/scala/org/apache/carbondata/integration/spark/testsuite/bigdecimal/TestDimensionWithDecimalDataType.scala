@@ -39,10 +39,16 @@ class TestDimensionWithDecimalDataType extends QueryTest with BeforeAndAfterAll 
     sql(s"LOAD DATA local inpath '$resourcesPath/decimalDataWithoutHeader.csv' INTO table hiveTable")
   }
 
-//  test("test detail query on dimension column with decimal data type") {
-//    checkAnswer(sql("select salary from carbonTable order by salary"),
-//      sql("select salary from hiveTable order by salary"))
-//  }
+  test("test unsafe with bigdecimal") {
+    sql("drop table if exists unsafecarbonTable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "true")
+    sql("CREATE TABLE IF NOT EXISTS unsafecarbonTable (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary Decimal(19,2))STORED BY 'org.apache.carbondata.format'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalDataWithHeader.csv' into table unsafecarbonTable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
+    sql("drop table if exists unsafecarbonTable")
+  }
 
   test("test aggregate query on dimension column with decimal data type") {
     checkAnswer(sql("select sum(salary) from carbonTable"),
