@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 
 /**
  * Reader interface for reading the measure blocks from file
@@ -33,7 +34,7 @@ public interface MeasureColumnChunkReader {
    * @param blockIndexes blocks to be read
    * @return measure data chunks
    */
-  MeasureColumnDataChunk[] readMeasureChunks(FileHolder fileReader, int[][] blockIndexes)
+  MeasureRawColumnChunk[] readRawMeasureChunks(FileHolder fileReader, int[][] blockIndexes)
       throws IOException;
 
   /**
@@ -43,6 +44,20 @@ public interface MeasureColumnChunkReader {
    * @param blockIndex block to be read
    * @return measure data chunk
    */
-  MeasureColumnDataChunk readMeasureChunk(FileHolder fileReader, int blockIndex) throws IOException;
+  MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int blockIndex)
+      throws IOException;
+
+  /**
+   * Covert raw data to measure chunk
+   * @param fileReader
+   * @param blockIndex
+   * @param rawData
+   * @param offset
+   * @param length
+   * @return
+   * @throws IOException
+   */
+  MeasureColumnDataChunk convertToMeasureChunk(FileHolder fileReader,
+      int blockIndex, byte[] rawData, int offset, int length, int pageNumber) throws IOException;
 
 }
