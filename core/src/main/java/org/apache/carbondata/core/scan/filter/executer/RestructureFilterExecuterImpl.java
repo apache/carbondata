@@ -22,6 +22,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
+import org.apache.carbondata.core.util.BitSetGroup;
 
 public class RestructureFilterExecuterImpl implements FilterExecuter {
 
@@ -35,13 +36,14 @@ public class RestructureFilterExecuterImpl implements FilterExecuter {
             dimColumnResolvedFilterInfo.getDimension(), dimColumnExecuterInfo);
   }
 
-  @Override public BitSet applyFilter(BlocksChunkHolder blocksChunkHolder) {
-    BitSet bitSet = new BitSet(blocksChunkHolder.getDataBlock().nodeSize());
-    byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-    if (null != filterValues && filterValues.length > 0) {
-      bitSet.set(0, blocksChunkHolder.getDataBlock().nodeSize());
-    }
-    return bitSet;
+  @Override public BitSetGroup applyFilter(BlocksChunkHolder blocksChunkHolder) {
+//    BitSet bitSet = new BitSet(blocksChunkHolder.getDataBlock().nodeSize());
+//    byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+//    if (null != filterValues && filterValues.length > 0) {
+//      bitSet.set(0, blocksChunkHolder.getDataBlock().nodeSize());
+//    }
+    // TODO find out what is this for?
+    return new BitSetGroup(0);
   }
 
   @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {

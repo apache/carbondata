@@ -47,7 +47,9 @@ import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastore.compression.MeasureMetaDataModel;
@@ -1353,19 +1355,19 @@ public final class CarbonUtil {
     return outputArray;
   }
 
-  public static void freeMemory(DimensionColumnDataChunk[] dimensionColumnDataChunk,
-      MeasureColumnDataChunk[] measureColumnDataChunks) {
-    if (null != measureColumnDataChunks) {
-      for (int i = 0; i < measureColumnDataChunks.length; i++) {
-        if (null != measureColumnDataChunks[i]) {
-          measureColumnDataChunks[i].freeMemory();
+  public static void freeMemory(DimensionRawColumnChunk[] dimensionRawColumnChunks,
+      MeasureRawColumnChunk[] measureRawColumnChunks) {
+    if (null != measureRawColumnChunks) {
+      for (int i = 0; i < measureRawColumnChunks.length; i++) {
+        if (null != measureRawColumnChunks[i]) {
+          measureRawColumnChunks[i].freeMemory();
         }
       }
     }
-    if (null != dimensionColumnDataChunk) {
-      for (int i = 0; i < dimensionColumnDataChunk.length; i++) {
-        if (null != dimensionColumnDataChunk[i]) {
-          dimensionColumnDataChunk[i].freeMemory();
+    if (null != dimensionRawColumnChunks) {
+      for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
+        if (null != dimensionRawColumnChunks[i]) {
+          dimensionRawColumnChunks[i].freeMemory();
         }
       }
     }

@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.Bits;
@@ -92,11 +93,12 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
   }
 
   @Override public void parseBlocksAndReturnComplexColumnByteArray(
-      DimensionColumnDataChunk[] dimensionDataChunks, int rowNumber,
-      DataOutputStream dataOutputStream) throws IOException {
-    byte[] currentVal =
-        new byte[dimensionDataChunks[blockIndex].getColumnValueSize()];
-    copyBlockDataChunk(dimensionDataChunks, rowNumber, currentVal);
+      DimensionRawColumnChunk[] rawColumnChunks, int rowNumber,
+      int pageNumber, DataOutputStream dataOutputStream) throws IOException {
+    DimensionColumnDataChunk dataChunk =
+        rawColumnChunks[blockIndex].convertToDimColDataChunk(pageNumber);
+    byte[] currentVal = new byte[dataChunk.getColumnValueSize()];
+    copyBlockDataChunk(rawColumnChunks, rowNumber, pageNumber, currentVal);
     dataOutputStream.write(currentVal);
   }
 

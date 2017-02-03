@@ -20,6 +20,8 @@ import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 
 /**
  * Block chunk holder which will hold the dimension and
@@ -30,12 +32,12 @@ public class BlocksChunkHolder {
   /**
    * dimension column data chunk
    */
-  private DimensionColumnDataChunk[] dimensionDataChunk;
+  private DimensionRawColumnChunk[] dimensionRawDataChunk;
 
   /**
    * measure column data chunk
    */
-  private MeasureColumnDataChunk[] measureDataChunk;
+  private MeasureRawColumnChunk[] measureRawDataChunk;
 
   /**
    * file reader which will use to read the block from file
@@ -48,36 +50,36 @@ public class BlocksChunkHolder {
   private DataRefNode dataBlock;
 
   public BlocksChunkHolder(int numberOfDimensionBlock, int numberOfMeasureBlock) {
-    dimensionDataChunk = new DimensionColumnDataChunk[numberOfDimensionBlock];
-    measureDataChunk = new MeasureColumnDataChunk[numberOfMeasureBlock];
+    dimensionRawDataChunk = new DimensionRawColumnChunk[numberOfDimensionBlock];
+    measureRawDataChunk = new MeasureRawColumnChunk[numberOfMeasureBlock];
   }
 
   /**
-   * @return the dimensionDataChunk
+   * @return the dimensionRawDataChunk
    */
-  public DimensionColumnDataChunk[] getDimensionDataChunk() {
-    return dimensionDataChunk;
+  public DimensionRawColumnChunk[] getDimensionRawDataChunk() {
+    return dimensionRawDataChunk;
   }
 
   /**
-   * @param dimensionDataChunk the dimensionDataChunk to set
+   * @param dimensionRawDataChunk the dimensionRawDataChunk to set
    */
-  public void setDimensionDataChunk(DimensionColumnDataChunk[] dimensionDataChunk) {
-    this.dimensionDataChunk = dimensionDataChunk;
+  public void setDimensionRawDataChunk(DimensionRawColumnChunk[] dimensionRawDataChunk) {
+    this.dimensionRawDataChunk = dimensionRawDataChunk;
   }
 
   /**
-   * @return the measureDataChunk
+   * @return the measureRawDataChunk
    */
-  public MeasureColumnDataChunk[] getMeasureDataChunk() {
-    return measureDataChunk;
+  public MeasureRawColumnChunk[] getMeasureRawDataChunk() {
+    return measureRawDataChunk;
   }
 
   /**
-   * @param measureDataChunk the measureDataChunk to set
+   * @param measureRawDataChunk the measureRawDataChunk to set
    */
-  public void setMeasureDataChunk(MeasureColumnDataChunk[] measureDataChunk) {
-    this.measureDataChunk = measureDataChunk;
+  public void setMeasureRawDataChunk(MeasureRawColumnChunk[] measureRawDataChunk) {
+    this.measureRawDataChunk = measureRawDataChunk;
   }
 
   /**
@@ -113,11 +115,11 @@ public class BlocksChunkHolder {
    * array
    */
   public void reset() {
-    for (int i = 0; i < measureDataChunk.length; i++) {
-      this.measureDataChunk[i] = null;
+    for (int i = 0; i < measureRawDataChunk.length; i++) {
+      this.measureRawDataChunk[i] = null;
     }
-    for (int i = 0; i < dimensionDataChunk.length; i++) {
-      this.dimensionDataChunk[i] = null;
+    for (int i = 0; i < dimensionRawDataChunk.length; i++) {
+      this.dimensionRawDataChunk[i] = null;
     }
   }
 }

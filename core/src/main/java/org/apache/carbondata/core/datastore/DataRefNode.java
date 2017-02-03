@@ -21,6 +21,8 @@ import java.io.IOException;
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 
 /**
  * Interface data block reference
@@ -77,7 +79,7 @@ public interface DataRefNode {
    *                     data in On IO
    * @return dimension data chunks
    */
-  DimensionColumnDataChunk[] getDimensionChunks(FileHolder fileReader, int[][] blockIndexes)
+  DimensionRawColumnChunk[] getDimensionChunks(FileHolder fileReader, int[][] blockIndexes)
       throws IOException;
 
   /**
@@ -86,7 +88,7 @@ public interface DataRefNode {
    * @param fileReader file reader to read the chunk from file
    * @return dimension data chunk
    */
-  DimensionColumnDataChunk getDimensionChunk(FileHolder fileReader, int blockIndexes)
+  DimensionRawColumnChunk getDimensionChunk(FileHolder fileReader, int blockIndexes)
       throws IOException;
 
   /**
@@ -101,7 +103,7 @@ public interface DataRefNode {
    *                     data in On IO
    * @return measure column data chunk
    */
-  MeasureColumnDataChunk[] getMeasureChunks(FileHolder fileReader, int[][] blockIndexes)
+  MeasureRawColumnChunk[] getMeasureChunks(FileHolder fileReader, int[][] blockIndexes)
       throws IOException;
 
   /**
@@ -111,7 +113,7 @@ public interface DataRefNode {
    * @param blockIndex block index to be read from file
    * @return measure data chunk
    */
-  MeasureColumnDataChunk getMeasureChunk(FileHolder fileReader, int blockIndex) throws IOException;
+  MeasureRawColumnChunk getMeasureChunk(FileHolder fileReader, int blockIndex) throws IOException;
 
   /**
    * @param deleteDeltaDataCache

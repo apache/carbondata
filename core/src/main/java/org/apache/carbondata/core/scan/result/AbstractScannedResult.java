@@ -28,6 +28,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
@@ -47,16 +48,23 @@ public abstract class AbstractScannedResult {
    * current row number
    */
   protected int currentRow = -1;
+
+  protected int pageCounter;
   /**
    * row mapping indexes
    */
-  protected int[] rowMapping;
+  protected int[][] rowMapping;
   /**
    * key size of the fixed length column
    */
   private int fixedLengthKeySize;
   /**
-   * total number of rows
+   * total number of rows per page
+   */
+  private int[] numberOfRows;
+
+  /**
+   * Total number of rows.
    */
   private int totalNumberOfRows;
   /**
@@ -66,11 +74,16 @@ public abstract class AbstractScannedResult {
   /**
    * dimension column data chunk
    */
-  protected DimensionColumnDataChunk[] dataChunks;
+  protected DimensionColumnDataChunk[][] dataChunks;
+
+  /**
+   * Raw dimension chunks;
+   */
+  protected DimensionRawColumnChunk[] rawColumnChunks;
   /**
    * measure column data chunk
    */
-  protected MeasureColumnDataChunk[] measureDataChunks;
+  protected MeasureColumnDataChunk[][] measureDataChunks;
   /**
    * dictionary column block index in file
    */
@@ -128,7 +141,7 @@ public abstract class AbstractScannedResult {
    *
    * @param dataChunks dimension chunks used in query
    */
-  public void setDimensionChunks(DimensionColumnDataChunk[] dataChunks) {
+  public void setDimensionChunks(DimensionColumnDataChunk[][] dataChunks) {
     this.dataChunks = dataChunks;
   }
 
@@ -137,8 +150,12 @@ public abstract class AbstractScannedResult {
    *
    * @param measureDataChunks measure data chunks
    */
-  public void setMeasureChunks(MeasureColumnDataChunk[] measureDataChunks) {
+  public void setMeasureChunks(MeasureColumnDataChunk[][] measureDataChunks) {
     this.measureDataChunks = measureDataChunks;
+  }
+
+  public void setRawColumnChunks(DimensionRawColumnChunk[] rawColumnChunks) {
+    this.rawColumnChunks = rawColumnChunks;
   }
 
   /**
@@ -148,7 +165,7 @@ public abstract class AbstractScannedResult {
    * @return measure column chunk
    */
   public MeasureColumnDataChunk getMeasureChunk(int ordinal) {
-    return measureDataChunks[ordinal];
+    return measureDataChunks[ordinal][pageCounter];
   }
 
   /**
@@ -162,7 +179,7 @@ public abstract class AbstractScannedResult {
     byte[] completeKey = new byte[fixedLengthKeySize];
     int offset = 0;
     for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
-      offset += dataChunks[dictionaryColumnBlockIndexes[i]]
+      offset += dataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
           .fillChunkData(completeKey, offset, rowId,
               columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
     }
@@ -181,7 +198,7 @@ public abstract class AbstractScannedResult {
     int[] completeKey = new int[totalDimensionsSize];
     int column = 0;
     for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
-      column = dataChunks[dictionaryColumnBlockIndexes[i]]
+      column = dataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
           .fillConvertedChunkData(rowId, column, completeKey,
               columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
     }
@@ -195,7 +212,7 @@ public abstract class AbstractScannedResult {
   public void fillColumnarDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
     int column = 0;
     for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
-      column = dataChunks[dictionaryColumnBlockIndexes[i]]
+      column = dataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
           .fillConvertedChunkData(vectorInfo, column,
               columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
     }
@@ -207,7 +224,7 @@ public abstract class AbstractScannedResult {
   public void fillColumnarNoDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
     int column = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
-      column = dataChunks[noDictionaryColumnBlockIndexes[i]]
+      column = dataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter]
           .fillConvertedChunkData(vectorInfo, column,
               columnGroupKeyStructureInfo.get(noDictionaryColumnBlockIndexes[i]));
     }
@@ -219,7 +236,7 @@ public abstract class AbstractScannedResult {
   public void fillColumnarMeasureBatch(ColumnVectorInfo[] vectorInfo, int[] measuresOrdinal) {
     for (int i = 0; i < measuresOrdinal.length; i++) {
       vectorInfo[i].measureVectorFiller
-          .fillMeasureVector(measureDataChunks[measuresOrdinal[i]], vectorInfo[i]);
+          .fillMeasureVector(measureDataChunks[measuresOrdinal[i]][pageCounter], vectorInfo[i]);
     }
   }
 
@@ -233,8 +250,9 @@ public abstract class AbstractScannedResult {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         DataOutputStream dataOutput = new DataOutputStream(byteStream);
         try {
-          vectorInfos[i].genericQueryType.parseBlocksAndReturnComplexColumnByteArray(dataChunks,
-              rowMapping == null ? j : rowMapping[j], dataOutput);
+          vectorInfos[i].genericQueryType
+              .parseBlocksAndReturnComplexColumnByteArray(rawColumnChunks,
+                  rowMapping == null ? j : rowMapping[pageCounter][j], pageCounter, dataOutput);
           Object data = vectorInfos[i].genericQueryType
               .getDataBasedOnDataTypeFromSurrogates(ByteBuffer.wrap(byteStream.toByteArray()));
           vector.putObject(vectorOffset++, data);
@@ -257,6 +275,31 @@ public abstract class AbstractScannedResult {
   }
 
   /**
+   * Just increment the page counter and reset the remaining counters.
+   */
+  public void incrementPageCounter() {
+    rowCounter = 0;
+    currentRow = -1;
+    pageCounter++;
+  }
+
+  public int numberOfpages() {
+    return numberOfRows.length;
+  }
+
+  /**
+   * Get total rows in the current page
+   * @return
+   */
+  public int getCurrentPageRowCount() {
+    return numberOfRows[pageCounter];
+  }
+
+  public int getCurrentPageCounter() {
+    return pageCounter;
+  }
+
+  /**
    * increment the counter.
    */
   public void setRowCounter(int rowCounter) {
@@ -272,7 +315,7 @@ public abstract class AbstractScannedResult {
    * @return dimension data based on row id
    */
   protected byte[] getDimensionData(int dimOrdinal, int rowId) {
-    return dataChunks[dimOrdinal].getChunkData(rowId);
+    return dataChunks[dimOrdinal][pageCounter].getChunkData(rowId);
   }
 
   /**
@@ -287,7 +330,7 @@ public abstract class AbstractScannedResult {
     int position = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
       noDictionaryColumnsKeys[position++] =
-          dataChunks[noDictionaryColumnBlockIndexes[i]].getChunkData(rowId);
+          dataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId);
     }
     return noDictionaryColumnsKeys;
   }
@@ -303,8 +346,8 @@ public abstract class AbstractScannedResult {
     String[] noDictionaryColumnsKeys = new String[noDictionaryColumnBlockIndexes.length];
     int position = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
-      noDictionaryColumnsKeys[position++] =
-          new String(dataChunks[noDictionaryColumnBlockIndexes[i]].getChunkData(rowId));
+      noDictionaryColumnsKeys[position++] = new String(
+          dataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId));
     }
     return noDictionaryColumnsKeys;
   }
@@ -353,7 +396,9 @@ public abstract class AbstractScannedResult {
       ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
       DataOutputStream dataOutput = new DataOutputStream(byteStream);
       try {
-        genericQueryType.parseBlocksAndReturnComplexColumnByteArray(dataChunks, rowId, dataOutput);
+        genericQueryType
+            .parseBlocksAndReturnComplexColumnByteArray(rawColumnChunks, rowId, pageCounter,
+                dataOutput);
         complexTypeData[i] = byteStream.toByteArray();
       } catch (IOException e) {
         LOGGER.error(e);
@@ -378,8 +423,13 @@ public abstract class AbstractScannedResult {
    * @return
    */
   public boolean hasNext() {
-    if (rowCounter < this.totalNumberOfRows) {
+    if (pageCounter < numberOfRows.length && rowCounter < this.numberOfRows[pageCounter]) {
       return true;
+    } else if (pageCounter < numberOfRows.length){
+      pageCounter++;
+      rowCounter = 0;
+      currentRow = -1;
+      return hasNext();
     }
     return false;
   }
@@ -393,13 +443,18 @@ public abstract class AbstractScannedResult {
   public void reset() {
     rowCounter = 0;
     currentRow = -1;
+    pageCounter = 0;
   }
 
   /**
-   * @param totalNumberOfRows set total of number rows valid after scanning
+   * @param numberOfRows set total of number rows valid after scanning
    */
-  public void setNumberOfRows(int totalNumberOfRows) {
-    this.totalNumberOfRows = totalNumberOfRows;
+  public void setNumberOfRows(int[] numberOfRows) {
+    this.numberOfRows = numberOfRows;
+
+    for (int count: numberOfRows) {
+      totalNumberOfRows += count;
+    }
   }
 
   /**
@@ -408,7 +463,7 @@ public abstract class AbstractScannedResult {
    *
    * @param indexes
    */
-  public void setIndexes(int[] indexes) {
+  public void setIndexes(int[][] indexes) {
     this.rowMapping = indexes;
   }
 
@@ -420,7 +475,8 @@ public abstract class AbstractScannedResult {
    * @return whether it is null or not
    */
   protected boolean isNullMeasureValue(int ordinal, int rowIndex) {
-    return measureDataChunks[ordinal].getNullValueIndexHolder().getBitSet().get(rowIndex);
+    return measureDataChunks[ordinal][pageCounter].getNullValueIndexHolder().getBitSet()
+        .get(rowIndex);
   }
 
   /**
@@ -432,7 +488,8 @@ public abstract class AbstractScannedResult {
    * @return measure value of long type
    */
   protected long getLongMeasureValue(int ordinal, int rowIndex) {
-    return measureDataChunks[ordinal].getMeasureDataHolder().getReadableLongValueByIndex(rowIndex);
+    return measureDataChunks[ordinal][pageCounter].getMeasureDataHolder()
+        .getReadableLongValueByIndex(rowIndex);
   }
 
   /**
@@ -443,7 +500,7 @@ public abstract class AbstractScannedResult {
    * @return measure value of double type
    */
   protected double getDoubleMeasureValue(int ordinal, int rowIndex) {
-    return measureDataChunks[ordinal].getMeasureDataHolder()
+    return measureDataChunks[ordinal][pageCounter].getMeasureDataHolder()
         .getReadableDoubleValueByIndex(rowIndex);
   }
 
@@ -455,7 +512,7 @@ public abstract class AbstractScannedResult {
    * @return measure of big decimal type
    */
   protected BigDecimal getBigDecimalMeasureValue(int ordinal, int rowIndex) {
-    return measureDataChunks[ordinal].getMeasureDataHolder()
+    return measureDataChunks[ordinal][pageCounter].getMeasureDataHolder()
         .getReadableBigDecimalValueByIndex(rowIndex);
   }
 

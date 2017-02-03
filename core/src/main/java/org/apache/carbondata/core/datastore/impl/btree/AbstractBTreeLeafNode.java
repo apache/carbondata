@@ -24,6 +24,8 @@ import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 
 /**
  * Non leaf node abstract class
@@ -177,7 +179,7 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
    * @param blockIndexes indexes of the blocks need to be read
    * @return dimension data chunks
    */
-  @Override public DimensionColumnDataChunk[] getDimensionChunks(FileHolder fileReader,
+  @Override public DimensionRawColumnChunk[] getDimensionChunks(FileHolder fileReader,
       int[][] blockIndexes) throws IOException {
     // No required here as leaf which will will be use this class will implement its own get
     // dimension chunks
@@ -191,7 +193,7 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
    * @param blockIndex block index to be read
    * @return dimension data chunk
    */
-  @Override public DimensionColumnDataChunk getDimensionChunk(FileHolder fileReader,
+  @Override public DimensionRawColumnChunk getDimensionChunk(FileHolder fileReader,
       int blockIndex) throws IOException {
     // No required here as leaf which will will be use this class will implement
     // its own get dimension chunks
@@ -205,7 +207,7 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
    * @param blockIndexes block indexes to be read from file
    * @return measure column data chunk
    */
-  @Override public MeasureColumnDataChunk[] getMeasureChunks(FileHolder fileReader,
+  @Override public MeasureRawColumnChunk[] getMeasureChunks(FileHolder fileReader,
       int[][] blockIndexes) throws IOException {
     // No required here as leaf which will will be use this class will implement its own get
     // measure chunks
@@ -219,7 +221,7 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
    * @param blockIndex block index to be read from file
    * @return measure data chunk
    */
-  @Override public MeasureColumnDataChunk getMeasureChunk(FileHolder fileReader, int blockIndex)
+  @Override public MeasureRawColumnChunk getMeasureChunk(FileHolder fileReader, int blockIndex)
       throws IOException {
     // No required here as leaf which will will be use this class will implement its own get
     // measure chunks

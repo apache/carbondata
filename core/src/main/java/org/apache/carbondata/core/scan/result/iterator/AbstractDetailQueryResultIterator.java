@@ -168,8 +168,8 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
       BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
       blockExecutionInfos.remove(executionInfo);
       queryStatisticsModel.setRecorder(recorder);
-      CarbonUtil.freeMemory(blocksChunkHolder.getDimensionDataChunk(),
-          blocksChunkHolder.getMeasureDataChunk());
+      CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),
+          blocksChunkHolder.getMeasureRawDataChunk());
       return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize, queryStatisticsModel,
           blocksChunkHolder);
     }
@@ -191,8 +191,8 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   }
 
   @Override public void close() {
-    CarbonUtil.freeMemory(blocksChunkHolder.getDimensionDataChunk(),
-        blocksChunkHolder.getMeasureDataChunk());
+    CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),
+        blocksChunkHolder.getMeasureRawDataChunk());
   }
 
 }
