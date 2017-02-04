@@ -29,6 +29,7 @@ import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
+import org.apache.carbondata.core.scan.result.impl.NonFilterQueryScannedResult;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
@@ -56,6 +57,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
 
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
       throws IOException, FilterUnsupportedException {
+    scannedResult = new NonFilterQueryScannedResult(blockExecutionInfo);
     fillKeyValue(blocksChunkHolder);
     return scannedResult;
   }
@@ -73,7 +75,6 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
         .addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM,
             validScannedBlockletStatistic.getCount() + 1);
     queryStatisticsModel.getRecorder().recordStatistics(validScannedBlockletStatistic);
-    scannedResult.reset();
     scannedResult.setBlockletId(
         blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR + blocksChunkHolder
             .getDataBlock().nodeNumber());
