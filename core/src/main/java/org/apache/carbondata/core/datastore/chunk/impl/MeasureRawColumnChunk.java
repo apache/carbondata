@@ -46,8 +46,10 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     }
     for (int i = 0; i < pagesCount; i++) {
       try {
-        dataChunks[i] =
-            chunkReader.convertToMeasureChunk(fileReader, blockId, rawData, offSet, length, i);
+        if (dataChunks[i] == null) {
+          dataChunks[i] =
+              chunkReader.convertToMeasureChunk(fileReader, blockId, rawData, offSet, length, i);
+        }
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -63,8 +65,10 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     }
 
     try {
-      dataChunks[index] =
-          chunkReader.convertToMeasureChunk(fileReader, blockId, rawData, offSet, length, index);
+      if (dataChunks[index] == null) {
+        dataChunks[index] =
+            chunkReader.convertToMeasureChunk(fileReader, blockId, rawData, offSet, length, index);
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
