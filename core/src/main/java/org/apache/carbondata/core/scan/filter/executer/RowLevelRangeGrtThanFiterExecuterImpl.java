@@ -93,7 +93,13 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
         blockChunkHolder.getDimensionRawDataChunk()[blockIndex];
     BitSetGroup bitSetGroup = new BitSetGroup(rawColumnChunk.getPagesCount());
     for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
-      if (isScanRequired(rawColumnChunk.getMaxValues()[i],this.filterRangeValues)) {
+      if (rawColumnChunk.getMaxValues() != null) {
+        if (isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues)) {
+          BitSet bitSet = getFilteredIndexes(rawColumnChunk.convertToDimColDataChunk(i),
+              rawColumnChunk.getRowCount()[i]);
+          bitSetGroup.setBitSet(bitSet, i);
+        }
+      } else {
         BitSet bitSet = getFilteredIndexes(rawColumnChunk.convertToDimColDataChunk(i),
             rawColumnChunk.getRowCount()[i]);
         bitSetGroup.setBitSet(bitSet, i);

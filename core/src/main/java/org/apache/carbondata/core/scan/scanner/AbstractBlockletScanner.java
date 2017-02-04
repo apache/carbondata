@@ -100,11 +100,6 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     }
     scannedResult.setMeasureChunks(measureColumnDataChunks);
     int[] numberOfRows = new int[] { blocksChunkHolder.getDataBlock().nodeSize() };
-    if (blockExecutionInfo.getAllSelectedDimensionBlocksIndexes().length > 0) {
-      numberOfRows = dimensionRawColumnChunks[0].getRowCount();
-    } else if (blockExecutionInfo.getAllSelectedMeasureBlocksIndexes().length > 0) {
-      numberOfRows = measureRawColumnChunks[0].getRowCount();
-    }
     scannedResult.setNumberOfRows(numberOfRows);
     // loading delete data cache in blockexecutioninfo instance
     DeleteDeltaCacheLoaderIntf deleteCacheLoader =
@@ -113,5 +108,6 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     deleteCacheLoader.loadDeleteDeltaFileDataToCache();
     scannedResult
         .setBlockletDeleteDeltaCache(blocksChunkHolder.getDataBlock().getDeleteDeltaDataCache());
+    scannedResult.setRawColumnChunks(dimensionRawColumnChunks);
   }
 }

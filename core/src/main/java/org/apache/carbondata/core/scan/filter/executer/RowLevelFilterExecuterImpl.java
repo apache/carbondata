@@ -100,8 +100,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.ARRAY
           && dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.STRUCT) {
         if (null == blockChunkHolder.getDimensionRawDataChunk()[blocksIndex[i]]) {
-          blockChunkHolder.getDimensionRawDataChunk()[blocksIndex[i]] = blockChunkHolder.getDataBlock()
-              .getDimensionChunk(blockChunkHolder.getFileReader(), blocksIndex[i]);
+          blockChunkHolder.getDimensionRawDataChunk()[blocksIndex[i]] =
+              blockChunkHolder.getDataBlock()
+                  .getDimensionChunk(blockChunkHolder.getFileReader(), blocksIndex[i]);
         }
       } else {
         GenericQueryType complexType = complexDimensionInfoMap.get(blocksIndex[i]);
