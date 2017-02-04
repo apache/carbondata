@@ -210,7 +210,7 @@ public class FilterScanner extends AbstractBlockletScanner {
         new MeasureColumnDataChunk[measureRawColumnChunks.length][indexesGroup.length];
     for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
       for (int j = 0; j < indexesGroup.length; j++) {
-        if (indexesGroup[j] != null) {
+        if (dimensionRawColumnChunks[i] != null) {
           dimensionColumnDataChunks[i][j] =
               dimensionRawColumnChunks[i].convertToDimColDataChunk(j);
         }
@@ -218,7 +218,7 @@ public class FilterScanner extends AbstractBlockletScanner {
     }
     for (int i = 0; i < measureRawColumnChunks.length; i++) {
       for (int j = 0; j < indexesGroup.length; j++) {
-        if (indexesGroup[j] != null) {
+        if (measureRawColumnChunks[i] != null) {
           measureColumnDataChunks[i][j] =
               measureRawColumnChunks[i].convertToMeasureColDataChunk(j);
         }

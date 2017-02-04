@@ -96,7 +96,13 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
         blockChunkHolder.getDimensionRawDataChunk()[blockIndex];
     BitSetGroup bitSetGroup = new BitSetGroup(rawColumnChunk.getPagesCount());
     for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
-      if (isScanRequired(rawColumnChunk.getMinValues()[i], this.filterRangeValues)) {
+      if (rawColumnChunk.getMinValues() != null) {
+        if (isScanRequired(rawColumnChunk.getMinValues()[i], this.filterRangeValues)) {
+          BitSet bitSet = getFilteredIndexes(rawColumnChunk.convertToDimColDataChunk(i),
+              rawColumnChunk.getRowCount()[i]);
+          bitSetGroup.setBitSet(bitSet, i);
+        }
+      } else {
         BitSet bitSet = getFilteredIndexes(rawColumnChunk.convertToDimColDataChunk(i),
             rawColumnChunk.getRowCount()[i]);
         bitSetGroup.setBitSet(bitSet, i);
