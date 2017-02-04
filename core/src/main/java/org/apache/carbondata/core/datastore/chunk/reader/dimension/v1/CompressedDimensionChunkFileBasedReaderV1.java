@@ -56,90 +56,90 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
     this.dimensionColumnChunk = blockletInfo.getDimensionColumnChunk();
   }
 
-//  /**
-//   * Below method will be used to read the chunk based on block indexes
-//   *
-//   * @param fileReader   file reader to read the blocks from file
-//   * @param blockIndexes blocks to be read
-//   * @return dimension column chunks
-//   */
-//  @Override public DimensionColumnDataChunk[] readDimensionChunks(FileHolder fileReader,
-//      int[][] blockIndexes) throws IOException {
-//    // read the column chunk based on block index and add
-//    DimensionColumnDataChunk[] dataChunks =
-//        new DimensionColumnDataChunk[dimensionColumnChunk.size()];
-//    for (int i = 0; i < blockIndexes.length; i++) {
-//      for (int j = blockIndexes[i][0]; j <= blockIndexes[i][1]; j++) {
-//        dataChunks[j] = readDimensionChunk(fileReader, j);
-//      }
-//    }
-//    return dataChunks;
-//  }
-//
-//  /**
-//   * Below method will be used to read the chunk based on block index
-//   *
-//   * @param fileReader file reader to read the blocks from file
-//   * @param blockIndex block to be read
-//   * @return dimension column chunk
-//   */
-//  @Override public DimensionColumnDataChunk readDimensionChunk(FileHolder fileReader,
-//      int blockIndex) throws IOException {
-//    byte[] dataPage = null;
-//    int[] invertedIndexes = null;
-//    int[] invertedIndexesReverse = null;
-//    int[] rlePage = null;
-//
-//    // first read the data and uncompressed it
-//    dataPage = COMPRESSOR.unCompressByte(fileReader
-//        .readByteArray(filePath, dimensionColumnChunk.get(blockIndex).getDataPageOffset(),
-//            dimensionColumnChunk.get(blockIndex).getDataPageLength()));
-//    // if row id block is present then read the row id chunk and uncompress it
-//    if (CarbonUtil.hasEncoding(dimensionColumnChunk.get(blockIndex).getEncodingList(),
-//        Encoding.INVERTED_INDEX)) {
-//      invertedIndexes = CarbonUtil
-//          .getUnCompressColumnIndex(dimensionColumnChunk.get(blockIndex).getRowIdPageLength(),
-//              fileReader.readByteArray(filePath,
-//                  dimensionColumnChunk.get(blockIndex).getRowIdPageOffset(),
-//                  dimensionColumnChunk.get(blockIndex).getRowIdPageLength()), numberComressor, 0);
-//      // get the reverse index
-//      invertedIndexesReverse = getInvertedReverseIndex(invertedIndexes);
-//    }
-//    // if rle is applied then read the rle block chunk and then uncompress
-//    //then actual data based on rle block
-//    if (CarbonUtil
-//        .hasEncoding(dimensionColumnChunk.get(blockIndex).getEncodingList(), Encoding.RLE)) {
-//      // read and uncompress the rle block
-//      rlePage = numberComressor.unCompress(fileReader
-//              .readByteArray(filePath, dimensionColumnChunk.get(blockIndex).getRlePageOffset(),
-//                  dimensionColumnChunk.get(blockIndex).getRlePageLength()), 0,
-//          dimensionColumnChunk.get(blockIndex).getRlePageLength());
-//      // uncompress the data with rle indexes
-//      dataPage = UnBlockIndexer.uncompressData(dataPage, rlePage, eachColumnValueSize[blockIndex]);
-//      rlePage = null;
-//    }
-//    // fill chunk attributes
-//    DimensionColumnDataChunk columnDataChunk = null;
-//    if (dimensionColumnChunk.get(blockIndex).isRowMajor()) {
-//      // to store fixed length column chunk values
-//      columnDataChunk = new ColumnGroupDimensionDataChunk(dataPage, eachColumnValueSize[blockIndex],
-//          numberOfRows);
-//    }
-//    // if no dictionary column then first create a no dictionary column chunk
-//    // and set to data chunk instance
-//    else if (!CarbonUtil
-//        .hasEncoding(dimensionColumnChunk.get(blockIndex).getEncodingList(), Encoding.DICTIONARY)) {
-//      columnDataChunk =
-//          new VariableLengthDimensionDataChunk(dataPage, invertedIndexes, invertedIndexesReverse,
-//              numberOfRows);
-//    } else {
-//      // to store fixed length column chunk values
-//      columnDataChunk =
-//          new FixedLengthDimensionDataChunk(dataPage, invertedIndexes, invertedIndexesReverse,
-//              numberOfRows, eachColumnValueSize[blockIndex]);
-//    }
-//    return columnDataChunk;
-//  }
+  /**
+   * Below method will be used to read the chunk based on block indexes
+   *
+   * @param fileReader   file reader to read the blocks from file
+   * @param blockIndexes blocks to be read
+   * @return dimension column chunks
+   */
+  public DimensionColumnDataChunk[] readDimensionChunks(FileHolder fileReader,
+      int[][] blockIndexes) throws IOException {
+    // read the column chunk based on block index and add
+    DimensionColumnDataChunk[] dataChunks =
+        new DimensionColumnDataChunk[dimensionColumnChunk.size()];
+    for (int i = 0; i < blockIndexes.length; i++) {
+      for (int j = blockIndexes[i][0]; j <= blockIndexes[i][1]; j++) {
+        dataChunks[j] = readDimensionChunk(fileReader, j);
+      }
+    }
+    return dataChunks;
+  }
+
+  /**
+   * Below method will be used to read the chunk based on block index
+   *
+   * @param fileReader file reader to read the blocks from file
+   * @param blockIndex block to be read
+   * @return dimension column chunk
+   */
+  public DimensionColumnDataChunk readDimensionChunk(FileHolder fileReader,
+      int blockIndex) throws IOException {
+    byte[] dataPage = null;
+    int[] invertedIndexes = null;
+    int[] invertedIndexesReverse = null;
+    int[] rlePage = null;
+
+    // first read the data and uncompressed it
+    dataPage = COMPRESSOR.unCompressByte(fileReader
+        .readByteArray(filePath, dimensionColumnChunk.get(blockIndex).getDataPageOffset(),
+            dimensionColumnChunk.get(blockIndex).getDataPageLength()));
+    // if row id block is present then read the row id chunk and uncompress it
+    if (CarbonUtil.hasEncoding(dimensionColumnChunk.get(blockIndex).getEncodingList(),
+        Encoding.INVERTED_INDEX)) {
+      invertedIndexes = CarbonUtil
+          .getUnCompressColumnIndex(dimensionColumnChunk.get(blockIndex).getRowIdPageLength(),
+              fileReader.readByteArray(filePath,
+                  dimensionColumnChunk.get(blockIndex).getRowIdPageOffset(),
+                  dimensionColumnChunk.get(blockIndex).getRowIdPageLength()), numberComressor, 0);
+      // get the reverse index
+      invertedIndexesReverse = getInvertedReverseIndex(invertedIndexes);
+    }
+    // if rle is applied then read the rle block chunk and then uncompress
+    //then actual data based on rle block
+    if (CarbonUtil
+        .hasEncoding(dimensionColumnChunk.get(blockIndex).getEncodingList(), Encoding.RLE)) {
+      // read and uncompress the rle block
+      rlePage = numberComressor.unCompress(fileReader
+              .readByteArray(filePath, dimensionColumnChunk.get(blockIndex).getRlePageOffset(),
+                  dimensionColumnChunk.get(blockIndex).getRlePageLength()), 0,
+          dimensionColumnChunk.get(blockIndex).getRlePageLength());
+      // uncompress the data with rle indexes
+      dataPage = UnBlockIndexer.uncompressData(dataPage, rlePage, eachColumnValueSize[blockIndex]);
+      rlePage = null;
+    }
+    // fill chunk attributes
+    DimensionColumnDataChunk columnDataChunk = null;
+    if (dimensionColumnChunk.get(blockIndex).isRowMajor()) {
+      // to store fixed length column chunk values
+      columnDataChunk = new ColumnGroupDimensionDataChunk(dataPage, eachColumnValueSize[blockIndex],
+          numberOfRows);
+    }
+    // if no dictionary column then first create a no dictionary column chunk
+    // and set to data chunk instance
+    else if (!CarbonUtil
+        .hasEncoding(dimensionColumnChunk.get(blockIndex).getEncodingList(), Encoding.DICTIONARY)) {
+      columnDataChunk =
+          new VariableLengthDimensionDataChunk(dataPage, invertedIndexes, invertedIndexesReverse,
+              numberOfRows);
+    } else {
+      // to store fixed length column chunk values
+      columnDataChunk =
+          new FixedLengthDimensionDataChunk(dataPage, invertedIndexes, invertedIndexesReverse,
+              numberOfRows, eachColumnValueSize[blockIndex]);
+    }
+    return columnDataChunk;
+  }
 
   // TODO implement as per latest interface
 

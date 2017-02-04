@@ -37,11 +37,6 @@ public class RestructureFilterExecuterImpl implements FilterExecuter {
   }
 
   @Override public BitSetGroup applyFilter(BlocksChunkHolder blocksChunkHolder) {
-//    BitSet bitSet = new BitSet(blocksChunkHolder.getDataBlock().nodeSize());
-//    byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-//    if (null != filterValues && filterValues.length > 0) {
-//      bitSet.set(0, blocksChunkHolder.getDataBlock().nodeSize());
-//    }
     // TODO find out what is this for?
     return new BitSetGroup(0);
   }

@@ -22,7 +22,6 @@ import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReader;
@@ -80,50 +79,6 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     return presenceMeta;
   }
 
-//  /**
-//   * Below method will be used to read the chunk based on block indexes
-//   * Reading logic of below method is: Except last column all the column chunk
-//   * can be read in group if not last column then read data of all the column
-//   * present in block index together then process it. For last column read is
-//   * separately and process
-//   *
-//   * @param fileReader   file reader to read the blocks from file
-//   * @param blockIndexes blocks range to be read
-//   * @return measure column chunks
-//   * @throws IOException
-//   */
-//  public MeasureColumnDataChunk[] readMeasureChunks(FileHolder fileReader, int[][] blockIndexes)
-//      throws IOException {
-//    // read the column chunk based on block index and add
-//    MeasureColumnDataChunk[] dataChunks =
-//        new MeasureColumnDataChunk[measureColumnChunkOffsets.size()];
-//    if (blockIndexes.length == 0) {
-//      return dataChunks;
-//    }
-//    MeasureColumnDataChunk[] groupChunk = null;
-//    int index = 0;
-//    for (int i = 0; i < blockIndexes.length - 1; i++) {
-//      index = 0;
-//      groupChunk = readMeasureChunksInGroup(fileReader, blockIndexes[i][0], blockIndexes[i][1]);
-//      for (int j = blockIndexes[i][0]; j <= blockIndexes[i][1]; j++) {
-//        dataChunks[j] = groupChunk[index++];
-//      }
-//    }
-//    if (blockIndexes[blockIndexes.length - 1][0] == measureColumnChunkOffsets.size() - 1) {
-//      dataChunks[blockIndexes[blockIndexes.length - 1][0]] =
-//          readMeasureChunk(fileReader, blockIndexes[blockIndexes.length - 1][0]);
-//    } else {
-//      groupChunk = readMeasureChunksInGroup(fileReader, blockIndexes[blockIndexes.length - 1][0],
-//          blockIndexes[blockIndexes.length - 1][1]);
-//      index = 0;
-//      for (int j = blockIndexes[blockIndexes.length - 1][0];
-//           j <= blockIndexes[blockIndexes.length - 1][1]; j++) {
-//        dataChunks[j] = groupChunk[index++];
-//      }
-//    }
-//    return dataChunks;
-//  }
-
   /**
    * Below method will be used to read the chunk based on block indexes
    * Reading logic of below method is: Except last column all the column chunk
@@ -172,9 +127,8 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
       throws IOException {
     byte[] data;
     if (measureColumnChunkOffsets.size() - 1 == blockIndex) {
-      data = fileReader
-          .readByteArray(filePath, measureColumnChunkOffsets.get(blockIndex),
-              measureColumnChunkLength.get(blockIndex));
+      data = fileReader.readByteArray(filePath, measureColumnChunkOffsets.get(blockIndex),
+          measureColumnChunkLength.get(blockIndex));
     } else {
       long currentMeasureOffset = measureColumnChunkOffsets.get(blockIndex);
       data = fileReader.readByteArray(filePath, currentMeasureOffset,
@@ -184,7 +138,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
         new MeasureRawColumnChunk(blockIndex, data, 0, data.length, this);
     rawColumnChunk.setFileReader(fileReader);
     rawColumnChunk.setPagesCount(1);
-    rawColumnChunk.setRowCount(new int[]{numberOfRows});
+    rawColumnChunk.setRowCount(new int[] { numberOfRows });
     return rawColumnChunk;
   }
 
@@ -198,11 +152,12 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     int runningLength = 0;
     int index = 0;
     for (int i = startBlockIndex; i <= endBlockIndex; i++) {
-      int currentLength = (int)(measureColumnChunkOffsets.get(i + 1)-measureColumnChunkOffsets.get(i));
+      int currentLength =
+          (int) (measureColumnChunkOffsets.get(i + 1) - measureColumnChunkOffsets.get(i));
       MeasureRawColumnChunk measureRawColumnChunk =
           new MeasureRawColumnChunk(i, data, runningLength, currentLength, this);
       measureRawColumnChunk.setFileReader(fileReader);
-      measureRawColumnChunk.setRowCount(new int[]{numberOfRows});
+      measureRawColumnChunk.setRowCount(new int[] { numberOfRows });
       measureRawColumnChunk.setPagesCount(1);
       dataChunks[index] = measureRawColumnChunk;
       runningLength += currentLength;
@@ -210,6 +165,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     }
     return dataChunks;
   }
+
   /**
    * Method to read the blocks data based on block index
    *
@@ -252,9 +208,9 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     ValueCompressionHolder values = compressionModel.getValueCompressionHolder()[0];
 
     // uncompress
-    values.uncompress(compressionModel.getConvertedDataType()[0], data,
-        copyPoint, measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
-            compressionModel.getMaxValue()[0], numberOfRows);
+    values.uncompress(compressionModel.getConvertedDataType()[0], data, copyPoint,
+        measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
+        compressionModel.getMaxValue()[0], numberOfRows);
 
     CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values);
 
@@ -304,8 +260,8 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
 
       // uncompress
       values.uncompress(compressionModel.getConvertedDataType()[0], data, copyPoint,
-              measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
-              compressionModel.getMaxValue()[0], numberOfRows);
+          measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
+          compressionModel.getMaxValue()[0], numberOfRows);
 
       CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values);
 
@@ -320,15 +276,15 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     return dataChunks;
   }
 
-  public MeasureColumnDataChunk convertToMeasureChunk(FileHolder fileReader,
-      int blockIndex, byte[] rawData, int offset, int length, int pageNumber) throws IOException {
+  public MeasureColumnDataChunk convertToMeasureChunk(FileHolder fileReader, int blockIndex,
+      byte[] rawData, int offset, int length, int pageNumber) throws IOException {
     MeasureColumnDataChunk datChunk = new MeasureColumnDataChunk();
     DataChunk2 measureColumnChunk = null;
     byte[] data = null;
     int copyPoint = offset;
     if (measureColumnChunkOffsets.size() - 1 == blockIndex) {
-      measureColumnChunk = CarbonUtil
-          .readDataChunk(rawData, copyPoint, measureColumnChunkLength.get(blockIndex));
+      measureColumnChunk =
+          CarbonUtil.readDataChunk(rawData, copyPoint, measureColumnChunkLength.get(blockIndex));
       data = fileReader.readByteArray(filePath,
           measureColumnChunkOffsets.get(blockIndex) + measureColumnChunkLength.get(blockIndex),
           measureColumnChunk.data_page_length);
@@ -348,8 +304,8 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     ValueCompressionHolder values = compressionModel.getValueCompressionHolder()[0];
 
     // uncompress
-    values.uncompress(compressionModel.getConvertedDataType()[0], data,
-        copyPoint, measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
+    values.uncompress(compressionModel.getConvertedDataType()[0], data, copyPoint,
+        measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
         compressionModel.getMaxValue()[0], numberOfRows);
 
     CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values);

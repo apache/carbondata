@@ -123,7 +123,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     }
     // CHECKSTYLE:ON
 
-    int numberOfRows[] = null;
+    int[] numberOfRows = null;
     int pageNumbers = 0;
 
     if (dimColEvaluatorInfoList.size() > 0) {
