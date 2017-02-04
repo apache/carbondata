@@ -33,7 +33,6 @@ import org.apache.carbondata.core.scan.result.BatchResult;
 public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator<BatchResult> {
 
   private final Object lock = new Object();
-  private Future<BatchResult> future;
 
   public DetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
       ExecutorService execService) {
@@ -41,43 +40,20 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
   }
 
   @Override public BatchResult next() {
-    BatchResult result;
     long startTime = System.currentTimeMillis();
-    try {
-      if (future == null) {
-        future = execute();
-      }
-      result = future.get();
-      nextBatch = false;
-      if (hasNext()) {
-        nextBatch = true;
-        future = execute();
-      } else {
-        fileReader.finish();
-      }
-      totalScanTime += System.currentTimeMillis() - startTime;
-    } catch (Exception ex) {
-      try {
-        fileReader.finish();
-      } finally {
-        throw new RuntimeException(ex);
-      }
-    }
-    return result;
+    BatchResult batchResult = getBatchResult();
+    totalScanTime += System.currentTimeMillis() - startTime;
+    return batchResult;
   }
 
-  private Future<BatchResult> execute() {
-    return execService.submit(new Callable<BatchResult>() {
-      @Override public BatchResult call() {
-        BatchResult batchResult = new BatchResult();
-        synchronized (lock) {
-          updateDataBlockIterator();
-          if (dataBlockIterator != null) {
-            batchResult.setRows(dataBlockIterator.next());
-          }
-        }
-        return batchResult;
+  private BatchResult getBatchResult() {
+    BatchResult batchResult = new BatchResult();
+    synchronized (lock) {
+      updateDataBlockIterator();
+      if (dataBlockIterator != null) {
+        batchResult.setRows(dataBlockIterator.next());
       }
-    });
+    }
+    return batchResult;
   }
 }

@@ -112,7 +112,7 @@ public class FilterScanner extends AbstractBlockletScanner {
    */
   private void fillScannedResult(BlocksChunkHolder blocksChunkHolder)
       throws FilterUnsupportedException, IOException {
-    scannedResult.reset();
+    scannedResult = new FilterQueryScannedResult(blockExecutionInfo);
     scannedResult.setBlockletId(
         blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR + blocksChunkHolder
             .getDataBlock().nodeNumber());

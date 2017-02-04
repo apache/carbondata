@@ -585,7 +585,7 @@ public final class CarbonCommonConstants {
    * INMEMORY_REOCRD_SIZE
    */
   public static final String DETAIL_QUERY_BATCH_SIZE = "carbon.detail.batch.size";
-  public static final int DETAIL_QUERY_BATCH_SIZE_DEFAULT = 10000;
+  public static final int DETAIL_QUERY_BATCH_SIZE_DEFAULT = 100;
   /**
    * SPILL_OVER_DISK_PATH
    */

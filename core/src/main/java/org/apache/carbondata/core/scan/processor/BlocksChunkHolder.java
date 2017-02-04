@@ -52,6 +52,13 @@ public class BlocksChunkHolder {
     measureRawDataChunk = new MeasureRawColumnChunk[numberOfMeasureBlock];
   }
 
+  public BlocksChunkHolder(int numberOfDimensionBlock, int numberOfMeasureBlock,
+      FileHolder fileReader) {
+    dimensionRawDataChunk = new DimensionRawColumnChunk[numberOfDimensionBlock];
+    measureRawDataChunk = new MeasureRawColumnChunk[numberOfMeasureBlock];
+    this.fileReader = fileReader;
+  }
+
   /**
    * @return the dimensionRawDataChunk
    */

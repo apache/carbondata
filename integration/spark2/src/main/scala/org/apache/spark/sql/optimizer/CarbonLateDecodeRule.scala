@@ -195,6 +195,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
           agg.aggregateExpressions.map {
             case attr: AttributeReference =>
             case a@Alias(attr: AttributeReference, name) =>
+            case Alias(AggregateExpression(Count(Seq(attr: AttributeReference)), _, _, _), _) =>
             case aggExp: AggregateExpression =>
               aggExp.transform {
                 case aggExp: AggregateExpression =>
