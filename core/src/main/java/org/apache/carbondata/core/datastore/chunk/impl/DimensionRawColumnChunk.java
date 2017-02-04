@@ -62,8 +62,8 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     }
     if (dataChunks[index] == null) {
       try {
-        dataChunks[index] =
-            chunkReader.convertToDimensionChunk(fileHolder, blockId, rawData, offSet, length, index);
+        dataChunks[index] = chunkReader
+            .convertToDimensionChunk(fileHolder, blockId, rawData, offSet, length, index);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }

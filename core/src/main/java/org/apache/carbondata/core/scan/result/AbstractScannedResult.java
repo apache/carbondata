@@ -425,7 +425,7 @@ public abstract class AbstractScannedResult {
   public boolean hasNext() {
     if (pageCounter < numberOfRows.length && rowCounter < this.numberOfRows[pageCounter]) {
       return true;
-    } else if (pageCounter < numberOfRows.length){
+    } else if (pageCounter < numberOfRows.length) {
       pageCounter++;
       rowCounter = 0;
       currentRow = -1;
