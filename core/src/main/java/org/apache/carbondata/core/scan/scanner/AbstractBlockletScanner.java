@@ -89,6 +89,21 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     }
     scannedResult.setMeasureChunks(measureColumnDataChunks);
     int[] numberOfRows = new int[] { blocksChunkHolder.getDataBlock().nodeSize() };
+    if (blockExecutionInfo.getAllSelectedDimensionBlocksIndexes().length > 0) {
+      for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
+        if (dimensionRawColumnChunks[i] != null) {
+          numberOfRows = dimensionRawColumnChunks[i].getRowCount();
+          break;
+        }
+      }
+    } else if (blockExecutionInfo.getAllSelectedMeasureBlocksIndexes().length > 0) {
+      for (int i = 0; i < measureRawColumnChunks.length; i++) {
+        if (measureRawColumnChunks[i] != null) {
+          numberOfRows = measureRawColumnChunks[i].getRowCount();
+          break;
+        }
+      }
+    }
     scannedResult.setNumberOfRows(numberOfRows);
     // loading delete data cache in blockexecutioninfo instance
     DeleteDeltaCacheLoaderIntf deleteCacheLoader =

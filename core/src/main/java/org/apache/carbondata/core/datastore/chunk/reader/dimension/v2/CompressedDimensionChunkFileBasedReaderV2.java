@@ -177,9 +177,11 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
       int totalDimensionDataLength =
           dimensionColumnChunk.data_page_length + dimensionColumnChunk.rle_page_length
               + dimensionColumnChunk.rowid_page_length;
-      data = fileReader.readByteArray(filePath,
-          dimensionChunksOffset.get(blockIndex) + dimensionChunksLength.get(blockIndex),
-          totalDimensionDataLength);
+      synchronized (fileReader) {
+        data = fileReader.readByteArray(filePath,
+            dimensionChunksOffset.get(blockIndex) + dimensionChunksLength.get(blockIndex),
+            totalDimensionDataLength);
+      }
     } else {
       data = rawData;
       dimensionColumnChunk =

@@ -50,7 +50,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
           dataChunks[i] =
               chunkReader.convertToDimensionChunk(fileHolder, blockId, rawData, offSet, length, i);
         }
-      } catch (IOException e) {
+      } catch (Exception e) {
         throw new RuntimeException(e);
       }
     }
