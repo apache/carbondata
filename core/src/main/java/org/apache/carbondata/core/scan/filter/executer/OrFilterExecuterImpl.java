@@ -49,4 +49,8 @@ public class OrFilterExecuterImpl implements FilterExecuter {
     return leftFilters;
   }
 
+  @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
+    leftExecuter.readBlocks(blockChunkHolder);
+    rightExecuter.readBlocks(blockChunkHolder);
+  }
 }

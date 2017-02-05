@@ -69,7 +69,6 @@ public class FilterScanner extends AbstractBlockletScanner {
   public FilterScanner(BlockExecutionInfo blockExecutionInfo,
       QueryStatisticsModel queryStatisticsModel) {
     super(blockExecutionInfo);
-    scannedResult = new FilterQueryScannedResult(blockExecutionInfo);
     // to check whether min max is enabled or not
     String minMaxEnableValue = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_QUERY_MIN_MAX_ENABLED,
@@ -90,8 +89,26 @@ public class FilterScanner extends AbstractBlockletScanner {
    */
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
       throws IOException, FilterUnsupportedException {
-    fillScannedResult(blocksChunkHolder);
-    return scannedResult;
+    return fillScannedResult(blocksChunkHolder);
+  }
+
+  @Override public boolean isScanRequired(BlocksChunkHolder blocksChunkHolder) throws IOException {
+    // apply min max
+    if (isMinMaxEnabled) {
+      BitSet bitSet = this.filterExecuter
+          .isScanRequired(blocksChunkHolder.getDataBlock().getColumnsMaxValue(),
+              blocksChunkHolder.getDataBlock().getColumnsMinValue());
+      if (bitSet.isEmpty()) {
+        CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),
+            blocksChunkHolder.getMeasureRawDataChunk());
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @Override public void readBlocklet(BlocksChunkHolder blocksChunkHolder) throws IOException {
+    this.filterExecuter.readBlocks(blocksChunkHolder);
   }
 
   /**
@@ -110,35 +127,21 @@ public class FilterScanner extends AbstractBlockletScanner {
    * @param blocksChunkHolder
    * @throws FilterUnsupportedException
    */
-  private void fillScannedResult(BlocksChunkHolder blocksChunkHolder)
+  private AbstractScannedResult fillScannedResult(BlocksChunkHolder blocksChunkHolder)
       throws FilterUnsupportedException, IOException {
-    scannedResult = new FilterQueryScannedResult(blockExecutionInfo);
-    scannedResult.setBlockletId(
-        blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR + blocksChunkHolder
-            .getDataBlock().nodeNumber());
-    // apply min max
-    if (isMinMaxEnabled) {
-      BitSet bitSet = this.filterExecuter
-          .isScanRequired(blocksChunkHolder.getDataBlock().getColumnsMaxValue(),
-              blocksChunkHolder.getDataBlock().getColumnsMinValue());
-      if (bitSet.isEmpty()) {
-        scannedResult.setNumberOfRows(new int[]{0});
-        scannedResult.setIndexes(new int[0][]);
-        CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),
-            blocksChunkHolder.getMeasureRawDataChunk());
-        return;
-      }
-    }
     // apply filter on actual data
     BitSetGroup bitSetGroup = this.filterExecuter.applyFilter(blocksChunkHolder);
     // if indexes is empty then return with empty result
     if (bitSetGroup.isEmpty()) {
-      scannedResult.setNumberOfRows(new int[0]);
-      scannedResult.setIndexes(new int[0][]);
       CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),
           blocksChunkHolder.getMeasureRawDataChunk());
-      return;
+      return createEmptyResult();
     }
+
+    AbstractScannedResult scannedResult = new FilterQueryScannedResult(blockExecutionInfo);
+    scannedResult.setBlockletId(
+        blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR + blocksChunkHolder
+            .getDataBlock().nodeNumber());
     // valid scanned blocklet
     QueryStatistic validScannedBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM);
@@ -228,5 +231,6 @@ public class FilterScanner extends AbstractBlockletScanner {
     scannedResult.setIndexes(indexesGroup);
     scannedResult.setMeasureChunks(measureColumnDataChunks);
     scannedResult.setNumberOfRows(rowCount);
+    return scannedResult;
   }
 }

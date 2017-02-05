@@ -103,7 +103,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     LOGGER.info("Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
         .getCarbonTableIdentifier().getTableName());
     // add executor service for query execution
-    queryProperties.executorService = Executors.newFixedThreadPool(1);
+    queryProperties.executorService = Executors.newCachedThreadPool();
     // Initializing statistics list to record the query statistics
     // creating copy on write to handle concurrent scenario
     queryProperties.queryStatisticsRecorder =

@@ -40,16 +40,13 @@ import org.apache.carbondata.core.stats.QueryStatisticsModel;
 public abstract class AbstractBlockletScanner implements BlockletScanner {
 
   /**
-   * scanner result
-   */
-  protected AbstractScannedResult scannedResult;
-
-  /**
    * block execution info
    */
   protected BlockExecutionInfo blockExecutionInfo;
 
   public QueryStatisticsModel queryStatisticsModel;
+
+  private AbstractScannedResult emptyResult;
 
   public AbstractBlockletScanner(BlockExecutionInfo tableBlockExecutionInfos) {
     this.blockExecutionInfo = tableBlockExecutionInfos;
@@ -57,13 +54,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
 
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
       throws IOException, FilterUnsupportedException {
-    scannedResult = new NonFilterQueryScannedResult(blockExecutionInfo);
-    fillKeyValue(blocksChunkHolder);
-    return scannedResult;
-  }
-
-  protected void fillKeyValue(BlocksChunkHolder blocksChunkHolder) throws IOException {
-
+    AbstractScannedResult scannedResult = new NonFilterQueryScannedResult(blockExecutionInfo);
     QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);
     totalBlockletStatistic.addCountStatistic(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM,
@@ -78,9 +69,8 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     scannedResult.setBlockletId(
         blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR + blocksChunkHolder
             .getDataBlock().nodeNumber());
-    DimensionRawColumnChunk[] dimensionRawColumnChunks = blocksChunkHolder.getDataBlock()
-        .getDimensionChunks(blocksChunkHolder.getFileReader(),
-            blockExecutionInfo.getAllSelectedDimensionBlocksIndexes());
+    DimensionRawColumnChunk[] dimensionRawColumnChunks =
+        blocksChunkHolder.getDimensionRawDataChunk();
     DimensionColumnDataChunk[][] dimensionColumnDataChunks =
         new DimensionColumnDataChunk[dimensionRawColumnChunks.length][];
     for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
@@ -89,9 +79,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
       }
     }
     scannedResult.setDimensionChunks(dimensionColumnDataChunks);
-    MeasureRawColumnChunk[] measureRawColumnChunks = blocksChunkHolder.getDataBlock()
-        .getMeasureChunks(blocksChunkHolder.getFileReader(),
-            blockExecutionInfo.getAllSelectedMeasureBlocksIndexes());
+    MeasureRawColumnChunk[] measureRawColumnChunks = blocksChunkHolder.getMeasureRawDataChunk();
     MeasureColumnDataChunk[][] measureColumnDataChunks =
         new MeasureColumnDataChunk[measureRawColumnChunks.length][];
     for (int i = 0; i < measureRawColumnChunks.length; i++) {
@@ -110,5 +98,31 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     scannedResult
         .setBlockletDeleteDeltaCache(blocksChunkHolder.getDataBlock().getDeleteDeltaDataCache());
     scannedResult.setRawColumnChunks(dimensionRawColumnChunks);
+    return scannedResult;
+  }
+
+  @Override public void readBlocklet(BlocksChunkHolder blocksChunkHolder) throws IOException {
+    DimensionRawColumnChunk[] dimensionRawColumnChunks = blocksChunkHolder.getDataBlock()
+        .getDimensionChunks(blocksChunkHolder.getFileReader(),
+            blockExecutionInfo.getAllSelectedDimensionBlocksIndexes());
+    blocksChunkHolder.setDimensionRawDataChunk(dimensionRawColumnChunks);
+    MeasureRawColumnChunk[] measureRawColumnChunks = blocksChunkHolder.getDataBlock()
+        .getMeasureChunks(blocksChunkHolder.getFileReader(),
+            blockExecutionInfo.getAllSelectedMeasureBlocksIndexes());
+    blocksChunkHolder.setMeasureRawDataChunk(measureRawColumnChunks);
+  }
+
+  @Override public AbstractScannedResult createEmptyResult() {
+    if (emptyResult == null) {
+      emptyResult = new NonFilterQueryScannedResult(blockExecutionInfo);
+      emptyResult.setNumberOfRows(new int[0]);
+      emptyResult.setIndexes(new int[0][]);
+    }
+    return emptyResult;
+  }
+
+  @Override public boolean isScanRequired(BlocksChunkHolder blocksChunkHolder) throws IOException {
+    // For non filter it is always true
+    return true;
   }
 }

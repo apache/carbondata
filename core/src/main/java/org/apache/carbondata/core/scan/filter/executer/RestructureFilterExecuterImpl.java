@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.scan.filter.executer;
 
+import java.io.IOException;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -45,5 +46,9 @@ public class RestructureFilterExecuterImpl implements FilterExecuter {
     BitSet bitSet = new BitSet(1);
     bitSet.set(0);
     return bitSet;
+  }
+
+  @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
+    // TODO
   }
 }
