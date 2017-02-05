@@ -50,7 +50,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
           dataChunks[i] =
               chunkReader.convertToMeasureChunk(fileReader, blockId, rawData, offSet, length, i);
         }
-      } catch (IOException e) {
+      } catch (Exception e) {
         throw new RuntimeException(e);
       }
     }

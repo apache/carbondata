@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
@@ -73,13 +74,17 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
 
   private Future<AbstractScannedResult> future;
 
-  private boolean nextResult;
+  private Future<BlocksChunkHolder> futureIo;
 
   protected AbstractScannedResult scannedResult;
 
   private BlockExecutionInfo blockExecutionInfo;
 
   private FileHolder fileReader;
+
+  private AtomicBoolean nextBlock;
+
+  private AtomicBoolean nextRead;
 
   public AbstractDataBlockIterator(BlockExecutionInfo blockExecutionInfo,
       FileHolder fileReader, int batchSize, QueryStatisticsModel queryStatisticsModel,
@@ -108,14 +113,15 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     }
     this.batchSize = batchSize;
     this.executorService = executorService;
-    this.nextResult = false;
+    this.nextBlock = new AtomicBoolean(false);
+    this.nextRead = new AtomicBoolean(false);
   }
 
   public boolean hasNext() {
     if (scannedResult != null && scannedResult.hasNext()) {
       return true;
     } else {
-      return dataBlockIterator.hasNext() || nextResult;
+      return dataBlockIterator.hasNext() || nextBlock.get() || nextRead.get();
     }
   }
 
@@ -131,7 +137,8 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
           }
           scannedResult = getNextScannedResult();
         }
-        nextResult = false;
+        nextBlock.set(false);
+        nextRead.set(false);
         return false;
       }
     } catch (Exception ex) {
@@ -141,44 +148,29 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
 
   private AbstractScannedResult getNextScannedResult() throws Exception {
     AbstractScannedResult result = null;
-    if (dataBlockIterator.hasNext() || nextResult) {
+    if (dataBlockIterator.hasNext() || nextBlock.get() || nextRead.get()) {
       if (future == null) {
-        BlocksChunkHolder blocksChunkHolder = getBlocksChunkHolder();
-        while (blocksChunkHolder == null && dataBlockIterator.hasNext()) {
-          blocksChunkHolder = getBlocksChunkHolder();
-        }
-        if (blocksChunkHolder != null) {
-          future = execute(blocksChunkHolder);
-        } else {
-          return blockletScanner.createEmptyResult();
-        }
+        future = execute();
       }
       result = future.get();
-      nextResult = false;
-      if (dataBlockIterator.hasNext()) {
-        BlocksChunkHolder blocksChunkHolder = getBlocksChunkHolder();
-        while (blocksChunkHolder == null && dataBlockIterator.hasNext()) {
-          blocksChunkHolder = getBlocksChunkHolder();
-        }
-        if (blocksChunkHolder != null) {
-          nextResult = true;
-          future = execute(blocksChunkHolder);
-        }
+      nextBlock.set(false);
+      if (dataBlockIterator.hasNext() || nextRead.get()) {
+        nextBlock.set(true);
+        future = execute();
       }
     }
     return result;
   }
 
-  private Future<AbstractScannedResult> execute(final BlocksChunkHolder blocksChunkHolder) {
-    return executorService.submit(new Callable<AbstractScannedResult>() {
-      @Override public AbstractScannedResult call() throws Exception {
-        blockletScanner.readBlocklet(blocksChunkHolder);
-        return blockletScanner.scanBlocklet(blocksChunkHolder);
-      }
-    });
+  private BlocksChunkHolder getBlocksChunkHolder() throws IOException {
+    BlocksChunkHolder blocksChunkHolder = getBlocksChunkHolderInternal();
+    while (blocksChunkHolder == null && dataBlockIterator.hasNext()) {
+      blocksChunkHolder = getBlocksChunkHolderInternal();
+    }
+    return blocksChunkHolder;
   }
 
-  private BlocksChunkHolder getBlocksChunkHolder() throws IOException {
+  private BlocksChunkHolder getBlocksChunkHolderInternal() throws IOException {
     BlocksChunkHolder blocksChunkHolder =
         new BlocksChunkHolder(blockExecutionInfo.getTotalNumberDimensionBlock(),
             blockExecutionInfo.getTotalNumberOfMeasureBlock(), fileReader);
@@ -187,6 +179,44 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
       return blocksChunkHolder;
     }
     return null;
+  }
+
+  private Future<AbstractScannedResult> execute() {
+    return executorService.submit(new Callable<AbstractScannedResult>() {
+      @Override public AbstractScannedResult call() throws Exception {
+        if (futureIo == null) {
+          futureIo = executeRead();
+        }
+        BlocksChunkHolder blocksChunkHolder = futureIo.get();
+        futureIo = null;
+        nextRead.set(false);
+        if (blocksChunkHolder != null) {
+          if (dataBlockIterator.hasNext()) {
+            nextRead.set(true);
+            futureIo = executeRead();
+          }
+          return blockletScanner.scanBlocklet(blocksChunkHolder);
+        }
+        return null;
+      }
+    });
+  }
+
+  private Future<BlocksChunkHolder> executeRead() {
+    return executorService.submit(new Callable<BlocksChunkHolder>() {
+      @Override public BlocksChunkHolder call() throws Exception {
+        if (dataBlockIterator.hasNext()) {
+          BlocksChunkHolder blocksChunkHolder = getBlocksChunkHolder();
+          if (blocksChunkHolder != null) {
+            synchronized (fileReader) {
+              blockletScanner.readBlocklet(blocksChunkHolder);
+            }
+            return blocksChunkHolder;
+          }
+        }
+        return null;
+      }
+    });
   }
 
   public abstract void processNextBatch(CarbonColumnarBatch columnarBatch);
