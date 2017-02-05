@@ -95,32 +95,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
   @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
       throws FilterUnsupportedException, IOException {
-    for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
-      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = dimColEvaluatorInfoList.get(i);
-      if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.ARRAY
-          && dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.STRUCT) {
-        if (null == blockChunkHolder.getDimensionRawDataChunk()[blocksIndex[i]]) {
-          blockChunkHolder.getDimensionRawDataChunk()[blocksIndex[i]] =
-              blockChunkHolder.getDataBlock()
-                  .getDimensionChunk(blockChunkHolder.getFileReader(), blocksIndex[i]);
-        }
-      } else {
-        GenericQueryType complexType = complexDimensionInfoMap.get(blocksIndex[i]);
-        complexType.fillRequiredBlockData(blockChunkHolder);
-      }
-    }
-
-    // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_001
-    if (null != msrColEvalutorInfoList) {
-      for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
-        if (null == blockChunkHolder.getMeasureRawDataChunk()[msrColumnEvalutorInfo
-            .getColumnIndex()]) {
-          blockChunkHolder.getMeasureRawDataChunk()[msrColumnEvalutorInfo.getColumnIndex()] =
-              blockChunkHolder.getDataBlock().getMeasureChunk(blockChunkHolder.getFileReader(),
-                  msrColumnEvalutorInfo.getColumnIndex());
-        }
-      }
-    }
+    readBlocks(blockChunkHolder);
     // CHECKSTYLE:ON
 
     int[] numberOfRows = null;
@@ -383,5 +358,34 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     BitSet bitSet = new BitSet(1);
     bitSet.set(0);
     return bitSet;
+  }
+
+  @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
+    for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
+      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = dimColEvaluatorInfoList.get(i);
+      if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.ARRAY
+          && dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.STRUCT) {
+        if (null == blockChunkHolder.getDimensionRawDataChunk()[blocksIndex[i]]) {
+          blockChunkHolder.getDimensionRawDataChunk()[blocksIndex[i]] =
+              blockChunkHolder.getDataBlock()
+                  .getDimensionChunk(blockChunkHolder.getFileReader(), blocksIndex[i]);
+        }
+      } else {
+        GenericQueryType complexType = complexDimensionInfoMap.get(blocksIndex[i]);
+        complexType.fillRequiredBlockData(blockChunkHolder);
+      }
+    }
+
+    // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_001
+    if (null != msrColEvalutorInfoList) {
+      for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
+        if (null == blockChunkHolder.getMeasureRawDataChunk()[msrColumnEvalutorInfo
+            .getColumnIndex()]) {
+          blockChunkHolder.getMeasureRawDataChunk()[msrColumnEvalutorInfo.getColumnIndex()] =
+              blockChunkHolder.getDataBlock().getMeasureChunk(blockChunkHolder.getFileReader(),
+                  msrColumnEvalutorInfo.getColumnIndex());
+        }
+      }
+    }
   }
 }

@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.scan.result.iterator;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -191,6 +192,11 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   }
 
   @Override public void close() {
+    try {
+      fileReader.finish();
+    } catch (IOException e) {
+      LOGGER.error(e);
+    }
     CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),
         blocksChunkHolder.getMeasureRawDataChunk());
   }

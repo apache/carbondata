@@ -59,4 +59,9 @@ public class AndFilterExecuterImpl implements FilterExecuter {
     leftFilters.and(rightFilter);
     return leftFilters;
   }
+
+  @Override public void readBlocks(BlocksChunkHolder blocksChunkHolder) throws IOException {
+    leftExecuter.readBlocks(blocksChunkHolder);
+    rightExecuter.readBlocks(blocksChunkHolder);
+  }
 }

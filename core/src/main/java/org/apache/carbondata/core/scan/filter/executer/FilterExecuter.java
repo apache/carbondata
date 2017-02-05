@@ -43,4 +43,10 @@ public interface FilterExecuter {
    * @return BitSet
    */
   BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue);
+
+  /**
+   * It just reads necessary block for filter executor, it does not uncompress the data.
+   * @param blockChunkHolder
+   */
+  void readBlocks(BlocksChunkHolder blockChunkHolder)throws IOException;
 }
