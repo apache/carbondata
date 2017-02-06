@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.constants;
 
+import java.nio.charset.Charset;
+
 public final class CarbonCommonConstants {
   /**
    * integer size in bytes
@@ -709,6 +711,11 @@ public final class CarbonCommonConstants {
    * default charset to be used for reading and writing
    */
   public static final String DEFAULT_CHARSET = "UTF-8";
+
+  /**
+   * default charset class to be used for reading and writing
+   */
+  public static final Charset DEFAULT_CHARSET_CLASS = Charset.forName(DEFAULT_CHARSET);
 
   /**
    * surrogate key that will be sent whenever in the dictionary chunks

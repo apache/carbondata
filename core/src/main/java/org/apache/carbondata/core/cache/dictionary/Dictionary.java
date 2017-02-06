@@ -59,6 +59,17 @@ public interface Dictionary {
   String getDictionaryValueForKey(int surrogateKey);
 
   /**
+   * This method will find and return the dictionary value for a given surrogate key in bytes.
+   * Applicable scenarios:
+   * 1. Query final result preparation : While convert the final result which will
+   * be surrogate key back to original dictionary values this method will be used
+   *
+   * @param surrogateKey a unique ID for a dictionary value
+   * @return value if found else null
+   */
+  byte[] getDictionaryValueForKeyInBytes(int surrogateKey);
+
+  /**
    * This method will find and return the sort index for a given dictionary id.
    * Applicable scenarios:
    * 1. Used in case of order by queries when data sorting is required

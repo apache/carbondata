@@ -95,7 +95,7 @@ public class DataTypeUtilTest {
     assertEquals(getDataBasedOnDataType("1", DataType.DECIMAL), expected);
     assertEquals(getDataBasedOnDataType("default", DataType.NULL),
         UTF8String.fromString("default"));
-    assertEquals(getDataBasedOnDataType(null, DataType.NULL), null);
+    assertEquals(getDataBasedOnDataType((String) null, DataType.NULL), null);
   }
 
   @Test public void testGetMeasureDataBasedOnDataType() throws NumberFormatException {
