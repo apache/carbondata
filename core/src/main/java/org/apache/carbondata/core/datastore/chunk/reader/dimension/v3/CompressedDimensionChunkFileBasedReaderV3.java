@@ -114,9 +114,7 @@ public class CompressedDimensionChunkFileBasedReaderV3
     } else {
       length = (int) (dimensionChunksOffset.get(blockIndex + 1) - currentDimensionOffset);
     }
-    synchronized (fileReader) {
-      data = fileReader.readByteArray(filePath, currentDimensionOffset, length);
-    }
+    data = fileReader.readByteArray(filePath, currentDimensionOffset, length);
     DataChunk3 dataChunk = CarbonUtil.readDataChunk3(data, 0, length);
     DimensionRawColumnChunk rawColumnChunk =
         new DimensionRawColumnChunk(blockIndex, data, 0, data.length, this);
@@ -147,11 +145,8 @@ public class CompressedDimensionChunkFileBasedReaderV3
   protected DimensionRawColumnChunk[] readRawDimensionChunksInGroup(FileHolder fileReader,
       int startBlockIndex, int endBlockIndex) throws IOException {
     long currentDimensionOffset = dimensionChunksOffset.get(startBlockIndex);
-    byte[] data = null;
-    synchronized (fileReader) {
-      data = fileReader.readByteArray(filePath, currentDimensionOffset,
+    byte[] data = fileReader.readByteArray(filePath, currentDimensionOffset,
         (int) (dimensionChunksOffset.get(endBlockIndex + 1) - currentDimensionOffset));
-    }
     DimensionRawColumnChunk[] dimensionDataChunks =
         new DimensionRawColumnChunk[endBlockIndex - startBlockIndex + 1];
     int index = 0;

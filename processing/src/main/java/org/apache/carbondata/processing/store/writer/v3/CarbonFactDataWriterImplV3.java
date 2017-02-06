@@ -36,7 +36,6 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.NodeHolder;
 import org.apache.carbondata.core.writer.CarbonFooterWriter;
-import org.apache.carbondata.format.BlockletIndex;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.FileFooter;
 import org.apache.carbondata.processing.store.colgroup.ColGroupBlockStorage;
@@ -50,10 +49,6 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
 
   private DataWriterHolder dataWriterHolder;
 
-  private List<BlockletInfo3> blockletMetadata;
-
-  private List<BlockletIndex> blockletIndex;
-
   public CarbonFactDataWriterImplV3(CarbonDataWriterVo dataWriterVo) {
     super(dataWriterVo);
     try {
@@ -65,8 +60,6 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
           Integer.parseInt(CarbonCommonConstants.NUMBER_OF_CHUNK_IN_BLOCKLET_DEFAULT_VALUE);
     }
     dataWriterHolder = new DataWriterHolder();
-    blockletMetadata = new ArrayList<BlockletInfo3>();
-    blockletIndex = new ArrayList<>();
   }
 
   @Override

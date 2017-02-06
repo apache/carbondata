@@ -64,10 +64,10 @@ import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileWriter;
 import org.apache.carbondata.format.BlockIndex;
+import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.processing.mdkeygen.file.FileData;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.hadoop.io.IOUtils;
 
@@ -142,6 +142,10 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   protected FileOutputStream fileOutputStream;
 
   protected List<BlockIndexInfo> blockIndexInfoList;
+  
+  protected List<BlockletInfo3> blockletMetadata;
+
+  protected List<org.apache.carbondata.format.BlockletIndex> blockletIndex;
 
   public AbstractFactDataWriter(CarbonDataWriterVo dataWriterVo) {
     this.dataWriterVo = dataWriterVo;
@@ -190,6 +194,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)));
     this.dataChunksOffsets = new ArrayList<>();
     this.dataChunksLength = new ArrayList<>();
+    blockletMetadata = new ArrayList<BlockletInfo3>();
+    blockletIndex = new ArrayList<>();
   }
 
   /**
@@ -251,6 +257,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
           new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
       this.dataChunksOffsets = new ArrayList<>();
       this.dataChunksLength = new ArrayList<>();
+      this.blockletMetadata = new ArrayList<>();
+      this.blockletIndex = new ArrayList<>();
       CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
       // rename carbon data file from in progress status to actual
       renameCarbonDataFile();
