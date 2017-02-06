@@ -471,6 +471,32 @@ public final class CarbonUtil {
             numberCompressor.unCompress(indexMap, 0, indexMap.length));
   }
 
+  public static int[] getUnCompressColumnIndex(int totalLength, byte[] columnIndexData,
+      int offset) {
+    ByteBuffer buffer = ByteBuffer.wrap(columnIndexData, offset, totalLength);
+    int indexDataLength = buffer.getInt();
+    byte[] indexData = new byte[indexDataLength];
+    byte[] indexMap =
+        new byte[totalLength - indexDataLength - CarbonCommonConstants.INT_SIZE_IN_BYTE];
+    buffer.get(indexData);
+    buffer.get(indexMap);
+    return UnBlockIndexer.uncompressIndex(getIntArray(indexData, 0, indexData.length),
+        getIntArray(indexMap, 0, indexMap.length));
+  }
+
+  public static int[] getIntArray(byte[] data, int offset, int length) {
+    if (length == 0) {
+      return new int[0];
+    }
+    ByteBuffer buffer = ByteBuffer.wrap(data, offset, length);
+    int[] intArray = new int[length / 2];
+    int index = 0;
+    while (buffer.hasRemaining()) {
+      intArray[index++] = buffer.getShort();
+    }
+    return intArray;
+  }
+
   /**
    * Convert int array to Integer list
    *
@@ -1233,6 +1259,15 @@ public final class CarbonUtil {
     }, offset, length);
   }
 
+  public static DataChunk3 readDataChunk3(byte[] dataChunkBytes, int offset, int length)
+      throws IOException {
+    return (DataChunk3) read(dataChunkBytes, new ThriftReader.TBaseCreator() {
+      @Override public TBase create() {
+        return new DataChunk3();
+      }
+    }, offset, length);
+  }
+
   /**
    * Below method will be used to convert the byte array value to thrift object for
    * data chunk
@@ -1279,6 +1314,35 @@ public final class CarbonUtil {
       CarbonUtil.closeStreams(objStream);
     }
     return meta;
+  }
+
+  public static ValueEncoderMeta deserializeEncoderMetaNew(byte[] encodeMeta) {
+    ByteBuffer buffer = ByteBuffer.wrap(encodeMeta);
+    char measureType = buffer.getChar();
+    ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
+    valueEncoderMeta.setType(measureType);
+    switch (measureType) {
+      case CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE:
+        valueEncoderMeta.setMaxValue(buffer.getDouble());
+        valueEncoderMeta.setMinValue(buffer.getDouble());
+        valueEncoderMeta.setUniqueValue(buffer.getDouble());
+        break;
+      case CarbonCommonConstants.BIG_DECIMAL_MEASURE:
+        valueEncoderMeta.setMaxValue(0.0);
+        valueEncoderMeta.setMinValue(0.0);
+        valueEncoderMeta.setUniqueValue(0.0);
+        break;
+      case CarbonCommonConstants.BIG_INT_MEASURE:
+        valueEncoderMeta.setMaxValue(buffer.getLong());
+        valueEncoderMeta.setMinValue(buffer.getLong());
+        valueEncoderMeta.setUniqueValue(buffer.getLong());
+        break;
+      default:
+        throw new IllegalArgumentException("invalid measure type");
+    }
+    valueEncoderMeta.setDecimal(buffer.getInt());
+    valueEncoderMeta.setDataTypeSelected(buffer.get());
+    return valueEncoderMeta;
   }
 
   /**

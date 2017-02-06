@@ -29,12 +29,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonFooterReader;
 import org.apache.carbondata.format.FileFooter;
 
-/**
- * Below class will be used to convert the thrift object of data file
- * meta data to wrapper object for version 2 data file
- */
-
-public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
+public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
 
   /**
    * Below method will be used to convert thrift file meta to wrapper file meta
@@ -62,8 +57,8 @@ public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
       BlockletIndex blockletIndex = getBlockletIndex(leaf_node_indices_Thrift.get(i));
       blockletIndexList.add(blockletIndex);
     }
-    List<org.apache.carbondata.format.BlockletInfo2> leaf_node_infos_Thrift =
-        footer.getBlocklet_info_list2();
+    List<org.apache.carbondata.format.BlockletInfo3> leaf_node_infos_Thrift =
+        footer.getBlocklet_info_list3();
     List<BlockletInfo> blockletInfoList = new ArrayList<BlockletInfo>();
     for (int i = 0; i < leaf_node_infos_Thrift.size(); i++) {
       BlockletInfo blockletInfo = getBlockletInfo(leaf_node_infos_Thrift.get(i),
@@ -84,32 +79,25 @@ public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
    * @return blocklet info wrapper
    */
   private BlockletInfo getBlockletInfo(
-      org.apache.carbondata.format.BlockletInfo2 blockletInfoThrift, int numberOfDimensionColumns) {
+      org.apache.carbondata.format.BlockletInfo3 blockletInfoThrift, int numberOfDimensionColumns) {
     BlockletInfo blockletInfo = new BlockletInfo();
     List<Long> dimensionColumnChunkOffsets =
         blockletInfoThrift.getColumn_data_chunks_offsets().subList(0, numberOfDimensionColumns);
     List<Long> measureColumnChunksOffsets = blockletInfoThrift.getColumn_data_chunks_offsets()
         .subList(numberOfDimensionColumns,
             blockletInfoThrift.getColumn_data_chunks_offsets().size());
-    List<Short> dimensionColumnChunkLength =
+    List<Integer> dimensionColumnChunkLength =
         blockletInfoThrift.getColumn_data_chunks_length().subList(0, numberOfDimensionColumns);
-    List<Short> measureColumnChunksLength = blockletInfoThrift.getColumn_data_chunks_length()
+    List<Integer> measureColumnChunksLength = blockletInfoThrift.getColumn_data_chunks_length()
         .subList(numberOfDimensionColumns,
             blockletInfoThrift.getColumn_data_chunks_offsets().size());
     blockletInfo.setDimensionChunkOffsets(dimensionColumnChunkOffsets);
     blockletInfo.setMeasureChunkOffsets(measureColumnChunksOffsets);
-
-    List<Integer> dimensionColumnChunkLengthInteger = new ArrayList<Integer>();
-    List<Integer> measureColumnChunkLengthInteger = new ArrayList<Integer>();
-    for (int i = 0; i < dimensionColumnChunkLength.size(); i++) {
-      dimensionColumnChunkLengthInteger.add(dimensionColumnChunkLength.get(i).intValue());
-    }
-    for (int i = 0; i < measureColumnChunksLength.size(); i++) {
-      measureColumnChunkLengthInteger.add(measureColumnChunksLength.get(i).intValue());
-    }
-    blockletInfo.setDimensionChunksLength(dimensionColumnChunkLengthInteger);
-    blockletInfo.setMeasureChunksLength(measureColumnChunkLengthInteger);
+    blockletInfo.setDimensionChunksLength(dimensionColumnChunkLength);
+    blockletInfo.setMeasureChunksLength(measureColumnChunksLength);
     blockletInfo.setNumberOfRows(blockletInfoThrift.getNum_rows());
+    blockletInfo.setDimensionOffset(blockletInfoThrift.getDimension_offsets());
+    blockletInfo.setMeasureOffsets(blockletInfoThrift.getMeasure_offsets());
     return blockletInfo;
   }
 
@@ -141,3 +129,4 @@ public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
   }
 
 }
+

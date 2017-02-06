@@ -128,6 +128,7 @@ struct DataChunk2{
     8: optional list<schema.Encoding> encoders; // The List of encoders overriden at node level
     9: optional list<binary> encoder_meta; // extra information required by encoders
     10: optional BlockletMinMaxIndex min_max; 
+    11: optional i32 numberOfRowsInpage;
  }
 
 
