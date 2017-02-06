@@ -62,7 +62,7 @@ import org.apache.spark.sql.CarbonSession._
 * Create a CarbonSession :
 
 ```
-val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession()
+val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession(<path to hdfs store>)
 ```
 
 #### Executing Queries
