@@ -40,6 +40,7 @@ import org.apache.spark.util.SparkUtil
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo}
+import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarFormatVersion}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -364,6 +365,7 @@ object CarbonDataRDDFactory {
       columnar: Boolean,
       partitionStatus: String = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS,
       useKettle: Boolean,
+      result: Future[DictionaryServer],
       dataFrame: Option[DataFrame] = None,
       updateModel: Option[UpdateTableModel] = None): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
@@ -961,6 +963,18 @@ object CarbonDataRDDFactory {
         } else if (!carbonLoadModel.isRetentionRequest) {
           // TODO : Handle it
           LOGGER.info("********Database updated**********")
+        }
+
+        // write dictionary file and shutdown dictionary server
+        if (carbonLoadModel.getUseOnePass) {
+          try {
+            result.get().shutdown()
+          } catch {
+            case ex: Exception =>
+              LOGGER.error("Error while close dictionary server and write dictionary file for " +
+                s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+              throw new Exception("Dataload failed due to error while write dictionary file!")
+          }
         }
         LOGGER.audit("Data load is successful for " +
             s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
