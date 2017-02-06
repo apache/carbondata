@@ -440,6 +440,23 @@ case class LoadTable(
         .setBadRecordsAction(
           TableOptionConstant.BAD_RECORDS_ACTION.getName + "," + badRecordsLoggerRedirect)
 
+      val useOnePass = options.getOrElse("single_pass", "false").trim.toLowerCase match {
+        case "true" =>
+          if (!useKettle && StringUtils.isEmpty(allDictionaryPath)) {
+            true
+          } else {
+            LOGGER.error("Can't use single_pass, because SINGLE_PASS and ALL_DICTIONARY_PATH" +
+              "can not be used together, and USE_KETTLE must be set as false")
+            false
+          }
+        case "false" =>
+          false
+        case illegal =>
+          LOGGER.error(s"Can't use single_pass, because illegal syntax found: [" + illegal + "] " +
+            "Please set it as 'true' or 'false'")
+          false
+      }
+      carbonLoadModel.setUseOnePass(useOnePass)
       if (delimiter.equalsIgnoreCase(complex_delimiter_level_1) ||
           complex_delimiter_level_1.equalsIgnoreCase(complex_delimiter_level_2) ||
           delimiter.equalsIgnoreCase(complex_delimiter_level_2)) {
