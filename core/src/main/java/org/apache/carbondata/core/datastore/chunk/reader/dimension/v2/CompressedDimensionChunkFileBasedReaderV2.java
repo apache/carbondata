@@ -245,4 +245,12 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
     return encodings.contains(encoding);
   }
 
+  @Override
+  public DimensionColumnDataChunk convertToDimensionChunk(
+      DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber)
+      throws IOException {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
 }

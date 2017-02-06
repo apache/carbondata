@@ -209,4 +209,12 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     datChunk.setNullValueIndexHolder(getPresenceMeta(measureColumnChunk.presence));
     return datChunk;
   }
+
+  @Override
+  public MeasureColumnDataChunk convertToMeasureChunk(
+      MeasureRawColumnChunk measureRawColumnChunk, int pageNumber)
+      throws IOException {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

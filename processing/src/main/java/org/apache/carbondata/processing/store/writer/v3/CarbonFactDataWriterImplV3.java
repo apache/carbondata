@@ -405,6 +405,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
         currentDataChunksLength.add(dataChunkBytes[dataChunkStartIndex].length);
         buffer = ByteBuffer.allocate(dataChunkBytes[dataChunkStartIndex].length);
         buffer.put(dataChunkBytes[dataChunkStartIndex]);
+        buffer.flip();
         fileChannel.write(buffer);
         offset += dataChunkBytes[dataChunkStartIndex].length;
         dataChunkStartIndex++;

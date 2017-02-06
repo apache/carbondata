@@ -89,7 +89,7 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
   }
 
   private int makeInt(byte b3, byte b2, byte b1, byte b0) {
-    return (((b3) << 24) | ((b2 & 0xff) << 16) | ((b1 & 0xff) << 8) | ((b0 & 0xff)));
+    return (((b0) << 24) | ((b1 & 0xff) << 16) | ((b2 & 0xff) << 8) | ((b3 & 0xff)));
   }
 
   /**

@@ -48,7 +48,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
       try {
         if (dataChunks[i] == null) {
           dataChunks[i] =
-              chunkReader.convertToDimensionChunk(fileHolder, blockId, rawData, offSet, length, i);
+              chunkReader.convertToDimensionChunk(this, i);
         }
       } catch (Exception e) {
         throw new RuntimeException(e);
@@ -65,7 +65,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     if (dataChunks[index] == null) {
       try {
         dataChunks[index] = chunkReader
-            .convertToDimensionChunk(fileHolder, blockId, rawData, offSet, length, index);
+            .convertToDimensionChunk(this, index);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }

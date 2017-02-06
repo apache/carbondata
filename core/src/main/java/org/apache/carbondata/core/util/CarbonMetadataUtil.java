@@ -720,6 +720,7 @@ public class CarbonMetadataUtil {
       dataChunk = new DataChunk2();
       dataChunk.min_max = new BlockletMinMaxIndex();
       dataChunk.setChunk_meta(getChunkCompressionMeta());
+      dataChunk.setNumberOfRowsInpage(nodeHolder.getEntryCount());
       List<Encoding> encodings = new ArrayList<Encoding>();
       if (isDimensionColumn) {
         dataChunk.setData_page_length(nodeHolder.getKeyLengths()[index]);
@@ -773,6 +774,7 @@ public class CarbonMetadataUtil {
         dataChunk.min_max
             .addToMin_values(ByteBuffer.wrap(nodeHolder.getMeasureColumnMinData()[index]));
       }
+      dataChunk.setEncoders(encodings);
       colDataChunks.add(dataChunk);
     }
     return colDataChunks;
@@ -808,6 +810,7 @@ public class CarbonMetadataUtil {
       buffer = ByteBuffer.allocate(
           (CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
               + 3);
+      buffer.putChar(valueEncoderMeta.getType());
       buffer.putDouble((Double) valueEncoderMeta.getMaxValue());
       buffer.putDouble((Double) valueEncoderMeta.getMinValue());
       buffer.putDouble((Double) valueEncoderMeta.getUniqueValue());
@@ -815,14 +818,15 @@ public class CarbonMetadataUtil {
       buffer = ByteBuffer.allocate(
           (CarbonCommonConstants.LONG_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
               + 3);
+      buffer.putChar(valueEncoderMeta.getType());
       buffer.putLong((Long) valueEncoderMeta.getMaxValue());
       buffer.putLong((Long) valueEncoderMeta.getMinValue());
       buffer.putLong((Long) valueEncoderMeta.getUniqueValue());
     } else {
       buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + 3);
+      buffer.putChar(valueEncoderMeta.getType());
     }
     buffer.putInt(valueEncoderMeta.getDecimal());
-    buffer.putChar(valueEncoderMeta.getType());
     buffer.put(valueEncoderMeta.getDataTypeSelected());
     buffer.flip();
     return buffer.array();

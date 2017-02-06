@@ -48,7 +48,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
       try {
         if (dataChunks[i] == null) {
           dataChunks[i] =
-              chunkReader.convertToMeasureChunk(fileReader, blockId, rawData, offSet, length, i);
+              chunkReader.convertToMeasureChunk(this, i);
         }
       } catch (Exception e) {
         throw new RuntimeException(e);
@@ -67,7 +67,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     try {
       if (dataChunks[index] == null) {
         dataChunks[index] =
-            chunkReader.convertToMeasureChunk(fileReader, blockId, rawData, offSet, length, index);
+            chunkReader.convertToMeasureChunk(this, index);
       }
     } catch (IOException e) {
       throw new RuntimeException(e);

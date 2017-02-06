@@ -117,8 +117,10 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
   }
 
   @Override
-  public MeasureColumnDataChunk convertToMeasureChunk(FileHolder fileReader, int blockIndex,
-      byte[] rawData, int offset, int length, int pageNumber) throws IOException {
+  public MeasureColumnDataChunk convertToMeasureChunk(
+      MeasureRawColumnChunk measureRawColumnChunk, int pageNumber)
+      throws IOException {
+    // TODO Auto-generated method stub
     return null;
   }
 }
