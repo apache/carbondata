@@ -130,6 +130,24 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE load_test")
   }
 
+  test("test data loading into table with Single Pass") {
+    sql("DROP TABLE IF EXISTS load_test_singlepass")
+    sql(""" CREATE TABLE load_test_singlepass(id int, name string, city string, age int)
+        STORED BY 'org.apache.carbondata.format' """)
+    val testData = s"$resourcesPath/sample.csv"
+    try {
+      sql(s"LOAD DATA LOCAL INPATH '$testData' into table load_test_singlepass options ('USE_KETTLE'='FALSE','SINGLE_PASS'='TRUE')")
+    } catch {
+      case ex: Exception =>
+        assert(false)
+    }
+    checkAnswer(
+      sql("SELECT id,name FROM load_test_singlepass where name='eason'"),
+      Seq(Row(2,"eason"))
+    )
+    sql("DROP TABLE load_test_singlepass")
+  }
+
   override def afterAll {
     sql("DROP TABLE if exists loadtest")
     sql("drop table if exists invalidMeasures")
