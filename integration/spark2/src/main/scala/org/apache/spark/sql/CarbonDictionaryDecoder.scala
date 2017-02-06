@@ -338,7 +338,6 @@ class CarbonDecoderRDD(
                 .getDictionaryValueForKeyInBytes(data(index).asInstanceOf[Int]),
               getDictionaryColumnIds(index)._3)
           }
-          for
         }
         new GenericInternalRow(data)
       }
