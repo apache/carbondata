@@ -40,12 +40,12 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
   /**
    * dimension chunks offset
    */
-  private List<Long> dimensionChunksOffset;
+  protected List<Long> dimensionChunksOffset;
 
   /**
    * dimension chunks length
    */
-  private List<Short> dimensionChunksLength;
+  protected List<Integer> dimensionChunksLength;
 
   /**
    * Constructor to get minimum parameter to create instance of this class
@@ -241,7 +241,7 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
    * @param encoding encoding to search
    * @return if encoding is present in dimension
    */
-  private boolean hasEncoding(List<Encoding> encodings, Encoding encoding) {
+  protected boolean hasEncoding(List<Encoding> encodings, Encoding encoding) {
     return encodings.contains(encoding);
   }
 

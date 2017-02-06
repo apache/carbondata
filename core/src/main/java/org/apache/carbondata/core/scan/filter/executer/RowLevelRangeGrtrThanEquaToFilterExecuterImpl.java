@@ -67,8 +67,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       // filter value should be in range of max and min value i.e
       // max>filtervalue>min
       // so filter-max should be negative
-      int maxCompare =
-          ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMaxValue);
+      int maxCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMaxValue);
       // if any filter value is in range than this block needs to be
       // scanned less than equal to max range.
       if (maxCompare <= 0) {
@@ -96,9 +95,17 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
       if (rawColumnChunk.getMaxValues() != null) {
         if (isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues)) {
-          BitSet bitSet = getFilteredIndexes(rawColumnChunk.convertToDimColDataChunk(i),
-              rawColumnChunk.getRowCount()[i]);
-          bitSetGroup.setBitSet(bitSet, i);
+          int compare = ByteUtil.UnsafeComparer.INSTANCE
+              .compareTo(filterRangeValues[0], rawColumnChunk.getMinValues()[i]);
+          if (compare <= 0) {
+            BitSet bitSet = new BitSet(rawColumnChunk.getRowCount()[i]);
+            bitSet.flip(0, rawColumnChunk.getRowCount()[i]);
+            bitSetGroup.setBitSet(bitSet, i);
+          } else {
+            BitSet bitSet = getFilteredIndexes(rawColumnChunk.convertToDimColDataChunk(i),
+                rawColumnChunk.getRowCount()[i]);
+            bitSetGroup.setBitSet(bitSet, i);
+          }
         }
       } else {
         BitSet bitSet = getFilteredIndexes(rawColumnChunk.convertToDimColDataChunk(i),

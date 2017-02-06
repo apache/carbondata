@@ -67,8 +67,7 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
     boolean isScanRequired = false;
     for (int k = 0; k < filterValues.length; k++) {
       // and filter-min should be positive
-      int minCompare =
-          ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMinValue);
+      int minCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMinValue);
 
       // if any filter applied is not in range of min and max of block
       // then since its a less than fiter validate whether the block
@@ -98,9 +97,17 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
     for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
       if (rawColumnChunk.getMinValues() != null) {
         if (isScanRequired(rawColumnChunk.getMinValues()[i], this.filterRangeValues)) {
-          BitSet bitSet = getFilteredIndexes(rawColumnChunk.convertToDimColDataChunk(i),
-              rawColumnChunk.getRowCount()[i]);
-          bitSetGroup.setBitSet(bitSet, i);
+          int compare = ByteUtil.UnsafeComparer.INSTANCE
+              .compareTo(filterRangeValues[0], rawColumnChunk.getMaxValues()[i]);
+          if (compare > 0) {
+            BitSet bitSet = new BitSet(rawColumnChunk.getRowCount()[i]);
+            bitSet.flip(0, rawColumnChunk.getRowCount()[i]);
+            bitSetGroup.setBitSet(bitSet, i);
+          } else {
+            BitSet bitSet = getFilteredIndexes(rawColumnChunk.convertToDimColDataChunk(i),
+                rawColumnChunk.getRowCount()[i]);
+            bitSetGroup.setBitSet(bitSet, i);
+          }
         }
       } else {
         BitSet bitSet = getFilteredIndexes(rawColumnChunk.convertToDimColDataChunk(i),

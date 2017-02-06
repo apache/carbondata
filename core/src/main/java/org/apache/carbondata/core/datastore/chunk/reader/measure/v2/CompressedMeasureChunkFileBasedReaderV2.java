@@ -43,12 +43,12 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
   /**
    * measure column chunks offset
    */
-  private List<Long> measureColumnChunkOffsets;
+  protected List<Long> measureColumnChunkOffsets;
 
   /**
    * measure column chunks length
    */
-  private List<Short> measureColumnChunkLength;
+  protected List<Integer> measureColumnChunkLength;
 
   /**
    * Constructor to get minimum parameter to create instance of this class
@@ -70,7 +70,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
    * @param presentMetadataThrift
    * @return wrapper presence meta
    */
-  private static PresenceMeta getPresenceMeta(
+  protected static PresenceMeta getPresenceMeta(
       org.apache.carbondata.format.PresenceMeta presentMetadataThrift) {
     PresenceMeta presenceMeta = new PresenceMeta();
     presenceMeta.setRepresentNullValues(presentMetadataThrift.isRepresents_presence());
