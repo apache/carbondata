@@ -20,8 +20,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
@@ -165,13 +165,13 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
           VariableLengthDimensionDataChunk dimensionColumnDataChunk =
               (VariableLengthDimensionDataChunk) columnDataChunk;
-          memberString = readMemberBasedOnNoDictionaryVal(dimensionColumnDataChunk, index);
-          if (null != memberString) {
-            if (memberString.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-              memberString = null;
+          byte[] memberBytes = dimensionColumnDataChunk.getChunkData(index);
+          if (null != memberBytes) {
+            if (Arrays.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, memberBytes)) {
+              memberBytes = null;
             }
             record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
-                .getDataBasedOnDataType(memberString,
+                .getDataBasedOnDataType(memberBytes,
                     dimColumnEvaluatorInfo.getDimension().getDataType());
           } else {
             continue;
@@ -339,20 +339,6 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     return 0;
   }
 
-  /**
-   * Reading the blocks for no dictionary data, in no dictionary case
-   * directly the filter data will read, no need to scan the dictionary
-   * or read the dictionary value.
-   *
-   * @param dimensionColumnDataChunk
-   * @param index
-   * @return
-   */
-  private String readMemberBasedOnNoDictionaryVal(
-      VariableLengthDimensionDataChunk dimensionColumnDataChunk, int index) {
-    return new String(dimensionColumnDataChunk.getChunkData(index),
-        Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-  }
 
   @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
     BitSet bitSet = new BitSet(1);

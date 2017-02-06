@@ -180,32 +180,20 @@ case class CarbonDictionaryDecoder(
           )
           new Iterator[InternalRow] {
             val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
-            var flag = true
-            var total = 0L
             override final def hasNext: Boolean = {
-              flag = iter.hasNext
-              if (!flag && total > 0) {
-                val queryStatistic = new QueryStatistic()
-                queryStatistic
-                  .addFixedTimeStatistic(QueryStatisticsConstants.PREPARE_RESULT, total)
-                recorder.recordStatistics(queryStatistic)
-                recorder.logStatistics()
-              }
-              flag
+              iter.hasNext
             }
             override final def next(): InternalRow = {
-              val startTime = System.currentTimeMillis()
               val row: InternalRow = iter.next()
               val data = row.toSeq(dataTypes).toArray
               dictIndex.foreach { index =>
                 if (data(index) != null) {
                   data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
-                    .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
+                    .getDictionaryValueForKeyInBytes(data(index).asInstanceOf[Int]),
                     getDictionaryColumnIds(index)._3)
                 }
               }
               val result = unsafeProjection(new GenericMutableRow(data))
-              total += System.currentTimeMillis() - startTime
               result
             }
           }
