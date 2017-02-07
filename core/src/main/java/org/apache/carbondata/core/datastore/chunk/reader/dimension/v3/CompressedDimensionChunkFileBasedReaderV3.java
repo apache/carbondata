@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.datastore.chunk.reader.dimension.v3;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
@@ -31,7 +32,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 import org.apache.carbondata.format.Encoding;
-
 import org.apache.commons.lang.ArrayUtils;
 
 public class CompressedDimensionChunkFileBasedReaderV3
@@ -106,7 +106,6 @@ public class CompressedDimensionChunkFileBasedReaderV3
    */
   public DimensionRawColumnChunk readRawDimensionChunk(FileHolder fileReader, int blockIndex)
       throws IOException {
-    byte[] data;
     long currentDimensionOffset = dimensionChunksOffset.get(blockIndex);
     int length = 0;
     if (dimensionChunksOffset.size() - 1 == blockIndex) {
@@ -114,10 +113,11 @@ public class CompressedDimensionChunkFileBasedReaderV3
     } else {
       length = (int) (dimensionChunksOffset.get(blockIndex + 1) - currentDimensionOffset);
     }
-    data = fileReader.readByteArray(filePath, currentDimensionOffset, length);
-    DataChunk3 dataChunk = CarbonUtil.readDataChunk3(data, 0, length);
+    ByteBuffer buffer = ByteBuffer.allocateDirect(length);
+    fileReader.readByteBuffer(filePath, buffer, currentDimensionOffset, length);
+    DataChunk3 dataChunk = CarbonUtil.readDataChunk3(buffer, 0, length);
     DimensionRawColumnChunk rawColumnChunk =
-        new DimensionRawColumnChunk(blockIndex, data, 0, data.length, this);
+        new DimensionRawColumnChunk(blockIndex, buffer, 0, length, this);
     int numberOfPages = dataChunk.getPage_length().size();
     byte[][] maxValueOfEachPage = new byte[numberOfPages][];
     byte[][] minValueOfEachPage = new byte[numberOfPages][];
@@ -145,7 +145,8 @@ public class CompressedDimensionChunkFileBasedReaderV3
   protected DimensionRawColumnChunk[] readRawDimensionChunksInGroup(FileHolder fileReader,
       int startBlockIndex, int endBlockIndex) throws IOException {
     long currentDimensionOffset = dimensionChunksOffset.get(startBlockIndex);
-    byte[] data = fileReader.readByteArray(filePath, currentDimensionOffset,
+    ByteBuffer buffer = ByteBuffer.allocateDirect( (int) (dimensionChunksOffset.get(endBlockIndex + 1) - currentDimensionOffset));
+    fileReader.readByteBuffer(filePath, buffer, currentDimensionOffset,
         (int) (dimensionChunksOffset.get(endBlockIndex + 1) - currentDimensionOffset));
     DimensionRawColumnChunk[] dimensionDataChunks =
         new DimensionRawColumnChunk[endBlockIndex - startBlockIndex + 1];
@@ -154,9 +155,9 @@ public class CompressedDimensionChunkFileBasedReaderV3
     for (int i = startBlockIndex; i <= endBlockIndex; i++) {
       int currentLength = (int) (dimensionChunksOffset.get(i + 1) - dimensionChunksOffset.get(i));
       dimensionDataChunks[index] =
-          new DimensionRawColumnChunk(i, data, runningLength, currentLength, this);
+          new DimensionRawColumnChunk(i, buffer, runningLength, currentLength, this);
       DataChunk3 dataChunk =
-          CarbonUtil.readDataChunk3(data, runningLength, dimensionChunksLength.get(i));
+          CarbonUtil.readDataChunk3(buffer, runningLength, dimensionChunksLength.get(i));
       int numberOfPages = dataChunk.getPage_length().size();
       byte[][] maxValueOfEachPage = new byte[numberOfPages][];
       byte[][] minValueOfEachPage = new byte[numberOfPages][];
@@ -192,13 +193,16 @@ public class CompressedDimensionChunkFileBasedReaderV3
     int[] rlePage = null;
     DataChunk2 dimensionColumnChunk = null;
     DataChunk3 dataChunk3 = dimensionRawColumnChunk.getDataChunk3();
-    byte[] rawData = dimensionRawColumnChunk.getRawData();
+    ByteBuffer rawData = dimensionRawColumnChunk.getRawData();
     dimensionColumnChunk = dataChunk3.getData_chunk_list().get(pageNumber);
     int copySourcePoint = dimensionRawColumnChunk.getOffSet() + dimensionChunksLength
         .get(dimensionRawColumnChunk.getBlockId()) + dataChunk3.getPage_offset().get(pageNumber);
+    byte[] data = new byte[dimensionColumnChunk.data_page_length];
+    rawData.position(copySourcePoint);
+    rawData.get(data);
     // first read the data and uncompressed it
     dataPage =
-        COMPRESSOR.unCompressByte(rawData, copySourcePoint, dimensionColumnChunk.data_page_length);
+        COMPRESSOR.unCompressByte(data, 0, dimensionColumnChunk.data_page_length);
     copySourcePoint += dimensionColumnChunk.data_page_length;
     // if row id block is present then read the row id chunk and uncompress it
     if (hasEncoding(dimensionColumnChunk.encoders, Encoding.INVERTED_INDEX)) {

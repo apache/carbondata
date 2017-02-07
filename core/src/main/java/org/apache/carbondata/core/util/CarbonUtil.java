@@ -472,28 +472,30 @@ public final class CarbonUtil {
             numberCompressor.unCompress(indexMap, 0, indexMap.length));
   }
 
-  public static int[] getUnCompressColumnIndex(int totalLength, byte[] columnIndexData,
+  public static int[] getUnCompressColumnIndex(int totalLength,ByteBuffer buffer,
       int offset) {
-    ByteBuffer buffer = ByteBuffer.wrap(columnIndexData, offset, totalLength);
+    buffer.position(offset);
     int indexDataLength = buffer.getInt();
-    byte[] indexData = new byte[indexDataLength];
-    byte[] indexMap =
-        new byte[totalLength - indexDataLength - CarbonCommonConstants.INT_SIZE_IN_BYTE];
-    buffer.get(indexData);
-    buffer.get(indexMap);
-    return UnBlockIndexer.uncompressIndex(getIntArray(indexData, 0, indexData.length),
-        getIntArray(indexMap, 0, indexMap.length));
+    int indexMapLength = totalLength - indexDataLength - CarbonCommonConstants.INT_SIZE_IN_BYTE;
+//    byte[] indexData = new byte[indexDataLength];
+//    byte[] indexMap =
+//        new byte[totalLength - indexDataLength - CarbonCommonConstants.INT_SIZE_IN_BYTE];
+//    buffer.get(indexData);
+//    buffer.get(indexMap);
+    int[] indexData = getIntArray(buffer, buffer.position(), indexDataLength);
+    int[] indexMap = getIntArray(buffer, buffer.position(), indexMapLength);
+    return UnBlockIndexer.uncompressIndex(indexData,
+        indexMap);
   }
-
-  public static int[] getIntArray(byte[] data, int offset, int length) {
+  public static int[] getIntArray(ByteBuffer data, int offset, int length) {
     if (length == 0) {
       return new int[0];
     }
-    ByteBuffer buffer = ByteBuffer.wrap(data, offset, length);
+    data.position(offset);
     int[] intArray = new int[length / 2];
     int index = 0;
-    while (buffer.hasRemaining()) {
-      intArray[index++] = buffer.getShort();
+    while (index<intArray.length) {
+      intArray[index++] = data.getShort();
     }
     return intArray;
   }
@@ -1260,13 +1262,16 @@ public final class CarbonUtil {
     }, offset, length);
   }
 
-  public static DataChunk3 readDataChunk3(byte[] dataChunkBytes, int offset, int length)
+  public static DataChunk3 readDataChunk3(ByteBuffer dataChunkBuffer, int offset, int length)
       throws IOException {
-    return (DataChunk3) read(dataChunkBytes, new ThriftReader.TBaseCreator() {
+    byte[] data = new byte[length];
+    dataChunkBuffer.position(offset);
+    dataChunkBuffer.get(data);
+    return (DataChunk3) read(data, new ThriftReader.TBaseCreator() {
       @Override public TBase create() {
         return new DataChunk3();
       }
-    }, offset, length);
+    }, 0, length);
   }
 
   /**

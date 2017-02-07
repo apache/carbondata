@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.datastore.chunk.impl;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
@@ -34,7 +35,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
 
   private FileHolder fileHolder;
 
-  public DimensionRawColumnChunk(int blockId, byte[] rawData, int offSet, int length,
+  public DimensionRawColumnChunk(int blockId, ByteBuffer rawData, int offSet, int length,
       DimensionColumnChunkReader columnChunkReader) {
     super(blockId, rawData, offSet, length);
     this.chunkReader = columnChunkReader;

@@ -134,8 +134,8 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
       data = fileReader.readByteArray(filePath, currentMeasureOffset,
           (int) (measureColumnChunkOffsets.get(blockIndex + 1) - currentMeasureOffset));
     }
-    MeasureRawColumnChunk rawColumnChunk =
-        new MeasureRawColumnChunk(blockIndex, data, 0, data.length, this);
+    MeasureRawColumnChunk rawColumnChunk = null;
+//        new MeasureRawColumnChunk(blockIndex, data, 0, data.length, this);
     rawColumnChunk.setFileReader(fileReader);
     rawColumnChunk.setPagesCount(1);
     rawColumnChunk.setRowCount(new int[] { numberOfRows });
@@ -154,8 +154,8 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     for (int i = startBlockIndex; i <= endBlockIndex; i++) {
       int currentLength =
           (int) (measureColumnChunkOffsets.get(i + 1) - measureColumnChunkOffsets.get(i));
-      MeasureRawColumnChunk measureRawColumnChunk =
-          new MeasureRawColumnChunk(i, data, runningLength, currentLength, this);
+      MeasureRawColumnChunk measureRawColumnChunk = null;
+//          new MeasureRawColumnChunk(i, data, runningLength, currentLength, this);
       measureRawColumnChunk.setFileReader(fileReader);
       measureRawColumnChunk.setRowCount(new int[] { numberOfRows });
       measureRawColumnChunk.setPagesCount(1);

@@ -133,8 +133,8 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
       data = fileReader.readByteArray(filePath, currentDimensionOffset,
           (int) (dimensionChunksOffset.get(blockIndex + 1) - currentDimensionOffset));
     }
-    DimensionRawColumnChunk rawColumnChunk =
-        new DimensionRawColumnChunk(blockIndex, data, 0, data.length, this);
+    DimensionRawColumnChunk rawColumnChunk = null;
+//        new DimensionRawColumnChunk(blockIndex, data, 0, data.length, this);
     rawColumnChunk.setFileHolder(fileReader);
     rawColumnChunk.setPagesCount(1);
     rawColumnChunk.setRowCount(new int[]{numberOfRows});
@@ -152,7 +152,7 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
     int runningLength = 0;
     for (int i = startBlockIndex; i <= endBlockIndex; i++) {
       int currentLength = (int)(dimensionChunksOffset.get(i + 1) - dimensionChunksOffset.get(i));
-      dataChunks[index] = new DimensionRawColumnChunk(i, data, runningLength, currentLength, this);
+      dataChunks[index] = null;
       dataChunks[index].setFileHolder(fileReader);
       dataChunks[index].setPagesCount(1);
       dataChunks[index].setRowCount(new int[]{numberOfRows});

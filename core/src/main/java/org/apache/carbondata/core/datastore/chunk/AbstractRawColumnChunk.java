@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.core.datastore.chunk;
 
+import java.nio.ByteBuffer;
+
 import org.apache.carbondata.format.DataChunk3;
 
 /**
@@ -27,7 +29,7 @@ public abstract class AbstractRawColumnChunk {
 
   private byte[][] maxValues;
 
-  protected byte[] rawData;
+  protected ByteBuffer rawData;
 
   private int[] lengths;
 
@@ -44,8 +46,8 @@ public abstract class AbstractRawColumnChunk {
   protected int length;
 
   protected DataChunk3 dataChunk3;
-
-  public AbstractRawColumnChunk(int blockId, byte[] rawData, int offSet, int length) {
+  
+  public AbstractRawColumnChunk(int blockId, ByteBuffer rawData, int offSet, int length) {
     this.blockId = blockId;
     this.rawData = rawData;
     this.offSet = offSet;
@@ -68,11 +70,11 @@ public abstract class AbstractRawColumnChunk {
     this.maxValues = maxValues;
   }
 
-  public byte[] getRawData() {
+  public ByteBuffer getRawData() {
     return rawData;
   }
 
-  public void setRawData(byte[] rawData) {
+  public void setRawData(ByteBuffer rawData) {
     this.rawData = rawData;
   }
 
