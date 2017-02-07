@@ -219,25 +219,26 @@ public class CompressedDimensionChunkFileBasedReaderV3
           eachColumnValueSize[dimensionRawColumnChunk.getBlockId()]);
       rlePage = null;
     }
+    
     // fill chunk attributes
     DimensionColumnDataChunk columnDataChunk = null;
 
     if (dimensionColumnChunk.isRowMajor()) {
       // to store fixed length column chunk values
       columnDataChunk = new ColumnGroupDimensionDataChunk(dataPage,
-          eachColumnValueSize[dimensionRawColumnChunk.getBlockId()], numberOfRows);
+          eachColumnValueSize[dimensionRawColumnChunk.getBlockId()], dimensionRawColumnChunk.getRowCount()[pageNumber]);
     }
     // if no dictionary column then first create a no dictionary column chunk
     // and set to data chunk instance
     else if (!hasEncoding(dimensionColumnChunk.encoders, Encoding.DICTIONARY)) {
       columnDataChunk =
           new VariableLengthDimensionDataChunk(dataPage, invertedIndexes, invertedIndexesReverse,
-              numberOfRows);
+              dimensionRawColumnChunk.getRowCount()[pageNumber]);
     } else {
       // to store fixed length column chunk values
       columnDataChunk =
           new FixedLengthDimensionDataChunk(dataPage, invertedIndexes, invertedIndexesReverse,
-              numberOfRows, eachColumnValueSize[dimensionRawColumnChunk.getBlockId()]);
+              dimensionRawColumnChunk.getRowCount()[pageNumber], eachColumnValueSize[dimensionRawColumnChunk.getBlockId()]);
     }
     return columnDataChunk;
   }

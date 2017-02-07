@@ -192,7 +192,7 @@ public class CompressedMeasureChunkFileBasedReaderV3
     values
         .uncompress(compressionModel.getConvertedDataType()[0], measureRawColumnChunk.getRawData(),
             copyPoint, measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
-            compressionModel.getMaxValue()[0], numberOfRows);
+            compressionModel.getMaxValue()[0], measureRawColumnChunk.getRowCount()[pageNumber]);
     CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values);
     // set the data chunk
     datChunk.setMeasureDataHolder(measureDataHolder);
