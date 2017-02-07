@@ -88,4 +88,8 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
   public void setFileReader(FileHolder fileReader) {
     this.fileReader = fileReader;
   }
+  
+  public FileHolder getFileReader() {
+    return fileReader;
+  }
 }

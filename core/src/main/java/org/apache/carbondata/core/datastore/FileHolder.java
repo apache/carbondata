@@ -20,6 +20,8 @@ package org.apache.carbondata.core.datastore;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import org.apache.carbondata.core.util.StatisticObject;
+
 public interface FileHolder {
   
   void readByteBuffer(String filePath, ByteBuffer byteBuffer, long offset, int length) throws IOException;
@@ -86,4 +88,8 @@ public interface FileHolder {
    * This method will be used to close all the streams currently present in the cache
    */
   void finish() throws IOException;
+  
+  void setStatistic(StatisticObject statisticObject);
+  
+  StatisticObject getStatisticObject();
 }

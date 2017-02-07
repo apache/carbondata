@@ -512,6 +512,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     LOGGER.info("************ Blocklet Processing time for queryId: " + queryId + ": " + statisticObject.getBlockletProcessingTime());
     LOGGER.info("************ Number Of Blocklet Scan for queryId: " + queryId + ": " + statisticObject.getScanBlockletNumber());
     LOGGER.info("************ Number Of Block Scan for queryId: " + queryId + ": " + statisticObject.getScanBlockNumber());
+    LOGGER.info("************ Time taken to snappy uncompression for queryId: " + queryId + ": " + (statisticObject.getTimeTakenForSnappyUnCompression()/1000000));
+    LOGGER.info("************ Time taken for inverted index for queryId: " + queryId + ": " + (statisticObject.getTimeTakenForInvertedIndex()/1000000));
+    LOGGER.info("************ Time taken for rle uncompression for queryId: " + queryId + ": " + (statisticObject.getTimeTakenForRle()/1000000));
+    LOGGER.info("************ Time taken for value uncompression for queryId: " + queryId + ": " + (statisticObject.getTimeTakenForValueCompression()/1000000));
+    LOGGER.info("************ Time taken for assigning the object for queryId: " + queryId + ": " + (statisticObject.getTimeTakenForAllocatingTheObject()/1000000));
+
   }
 
 }

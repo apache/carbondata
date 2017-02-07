@@ -197,33 +197,39 @@ public class CompressedDimensionChunkFileBasedReaderV3
     dimensionColumnChunk = dataChunk3.getData_chunk_list().get(pageNumber);
     int copySourcePoint = dimensionRawColumnChunk.getOffSet() + dimensionChunksLength
         .get(dimensionRawColumnChunk.getBlockId()) + dataChunk3.getPage_offset().get(pageNumber);
+    long currentTimeMillis = System.nanoTime();
     byte[] data = new byte[dimensionColumnChunk.data_page_length];
     rawData.position(copySourcePoint);
     rawData.get(data);
     // first read the data and uncompressed it
     dataPage =
         COMPRESSOR.unCompressByte(data, 0, dimensionColumnChunk.data_page_length);
+    dimensionRawColumnChunk.getFileReader().getStatisticObject().setTimeTakenForSnappyUnCompression((System.nanoTime()-currentTimeMillis));
     copySourcePoint += dimensionColumnChunk.data_page_length;
     // if row id block is present then read the row id chunk and uncompress it
     if (hasEncoding(dimensionColumnChunk.encoders, Encoding.INVERTED_INDEX)) {
+      currentTimeMillis = System.nanoTime();
       invertedIndexes = CarbonUtil
           .getUnCompressColumnIndex(dimensionColumnChunk.rowid_page_length, rawData,
               copySourcePoint);
       copySourcePoint += dimensionColumnChunk.rowid_page_length;
       // get the reverse index
       invertedIndexesReverse = getInvertedReverseIndex(invertedIndexes);
+      dimensionRawColumnChunk.getFileReader().getStatisticObject().setTimeTakenForInvertedIndex((System.nanoTime()-currentTimeMillis));
     }
     // if rle is applied then read the rle block chunk and then uncompress
     //then actual data based on rle block
     if (hasEncoding(dimensionColumnChunk.encoders, Encoding.RLE)) {
+      currentTimeMillis = System.nanoTime();
       rlePage =
           CarbonUtil.getIntArray(rawData, copySourcePoint, dimensionColumnChunk.rle_page_length);
       // uncompress the data with rle indexes
       dataPage = UnBlockIndexer.uncompressData(dataPage, rlePage,
           eachColumnValueSize[dimensionRawColumnChunk.getBlockId()]);
       rlePage = null;
+      dimensionRawColumnChunk.getFileReader().getStatisticObject().setTimeTakenForRle((System.nanoTime()-currentTimeMillis));
     }
-    
+    currentTimeMillis = System.nanoTime();
     // fill chunk attributes
     DimensionColumnDataChunk columnDataChunk = null;
 
@@ -244,6 +250,7 @@ public class CompressedDimensionChunkFileBasedReaderV3
           new FixedLengthDimensionDataChunk(dataPage, invertedIndexes, invertedIndexesReverse,
               dimensionRawColumnChunk.getRowCount()[pageNumber], eachColumnValueSize[dimensionRawColumnChunk.getBlockId()]);
     }
+    dimensionRawColumnChunk.getFileReader().getStatisticObject().setTimeTakenForAllocatingTheObject(System.nanoTime()-currentTimeMillis);
     return columnDataChunk;
   }
 }

@@ -189,6 +189,7 @@ public class CompressedMeasureChunkFileBasedReaderV3
     WriterCompressModel compressionModel = CarbonUtil.getValueCompressionModel(valueEncodeMeta);
     ValueCompressionHolder values = compressionModel.getValueCompressionHolder()[0];
     // uncompress
+    long nanoTime = System.nanoTime();
     byte[] data = new byte[measureColumnChunk.data_page_length];
     ByteBuffer rawData = measureRawColumnChunk.getRawData();
     rawData.position(copyPoint);
@@ -198,6 +199,7 @@ public class CompressedMeasureChunkFileBasedReaderV3
             0, measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
             compressionModel.getMaxValue()[0], measureRawColumnChunk.getRowCount()[pageNumber]);
     CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values);
+    measureRawColumnChunk.getFileReader().getStatisticObject().setTimeTakenForValueCompression(System.nanoTime()-nanoTime);
     // set the data chunk
     datChunk.setMeasureDataHolder(measureDataHolder);
     // set the enun value indexes

@@ -86,4 +86,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
   public void setFileHolder(FileHolder fileHolder) {
     this.fileHolder = fileHolder;
   }
+  public FileHolder getFileReader() {
+    return fileHolder;
+  }
 }

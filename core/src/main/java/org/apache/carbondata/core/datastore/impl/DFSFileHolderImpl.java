@@ -24,6 +24,7 @@ import java.util.Map.Entry;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.util.StatisticObject;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -34,6 +35,8 @@ public class DFSFileHolderImpl implements FileHolder {
    * cache to hold filename and its stream
    */
   private Map<String, FSDataInputStream> fileNameAndStreamCache;
+  
+  private StatisticObject statisticObject;
 
   public DFSFileHolderImpl() {
     this.fileNameAndStreamCache =
@@ -140,5 +143,15 @@ public class DFSFileHolderImpl implements FileHolder {
       sizeRead += fileChannel.read(byteBuffer);
     }
     byteBuffer.rewind();
+  }
+
+  @Override
+  public void setStatistic(StatisticObject statisticObject) {
+    this.statisticObject=statisticObject;
+  }
+
+  @Override
+  public StatisticObject getStatisticObject() {
+    return this.statisticObject;
   }
 }

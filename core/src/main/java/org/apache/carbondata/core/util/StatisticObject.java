@@ -30,6 +30,16 @@ public class StatisticObject {
   
   private long blockletProcessingTime;
   
+  private long timeTakenForSnappyUnCompression;
+  
+  private long timeTakenForInvertedIndex;
+  
+  private long timeTakenForRle;
+  
+  private long timeTakenForValueCompression;
+  
+  private long timeTakenForAllocatingTheObject;
+  
   public long getScanTime() {
     return scanTime;
   }
@@ -76,5 +86,47 @@ public class StatisticObject {
 
   public synchronized void setBlockletProcessingTime(long blockletProcessingTime) {
     this.blockletProcessingTime += blockletProcessingTime;
+  }
+
+  public long getTimeTakenForSnappyUnCompression() {
+    return timeTakenForSnappyUnCompression;
+  }
+
+  public synchronized void setTimeTakenForSnappyUnCompression(
+      long timeTakenForSnappyUnCompression) {
+    this.timeTakenForSnappyUnCompression += timeTakenForSnappyUnCompression;
+  }
+
+  public long getTimeTakenForInvertedIndex() {
+    return timeTakenForInvertedIndex;
+  }
+
+  public synchronized void setTimeTakenForInvertedIndex(long timeTakenForInvertedIndex) {
+    this.timeTakenForInvertedIndex += timeTakenForInvertedIndex;
+  }
+
+  public long getTimeTakenForRle() {
+    return timeTakenForRle;
+  }
+
+  public synchronized void setTimeTakenForRle(long timeTakenForRle) {
+    this.timeTakenForRle += timeTakenForRle;
+  }
+
+  public long getTimeTakenForValueCompression() {
+    return timeTakenForValueCompression;
+  }
+
+  public synchronized void setTimeTakenForValueCompression(long timeTakenForValueCompression) {
+    this.timeTakenForValueCompression += timeTakenForValueCompression;
+  }
+
+  public long getTimeTakenForAllocatingTheObject() {
+    return timeTakenForAllocatingTheObject;
+  }
+
+  public synchronized void setTimeTakenForAllocatingTheObject(
+      long timeTakenForAllocatingTheObject) {
+    this.timeTakenForAllocatingTheObject += timeTakenForAllocatingTheObject;
   }
 }

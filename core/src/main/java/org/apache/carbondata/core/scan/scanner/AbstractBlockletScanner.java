@@ -107,12 +107,12 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     }
     scannedResult.setNumberOfRows(numberOfRows);
     // loading delete data cache in blockexecutioninfo instance
-    DeleteDeltaCacheLoaderIntf deleteCacheLoader =
-        new BlockletDeleteDeltaCacheLoader(scannedResult.getBlockletId(),
-            blocksChunkHolder.getDataBlock(), blockExecutionInfo.getAbsoluteTableIdentifier());
-    deleteCacheLoader.loadDeleteDeltaFileDataToCache();
-    scannedResult
-        .setBlockletDeleteDeltaCache(blocksChunkHolder.getDataBlock().getDeleteDeltaDataCache());
+//    DeleteDeltaCacheLoaderIntf deleteCacheLoader =
+//        new BlockletDeleteDeltaCacheLoader(scannedResult.getBlockletId(),
+//            blocksChunkHolder.getDataBlock(), blockExecutionInfo.getAbsoluteTableIdentifier());
+//    deleteCacheLoader.loadDeleteDeltaFileDataToCache();
+//    scannedResult
+//        .setBlockletDeleteDeltaCache(blocksChunkHolder.getDataBlock().getDeleteDeltaDataCache());
     scannedResult.setRawColumnChunks(dimensionRawColumnChunks);
     blockExecutionInfo.getStatisticObject().setScanTime((System.currentTimeMillis()-currentTimeMillis));
     return scannedResult;
