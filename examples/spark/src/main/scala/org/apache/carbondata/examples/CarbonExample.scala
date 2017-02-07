@@ -20,6 +20,7 @@ package org.apache.carbondata.examples
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.util.ExampleUtils
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object CarbonExample {
 
@@ -30,46 +31,73 @@ object CarbonExample {
     // Specify timestamp format based on raw data
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    try {
+      cc.sql("DROP TABLE IF EXISTS  productSalesTable").show()
+
+      cc.sql(
+        """CREATE TABLE productSalesTable( productNumber Int, productName String, storeCity
+          |String, storeProvince String, productCategory String, productBatch String,
+          |saleQuantity Int, revenue Int) STORED BY 'carbondata' TBLPROPERTIES ('COLUMN_GROUPS'='
+          |( productName)','DICTIONARY_INCLUDE'='productName', 'NO_INVERTED_INDEX'='1')"""
+          .stripMargin)
+    }
+    catch {
+      case malformedCarbonCommandException: MalformedCarbonCommandException => assert(true)
+    }
+    cc.sql("DROP TABLE IF EXISTS  productSalesTable")
+
+    cc.sql(
+        """CREATE TABLE productSalesTable( productNumber Int, productName String, storeCity
+          |String, storeProvince String, productCategory String, productBatch String,
+          |saleQuantity Int, revenue Int) STORED BY 'carbondata' TBLPROPERTIES ('COLUMN_GROUPS'='
+          |( productName)','DICTIONARY_INCLUDE'='productName', 'NO_INVERTED_INDEX'='productName')
+          |""".stripMargin)
+      .show()
 
     cc.sql("DROP TABLE IF EXISTS t3")
 
     // Create table, 6 dimensions, 1 measure
-    cc.sql("""
+    cc.sql(
+      """
            CREATE TABLE IF NOT EXISTS t3
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname char(10), salary Int)
            STORED BY 'carbondata'
-           """)
+      """)
 
     // Currently there are two data loading flows in CarbonData, one uses Kettle as ETL tool
     // in each node to do data loading, another uses a multi-thread framework without Kettle (See
     // AbstractDataLoadProcessorStep)
     // Load data with Kettle
-    cc.sql(s"""
+    cc.sql(
+      s"""
            LOAD DATA LOCAL INPATH '$testData' into table t3
            """)
 
     // Perform a query
-    cc.sql("""
+    cc.sql(
+      """
            SELECT country, count(salary) AS amount
            FROM t3
            WHERE country IN ('china','france')
            GROUP BY country
-           """).show()
+      """).show()
 
     // Load data without kettle
-    cc.sql(s"""
+    cc.sql(
+      s"""
            LOAD DATA LOCAL INPATH '$testData' into table t3
            OPTIONS('USE_KETTLE'='false')
            """)
 
     // Perform a query
-    cc.sql("""
+    cc.sql(
+      """
            SELECT country, count(salary) AS amount
            FROM t3
            WHERE country IN ('china','france')
            GROUP BY country
-           """).show()
+      """).show()
 
     // Drop table
     cc.sql("DROP TABLE IF EXISTS t3")
