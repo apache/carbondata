@@ -60,7 +60,9 @@ public class CompressedMeasureChunkFileBasedReaderV3
           .get(blockIndex));
     }
     ByteBuffer buffer = ByteBuffer.allocateDirect(dataLength);
-    fileReader.readByteBuffer(filePath,buffer, measureColumnChunkOffsets.get(blockIndex), dataLength);
+    synchronized (fileReader) {
+      fileReader.readByteBuffer(filePath,buffer, measureColumnChunkOffsets.get(blockIndex), dataLength);
+    }
     MeasureRawColumnChunk rawColumnChunk =
         new MeasureRawColumnChunk(blockIndex, buffer, 0, dataLength, this);
     DataChunk3 dataChunk =
@@ -137,8 +139,10 @@ public class CompressedMeasureChunkFileBasedReaderV3
       int startBlockIndex, int endBlockIndex) throws IOException {
     long currentMeasureOffset = measureColumnChunkOffsets.get(startBlockIndex);
     ByteBuffer buffer = ByteBuffer.allocateDirect( (int) (measureColumnChunkOffsets.get(endBlockIndex + 1) - currentMeasureOffset));
-    fileReader.readByteBuffer(filePath,buffer, currentMeasureOffset,
+    synchronized (fileReader) {
+      fileReader.readByteBuffer(filePath,buffer, currentMeasureOffset,
           (int) (measureColumnChunkOffsets.get(endBlockIndex + 1) - currentMeasureOffset));
+    }
     MeasureRawColumnChunk[] measureDataChunk =
         new MeasureRawColumnChunk[endBlockIndex - startBlockIndex + 1];
     try {

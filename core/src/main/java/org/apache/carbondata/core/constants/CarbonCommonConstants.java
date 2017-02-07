@@ -79,11 +79,11 @@ public final class CarbonCommonConstants {
   /**
    * default blocklet size
    */
-  public static final String BLOCKLET_SIZE_DEFAULT_VAL = "32000";
+  public static final String BLOCKLET_SIZE_DEFAULT_VAL = "300";
   /**
    * min blocklet size
    */
-  public static final int BLOCKLET_SIZE_MIN_VAL = 2000;
+  public static final int BLOCKLET_SIZE_MIN_VAL = 10;
   /**
    * max blocklet size
    */
@@ -1139,7 +1139,7 @@ public final class CarbonCommonConstants {
 
   public static final String NUMBER_OF_CHUNK_IN_BLOCKLET = "carbon.number.of.chunk.in.blocklet";
 
-  public static final String NUMBER_OF_CHUNK_IN_BLOCKLET_DEFAULT_VALUE = "10";
+  public static final String NUMBER_OF_CHUNK_IN_BLOCKLET_DEFAULT_VALUE = "4";
   
   public static final String NUMBER_OF_COLUMN_TO_READ_IN_IO="number.of.column.to.read.in.io";
   

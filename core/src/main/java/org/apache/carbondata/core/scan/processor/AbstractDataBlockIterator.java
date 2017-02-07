@@ -215,11 +215,11 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
         if (dataBlockIterator.hasNext()) {
           BlocksChunkHolder blocksChunkHolder = getBlocksChunkHolder();
           if (blocksChunkHolder != null) {
-            synchronized (fileReader) {
+//            synchronized (fileReader) {
               long currentTimeMillis = System.currentTimeMillis();
               blockletScanner.readBlocklet(blocksChunkHolder);
               statisticObject.setReadTime((System.currentTimeMillis()-currentTimeMillis));
-            }
+//            }
             return blocksChunkHolder;
           }
         }
