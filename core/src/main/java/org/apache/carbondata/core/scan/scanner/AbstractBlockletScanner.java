@@ -23,8 +23,6 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
-import org.apache.carbondata.core.mutate.data.BlockletDeleteDeltaCacheLoader;
-import org.apache.carbondata.core.mutate.data.DeleteDeltaCacheLoaderIntf;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -69,7 +67,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     scannedResult.setBlockletId(
         blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR + blocksChunkHolder
             .getDataBlock().nodeNumber());
-    long currentTimeMillis = System.currentTimeMillis();
+//    long currentTimeMillis = System.currentTimeMillis();
     DimensionRawColumnChunk[] dimensionRawColumnChunks =
         blocksChunkHolder.getDimensionRawDataChunk();
     DimensionColumnDataChunk[][] dimensionColumnDataChunks =
@@ -114,7 +112,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
 //    scannedResult
 //        .setBlockletDeleteDeltaCache(blocksChunkHolder.getDataBlock().getDeleteDeltaDataCache());
     scannedResult.setRawColumnChunks(dimensionRawColumnChunks);
-    blockExecutionInfo.getStatisticObject().setScanTime((System.currentTimeMillis()-currentTimeMillis));
+//    blockExecutionInfo.getStatisticObject().setScanTime((System.currentTimeMillis()-currentTimeMillis));
     return scannedResult;
   }
 

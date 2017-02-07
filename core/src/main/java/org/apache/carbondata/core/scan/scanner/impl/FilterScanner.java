@@ -130,9 +130,9 @@ public class FilterScanner extends AbstractBlockletScanner {
   private AbstractScannedResult fillScannedResult(BlocksChunkHolder blocksChunkHolder)
       throws FilterUnsupportedException, IOException {
     // apply filter on actual data
-    long applyFilterTime= System.currentTimeMillis();
+//    long applyFilterTime= System.currentTimeMillis();
     BitSetGroup bitSetGroup = this.filterExecuter.applyFilter(blocksChunkHolder);
-    blockExecutionInfo.getStatisticObject().setScanTime(System.currentTimeMillis()-applyFilterTime);
+//    blockExecutionInfo.getStatisticObject().setScanTime(System.currentTimeMillis()-applyFilterTime);
     // if indexes is empty then return with empty result
     if (bitSetGroup.isEmpty()) {
       CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),
@@ -174,12 +174,12 @@ public class FilterScanner extends AbstractBlockletScanner {
     scannedResult
         .setBlockletDeleteDeltaCache(blocksChunkHolder.getDataBlock().getDeleteDeltaDataCache());
     FileHolder fileReader = blocksChunkHolder.getFileReader();
-    long currentTimeMillis = System.currentTimeMillis();
+//    long currentTimeMillis = System.currentTimeMillis();
     int[][] allSelectedDimensionBlocksIndexes =
         blockExecutionInfo.getAllSelectedDimensionBlocksIndexes();
     DimensionRawColumnChunk[] projectionListDimensionChunk = blocksChunkHolder.getDataBlock()
         .getDimensionChunks(fileReader, allSelectedDimensionBlocksIndexes);
-    blockExecutionInfo.getStatisticObject().setReadTime(System.currentTimeMillis()-currentTimeMillis);
+//    blockExecutionInfo.getStatisticObject().setReadTime(System.currentTimeMillis()-currentTimeMillis);
     DimensionRawColumnChunk[] dimensionRawColumnChunks =
         new DimensionRawColumnChunk[blockExecutionInfo.getTotalNumberDimensionBlock()];
     // read dimension chunk blocks from file which is not present
@@ -211,10 +211,10 @@ public class FilterScanner extends AbstractBlockletScanner {
         new MeasureRawColumnChunk[blockExecutionInfo.getTotalNumberOfMeasureBlock()];
     int[][] allSelectedMeasureBlocksIndexes =
         blockExecutionInfo.getAllSelectedMeasureBlocksIndexes();
-    currentTimeMillis = System.currentTimeMillis();
+//    currentTimeMillis = System.currentTimeMillis();
     MeasureRawColumnChunk[] projectionListMeasureChunk = blocksChunkHolder.getDataBlock()
         .getMeasureChunks(fileReader, allSelectedMeasureBlocksIndexes);
-    blockExecutionInfo.getStatisticObject().setReadTime(System.currentTimeMillis()-currentTimeMillis);
+//    blockExecutionInfo.getStatisticObject().setReadTime(System.currentTimeMillis()-currentTimeMillis);
     // read the measure chunk blocks which is not present
     for (int i = 0; i < measureRawColumnChunks.length; i++) {
       if (null != blocksChunkHolder.getMeasureRawDataChunk()[i]) {
