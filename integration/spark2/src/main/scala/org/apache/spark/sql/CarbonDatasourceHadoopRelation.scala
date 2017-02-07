@@ -39,8 +39,7 @@ case class CarbonDatasourceHadoopRelation(
     sparkSession: SparkSession,
     paths: Array[String],
     parameters: Map[String, String],
-    tableSchema: Option[StructType],
-    var isSubquery: Boolean = false)
+    tableSchema: Option[StructType])
   extends BaseRelation with InsertableRelation {
 
   lazy val absIdentifier = AbsoluteTableIdentifier.fromTablePath(paths.head)
