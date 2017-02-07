@@ -59,6 +59,7 @@ import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.StatisticObject;
@@ -343,14 +344,16 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     int[] dimensionsBlockIndexes = QueryUtil.getDimensionsBlockIndexes(updatedQueryDimension,
         segmentProperties.getDimensionOrdinalToBlockMapping(), expressionDimensions,
         queryProperties.complexFilterDimension, allProjectionListDimensionIdexes);
+    int numberOfCOlumnInOneIO = Integer.parseInt(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
+            CarbonCommonConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE));
     if (dimensionsBlockIndexes.length > 0) {
       numberOfElementToConsider = dimensionsBlockIndexes[dimensionsBlockIndexes.length - 1]
           == segmentProperties.getBlockTodimensionOrdinalMapping().size() - 1 ?
           dimensionsBlockIndexes.length - 1 :
           dimensionsBlockIndexes.length;
       blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(CarbonUtil
-          .getRangeIndex(dimensionsBlockIndexes, numberOfElementToConsider,
-              CarbonCommonConstants.NUMBER_OF_COLUMN_READ_IN_IO));
+          .getRangeIndex(dimensionsBlockIndexes, numberOfElementToConsider,numberOfCOlumnInOneIO));
     } else {
       blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(new int[0][0]);
     }
@@ -368,8 +371,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           measureBlockIndexes.length;
       // setting all the measure chunk indexes to be read from file
       blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(CarbonUtil
-          .getRangeIndex(measureBlockIndexes, numberOfElementToConsider,
-              CarbonCommonConstants.NUMBER_OF_COLUMN_READ_IN_IO));
+          .getRangeIndex(measureBlockIndexes, numberOfElementToConsider,numberOfCOlumnInOneIO));
     } else {
       blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(new int[0][0]);
     }

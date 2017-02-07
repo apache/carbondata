@@ -133,8 +133,12 @@ public class DFSFileHolderImpl implements FileHolder {
   @Override
   public void readByteBuffer(String filePath, ByteBuffer byteBuffer,
       long offset, int length) throws IOException {
-    byte[] readByteArray = readByteArray(filePath, offset, length);
-    byteBuffer.put(readByteArray);
+    FSDataInputStream fileChannel = updateCache(filePath);
+    fileChannel.seek(offset);
+    int sizeRead = fileChannel.read(byteBuffer);
+    while (sizeRead < length) {
+      sizeRead += fileChannel.read(byteBuffer);
+    }
     byteBuffer.rewind();
   }
 }
