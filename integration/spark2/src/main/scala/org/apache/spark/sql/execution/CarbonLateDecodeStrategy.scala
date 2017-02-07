@@ -425,6 +425,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           Some(sources.Not(sources.EqualTo(a.name, v)))
       case Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) =>
           Some(sources.Not(sources.EqualTo(a.name, v)))
+      case IsNotNull(a: Attribute) => Some(sources.IsNotNull(a.name))
+      case IsNull(a: Attribute) => Some(sources.IsNull(a.name))
       case Not(In(a: Attribute, list)) if !list.exists(!_.isInstanceOf[Literal]) =>
         val hSet = list.map(e => e.eval(EmptyRow))
         Some(sources.Not(sources.In(a.name, hSet.toArray)))

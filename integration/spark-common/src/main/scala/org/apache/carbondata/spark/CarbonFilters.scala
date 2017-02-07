@@ -83,6 +83,13 @@ object CarbonFilters {
             new ListExpression(
               convertToJavaList(values.map(f => getCarbonLiteralExpression(name, f)).toList))))
 
+        case sources.IsNull(name) =>
+          Some(new EqualToExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, null), true))
+        case sources.IsNotNull(name) =>
+          Some(new NotEqualsExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, null), true))
+
         case sources.And(lhs, rhs) =>
           (createFilter(lhs) ++ createFilter(rhs)).reduceOption(new AndExpression(_, _))
 
@@ -152,6 +159,10 @@ object CarbonFilters {
           Some(sources.Not(sources.EqualTo(a.name, v)))
         case Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) =>
           Some(sources.Not(sources.EqualTo(a.name, v)))
+        case IsNotNull(a: Attribute) =>
+          Some(sources.IsNotNull(a.name))
+        case IsNull(a: Attribute) =>
+          Some(sources.IsNull(a.name))
         case Not(In(a: Attribute, list)) if !list.exists(!_.isInstanceOf[Literal]) =>
           val hSet = list.map(e => e.eval(EmptyRow))
           Some(sources.Not(sources.In(a.name, hSet.toArray)))
