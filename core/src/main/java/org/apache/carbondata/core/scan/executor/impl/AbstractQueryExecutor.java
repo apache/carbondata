@@ -61,8 +61,8 @@ import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.StatisticObject;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
-
 import org.apache.commons.lang3.ArrayUtils;
 
 /**
@@ -84,6 +84,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * and give the result
    */
   protected CarbonIterator queryIterator;
+  
+  private StatisticObject statisticObject;
+  
+  private String queryId;
 
   public AbstractQueryExecutor() {
     queryProperties = new QueryExecutorProperties();
@@ -100,6 +104,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     StandardLogService.setThreadName(StandardLogService.getPartitionID(
         queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName()),
         queryModel.getQueryId());
+    queryId = queryModel.getQueryId();
+    statisticObject = new StatisticObject();
     LOGGER.info("Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
         .getCarbonTableIdentifier().getTableName());
     // add executor service for query execution
@@ -250,6 +256,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       AbstractIndex blockIndex, int startBlockletIndex, int numberOfBlockletToScan, String filePath)
       throws QueryExecutionException {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
+    blockExecutionInfo.setStatisticObject(statisticObject);
+    statisticObject.setScanBlockNumber(1);
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
     List<CarbonDimension> tableBlockDimensions = segmentProperties.getDimensions();
     KeyGenerator blockKeyGenerator = segmentProperties.getDimensionKeyGenerator();
@@ -496,6 +504,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         throw new QueryExecutionException(e);
       }
     }
+    LOGGER.info("************ Time taken to Scan for queryId: " + queryId + ": " + statisticObject.getScanTime());
+    LOGGER.info("************ Time taken to read for queryId: " + queryId + ": " + statisticObject.getReadTime());
+    LOGGER.info("************ Time taken to prepare result for queryId: " + queryId + ": " + statisticObject.getResultPrpTime());
+    LOGGER.info("************ Blocklet Processing time for queryId: " + queryId + ": " + statisticObject.getBlockletProcessingTime());
+    LOGGER.info("************ Number Of Blocklet Scan for queryId: " + queryId + ": " + statisticObject.getScanBlockletNumber());
+    LOGGER.info("************ Number Of Block Scan for queryId: " + queryId + ": " + statisticObject.getScanBlockNumber());
   }
 
 }

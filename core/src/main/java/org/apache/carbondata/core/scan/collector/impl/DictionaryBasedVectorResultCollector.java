@@ -108,6 +108,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
 
   @Override public void collectVectorBatch(AbstractScannedResult scannedResult,
       CarbonColumnarBatch columnarBatch) {
+    long startTime= System.currentTimeMillis();
     int numberOfPages = scannedResult.numberOfpages();
     while (scannedResult.getCurrentPageCounter() < numberOfPages) {
       int currentPageRowCount = scannedResult.getCurrentPageRowCount();
@@ -143,6 +144,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
       columnarBatch.setActualSize(columnarBatch.getActualSize() + requiredRows);
       columnarBatch.setRowCounter(columnarBatch.getRowCounter() + requiredRows);
     }
+    tableBlockExecutionInfos.getStatisticObject().setResultPrpTime((System.currentTimeMillis()-startTime));
   }
 
 }

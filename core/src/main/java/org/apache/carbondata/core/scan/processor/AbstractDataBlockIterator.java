@@ -39,6 +39,7 @@ import org.apache.carbondata.core.scan.scanner.BlockletScanner;
 import org.apache.carbondata.core.scan.scanner.impl.FilterScanner;
 import org.apache.carbondata.core.scan.scanner.impl.NonFilterScanner;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
+import org.apache.carbondata.core.util.StatisticObject;
 
 /**
  * This abstract class provides a skeletal implementation of the
@@ -85,6 +86,8 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
   private AtomicBoolean nextBlock;
 
   private AtomicBoolean nextRead;
+  
+  private StatisticObject statisticObject;
 
   public AbstractDataBlockIterator(BlockExecutionInfo blockExecutionInfo,
       FileHolder fileReader, int batchSize, QueryStatisticsModel queryStatisticsModel,
@@ -115,6 +118,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     this.executorService = executorService;
     this.nextBlock = new AtomicBoolean(false);
     this.nextRead = new AtomicBoolean(false);
+    this.statisticObject = blockExecutionInfo.getStatisticObject();
   }
 
   public boolean hasNext() {
@@ -147,6 +151,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
   }
 
   private AbstractScannedResult getNextScannedResult() throws Exception {
+    long currentTimeMillis = System.currentTimeMillis();
     AbstractScannedResult result = null;
     if (dataBlockIterator.hasNext() || nextBlock.get() || nextRead.get()) {
       if (future == null) {
@@ -159,6 +164,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
         future = execute();
       }
     }
+    statisticObject.setBlockletProcessingTime((System.currentTimeMillis()-currentTimeMillis));
     return result;
   }
 
@@ -195,6 +201,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
             nextRead.set(true);
             futureIo = executeRead();
           }
+          statisticObject.setScanBlockletNumber(1);
           return blockletScanner.scanBlocklet(blocksChunkHolder);
         }
         return null;
@@ -209,7 +216,9 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
           BlocksChunkHolder blocksChunkHolder = getBlocksChunkHolder();
           if (blocksChunkHolder != null) {
             synchronized (fileReader) {
+              long currentTimeMillis = System.currentTimeMillis();
               blockletScanner.readBlocklet(blocksChunkHolder);
+              statisticObject.setReadTime((System.currentTimeMillis()-currentTimeMillis));
             }
             return blocksChunkHolder;
           }

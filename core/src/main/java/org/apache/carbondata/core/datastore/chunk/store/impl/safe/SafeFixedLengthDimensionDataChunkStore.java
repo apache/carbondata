@@ -28,7 +28,7 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
    * Size of each value
    */
   private int columnValueSize;
-
+  
   public SafeFixedLengthDimensionDataChunkStore(boolean isInvertedIndex, int columnValueSize) {
     super(isInvertedIndex);
     this.columnValueSize = columnValueSize;
@@ -70,27 +70,41 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
   }
 
   private int getSurrogateInternal(int startOffsetOfData) {
-    byte defaultValue = 0;
+    int surrogate = 0;
     switch (columnValueSize) {
       case 1:
-        return makeInt(data[startOffsetOfData], defaultValue, defaultValue, defaultValue);
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData] & 0xFF;
+        return surrogate;
       case 2:
-        return makeInt(data[startOffsetOfData], data[startOffsetOfData + 1], defaultValue,
-            defaultValue);
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData+1] & 0xFF;
+        return surrogate;
       case 3:
-        return makeInt(data[startOffsetOfData], data[startOffsetOfData + 1],
-            data[startOffsetOfData + 2], defaultValue);
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData+1] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData+2] & 0xFF;
+        return surrogate;
       case 4:
-        return makeInt(data[startOffsetOfData], data[startOffsetOfData + 1],
-            data[startOffsetOfData + 2], data[startOffsetOfData + 3]);
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData+1] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData+2] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData+3] & 0xFF;
+        return surrogate;
       default:
         throw new IllegalArgumentException("Int cannot me more than 4 bytes");
     }
   }
 
-  private int makeInt(byte b3, byte b2, byte b1, byte b0) {
-    return (((b0) << 24) | ((b1 & 0xff) << 16) | ((b2 & 0xff) << 8) | ((b3 & 0xff)));
-  }
 
   /**
    * Below method will be used to fill the row values to buffer array

@@ -69,6 +69,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     scannedResult.setBlockletId(
         blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR + blocksChunkHolder
             .getDataBlock().nodeNumber());
+    long currentTimeMillis = System.currentTimeMillis();
     DimensionRawColumnChunk[] dimensionRawColumnChunks =
         blocksChunkHolder.getDimensionRawDataChunk();
     DimensionColumnDataChunk[][] dimensionColumnDataChunks =
@@ -113,6 +114,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     scannedResult
         .setBlockletDeleteDeltaCache(blocksChunkHolder.getDataBlock().getDeleteDeltaDataCache());
     scannedResult.setRawColumnChunks(dimensionRawColumnChunks);
+    blockExecutionInfo.getStatisticObject().setScanTime((System.currentTimeMillis()-currentTimeMillis));
     return scannedResult;
   }
 

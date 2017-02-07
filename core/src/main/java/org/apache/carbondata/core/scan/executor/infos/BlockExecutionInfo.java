@@ -28,6 +28,7 @@ import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
+import org.apache.carbondata.core.util.StatisticObject;
 
 /**
  * Below class will have all the properties which needed during query execution
@@ -214,6 +215,8 @@ public class BlockExecutionInfo {
    * absolute table identifier
    */
   private AbsoluteTableIdentifier absoluteTableIdentifier;
+  
+  private StatisticObject statisticObject;
 
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
     return absoluteTableIdentifier;
@@ -624,5 +627,13 @@ public class BlockExecutionInfo {
 
   public void setProjectionListMeasureIndexes(int[] projectionListMeasureIndexes) {
     this.projectionListMeasureIndexes = projectionListMeasureIndexes;
+  }
+
+  public StatisticObject getStatisticObject() {
+    return statisticObject;
+  }
+
+  public void setStatisticObject(StatisticObject statisticObject) {
+    this.statisticObject = statisticObject;
   }
 }
