@@ -21,6 +21,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
@@ -38,6 +40,9 @@ import org.apache.commons.lang.ArrayUtils;
 public class CompressedMeasureChunkFileBasedReaderV3
     extends CompressedMeasureChunkFileBasedReaderV2 {
 
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CompressedMeasureChunkFileBasedReaderV3.class.getName());
+  
   private long measureOffsets;
 
   public CompressedMeasureChunkFileBasedReaderV3(BlockletInfo blockletInfo, String filePath) {
@@ -136,6 +141,7 @@ public class CompressedMeasureChunkFileBasedReaderV3
           (int) (measureColumnChunkOffsets.get(endBlockIndex + 1) - currentMeasureOffset));
     MeasureRawColumnChunk[] measureDataChunk =
         new MeasureRawColumnChunk[endBlockIndex - startBlockIndex + 1];
+    try {
     int runningLength = 0;
     int index = 0;
     for (int i = startBlockIndex; i <= endBlockIndex; i++) {
@@ -170,6 +176,11 @@ public class CompressedMeasureChunkFileBasedReaderV3
       measureDataChunk[index] = measureRawColumnChunk;
       runningLength += currentLength;
       index++;
+    }
+    } catch(Throwable t) {
+      LOGGER.error(t, "************************ File path: " + filePath);
+      throw t;
+      
     }
     return measureDataChunk;
   }
