@@ -117,30 +117,41 @@ class CarbonScanRDD(
           result.add(partition)
         }
       } else {
-        // create a list of block based on split
-        val blockList = splits.asScala.map(_.asInstanceOf[Distributable])
-
-        // get the list of executors and map blocks to executors based on locality
-        val activeNodes = DistributionUtil.ensureExecutorsAndGetNodeList(blockList, sparkContext)
-
-        // divide the blocks among the tasks of the nodes as per the data locality
-        val nodeBlockMapping = CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1,
-          parallelism, activeNodes.toList.asJava)
         var i = 0
-        // Create Spark Partition for each task and assign blocks
-        nodeBlockMapping.asScala.foreach { case (node, blockList) =>
-          blockList.asScala.foreach { blocksPerTask =>
-            val splits = blocksPerTask.asScala.map(_.asInstanceOf[CarbonInputSplit])
-            if (blocksPerTask.size() != 0) {
-              val multiBlockSplit =
-                new CarbonMultiBlockSplit(identifier, splits.asJava, Array(node))
-              val partition = new CarbonSparkPartition(id, i, multiBlockSplit)
-              result.add(partition)
-              i += 1
-            }
-          }
+        splits.asScala.foreach { s =>
+          val multiBlockSplit =
+            new CarbonMultiBlockSplit(identifier,
+              Seq(s.asInstanceOf[CarbonInputSplit]).asJava,
+              s.getLocations)
+          val partition = new CarbonSparkPartition(id, i, multiBlockSplit)
+          i += 1
+          result.add(partition)
         }
-        noOfNodes = nodeBlockMapping.size
+//        // create a list of block based on split
+//        val blockList = splits.asScala.map(_.asInstanceOf[Distributable])
+//
+//        // get the list of executors and map blocks to executors based on locality
+//        val activeNodes = DistributionUtil.ensureExecutorsAndGetNodeList(blockList, sparkContext)
+//
+//        // divide the blocks among the tasks of the nodes as per the data locality
+//        val nodeBlockMapping = CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1,
+//          parallelism, activeNodes.toList.asJava)
+//        var i = 0
+//        // Create Spark Partition for each task and assign blocks
+//        nodeBlockMapping.asScala.foreach { case (node, blockList) =>
+//          blockList.asScala.foreach { blocksPerTask =>
+//            val splits = blocksPerTask.asScala.map(_.asInstanceOf[CarbonInputSplit])
+//            if (blocksPerTask.size() != 0) {
+//              val multiBlockSplit =
+//                new CarbonMultiBlockSplit(identifier, splits.asJava, Array(node))
+//              val partition = new CarbonSparkPartition(id, i, multiBlockSplit)
+//              result.add(partition)
+//              i += 1
+//            }
+//          }
+//        }
+        
+//        noOfNodes = nodeBlockMapping.size
       }
 
       noOfBlocks = splits.size
