@@ -448,16 +448,16 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     var noInvertedIdxColsProps: Array[String] = Array[String]()
     var noInvertedIdxCols: Seq[String] = Seq[String]()
 
-    if (tableProperties.get("no_inverted_index").isDefined) {
+    if (tableProperties.get("NO_INVERTED_INDEX").isDefined) {
       noInvertedIdxColsProps =
-        tableProperties.get("no_inverted_index").get.split(',').map(_.trim)
+        tableProperties.get("NO_INVERTED_INDEX").get.split(',').map(_.trim)
       noInvertedIdxColsProps.foreach { noInvertedIdxColProp =>
-        if (!fields.exists(tableCol => tableCol.column.equalsIgnoreCase(noInvertedIdxColProp))) {
-          val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
-                         " does not exist in table. Please check create table statement."
-          throw new MalformedCarbonCommandException(errormsg)
+          if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
+            val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
+                           " does not exist in table. Please check create table statement."
+            throw new MalformedCarbonCommandException(errormsg)
+          }
         }
-      }
     }
     // check duplicate columns and only 1 col left
     val distinctCols = noInvertedIdxColsProps.toSet
@@ -839,10 +839,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * Matching the decimal(10,0) data type and returning the same.
    */
   private lazy val charType =
-  CHAR ~ ("(" ~>numericLit <~ ")").? ^^ {
-    case char ~ digit =>
-      s"$char($digit)"
-  }
+    CHAR ~ ("(" ~>numericLit <~ ")").? ^^ {
+      case char ~ digit =>
+        s"$char($digit)"
+    }
 
   /**
    * Matching the decimal(10,0) data type and returning the same.
@@ -894,8 +894,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     dataType match {
       case "string" =>
         Field(field.column, Some("String"), field.name, Some(null), field.parent,
-          field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
-        )
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
+      )
       case "smallint" =>
         Field(field.column, Some("SmallInt"), field.name, Some(null),
           field.parent, field.storeType, field.schemaOrdinal,
