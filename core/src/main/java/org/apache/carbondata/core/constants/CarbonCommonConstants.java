@@ -267,7 +267,7 @@ public final class CarbonCommonConstants {
   /**
    * SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE
    */
-  public static final String CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE = "50000";
+  public static final String CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE = "16384";
   /**
    * Number of cores to be used while loading
    */
@@ -638,10 +638,15 @@ public final class CarbonCommonConstants {
    * for dimensions , one of ignore dictionary dimensions , one for measures.
    */
   public static final int ARRAYSIZE = 3;
+
   /**
    * CARBON_PREFETCH_BUFFERSIZE
    */
-  public static final int CARBON_PREFETCH_BUFFERSIZE = 20000;
+  public static final String CARBON_PREFETCH_BUFFERSIZE = "carbon.prefetch.buffersize";
+  /**
+   * CARBON_PREFETCH_BUFFERSIZE DEFAULT VALUE
+   */
+  public static final String CARBON_PREFETCH_BUFFERSIZE_DEFAULT = "1000";
   /**
    * CARBON_PREFETCH_IN_MERGE
    */

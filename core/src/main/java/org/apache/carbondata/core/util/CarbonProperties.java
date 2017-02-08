@@ -84,6 +84,27 @@ public final class CarbonProperties {
     validateHighCardinalityInRowCountPercentage();
     validateCarbonDataFileVersion();
     validateExecutorStartUpTime();
+    validatePrefetchBufferSize();
+  }
+
+  private void validatePrefetchBufferSize() {
+    String prefetchBufferSizeStr =
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE);
+
+    if (null == prefetchBufferSizeStr || prefetchBufferSizeStr.length() == 0) {
+      carbonProperties.setProperty(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
+          CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT);
+    } else {
+      try {
+        Integer.parseInt(prefetchBufferSizeStr);
+      } catch (NumberFormatException e) {
+        LOGGER.info("The prefetch buffer size value \"" + prefetchBufferSizeStr
+            + "\" is invalid. Using the default value \""
+            + CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT + "\"");
+        carbonProperties.setProperty(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
+            CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT);
+      }
+    }
   }
 
   private void validateBadRecordsLocation() {

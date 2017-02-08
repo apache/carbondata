@@ -178,7 +178,9 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     prefetch = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_MERGE_SORT_PREFETCH,
             CarbonCommonConstants.CARBON_MERGE_SORT_PREFETCH_DEFAULT));
-    bufferSize = CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE;
+    bufferSize = Integer.parseInt(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
+            CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT));
     this.isSortTempFileCompressionEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED,
             CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE));
@@ -464,6 +466,8 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   public void closeStream() {
     CarbonUtil.closeStreams(stream);
     executorService.shutdown();
+    this.backupBuffer = null;
+    this.currentBuffer = null;
   }
 
   /**

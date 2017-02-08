@@ -128,10 +128,9 @@ public abstract class AbstractDataLoadProcessorStep {
    * @return processed row.
    */
   protected CarbonRowBatch processRowBatch(CarbonRowBatch rowBatch) {
-    CarbonRowBatch newBatch = new CarbonRowBatch();
-    Iterator<CarbonRow> batchIterator = rowBatch.getBatchIterator();
-    while (batchIterator.hasNext()) {
-      newBatch.addRow(processRow(batchIterator.next()));
+    CarbonRowBatch newBatch = new CarbonRowBatch(rowBatch.getSize());
+    while (rowBatch.hasNext()) {
+      newBatch.addRow(processRow(rowBatch.next()));
     }
     return newBatch;
   }

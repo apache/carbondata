@@ -17,27 +17,40 @@
 
 package org.apache.carbondata.processing.newflow.row;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * Batch of rows.
  */
-public class CarbonRowBatch {
+public class CarbonRowBatch implements Iterator<CarbonRow> {
 
-  private List<CarbonRow> rowBatch = new ArrayList<>();
+  private CarbonRow[] rowBatch;
 
-  public void addRow(CarbonRow carbonRow) {
-    rowBatch.add(carbonRow);
+  private int size = 0;
+
+  private int index = 0;
+
+  public CarbonRowBatch(int batchSize) {
+    this.rowBatch = new CarbonRow[batchSize];
   }
 
-  public Iterator<CarbonRow> getBatchIterator() {
-    return rowBatch.iterator();
+  public void addRow(CarbonRow carbonRow) {
+    rowBatch[size++] = carbonRow;
   }
 
   public int getSize() {
-    return rowBatch.size();
+    return size;
   }
 
+  @Override public boolean hasNext() {
+    return index < size;
+  }
+
+  @Override public CarbonRow next() {
+    return rowBatch[index++];
+  }
+
+  @Override public void remove() {
+
+  }
 }
