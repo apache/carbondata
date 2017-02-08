@@ -78,10 +78,12 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
   }
 
   @Override public void freeMemory() {
+    if(null!=dataChunks) {
     for (int i = 0; i < dataChunks.length; i++) {
       if (dataChunks[i] != null) {
         dataChunks[i].freeMemory();
       }
+    }
     }
   }
 
