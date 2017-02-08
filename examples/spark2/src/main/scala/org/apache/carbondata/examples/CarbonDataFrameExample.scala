@@ -64,13 +64,14 @@ object CarbonDataFrameExample {
 
     spark.sql(""" SELECT * FROM carbon_table """).show()
 
-    // Reads carbondata to dataframe
+    // Specify schema
     import org.apache.spark.sql.types.{StructType, StructField, StringType, IntegerType}
     val customSchema = StructType(Array(
       StructField("c1", StringType),
       StructField("c2", StringType),
       StructField("number", IntegerType)))
 
+    // Reads carbondata to dataframe
     val carbondf = spark.read
       .format("carbondata")
       .schema(customSchema)
