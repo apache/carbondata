@@ -464,6 +464,8 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   public void closeStream() {
     CarbonUtil.closeStreams(stream);
     executorService.shutdown();
+    this.backupBuffer = null;
+    this.currentBuffer = null;
   }
 
   /**

@@ -67,6 +67,8 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
 
   private AtomicLong rowCounter;
 
+  final int batchSize = CarbonProperties.getInstance().getBatchSize();
+
   public ParallelReadMergeSorterWithBucketingImpl(AtomicLong rowCounter,
       BucketingInfo bucketingInfo) {
     this.rowCounter = rowCounter;
@@ -84,7 +86,7 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
     }
   }
 
-  @Override public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
+  @Override public void prepare(Iterator<CarbonRowBatch>[] iterators)
       throws CarbonDataLoadingException {
     SortDataRows[] sortDataRows = new SortDataRows[bucketingInfo.getNumberOfBuckets()];
     try {
@@ -100,7 +102,7 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
       throw new CarbonDataLoadingException(e);
     }
     this.executorService = Executors.newFixedThreadPool(iterators.length);
-    final int batchSize = CarbonProperties.getInstance().getBatchSize();
+
     try {
       for (int i = 0; i < iterators.length; i++) {
         executorService.submit(new SortIteratorThread(iterators[i], sortDataRows, rowCounter));
@@ -118,7 +120,10 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
     } catch (CarbonSortKeyAndGroupByException e) {
       throw new CarbonDataLoadingException(e);
     }
+  }
 
+  @Override public Iterator<CarbonRowBatch>[] sort()
+      throws CarbonDataLoadingException {
     Iterator<CarbonRowBatch>[] batchIterator = new Iterator[bucketingInfo.getNumberOfBuckets()];
     for (int i = 0; i < bucketingInfo.getNumberOfBuckets(); i++) {
       batchIterator[i] = new MergedDataIterator(String.valueOf(i), batchSize);
@@ -209,10 +214,9 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
       try {
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
-          Iterator<CarbonRow> batchIterator = batch.getBatchIterator();
           int i = 0;
-          while (batchIterator.hasNext()) {
-            CarbonRow row = batchIterator.next();
+          while (batch.hasNext()) {
+            CarbonRow row = batch.next();
             if (row != null) {
               SortDataRows sortDataRow = sortDataRows[row.bucketNumber];
               synchronized (sortDataRow) {
@@ -257,7 +261,7 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
 
     @Override public CarbonRowBatch next() {
       int counter = 0;
-      CarbonRowBatch rowBatch = new CarbonRowBatch();
+      CarbonRowBatch rowBatch = new CarbonRowBatch(batchSize);
       while (finalMerger.hasNext() && counter < batchSize) {
         rowBatch.addRow(new CarbonRow(finalMerger.next()));
         counter++;

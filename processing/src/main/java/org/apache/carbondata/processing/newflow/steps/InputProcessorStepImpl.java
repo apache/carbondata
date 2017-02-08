@@ -175,6 +175,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
       boolean hasNext = currentIterator.hasNext();
       // If iterator is finished then check for next iterator.
       if (!hasNext) {
+        currentIterator.close();
         // Check next iterator is available in the list.
         if (counter < inputIterators.size()) {
           // Get the next iterator from the list.
@@ -228,7 +229,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
     private CarbonRowBatch getBatch() {
       // Create batch and fill it.
-      CarbonRowBatch carbonRowBatch = new CarbonRowBatch();
+      CarbonRowBatch carbonRowBatch = new CarbonRowBatch(batchSize);
       int count = 0;
       while (internalHasNext() && count < batchSize) {
         carbonRowBatch.addRow(new CarbonRow(rowParser.parseRow(currentIterator.next())));

@@ -179,10 +179,9 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private void processBatch(CarbonRowBatch batch, CarbonFactHandler dataHandler)
       throws CarbonDataLoadingException {
-    Iterator<CarbonRow> iterator = batch.getBatchIterator();
     try {
-      while (iterator.hasNext()) {
-        CarbonRow row = iterator.next();
+      while (batch.hasNext()) {
+        CarbonRow row = batch.next();
         readCounter++;
         Object[] outputRow;
         // adding one for the high cardinality dims byte array.

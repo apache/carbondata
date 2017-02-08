@@ -641,7 +641,7 @@ public final class CarbonCommonConstants {
   /**
    * CARBON_PREFETCH_BUFFERSIZE
    */
-  public static final int CARBON_PREFETCH_BUFFERSIZE = 20000;
+  public static final int CARBON_PREFETCH_BUFFERSIZE = 1000;
   /**
    * CARBON_PREFETCH_IN_MERGE
    */

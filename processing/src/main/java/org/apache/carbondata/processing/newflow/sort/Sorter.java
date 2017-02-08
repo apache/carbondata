@@ -39,11 +39,13 @@ public interface Sorter {
    * Sorts the data of all iterators, this iterators can be
    * read parallely depends on implementation.
    *
-   * @param iterators array of iterators to read data.
    * @return
    * @throws CarbonDataLoadingException
    */
-  Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
+  Iterator<CarbonRowBatch>[] sort()
+      throws CarbonDataLoadingException;
+
+  void prepare(Iterator<CarbonRowBatch>[] iterators)
       throws CarbonDataLoadingException;
 
   /**

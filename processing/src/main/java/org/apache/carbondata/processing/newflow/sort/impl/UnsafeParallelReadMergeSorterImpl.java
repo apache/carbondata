@@ -64,6 +64,8 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
 
   private AtomicLong rowCounter;
 
+  final int batchSize = CarbonProperties.getInstance().getBatchSize();
+
   public UnsafeParallelReadMergeSorterImpl(AtomicLong rowCounter) {
     this.rowCounter = rowCounter;
   }
@@ -81,11 +83,10 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
     finalMerger = new UnsafeSingleThreadFinalSortFilesMerger(sortParameters);
   }
 
-  @Override public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
+  @Override public void prepare(Iterator<CarbonRowBatch>[] iterators)
       throws CarbonDataLoadingException {
     UnsafeSortDataRows sortDataRow =
         new UnsafeSortDataRows(sortParameters, unsafeIntermediateFileMerger);
-    final int batchSize = CarbonProperties.getInstance().getBatchSize();
     try {
       sortDataRow.initialize();
     } catch (CarbonSortKeyAndGroupByException e) {
@@ -106,12 +107,20 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
     }
     try {
       unsafeIntermediateFileMerger.finish();
+    } catch (CarbonDataWriterException e) {
+      throw new CarbonDataLoadingException(e);
+    } catch (CarbonSortKeyAndGroupByException e) {
+      throw new CarbonDataLoadingException(e);
+    }
+  }
+
+  @Override public Iterator<CarbonRowBatch>[] sort()
+      throws CarbonDataLoadingException {
+    try {
       List<UnsafeCarbonRowPage> rowPages = unsafeIntermediateFileMerger.getRowPages();
       finalMerger.startFinalMerge(rowPages.toArray(new UnsafeCarbonRowPage[rowPages.size()]),
           unsafeIntermediateFileMerger.getMergedPages());
     } catch (CarbonDataWriterException e) {
-      throw new CarbonDataLoadingException(e);
-    } catch (CarbonSortKeyAndGroupByException e) {
       throw new CarbonDataLoadingException(e);
     }
 
@@ -124,7 +133,7 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
 
       @Override public CarbonRowBatch next() {
         int counter = 0;
-        CarbonRowBatch rowBatch = new CarbonRowBatch();
+        CarbonRowBatch rowBatch = new CarbonRowBatch(batchSize);
         while (finalMerger.hasNext() && counter < batchSize) {
           rowBatch.addRow(new CarbonRow(finalMerger.next()));
           counter++;
@@ -194,10 +203,9 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
       try {
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
-          Iterator<CarbonRow> batchIterator = batch.getBatchIterator();
           int i = 0;
-          while (batchIterator.hasNext()) {
-            CarbonRow row = batchIterator.next();
+          while (batch.hasNext()) {
+            CarbonRow row = batch.next();
             if (row != null) {
               buffer[i++] = row.getData();
             }
