@@ -23,7 +23,6 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object CarbonSessionExample {
 
@@ -48,17 +47,6 @@ object CarbonSessionExample {
       .getOrCreateCarbonSession(storeLocation, metastoredb)
 
     spark.sparkContext.setLogLevel("WARN")
-
-    try {
-      spark.sql("DROP TABLE IF EXISTS  productSalesTable").show()
-    }
-    catch {
-      case malformedCarbonCommandException:MalformedCarbonCommandException=>true
-    }
-
-    spark.sql("DROP TABLE IF EXISTS  productSalesTable").show()
-
-    spark.sql("""CREATE TABLE productSalesTable( productNumber Int, productName String, storeCity String, storeProvince String, productCategory String, productBatch String, saleQuantity Int, revenue Int) STORED BY 'carbondata' TBLPROPERTIES ('COLUMN_GROUPS'='( productName)','DICTIONARY_INCLUDE'='productName', 'NO_INVERTED_INDEX'='productName')""").show()
 
     spark.sql("DROP TABLE IF EXISTS carbon_table")
 

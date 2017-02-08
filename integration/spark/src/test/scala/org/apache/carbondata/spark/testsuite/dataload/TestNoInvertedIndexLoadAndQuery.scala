@@ -23,13 +23,14 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 /**
-  * Test Class for no inverted index load and query
-  *
-  */
+ * Test Class for no inverted index load and query
+ *
+ */
 
-class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
+class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
 
   val testData1 = s"$resourcesPath/dimSample.csv"
   val testData2 = s"$resourcesPath/source.csv"
@@ -37,24 +38,38 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
   override def beforeAll {
     sql("DROP TABLE IF EXISTS index1")
     sql("DROP TABLE IF EXISTS index2")
+    sql("DROP TABLE IF EXISTS productSalesTable")
+
+  }
+
+  test("must give exception for invalid values of no _inverted_index") {
+    try {
+      sql("""CREATE TABLE productSalesTable( productNumber Int, productName String, storeCity String, storeProvince String, productCategory String, productBatch String, saleQuantity Int, revenue Int) STORED BY 'carbondata' TBLPROPERTIES ('COLUMN_GROUPS'='( productName)','DICTIONARY_INCLUDE'='productName', 'NO_INVERTED_INDEX'='1')""").show()
+    }
+    catch {
+      case malformedCarbonCommandException: MalformedCarbonCommandException => assert(true)
+    }
   }
 
   test("no inverted index load and point query") {
 
-    sql("""
+    sql(
+      """
            CREATE TABLE IF NOT EXISTS index1
            (id Int, name String, city String)
            STORED BY 'org.apache.carbondata.format'
            TBLPROPERTIES('NO_INVERTED_INDEX'='name,city')
-        """)
-    sql(s"""
+      """)
+    sql(
+      s"""
            LOAD DATA LOCAL INPATH '$testData1' into table index1
            """)
     checkAnswer(
-      sql("""
+      sql(
+        """
            SELECT * FROM index1 WHERE city = "Bangalore"
-          """),
-      Seq(Row(19.0,"Emily", "Bangalore" )))
+        """),
+      Seq(Row(19.0, "Emily", "Bangalore")))
 
   }
 
@@ -70,19 +85,21 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
       """)
 
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
-    sql(s"""
+    sql(
+      s"""
            LOAD DATA LOCAL INPATH '$testData2' into table index2
            """)
 
     checkAnswer(
-      sql("""
+      sql(
+        """
            SELECT country, count(salary) AS amount
            FROM index2
            WHERE country IN ('china','france')
            GROUP BY country
-          """),
+        """),
       Seq(Row("china", 96), Row("france", 1))
     )
 
