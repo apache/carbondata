@@ -18,6 +18,10 @@
 package org.apache.spark.sql.execution.command
 
 import java.io.File
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Future
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
@@ -37,6 +41,7 @@ import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.encoder.Encoding
@@ -472,6 +477,9 @@ case class LoadTable(
       carbonLoadModel.setAllDictPath(allDictionaryPath)
 
       val partitionStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
+      var result: Future[DictionaryServer] = null
+      var executorService: ExecutorService = null
+
       try {
         // First system has to partition the data first and then call the load data
         LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
@@ -483,54 +491,105 @@ case class LoadTable(
         carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
         GlobalDictionaryUtil.updateTableMetadataFunc = LoadTable.updateTableMetadata
 
-        val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
-          val fields = dataFrame.get.schema.fields
-          import org.apache.spark.sql.functions.udf
-          // extracting only segment from tupleId
-          val getSegIdUDF = udf((tupleId: String) =>
-            CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID))
-          // getting all fields except tupleId field as it is not required in the value
-          var otherFields = fields.toSeq
-            .filter(field => !field.name
-              .equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))
-            .map(field => {
-              if (field.name.endsWith(CarbonCommonConstants.UPDATED_COL_EXTENSION) && false) {
-                new Column(field.name
-                  .substring(0,
-                    field.name.lastIndexOf(CarbonCommonConstants.UPDATED_COL_EXTENSION)))
-              } else {
-
-                new Column(field.name)
-              }
-            })
-
-          // extract tupleId field which will be used as a key
-          val segIdColumn = getSegIdUDF(new Column(UnresolvedAttribute
-            .quotedString(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))).as("segId")
-          // use dataFrameWithoutTupleId as dictionaryDataFrame
-          val dataFrameWithoutTupleId = dataFrame.get.select(otherFields: _*)
-          otherFields = otherFields :+ segIdColumn
-          // use dataFrameWithTupleId as loadDataFrame
-          val dataFrameWithTupleId = dataFrame.get.select(otherFields: _*)
-          (Some(dataFrameWithoutTupleId), Some(dataFrameWithTupleId))
-        } else {
-          (dataFrame, dataFrame)
-        }
-        GlobalDictionaryUtil
-          .generateGlobalDictionary(
-            sparkSession.sqlContext,
-            carbonLoadModel,
-            relation.tableMeta.storePath,
-            dictionaryDataFrame)
-        CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
+        if (carbonLoadModel.getUseOnePass) {
+          val colDictFilePath = carbonLoadModel.getColDictFilePath
+          if (colDictFilePath != null) {
+            val storePath = relation.tableMeta.storePath
+            val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+            val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
+              .getCarbonTableIdentifier
+            val carbonTablePath = CarbonStorePath
+              .getCarbonTablePath(storePath, carbonTableIdentifier)
+            val dictFolderPath = carbonTablePath.getMetadataDirectoryPath
+            val dimensions = carbonTable.getDimensionByTableName(
+              carbonTable.getFactTableName).asScala.toArray
+            carbonLoadModel.initPredefDictMap()
+            // generate predefined dictionary
+            GlobalDictionaryUtil
+              .generatePredefinedColDictionary(colDictFilePath, carbonTableIdentifier,
+                dimensions, carbonLoadModel, sparkSession.sqlContext, storePath, dictFolderPath)
+          }
+          // dictionaryServerClient dictionary generator
+          val dictionaryServerPort = CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.DICTIONARY_SERVER_PORT,
+              CarbonCommonConstants.DICTIONARY_SERVER_PORT_DEFAULT)
+          carbonLoadModel.setDictionaryServerPort(Integer.parseInt(dictionaryServerPort))
+          val sparkDriverHost = sparkSession.sqlContext.sparkContext.
+            getConf.get("spark.driver.host")
+          carbonLoadModel.setDictionaryServerHost(sparkDriverHost)
+          // start dictionary server when use one pass load.
+          executorService = Executors.newFixedThreadPool(1)
+          result = executorService.submit(new Callable[DictionaryServer]() {
+            @throws[Exception]
+            def call: DictionaryServer = {
+              Thread.currentThread().setName("Dictionary server")
+              val server: DictionaryServer = new DictionaryServer
+              server.startServer(dictionaryServerPort.toInt)
+              server
+            }
+          })
+          CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
             carbonLoadModel,
             relation.tableMeta.storePath,
             kettleHomePath,
             columnar,
             partitionStatus,
             useKettle,
+            result,
+            dataFrame,
+            updateModel)
+        }
+        else {
+          val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
+            val fields = dataFrame.get.schema.fields
+            import org.apache.spark.sql.functions.udf
+            // extracting only segment from tupleId
+            val getSegIdUDF = udf((tupleId: String) =>
+              CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID))
+            // getting all fields except tupleId field as it is not required in the value
+            var otherFields = fields.toSeq
+              .filter(field => !field.name
+                .equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))
+              .map(field => {
+                if (field.name.endsWith(CarbonCommonConstants.UPDATED_COL_EXTENSION) && false) {
+                  new Column(field.name
+                    .substring(0,
+                      field.name.lastIndexOf(CarbonCommonConstants.UPDATED_COL_EXTENSION)))
+                } else {
+
+                  new Column(field.name)
+                }
+              })
+
+            // extract tupleId field which will be used as a key
+            val segIdColumn = getSegIdUDF(new Column(UnresolvedAttribute
+              .quotedString(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))).as("segId")
+            // use dataFrameWithoutTupleId as dictionaryDataFrame
+            val dataFrameWithoutTupleId = dataFrame.get.select(otherFields: _*)
+            otherFields = otherFields :+ segIdColumn
+            // use dataFrameWithTupleId as loadDataFrame
+            val dataFrameWithTupleId = dataFrame.get.select(otherFields: _*)
+            (Some(dataFrameWithoutTupleId), Some(dataFrameWithTupleId))
+          } else {
+            (dataFrame, dataFrame)
+          }
+          GlobalDictionaryUtil
+            .generateGlobalDictionary(
+              sparkSession.sqlContext,
+              carbonLoadModel,
+              relation.tableMeta.storePath,
+              dictionaryDataFrame)
+          CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
+            carbonLoadModel,
+            relation.tableMeta.storePath,
+            kettleHomePath,
+            columnar,
+            partitionStatus,
+            useKettle,
+            result,
             loadDataFrame,
             updateModel)
+        }
       } catch {
         case ex: Exception =>
           LOGGER.error(ex)
@@ -539,6 +598,12 @@ case class LoadTable(
       } finally {
         // Once the data load is successful delete the unwanted partition files
         try {
+
+          // shutdown dictionary server thread
+          if (carbonLoadModel.getUseOnePass) {
+            executorService.shutdownNow()
+          }
+
           val fileType = FileFactory.getFileType(partitionLocation)
           if (FileFactory.isFileExist(partitionLocation, fileType)) {
             val file = FileFactory
