@@ -27,12 +27,12 @@ import org.apache.spark.sql.hive.{CarbonMetastore, CarbonMetastoreTypes}
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types._
 
-import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnIdentifier}
+import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.stats._
 import org.apache.carbondata.core.util.{CarbonTimeStatisticsFactory, DataTypeUtil}
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
@@ -54,7 +54,7 @@ case class CarbonDictionaryDecoder(
     child.output.map { a =>
       val attr = aliasMap.getOrElse(a, a)
       val relation = relations.find(p => p.contains(attr))
-      if(relation.isDefined && canBeDecoded(attr)) {
+      if (relation.isDefined && canBeDecoded(attr)) {
         val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
         val carbonDimension = carbonTable
           .getDimensionByName(carbonTable.getFactTableName, attr.name)
@@ -123,7 +123,7 @@ case class CarbonDictionaryDecoder(
     val dictIds: Array[(String, ColumnIdentifier, DataType)] = attributes.map { a =>
       val attr = aliasMap.getOrElse(a, a)
       val relation = relations.find(p => p.contains(attr))
-      if(relation.isDefined && canBeDecoded(attr)) {
+      if (relation.isDefined && canBeDecoded(attr)) {
         val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
         val carbonDimension =
           carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
@@ -182,6 +182,7 @@ case class CarbonDictionaryDecoder(
             val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
             var flag = true
             var total = 0L
+
             override final def hasNext: Boolean = {
               flag = iter.hasNext
               if (!flag && total > 0) {
@@ -193,19 +194,20 @@ case class CarbonDictionaryDecoder(
               }
               flag
             }
+
             override final def next(): InternalRow = {
               val startTime = System.currentTimeMillis()
               val row: InternalRow = iter.next()
               val data = row.toSeq(dataTypes).toArray
               dictIndex.foreach { index =>
                 if (data(index) != null) {
-                 try {
-                   data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
-                     .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
-                     getDictionaryColumnIds(index)._3)
-                 }
+                  try {
+                    data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
+                      .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
+                      getDictionaryColumnIds(index)._3)
+                  }
                   catch {
-                    case x:ClassCastException => logDebug("ClassCastException occurred.")
+                    case x: ClassCastException => logDebug("ClassCastException occurred.")
                   }
                 }
               }
