@@ -99,20 +99,20 @@ TBLPROPERTIES ("COLUMN_GROUPS"="(column1, column3),
 
 ### Example:
 ```
-   CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
-                                productNumber Int,
-                                productName String,
-                                storeCity String,
-                                storeProvince String,
-                                productCategory String,
-                                productBatch String,
-                                saleQuantity Int,
-                                revenue Int)
-   STORED BY 'carbondata'
-   TBLPROPERTIES ('COLUMN_GROUPS'='(productName,productCategory)',
-                  'DICTIONARY_EXCLUDE'='productName',
-                  'DICTIONARY_INCLUDE'='productNumber',
-                  'NO_INVERTED_INDEX'='productBatch')
+    CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
+                                   productNumber Int,
+                                   productName String,
+                                   storeCity String,
+                                   storeProvince String,
+                                   productCategory String,
+                                   productBatch String,
+                                   saleQuantity Int,
+                                   revenue Int)
+      STORED BY 'carbondata'
+      TBLPROPERTIES ('COLUMN_GROUPS'='(productNumber,productName)',
+                     'DICTIONARY_EXCLUDE'='storeCity',
+                     'DICTIONARY_INCLUDE'='productNumber',
+                     'NO_INVERTED_INDEX'='productBatch')
 ```
 
 ## SHOW TABLE
