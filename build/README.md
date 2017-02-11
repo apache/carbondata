@@ -26,16 +26,7 @@
 * [Oracle Java 7 or 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 * [Apache Thrift 0.9.3](http://archive.apache.org/dist/thrift/0.9.3/)
 
-## Build release version
-Note:Need install Apache Thrift 0.9.3
-```
-mvn clean -DskipTests -Pbuild-with-format -Pspark-1.6 install
-```
-
-## Build dev version(snapshot version,clone from github)
-Note:Already uploaded format.jar to snapshot repo for facilitating dev users,
-so the compilation command works without "-Pbuild-with-format"
-
+## Build command
 Build without test,by default carbondata takes Spark 1.6.2 to build the project
 ```
 mvn -DskipTests clean package
@@ -56,4 +47,10 @@ mvn -DskipTests -Pspark-2.1 -Dspark.version=2.1.0 clean package
 Build with test
 ```
 mvn clean package
+```
+
+## For any contributors : if change format code, need build as per the command
+Note:Need install Apache Thrift 0.9.3
+```
+mvn clean -DskipTests -Pbuild-with-format -Pspark-1.6 package
 ```
