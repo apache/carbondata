@@ -49,7 +49,7 @@ Build with test
 mvn clean package
 ```
 
-## For any contributors : if change format code, need build as per the command
+## For contributors : To build the format code after any changes, please follow the below command.
 Note:Need install Apache Thrift 0.9.3
 ```
 mvn clean -DskipTests -Pbuild-with-format -Pspark-1.6 package
