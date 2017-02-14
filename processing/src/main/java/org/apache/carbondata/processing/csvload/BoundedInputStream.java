@@ -14,15 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.hadoop.io;
+package org.apache.carbondata.processing.csvload;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Custom reader class to read the data from file it will take care of reading
- * till the limit assigned to this class
+ * Customarized reader class to read data from file
+ * untill the upper threshold reached.
  */
 public class BoundedInputStream extends InputStream {
 

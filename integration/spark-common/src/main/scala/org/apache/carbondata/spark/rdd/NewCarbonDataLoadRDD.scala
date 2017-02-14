@@ -41,8 +41,8 @@ import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
-import org.apache.carbondata.hadoop.csv.CSVInputFormat
-import org.apache.carbondata.hadoop.csv.recorditerator.RecordReaderIterator
+import org.apache.carbondata.processing.csvload.CSVInputFormat
+import org.apache.carbondata.processing.csvload.CSVRecordReaderIterator
 import org.apache.carbondata.processing.csvreaderstep.BlockDetails
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.DataLoadExecutor
@@ -207,7 +207,7 @@ class NewCarbonDataLoadRDD[K, V](
           val readers =
           split.partitionBlocksDetail.map(format.createRecordReader(_, hadoopAttemptContext))
           readers.zipWithIndex.map { case (reader, index) =>
-            new RecordReaderIterator(reader,
+            new CSVRecordReaderIterator(reader,
               split.partitionBlocksDetail(index),
               hadoopAttemptContext)
           }
@@ -233,7 +233,7 @@ class NewCarbonDataLoadRDD[K, V](
           val readers =
             split.nodeBlocksDetail.map(format.createRecordReader(_, hadoopAttemptContext))
           readers.zipWithIndex.map { case (reader, index) =>
-            new RecordReaderIterator(reader, split.nodeBlocksDetail(index), hadoopAttemptContext)
+            new CSVRecordReaderIterator(reader, split.nodeBlocksDetail(index), hadoopAttemptContext)
           }
         }
       }

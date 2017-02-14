@@ -22,24 +22,27 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 
 /**
- * It converts to the desired class while reading the rows from RecordReader
+ * This is the interface to convert data reading from RecordReader to row representation.
  */
 public interface CarbonReadSupport<T> {
 
   /**
-   * It can use [{@link CarbonColumn}] array to create its own schema to create its row.
+   * Initialization if needed based on the projected column list
    *
-   * @param carbonColumns
+   * @param carbonColumns column list
+   * @param absoluteTableIdentifier table identifier
    */
   void initialize(CarbonColumn[] carbonColumns,
       AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException;
 
+  /**
+   * convert column data back to row representation
+   * @param data column data
+   */
   T readRow(Object[] data);
 
   /**
-   * This method will be used to clear the dictionary cache and update access count for each
-   * column involved which will be used during eviction of columns from LRU cache if memory
-   * reaches threshold
+   * cleanup step if necessary
    */
   void close();
 

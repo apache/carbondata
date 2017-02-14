@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.hadoop.csv.recorditerator;
+package org.apache.carbondata.processing.csvload;
 
 import java.io.IOException;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.hadoop.io.StringArrayWritable;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 
 import org.apache.hadoop.io.NullWritable;
@@ -31,7 +30,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 /**
  * It is wrapper iterator around @{@link RecordReader}.
  */
-public class RecordReaderIterator extends CarbonIterator<Object []> {
+public class CSVRecordReaderIterator extends CarbonIterator<Object []> {
 
   private RecordReader<NullWritable, StringArrayWritable> recordReader;
 
@@ -47,7 +46,7 @@ public class RecordReaderIterator extends CarbonIterator<Object []> {
 
   private TaskAttemptContext context;
 
-  public RecordReaderIterator(RecordReader<NullWritable, StringArrayWritable> recordReader,
+  public CSVRecordReaderIterator(RecordReader<NullWritable, StringArrayWritable> recordReader,
       InputSplit split, TaskAttemptContext context) {
     this.recordReader = recordReader;
     this.split = split;
