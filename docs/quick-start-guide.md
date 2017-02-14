@@ -62,8 +62,16 @@ import org.apache.spark.sql.CarbonSession._
 * Create a CarbonSession :
 
 ```
-val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession()
+val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<hdfs store path>")
 ```
+
+Or another interface as:
+
+```
+val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<hdfs store path>", "<hdfs
+metastore path>")
+```
+NOTE:It is recommended to use the first method.
 
 #### Executing Queries
 
