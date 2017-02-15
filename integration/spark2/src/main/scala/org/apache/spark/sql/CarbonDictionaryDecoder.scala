@@ -58,7 +58,7 @@ case class CarbonDictionaryDecoder(
           .getDimensionByName(carbonTable.getFactTableName, attr.name)
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
-            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) && !carbonDimension.isComplex()) {
           val newAttr = AttributeReference(a.name,
             convertCarbonToSparkDataType(carbonDimension,
               relation.get.carbonRelation.carbonRelation),
@@ -130,7 +130,7 @@ case class CarbonDictionaryDecoder(
           carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
-            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) && !carbonDimension.isComplex()) {
           (carbonTable.getFactTableName, carbonDimension.getColumnIdentifier,
             carbonDimension.getDataType)
         } else {
@@ -184,16 +184,9 @@ case class CarbonDictionaryDecoder(
               val data = row.toSeq(dataTypes).toArray
               dictIndex.foreach { index =>
                 if (data(index) != null) {
-                  try {
                     data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
                       .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
                       getDictionaryColumnIds(index)._3)
-                  }
-                  catch {
-                    case x: ClassCastException => {
-                      logDebug("ClassCastException occurred .")
-                    }
-                  }
                 }
               }
               val result = unsafeProjection(new GenericInternalRow(data))
