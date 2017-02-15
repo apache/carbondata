@@ -60,7 +60,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
-import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodedReadSupportImpl;
+import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
 import org.apache.carbondata.hadoop.util.BlockLevelTraverser;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
@@ -641,7 +641,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   public CarbonReadSupport<T> getReadSupportClass(Configuration configuration) {
     String readSupportClass = configuration.get(CARBON_READ_SUPPORT);
     //By default it uses dictionary decoder read class
-    CarbonReadSupport readSupport = null;
+    CarbonReadSupport<T> readSupport = null;
     if (readSupportClass != null) {
       try {
         Class<?> myClass = Class.forName(readSupportClass);
@@ -656,7 +656,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         LOG.error("Error while creating " + readSupportClass, ex);
       }
     } else {
-      readSupport = new DictionaryDecodedReadSupportImpl();
+      readSupport = new DictionaryDecodeReadSupport<>();
     }
     return readSupport;
   }

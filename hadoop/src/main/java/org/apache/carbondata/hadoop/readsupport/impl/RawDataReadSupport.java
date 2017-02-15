@@ -27,26 +27,17 @@ public class RawDataReadSupport implements CarbonReadSupport<InternalRow> {
 
   @Override
   public void initialize(CarbonColumn[] carbonColumns,
-      AbsoluteTableIdentifier absoluteTableIdentifier) {
-  }
+      AbsoluteTableIdentifier absoluteTableIdentifier) { }
 
   /**
-   * Just return same data.
+   * return column data as InternalRow
    *
-   * @param data
-   * @return
+   * @param data column data
    */
   @Override
   public InternalRow readRow(Object[] data) {
     return new GenericInternalRow(data);
   }
 
-  /**
-   * This method iwll be used to clear the dictionary cache and update access count for each
-   * column involved which will be used during eviction of columns from LRU cache if memory
-   * reaches threshold
-   */
-  @Override public void close() {
-
-  }
+  @Override public void close() { }
 }
