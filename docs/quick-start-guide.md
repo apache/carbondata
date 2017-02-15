@@ -64,13 +64,7 @@ import org.apache.spark.sql.CarbonSession._
 ```
 val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<hdfs store path>")
 ```
-
-Or another interface as:
-
-```
-val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<hdfs store path>", "<local metastore path>")
-```
-NOTE:It is recommended to use the first method.
+NOTE: By default store location is pointed to "../carbon.metastore", user can provide own store location to CarbonSession like `SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<hdfs store path>", "<local metastore path>")`
 
 #### Executing Queries
 
