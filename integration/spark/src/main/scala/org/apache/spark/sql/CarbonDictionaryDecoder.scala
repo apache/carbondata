@@ -60,7 +60,8 @@ case class CarbonDictionaryDecoder(
           .getDimensionByName(carbonTable.getFactTableName, attr.name)
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
-            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) && !carbonDimension.isComplex()) {
+            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
+            !carbonDimension.isComplex()) {
           val newAttr = AttributeReference(a.name,
             convertCarbonToSparkDataType(carbonDimension,
               relation.get.carbonRelation.carbonRelation),
@@ -129,7 +130,8 @@ case class CarbonDictionaryDecoder(
           carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
-            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) && !carbonDimension.isComplex()) {
+            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
+            !carbonDimension.isComplex()) {
           (carbonTable.getFactTableName, carbonDimension.getColumnIdentifier,
             carbonDimension.getDataType)
         } else {
@@ -201,9 +203,9 @@ case class CarbonDictionaryDecoder(
               val data = row.toSeq(dataTypes).toArray
               dictIndex.foreach { index =>
                 if (data(index) != null) {
-                    data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
-                      .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
-                      getDictionaryColumnIds(index)._3)
+                  data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
+                    .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
+                    getDictionaryColumnIds(index)._3)
                 }
               }
               val result = unsafeProjection(new GenericMutableRow(data))
