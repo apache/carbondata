@@ -116,15 +116,8 @@ public class IntermediateFileMerger implements Callable<Void> {
           writeDataTofile(next());
         }
       } else {
-        int i = 0;
         while (hasNext()) {
-          i++;
           writeDataTofileWithOutKettle(next());
-          if (i % 10000 == 0) {
-            if (this.stream != null) {
-              this.stream.flush();
-            }
-          }
         }
       }
       if (mergerParameters.isSortFileCompressionEnabled() || mergerParameters.isPrefetch()) {

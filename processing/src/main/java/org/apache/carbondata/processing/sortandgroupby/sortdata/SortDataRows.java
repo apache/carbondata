@@ -376,9 +376,6 @@ public class SortDataRows {
             stream.write((byte) 0);
           }
         }
-        if (i % 10000 == 9999) {
-          stream.flush();
-        }
       }
     } catch (IOException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while writing the file", e);
