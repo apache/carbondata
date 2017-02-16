@@ -64,8 +64,6 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
 
   private AtomicLong rowCounter;
 
-  final int batchSize = CarbonProperties.getInstance().getBatchSize();
-
   public UnsafeParallelReadMergeSorterImpl(AtomicLong rowCounter) {
     this.rowCounter = rowCounter;
   }
@@ -83,10 +81,11 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
     finalMerger = new UnsafeSingleThreadFinalSortFilesMerger(sortParameters);
   }
 
-  @Override public void prepare(Iterator<CarbonRowBatch>[] iterators)
+  @Override public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
       throws CarbonDataLoadingException {
     UnsafeSortDataRows sortDataRow =
         new UnsafeSortDataRows(sortParameters, unsafeIntermediateFileMerger);
+    final int batchSize = CarbonProperties.getInstance().getBatchSize();
     try {
       sortDataRow.initialize();
     } catch (CarbonSortKeyAndGroupByException e) {
@@ -107,20 +106,12 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
     }
     try {
       unsafeIntermediateFileMerger.finish();
-    } catch (CarbonDataWriterException e) {
-      throw new CarbonDataLoadingException(e);
-    } catch (CarbonSortKeyAndGroupByException e) {
-      throw new CarbonDataLoadingException(e);
-    }
-  }
-
-  @Override public Iterator<CarbonRowBatch>[] sort()
-      throws CarbonDataLoadingException {
-    try {
       List<UnsafeCarbonRowPage> rowPages = unsafeIntermediateFileMerger.getRowPages();
       finalMerger.startFinalMerge(rowPages.toArray(new UnsafeCarbonRowPage[rowPages.size()]),
           unsafeIntermediateFileMerger.getMergedPages());
     } catch (CarbonDataWriterException e) {
+      throw new CarbonDataLoadingException(e);
+    } catch (CarbonSortKeyAndGroupByException e) {
       throw new CarbonDataLoadingException(e);
     }
 

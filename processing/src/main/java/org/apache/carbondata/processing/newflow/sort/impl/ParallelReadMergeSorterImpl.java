@@ -62,8 +62,6 @@ public class ParallelReadMergeSorterImpl implements Sorter {
 
   private AtomicLong rowCounter;
 
-  final int batchSize = CarbonProperties.getInstance().getBatchSize();
-
   public ParallelReadMergeSorterImpl(AtomicLong rowCounter) {
     this.rowCounter = rowCounter;
   }
@@ -88,10 +86,11 @@ public class ParallelReadMergeSorterImpl implements Sorter {
             sortParameters.getNoDictionaryDimnesionColumn(), sortParameters.isUseKettle());
   }
 
-  public void prepare(Iterator<CarbonRowBatch>[] iterators)
+  @Override
+  public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
       throws CarbonDataLoadingException {
     SortDataRows sortDataRow = new SortDataRows(sortParameters, intermediateFileMerger);
-
+    final int batchSize = CarbonProperties.getInstance().getBatchSize();
     try {
       sortDataRow.initialize();
     } catch (CarbonSortKeyAndGroupByException e) {
@@ -113,19 +112,10 @@ public class ParallelReadMergeSorterImpl implements Sorter {
     try {
       intermediateFileMerger.finish();
       intermediateFileMerger = null;
+      finalMerger.startFinalMerge();
     } catch (CarbonDataWriterException e) {
       throw new CarbonDataLoadingException(e);
     } catch (CarbonSortKeyAndGroupByException e) {
-      throw new CarbonDataLoadingException(e);
-    }
-  }
-
-  @Override
-  public Iterator<CarbonRowBatch>[] sort()
-      throws CarbonDataLoadingException {
-    try {
-      finalMerger.startFinalMerge();
-    } catch (CarbonDataWriterException e) {
       throw new CarbonDataLoadingException(e);
     }
 
@@ -150,8 +140,6 @@ public class ParallelReadMergeSorterImpl implements Sorter {
     };
     return new Iterator[] { batchIterator };
   }
-
-
 
   @Override public void close() {
     if (intermediateFileMerger != null) {

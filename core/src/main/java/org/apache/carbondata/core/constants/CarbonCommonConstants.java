@@ -639,9 +639,12 @@ public final class CarbonCommonConstants {
    */
   public static final int ARRAYSIZE = 3;
 
-  public static final String CARBON_PREFETCH_BUFFERSIZE = "carbon.prefetch.buffersize";
   /**
    * CARBON_PREFETCH_BUFFERSIZE
+   */
+  public static final String CARBON_PREFETCH_BUFFERSIZE = "carbon.prefetch.buffersize";
+  /**
+   * CARBON_PREFETCH_BUFFERSIZE DEFAULT VALUE
    */
   public static final String CARBON_PREFETCH_BUFFERSIZE_DEFAULT = "1000";
   /**

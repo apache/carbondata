@@ -67,8 +67,6 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
 
   private AtomicLong rowCounter;
 
-  final int batchSize = CarbonProperties.getInstance().getBatchSize();
-
   public ParallelReadMergeSorterWithBucketingImpl(AtomicLong rowCounter,
       BucketingInfo bucketingInfo) {
     this.rowCounter = rowCounter;
@@ -86,7 +84,7 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
     }
   }
 
-  @Override public void prepare(Iterator<CarbonRowBatch>[] iterators)
+  @Override public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
       throws CarbonDataLoadingException {
     SortDataRows[] sortDataRows = new SortDataRows[bucketingInfo.getNumberOfBuckets()];
     try {
@@ -102,7 +100,7 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
       throw new CarbonDataLoadingException(e);
     }
     this.executorService = Executors.newFixedThreadPool(iterators.length);
-
+    final int batchSize = CarbonProperties.getInstance().getBatchSize();
     try {
       for (int i = 0; i < iterators.length; i++) {
         executorService.submit(new SortIteratorThread(iterators[i], sortDataRows, rowCounter));
@@ -120,10 +118,7 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
     } catch (CarbonSortKeyAndGroupByException e) {
       throw new CarbonDataLoadingException(e);
     }
-  }
 
-  @Override public Iterator<CarbonRowBatch>[] sort()
-      throws CarbonDataLoadingException {
     Iterator<CarbonRowBatch>[] batchIterator = new Iterator[bucketingInfo.getNumberOfBuckets()];
     for (int i = 0; i < bucketingInfo.getNumberOfBuckets(); i++) {
       batchIterator[i] = new MergedDataIterator(String.valueOf(i), batchSize);
