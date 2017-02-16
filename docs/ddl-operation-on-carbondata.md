@@ -183,22 +183,21 @@ Bucketing feature can be used to distribute/organize the table/partition data in
 that similar records are present in the same file. While creating a table, a user needs to specify the
 columns to be used for bucketing and the number of buckets. For the selction of bucket the Hash value
 of columns is used.
+
 ```
    CREATE TABLE [IF NOT EXISTS] [db_name.]table_name
                     [(col_name data_type, ...)]
    STORED BY 'carbondata'
    TBLPROPERTIES(“BUCKETNUMBER”=”noOfBuckets”,
-   “BUCKETCOLUMNS”=’’columnname”, “TABLENAME”=”tablename”)
-
+   “BUCKETCOLUMNS”=’’columnname”)
 ```
-
+  
 ## Parameter Description
 
 | Parameter 	| Description 	| Optional 	|
 |---------------	|------------------------------------------------------------------------------------------------------------------------------	|----------	|
 | BUCKETNUMBER 	| Specifies the number of Buckets to be created. 	| No 	|
 | BUCKETCOLUMNS 	| Specify the columns to be considered for Bucketing  	| No 	|
-| TABLENAME 	| The name of the table in Database. Table Name should consist of alphanumeric characters and underscore(_) special character. 	| Yes 	|
 
 ## Usage Guidelines
 
@@ -206,9 +205,11 @@ of columns is used.
 
 - Bucketing can not be performed for columns of Complex Data Types.
 
-- Columns in the BUCKETCOLUMN parameter must be either a dimension or a measure but combination of both is not supported.
+- Columns in the BUCKETCOLUMN parameter must be only dimension. The BUCKETCOLUMN parameter can not be a measure or a combination of measures and dimensions.
+
 
 ## Example :
+
 ```
  CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
                                 productNumber Int,
@@ -220,13 +221,11 @@ of columns is used.
                                 saleQuantity Int,
                                 revenue Int)
    STORED BY 'carbondata'
-   TBLPROPERTIES ('COLUMN_GROUPS'='(productName,productCategory)',
+   TBLPROPERTIES ('COLUMN_GROUPS'='(productName,productNumber)',
                   'DICTIONARY_EXCLUDE'='productName',
                   'DICTIONARY_INCLUDE'='productNumber',
                   'NO_INVERTED_INDEX'='productBatch',
                   'BUCKETNUMBER'='4',
-                  'BUCKETCOLUMNS'='productNumber,saleQuantity',
-                  'TABLENAME'='productSalesTable')
-
-  ```
+                  'BUCKETCOLUMNS'='productName')
+ ```
 
