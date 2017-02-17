@@ -138,7 +138,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   }
 
   @Override public boolean hasNext() {
-    if ((dataBlockIterator != null && dataBlockIterator.hasNext()) || nextBatch) {
+    if ((dataBlockIterator != null && dataBlockIterator.hasNext())) {
       return true;
     } else if (blockExecutionInfos.size() > 0) {
       return true;
@@ -171,7 +171,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
       CarbonUtil.freeMemory(blocksChunkHolder.getDimensionDataChunk(),
           blocksChunkHolder.getMeasureDataChunk());
       return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize, queryStatisticsModel,
-          blocksChunkHolder);
+          blocksChunkHolder, execService);
     }
     return null;
   }

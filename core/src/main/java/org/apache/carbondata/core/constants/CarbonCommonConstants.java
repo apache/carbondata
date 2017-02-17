@@ -1147,6 +1147,8 @@ public final class CarbonCommonConstants {
 
   public static final String USE_KETTLE_DEFAULT = "false";
 
+  public static final String NO_INVERTED_INDEX = "no_inverted_index";
+
   private CarbonCommonConstants() {
   }
 }

@@ -27,14 +27,17 @@ public final class UnBlockIndexer {
 
   public static int[] uncompressIndex(int[] indexData, int[] indexMap) {
     int actualSize = indexData.length;
-    for (int i = 0; i < indexMap.length; i++) {
+    int mapLength = indexMap.length;
+    for (int i = 0; i < mapLength; i++) {
       actualSize += indexData[indexMap[i] + 1] - indexData[indexMap[i]] - 1;
     }
     int[] indexes = new int[actualSize];
     int k = 0;
+    int oldIndex = 0;
     for (int i = 0; i < indexData.length; i++) {
-      int index = Arrays.binarySearch(indexMap, i);
+      int index = Arrays.binarySearch(indexMap, oldIndex, mapLength, i);
       if (index > -1) {
+        oldIndex = index;
         for (int j = indexData[indexMap[index]]; j <= indexData[indexMap[index] + 1]; j++) {
           indexes[k] = j;
           k++;
