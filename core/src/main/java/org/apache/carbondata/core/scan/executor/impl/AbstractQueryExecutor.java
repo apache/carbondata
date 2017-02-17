@@ -103,7 +103,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     LOGGER.info("Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
         .getCarbonTableIdentifier().getTableName());
     // add executor service for query execution
-    queryProperties.executorService = Executors.newFixedThreadPool(1);
+    queryProperties.executorService = Executors.newFixedThreadPool(2);
     // Initializing statistics list to record the query statistics
     // creating copy on write to handle concurrent scenario
     queryProperties.queryStatisticsRecorder =
@@ -346,10 +346,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     } else {
       blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(new int[0][0]);
     }
-
+    // list of measures to be projected
+    List<Integer> allProjectionListMeasureIdexes = new ArrayList<>();
     int[] measureBlockIndexes = QueryUtil
         .getMeasureBlockIndexes(queryModel.getQueryMeasures(), expressionMeasures,
-            segmentProperties.getMeasuresOrdinalToBlockMapping(), queryProperties.filterMeasures);
+            segmentProperties.getMeasuresOrdinalToBlockMapping(), queryProperties.filterMeasures,
+            allProjectionListMeasureIdexes);
     if (measureBlockIndexes.length > 0) {
 
       numberOfElementToConsider = measureBlockIndexes[measureBlockIndexes.length - 1]
@@ -363,6 +365,14 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     } else {
       blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(new int[0][0]);
     }
+    // setting the indexes of list of dimension in projection list
+    blockExecutionInfo.setProjectionListDimensionIndexes(ArrayUtils.toPrimitive(
+        allProjectionListDimensionIdexes
+            .toArray(new Integer[allProjectionListDimensionIdexes.size()])));
+    // setting the indexes of list of measures in projection list
+    blockExecutionInfo.setProjectionListMeasureIndexes(ArrayUtils.toPrimitive(
+        allProjectionListMeasureIdexes
+            .toArray(new Integer[allProjectionListMeasureIdexes.size()])));
     // setting the key structure info which will be required
     // to update the older block key with new key generator
     blockExecutionInfo.setKeyStructureInfo(queryProperties.keyStructureInfo);

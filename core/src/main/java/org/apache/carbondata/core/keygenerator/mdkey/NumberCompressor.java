@@ -38,16 +38,40 @@ public class NumberCompressor {
 
   private byte bitsLength;
 
+  private int bytesPerKey;
+
   public NumberCompressor(int cardinality) {
     bitsLength = (byte) Long.toBinaryString(cardinality).length();
+    bytesPerKey = bitsLength / BYTE_LENGTH;
+    if (bitsLength % BYTE_LENGTH != 0) {
+      bytesPerKey++;
+    }
   }
 
-  public byte[] compress(int[] keys) {
-    int[] sizes = getWordsAndByteSize(keys.length);
-    long[] words = get(keys, sizes[0]);
+    public byte[] compress(int[] keys) {
+      int[] sizes = getWordsAndByteSize(keys.length);
+      long[] words = get(keys, sizes[0]);
 
-    return getByteValues(sizes, words);
-  }
+      return getByteValues(sizes, words);
+    }
+
+//  public byte[] compress(int[] keys) {
+//    int length = keys.length;
+//    byte[] b = new byte[bytesPerKey * length];
+//
+//    int offset = 0;
+//    for (int k = 0; k < length; k++) {
+//      int val = keys[k];
+//      for (int i = offset + bytesPerKey - 1; i > offset; i--) {
+//        b[i] = (byte) val;
+//        val >>>= 8;
+//      }
+//      b[offset] = (byte) val;
+//      offset += bytesPerKey;
+//    }
+//
+//    return b;
+//  }
 
   private byte[] getByteValues(int[] sizes, long[] words) {
     byte[] bytes = new byte[sizes[1]];
@@ -137,13 +161,32 @@ public class NumberCompressor {
     return words;
   }
 
-  public int[] unCompress(byte[] key, int offset, int length) {
-    int ls = length;
-    int arrayLength = (ls * BYTE_LENGTH) / bitsLength;
-    long[] words = new long[getWordsSizeFromBytesSize(ls)];
-    unCompressVal(key, ls, words, offset);
-    return getArray(words, arrayLength);
-  }
+    public int[] unCompress(byte[] key, int offset, int length) {
+      int ls = length;
+      int arrayLength = (ls * BYTE_LENGTH) / bitsLength;
+      long[] words = new long[getWordsSizeFromBytesSize(ls)];
+      unCompressVal(key, ls, words, offset);
+      return getArray(words, arrayLength);
+    }
+
+//  public int[] unCompress(byte[] key, int offset, int length) {
+//    int len = length / bytesPerKey;
+//    if (length % bytesPerKey != 0) {
+//      throw new IllegalArgumentException(
+//          "Some thing wrong while decompress" + length + " " + bytesPerKey);
+//    }
+//    int[] ints = new int[len];
+//    int count = offset;
+//    for (int i = 0; i < len; i++) {
+//      int n = 0;
+//      for (int k = 0; k < bytesPerKey; k++) {
+//        n <<= BYTE_LENGTH;
+//        n ^= key[count++] & 0xFF;
+//      }
+//      ints[i] = n;
+//    }
+//    return ints;
+//  }
 
   private void unCompressVal(byte[] key, int ls, long[] words, int offset) {
     for (int i = 0; i < words.length; i++) {

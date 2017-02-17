@@ -37,25 +37,86 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.commons.lang3.ArrayUtils;
+
 /**
  * It is not a collector it is just a scanned result holder.
  */
 public class DictionaryBasedResultCollector extends AbstractScannedResultCollector {
 
-  public DictionaryBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
-    super(blockExecutionInfos);
-  }
+  /**
+   * delete delta cache to maintain records
+   * which go deleted
+   */
+  private BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache;
 
   /**
-   * This method will add a record both key and value to list object
-   * it will keep track of how many record is processed, to handle limit scenario
+   * is measure present
    */
-  @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
+  private boolean isMsrsPresent;
 
-    List<Object[]> listBasedResult = new ArrayList<>(batchSize);
-    boolean isMsrsPresent = measureDatatypes.length > 0;
+  /**
+   * list of dimension column present in projection list
+   */
+  private QueryDimension[] queryDimensions;
 
-    QueryDimension[] queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
+  /**
+   * list of measure column present in projection list
+   */
+  private QueryMeasure[] queryMeasures;
+
+  /**
+   * index of dictionary column in surrogate key array
+   */
+  private int[] actualIndexInSurrogateKey;
+
+  /**
+   * complex dimension info map
+   */
+  private Map<Integer, GenericQueryType> comlexDimensionInfoMap;
+
+  /**
+   * dictionary column index
+   */
+  private boolean[] dictionaryEncodingArray;
+
+  /**
+   * direct dictionary column index
+   */
+  private byte[] directDictionaryEncodingArray;
+
+  /**
+   * implicit column index
+   */
+  private boolean[] implictColumnArray;
+
+  /**
+   * complex column index
+   */
+  private boolean[] complexDataTypeArray;
+
+  /**
+   * number of dimension column
+   */
+  private int dimSize;
+
+  /**
+   * is dimension column present in query
+   */
+  private boolean isDimensionsExist;
+
+  /**
+   * order in query
+   */
+  private int[] order;
+
+  private DirectDictionaryGenerator dateTypeDictionaryGenerator;
+
+  private DirectDictionaryGenerator timestampTypeDictionaryGenerator;
+
+  public DictionaryBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
+    super(blockExecutionInfos);
+    this.isMsrsPresent = measureDatatypes.length > 0;
+    this.queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
     List<Integer> dictionaryIndexes = new ArrayList<Integer>();
     for (int i = 0; i < queryDimensions.length; i++) {
       if (queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY) || queryDimensions[i]
@@ -63,10 +124,10 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         dictionaryIndexes.add(queryDimensions[i].getDimension().getOrdinal());
       }
     }
-    int[] primitive = ArrayUtils.toPrimitive(dictionaryIndexes.toArray(
-        new Integer[dictionaryIndexes.size()]));
+    int[] primitive =
+        ArrayUtils.toPrimitive(dictionaryIndexes.toArray(new Integer[dictionaryIndexes.size()]));
     Arrays.sort(primitive);
-    int[] actualIndexInSurrogateKey = new int[dictionaryIndexes.size()];
+    this.actualIndexInSurrogateKey = new int[dictionaryIndexes.size()];
     int index = 0;
     for (int i = 0; i < queryDimensions.length; i++) {
       if (queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY) || queryDimensions[i]
@@ -76,25 +137,38 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       }
     }
 
-    QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
-    BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
-        scannedResult.getDeleteDeltaDataCache();
-    Map<Integer, GenericQueryType> comlexDimensionInfoMap =
-        tableBlockExecutionInfos.getComlexDimensionInfoMap();
-    boolean[] dictionaryEncodingArray = CarbonUtil.getDictionaryEncodingArray(queryDimensions);
-    boolean[] directDictionaryEncodingArray =
-        CarbonUtil.getDirectDictionaryEncodingArray(queryDimensions);
-    boolean[] implictColumnArray = CarbonUtil.getImplicitColumnArray(queryDimensions);
-    boolean[] complexDataTypeArray = CarbonUtil.getComplexDataTypeArray(queryDimensions);
-    int dimSize = queryDimensions.length;
-    boolean isDimensionsExist = dimSize > 0;
-    int[] order = new int[dimSize + queryMeasures.length];
+    this.queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
+    this.comlexDimensionInfoMap = tableBlockExecutionInfos.getComlexDimensionInfoMap();
+    this.dictionaryEncodingArray = CarbonUtil.getDictionaryEncodingArray(queryDimensions);
+    this.directDictionaryEncodingArray =
+        CarbonUtil.getDirectDictionaryEncodingArrayIndex(queryDimensions);
+    this.implictColumnArray = CarbonUtil.getImplicitColumnArray(queryDimensions);
+    this.complexDataTypeArray = CarbonUtil.getComplexDataTypeArray(queryDimensions);
+    this.dimSize = queryDimensions.length;
+    this.isDimensionsExist = dimSize > 0;
+    this.order = new int[dimSize + queryMeasures.length];
     for (int i = 0; i < dimSize; i++) {
       order[i] = queryDimensions[i].getQueryOrder();
     }
     for (int i = 0; i < queryMeasures.length; i++) {
       order[i + dimSize] = queryMeasures[i].getQueryOrder();
     }
+
+    this.dateTypeDictionaryGenerator =
+        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataType.DATE);
+
+    this.timestampTypeDictionaryGenerator =
+        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataType.TIMESTAMP);
+  }
+
+  /**
+   * This method will add a record both key and value to list object
+   * it will keep track of how many record is processed, to handle limit scenario
+   */
+  @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
+
+    List<Object[]> listBasedResult = new ArrayList<>(batchSize);
+    this.deleteDeltaDataCache = scannedResult.getDeleteDeltaDataCache();
     // scan the record and add to list
     int rowCounter = 0;
     int dictionaryColumnIndex = 0;
@@ -129,19 +203,20 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
                   .getDataBasedOnDataType(noDictionaryKeys[noDictionaryColumnIndex++],
                       queryDimensions[i].getDimension().getDataType());
             }
-          } else if (directDictionaryEncodingArray[i]) {
-            DirectDictionaryGenerator directDictionaryGenerator =
-                DirectDictionaryKeyGeneratorFactory
-                    .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
-            if (directDictionaryGenerator != null) {
-              row[order[i]] = directDictionaryGenerator.getValueFromSurrogate(
+          } else if (directDictionaryEncodingArray[i] == 1
+              || directDictionaryEncodingArray[i] == 2) {
+            if (directDictionaryEncodingArray[i] == 1) {
+              row[order[i]] = timestampTypeDictionaryGenerator.getValueFromSurrogate(
+                  surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]]);
+            } else if (directDictionaryEncodingArray[i] == 2) {
+              row[order[i]] = dateTypeDictionaryGenerator.getValueFromSurrogate(
                   surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]]);
             }
           } else if (complexDataTypeArray[i]) {
-            row[order[i]] = comlexDimensionInfoMap
-                .get(queryDimensions[i].getDimension().getOrdinal())
-                .getDataBasedOnDataTypeFromSurrogates(
-                    ByteBuffer.wrap(complexTypeKeyArray[complexTypeColumnIndex++]));
+            row[order[i]] =
+                comlexDimensionInfoMap.get(queryDimensions[i].getDimension().getOrdinal())
+                    .getDataBasedOnDataTypeFromSurrogates(
+                        ByteBuffer.wrap(complexTypeKeyArray[complexTypeColumnIndex++]));
           } else {
             row[order[i]] = surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]];
           }

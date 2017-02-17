@@ -159,8 +159,6 @@ object CarbonFilters {
             Some(sources.Not(sources.EqualTo(a.name, v)))
         case Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) =>
             Some(sources.Not(sources.EqualTo(a.name, v)))
-        case IsNotNull(a: Attribute) => Some(sources.IsNotNull(a.name))
-        case IsNull(a: Attribute) => Some(sources.IsNull(a.name))
         case Not(In(a: Attribute, list)) if !list.exists(!_.isInstanceOf[Literal]) =>
           val hSet = list.map(e => e.eval(EmptyRow))
           Some(sources.Not(sources.In(a.name, hSet.toArray)))
@@ -264,12 +262,6 @@ object CarbonFilters {
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
         case Not(EqualTo(l@Literal(v, t), Cast(a: Attribute, _))) =>
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case IsNotNull(child: Attribute) =>
-            Some(new NotEqualsExpression(transformExpression(child).get,
-             transformExpression(Literal(null)).get, true))
-        case IsNull(child: Attribute) =>
-            Some(new EqualToExpression(transformExpression(child).get,
-             transformExpression(Literal(null)).get, true))
         case Not(In(a: Attribute, list))
           if !list.exists(!_.isInstanceOf[Literal]) =>
           if (list.exists(x => isNullLiteral(x.asInstanceOf[Literal]))) {

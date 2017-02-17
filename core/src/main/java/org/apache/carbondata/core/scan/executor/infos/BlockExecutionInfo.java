@@ -98,6 +98,16 @@ public class BlockExecutionInfo {
   private int[][] allSelectedMeasureBlocksIndexes;
 
   /**
+   * list of dimension present in the projection
+   */
+  private int[] projectionListDimensionIndexes;
+
+  /**
+   * list of dimension present in the projection
+   */
+  private int[] projectionListMeasureIndexes;
+
+  /**
    * this will be used to update the older block fixed length keys with the
    * new block fixed length key
    */
@@ -598,5 +608,21 @@ public class BlockExecutionInfo {
 
   public void setBlockId(String blockId) {
     this.blockId = blockId;
+  }
+
+  public int[] getProjectionListDimensionIndexes() {
+    return projectionListDimensionIndexes;
+  }
+
+  public void setProjectionListDimensionIndexes(int[] projectionListDimensionIndexes) {
+    this.projectionListDimensionIndexes = projectionListDimensionIndexes;
+  }
+
+  public int[] getProjectionListMeasureIndexes() {
+    return projectionListMeasureIndexes;
+  }
+
+  public void setProjectionListMeasureIndexes(int[] projectionListMeasureIndexes) {
+    this.projectionListMeasureIndexes = projectionListMeasureIndexes;
   }
 }
