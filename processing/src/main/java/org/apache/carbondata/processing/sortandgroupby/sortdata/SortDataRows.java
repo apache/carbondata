@@ -149,11 +149,12 @@ public class SortDataRows {
     // if record holder list size is equal to sort buffer size then it will
     // sort the list and then write current list data to file
     synchronized (addRowsLock) {
+      int sizeLeft = 0;
       if (entryCount + size >= sortBufferSize) {
         LOGGER.debug("************ Writing to temp file ********** ");
         intermediateFileMerger.startMergingIfPossible();
         Object[][] recordHolderListLocal = recordHolderList;
-        int sizeLeft = sortBufferSize - entryCount ;
+        sizeLeft = sortBufferSize - entryCount ;
         if (sizeLeft > 0) {
           System.arraycopy(rowBatch, 0, recordHolderListLocal, entryCount, sizeLeft);
         }
@@ -172,7 +173,7 @@ public class SortDataRows {
           return;
         }
       }
-      System.arraycopy(rowBatch, 0, recordHolderList, entryCount, size);
+      System.arraycopy(rowBatch, sizeLeft, recordHolderList, entryCount, size);
       entryCount += size;
     }
   }

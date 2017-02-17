@@ -209,10 +209,9 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
       try {
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
-          Iterator<CarbonRow> batchIterator = batch.getBatchIterator();
           int i = 0;
-          while (batchIterator.hasNext()) {
-            CarbonRow row = batchIterator.next();
+          while (batch.hasNext()) {
+            CarbonRow row = batch.next();
             if (row != null) {
               SortDataRows sortDataRow = sortDataRows[row.bucketNumber];
               synchronized (sortDataRow) {
@@ -257,7 +256,7 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
 
     @Override public CarbonRowBatch next() {
       int counter = 0;
-      CarbonRowBatch rowBatch = new CarbonRowBatch();
+      CarbonRowBatch rowBatch = new CarbonRowBatch(batchSize);
       while (finalMerger.hasNext() && counter < batchSize) {
         rowBatch.addRow(new CarbonRow(finalMerger.next()));
         counter++;

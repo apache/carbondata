@@ -231,6 +231,9 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
 
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
+      if (csvParser == null) {
+        return false;
+      }
       columns = csvParser.parseNext();
       if (columns == null) {
         value = null;
@@ -275,9 +278,18 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
         if (reader != null) {
           reader.close();
         }
+        if (boundedInputStream != null) {
+          boundedInputStream.close();
+        }
       } finally {
+        reader = null;
+        boundedInputStream = null;
+        csvParser = null;
+        filePosition = null;
+        value = null;
         if (decompressor != null) {
           CodecPool.returnDecompressor(decompressor);
+          decompressor = null;
         }
       }
     }

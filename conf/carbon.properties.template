@@ -114,3 +114,5 @@ carbon.enable.quick.filter=false
 #carbon.cutOffTimestamp=2000-01-01 00:00:00
 ##The property to set the timestamp (ie milis) conversion to the SECOND, MINUTE, HOUR or DAY level.
 #carbon.timegranularity=SECOND
+##the number of prefetched rows in sort step
+#carbon.prefetch.buffersize=1000
