@@ -871,8 +871,10 @@ object CarbonDataRDDFactory {
                 errorMessage = errorMessage + ": " + executorMessage
               }
             case _ =>
-              executorMessage = ex.getCause.getMessage
-              errorMessage = errorMessage + ": " + executorMessage
+              if (ex.getCause != null) {
+                executorMessage = ex.getCause.getMessage
+                errorMessage = errorMessage + ": " + executorMessage
+              }
           }
           LOGGER.info(errorMessage)
           LOGGER.error(ex)

@@ -24,6 +24,7 @@ import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryKeyType;
 
 /**
  * Dictionary implementation along with dictionary server client to get new dictionary values
@@ -55,10 +56,10 @@ public class DictionaryServerClientDictionary implements BiDictionary<Integer, O
     Integer key = getKey(value);
     if (key == null) {
       synchronized (lock) {
-        dictionaryKey.setData(value);
-        dictionaryKey.setThreadNo(Thread.currentThread().getId() + "");
+        dictionaryKey.setData(value.toString());
+        dictionaryKey.setThreadNo(Thread.currentThread().getId());
         DictionaryKey dictionaryValue = client.getDictionary(dictionaryKey);
-        key = (Integer) dictionaryValue.getData();
+        key = dictionaryValue.getDictionaryValue();
         localCache.put(value, key);
       }
       return key + base;
@@ -85,9 +86,8 @@ public class DictionaryServerClientDictionary implements BiDictionary<Integer, O
   }
 
   @Override public int size() {
-    dictionaryKey.setType("SIZE");
-    int size = (int) client.getDictionary(dictionaryKey).getData()
-            + base;
+    dictionaryKey.setType(DictionaryKeyType.SIZE);
+    int size = client.getDictionary(dictionaryKey).getDictionaryValue() + base;
     return size;
   }
 }

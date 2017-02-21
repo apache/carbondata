@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
@@ -30,6 +31,7 @@ import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryKeyType;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -69,18 +71,17 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
       if (CarbonUtil.isFileExistsForGivenColumn(storePath, identifier)) {
         dictionary = cache.get(identifier);
       }
-      String threadNo = "initial";
       DictionaryKey dictionaryKey = new DictionaryKey();
       dictionaryKey.setColumnName(dataField.getColumn().getColName());
       dictionaryKey.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
-      dictionaryKey.setThreadNo(threadNo);
+      dictionaryKey.setThreadNo(Long.MAX_VALUE);
       // for table initialization
-      dictionaryKey.setType("TABLE_INTIALIZATION");
+      dictionaryKey.setType(DictionaryKeyType.TABLE_INTIALIZATION);
       dictionaryKey.setData("0");
       client.getDictionary(dictionaryKey);
-      Map<Object, Integer> localCache = new HashMap<>();
+      Map<Object, Integer> localCache = new ConcurrentHashMap<>();
       // for generate dictionary
-      dictionaryKey.setType("DICTIONARY_GENERATION");
+      dictionaryKey.setType(DictionaryKeyType.DICT_GENERATION);
       dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,
               dictionaryKey, localCache);
     } else {

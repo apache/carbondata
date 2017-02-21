@@ -16,12 +16,12 @@
  */
 package org.apache.carbondata.core.dictionary.generator.key;
 
-import java.io.Serializable;
+import io.netty.buffer.ByteBuf;
 
 /**
  * Dictionary key to generate dictionary
  */
-public class DictionaryKey implements Serializable {
+public class DictionaryKey {
 
   /**
    * tableUniqueName
@@ -36,17 +36,85 @@ public class DictionaryKey implements Serializable {
   /**
    * message data
    */
-  private Object data;
+  private String data;
+
+  /**
+   * Dictionary Value
+   */
+  private int dictionaryValue = -1;
 
   /**
    * message type
    */
-  private String type;
+  private DictionaryKeyType type;
 
   /**
    * dictionary client thread no
    */
-  private String threadNo;
+  private long threadNo;
+
+  public void readData(ByteBuf byteBuf) {
+    byte[] tableBytes = new byte[byteBuf.readInt()];
+    byteBuf.readBytes(tableBytes);
+    tableUniqueName = new String(tableBytes);
+
+    byte[] colBytes = new byte[byteBuf.readInt()];
+    byteBuf.readBytes(colBytes);
+    columnName = new String(colBytes);
+
+    threadNo = byteBuf.readLong();
+
+    byte typeByte = byteBuf.readByte();
+    type = getKeyType(typeByte);
+
+    byte dataType = byteBuf.readByte();
+    if (dataType == 0) {
+      dictionaryValue = byteBuf.readInt();
+    } else {
+      byte[] dataBytes = new byte[byteBuf.readInt()];
+      byteBuf.readBytes(dataBytes);
+      data = new String(dataBytes);
+    }
+  }
+
+  public void writeData(ByteBuf byteBuf) {
+    byte[] tableBytes = tableUniqueName.getBytes();
+    byteBuf.writeInt(tableBytes.length);
+    byteBuf.writeBytes(tableBytes);
+
+    byte[] colBytes = columnName.getBytes();
+    byteBuf.writeInt(colBytes.length);
+    byteBuf.writeBytes(colBytes);
+
+    byteBuf.writeLong(threadNo);
+
+    byteBuf.writeByte(type.getType());
+
+    if (dictionaryValue > 0) {
+      byteBuf.writeByte(0);
+      byteBuf.writeInt(dictionaryValue);
+    } else {
+      byteBuf.writeByte(1);
+      byte[] dataBytes = data.getBytes();
+      byteBuf.writeInt(dataBytes.length);
+      byteBuf.writeBytes(dataBytes);
+    }
+  }
+
+  private DictionaryKeyType getKeyType(byte type) {
+    switch (type) {
+      case 1 :
+        return DictionaryKeyType.DICT_GENERATION;
+      case 2 :
+        return DictionaryKeyType.TABLE_INTIALIZATION;
+      case 3 :
+        return DictionaryKeyType.SIZE;
+      case 4 :
+        return DictionaryKeyType.WRITE_DICTIONARY;
+      default:
+        return DictionaryKeyType.DICT_GENERATION;
+    }
+  }
 
   public String getTableUniqueName() {
     return tableUniqueName;
@@ -56,27 +124,27 @@ public class DictionaryKey implements Serializable {
     return columnName;
   }
 
-  public Object getData() {
+  public String getData() {
     return data;
   }
 
-  public void setData(Object data) {
+  public void setData(String data) {
     this.data = data;
   }
 
-  public void setThreadNo(String threadNo) {
+  public void setThreadNo(long threadNo) {
     this.threadNo = threadNo;
   }
 
-  public String getThreadNo() {
+  public long getThreadNo() {
     return this.threadNo;
   }
 
-  public String getType() {
+  public DictionaryKeyType getType() {
     return type;
   }
 
-  public void setType(String type) {
+  public void setType(DictionaryKeyType type) {
     this.type = type;
   }
 
@@ -86,5 +154,13 @@ public class DictionaryKey implements Serializable {
 
   public void setColumnName(String columnName) {
     this.columnName = columnName;
+  }
+
+  public int getDictionaryValue() {
+    return dictionaryValue;
+  }
+
+  public void setDictionaryValue(int dictionaryValue) {
+    this.dictionaryValue = dictionaryValue;
   }
 }

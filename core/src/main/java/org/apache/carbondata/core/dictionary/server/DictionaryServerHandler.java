@@ -20,18 +20,18 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.ServerDictionaryGenerator;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
-import org.apache.carbondata.core.dictionary.generator.key.KryoRegister;
 
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelHandler;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 
 /**
  * Handler for Dictionary server.
  */
-public class DictionaryServerHandler extends SimpleChannelHandler {
+@ChannelHandler.Sharable
+public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
 
   private static final LogService LOGGER =
           LogServiceFactory.getLogService(DictionaryServerHandler.class.getName());
@@ -42,45 +42,50 @@ public class DictionaryServerHandler extends SimpleChannelHandler {
   private ServerDictionaryGenerator generatorForServer = new ServerDictionaryGenerator();
 
   /**
-   * channel connected
+   * channel registered
    *
    * @param ctx
-   * @param e
    * @throws Exception
    */
-  public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-    LOGGER.audit("Connected " + ctx.getHandler());
+  public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+    LOGGER.audit("Registered " + ctx);
+    super.channelRegistered(ctx);
   }
 
   /**
    * receive message and handle
    *
    * @param ctx
-   * @param e
+   * @param msg
    * @throws Exception
    */
-  @Override public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
+  protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg)
       throws Exception {
-    byte[] request = (byte[]) e.getMessage();
-    DictionaryKey key = KryoRegister.deserialize(request);
+    DictionaryKey key = new DictionaryKey();
+    msg.resetReaderIndex();
+    key.readData(msg);
+    msg.release();
     int outPut = processMessage(key);
-    key.setData(outPut);
+    key.setDictionaryValue(outPut);
     // Send back the response
-    byte[] response = KryoRegister.serialize(key);
-    ctx.getChannel().write(response);
-    super.messageReceived(ctx, e);
+    ByteBuf buffer = Unpooled.buffer();
+    key.writeData(buffer);
+    ctx.writeAndFlush(buffer);
+  }
+
+  @Override public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    channelRead0(ctx, (ByteBuf) msg);
   }
 
   /**
    * handle exceptions
    *
    * @param ctx
-   * @param e
+   * @param cause
    */
-  @Override public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-    LOGGER.error("exceptionCaught");
-    e.getCause().printStackTrace();
-    ctx.getChannel().close();
+  @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    LOGGER.error(cause, "exceptionCaught");
+    ctx.close();
   }
 
   /**
@@ -90,16 +95,16 @@ public class DictionaryServerHandler extends SimpleChannelHandler {
    * @return
    * @throws Exception
    */
-  public Integer processMessage(DictionaryKey key) throws Exception {
+  public int processMessage(DictionaryKey key) throws Exception {
     switch (key.getType()) {
-      case "DICTIONARY_GENERATION":
+      case DICT_GENERATION :
         return generatorForServer.generateKey(key);
-      case "TABLE_INTIALIZATION":
+      case TABLE_INTIALIZATION :
         generatorForServer.initializeGeneratorForTable(key);
         return 0;
-      case "SIZE":
+      case SIZE :
         return generatorForServer.size(key);
-      case "WRITE_DICTIONARY":
+      case WRITE_DICTIONARY :
         generatorForServer.writeDictionaryData();
         return 0;
       default:

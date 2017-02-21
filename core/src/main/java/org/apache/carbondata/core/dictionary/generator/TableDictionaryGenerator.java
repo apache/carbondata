@@ -65,7 +65,7 @@ public class TableDictionaryGenerator
 
     DictionaryGenerator<Integer, String> generator =
             columnMap.get(dimension.getColumnId());
-    return generator.generateKey(value.getData().toString());
+    return generator.generateKey(value.getData());
   }
 
   public Integer size(DictionaryKey key) {
