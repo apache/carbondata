@@ -32,7 +32,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.devapi.DictionaryGenerator;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -42,7 +42,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
  * Dictionary generation for table.
  */
 public class TableDictionaryGenerator
-    implements DictionaryGenerator<Integer, DictionaryKey>, DictionaryWriter {
+    implements DictionaryGenerator<Integer, DictionaryMessage>, DictionaryWriter {
 
   private static final LogService LOGGER =
           LogServiceFactory.getLogService(TableDictionaryGenerator.class.getName());
@@ -57,7 +57,9 @@ public class TableDictionaryGenerator
             new IncrementalColumnDictionaryGenerator(dimension, 1));
   }
 
-  @Override public Integer generateKey(DictionaryKey value) throws DictionaryGenerationException {
+  @Override
+  public Integer generateKey(DictionaryMessage value)
+      throws DictionaryGenerationException {
     CarbonMetadata metadata = CarbonMetadata.getInstance();
     CarbonTable carbonTable = metadata.getCarbonTable(value.getTableUniqueName());
     CarbonDimension dimension = carbonTable.getPrimitiveDimensionByName(
@@ -65,10 +67,10 @@ public class TableDictionaryGenerator
 
     DictionaryGenerator<Integer, String> generator =
             columnMap.get(dimension.getColumnId());
-    return generator.generateKey(value.getData().toString());
+    return generator.generateKey(value.getData());
   }
 
-  public Integer size(DictionaryKey key) {
+  public Integer size(DictionaryMessage key) {
     CarbonMetadata metadata = CarbonMetadata.getInstance();
     CarbonTable carbonTable = metadata.getCarbonTable(key.getTableUniqueName());
     CarbonDimension dimension = carbonTable.getPrimitiveDimensionByName(
