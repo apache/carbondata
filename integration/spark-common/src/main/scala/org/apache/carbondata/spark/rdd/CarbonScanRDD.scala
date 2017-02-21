@@ -116,7 +116,8 @@ class CarbonScanRDD(
           i += 1
           result.add(partition)
         }
-      } else {
+      } else if (sparkContext.getConf.contains("spark.carbon.custom.distribution") &&
+                 sparkContext.getConf.getBoolean("spark.carbon.custom.distribution", false)) {
         // create a list of block based on split
         val blockList = splits.asScala.map(_.asInstanceOf[Distributable])
 
@@ -141,6 +142,15 @@ class CarbonScanRDD(
           }
         }
         noOfNodes = nodeBlockMapping.size
+      } else {
+        splits.asScala.zipWithIndex.foreach { splitWithIndex =>
+          val multiBlockSplit =
+            new CarbonMultiBlockSplit(identifier,
+              Seq(splitWithIndex._1.asInstanceOf[CarbonInputSplit]).asJava,
+              splitWithIndex._1.getLocations)
+          val partition = new CarbonSparkPartition(id, splitWithIndex._2, multiBlockSplit)
+          result.add(partition)
+        }
       }
 
       noOfBlocks = splits.size
