@@ -17,10 +17,13 @@
 
 package org.apache.spark.util
 
+import java.io.File
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.etl.DataLoadingException
 
 object FileUtils {
@@ -91,4 +94,24 @@ object FileUtils {
     }
   }
 
+  /*
+   * The store location of carbon comes from three places:
+   * 1. default location path in code(../carbon.store)
+   * 2. configurate "carbon.storelocation" in carbon.properties
+   * 3. pass the location as the parameter
+   * The priority is low to high.
+   */
+  def getHighestPriorityStorePath(storePathParameter: String): String = {
+    val storePathDefaultValue =
+      new File(CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL).getCanonicalPath
+    val storePathProperties = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.STORE_LOCATION)
+    if (!storePathParameter.equals(storePathDefaultValue)) {
+      storePathParameter
+    } else if (null != storePathProperties) {
+      storePathProperties
+    } else {
+      storePathDefaultValue
+    }
+  }
 }

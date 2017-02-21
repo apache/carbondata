@@ -24,6 +24,7 @@ import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
 import org.apache.spark.sql.hive.CarbonSessionState
 import org.apache.spark.sql.internal.{SessionState, SharedState}
+import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -141,8 +142,9 @@ object CarbonSession {
           sc
         }
 
+        val highestPriorityStorePath = FileUtils.getHighestPriorityStorePath(storePath)
         CarbonProperties.getInstance()
-          .addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
+          .addProperty(CarbonCommonConstants.STORE_LOCATION, highestPriorityStorePath)
         session = new CarbonSession(sparkContext)
         options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
         SparkSession.setDefaultSession(session)

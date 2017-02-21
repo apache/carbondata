@@ -30,6 +30,7 @@ import org.apache.spark.sql.execution.ExtractPythonUDFs
 import org.apache.spark.sql.execution.datasources.{PreInsertCastAndRename, PreWriteCheck}
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.optimizer.CarbonOptimizer
+import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -66,9 +67,10 @@ class CarbonContext(
 
   @transient
   override lazy val catalog = {
+    val highestPriorityStorePath = FileUtils.getHighestPriorityStorePath(storePath)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
-    new CarbonMetastore(this, storePath, metadataHive, queryId) with OverrideCatalog
+      .addProperty(CarbonCommonConstants.STORE_LOCATION, highestPriorityStorePath)
+    new CarbonMetastore(this, highestPriorityStorePath, metadataHive, queryId) with OverrideCatalog
   }
 
   @transient
