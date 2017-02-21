@@ -190,6 +190,7 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
   public void close() {
     if (!closed) {
       super.close();
+      createBadRecordLogger().closeStreams();
       if (converters != null) {
         for (RowConverter converter : converters) {
           converter.finish();

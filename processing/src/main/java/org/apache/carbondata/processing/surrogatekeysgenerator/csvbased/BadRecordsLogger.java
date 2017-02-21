@@ -179,7 +179,6 @@ public class BadRecordsLogger {
 
       }
       bufferedWriter.write(logStrings.toString());
-      bufferedWriter.flush();
       bufferedWriter.newLine();
     } catch (FileNotFoundException e) {
       LOGGER.error("Bad Log Files not found");
@@ -222,7 +221,6 @@ public class BadRecordsLogger {
 
       }
       bufferedCSVWriter.write(logStrings.toString());
-      bufferedCSVWriter.flush();
       bufferedCSVWriter.newLine();
     } catch (FileNotFoundException e) {
       LOGGER.error("Bad record csv Files not found");

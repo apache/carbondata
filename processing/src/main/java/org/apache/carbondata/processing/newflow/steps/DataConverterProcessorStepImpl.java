@@ -85,7 +85,6 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
         }
         return childIter.hasNext();
       }
-
       @Override public CarbonRowBatch next() {
         return processRowBatch(childIter.next(), localConverter);
       }
@@ -163,6 +162,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
   @Override
   public void close() {
     if (!closed) {
+      createBadRecordLogger().closeStreams();
       super.close();
       if (converters != null) {
         for (RowConverter converter : converters) {
