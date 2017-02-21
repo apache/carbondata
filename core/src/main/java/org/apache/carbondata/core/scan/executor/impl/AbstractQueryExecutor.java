@@ -59,10 +59,11 @@ import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.StatisticObject;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
-
 import org.apache.commons.lang3.ArrayUtils;
 
 /**
@@ -84,6 +85,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * and give the result
    */
   protected CarbonIterator queryIterator;
+  
+  private StatisticObject statisticObject;
+  
+  private String queryId;
 
   public AbstractQueryExecutor() {
     queryProperties = new QueryExecutorProperties();
@@ -100,10 +105,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     StandardLogService.setThreadName(StandardLogService.getPartitionID(
         queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName()),
         queryModel.getQueryId());
+    queryId = queryModel.getQueryId();
+    statisticObject = new StatisticObject();
     LOGGER.info("Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
         .getCarbonTableIdentifier().getTableName());
     // add executor service for query execution
-    queryProperties.executorService = Executors.newFixedThreadPool(1);
+    queryProperties.executorService = Executors.newCachedThreadPool();
     // Initializing statistics list to record the query statistics
     // creating copy on write to handle concurrent scenario
     queryProperties.queryStatisticsRecorder =
@@ -250,6 +257,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       AbstractIndex blockIndex, int startBlockletIndex, int numberOfBlockletToScan, String filePath)
       throws QueryExecutionException {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
+    blockExecutionInfo.setStatisticObject(statisticObject);
+//    statisticObject.setScanBlockNumber(1);
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
     List<CarbonDimension> tableBlockDimensions = segmentProperties.getDimensions();
     KeyGenerator blockKeyGenerator = segmentProperties.getDimensionKeyGenerator();
@@ -335,21 +344,25 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     int[] dimensionsBlockIndexes = QueryUtil.getDimensionsBlockIndexes(updatedQueryDimension,
         segmentProperties.getDimensionOrdinalToBlockMapping(), expressionDimensions,
         queryProperties.complexFilterDimension, allProjectionListDimensionIdexes);
+    int numberOfCOlumnInOneIO = Integer.parseInt(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
+            CarbonCommonConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE));
     if (dimensionsBlockIndexes.length > 0) {
       numberOfElementToConsider = dimensionsBlockIndexes[dimensionsBlockIndexes.length - 1]
           == segmentProperties.getBlockTodimensionOrdinalMapping().size() - 1 ?
           dimensionsBlockIndexes.length - 1 :
           dimensionsBlockIndexes.length;
       blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(CarbonUtil
-          .getRangeIndex(dimensionsBlockIndexes, numberOfElementToConsider,
-              CarbonCommonConstants.NUMBER_OF_COLUMN_READ_IN_IO));
+          .getRangeIndex(dimensionsBlockIndexes, numberOfElementToConsider,numberOfCOlumnInOneIO));
     } else {
       blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(new int[0][0]);
     }
-
+    // list of measures to be projected
+    List<Integer> allProjectionListMeasureIdexes = new ArrayList<>();
     int[] measureBlockIndexes = QueryUtil
         .getMeasureBlockIndexes(queryModel.getQueryMeasures(), expressionMeasures,
-            segmentProperties.getMeasuresOrdinalToBlockMapping(), queryProperties.filterMeasures);
+            segmentProperties.getMeasuresOrdinalToBlockMapping(), queryProperties.filterMeasures,
+            allProjectionListMeasureIdexes);
     if (measureBlockIndexes.length > 0) {
 
       numberOfElementToConsider = measureBlockIndexes[measureBlockIndexes.length - 1]
@@ -358,11 +371,18 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           measureBlockIndexes.length;
       // setting all the measure chunk indexes to be read from file
       blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(CarbonUtil
-          .getRangeIndex(measureBlockIndexes, numberOfElementToConsider,
-              CarbonCommonConstants.NUMBER_OF_COLUMN_READ_IN_IO));
+          .getRangeIndex(measureBlockIndexes, numberOfElementToConsider,numberOfCOlumnInOneIO));
     } else {
       blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(new int[0][0]);
     }
+    // setting the indexes of list of dimension in projection list
+    blockExecutionInfo.setProjectionListDimensionIndexes(ArrayUtils.toPrimitive(
+        allProjectionListDimensionIdexes
+            .toArray(new Integer[allProjectionListDimensionIdexes.size()])));
+    // setting the indexes of list of measures in projection list
+    blockExecutionInfo.setProjectionListMeasureIndexes(ArrayUtils.toPrimitive(
+        allProjectionListMeasureIdexes
+            .toArray(new Integer[allProjectionListMeasureIdexes.size()])));
     // setting the key structure info which will be required
     // to update the older block key with new key generator
     blockExecutionInfo.setKeyStructureInfo(queryProperties.keyStructureInfo);
@@ -486,6 +506,18 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         throw new QueryExecutionException(e);
       }
     }
+//    LOGGER.info("************ Time taken to Scan for queryId: " + queryId + ": " + statisticObject.getScanTime());
+//    LOGGER.info("************ Time taken to read for queryId: " + queryId + ": " + statisticObject.getReadTime());
+//    LOGGER.info("************ Time taken to prepare result for queryId: " + queryId + ": " + statisticObject.getResultPrpTime());
+//    LOGGER.info("************ Blocklet Processing time for queryId: " + queryId + ": " + statisticObject.getBlockletProcessingTime());
+//    LOGGER.info("************ Number Of Blocklet Scan for queryId: " + queryId + ": " + statisticObject.getScanBlockletNumber());
+//    LOGGER.info("************ Number Of Block Scan for queryId: " + queryId + ": " + statisticObject.getScanBlockNumber());
+//    LOGGER.info("************ Time taken to snappy uncompression for queryId: " + queryId + ": " + (statisticObject.getTimeTakenForSnappyUnCompression()/1000000));
+//    LOGGER.info("************ Time taken for inverted index for queryId: " + queryId + ": " + (statisticObject.getTimeTakenForInvertedIndex()/1000000));
+//    LOGGER.info("************ Time taken for rle uncompression for queryId: " + queryId + ": " + (statisticObject.getTimeTakenForRle()/1000000));
+//    LOGGER.info("************ Time taken for value uncompression for queryId: " + queryId + ": " + (statisticObject.getTimeTakenForValueCompression()/1000000));
+//    LOGGER.info("************ Time taken for assigning the object for queryId: " + queryId + ": " + (statisticObject.getTimeTakenForAllocatingTheObject()/1000000));
+
   }
 
 }

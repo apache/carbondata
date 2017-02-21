@@ -108,27 +108,43 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
 
   @Override public void collectVectorBatch(AbstractScannedResult scannedResult,
       CarbonColumnarBatch columnarBatch) {
-    int rowCounter = scannedResult.getRowCounter();
-    int availableRows = scannedResult.numberOfOutputRows() - rowCounter;
-    int requiredRows = columnarBatch.getBatchSize() - columnarBatch.getActualSize();
-    requiredRows = Math.min(requiredRows, availableRows);
-    if (requiredRows < 1) {
-      return;
-    }
-    for (int i = 0; i < allColumnInfo.length; i++) {
-      allColumnInfo[i].size = requiredRows;
-      allColumnInfo[i].offset = rowCounter;
-      allColumnInfo[i].vectorOffset = columnarBatch.getRowCounter();
-      allColumnInfo[i].vector = columnarBatch.columnVectors[i];
-    }
+    long startTime= System.currentTimeMillis();
+    int numberOfPages = scannedResult.numberOfpages();
+    while (scannedResult.getCurrentPageCounter() < numberOfPages) {
+      int currentPageRowCount = scannedResult.getCurrentPageRowCount();
+      if (currentPageRowCount == 0) {
+        scannedResult.incrementPageCounter();
+        continue;
+      }
+      int rowCounter = scannedResult.getRowCounter();
+      int availableRows = currentPageRowCount - rowCounter;
+      int requiredRows = columnarBatch.getBatchSize() - columnarBatch.getActualSize();
+      requiredRows = Math.min(requiredRows, availableRows);
+      if (requiredRows < 1) {
+        return;
+      }
+      for (int i = 0; i < allColumnInfo.length; i++) {
+        allColumnInfo[i].size = requiredRows;
+        allColumnInfo[i].offset = rowCounter;
+        allColumnInfo[i].vectorOffset = columnarBatch.getRowCounter();
+        allColumnInfo[i].vector = columnarBatch.columnVectors[i];
+      }
 
-    scannedResult.fillColumnarDictionaryBatch(dictionaryInfo);
-    scannedResult.fillColumnarNoDictionaryBatch(noDictionaryInfo);
-    scannedResult.fillColumnarMeasureBatch(measureInfo, measuresOrdinal);
-    scannedResult.fillColumnarComplexBatch(complexInfo);
-    scannedResult.setRowCounter(rowCounter + requiredRows);
-    columnarBatch.setActualSize(columnarBatch.getActualSize() + requiredRows);
-    columnarBatch.setRowCounter(columnarBatch.getRowCounter() + requiredRows);
+      scannedResult.fillColumnarDictionaryBatch(dictionaryInfo);
+      scannedResult.fillColumnarNoDictionaryBatch(noDictionaryInfo);
+      scannedResult.fillColumnarMeasureBatch(measureInfo, measuresOrdinal);
+      scannedResult.fillColumnarComplexBatch(complexInfo);
+      // it means fetched all data out of page so increment the page counter
+      if (availableRows == requiredRows) {
+        scannedResult.incrementPageCounter();
+      } else {
+        // Or set the row counter.
+        scannedResult.setRowCounter(rowCounter + requiredRows);
+      }
+      columnarBatch.setActualSize(columnarBatch.getActualSize() + requiredRows);
+      columnarBatch.setRowCounter(columnarBatch.getRowCounter() + requiredRows);
+    }
+    tableBlockExecutionInfos.getStatisticObject().setResultPrpTime((System.currentTimeMillis()-startTime));
   }
 
 }

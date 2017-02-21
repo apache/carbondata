@@ -28,7 +28,7 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
    * Size of each value
    */
   private int columnValueSize;
-
+  
   public SafeFixedLengthDimensionDataChunkStore(boolean isInvertedIndex, int columnValueSize) {
     super(isInvertedIndex);
     this.columnValueSize = columnValueSize;
@@ -66,14 +66,45 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
     }
     // below part is to convert the byte array to surrogate value
     int startOffsetOfData = index * columnValueSize;
-    int surrogate = 0;
-    for (int i = 0; i < columnValueSize; i++) {
-      surrogate <<= 8;
-      surrogate ^= data[startOffsetOfData] & 0xFF;
-      startOffsetOfData++;
-    }
-    return surrogate;
+    return getSurrogateInternal(startOffsetOfData);
   }
+
+  private int getSurrogateInternal(int startOffsetOfData) {
+    int surrogate = 0;
+    switch (columnValueSize) {
+      case 1:
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData] & 0xFF;
+        return surrogate;
+      case 2:
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData+1] & 0xFF;
+        return surrogate;
+      case 3:
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData+1] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData+2] & 0xFF;
+        return surrogate;
+      case 4:
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData+1] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData+2] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData+3] & 0xFF;
+        return surrogate;
+      default:
+        throw new IllegalArgumentException("Int cannot me more than 4 bytes");
+    }
+  }
+
 
   /**
    * Below method will be used to fill the row values to buffer array

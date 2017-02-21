@@ -30,11 +30,11 @@ import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.NodeHolder;
 import org.apache.carbondata.core.writer.CarbonFooterWriter;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.FileFooter;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
-import org.apache.carbondata.processing.store.writer.NodeHolder;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.store.writer.v1.CarbonFactDataWriterImplV1;
 
@@ -265,7 +265,7 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
   /**
    * This method will write metadata at the end of file file format in thrift format
    */
-  protected void writeBlockletInfoToFile(List<BlockletInfoColumnar> infoList, FileChannel channel,
+  protected void writeBlockletInfoToFile(FileChannel channel,
       String filePath) throws CarbonDataWriterException {
     try {
       // get the current file position
@@ -273,10 +273,10 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
       CarbonFooterWriter writer = new CarbonFooterWriter(filePath);
       // get thrift file footer instance
       FileFooter convertFileMeta = CarbonMetadataUtil
-          .convertFilterFooter2(infoList, localCardinality, thriftColumnSchemaList,
+          .convertFilterFooter2(blockletInfoList, localCardinality, thriftColumnSchemaList,
               dataChunksOffsets, dataChunksLength);
       // fill the carbon index details
-      fillBlockIndexInfoDetails(infoList, convertFileMeta.getNum_rows(), filePath, currentPosition);
+      fillBlockIndexInfoDetails(convertFileMeta.getNum_rows(), filePath, currentPosition);
       // write the footer
       writer.writeFooter(convertFileMeta, currentPosition);
     } catch (IOException e) {

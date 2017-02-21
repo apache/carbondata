@@ -24,8 +24,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.IndexKey;
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 
 /**
  * No leaf node of a b+tree class which will keep the matadata(start key) of the
@@ -170,7 +170,7 @@ public class BTreeNonLeafNode implements BTreeNode {
    * @param blockIndexes indexes of the blocks need to be read
    * @return dimension data chunks
    */
-  @Override public DimensionColumnDataChunk[] getDimensionChunks(FileHolder fileReader,
+  @Override public DimensionRawColumnChunk[] getDimensionChunks(FileHolder fileReader,
       int[][] blockIndexes) {
 
     // operation of getting the dimension chunks is not supported as its a
@@ -187,7 +187,7 @@ public class BTreeNonLeafNode implements BTreeNode {
    * @param fileReader file reader to read the chunk from file
    * @return dimension data chunk
    */
-  @Override public DimensionColumnDataChunk getDimensionChunk(FileHolder fileReader,
+  @Override public DimensionRawColumnChunk getDimensionChunk(FileHolder fileReader,
       int blockIndexes) {
     // operation of getting the dimension chunk is not supported as its a
     // non leaf node
@@ -204,7 +204,7 @@ public class BTreeNonLeafNode implements BTreeNode {
    * @param blockIndexes block indexes to be read from file
    * @return measure column data chunk
    */
-  @Override public MeasureColumnDataChunk[] getMeasureChunks(FileHolder fileReader,
+  @Override public MeasureRawColumnChunk[] getMeasureChunks(FileHolder fileReader,
       int[][] blockIndexes) {
     // operation of getting the measure chunk is not supported as its a non
     // leaf node
@@ -222,7 +222,7 @@ public class BTreeNonLeafNode implements BTreeNode {
    * @return measure data chunk
    */
 
-  @Override public MeasureColumnDataChunk getMeasureChunk(FileHolder fileReader, int blockIndex) {
+  @Override public MeasureRawColumnChunk getMeasureChunk(FileHolder fileReader, int blockIndex) {
     // operation of getting the measure chunk is not supported as its a non
     // leaf node
     // and in case of B+Tree data will be stored only in leaf node and

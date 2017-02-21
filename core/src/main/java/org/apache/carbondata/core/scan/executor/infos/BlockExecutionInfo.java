@@ -28,6 +28,7 @@ import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
+import org.apache.carbondata.core.util.StatisticObject;
 
 /**
  * Below class will have all the properties which needed during query execution
@@ -96,6 +97,16 @@ public class BlockExecutionInfo {
    * will be used to read the measure block from file
    */
   private int[][] allSelectedMeasureBlocksIndexes;
+
+  /**
+   * list of dimension present in the projection
+   */
+  private int[] projectionListDimensionIndexes;
+
+  /**
+   * list of dimension present in the projection
+   */
+  private int[] projectionListMeasureIndexes;
 
   /**
    * this will be used to update the older block fixed length keys with the
@@ -204,6 +215,8 @@ public class BlockExecutionInfo {
    * absolute table identifier
    */
   private AbsoluteTableIdentifier absoluteTableIdentifier;
+  
+  private StatisticObject statisticObject;
 
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
     return absoluteTableIdentifier;
@@ -598,5 +611,29 @@ public class BlockExecutionInfo {
 
   public void setBlockId(String blockId) {
     this.blockId = blockId;
+  }
+
+  public int[] getProjectionListDimensionIndexes() {
+    return projectionListDimensionIndexes;
+  }
+
+  public void setProjectionListDimensionIndexes(int[] projectionListDimensionIndexes) {
+    this.projectionListDimensionIndexes = projectionListDimensionIndexes;
+  }
+
+  public int[] getProjectionListMeasureIndexes() {
+    return projectionListMeasureIndexes;
+  }
+
+  public void setProjectionListMeasureIndexes(int[] projectionListMeasureIndexes) {
+    this.projectionListMeasureIndexes = projectionListMeasureIndexes;
+  }
+
+  public StatisticObject getStatisticObject() {
+    return statisticObject;
+  }
+
+  public void setStatisticObject(StatisticObject statisticObject) {
+    this.statisticObject = statisticObject;
   }
 }

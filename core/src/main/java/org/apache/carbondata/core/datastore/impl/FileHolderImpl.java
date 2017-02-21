@@ -28,12 +28,15 @@ import java.util.Map.Entry;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.util.StatisticObject;
 
 public class FileHolderImpl implements FileHolder {
   /**
    * cache to hold filename and its stream
    */
   private Map<String, FileChannel> fileNameAndStreamCache;
+  
+  private StatisticObject statisticObject;
 
   /**
    * FileHolderImpl Constructor
@@ -191,6 +194,25 @@ public class FileHolderImpl implements FileHolder {
     FileChannel fileChannel = updateCache(filePath);
     ByteBuffer byteBffer = read(fileChannel, CarbonCommonConstants.LONG_SIZE_IN_BYTE, offset);
     return byteBffer.getLong();
+  }
+  
+  @Override
+  public void readByteBuffer(String filePath, ByteBuffer byteBuffer,
+      long offset, int length) throws IOException {
+    FileChannel fileChannel = updateCache(filePath);
+    fileChannel.position(offset);
+    fileChannel.read(byteBuffer);
+    byteBuffer.rewind();
+  }
+  
+  @Override
+  public void setStatistic(StatisticObject statisticObject) {
+    this.statisticObject=statisticObject;
+  }
+
+  @Override
+  public StatisticObject getStatisticObject() {
+    return this.statisticObject;
   }
 
 }

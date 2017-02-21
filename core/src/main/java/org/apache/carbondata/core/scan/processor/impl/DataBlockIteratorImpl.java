@@ -18,6 +18,7 @@ package org.apache.carbondata.core.scan.processor.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
@@ -37,8 +38,8 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
    */
   public DataBlockIteratorImpl(BlockExecutionInfo blockExecutionInfo, FileHolder fileReader,
       int batchSize, QueryStatisticsModel queryStatisticsModel,
-      BlocksChunkHolder blockChunkHolder) {
-    super(blockExecutionInfo, fileReader, batchSize, queryStatisticsModel, blockChunkHolder);
+      BlocksChunkHolder blockChunkHolder, ExecutorService executorService) {
+    super(blockExecutionInfo, fileReader, batchSize, queryStatisticsModel, executorService);
   }
 
   /**
@@ -64,9 +65,6 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
   public void processNextBatch(CarbonColumnarBatch columnarBatch) {
     if (updateScanner()) {
       this.scannerResultAggregator.collectVectorBatch(scannedResult, columnarBatch);
-      while (columnarBatch.getActualSize() < columnarBatch.getBatchSize() && updateScanner()) {
-        this.scannerResultAggregator.collectVectorBatch(scannedResult, columnarBatch);
-      }
     }
   }
 

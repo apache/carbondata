@@ -21,6 +21,7 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
+import org.apache.carbondata.core.util.BitSetGroup;
 
 public interface FilterExecuter {
 
@@ -30,7 +31,7 @@ public interface FilterExecuter {
    * @return
    * @throws FilterUnsupportedException
    */
-  BitSet applyFilter(BlocksChunkHolder blocksChunkHolder)
+  BitSetGroup applyFilter(BlocksChunkHolder blocksChunkHolder)
       throws FilterUnsupportedException, IOException;
 
   /**
@@ -42,4 +43,10 @@ public interface FilterExecuter {
    * @return BitSet
    */
   BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue);
+
+  /**
+   * It just reads necessary block for filter executor, it does not uncompress the data.
+   * @param blockChunkHolder
+   */
+  void readBlocks(BlocksChunkHolder blockChunkHolder)throws IOException;
 }

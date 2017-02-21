@@ -16,12 +16,14 @@
  */
 package org.apache.carbondata.core.scan.filter.executer;
 
+import java.io.IOException;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
+import org.apache.carbondata.core.util.BitSetGroup;
 
 public class RestructureFilterExecuterImpl implements FilterExecuter {
 
@@ -35,18 +37,18 @@ public class RestructureFilterExecuterImpl implements FilterExecuter {
             dimColumnResolvedFilterInfo.getDimension(), dimColumnExecuterInfo);
   }
 
-  @Override public BitSet applyFilter(BlocksChunkHolder blocksChunkHolder) {
-    BitSet bitSet = new BitSet(blocksChunkHolder.getDataBlock().nodeSize());
-    byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-    if (null != filterValues && filterValues.length > 0) {
-      bitSet.set(0, blocksChunkHolder.getDataBlock().nodeSize());
-    }
-    return bitSet;
+  @Override public BitSetGroup applyFilter(BlocksChunkHolder blocksChunkHolder) {
+    // TODO find out what is this for?
+    return new BitSetGroup(0);
   }
 
   @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
     BitSet bitSet = new BitSet(1);
     bitSet.set(0);
     return bitSet;
+  }
+
+  @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
+    // TODO
   }
 }

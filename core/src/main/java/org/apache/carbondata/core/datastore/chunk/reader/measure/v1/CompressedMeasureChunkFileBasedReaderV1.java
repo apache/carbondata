@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReader;
 import org.apache.carbondata.core.datastore.compression.ReaderCompressModel;
 import org.apache.carbondata.core.datastore.compression.ValueCompressionHolder;
@@ -59,7 +60,7 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
    * @param blockIndexes blocks to be read
    * @return measure data chunks
    */
-  @Override public MeasureColumnDataChunk[] readMeasureChunks(final FileHolder fileReader,
+  public MeasureColumnDataChunk[] readMeasureChunks(final FileHolder fileReader,
       final int[][] blockIndexes) throws IOException {
     MeasureColumnDataChunk[] datChunk = new MeasureColumnDataChunk[measureColumnChunks.size()];
     for (int i = 0; i < blockIndexes.length; i++) {
@@ -77,7 +78,7 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
    * @param blockIndex block to be read
    * @return measure data chunk
    */
-  @Override public MeasureColumnDataChunk readMeasureChunk(final FileHolder fileReader,
+  public MeasureColumnDataChunk readMeasureChunk(final FileHolder fileReader,
       final int blockIndex) throws IOException {
     ValueEncoderMeta meta = measureColumnChunks.get(blockIndex).getValueEncoderMeta().get(0);
     ReaderCompressModel compressModel = ValueCompressionUtil.getReaderCompressModel(meta);
@@ -103,4 +104,23 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
     return datChunk;
   }
 
+  // TODO implment them
+  @Override
+  public MeasureRawColumnChunk[] readRawMeasureChunks(FileHolder fileReader, int[][] blockIndexes)
+      throws IOException {
+    return new MeasureRawColumnChunk[0];
+  }
+
+  @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int blockIndex)
+      throws IOException {
+    return null;
+  }
+
+  @Override
+  public MeasureColumnDataChunk convertToMeasureChunk(
+      MeasureRawColumnChunk measureRawColumnChunk, int pageNumber)
+      throws IOException {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

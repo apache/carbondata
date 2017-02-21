@@ -19,7 +19,7 @@ package org.apache.carbondata.core.scan.complextypes;
 
 import java.io.IOException;
 
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 
@@ -45,9 +45,10 @@ public class ComplexQueryType {
    * @param rowNumber
    * @param input
    */
-  protected void copyBlockDataChunk(DimensionColumnDataChunk[] dimensionColumnDataChunks,
-      int rowNumber, byte[] input) {
-    byte[] data = dimensionColumnDataChunks[blockIndex].getChunkData(rowNumber);
+  protected void copyBlockDataChunk(DimensionRawColumnChunk[] rawColumnChunks,
+      int rowNumber, int pageNumber, byte[] input) {
+    byte[] data =
+        rawColumnChunks[blockIndex].convertToDimColDataChunk(pageNumber).getChunkData(rowNumber);
     System.arraycopy(data, 0, input, 0, data.length);
   }
 
@@ -55,8 +56,8 @@ public class ComplexQueryType {
    * This method will read the block data chunk from the respective block
    */
   protected void readBlockDataChunk(BlocksChunkHolder blockChunkHolder) throws IOException {
-    if (null == blockChunkHolder.getDimensionDataChunk()[blockIndex]) {
-      blockChunkHolder.getDimensionDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
+    if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
+      blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
           .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
     }
   }

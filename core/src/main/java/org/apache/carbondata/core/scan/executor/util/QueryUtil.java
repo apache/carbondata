@@ -394,10 +394,11 @@ public class QueryUtil {
    */
   public static int[] getMeasureBlockIndexes(List<QueryMeasure> queryMeasures,
       List<CarbonMeasure> expressionMeasure, Map<Integer, Integer> ordinalToBlockIndexMapping,
-      Set<CarbonMeasure> filterMeasures) {
+      Set<CarbonMeasure> filterMeasures, List<Integer> allProjectionListMeasureIdexes) {
     Set<Integer> measureBlockIndex = new HashSet<Integer>();
     Set<Integer> filterMeasureOrdinal = getFilterMeasureOrdinal(filterMeasures);
     for (int i = 0; i < queryMeasures.size(); i++) {
+      allProjectionListMeasureIdexes.add(queryMeasures.get(i).getMeasure().getOrdinal());
       if (!filterMeasureOrdinal.contains(queryMeasures.get(i).getMeasure().getOrdinal())) {
         measureBlockIndex
             .add(ordinalToBlockIndexMapping.get(queryMeasures.get(i).getMeasure().getOrdinal()));

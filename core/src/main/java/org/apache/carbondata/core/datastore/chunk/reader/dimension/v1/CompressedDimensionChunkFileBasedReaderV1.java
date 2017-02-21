@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.ColumnGroupDimensionDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionDataChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.dimension.AbstractChunkReader;
@@ -62,7 +63,7 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
    * @param blockIndexes blocks to be read
    * @return dimension column chunks
    */
-  @Override public DimensionColumnDataChunk[] readDimensionChunks(FileHolder fileReader,
+  public DimensionColumnDataChunk[] readDimensionChunks(FileHolder fileReader,
       int[][] blockIndexes) throws IOException {
     // read the column chunk based on block index and add
     DimensionColumnDataChunk[] dataChunks =
@@ -82,7 +83,7 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
    * @param blockIndex block to be read
    * @return dimension column chunk
    */
-  @Override public DimensionColumnDataChunk readDimensionChunk(FileHolder fileReader,
+  public DimensionColumnDataChunk readDimensionChunk(FileHolder fileReader,
       int blockIndex) throws IOException {
     byte[] dataPage = null;
     int[] invertedIndexes = null;
@@ -140,4 +141,24 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
     return columnDataChunk;
   }
 
+  // TODO implement as per latest interface
+
+  @Override public DimensionRawColumnChunk[] readRawDimensionChunks(FileHolder fileReader,
+      int[][] blockIndexes) throws IOException {
+    return new DimensionRawColumnChunk[0];
+  }
+
+  @Override
+  public DimensionRawColumnChunk readRawDimensionChunk(FileHolder fileReader, int blockIndex)
+      throws IOException {
+    return null;
+  }
+
+  @Override
+  public DimensionColumnDataChunk convertToDimensionChunk(
+      DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber)
+      throws IOException {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

@@ -58,6 +58,12 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
   def apply(plan: LogicalPlan): LogicalPlan = {
     relations = collectCarbonRelation(plan)
     if (relations.nonEmpty && !isOptimized(plan)) {
+      // In case scalar subquery skip the transformation and update the flag.
+      if (relations.exists(_.carbonRelation.isSubquery)) {
+        relations.foreach(p => p.carbonRelation.isSubquery = false)
+        LOGGER.info("Skip CarbonOptimizer for scalar sub query")
+        return plan
+      }
       LOGGER.info("Starting to optimize plan")
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("")
       val queryStatistic = new QueryStatistic()

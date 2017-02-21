@@ -17,13 +17,14 @@
 package org.apache.carbondata.core.datastore.impl;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileHolder;
-
+import org.apache.carbondata.core.util.StatisticObject;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -34,6 +35,8 @@ public class DFSFileHolderImpl implements FileHolder {
    * cache to hold filename and its stream
    */
   private Map<String, FSDataInputStream> fileNameAndStreamCache;
+  
+  private StatisticObject statisticObject;
 
   public DFSFileHolderImpl() {
     this.fileNameAndStreamCache =
@@ -128,5 +131,29 @@ public class DFSFileHolderImpl implements FileHolder {
   @Override public int readInt(String filePath) throws IOException {
     FSDataInputStream fileChannel = updateCache(filePath);
     return fileChannel.readInt();
+  }
+
+  @Override
+  public void readByteBuffer(String filePath, ByteBuffer byteBuffer,
+      long offset, int length) throws IOException {
+//    FSDataInputStream fileChannel = updateCache(filePath);
+//    fileChannel.seek(offset);
+    byte[] readByteArray = readByteArray(filePath, offset, length);
+//    int sizeRead = fileChannel.read(byteBuffer);
+//    while (sizeRead < length) {
+//      sizeRead += fileChannel.read(byteBuffer);
+//    }
+    byteBuffer.put(readByteArray);
+    byteBuffer.rewind();
+  }
+
+  @Override
+  public void setStatistic(StatisticObject statisticObject) {
+    this.statisticObject=statisticObject;
+  }
+
+  @Override
+  public StatisticObject getStatisticObject() {
+    return this.statisticObject;
   }
 }

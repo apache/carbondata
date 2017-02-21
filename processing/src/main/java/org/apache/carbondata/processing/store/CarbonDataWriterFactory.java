@@ -22,6 +22,7 @@ import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
 import org.apache.carbondata.processing.store.writer.v1.CarbonFactDataWriterImplV1;
 import org.apache.carbondata.processing.store.writer.v2.CarbonFactDataWriterImplV2;
+import org.apache.carbondata.processing.store.writer.v3.CarbonFactDataWriterImplV3;
 
 /**
  * Factory class to get the writer instance
@@ -62,8 +63,12 @@ public class CarbonDataWriterFactory {
     switch (version) {
       case V1:
         return new CarbonFactDataWriterImplV1(carbonDataWriterVo);
-      default:
+      case V2:
         return new CarbonFactDataWriterImplV2(carbonDataWriterVo);
+      case V3:
+        return new CarbonFactDataWriterImplV3(carbonDataWriterVo);
+      default:
+        return new CarbonFactDataWriterImplV3(carbonDataWriterVo);
     }
   }
 

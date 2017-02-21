@@ -56,8 +56,11 @@ public class DataFileFooterConverterFactory {
     switch (version) {
       case V1:
         return new DataFileFooterConverter();
-      default:
+      case V2:
         return new DataFileFooterConverter2();
+      case V3:
+      default:
+        return new DataFileFooterConverterV3();
     }
   }
 

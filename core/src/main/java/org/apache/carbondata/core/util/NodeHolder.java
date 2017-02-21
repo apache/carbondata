@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.store.writer;
+package org.apache.carbondata.core.util;
 
 import java.util.BitSet;
 
@@ -104,6 +104,10 @@ public class NodeHolder {
    * column min data
    */
   private byte[][] columnMinData;
+
+  private byte[][] measureColumnMaxData;
+
+  private byte[][] measureColumnMinData;
 
   /**
    * compression model for numbers data block.
@@ -406,5 +410,21 @@ public class NodeHolder {
 
   public void setTotalMeasureArrayLength(int totalMeasureArrayLength) {
     this.totalMeasureArrayLength = totalMeasureArrayLength;
+  }
+
+  public byte[][] getMeasureColumnMaxData() {
+    return measureColumnMaxData;
+  }
+
+  public void setMeasureColumnMaxData(byte[][] measureColumnMaxData) {
+    this.measureColumnMaxData = measureColumnMaxData;
+  }
+
+  public byte[][] getMeasureColumnMinData() {
+    return measureColumnMinData;
+  }
+
+  public void setMeasureColumnMinData(byte[][] measureColumnMinData) {
+    this.measureColumnMinData = measureColumnMinData;
   }
 }
