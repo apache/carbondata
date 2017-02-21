@@ -18,10 +18,8 @@
 package org.apache.carbondata.processing.newflow.converter.impl;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
@@ -53,11 +51,15 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
 
   private String nullFormat;
 
+  private Dictionary dictionary;
+
+  private DictionaryKey dictionaryKey;
+
   public DictionaryFieldConverterImpl(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, String nullFormat, int index,
-      DictionaryClient client, Boolean useOnePass, String storePath)
-      throws IOException {
+      DictionaryClient client, boolean useOnePass, String storePath, boolean tableInitialize,
+      Map<Object, Integer> localCache) throws IOException {
     this.index = index;
     this.carbonDimension = (CarbonDimension) dataField.getColumn();
     this.nullFormat = nullFormat;
@@ -65,21 +67,20 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
             dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType());
 
-    Dictionary dictionary = null;
     // if use one pass, use DictionaryServerClientDictionary
     if (useOnePass) {
       if (CarbonUtil.isFileExistsForGivenColumn(storePath, identifier)) {
         dictionary = cache.get(identifier);
       }
-      DictionaryKey dictionaryKey = new DictionaryKey();
+      dictionaryKey = new DictionaryKey();
       dictionaryKey.setColumnName(dataField.getColumn().getColName());
       dictionaryKey.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
-      dictionaryKey.setThreadNo(Long.MAX_VALUE);
       // for table initialization
       dictionaryKey.setType(DictionaryKeyType.TABLE_INTIALIZATION);
       dictionaryKey.setData("0");
-      client.getDictionary(dictionaryKey);
-      Map<Object, Integer> localCache = new ConcurrentHashMap<>();
+      if (tableInitialize) {
+        client.getDictionary(dictionaryKey);
+      }
       // for generate dictionary
       dictionaryKey.setType(DictionaryKeyType.DICT_GENERATION);
       dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,
@@ -108,4 +109,5 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
   public void fillColumnCardinality(List<Integer> cardinality) {
     cardinality.add(dictionaryGenerator.size());
   }
+
 }

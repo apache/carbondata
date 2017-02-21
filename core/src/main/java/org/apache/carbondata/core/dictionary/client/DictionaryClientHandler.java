@@ -16,9 +16,7 @@
  */
 package org.apache.carbondata.core.dictionary.client;
 
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -26,7 +24,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
@@ -38,7 +35,7 @@ public class DictionaryClientHandler extends ChannelInboundHandlerAdapter {
   private static final LogService LOGGER =
           LogServiceFactory.getLogService(DictionaryClientHandler.class.getName());
 
-  final Map<Long, BlockingQueue<DictionaryKey>> dictKeyQueueMap = new ConcurrentHashMap<>();
+  final BlockingQueue<DictionaryKey> dictKeyQueue = new LinkedBlockingQueue<>();
 
   private ChannelHandlerContext ctx;
 
@@ -47,18 +44,21 @@ public class DictionaryClientHandler extends ChannelInboundHandlerAdapter {
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
     this.ctx = ctx;
-    LOGGER.audit("Registered client " + ctx);
-    super.channelRegistered(ctx);
+    LOGGER.audit("Connected client " + ctx);
+    super.channelActive(ctx);
   }
 
   protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg)
       throws Exception {
-    msg.resetReaderIndex();
-    DictionaryKey key = new DictionaryKey();
-    key.readData(msg);
-    msg.release();
-    BlockingQueue<DictionaryKey> dictKeyQueue = dictKeyQueueMap.get(key.getThreadNo());
-    dictKeyQueue.offer(key);
+    try {
+      DictionaryKey key = new DictionaryKey();
+      key.readData(msg);
+      msg.release();
+      dictKeyQueue.offer(key);
+    } catch (Exception e) {
+      LOGGER.error(e);
+      throw e;
+    }
   }
 
   @Override public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -79,16 +79,8 @@ public class DictionaryClientHandler extends ChannelInboundHandlerAdapter {
    */
   public DictionaryKey getDictionary(DictionaryKey key) {
     DictionaryKey dictionaryKey;
-    BlockingQueue<DictionaryKey> dictKeyQueue = null;
     try {
-      synchronized (lock) {
-        dictKeyQueue = dictKeyQueueMap.get(key.getThreadNo());
-        if (dictKeyQueue == null) {
-          dictKeyQueue = new LinkedBlockingQueue<DictionaryKey>();
-          dictKeyQueueMap.put(key.getThreadNo(), dictKeyQueue);
-        }
-      }
-      ByteBuf buffer = Unpooled.buffer();
+      ByteBuf buffer = ctx.alloc().buffer();
       key.writeData(buffer);
       ctx.writeAndFlush(buffer);
     } catch (Exception e) {

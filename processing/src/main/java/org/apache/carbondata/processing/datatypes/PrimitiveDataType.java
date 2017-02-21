@@ -21,10 +21,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
@@ -121,10 +119,9 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * @param columnId
    */
   public PrimitiveDataType(String name, String parentname, String columnId,
-                           CarbonDimension carbonDimension,
-                           Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
-                           CarbonTableIdentifier carbonTableIdentifier,
-                           DictionaryClient client, Boolean useOnePass, String storePath) {
+      CarbonDimension carbonDimension, Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
+      CarbonTableIdentifier carbonTableIdentifier, DictionaryClient client, Boolean useOnePass,
+      String storePath, boolean tableInitialize, Map<Object, Integer> localCache) {
     this.name = name;
     this.parentname = parentname;
     this.columnId = columnId;
@@ -145,12 +142,12 @@ public class PrimitiveDataType implements GenericDataType<Object> {
           DictionaryKey dictionaryKey = new DictionaryKey();
           dictionaryKey.setColumnName(carbonDimension.getColName());
           dictionaryKey.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
-          dictionaryKey.setThreadNo(Long.MIN_VALUE);
           // for table initialization
           dictionaryKey.setType(DictionaryKeyType.TABLE_INTIALIZATION);
           dictionaryKey.setData("0");
-          client.getDictionary(dictionaryKey);
-          Map<Object, Integer> localCache = new ConcurrentHashMap<>();
+          if (tableInitialize) {
+            client.getDictionary(dictionaryKey);
+          }
           // for generate dictionary
           dictionaryKey.setType(DictionaryKeyType.DICT_GENERATION);
           dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,

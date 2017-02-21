@@ -22,7 +22,6 @@ import org.apache.carbondata.core.dictionary.generator.ServerDictionaryGenerator
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -47,9 +46,9 @@ public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
    * @param ctx
    * @throws Exception
    */
-  public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-    LOGGER.audit("Registered " + ctx);
-    super.channelRegistered(ctx);
+  public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    LOGGER.audit("Connected " + ctx);
+    super.channelActive(ctx);
   }
 
   /**
@@ -61,16 +60,20 @@ public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
    */
   protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg)
       throws Exception {
-    DictionaryKey key = new DictionaryKey();
-    msg.resetReaderIndex();
-    key.readData(msg);
-    msg.release();
-    int outPut = processMessage(key);
-    key.setDictionaryValue(outPut);
-    // Send back the response
-    ByteBuf buffer = Unpooled.buffer();
-    key.writeData(buffer);
-    ctx.writeAndFlush(buffer);
+    try {
+      DictionaryKey key = new DictionaryKey();
+      key.readData(msg);
+      msg.release();
+      int outPut = processMessage(key);
+      key.setDictionaryValue(outPut);
+      // Send back the response
+      ByteBuf buffer = ctx.alloc().buffer();
+      key.writeData(buffer);
+      ctx.writeAndFlush(buffer);
+    } catch (Exception e) {
+      LOGGER.error(e);
+      throw e;
+    }
   }
 
   @Override public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {

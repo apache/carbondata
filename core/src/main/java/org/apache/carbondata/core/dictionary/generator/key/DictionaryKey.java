@@ -48,11 +48,6 @@ public class DictionaryKey {
    */
   private DictionaryKeyType type;
 
-  /**
-   * dictionary client thread no
-   */
-  private long threadNo;
-
   public void readData(ByteBuf byteBuf) {
     byte[] tableBytes = new byte[byteBuf.readInt()];
     byteBuf.readBytes(tableBytes);
@@ -61,8 +56,6 @@ public class DictionaryKey {
     byte[] colBytes = new byte[byteBuf.readInt()];
     byteBuf.readBytes(colBytes);
     columnName = new String(colBytes);
-
-    threadNo = byteBuf.readLong();
 
     byte typeByte = byteBuf.readByte();
     type = getKeyType(typeByte);
@@ -85,8 +78,6 @@ public class DictionaryKey {
     byte[] colBytes = columnName.getBytes();
     byteBuf.writeInt(colBytes.length);
     byteBuf.writeBytes(colBytes);
-
-    byteBuf.writeLong(threadNo);
 
     byteBuf.writeByte(type.getType());
 
@@ -132,14 +123,6 @@ public class DictionaryKey {
     this.data = data;
   }
 
-  public void setThreadNo(long threadNo) {
-    this.threadNo = threadNo;
-  }
-
-  public long getThreadNo() {
-    return this.threadNo;
-  }
-
   public DictionaryKeyType getType() {
     return type;
   }
@@ -162,5 +145,11 @@ public class DictionaryKey {
 
   public void setDictionaryValue(int dictionaryValue) {
     this.dictionaryValue = dictionaryValue;
+  }
+
+  @Override public String toString() {
+    return "DictionaryKey{ columnName='"
+        + columnName + '\'' + ", data='" + data + '\'' + ", dictionaryValue=" + dictionaryValue
+        + ", type=" + type + '}';
   }
 }
