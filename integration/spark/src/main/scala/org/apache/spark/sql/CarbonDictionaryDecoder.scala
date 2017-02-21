@@ -54,13 +54,14 @@ case class CarbonDictionaryDecoder(
     child.output.map { a =>
       val attr = aliasMap.getOrElse(a, a)
       val relation = relations.find(p => p.contains(attr))
-      if(relation.isDefined && canBeDecoded(attr)) {
+      if (relation.isDefined && canBeDecoded(attr)) {
         val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
         val carbonDimension = carbonTable
           .getDimensionByName(carbonTable.getFactTableName, attr.name)
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
-            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
+            !carbonDimension.isComplex()) {
           val newAttr = AttributeReference(a.name,
             convertCarbonToSparkDataType(carbonDimension,
               relation.get.carbonRelation.carbonRelation),
@@ -123,13 +124,14 @@ case class CarbonDictionaryDecoder(
     val dictIds: Array[(String, ColumnIdentifier, DataType)] = attributes.map { a =>
       val attr = aliasMap.getOrElse(a, a)
       val relation = relations.find(p => p.contains(attr))
-      if(relation.isDefined && canBeDecoded(attr)) {
+      if (relation.isDefined && canBeDecoded(attr)) {
         val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
         val carbonDimension =
           carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
-            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
+            !carbonDimension.isComplex()) {
           (carbonTable.getFactTableName, carbonDimension.getColumnIdentifier,
             carbonDimension.getDataType)
         } else {
@@ -182,6 +184,7 @@ case class CarbonDictionaryDecoder(
             val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
             var flag = true
             var total = 0L
+
             override final def hasNext: Boolean = {
               flag = iter.hasNext
               if (!flag && total > 0) {
@@ -193,6 +196,7 @@ case class CarbonDictionaryDecoder(
               }
               flag
             }
+
             override final def next(): InternalRow = {
               val startTime = System.currentTimeMillis()
               val row: InternalRow = iter.next()
