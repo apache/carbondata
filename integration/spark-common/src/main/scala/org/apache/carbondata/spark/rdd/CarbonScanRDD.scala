@@ -143,14 +143,12 @@ class CarbonScanRDD(
         }
         noOfNodes = nodeBlockMapping.size
       } else {
-        var i = 0
-        splits.asScala.foreach { s =>
+        splits.asScala.zipWithIndex.foreach { splitWithIndex =>
           val multiBlockSplit =
             new CarbonMultiBlockSplit(identifier,
-              Seq(s.asInstanceOf[CarbonInputSplit]).asJava,
-              s.getLocations)
-          val partition = new CarbonSparkPartition(id, i, multiBlockSplit)
-          i += 1
+              Seq(splitWithIndex._1.asInstanceOf[CarbonInputSplit]).asJava,
+              splitWithIndex._1.getLocations)
+          val partition = new CarbonSparkPartition(id, splitWithIndex._2, multiBlockSplit)
           result.add(partition)
         }
       }
