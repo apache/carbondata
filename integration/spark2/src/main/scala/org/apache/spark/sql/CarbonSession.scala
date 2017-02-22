@@ -67,17 +67,23 @@ object CarbonSession {
 
     def getOrCreateCarbonSession(): SparkSession = {
       getOrCreateCarbonSession(
-        new File(CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL).getCanonicalPath,
+        None,
         new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
     }
 
     def getOrCreateCarbonSession(storePath: String): SparkSession = {
       getOrCreateCarbonSession(
-        storePath,
+        Option(storePath),
         new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
     }
 
-    def getOrCreateCarbonSession(storePath: String,
+    def getOrCreateCarbonSession(storePath: String, metaStorePath: String): SparkSession = {
+      getOrCreateCarbonSession(
+        Option(storePath),
+        metaStorePath)
+    }
+
+    def getOrCreateCarbonSession(storePath: Option[String],
         metaStorePath: String): SparkSession = synchronized {
       builder.enableHiveSupport()
       val options =

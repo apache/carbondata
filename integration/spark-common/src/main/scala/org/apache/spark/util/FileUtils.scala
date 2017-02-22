@@ -101,13 +101,13 @@ object FileUtils {
    * 3. pass the location as the parameter
    * The priority is low to high.
    */
-  def getHighestPriorityStorePath(storePathParameter: String): String = {
+  def getHighestPriorityStorePath(storePathParameter: Option[String]): String = {
     val storePathDefaultValue =
       new File(CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL).getCanonicalPath
     val storePathProperties = CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.STORE_LOCATION)
-    if (!storePathParameter.equals(storePathDefaultValue)) {
-      storePathParameter
+    if (storePathParameter.isDefined) {
+      storePathParameter.get
     } else if (null != storePathProperties) {
       storePathProperties
     } else {

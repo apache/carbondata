@@ -42,7 +42,7 @@ object CarbonEnv {
   def init(sqlContext: SQLContext): Unit = {
     if (!initialized) {
       val cc = sqlContext.asInstanceOf[CarbonContext]
-      val highestPriorityStorePath = FileUtils.getHighestPriorityStorePath(cc.storePath)
+      val highestPriorityStorePath = FileUtils.getHighestPriorityStorePath(cc.storePathInParam)
       val catalog = new CarbonMetastore(cc, highestPriorityStorePath, cc.hiveClientInterface, "")
       carbonEnv = CarbonEnv(catalog)
       CarbonIUDAnalysisRule.init(sqlContext)
