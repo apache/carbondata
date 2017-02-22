@@ -171,9 +171,23 @@ public class FilterScanner extends AbstractBlockletScanner {
       }
     }
     for (int i = 0; i < allSelectedDimensionBlocksIndexes.length; i++) {
-      System.arraycopy(projectionListDimensionChunk, allSelectedDimensionBlocksIndexes[i][0],
-          dimensionColumnDataChunk, allSelectedDimensionBlocksIndexes[i][0],
-          allSelectedDimensionBlocksIndexes[i][1] + 1 - allSelectedDimensionBlocksIndexes[i][0]);
+      for (int j = allSelectedDimensionBlocksIndexes[i][0];
+           j <= allSelectedDimensionBlocksIndexes[i][1]; j++) {
+        dimensionColumnDataChunk[j] = projectionListDimensionChunk[j];
+      }
+    }
+    /**
+     * in case projection if the projected dimension are not loaded in the dimensionColumnDataChunk
+     * then loading them
+     */
+    int[] projectionListDimensionIndexes = blockExecutionInfo.getProjectionListDimensionIndexes();
+    int projectionListDimensionIndexesLength = projectionListDimensionIndexes.length;
+    for (int i = 0; i < projectionListDimensionIndexesLength; i++) {
+      if (null == dimensionColumnDataChunk[projectionListDimensionIndexes[i]]) {
+        dimensionColumnDataChunk[projectionListDimensionIndexes[i]] =
+            blocksChunkHolder.getDataBlock()
+                .getDimensionChunk(fileReader, projectionListDimensionIndexes[i]);
+      }
     }
     MeasureColumnDataChunk[] measureColumnDataChunk =
         new MeasureColumnDataChunk[blockExecutionInfo.getTotalNumberOfMeasureBlock()];
@@ -188,9 +202,22 @@ public class FilterScanner extends AbstractBlockletScanner {
       }
     }
     for (int i = 0; i < allSelectedMeasureBlocksIndexes.length; i++) {
-      System.arraycopy(projectionListMeasureChunk, allSelectedMeasureBlocksIndexes[i][0],
-          measureColumnDataChunk, allSelectedMeasureBlocksIndexes[i][0],
-          allSelectedMeasureBlocksIndexes[i][1] + 1 - allSelectedMeasureBlocksIndexes[i][0]);
+      for (int j = allSelectedMeasureBlocksIndexes[i][0];
+           j <= allSelectedMeasureBlocksIndexes[i][1]; j++) {
+        measureColumnDataChunk[j] = projectionListMeasureChunk[j];
+      }
+    }
+    /**
+     * in case projection if the projected measure are not loaded in the measureColumnDataChunk
+     * then loading them
+     */
+    int[] projectionListMeasureIndexes = blockExecutionInfo.getProjectionListMeasureIndexes();
+    int projectionListMeasureIndexesLength = projectionListMeasureIndexes.length;
+    for (int i = 0; i < projectionListMeasureIndexesLength; i++) {
+      if (null == measureColumnDataChunk[projectionListMeasureIndexes[i]]) {
+        measureColumnDataChunk[projectionListMeasureIndexes[i]] = blocksChunkHolder.getDataBlock()
+            .getMeasureChunk(fileReader, projectionListMeasureIndexes[i]);
+      }
     }
     scannedResult.setDimensionChunks(dimensionColumnDataChunk);
     scannedResult.setIndexes(indexes);
