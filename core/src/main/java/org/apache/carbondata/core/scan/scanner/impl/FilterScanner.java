@@ -257,6 +257,7 @@ public class FilterScanner extends AbstractBlockletScanner {
     scannedResult.setDimensionChunks(dimensionColumnDataChunks);
     scannedResult.setIndexes(indexesGroup);
     scannedResult.setMeasureChunks(measureColumnDataChunks);
+    scannedResult.setRawColumnChunks(dimensionRawColumnChunks);
     scannedResult.setNumberOfRows(rowCount);
     return scannedResult;
   }
