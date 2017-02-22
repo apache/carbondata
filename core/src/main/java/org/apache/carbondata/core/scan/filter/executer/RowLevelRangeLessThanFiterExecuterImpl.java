@@ -67,8 +67,7 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
     boolean isScanRequired = false;
     for (int k = 0; k < filterValues.length; k++) {
       // and filter-min should be positive
-      int minCompare =
-          ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMinValue);
+      int minCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMinValue);
 
       // if any filter applied is not in range of min and max of block
       // then since its a less than fiter validate whether the block
@@ -178,7 +177,7 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
       start = CarbonUtil.nextLesserValueToTarget(start, dimensionColumnDataChunk, filterValues[i]);
       if (start < 0) {
         start = -(start + 1);
-        if (start == numerOfRows) {
+        if (start >= numerOfRows) {
           start = start - 1;
         }
         // Method will compare the tentative index value after binary search, this tentative

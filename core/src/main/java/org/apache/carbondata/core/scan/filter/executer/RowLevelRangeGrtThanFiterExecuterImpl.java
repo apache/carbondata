@@ -66,8 +66,7 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
       // filter value should be in range of max and min value i.e
       // max>filtervalue>min
       // so filter-max should be negative
-      int maxCompare =
-          ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMaxValue);
+      int maxCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMaxValue);
       // if any filter value is in range than this block needs to be
       // scanned means always less than block max range.
       if (maxCompare < 0) {
@@ -140,8 +139,9 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
           .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
               filterValues[i], true);
       if (start >= 0) {
-        start = CarbonUtil.nextGreaterValueToTarget(start, dimensionColumnDataChunk,
-            filterValues[i], numerOfRows);
+        start = CarbonUtil
+            .nextGreaterValueToTarget(start, dimensionColumnDataChunk, filterValues[i],
+                numerOfRows);
       }
       // Logic will handle the case where the range filter member is not present in block
       // in this case the binary search will return the index from where the bit sets will be

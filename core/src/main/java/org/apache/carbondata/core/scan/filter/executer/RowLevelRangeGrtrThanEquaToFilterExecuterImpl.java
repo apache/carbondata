@@ -67,8 +67,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       // filter value should be in range of max and min value i.e
       // max>filtervalue>min
       // so filter-max should be negative
-      int maxCompare =
-          ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMaxValue);
+      int maxCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMaxValue);
       // if any filter value is in range than this block needs to be
       // scanned less than equal to max range.
       if (maxCompare <= 0) {

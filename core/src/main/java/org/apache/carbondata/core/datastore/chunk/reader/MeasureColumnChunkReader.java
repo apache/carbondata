@@ -49,6 +49,7 @@ public interface MeasureColumnChunkReader {
 
   /**
    * Covert raw data to measure chunk
+   *
    * @param fileReader
    * @param blockIndex
    * @param rawData
@@ -57,7 +58,7 @@ public interface MeasureColumnChunkReader {
    * @return
    * @throws IOException
    */
-  MeasureColumnDataChunk convertToMeasureChunk(FileHolder fileReader,
-      int blockIndex, byte[] rawData, int offset, int length, int pageNumber) throws IOException;
+  MeasureColumnDataChunk convertToMeasureChunk(MeasureRawColumnChunk measureRawColumnChunk,
+      int pageNumber) throws IOException;
 
 }

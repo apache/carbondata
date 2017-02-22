@@ -91,12 +91,19 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    *
    * @return start IndexKey
    */
-  public void getStartKey(long[] startKey,
-      SortedMap<Integer, byte[]> noDictStartKeys, List<long[]> startKeyList) {
-    FilterUtil.getStartKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
-        startKey, startKeyList);
-    FilterUtil
-        .getStartKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), noDictStartKeys);
+  public void getStartKey(long[] startKey, SortedMap<Integer, byte[]> noDictStartKeys,
+      List<long[]> startKeyList) {
+    switch (exp.getFilterExpressionType()) {
+      case GREATERTHAN:
+      case GREATERTHAN_EQUALTO:
+        FilterUtil.getStartKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
+            startKey, startKeyList);
+        FilterUtil
+            .getStartKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), noDictStartKeys);
+        break;
+      default:
+        //do nothing
+    }
   }
 
   /**
@@ -106,10 +113,17 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    */
   @Override public void getEndKey(SegmentProperties segmentProperties, long[] endKeys,
       SortedMap<Integer, byte[]> noDicEndKeys, List<long[]> endKeyList) {
-    FilterUtil.getEndKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
-        endKeys, segmentProperties, endKeyList);
-    FilterUtil
-        .getEndKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), noDicEndKeys);
+    switch (exp.getFilterExpressionType()) {
+      case LESSTHAN:
+      case LESSTHAN_EQUALTO:
+        FilterUtil
+            .getEndKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(), endKeys,
+                segmentProperties, endKeyList);
+        FilterUtil.getEndKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), noDicEndKeys);
+        break;
+      default:
+        //do nothing
+    }
   }
 
   private List<byte[]> getNoDictionaryRangeValues() {

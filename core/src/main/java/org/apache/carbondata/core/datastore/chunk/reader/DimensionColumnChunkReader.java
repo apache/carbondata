@@ -60,6 +60,6 @@ public interface DimensionColumnChunkReader {
    * @return
    * @throws IOException
    */
-  DimensionColumnDataChunk convertToDimensionChunk(FileHolder fileReader, int blockIndex,
-      byte[] rawData, int offset, int length, int pageNumber) throws IOException;
+  DimensionColumnDataChunk convertToDimensionChunk(DimensionRawColumnChunk dimensionRawColumnChunk,
+      int pageNumber) throws IOException;
 }

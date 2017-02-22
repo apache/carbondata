@@ -154,9 +154,8 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
     return null;
   }
 
-  @Override
-  public DimensionColumnDataChunk convertToDimensionChunk(FileHolder fileReader, int blockIndex,
-      byte[] rawData, int offset, int length, int pageNumber) throws IOException {
+  @Override public DimensionColumnDataChunk convertToDimensionChunk(
+      DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber) throws IOException {
     return null;
   }
 }

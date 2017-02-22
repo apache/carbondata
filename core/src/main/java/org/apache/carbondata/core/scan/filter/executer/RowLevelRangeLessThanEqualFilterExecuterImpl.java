@@ -67,8 +67,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     boolean isScanRequired = false;
     for (int k = 0; k < filterValues.length; k++) {
       // and filter-min should be positive
-      int minCompare =
-          ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMinValue);
+      int minCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMinValue);
 
       // if any filter applied is not in range of min and max of block
       // then since its a less than equal to fiter validate whether the block
@@ -240,7 +239,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
             filterValues[k], true);
         if (start < 0) {
           start = -(start + 1);
-          if (start == numerOfRows) {
+          if (start >= numerOfRows) {
             start = start - 1;
           }
           // Method will compare the tentative index value after binary search, this tentative
