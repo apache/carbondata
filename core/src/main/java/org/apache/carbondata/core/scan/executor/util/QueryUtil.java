@@ -209,7 +209,7 @@ public class QueryUtil {
   public static int[] getDimensionsBlockIndexes(List<QueryDimension> queryDimensions,
       Map<Integer, Integer> dimensionOrdinalToBlockMapping,
       List<CarbonDimension> customAggregationDimension, Set<CarbonDimension> filterDimensions,
-      List<Integer> allProjectionListDimensionIndexes) {
+      Set<Integer> allProjectionListDimensionIndexes) {
     // using set as in row group columns will point to same block
     Set<Integer> dimensionBlockIndex = new HashSet<Integer>();
     Set<Integer> filterDimensionOrdinal = getFilterDimensionOrdinal(filterDimensions);
@@ -218,7 +218,13 @@ public class QueryUtil {
       if (queryDimensions.get(i).getDimension().hasEncoding(Encoding.IMPLICIT)) {
         continue;
       }
-      allProjectionListDimensionIndexes.add(queryDimensions.get(i).getDimension().getOrdinal());
+
+      allProjectionListDimensionIndexes.add(
+          dimensionOrdinalToBlockMapping.get(queryDimensions.get(i).getDimension().getOrdinal()));
+      if (queryDimensions.get(i).getDimension().numberOfChild() > 0) {
+        addChildrenBlockIndex(allProjectionListDimensionIndexes,
+            queryDimensions.get(i).getDimension());
+      }
 
       if (!filterDimensionOrdinal.contains(queryDimensions.get(i).getDimension().getOrdinal())) {
         blockIndex =

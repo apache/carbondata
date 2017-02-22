@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -331,7 +332,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // setting all the dimension chunk indexes to be read from file
     int numberOfElementToConsider = 0;
     // list of dimensions to be projected
-    List<Integer> allProjectionListDimensionIdexes = new ArrayList<>();
+    Set<Integer> allProjectionListDimensionIdexes = new LinkedHashSet<>();
     int[] dimensionsBlockIndexes = QueryUtil.getDimensionsBlockIndexes(updatedQueryDimension,
         segmentProperties.getDimensionOrdinalToBlockMapping(), expressionDimensions,
         queryProperties.complexFilterDimension, allProjectionListDimensionIdexes);
