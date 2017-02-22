@@ -95,9 +95,17 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
       if (rawColumnChunk.getMaxValues() != null) {
         if (isScanRequired(rawColumnChunk.getMaxValues()[i], this.filterRangeValues)) {
-          BitSet bitSet = getFilteredIndexes(rawColumnChunk.convertToDimColDataChunk(i),
-              rawColumnChunk.getRowCount()[i]);
-          bitSetGroup.setBitSet(bitSet, i);
+          int compare = ByteUtil.UnsafeComparer.INSTANCE
+              .compareTo(filterRangeValues[0], rawColumnChunk.getMinValues()[i]);
+          if (compare <= 0) {
+            BitSet bitSet = new BitSet(rawColumnChunk.getRowCount()[i]);
+            bitSet.flip(0, rawColumnChunk.getRowCount()[i]);
+            bitSetGroup.setBitSet(bitSet, i);
+          } else {
+            BitSet bitSet = getFilteredIndexes(rawColumnChunk.convertToDimColDataChunk(i),
+                rawColumnChunk.getRowCount()[i]);
+            bitSetGroup.setBitSet(bitSet, i);
+          }
         }
       } else {
         BitSet bitSet = getFilteredIndexes(rawColumnChunk.convertToDimColDataChunk(i),
