@@ -18,11 +18,12 @@ package org.apache.carbondata.core.dictionary.server;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKeyType;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -50,6 +51,7 @@ public class DictionaryServer {
    * @throws Exception
    */
   public void startServer(int port) {
+    long start = System.currentTimeMillis();
     dictionaryServerHandler = new DictionaryServerHandler();
     boss = new NioEventLoopGroup();
     worker = new NioEventLoopGroup();
@@ -65,9 +67,11 @@ public class DictionaryServer {
           pipeline.addLast("DictionaryServerHandler", dictionaryServerHandler);
         }
       });
+      bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
       bootstrap.bind(port).sync();
 
-      LOGGER.audit("Server Start!");
+      LOGGER.info("Dictionary Server started, Time spent " + (start - System.currentTimeMillis())
+          + " Listening on port " + port);
     } catch (Exception e) {
       LOGGER.error(e, "Dictionary Server Start Failed");
       throw new RuntimeException(e);
@@ -80,13 +84,20 @@ public class DictionaryServer {
    * @throws Exception
    */
   public void shutdown() throws Exception {
-    DictionaryKey key = new DictionaryKey();
-    key.setType(DictionaryKeyType.WRITE_DICTIONARY);
-    dictionaryServerHandler.processMessage(key);
     worker.shutdownGracefully();
     boss.shutdownGracefully();
     // Wait until all threads are terminated.
     boss.terminationFuture().sync();
     worker.terminationFuture().sync();
+  }
+
+  /**
+   * Write dictionary to the store.
+   * @throws Exception
+   */
+  public void writeDictionary() throws Exception {
+    DictionaryMessage key = new DictionaryMessage();
+    key.setType(DictionaryMessageType.WRITE_DICTIONARY);
+    dictionaryServerHandler.processMessage(key);
   }
 }

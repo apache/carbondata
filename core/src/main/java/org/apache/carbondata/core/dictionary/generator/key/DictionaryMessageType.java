@@ -19,7 +19,7 @@ package org.apache.carbondata.core.dictionary.generator.key;
 /**
  * Dictionary key types.
  */
-public enum DictionaryKeyType {
+public enum DictionaryMessageType {
 
   DICT_GENERATION((byte) 1),
   TABLE_INTIALIZATION((byte) 2),
@@ -28,7 +28,7 @@ public enum DictionaryKeyType {
 
   final byte type;
 
-  DictionaryKeyType(byte type) {
+  DictionaryMessageType(byte type) {
     this.type = type;
   }
 

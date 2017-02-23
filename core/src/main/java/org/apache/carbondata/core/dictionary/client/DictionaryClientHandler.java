@@ -18,12 +18,15 @@ package org.apache.carbondata.core.dictionary.client;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
@@ -35,34 +38,32 @@ public class DictionaryClientHandler extends ChannelInboundHandlerAdapter {
   private static final LogService LOGGER =
           LogServiceFactory.getLogService(DictionaryClientHandler.class.getName());
 
-  final BlockingQueue<DictionaryKey> dictKeyQueue = new LinkedBlockingQueue<>();
+  private final BlockingQueue<DictionaryMessage> responseMsgQueue = new LinkedBlockingQueue<>();
 
   private ChannelHandlerContext ctx;
 
-  private Object lock = new Object();
+  private DictionaryChannelFutureListener channelFutureListener;
 
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
     this.ctx = ctx;
+    channelFutureListener = new DictionaryChannelFutureListener(ctx);
     LOGGER.audit("Connected client " + ctx);
     super.channelActive(ctx);
   }
 
-  protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg)
-      throws Exception {
+  @Override
+  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     try {
-      DictionaryKey key = new DictionaryKey();
-      key.readData(msg);
-      msg.release();
-      dictKeyQueue.offer(key);
+      ByteBuf data = (ByteBuf) msg;
+      DictionaryMessage key = new DictionaryMessage();
+      key.readData(data);
+      data.release();
+      responseMsgQueue.offer(key);
     } catch (Exception e) {
       LOGGER.error(e);
       throw e;
     }
-  }
-
-  @Override public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-    channelRead0(ctx, (ByteBuf)msg);
   }
 
   @Override
@@ -74,32 +75,44 @@ public class DictionaryClientHandler extends ChannelInboundHandlerAdapter {
   /**
    * client send request to server
    *
-   * @param key
-   * @return
+   * @param key DictionaryMessage
+   * @return DictionaryMessage
    */
-  public DictionaryKey getDictionary(DictionaryKey key) {
-    DictionaryKey dictionaryKey;
+  public DictionaryMessage getDictionary(DictionaryMessage key) {
+    DictionaryMessage dictionaryMessage;
     try {
       ByteBuf buffer = ctx.alloc().buffer();
       key.writeData(buffer);
-      ctx.writeAndFlush(buffer);
+      ctx.writeAndFlush(buffer).addListener(channelFutureListener);
     } catch (Exception e) {
-      LOGGER.error(e, "Error while send request to server " + e.getMessage());
+      LOGGER.error(e, "Error while send request to server ");
       ctx.close();
     }
-    boolean interrupted = false;
     try {
-      for (; ; ) {
-        try {
-          dictionaryKey = dictKeyQueue.take();
-          return dictionaryKey;
-        } catch (InterruptedException ignore) {
-          interrupted = true;
-        }
+      dictionaryMessage = responseMsgQueue.poll(100, TimeUnit.SECONDS);
+      if (dictionaryMessage == null) {
+        throw new RuntimeException("Request timed out for key : " + key);
       }
-    } finally {
-      if (interrupted) {
-        Thread.currentThread().interrupt();
+      return dictionaryMessage;
+    } catch (Exception e) {
+      LOGGER.error(e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static class DictionaryChannelFutureListener implements ChannelFutureListener {
+
+    private ChannelHandlerContext ctx;
+
+    DictionaryChannelFutureListener(ChannelHandlerContext ctx) {
+      this.ctx = ctx;
+    }
+
+    @Override
+    public void operationComplete(ChannelFuture future) throws Exception {
+      if (!future.isSuccess()) {
+        LOGGER.error(future.cause(), "Error while sending request to Dictionary Server");
+        ctx.close();
       }
     }
   }

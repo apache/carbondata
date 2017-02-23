@@ -28,8 +28,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKeyType;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -53,7 +53,7 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
 
   private Dictionary dictionary;
 
-  private DictionaryKey dictionaryKey;
+  private DictionaryMessage dictionaryMessage;
 
   public DictionaryFieldConverterImpl(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
@@ -72,19 +72,19 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
       if (CarbonUtil.isFileExistsForGivenColumn(storePath, identifier)) {
         dictionary = cache.get(identifier);
       }
-      dictionaryKey = new DictionaryKey();
-      dictionaryKey.setColumnName(dataField.getColumn().getColName());
-      dictionaryKey.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
+      dictionaryMessage = new DictionaryMessage();
+      dictionaryMessage.setColumnName(dataField.getColumn().getColName());
+      dictionaryMessage.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
       // for table initialization
-      dictionaryKey.setType(DictionaryKeyType.TABLE_INTIALIZATION);
-      dictionaryKey.setData("0");
+      dictionaryMessage.setType(DictionaryMessageType.TABLE_INTIALIZATION);
+      dictionaryMessage.setData("0");
       if (tableInitialize) {
-        client.getDictionary(dictionaryKey);
+        client.getDictionary(dictionaryMessage);
       }
       // for generate dictionary
-      dictionaryKey.setType(DictionaryKeyType.DICT_GENERATION);
+      dictionaryMessage.setType(DictionaryMessageType.DICT_GENERATION);
       dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,
-              dictionaryKey, localCache);
+          dictionaryMessage, localCache);
     } else {
       dictionary = cache.get(identifier);
       dictionaryGenerator = new PreCreatedDictionary(dictionary);

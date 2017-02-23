@@ -16,12 +16,14 @@
  */
 package org.apache.carbondata.core.dictionary.generator.key;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+
 import io.netty.buffer.ByteBuf;
 
 /**
  * Dictionary key to generate dictionary
  */
-public class DictionaryKey {
+public class DictionaryMessage {
 
   /**
    * tableUniqueName
@@ -41,12 +43,12 @@ public class DictionaryKey {
   /**
    * Dictionary Value
    */
-  private int dictionaryValue = -1;
+  private int dictionaryValue = CarbonCommonConstants.INVALID_SURROGATE_KEY;
 
   /**
    * message type
    */
-  private DictionaryKeyType type;
+  private DictionaryMessageType type;
 
   public void readData(ByteBuf byteBuf) {
     byte[] tableBytes = new byte[byteBuf.readInt()];
@@ -92,18 +94,18 @@ public class DictionaryKey {
     }
   }
 
-  private DictionaryKeyType getKeyType(byte type) {
+  private DictionaryMessageType getKeyType(byte type) {
     switch (type) {
       case 1 :
-        return DictionaryKeyType.DICT_GENERATION;
+        return DictionaryMessageType.DICT_GENERATION;
       case 2 :
-        return DictionaryKeyType.TABLE_INTIALIZATION;
+        return DictionaryMessageType.TABLE_INTIALIZATION;
       case 3 :
-        return DictionaryKeyType.SIZE;
+        return DictionaryMessageType.SIZE;
       case 4 :
-        return DictionaryKeyType.WRITE_DICTIONARY;
+        return DictionaryMessageType.WRITE_DICTIONARY;
       default:
-        return DictionaryKeyType.DICT_GENERATION;
+        return DictionaryMessageType.DICT_GENERATION;
     }
   }
 
@@ -123,11 +125,11 @@ public class DictionaryKey {
     this.data = data;
   }
 
-  public DictionaryKeyType getType() {
+  public DictionaryMessageType getType() {
     return type;
   }
 
-  public void setType(DictionaryKeyType type) {
+  public void setType(DictionaryMessageType type) {
     this.type = type;
   }
 

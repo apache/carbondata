@@ -20,7 +20,7 @@ import java.net.InetSocketAddress;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelInitializer;
@@ -49,19 +49,19 @@ public class DictionaryClient {
    * @param port
    */
   public void startClient(String address, int port) {
+    long start = System.currentTimeMillis();
     workerGroup = new NioEventLoopGroup();
     Bootstrap clientBootstrap = new Bootstrap();
-    clientBootstrap.group(workerGroup);
-    clientBootstrap.channel(NioSocketChannel.class);
-    clientBootstrap.handler(new ChannelInitializer<SocketChannel>() {
-      @Override
-      public void initChannel(SocketChannel ch) throws Exception {
-        ChannelPipeline pipeline = ch.pipeline();
-        pipeline.addLast("DictionaryClientHandler", dictionaryClientHandler);
-      }
-    });
+    clientBootstrap.group(workerGroup).channel(NioSocketChannel.class)
+        .handler(new ChannelInitializer<SocketChannel>() {
+          @Override public void initChannel(SocketChannel ch) throws Exception {
+            ChannelPipeline pipeline = ch.pipeline();
+            pipeline.addLast("DictionaryClientHandler", dictionaryClientHandler);
+          }
+        });
     clientBootstrap.connect(new InetSocketAddress(address, port));
-    LOGGER.audit("Client Start!");
+    LOGGER.info(
+        "Dictionary client Started, Total time spent : " + (start - System.currentTimeMillis()));
   }
 
   /**
@@ -70,7 +70,7 @@ public class DictionaryClient {
    * @param key
    * @return
    */
-  public DictionaryKey getDictionary(DictionaryKey key) {
+  public DictionaryMessage getDictionary(DictionaryMessage key) {
     return dictionaryClientHandler.getDictionary(key);
   }
 

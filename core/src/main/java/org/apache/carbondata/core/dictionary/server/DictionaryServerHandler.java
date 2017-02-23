@@ -19,7 +19,7 @@ package org.apache.carbondata.core.dictionary.server;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.ServerDictionaryGenerator;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
@@ -51,19 +51,13 @@ public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
     super.channelActive(ctx);
   }
 
-  /**
-   * receive message and handle
-   *
-   * @param ctx
-   * @param msg
-   * @throws Exception
-   */
-  protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg)
-      throws Exception {
+  @Override
+  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     try {
-      DictionaryKey key = new DictionaryKey();
-      key.readData(msg);
-      msg.release();
+      ByteBuf data = (ByteBuf) msg;
+      DictionaryMessage key = new DictionaryMessage();
+      key.readData(data);
+      data.release();
       int outPut = processMessage(key);
       key.setDictionaryValue(outPut);
       // Send back the response
@@ -76,17 +70,14 @@ public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
     }
   }
 
-  @Override public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-    channelRead0(ctx, (ByteBuf) msg);
-  }
-
   /**
    * handle exceptions
    *
    * @param ctx
    * @param cause
    */
-  @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     LOGGER.error(cause, "exceptionCaught");
     ctx.close();
   }
@@ -98,7 +89,7 @@ public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
    * @return
    * @throws Exception
    */
-  public int processMessage(DictionaryKey key) throws Exception {
+  public int processMessage(DictionaryMessage key) throws Exception {
     switch (key.getType()) {
       case DICT_GENERATION :
         return generatorForServer.generateKey(key);

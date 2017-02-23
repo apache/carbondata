@@ -23,8 +23,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKeyType;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType;
 
 /**
  * Dictionary implementation along with dictionary server client to get new dictionary values
@@ -37,15 +37,15 @@ public class DictionaryServerClientDictionary implements BiDictionary<Integer, O
 
   private Map<Object, Integer> localCache;
 
-  private DictionaryKey dictionaryKey;
+  private DictionaryMessage dictionaryMessage;
 
   private int base;
 
   public DictionaryServerClientDictionary(Dictionary dictionary, DictionaryClient client,
-      DictionaryKey key, Map<Object, Integer> localCache) {
+      DictionaryMessage key, Map<Object, Integer> localCache) {
     this.dictionary = dictionary;
     this.client = client;
-    this.dictionaryKey = key;
+    this.dictionaryMessage = key;
     this.localCache = localCache;
     this.base = (dictionary == null ? 0 : dictionary.getDictionaryChunks().getSize() - 1);
   }
@@ -53,8 +53,8 @@ public class DictionaryServerClientDictionary implements BiDictionary<Integer, O
   @Override public Integer getOrGenerateKey(Object value) throws DictionaryGenerationException {
     Integer key = getKey(value);
     if (key == null) {
-      dictionaryKey.setData(value.toString());
-      DictionaryKey dictionaryValue = client.getDictionary(dictionaryKey);
+      dictionaryMessage.setData(value.toString());
+      DictionaryMessage dictionaryValue = client.getDictionary(dictionaryMessage);
       key = dictionaryValue.getDictionaryValue();
       synchronized (localCache) {
         localCache.put(value, key);
@@ -83,8 +83,8 @@ public class DictionaryServerClientDictionary implements BiDictionary<Integer, O
   }
 
   @Override public int size() {
-    dictionaryKey.setType(DictionaryKeyType.SIZE);
-    int size = client.getDictionary(dictionaryKey).getDictionaryValue() + base;
+    dictionaryMessage.setType(DictionaryMessageType.SIZE);
+    int size = client.getDictionary(dictionaryMessage).getDictionaryValue() + base;
     return size;
   }
 }

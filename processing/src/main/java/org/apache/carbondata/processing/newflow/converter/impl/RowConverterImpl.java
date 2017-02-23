@@ -27,6 +27,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
@@ -49,6 +51,9 @@ import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecor
  * and nondictionary values are converted to binary.
  */
 public class RowConverterImpl implements RowConverter {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(RowConverterImpl.class.getName());
 
   private CarbonDataLoadConfiguration configuration;
 
@@ -125,7 +130,8 @@ public class RowConverterImpl implements RowConverter {
         // wait for client initialization finished, or will raise null pointer exception
         Thread.sleep(1000);
       } catch (InterruptedException e) {
-        e.printStackTrace();
+        LOGGER.error(e);
+        throw new RuntimeException(e);
       }
 
       try {
@@ -156,10 +162,12 @@ public class RowConverterImpl implements RowConverter {
   @Override
   public void finish() {
     List<Integer> dimCardinality = new ArrayList<>();
-    for (int i = 0; i < fieldConverters.length; i++) {
-      if (fieldConverters[i] instanceof AbstractDictionaryFieldConverterImpl) {
-        ((AbstractDictionaryFieldConverterImpl) fieldConverters[i])
-            .fillColumnCardinality(dimCardinality);
+    if (fieldConverters != null) {
+      for (int i = 0; i < fieldConverters.length; i++) {
+        if (fieldConverters[i] instanceof AbstractDictionaryFieldConverterImpl) {
+          ((AbstractDictionaryFieldConverterImpl) fieldConverters[i])
+              .fillColumnCardinality(dimCardinality);
+        }
       }
     }
     int[] cardinality = new int[dimCardinality.size()];
