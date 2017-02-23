@@ -70,7 +70,7 @@ public class DictionaryServer {
       bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
       bootstrap.bind(port).sync();
 
-      LOGGER.info("Dictionary Server started, Time spent " + (start - System.currentTimeMillis())
+      LOGGER.info("Dictionary Server started, Time spent " + (System.currentTimeMillis()-start)
           + " Listening on port " + port);
     } catch (Exception e) {
       LOGGER.error(e, "Dictionary Server Start Failed");

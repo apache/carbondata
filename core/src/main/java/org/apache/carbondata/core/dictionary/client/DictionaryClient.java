@@ -61,7 +61,7 @@ public class DictionaryClient {
         });
     clientBootstrap.connect(new InetSocketAddress(address, port));
     LOGGER.info(
-        "Dictionary client Started, Total time spent : " + (start - System.currentTimeMillis()));
+        "Dictionary client Started, Total time spent : " + (System.currentTimeMillis()-start));
   }
 
   /**
