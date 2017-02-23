@@ -43,6 +43,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForInt;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndex;
+import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort;
 import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
@@ -59,6 +60,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.NodeHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.mdkeygen.file.FileManager;
@@ -70,10 +72,8 @@ import org.apache.carbondata.processing.store.colgroup.ColumnDataHolder;
 import org.apache.carbondata.processing.store.colgroup.DataHolder;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
-import org.apache.carbondata.processing.store.writer.NodeHolder;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
-
 import org.apache.spark.sql.types.Decimal;
 
 /**
@@ -255,6 +255,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private boolean useKettle;
 
   private int bucketNumber;
+  
+  /**
+   * current data format version
+   */
+  private ColumnarFormatVersion version;
 
   /**
    * CarbonFactDataHandler constructor
@@ -326,6 +331,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       }
       aggKeyBlock = arrangeUniqueBlockType(aggKeyBlock);
     }
+    version = CarbonProperties.getInstance().getFormatVersion();
   }
 
   private void initParameters(CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
@@ -476,7 +482,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       } else if (type[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
         max[i] = -Double.MAX_VALUE;
       } else if (type[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        max[i] = new BigDecimal(0.0);
+        max[i] = new BigDecimal(-Double.MAX_VALUE);
       } else {
         max[i] = 0.0;
       }
@@ -1220,7 +1226,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.blockletSize = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
-    LOGGER.info("Blocklet Size: " + blockletSize);
+    if(version == ColumnarFormatVersion.V3) {
+      this.blockletSize = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
+              CarbonCommonConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT));
+    }
+    LOGGER.info("Number of rows per column blocklet " + blockletSize);
     dataRows = new ArrayList<>(this.blockletSize);
     int dimSet =
         Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
@@ -1377,7 +1388,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @return data writer instance
    */
   private CarbonFactDataWriter<?> getFactDataWriter(int[] keyBlockSize) {
-    ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
     return CarbonDataWriterFactory.getInstance()
         .getFactDataWriter(version, getDataWriterVo(keyBlockSize));
   }
@@ -1620,8 +1630,13 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     @Override public IndexStorage call() throws Exception {
       if (isUseInvertedIndex) {
-        return new BlockIndexerStorageForInt(this.data, isCompressionReq, isNoDictionary,
-            isSortRequired);
+        if (version==ColumnarFormatVersion.V3) {
+          return new BlockIndexerStorageForShort(this.data, isCompressionReq, isNoDictionary,
+              isSortRequired);
+        } else {
+          return new BlockIndexerStorageForInt(this.data, isCompressionReq, isNoDictionary,
+              isSortRequired);
+        }
       } else {
         return new BlockIndexerStorageForNoInvertedIndex(this.data, isCompressionReq,
             isNoDictionary);

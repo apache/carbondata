@@ -85,6 +85,9 @@ public final class CarbonProperties {
     validateCarbonDataFileVersion();
     validateExecutorStartUpTime();
     validatePrefetchBufferSize();
+    validateNumberOfPagesPerBlocklet();
+    validateNumberOfColumnPerIORead();
+    validateNumberOfRowsPerBlockletColumnPage();
   }
 
   private void validatePrefetchBufferSize() {
@@ -104,6 +107,87 @@ public final class CarbonProperties {
         carbonProperties.setProperty(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
             CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT);
       }
+    }
+  }
+
+  /**
+   * This method validates the number of pages per blocklet column
+   */
+  private void validateNumberOfPagesPerBlocklet() {
+    String numberOfPagePerBlockletColumnString = carbonProperties
+        .getProperty(CarbonCommonConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN,
+            CarbonCommonConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE);
+    try {
+      short numberOfPagePerBlockletColumn = Short.parseShort(numberOfPagePerBlockletColumnString);
+      if (numberOfPagePerBlockletColumn < CarbonCommonConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_MIN
+          || numberOfPagePerBlockletColumn
+          > CarbonCommonConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_MAX) {
+        LOGGER.info(
+            "The Number Of pages per blocklet column value \"" + numberOfPagePerBlockletColumnString
+                + "\" is invalid. Using the default value \""
+                + CarbonCommonConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE);
+        carbonProperties.setProperty(CarbonCommonConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN,
+            CarbonCommonConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info(
+          "The Number Of pages per blocklet column value \"" + numberOfPagePerBlockletColumnString
+              + "\" is invalid. Using the default value \""
+              + CarbonCommonConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE);
+      carbonProperties.setProperty(CarbonCommonConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN,
+          CarbonCommonConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE);
+    }
+  }
+
+  /**
+   * This method validates the number of column read in one IO
+   */
+  private void validateNumberOfColumnPerIORead() {
+    String numberofColumnPerIOString = carbonProperties
+        .getProperty(CarbonCommonConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
+            CarbonCommonConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+    try {
+      short numberofColumnPerIO = Short.parseShort(numberofColumnPerIOString);
+      if (numberofColumnPerIO < CarbonCommonConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_MIN
+          || numberofColumnPerIO > CarbonCommonConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_MAX) {
+        LOGGER.info("The Number Of pages per blocklet column value \"" + numberofColumnPerIOString
+            + "\" is invalid. Using the default value \""
+            + CarbonCommonConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+        carbonProperties.setProperty(CarbonCommonConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
+            CarbonCommonConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info("The Number Of pages per blocklet column value \"" + numberofColumnPerIOString
+          + "\" is invalid. Using the default value \""
+          + CarbonCommonConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+      carbonProperties.setProperty(CarbonCommonConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
+          CarbonCommonConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+    }
+  }
+  
+  /**
+   * This method validates the number of column read in one IO
+   */
+  private void validateNumberOfRowsPerBlockletColumnPage() {
+    String numberOfRowsPerBlockletColumnPageString = carbonProperties
+        .getProperty(CarbonCommonConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
+            CarbonCommonConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+    try {
+      short numberOfRowsPerBlockletColumnPage = Short.parseShort(numberOfRowsPerBlockletColumnPageString);
+      if (numberOfRowsPerBlockletColumnPage < CarbonCommonConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_MIN
+          || numberOfRowsPerBlockletColumnPage > CarbonCommonConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_MAX) {
+        LOGGER.info("The Number Of rows per blocklet column pages value \"" + numberOfRowsPerBlockletColumnPageString
+            + "\" is invalid. Using the default value \""
+            + CarbonCommonConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+        carbonProperties.setProperty(CarbonCommonConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
+            CarbonCommonConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info("The Number Of rows per blocklet column pages value \"" + numberOfRowsPerBlockletColumnPageString
+          + "\" is invalid. Using the default value \""
+          + CarbonCommonConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+      carbonProperties.setProperty(CarbonCommonConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
+          CarbonCommonConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
     }
   }
 

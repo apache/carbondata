@@ -127,9 +127,20 @@ struct DataChunk2{
     7: optional SortState sort_state;
     8: optional list<schema.Encoding> encoders; // The List of encoders overriden at node level
     9: optional list<binary> encoder_meta; // extra information required by encoders
-}
+    10: optional BlockletMinMaxIndex min_max; 
+    11: optional i32 numberOfRowsInpage;
+ }
 
 
+/**
+* Represents a chunk of data. The chunk can be a single column stored in Column Major format or a group of columns stored in Row Major Format.
+**/
+struct DataChunk3{
+    1: required list<DataChunk2> data_chunk_list; // list of data chunk
+    2: optional list<i32> page_offset; // offset of each chunk
+    3: optional list<i32> page_length; // length of each chunk
+   
+ }
 /**
 *	Information about a blocklet
 */
@@ -146,7 +157,16 @@ struct BlockletInfo2{
     2: required list<i64> column_data_chunks_offsets;	// Information about offsets all column chunks in this blocklet
     3: required list<i16> column_data_chunks_length;	// Information about length all column chunks in this blocklet
 }
-
+/**
+*	Information about a blocklet
+*/
+struct BlockletInfo3{
+    1: required i32 num_rows;	// Number of rows in this blocklet
+    2: required list<i64> column_data_chunks_offsets;	// Information about offsets all column chunks in this blocklet
+    3: required list<i32> column_data_chunks_length;	// Information about length all column chunks in this blocklet
+    4: required i64 dimension_offsets;
+    5: required i64 measure_offsets;
+  }
 /**
 * Footer for indexed carbon file
 */
@@ -158,7 +178,8 @@ struct FileFooter{
     5: required list<BlockletIndex> blocklet_index_list;	// blocklet index of all blocklets in this file
     6: optional list<BlockletInfo> blocklet_info_list;	// Information about blocklets of all columns in this file
     7: optional list<BlockletInfo2> blocklet_info_list2;	// Information about blocklets of all columns in this file
-    8: optional dictionary.ColumnDictionaryChunk dictionary; // blocklet local dictionary
+    8: optional list<BlockletInfo3> blocklet_info_list3;	// Information about blocklets of all columns in this file
+    9: optional dictionary.ColumnDictionaryChunk dictionary; // blocklet local dictionary
 }
 
 /**
