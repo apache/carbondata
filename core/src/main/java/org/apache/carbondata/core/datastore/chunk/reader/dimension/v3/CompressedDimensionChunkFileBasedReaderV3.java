@@ -25,7 +25,7 @@ import org.apache.carbondata.core.datastore.chunk.impl.ColumnGroupDimensionDataC
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionDataChunk;
-import org.apache.carbondata.core.datastore.chunk.reader.dimension.v2.CompressedDimensionChunkFileBasedReaderV2;
+import org.apache.carbondata.core.datastore.chunk.reader.dimension.AbstractChunkReaderV2V3Format;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -45,8 +45,7 @@ import org.apache.commons.lang.ArrayUtils;
  * <Column3 Data ChunkV3><Column3<Page1><Page2><Page3><Page4>>
  * <Column4 Data ChunkV3><Column4<Page1><Page2><Page3><Page4>>
  */
-public class CompressedDimensionChunkFileBasedReaderV3
-    extends CompressedDimensionChunkFileBasedReaderV2 {
+public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkReaderV2V3Format {
 
   /**
    * end position of last dimension in carbon data file
@@ -61,6 +60,12 @@ public class CompressedDimensionChunkFileBasedReaderV3
 
   /**
    * Below method will be used to read the dimension column data form carbon data file
+   * Steps for reading
+   * 1. Get the length of the data to be read
+   * 2. Allocate the direct buffer
+   * 3. read the data from file
+   * 4. Get the data chunk object from data read
+   * 5. Create the raw chunk object and fill the details
    *
    * @param fileReader          reader for reading the column from carbon data file
    * @param blockletColumnIndex blocklet index of the column in carbon data file
@@ -72,7 +77,7 @@ public class CompressedDimensionChunkFileBasedReaderV3
     long currentDimensionOffset = dimensionChunksOffset.get(blockletColumnIndex);
     int length = 0;
     // to calculate the length of the data to be read
-    // column other than last column we can subtract the offset of current column with 
+    // column other than last column we can subtract the offset of current column with
     // next column and get the total length.
     // but for last column we need to use lastDimensionOffset which is the end position
     // of the last dimension, we can subtract current dimension offset from lastDimesionOffset
@@ -103,7 +108,7 @@ public class CompressedDimensionChunkFileBasedReaderV3
           dataChunk.getData_chunk_list().get(i).getMin_max().getMin_values().get(0).array();
       eachPageLength[i] = dataChunk.getData_chunk_list().get(i).getNumberOfRowsInpage();
     }
-    rawColumnChunk.setDataChunk3(dataChunk);
+    rawColumnChunk.setDataChunkV3(dataChunk);
     rawColumnChunk.setFileHolder(fileReader);
     rawColumnChunk.setPagesCount(dataChunk.getPage_length().size());
     rawColumnChunk.setMaxValues(maxValueOfEachPage);
@@ -119,16 +124,26 @@ public class CompressedDimensionChunkFileBasedReaderV3
   /**
    * Below method will be used to read the multiple dimension column data in group
    * and divide into dimension raw chunk object
+   * Steps for reading
+   * 1. Get the length of the data to be read
+   * 2. Allocate the direct buffer
+   * 3. read the data from file
+   * 4. Get the data chunk object from file for each column
+   * 5. Create the raw chunk object and fill the details for each column
+   * 6. increment the offset of the data
    *
-   * @param fileReader               reader which will be used to read the dimension columns data from file
-   * @param startBlockletColumnIndex blocklet index of the first dimension column
-   * @param endBlockletColumnIndex   blocklet index of the last dimension column
+   * @param fileReader
+   *        reader which will be used to read the dimension columns data from file
+   * @param startBlockletColumnIndex
+   *        blocklet index of the first dimension column
+   * @param endBlockletColumnIndex
+   *        blocklet index of the last dimension column
    * @ DimensionRawColumnChunk array
    */
   protected DimensionRawColumnChunk[] readRawDimensionChunksInGroup(FileHolder fileReader,
       int startBlockletColumnIndex, int endBlockletColumnIndex) throws IOException {
     // to calculate the length of the data to be read
-    // column we can subtract the offset of start column offset with  
+    // column we can subtract the offset of start column offset with
     // end column+1 offset and get the total length.
     long currentDimensionOffset = dimensionChunksOffset.get(startBlockletColumnIndex);
     ByteBuffer buffer = ByteBuffer.allocateDirect(
@@ -160,7 +175,7 @@ public class CompressedDimensionChunkFileBasedReaderV3
             dataChunk.getData_chunk_list().get(j).getMin_max().getMin_values().get(0).array();
         eachPageLength[j] = dataChunk.getData_chunk_list().get(j).getNumberOfRowsInpage();
       }
-      dimensionDataChunks[index].setDataChunk3(dataChunk);
+      dimensionDataChunks[index].setDataChunkV3(dataChunk);
       dimensionDataChunks[index].setFileHolder(fileReader);
       dimensionDataChunks[index].setPagesCount(dataChunk.getPage_length().size());
       dimensionDataChunks[index].setMaxValues(maxValueOfEachPage);
@@ -192,15 +207,15 @@ public class CompressedDimensionChunkFileBasedReaderV3
     // data chunk of page
     DataChunk2 dimensionColumnChunk = null;
     // data chunk of blocklet column
-    DataChunk3 dataChunk3 = dimensionRawColumnChunk.getDataChunk3();
+    DataChunk3 dataChunk3 = dimensionRawColumnChunk.getDataChunkV3();
     // get the data buffer
     ByteBuffer rawData = dimensionRawColumnChunk.getRawData();
     dimensionColumnChunk = dataChunk3.getData_chunk_list().get(pageNumber);
     // calculating the start point of data
-    // as buffer can contain multiple column data, start point will be datachunkoffset + 
+    // as buffer can contain multiple column data, start point will be datachunkoffset +
     // data chunk length + page offset
     int copySourcePoint = dimensionRawColumnChunk.getOffSet() + dimensionChunksLength
-        .get(dimensionRawColumnChunk.getBlockId()) + dataChunk3.getPage_offset().get(pageNumber);
+        .get(dimensionRawColumnChunk.getBlockletId()) + dataChunk3.getPage_offset().get(pageNumber);
     byte[] data = new byte[dimensionColumnChunk.data_page_length];
     rawData.position(copySourcePoint);
     rawData.get(data);
@@ -223,7 +238,7 @@ public class CompressedDimensionChunkFileBasedReaderV3
           CarbonUtil.getIntArray(rawData, copySourcePoint, dimensionColumnChunk.rle_page_length);
       // uncompress the data with rle indexes
       dataPage = UnBlockIndexer.uncompressData(dataPage, rlePage,
-          eachColumnValueSize[dimensionRawColumnChunk.getBlockId()]);
+          eachColumnValueSize[dimensionRawColumnChunk.getBlockletId()]);
       rlePage = null;
     }
     // fill chunk attributes
@@ -232,7 +247,7 @@ public class CompressedDimensionChunkFileBasedReaderV3
     if (dimensionColumnChunk.isRowMajor()) {
       // to store fixed length column chunk values
       columnDataChunk = new ColumnGroupDimensionDataChunk(dataPage,
-          eachColumnValueSize[dimensionRawColumnChunk.getBlockId()],
+          eachColumnValueSize[dimensionRawColumnChunk.getBlockletId()],
           dimensionRawColumnChunk.getRowCount()[pageNumber]);
     }
     // if no dictionary column then first create a no dictionary column chunk
@@ -246,7 +261,7 @@ public class CompressedDimensionChunkFileBasedReaderV3
       columnDataChunk =
           new FixedLengthDimensionDataChunk(dataPage, invertedIndexes, invertedIndexesReverse,
               dimensionRawColumnChunk.getRowCount()[pageNumber],
-              eachColumnValueSize[dimensionRawColumnChunk.getBlockId()]);
+              eachColumnValueSize[dimensionRawColumnChunk.getBlockletId()]);
     }
     return columnDataChunk;
   }

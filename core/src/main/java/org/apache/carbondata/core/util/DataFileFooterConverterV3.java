@@ -33,6 +33,15 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
 
   /**
    * Below method will be used to convert thrift file meta to wrapper file meta
+   * This method will read the footer from footer offset present in the data file
+   * 1. It will set the stream offset
+   * 2. It will read the footer data from file
+   * 3. parse the footer to thrift object
+   * 4. convert to wrapper object
+   *
+   * @param tableBlockInfo
+   *        table block info
+   * @return data file footer
    */
   @Override public DataFileFooter readDataFileFooter(TableBlockInfo tableBlockInfo)
       throws IOException {

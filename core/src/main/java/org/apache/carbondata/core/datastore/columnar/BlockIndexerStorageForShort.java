@@ -49,10 +49,6 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     }
   }
 
-  public BlockIndexerStorageForShort() {
-    // TODO Auto-generated constructor stub
-  }
-
   /**
    * Create an object with each column array and respective index
    *

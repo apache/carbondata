@@ -858,7 +858,7 @@ public final class CarbonCommonConstants {
    * Invalid filter member log string
    */
   public static final String FILTER_INVALID_MEMBER =
-      " Invalid Record(s) are present " + "while filter evaluation. ";
+      " Invalid Record(s) are present while filter evaluation. ";
 
   /**
    * Number of unmerged segments to be merged.
@@ -1146,68 +1146,6 @@ public final class CarbonCommonConstants {
   public static final String USE_KETTLE = "use_kettle";
 
   public static final String USE_KETTLE_DEFAULT = "false";
-
-  /**
-   * number of page per blocklet column
-   */
-  public static final String NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN =
-      "carbon.number.of.page.in.blocklet.column";
-
-  /**
-   * number of page per blocklet column default value
-   */
-  public static final String NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE = "10";
-
-  /**
-   * number of page per blocklet column max value
-   */
-  public static final short NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_MAX = 20;
-
-  /**
-   * number of page per blocklet column min value
-   */
-  public static final short NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_MIN = 1;
-
-  /**
-   * number of column to be read in one IO in query
-   */
-  public static final String NUMBER_OF_COLUMN_TO_READ_IN_IO = "number.of.column.to.read.in.io";
-
-  /**
-   * number of column to be read in one IO in query default value
-   */
-  public static final String NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE = "10";
-
-  /**
-   * number of column to be read in one IO in query max value
-   */
-  public static final short NUMBER_OF_COLUMN_TO_READ_IN_IO_MAX = 20;
-
-  /**
-   * number of column to be read in one IO in query min value
-   */
-  public static final short NUMBER_OF_COLUMN_TO_READ_IN_IO_MIN = 1;
-
-  /**
-   * number of rows per blocklet column page
-   */
-  public static final String NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE =
-      "number.of.rows.per.blocklet.column.page";
-
-  /**
-   * number of rows per blocklet column page default value
-   */
-  public static final String NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT = "32000";
-
-  /**
-   * number of rows per blocklet column page max value
-   */
-  public static final short NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_MAX = 32000;
-
-  /**
-   * number of rows per blocklet column page min value
-   */
-  public static final short NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_MIN = 8000;
 
   private CarbonCommonConstants() {
   }

@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -848,7 +849,7 @@ public class CarbonMetadataUtil {
         b.flip();
         return b.array();
       case DECIMAL:
-        return (byte[]) data;
+        return DataTypeUtil.bigDecimalToByte((BigDecimal)data);
       default:
         throw new IllegalArgumentException("Invalid data type");
     }

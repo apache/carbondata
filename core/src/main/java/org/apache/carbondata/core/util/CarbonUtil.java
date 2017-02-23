@@ -476,11 +476,6 @@ public final class CarbonUtil {
     buffer.position(offset);
     int indexDataLength = buffer.getInt();
     int indexMapLength = totalLength - indexDataLength - CarbonCommonConstants.INT_SIZE_IN_BYTE;
-    //    byte[] indexData = new byte[indexDataLength];
-    //    byte[] indexMap =
-    //        new byte[totalLength - indexDataLength - CarbonCommonConstants.INT_SIZE_IN_BYTE];
-    //    buffer.get(indexData);
-    //    buffer.get(indexMap);
     int[] indexData = getIntArray(buffer, buffer.position(), indexDataLength);
     int[] indexMap = getIntArray(buffer, buffer.position(), indexMapLength);
     return UnBlockIndexer.uncompressIndex(indexData, indexMap);
