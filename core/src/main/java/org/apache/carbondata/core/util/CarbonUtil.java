@@ -73,6 +73,7 @@ import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.DataChunk2;
+import org.apache.carbondata.format.DataChunk3;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -469,6 +470,28 @@ public final class CarbonUtil {
     return UnBlockIndexer
         .uncompressIndex(numberCompressor.unCompress(indexData, 0, indexData.length),
             numberCompressor.unCompress(indexMap, 0, indexMap.length));
+  }
+
+  public static int[] getUnCompressColumnIndex(int totalLength, ByteBuffer buffer, int offset) {
+    buffer.position(offset);
+    int indexDataLength = buffer.getInt();
+    int indexMapLength = totalLength - indexDataLength - CarbonCommonConstants.INT_SIZE_IN_BYTE;
+    int[] indexData = getIntArray(buffer, buffer.position(), indexDataLength);
+    int[] indexMap = getIntArray(buffer, buffer.position(), indexMapLength);
+    return UnBlockIndexer.uncompressIndex(indexData, indexMap);
+  }
+
+  public static int[] getIntArray(ByteBuffer data, int offset, int length) {
+    if (length == 0) {
+      return new int[0];
+    }
+    data.position(offset);
+    int[] intArray = new int[length / 2];
+    int index = 0;
+    while (index < intArray.length) {
+      intArray[index++] = data.getShort();
+    }
+    return intArray;
   }
 
   /**
@@ -1233,6 +1256,18 @@ public final class CarbonUtil {
     }, offset, length);
   }
 
+  public static DataChunk3 readDataChunk3(ByteBuffer dataChunkBuffer, int offset, int length)
+      throws IOException {
+    byte[] data = new byte[length];
+    dataChunkBuffer.position(offset);
+    dataChunkBuffer.get(data);
+    return (DataChunk3) read(data, new ThriftReader.TBaseCreator() {
+      @Override public TBase create() {
+        return new DataChunk3();
+      }
+    }, 0, length);
+  }
+
   public static DataChunk2 readDataChunk(ByteBuffer dataChunkBuffer, int offset, int length)
       throws IOException {
     byte[] data = new byte[length];
@@ -1291,6 +1326,35 @@ public final class CarbonUtil {
       CarbonUtil.closeStreams(objStream);
     }
     return meta;
+  }
+
+  public static ValueEncoderMeta deserializeEncoderMetaNew(byte[] encodeMeta) {
+    ByteBuffer buffer = ByteBuffer.wrap(encodeMeta);
+    char measureType = buffer.getChar();
+    ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
+    valueEncoderMeta.setType(measureType);
+    switch (measureType) {
+      case CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE:
+        valueEncoderMeta.setMaxValue(buffer.getDouble());
+        valueEncoderMeta.setMinValue(buffer.getDouble());
+        valueEncoderMeta.setUniqueValue(buffer.getDouble());
+        break;
+      case CarbonCommonConstants.BIG_DECIMAL_MEASURE:
+        valueEncoderMeta.setMaxValue(0.0);
+        valueEncoderMeta.setMinValue(0.0);
+        valueEncoderMeta.setUniqueValue(0.0);
+        break;
+      case CarbonCommonConstants.BIG_INT_MEASURE:
+        valueEncoderMeta.setMaxValue(buffer.getLong());
+        valueEncoderMeta.setMinValue(buffer.getLong());
+        valueEncoderMeta.setUniqueValue(buffer.getLong());
+        break;
+      default:
+        throw new IllegalArgumentException("invalid measure type");
+    }
+    valueEncoderMeta.setDecimal(buffer.getInt());
+    valueEncoderMeta.setDataTypeSelected(buffer.get());
+    return valueEncoderMeta;
   }
 
   /**
@@ -1452,6 +1516,52 @@ public final class CarbonUtil {
                 CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
       default:
         return null;
+    }
+  }
+
+  /**
+   * Below method will be used to convert byte data to surrogate key based
+   * column value size
+   *
+   * @param data                data
+   * @param startOffsetOfData   start offset of data
+   * @param eachColumnValueSize size of each column value
+   * @return surrogate key
+   */
+  public static int getSurrogateInternal(byte[] data, int startOffsetOfData,
+      int eachColumnValueSize) {
+    int surrogate = 0;
+    switch (eachColumnValueSize) {
+      case 1:
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData] & 0xFF;
+        return surrogate;
+      case 2:
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData + 1] & 0xFF;
+        return surrogate;
+      case 3:
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData + 1] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData + 2] & 0xFF;
+        return surrogate;
+      case 4:
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData + 1] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData + 2] & 0xFF;
+        surrogate <<= 8;
+        surrogate ^= data[startOffsetOfData + 3] & 0xFF;
+        return surrogate;
+      default:
+        throw new IllegalArgumentException("Int cannot me more than 4 bytes");
     }
   }
 }

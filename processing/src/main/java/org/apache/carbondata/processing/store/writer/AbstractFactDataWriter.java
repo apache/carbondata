@@ -59,10 +59,12 @@ import org.apache.carbondata.core.util.CarbonMergerUtil;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.NodeHolder;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileWriter;
 import org.apache.carbondata.format.BlockIndex;
+import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.processing.mdkeygen.file.FileData;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
@@ -137,8 +139,20 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * size reserved in one file for writing block meta data. It will be in percentage
    */
   private int spaceReservedForBlockMetaSize;
-  private FileOutputStream fileOutputStream;
-  private List<BlockIndexInfo> blockIndexInfoList;
+
+  protected FileOutputStream fileOutputStream;
+
+  protected List<BlockIndexInfo> blockIndexInfoList;
+
+  /**
+   * list of metadata for V3 format
+   */
+  protected List<BlockletInfo3> blockletMetadata;
+
+  /**
+   * list of blocklet index
+   */
+  protected List<org.apache.carbondata.format.BlockletIndex> blockletIndex;
 
   public AbstractFactDataWriter(CarbonDataWriterVo dataWriterVo) {
     this.dataWriterVo = dataWriterVo;
@@ -187,6 +201,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)));
     this.dataChunksOffsets = new ArrayList<>();
     this.dataChunksLength = new ArrayList<>();
+    blockletMetadata = new ArrayList<BlockletInfo3>();
+    blockletIndex = new ArrayList<>();
   }
 
   /**
@@ -242,12 +258,14 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       LOGGER.info("Writing data to file as max file size reached for file: " + fileName
           + " .Data block size: " + currentFileSize);
       // write meta data to end of the existing file
-      writeBlockletInfoToFile(blockletInfoList, fileChannel, fileName);
+      writeBlockletInfoToFile(fileChannel, fileName);
       this.currentFileSize = 0;
       blockletInfoList =
           new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
       this.dataChunksOffsets = new ArrayList<>();
       this.dataChunksLength = new ArrayList<>();
+      this.blockletMetadata = new ArrayList<>();
+      this.blockletIndex = new ArrayList<>();
       CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
       // rename carbon data file from in progress status to actual
       renameCarbonDataFile();
@@ -316,7 +334,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   /**
    * This method will write metadata at the end of file file format in thrift format
    */
-  protected abstract void writeBlockletInfoToFile(List<BlockletInfoColumnar> infoList,
+  protected abstract void writeBlockletInfoToFile(
       FileChannel channel, String filePath) throws CarbonDataWriterException;
 
   /**
@@ -327,19 +345,19 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * @param filePath        file path
    * @param currentPosition current offset
    */
-  protected void fillBlockIndexInfoDetails(List<BlockletInfoColumnar> infoList, long numberOfRows,
+  protected void fillBlockIndexInfoDetails(long numberOfRows,
       String filePath, long currentPosition) {
 
     // as min-max will change for each blocklet and second blocklet min-max can be lesser than
     // the first blocklet so we need to calculate the complete block level min-max by taking
     // the min value of each column and max value of each column
-    byte[][] currentMinValue = infoList.get(0).getColumnMinData().clone();
-    byte[][] currentMaxValue = infoList.get(0).getColumnMaxData().clone();
+    byte[][] currentMinValue = blockletInfoList.get(0).getColumnMinData().clone();
+    byte[][] currentMaxValue = blockletInfoList.get(0).getColumnMaxData().clone();
     byte[][] minValue = null;
     byte[][] maxValue = null;
-    for (int i = 1; i < infoList.size(); i++) {
-      minValue = infoList.get(i).getColumnMinData();
-      maxValue = infoList.get(i).getColumnMaxData();
+    for (int i = 1; i < blockletInfoList.size(); i++) {
+      minValue = blockletInfoList.get(i).getColumnMinData();
+      maxValue = blockletInfoList.get(i).getColumnMaxData();
       for (int j = 0; j < maxValue.length; j++) {
         if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMinValue[j], minValue[j]) > 0) {
           currentMinValue[j] = minValue[j].clone();
@@ -352,8 +370,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     // start and end key we can take based on first blocklet
     // start key will be the block start key as
     // it is the least key and end blocklet end key will be the block end key as it is the max key
-    BlockletBTreeIndex btree = new BlockletBTreeIndex(infoList.get(0).getStartKey(),
-        infoList.get(infoList.size() - 1).getEndKey());
+    BlockletBTreeIndex btree = new BlockletBTreeIndex(blockletInfoList.get(0).getStartKey(),
+        blockletInfoList.get(blockletInfoList.size() - 1).getEndKey());
     BlockletMinMaxIndex minmax = new BlockletMinMaxIndex();
     minmax.setMinValues(currentMinValue);
     minmax.setMaxValues(currentMaxValue);
@@ -414,7 +432,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * @throws IOException               throws io exception if any problem while writing
    * @throws CarbonDataWriterException data writing
    */
-  private void writeIndexFile() throws IOException, CarbonDataWriterException {
+  protected void writeIndexFile() throws IOException, CarbonDataWriterException {
     // get the header
     IndexHeader indexHeader = CarbonMetadataUtil
         .getIndexHeader(localCardinality, thriftColumnSchemaList, dataWriterVo.getBucketNumber());
@@ -444,7 +462,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    *
    * @throws CarbonDataWriterException
    */
-  private void closeExecutorService() throws CarbonDataWriterException {
+  protected void closeExecutorService() throws CarbonDataWriterException {
     executorService.shutdown();
     try {
       executorService.awaitTermination(2, TimeUnit.HOURS);
@@ -467,7 +485,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    *
    * @throws CarbonDataWriterException
    */
-  private void renameCarbonDataFile() throws CarbonDataWriterException {
+  protected void renameCarbonDataFile() throws CarbonDataWriterException {
     File origFile = new File(this.fileName.substring(0, this.fileName.lastIndexOf('.')));
     File curFile = new File(this.fileName);
     if (!curFile.renameTo(origFile)) {
@@ -481,7 +499,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * @param localFileName local file name with full path
    * @throws CarbonDataWriterException
    */
-  private void copyCarbonDataFileToCarbonStorePath(String localFileName)
+  protected void copyCarbonDataFileToCarbonStorePath(String localFileName)
       throws CarbonDataWriterException {
     long copyStartTime = System.currentTimeMillis();
     LOGGER.info("Copying " + localFileName + " --> " + dataWriterVo.getCarbonDataDirectoryPath());
@@ -537,7 +555,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   @Override public void writeBlockletInfoToFile() throws CarbonDataWriterException {
     if (this.blockletInfoList.size() > 0) {
-      writeBlockletInfoToFile(this.blockletInfoList, fileChannel, fileName);
+      writeBlockletInfoToFile(fileChannel, fileName);
     }
   }
 
@@ -551,7 +569,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   public abstract void writeBlockletData(NodeHolder nodeHolder) throws CarbonDataWriterException;
 
-  protected byte[][] fillAndCompressedKeyBlockData(IndexStorage<int[]>[] keyStorageArray,
+  protected byte[][] fillAndCompressedKeyBlockData(IndexStorage[] keyStorageArray,
       int entryCount) {
     byte[][] keyBlockData = new byte[keyStorageArray.length][];
     int destPos = 0;
