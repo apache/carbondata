@@ -81,13 +81,14 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
    */
   @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int blockIndex)
       throws IOException {
+    DataChunk dataChunk = measureColumnChunks.get(blockIndex);
     ByteBuffer buffer =
-        ByteBuffer.allocateDirect(measureColumnChunks.get(blockIndex).getDataPageLength());
+        ByteBuffer.allocateDirect(dataChunk.getDataPageLength());
     fileReader
-        .readByteBuffer(filePath, buffer, measureColumnChunks.get(blockIndex).getDataPageOffset(),
-            measureColumnChunks.get(blockIndex).getDataPageLength());
+        .readByteBuffer(filePath, buffer, dataChunk.getDataPageOffset(),
+            dataChunk.getDataPageLength());
     MeasureRawColumnChunk rawColumnChunk = new MeasureRawColumnChunk(blockIndex, buffer, 0,
-        measureColumnChunks.get(blockIndex).getDataPageLength(), this);
+        dataChunk.getDataPageLength(), this);
     rawColumnChunk.setFileReader(fileReader);
     rawColumnChunk.setPagesCount(1);
     rawColumnChunk.setRowCount(new int[] { numberOfRows });
@@ -97,8 +98,9 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
   @Override
   public MeasureColumnDataChunk convertToMeasureChunk(MeasureRawColumnChunk measureRawColumnChunk,
       int pageNumber) throws IOException {
-    int blockIndex = measureRawColumnChunk.getBlockId();
-    ValueEncoderMeta meta = measureColumnChunks.get(blockIndex).getValueEncoderMeta().get(0);
+    int blockIndex = measureRawColumnChunk.getBlockletId();
+    DataChunk dataChunk = measureColumnChunks.get(blockIndex);
+    ValueEncoderMeta meta = dataChunk.getValueEncoderMeta().get(0);
     ReaderCompressModel compressModel = ValueCompressionUtil.getReaderCompressModel(meta);
 
     ValueCompressionHolder values = compressModel.getValueCompressionHolder();
@@ -109,7 +111,7 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
 
     // unCompress data
     values.uncompress(compressModel.getConvertedDataType(), dataPage, 0,
-        measureColumnChunks.get(blockIndex).getDataPageLength(), compressModel.getMantissa(),
+        dataChunk.getDataPageLength(), compressModel.getMantissa(),
         compressModel.getMaxValue(), numberOfRows);
 
     CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values);
@@ -119,7 +121,7 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
     datChunk.setMeasureDataHolder(measureDataHolder);
     // set the enun value indexes
     datChunk
-        .setNullValueIndexHolder(measureColumnChunks.get(blockIndex).getNullValueIndexForColumn());
+        .setNullValueIndexHolder(dataChunk.getNullValueIndexForColumn());
     return datChunk;
   }
 }

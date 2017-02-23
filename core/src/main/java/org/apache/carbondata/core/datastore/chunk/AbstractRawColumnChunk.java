@@ -38,14 +38,14 @@ public abstract class AbstractRawColumnChunk {
 
   protected int pagesCount;
 
-  protected int blockId;
+  protected int blockletId;
 
   protected int offSet;
 
   protected int length;
 
-  public AbstractRawColumnChunk(int blockId, ByteBuffer rawData, int offSet, int length) {
-    this.blockId = blockId;
+  public AbstractRawColumnChunk(int blockletId, ByteBuffer rawData, int offSet, int length) {
+    this.blockletId = blockletId;
     this.rawData = rawData;
     this.offSet = offSet;
     this.length = length;
@@ -109,8 +109,8 @@ public abstract class AbstractRawColumnChunk {
 
   public abstract void freeMemory();
 
-  public int getBlockId() {
-    return blockId;
+  public int getBlockletId() {
+    return blockletId;
   }
 
   public int getOffSet() {

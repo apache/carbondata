@@ -26,6 +26,9 @@ import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReade
 
 /**
  * Contains raw measure data
+ * 1. The read uncompressed raw data of column chunk with all pages is stored in this instance.
+ * 2. The raw data can be converted to processed chunk using convertToMeasureColDataChunk method
+ *  by specifying page number.
  */
 public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
 
@@ -41,6 +44,10 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     this.chunkReader = chunkReader;
   }
 
+  /**
+   * Convert all raw data with all pages to processed MeasureColumnDataChunk's
+   * @return
+   */
   public MeasureColumnDataChunk[] convertToMeasureColDataChunks() {
     if (dataChunks == null) {
       dataChunks = new MeasureColumnDataChunk[pagesCount];
@@ -58,6 +65,11 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
     return dataChunks;
   }
 
+  /**
+   * Convert raw data with specified page number processed to MeasureColumnDataChunk
+   * @param index
+   * @return
+   */
   public MeasureColumnDataChunk convertToMeasureColDataChunk(int index) {
     assert index < pagesCount;
     if (dataChunks == null) {

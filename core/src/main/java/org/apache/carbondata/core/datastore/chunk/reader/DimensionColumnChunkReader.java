@@ -33,30 +33,27 @@ public interface DimensionColumnChunkReader {
    * Below method will be used to read the chunk based on block indexes
    *
    * @param fileReader   file reader to read the blocks from file
-   * @param blockIndexes blocks to be read
+   * @param blockletIndexes blocklets to be read
    * @return dimension column chunks
    */
-  DimensionRawColumnChunk[] readRawDimensionChunks(FileHolder fileReader, int[][] blockIndexes)
+  DimensionRawColumnChunk[] readRawDimensionChunks(FileHolder fileReader, int[][] blockletIndexes)
       throws IOException;
 
   /**
    * Below method will be used to read the chunk based on block index
    *
    * @param fileReader file reader to read the blocks from file
-   * @param blockIndex block to be read
+   * @param blockletIndex block to be read
    * @return dimension column chunk
    */
-  DimensionRawColumnChunk readRawDimensionChunk(FileHolder fileReader, int blockIndex)
+  DimensionRawColumnChunk readRawDimensionChunk(FileHolder fileReader, int blockletIndex)
       throws IOException;
 
   /**
-   * Converts the raw data to chunk based on block indexes
+   * Converts the raw data chunk to processed chunk based on blocklet indexes and page numbers
    *
-   * @param fileReader
-   * @param blockIndex
-   * @param rawData
-   * @param offset
-   * @param length
+   * @param dimensionRawColumnChunk raw data chunk
+   * @param pageNumber page number to be processed
    * @return
    * @throws IOException
    */

@@ -362,7 +362,6 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       }
     }
 
-    // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_001
     if (null != msrColEvalutorInfoList) {
       for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
         if (null == blockChunkHolder.getMeasureRawDataChunk()[msrColumnEvalutorInfo

@@ -20,6 +20,7 @@ import java.util.BitSet;
 
 /**
  * Maintains the group of bitsets.
+ * Each filter executor returns BitSetGroup after filtering the data.
  */
 public class BitSetGroup {
 

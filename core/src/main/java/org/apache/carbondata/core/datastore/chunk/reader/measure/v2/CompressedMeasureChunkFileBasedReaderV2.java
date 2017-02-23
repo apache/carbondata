@@ -179,7 +179,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     MeasureColumnDataChunk datChunk = new MeasureColumnDataChunk();
     DataChunk2 measureColumnChunk = null;
     int copyPoint = measureRawColumnChunk.getOffSet();
-    int blockIndex = measureRawColumnChunk.getBlockId();
+    int blockIndex = measureRawColumnChunk.getBlockletId();
     ByteBuffer rawData = measureRawColumnChunk.getRawData();
     if (measureColumnChunkOffsets.size() - 1 == blockIndex) {
       measureColumnChunk =

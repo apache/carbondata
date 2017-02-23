@@ -25,7 +25,10 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
 
 /**
- * Contains raw dimension data
+ * Contains raw dimension data,
+ * 1. The read uncompressed raw data of column chunk with all pages is stored in this instance.
+ * 2. The raw data can be converted to processed chunk using convertToDimColDataChunk method
+ *  by specifying page number.
  */
 public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
 
@@ -35,12 +38,16 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
 
   private FileHolder fileHolder;
 
-  public DimensionRawColumnChunk(int blockId, ByteBuffer rawData, int offSet, int length,
+  public DimensionRawColumnChunk(int blockletId, ByteBuffer rawData, int offSet, int length,
       DimensionColumnChunkReader columnChunkReader) {
-    super(blockId, rawData, offSet, length);
+    super(blockletId, rawData, offSet, length);
     this.chunkReader = columnChunkReader;
   }
 
+  /**
+   * Convert all raw data with all pages to processed DimensionColumnDataChunk's
+   * @return
+   */
   public DimensionColumnDataChunk[] convertToDimColDataChunks() {
     if (dataChunks == null) {
       dataChunks = new DimensionColumnDataChunk[pagesCount];
@@ -57,6 +64,11 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     return dataChunks;
   }
 
+  /**
+   * Convert raw data with specified page number processed to DimensionColumnDataChunk
+   * @param index
+   * @return
+   */
   public DimensionColumnDataChunk convertToDimColDataChunk(int index) {
     assert index < pagesCount;
     if (dataChunks == null) {

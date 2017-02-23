@@ -72,43 +72,43 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
    * For last column read is separately and process
    *
    * @param fileReader   file reader to read the blocks from file
-   * @param blockIndexes blocks range to be read
+   * @param blockletIndexes blocks range to be read
    * @return dimension column chunks
    */
   @Override public DimensionRawColumnChunk[] readRawDimensionChunks(final FileHolder fileReader,
-      final int[][] blockIndexes) throws IOException {
+      final int[][] blockletIndexes) throws IOException {
     // read the column chunk based on block index and add
     DimensionRawColumnChunk[] dataChunks =
         new DimensionRawColumnChunk[dimensionChunksOffset.size()];
     // if blocklet index is empty then return empry data chunk
-    if (blockIndexes.length == 0) {
+    if (blockletIndexes.length == 0) {
       return dataChunks;
     }
     DimensionRawColumnChunk[] groupChunk = null;
     int index = 0;
     // iterate till block indexes -1 as block index will be in sorted order, so to avoid
     // the last column reading in group
-    for (int i = 0; i < blockIndexes.length - 1; i++) {
+    for (int i = 0; i < blockletIndexes.length - 1; i++) {
       index = 0;
       groupChunk =
-          readRawDimensionChunksInGroup(fileReader, blockIndexes[i][0], blockIndexes[i][1]);
-      for (int j = blockIndexes[i][0]; j <= blockIndexes[i][1]; j++) {
+          readRawDimensionChunksInGroup(fileReader, blockletIndexes[i][0], blockletIndexes[i][1]);
+      for (int j = blockletIndexes[i][0]; j <= blockletIndexes[i][1]; j++) {
         dataChunks[j] = groupChunk[index++];
       }
     }
     // check last index is present in block index, if it is present then read separately
-    if (blockIndexes[blockIndexes.length - 1][0] == dimensionChunksOffset.size() - 1) {
-      dataChunks[blockIndexes[blockIndexes.length - 1][0]] =
-          readRawDimensionChunk(fileReader, blockIndexes[blockIndexes.length - 1][0]);
+    if (blockletIndexes[blockletIndexes.length - 1][0] == dimensionChunksOffset.size() - 1) {
+      dataChunks[blockletIndexes[blockletIndexes.length - 1][0]] =
+          readRawDimensionChunk(fileReader, blockletIndexes[blockletIndexes.length - 1][0]);
     }
     // otherwise read the data in group
     else {
       groupChunk =
-          readRawDimensionChunksInGroup(fileReader, blockIndexes[blockIndexes.length - 1][0],
-              blockIndexes[blockIndexes.length - 1][1]);
+          readRawDimensionChunksInGroup(fileReader, blockletIndexes[blockletIndexes.length - 1][0],
+              blockletIndexes[blockletIndexes.length - 1][1]);
       index = 0;
-      for (int j = blockIndexes[blockIndexes.length - 1][0];
-           j <= blockIndexes[blockIndexes.length - 1][1]; j++) {
+      for (int j = blockletIndexes[blockletIndexes.length - 1][0];
+           j <= blockletIndexes[blockletIndexes.length - 1][1]; j++) {
         dataChunks[j] = groupChunk[index++];
       }
     }
@@ -119,25 +119,25 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
    * Below method will be used to read the chunk based on block index
    *
    * @param fileReader file reader to read the blocks from file
-   * @param blockIndex block to be read
+   * @param blockletIndex block to be read
    * @return dimension column chunk
    */
   public DimensionRawColumnChunk readRawDimensionChunk(FileHolder fileReader,
-      int blockIndex) throws IOException {
+      int blockletIndex) throws IOException {
     int length = 0;
-    if (dimensionChunksOffset.size() - 1 == blockIndex) {
+    if (dimensionChunksOffset.size() - 1 == blockletIndex) {
       // Incase of last block read only for datachunk and read remaining while converting it.
-      length = dimensionChunksLength.get(blockIndex);
+      length = dimensionChunksLength.get(blockletIndex);
     } else {
-      long currentDimensionOffset = dimensionChunksOffset.get(blockIndex);
-      length = (int) (dimensionChunksOffset.get(blockIndex + 1) - currentDimensionOffset);
+      long currentDimensionOffset = dimensionChunksOffset.get(blockletIndex);
+      length = (int) (dimensionChunksOffset.get(blockletIndex + 1) - currentDimensionOffset);
     }
     ByteBuffer buffer = ByteBuffer.allocateDirect(length);
     synchronized (fileReader) {
-      fileReader.readByteBuffer(filePath, buffer, dimensionChunksOffset.get(blockIndex), length);
+      fileReader.readByteBuffer(filePath, buffer, dimensionChunksOffset.get(blockletIndex), length);
     }
     DimensionRawColumnChunk rawColumnChunk =
-        new DimensionRawColumnChunk(blockIndex, buffer, 0, length, this);
+        new DimensionRawColumnChunk(blockletIndex, buffer, 0, length, this);
     rawColumnChunk.setFileHolder(fileReader);
     rawColumnChunk.setPagesCount(1);
     rawColumnChunk.setRowCount(new int[]{numberOfRows});
@@ -178,7 +178,7 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
     int[] rlePage = null;
     DataChunk2 dimensionColumnChunk = null;
     int copySourcePoint = dimensionRawColumnChunk.getOffSet();
-    int blockIndex = dimensionRawColumnChunk.getBlockId();
+    int blockIndex = dimensionRawColumnChunk.getBlockletId();
     ByteBuffer rawData = dimensionRawColumnChunk.getRawData();
     if (dimensionChunksOffset.size() - 1 == blockIndex) {
       dimensionColumnChunk = CarbonUtil
@@ -227,7 +227,6 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
           numberComressor.unCompress(dataRle, 0, dimensionColumnChunk.rle_page_length);
       // uncompress the data with rle indexes
       dataPage = UnBlockIndexer.uncompressData(dataPage, rlePage, eachColumnValueSize[blockIndex]);
-      rlePage = null;
     }
     // fill chunk attributes
     DimensionColumnDataChunk columnDataChunk = null;

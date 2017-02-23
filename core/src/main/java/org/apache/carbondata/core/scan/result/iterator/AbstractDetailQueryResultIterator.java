@@ -196,9 +196,10 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
       fileReader.finish();
     } catch (IOException e) {
       LOGGER.error(e);
+    } finally {
+      CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),
+          blocksChunkHolder.getMeasureRawDataChunk());
     }
-    CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),
-        blocksChunkHolder.getMeasureRawDataChunk());
   }
 
 }

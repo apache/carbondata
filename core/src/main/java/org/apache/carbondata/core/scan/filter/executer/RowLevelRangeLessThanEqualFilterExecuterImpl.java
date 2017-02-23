@@ -60,7 +60,6 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       bitSet.set(0);
     }
     return bitSet;
-
   }
 
   private boolean isScanRequired(byte[] blockMinValue, byte[][] filterValues) {

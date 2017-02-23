@@ -588,9 +588,10 @@ public final class CarbonCommonConstants {
    */
   public static final String TABLEUPDATESTATUS_FILENAME = "tableupdatestatus";
   /**
-   * INMEMORY_REOCRD_SIZE
+   * The batch size of records which returns to client.
    */
   public static final String DETAIL_QUERY_BATCH_SIZE = "carbon.detail.batch.size";
+
   public static final int DETAIL_QUERY_BATCH_SIZE_DEFAULT = 100;
   /**
    * SPILL_OVER_DISK_PATH
