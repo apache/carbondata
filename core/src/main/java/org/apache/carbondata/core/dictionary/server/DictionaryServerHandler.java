@@ -19,19 +19,18 @@ package org.apache.carbondata.core.dictionary.server;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.ServerDictionaryGenerator;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
-import org.apache.carbondata.core.dictionary.generator.key.KryoRegister;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelHandler;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 
 /**
  * Handler for Dictionary server.
  */
-public class DictionaryServerHandler extends SimpleChannelHandler {
+@ChannelHandler.Sharable
+public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
 
   private static final LogService LOGGER =
           LogServiceFactory.getLogService(DictionaryServerHandler.class.getName());
@@ -42,45 +41,45 @@ public class DictionaryServerHandler extends SimpleChannelHandler {
   private ServerDictionaryGenerator generatorForServer = new ServerDictionaryGenerator();
 
   /**
-   * channel connected
+   * channel registered
    *
    * @param ctx
-   * @param e
    * @throws Exception
    */
-  public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-    LOGGER.audit("Connected " + ctx.getHandler());
+  public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    LOGGER.audit("Connected " + ctx);
+    super.channelActive(ctx);
   }
 
-  /**
-   * receive message and handle
-   *
-   * @param ctx
-   * @param e
-   * @throws Exception
-   */
-  @Override public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
-      throws Exception {
-    byte[] request = (byte[]) e.getMessage();
-    DictionaryKey key = KryoRegister.deserialize(request);
-    int outPut = processMessage(key);
-    key.setData(outPut);
-    // Send back the response
-    byte[] response = KryoRegister.serialize(key);
-    ctx.getChannel().write(response);
-    super.messageReceived(ctx, e);
+  @Override
+  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    try {
+      ByteBuf data = (ByteBuf) msg;
+      DictionaryMessage key = new DictionaryMessage();
+      key.readData(data);
+      data.release();
+      int outPut = processMessage(key);
+      key.setDictionaryValue(outPut);
+      // Send back the response
+      ByteBuf buffer = ctx.alloc().buffer();
+      key.writeData(buffer);
+      ctx.writeAndFlush(buffer);
+    } catch (Exception e) {
+      LOGGER.error(e);
+      throw e;
+    }
   }
 
   /**
    * handle exceptions
    *
    * @param ctx
-   * @param e
+   * @param cause
    */
-  @Override public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-    LOGGER.error("exceptionCaught");
-    e.getCause().printStackTrace();
-    ctx.getChannel().close();
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    LOGGER.error(cause, "exceptionCaught");
+    ctx.close();
   }
 
   /**
@@ -90,16 +89,16 @@ public class DictionaryServerHandler extends SimpleChannelHandler {
    * @return
    * @throws Exception
    */
-  public Integer processMessage(DictionaryKey key) throws Exception {
+  public int processMessage(DictionaryMessage key) throws Exception {
     switch (key.getType()) {
-      case "DICTIONARY_GENERATION":
+      case DICT_GENERATION :
         return generatorForServer.generateKey(key);
-      case "TABLE_INTIALIZATION":
+      case TABLE_INTIALIZATION :
         generatorForServer.initializeGeneratorForTable(key);
         return 0;
-      case "SIZE":
+      case SIZE :
         return generatorForServer.size(key);
-      case "WRITE_DICTIONARY":
+      case WRITE_DICTIONARY :
         generatorForServer.writeDictionaryData();
         return 0;
       default:

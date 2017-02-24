@@ -934,6 +934,7 @@ object CarbonDataRDDFactory {
         LOGGER.audit(s"Data load is failed for " +
             s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         LOGGER.warn("Cannot write load metadata file as data load failed")
+        shutDownDictionaryServer(carbonLoadModel, result, false)
         throw new Exception(errorMessage)
       } else {
         val metadataDetails = status(0)._2
@@ -948,6 +949,7 @@ object CarbonDataRDDFactory {
                       .getTableName
                 }")
             LOGGER.error("Dataload failed due to failure in table status updation.")
+            shutDownDictionaryServer(carbonLoadModel, result, false)
             throw new Exception(errorMessage)
           }
         } else if (!carbonLoadModel.isRetentionRequest) {
@@ -955,17 +957,7 @@ object CarbonDataRDDFactory {
           LOGGER.info("********Database updated**********")
         }
 
-        // write dictionary file and shutdown dictionary server
-        if (carbonLoadModel.getUseOnePass) {
-          try {
-            result.get().shutdown()
-          } catch {
-            case ex: Exception =>
-              LOGGER.error("Error while close dictionary server and write dictionary file for " +
-                s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-              throw new Exception("Dataload failed due to error while write dictionary file!")
-          }
-        }
+        shutDownDictionaryServer(carbonLoadModel, result)
 
         LOGGER.audit("Data load is successful for " +
             s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
@@ -982,4 +974,22 @@ object CarbonDataRDDFactory {
 
   }
 
+  private def shutDownDictionaryServer(carbonLoadModel: CarbonLoadModel,
+      result: Future[DictionaryServer], writeDictionary: Boolean = true): Unit = {
+    // write dictionary file and shutdown dictionary server
+    if (carbonLoadModel.getUseOnePass) {
+      try {
+        val server = result.get()
+        if (writeDictionary) {
+          server.writeDictionary()
+        }
+        server.shutdown()
+      } catch {
+        case ex: Exception =>
+          LOGGER.error("Error while close dictionary server and write dictionary file for " +
+                       s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+          throw new Exception("Dataload failed due to error while write dictionary file!")
+      }
+    }
+  }
 }

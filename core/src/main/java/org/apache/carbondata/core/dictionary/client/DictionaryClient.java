@@ -17,21 +17,17 @@
 package org.apache.carbondata.core.dictionary.client;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.handler.codec.serialization.ClassResolvers;
-import org.jboss.netty.handler.codec.serialization.ObjectDecoder;
-import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 
 
 /**
@@ -44,7 +40,7 @@ public class DictionaryClient {
 
   private DictionaryClientHandler dictionaryClientHandler = new DictionaryClientHandler();
 
-  private ClientBootstrap clientBootstrap;
+  private NioEventLoopGroup workerGroup;
 
   /**
    * start dictionary client
@@ -53,23 +49,19 @@ public class DictionaryClient {
    * @param port
    */
   public void startClient(String address, int port) {
-    clientBootstrap = new ClientBootstrap();
-    ExecutorService boss = Executors.newCachedThreadPool();
-    ExecutorService worker = Executors.newCachedThreadPool();
-    clientBootstrap.setFactory(new NioClientSocketChannelFactory(boss, worker));
-    clientBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      @Override
-      public ChannelPipeline getPipeline() throws Exception {
-        ChannelPipeline pipeline = Channels.pipeline();
-        pipeline.addLast("ObjectEncoder", new ObjectEncoder());
-        pipeline.addLast("ObjectDecoder", new ObjectDecoder(ClassResolvers.cacheDisabled(
-            getClass().getClassLoader())));
-        pipeline.addLast("DictionaryClientHandler", dictionaryClientHandler);
-        return pipeline;
-      }
-    });
+    long start = System.currentTimeMillis();
+    workerGroup = new NioEventLoopGroup();
+    Bootstrap clientBootstrap = new Bootstrap();
+    clientBootstrap.group(workerGroup).channel(NioSocketChannel.class)
+        .handler(new ChannelInitializer<SocketChannel>() {
+          @Override public void initChannel(SocketChannel ch) throws Exception {
+            ChannelPipeline pipeline = ch.pipeline();
+            pipeline.addLast("DictionaryClientHandler", dictionaryClientHandler);
+          }
+        });
     clientBootstrap.connect(new InetSocketAddress(address, port));
-    LOGGER.audit("Client Start!");
+    LOGGER.info(
+        "Dictionary client Started, Total time spent : " + (System.currentTimeMillis() - start));
   }
 
   /**
@@ -78,7 +70,7 @@ public class DictionaryClient {
    * @param key
    * @return
    */
-  public DictionaryKey getDictionary(DictionaryKey key) {
+  public DictionaryMessage getDictionary(DictionaryMessage key) {
     return dictionaryClientHandler.getDictionary(key);
   }
 
@@ -86,7 +78,11 @@ public class DictionaryClient {
    * shutdown dictionary client
    */
   public void shutDown() {
-    clientBootstrap.releaseExternalResources();
-    clientBootstrap.shutdown();
+    workerGroup.shutdownGracefully();
+    try {
+      workerGroup.terminationFuture().sync();
+    } catch (InterruptedException e) {
+      LOGGER.error(e);
+    }
   }
 }
