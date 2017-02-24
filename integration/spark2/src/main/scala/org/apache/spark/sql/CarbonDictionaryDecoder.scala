@@ -181,19 +181,16 @@ case class CarbonDictionaryDecoder(
             override final def hasNext: Boolean = iter.hasNext
 
             override final def next(): InternalRow = {
-              val startTime = System.currentTimeMillis()
               val row: InternalRow = iter.next()
               val data = row.toSeq(dataTypes).toArray
               dictIndex.foreach { index =>
                 if (data(index) != null) {
                   data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
-                    .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
+                    .getDictionaryValueForKeyInBytes(data(index).asInstanceOf[Int]),
                     getDictionaryColumnIds(index)._3)
                 }
               }
-              val result = unsafeProjection(new GenericInternalRow(data))
-              total += System.currentTimeMillis() - startTime
-              result
+              unsafeProjection(new GenericInternalRow(data))
             }
           }
         }
@@ -342,7 +339,7 @@ class CarbonDecoderRDD(
         dictIndex.foreach { index =>
           if (data(index) != null) {
             data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
-              .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
+                .getDictionaryValueForKeyInBytes(data(index).asInstanceOf[Int]),
               getDictionaryColumnIds(index)._3)
           }
         }

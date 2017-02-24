@@ -46,7 +46,7 @@ public class SparkRowReadSupportImpl extends DictionaryDecodeReadSupport<Row> {
       }
       if (dictionaries[i] != null) {
         data[i] = DataTypeUtil
-            .getDataBasedOnDataType(dictionaries[i].getDictionaryValueForKey((int) data[i]),
+            .getDataBasedOnDataType(dictionaries[i].getDictionaryValueForKeyInBytes((int) data[i]),
                 dataTypes[i]);
         if (data[i] == null) {
           continue;

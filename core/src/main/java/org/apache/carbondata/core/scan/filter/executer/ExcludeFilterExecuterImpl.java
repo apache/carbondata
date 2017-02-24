@@ -21,11 +21,13 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionDataChunk;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
+import org.apache.carbondata.core.util.BitSetGroup;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 public class ExcludeFilterExecuterImpl implements FilterExecuter {
@@ -43,15 +45,26 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
         dimColEvaluatorInfo.getDimension(), dimColumnExecuterInfo);
   }
 
-  @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder) throws IOException {
+  @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder) throws IOException {
     int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
         .get(dimColEvaluatorInfo.getColumnIndex());
-    if (null == blockChunkHolder.getDimensionDataChunk()[blockIndex]) {
-      blockChunkHolder.getDimensionDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
+    if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
+      blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
           .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
     }
-    return getFilteredIndexes(blockChunkHolder.getDimensionDataChunk()[blockIndex],
-        blockChunkHolder.getDataBlock().nodeSize());
+    DimensionRawColumnChunk dimensionRawColumnChunk =
+        blockChunkHolder.getDimensionRawDataChunk()[blockIndex];
+    DimensionColumnDataChunk[] dimensionColumnDataChunks =
+        dimensionRawColumnChunk.convertToDimColDataChunks();
+    BitSetGroup bitSetGroup =
+        new BitSetGroup(dimensionRawColumnChunk.getPagesCount());
+    for (int i = 0; i < dimensionColumnDataChunks.length; i++) {
+      BitSet bitSet = getFilteredIndexes(dimensionColumnDataChunks[i],
+          dimensionRawColumnChunk.getRowCount()[i]);
+      bitSetGroup.setBitSet(bitSet, i);
+    }
+
+    return bitSetGroup;
   }
 
   protected BitSet getFilteredIndexes(DimensionColumnDataChunk dimColumnDataChunk,
@@ -147,5 +160,14 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     BitSet bitSet = new BitSet(1);
     bitSet.flip(0, 1);
     return bitSet;
+  }
+
+  @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
+    int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
+        .get(dimColEvaluatorInfo.getColumnIndex());
+    if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
+      blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
+          .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
+    }
   }
 }

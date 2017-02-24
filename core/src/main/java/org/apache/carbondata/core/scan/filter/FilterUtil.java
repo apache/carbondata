@@ -68,7 +68,6 @@ import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.executer.IncludeColGroupFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.IncludeFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.OrFilterExecuterImpl;
-import org.apache.carbondata.core.scan.filter.executer.RestructureFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.RowLevelFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.RowLevelRangeTypeExecuterFacory;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
@@ -125,10 +124,6 @@ public final class FilterUtil {
                   complexDimensionInfoMap),
               createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
                   complexDimensionInfoMap));
-        case RESTRUCTURE:
-          return new RestructureFilterExecuterImpl(
-              filterExpressionResolverTree.getDimColResolvedFilterInfo(),
-              segmentProperties);
         case ROWLEVEL_LESSTHAN:
         case ROWLEVEL_LESSTHAN_EQUALTO:
         case ROWLEVEL_GREATERTHAN_EQUALTO:

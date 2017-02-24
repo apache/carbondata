@@ -18,8 +18,22 @@
 package org.apache.carbondata.core.datastore;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public interface FileHolder {
+
+  /**
+   * This method will be used to reads the data to byteBuffer from file based on offset
+   * and length(number of bytes) need to read
+   *
+   * @param filePath fully qualified file path
+   * @param byteBuffer
+   * @param offset reading start position,
+   * @param length number of bytes to be read
+   * @throws IOException
+   */
+  void readByteBuffer(String filePath, ByteBuffer byteBuffer, long offset, int length)
+      throws IOException;
   /**
    * This method will be used to read the byte array from file based on offset
    * and length(number of bytes) need to read

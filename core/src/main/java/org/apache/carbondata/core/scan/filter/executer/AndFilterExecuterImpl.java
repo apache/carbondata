@@ -21,6 +21,7 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
+import org.apache.carbondata.core.util.BitSetGroup;
 
 public class AndFilterExecuterImpl implements FilterExecuter {
 
@@ -32,13 +33,13 @@ public class AndFilterExecuterImpl implements FilterExecuter {
     this.rightExecuter = rightExecuter;
   }
 
-  @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder)
+  @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
       throws FilterUnsupportedException, IOException {
-    BitSet leftFilters = leftExecuter.applyFilter(blockChunkHolder);
+    BitSetGroup leftFilters = leftExecuter.applyFilter(blockChunkHolder);
     if (leftFilters.isEmpty()) {
       return leftFilters;
     }
-    BitSet rightFilter = rightExecuter.applyFilter(blockChunkHolder);
+    BitSetGroup rightFilter = rightExecuter.applyFilter(blockChunkHolder);
     if (rightFilter.isEmpty()) {
       return rightFilter;
     }
@@ -57,5 +58,10 @@ public class AndFilterExecuterImpl implements FilterExecuter {
     }
     leftFilters.and(rightFilter);
     return leftFilters;
+  }
+
+  @Override public void readBlocks(BlocksChunkHolder blocksChunkHolder) throws IOException {
+    leftExecuter.readBlocks(blocksChunkHolder);
+    rightExecuter.readBlocks(blocksChunkHolder);
   }
 }

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -103,7 +104,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     LOGGER.info("Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
         .getCarbonTableIdentifier().getTableName());
     // add executor service for query execution
-    queryProperties.executorService = Executors.newFixedThreadPool(1);
+    queryProperties.executorService = Executors.newCachedThreadPool();
     // Initializing statistics list to record the query statistics
     // creating copy on write to handle concurrent scenario
     queryProperties.queryStatisticsRecorder =
@@ -331,7 +332,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // setting all the dimension chunk indexes to be read from file
     int numberOfElementToConsider = 0;
     // list of dimensions to be projected
-    List<Integer> allProjectionListDimensionIdexes = new ArrayList<>();
+    Set<Integer> allProjectionListDimensionIdexes = new LinkedHashSet<>();
     int[] dimensionsBlockIndexes = QueryUtil.getDimensionsBlockIndexes(updatedQueryDimension,
         segmentProperties.getDimensionOrdinalToBlockMapping(), expressionDimensions,
         queryProperties.complexFilterDimension, allProjectionListDimensionIdexes);
@@ -346,10 +347,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     } else {
       blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(new int[0][0]);
     }
-
+    // list of measures to be projected
+    List<Integer> allProjectionListMeasureIdexes = new ArrayList<>();
     int[] measureBlockIndexes = QueryUtil
         .getMeasureBlockIndexes(queryModel.getQueryMeasures(), expressionMeasures,
-            segmentProperties.getMeasuresOrdinalToBlockMapping(), queryProperties.filterMeasures);
+            segmentProperties.getMeasuresOrdinalToBlockMapping(), queryProperties.filterMeasures,
+            allProjectionListMeasureIdexes);
     if (measureBlockIndexes.length > 0) {
 
       numberOfElementToConsider = measureBlockIndexes[measureBlockIndexes.length - 1]
@@ -363,6 +366,14 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     } else {
       blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(new int[0][0]);
     }
+    // setting the indexes of list of dimension in projection list
+    blockExecutionInfo.setProjectionListDimensionIndexes(ArrayUtils.toPrimitive(
+        allProjectionListDimensionIdexes
+            .toArray(new Integer[allProjectionListDimensionIdexes.size()])));
+    // setting the indexes of list of measures in projection list
+    blockExecutionInfo.setProjectionListMeasureIndexes(ArrayUtils.toPrimitive(
+        allProjectionListMeasureIdexes
+            .toArray(new Integer[allProjectionListMeasureIdexes.size()])));
     // setting the key structure info which will be required
     // to update the older block key with new key generator
     blockExecutionInfo.setKeyStructureInfo(queryProperties.keyStructureInfo);
