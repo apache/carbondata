@@ -25,9 +25,8 @@ import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 
-import org.apache.spark.sql.catalyst.util.GenericArrayData;
-import org.apache.spark.sql.types.ArrayType;
-import org.apache.spark.sql.types.DataType;
+import org.apache.spark.sql.catalyst.util.*;
+import org.apache.spark.sql.types.*;
 
 public class ArrayQueryType extends ComplexQueryType implements GenericQueryType {
 
