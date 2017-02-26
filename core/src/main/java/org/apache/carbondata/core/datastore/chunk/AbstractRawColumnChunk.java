@@ -18,6 +18,7 @@ package org.apache.carbondata.core.datastore.chunk;
 
 import java.nio.ByteBuffer;
 
+import org.apache.carbondata.format.DataChunk3;
 
 /**
  * It contains group of uncompressed blocklets on one column.
@@ -43,6 +44,8 @@ public abstract class AbstractRawColumnChunk {
   protected int offSet;
 
   protected int length;
+
+  protected DataChunk3 dataChunkV3;
 
   public AbstractRawColumnChunk(int blockletId, ByteBuffer rawData, int offSet, int length) {
     this.blockletId = blockletId;
@@ -119,6 +122,14 @@ public abstract class AbstractRawColumnChunk {
 
   public int getLength() {
     return length;
+  }
+
+  public DataChunk3 getDataChunkV3() {
+    return dataChunkV3;
+  }
+
+  public void setDataChunkV3(DataChunk3 dataChunkV3) {
+    this.dataChunkV3 = dataChunkV3;
   }
 
 }

@@ -19,6 +19,7 @@ package org.apache.carbondata.processing.store.writer;
 
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
+import org.apache.carbondata.core.util.NodeHolder;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
 public interface CarbonFactDataWriter<T> {

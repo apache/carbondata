@@ -52,9 +52,11 @@ public class BitSetGroup {
   public void and(BitSetGroup group) {
     int i = 0;
     for (BitSet bitSet : bitSets) {
-      BitSet otherSet  = group.getBitSet(i);
+      BitSet otherSet = group.getBitSet(i);
       if (bitSet != null && otherSet != null) {
         bitSet.and(otherSet);
+      } else {
+        bitSets[i] = null;
       }
       i++;
     }
@@ -63,7 +65,7 @@ public class BitSetGroup {
   public void or(BitSetGroup group) {
     int i = 0;
     for (BitSet bitSet : bitSets) {
-      BitSet otherSet  = group.getBitSet(i);
+      BitSet otherSet = group.getBitSet(i);
       if (bitSet != null && otherSet != null) {
         bitSet.or(otherSet);
       }

@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * Below class will be used to store fixed length dimension data
@@ -66,13 +67,7 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
     }
     // below part is to convert the byte array to surrogate value
     int startOffsetOfData = index * columnValueSize;
-    int surrogate = 0;
-    for (int i = 0; i < columnValueSize; i++) {
-      surrogate <<= 8;
-      surrogate ^= data[startOffsetOfData] & 0xFF;
-      startOffsetOfData++;
-    }
-    return surrogate;
+    return CarbonUtil.getSurrogateInternal(data, startOffsetOfData, columnValueSize);
   }
 
   /**
