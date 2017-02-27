@@ -24,15 +24,15 @@ This tutorial provides a quick introduction to using CarbonData.
 * [Installation and building CarbonData](https://github.com/apache/incubator-carbondata/blob/master/build).
 * Create a sample.csv file using the following commands. The CSV file is required for loading data into CarbonData.
 
-```
-cd carbondata
-cat > sample.csv << EOF
-id,name,city,age
-1,david,shenzhen,31
-2,eason,shenzhen,27
-3,jarry,wuhan,35
-EOF
-```
+  ```
+  cd carbondata
+  cat > sample.csv << EOF
+  id,name,city,age
+  1,david,shenzhen,31
+  2,eason,shenzhen,27
+  3,jarry,wuhan,35
+  EOF
+  ```
 
 ## Interactive Analysis with Spark Shell
 
@@ -48,7 +48,7 @@ Start Spark shell by running the following command in the Spark directory:
 ./bin/spark-shell --jars <carbondata assembly jar path>
 ```
 
-In this shell, SparkSession is readily available as 'spark' and Spark context is readily available as 'sc'.
+In this shell, SparkSession is readily available as `spark` and Spark context is readily available as `sc`.
 
 In order to create a CarbonSession we will have to configure it explicitly in the following manner :
 
@@ -64,7 +64,7 @@ import org.apache.spark.sql.CarbonSession._
 ```
 val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<hdfs store path>")
 ```
-NOTE: By default metastore location is pointed to "../carbon.metastore", user can provide own metastore location to CarbonSession like `SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<hdfs store path>", "<local metastore path>")`
+**NOTE**: By default metastore location is pointed to `../carbon.metastore`, user can provide own metastore location to CarbonSession like `SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<hdfs store path>", "<local metastore path>")`
 
 #### Executing Queries
 
@@ -79,7 +79,7 @@ scala>carbon.sql("CREATE TABLE IF NOT EXISTS test_table(id string, name string, 
 ```
 scala>carbon.sql("LOAD DATA INPATH 'sample.csv file path' INTO TABLE test_table")
 ```
-NOTE:Please provide the real file path of sample.csv for the above script.
+**NOTE**: Please provide the real file path of `sample.csv` for the above script.
 
 ###### Query Data from a Table
 
@@ -100,7 +100,7 @@ Start Spark shell by running the following command in the Spark directory:
 ./bin/spark-shell --jars <carbondata assembly jar path>
 ```
 
-NOTE: In this shell, SparkContext is readily available as sc.
+**NOTE**: In this shell, SparkContext is readily available as `sc`.
 
 * In order to execute the Queries we need to import CarbonContext:
 
@@ -111,10 +111,9 @@ import org.apache.spark.sql.CarbonContext
 * Create an instance of CarbonContext in the following manner :
 
 ```
-val cc = new CarbonContext(sc)
+val cc = new CarbonContext(sc, "<hdfs store path>")
 ```
-
-NOTE: By default store location is pointed to "../carbon.store", user can provide own store location to CarbonContext like new CarbonContext(sc, storeLocation).
+**NOTE**: If running on local machine without hdfs, configure the local machine's store path instead of hdfs store path
 
 #### Executing Queries
 
@@ -134,7 +133,7 @@ scala>cc.sql("SHOW TABLES").show()
 ```
 scala>cc.sql("LOAD DATA INPATH 'sample.csv file path' INTO TABLE test_table")
 ```
-NOTE:Please provide the real file path of sample.csv for the above script.
+**NOTE**: Please provide the real file path of `sample.csv` for the above script.
 
 ##### Query Data from a Table
 
