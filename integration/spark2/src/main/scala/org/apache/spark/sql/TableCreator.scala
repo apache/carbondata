@@ -311,11 +311,11 @@ object TableCreator {
     var noInvertedIdxColsProps: Array[String] = Array[String]()
     var noInvertedIdxCols: Seq[String] = Seq[String]()
 
-    if (tableProperties.get("NO_INVERTED_INDEX").isDefined) {
+    if (tableProperties.get("no_inverted_index").isDefined) {
       noInvertedIdxColsProps =
-        tableProperties("NO_INVERTED_INDEX").split(',').map(_.trim)
+        tableProperties("no_inverted_index").split(',').map(_.trim)
       noInvertedIdxColsProps.foreach { noInvertedIdxColProp =>
-          if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
+          if (!fields.exists(tableCol => tableCol.column.equalsIgnoreCase(noInvertedIdxColProp))) {
             val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
               " does not exist in table. Please check create table statement."
             throw new MalformedCarbonCommandException(errormsg)
