@@ -7,16 +7,17 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 case class CommandLineArguments(inputPath: String, fileHeaders: Option[List[String]] = None, delimiter: String = ",", quoteCharacter: String = " \"",
                                 badRecordAction: String = "IGNORE")
 
-object DataFrameHandler {
+class DataFrameHandler {
 
   val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  def main(args: Array[String]) {
-    if (args.length > 5 || args.length < 1) {
-        LOGGER.error("Invalid input parameters.")
-        LOGGER.error("[Usage]: <Path> <File Header(Comma-separated)>[Optional] <Delimiter>[Optional] <Quote Character>[Optional] <Bad Record Action>[Optional]")
-      } else {
-        processDataFrame(getArguments(args))
+  def startProcess(args: Array[String]): Boolean = {
+    try {
+      processDataFrame(getArguments(args))
+      true
+    }
+    catch {
+      case _: Exception => false
     }
   }
 
@@ -57,7 +58,7 @@ object DataFrameHandler {
     val conf = new SparkConf().setAppName("cardinality_demo").setMaster("local")
     val sparkSession = SparkSession.builder().config(conf).getOrCreate()
 
-//    sparkSession.sparkContext.setLogLevel("WARN")
+    sparkSession.sparkContext.setLogLevel("WARN")
 
     val df: DataFrame = sparkSession.read
       .format("com.databricks.spark.csv")
