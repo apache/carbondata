@@ -4,7 +4,7 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.{DataType, StringType}
 
-case class CardinalityMatrix(columnName: String, cardinality: Double, columnDataframe: DataFrame, dataType: DataType = StringType)
+case class CardinalityMatrix(columnName: String, cardinality: Double, columnDataframe: DataFrame, dataType: DataType = StringType, inputColumnName: String = "")
 
 class CardinalityProcessor{
 
@@ -37,7 +37,7 @@ class CardinalityProcessor{
     * @param dataFrame
     * @return
     */
-  def getCardinalityMatrix(dataFrame: DataFrame): List[CardinalityMatrix] = {
+  def getCardinalityMatrix(dataFrame: DataFrame, parameters: CommandLineArguments): List[CardinalityMatrix] = {
     val cardinalityProcessor = new CardinalityProcessor()
     val cardinalityMatrixList = dataFrameUtil.getColumnNames(dataFrame) map { columnName =>
       val columnDataFrame = dataFrame.select(columnName)
@@ -45,7 +45,9 @@ class CardinalityProcessor{
       CardinalityMatrix(columnName, cardinality, columnDataFrame)
     }
     val inputFileSchema = dataFrameUtil.getColumnDataTypes(dataFrame)
-    cardinalityProcessor.setDataTypeWithCardinality(cardinalityMatrixList, inputFileSchema)
+    val columnList = dataFrameUtil.getColumnNameFromFileHeader(parameters)
+    val cardinalityMatrix = cardinalityProcessor.setDataTypeWithCardinality(cardinalityMatrixList, inputFileSchema)
+    columnList.zip(cardinalityMatrix) map {case (column, matrix) => matrix.copy(inputColumnName = column)}
   }
 
 }

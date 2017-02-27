@@ -13,10 +13,10 @@ object DataFrameHandler {
 
   def main(args: Array[String]) {
     if (args.length > 5 || args.length < 1) {
-      LOGGER.error("Invalid input parameters.")
-      LOGGER.error("[Usage]: <Path> <File Header(Comma-separated)>[Optional] <Delimiter>[Optional] <Quote Character>[Optional] <Bad Record Action>[Optional]")
-    } else {
-      processDataFrame(getArguments(args))
+        LOGGER.error("Invalid input parameters.")
+        LOGGER.error("[Usage]: <Path> <File Header(Comma-separated)>[Optional] <Delimiter>[Optional] <Quote Character>[Optional] <Bad Record Action>[Optional]")
+      } else {
+        processDataFrame(getArguments(args))
     }
   }
 
@@ -49,7 +49,7 @@ object DataFrameHandler {
     val isHeaderExist = parameters.fileHeaders.isDefined
     val dataFrame = loadData(parameters.inputPath, isHeaderExist)
     val cardinalityProcessor = new CardinalityProcessor
-    LOGGER.info("Cardinality Matrix is : " + cardinalityProcessor.getCardinalityMatrix(dataFrame))
+    println("Cardinality Matrix is : " + cardinalityProcessor.getCardinalityMatrix(dataFrame, parameters))
   }
 
   def loadData(filePath: String, isHeaderExist: Boolean): DataFrame = {
@@ -59,9 +59,9 @@ object DataFrameHandler {
 
 //    sparkSession.sparkContext.setLogLevel("WARN")
 
-    val df = sparkSession.read
+    val df: DataFrame = sparkSession.read
       .format("com.databricks.spark.csv")
-      .option("header", (!isHeaderExist).toString)
+      .option("header", "true")
       .option("inferSchema", "true")
       .load(filePath)
     df.printSchema()
