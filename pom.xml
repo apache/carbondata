@@ -241,6 +241,32 @@
     </pluginManagement>
     <plugins>
       <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>0.12</version>
+        <executions>
+          <execution>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <reportFile>${project.build.directory}/${project.build.finalName}.rat</reportFile>
+          <excludeSubProjects>false</excludeSubProjects>
+          <consoleOutput>true</consoleOutput>
+          <useDefaultExcludes>true</useDefaultExcludes>
+          <excludes>
+            <exclude>**/target/**/*</exclude>
+            <exclude>.github/**/*</exclude>
+            <exclude>**/*.iml</exclude>
+            <exclude>**/src/test/**/*</exclude>
+            <exclude>examples/**/*.csv</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>2.17</version>
