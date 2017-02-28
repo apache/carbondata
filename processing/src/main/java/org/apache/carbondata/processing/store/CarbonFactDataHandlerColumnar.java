@@ -43,7 +43,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForInt;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndex;
+import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForShort;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort;
 import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
@@ -1637,8 +1637,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
               isSortRequired);
         }
       } else {
-        return new BlockIndexerStorageForNoInvertedIndex(this.data, isCompressionReq,
-            isNoDictionary);
+        return new BlockIndexerStorageForNoInvertedIndexForShort(this.data, isNoDictionary);
       }
 
     }
