@@ -182,6 +182,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
     dictionaryFile.delete();
 
     // cleanup created files
+    metadata.removeTable(carbonTable.getTableUniqueName());
     cleanUpDirectory(new File(storePath));
 
   }

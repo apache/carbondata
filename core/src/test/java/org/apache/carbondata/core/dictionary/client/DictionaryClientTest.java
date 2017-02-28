@@ -132,15 +132,8 @@ public class DictionaryClientTest {
   }
 
   @After public void tearDown() {
-    try {
-
-
-
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-
     // Cleanup created files
+    CarbonMetadata.getInstance().removeTable(tableInfo.getTableUniqueName());
     cleanUpDirectory(new File(storePath));
   }
 
@@ -154,7 +147,6 @@ public class DictionaryClientTest {
       else file.delete();
     }
     path.delete();
-    CarbonMetadata.getInstance().removeTable(tableInfo.getTableUniqueName());
   }
 
 }

@@ -215,6 +215,7 @@ public class TableDictionaryGeneratorTest {
   }
 
   @After public void tearDown() {
+    CarbonMetadata.getInstance().removeTable(tableInfo.getTableUniqueName());
     cleanUpDirectory(new File(storePath));
   }
 
@@ -228,6 +229,5 @@ public class TableDictionaryGeneratorTest {
       else file.delete();
     }
     path.delete();
-    CarbonMetadata.getInstance().removeTable(tableInfo.getTableUniqueName());
   }
 }
