@@ -21,7 +21,7 @@ import java.io.File;
 import java.util.Arrays;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -94,7 +94,7 @@ public class ServerDictionaryGeneratorTest {
     ServerDictionaryGenerator serverDictionaryGenerator = new ServerDictionaryGenerator();
 
     // Generate dictionary for one key
-    DictionaryKey empKey = new DictionaryKey();
+    DictionaryMessage empKey = new DictionaryMessage();
     empKey.setTableUniqueName(tableInfo.getTableUniqueName());
     empKey.setColumnName(empColumnSchema.getColumnName());
     empKey.setData("FirstKey");
@@ -108,14 +108,14 @@ public class ServerDictionaryGeneratorTest {
     ServerDictionaryGenerator serverDictionaryGenerator = new ServerDictionaryGenerator();
 
     // Generate dictionary for same key twice
-    DictionaryKey firstKey = new DictionaryKey();
+    DictionaryMessage firstKey = new DictionaryMessage();
     firstKey.setTableUniqueName(tableInfo.getTableUniqueName());
     firstKey.setColumnName(empColumnSchema.getColumnName());
     firstKey.setData("FirstKey");
     serverDictionaryGenerator.initializeGeneratorForTable(firstKey);
     Integer value = serverDictionaryGenerator.generateKey(firstKey);
     assertEquals(new Integer(2), value);
-    DictionaryKey secondKey = new DictionaryKey();
+    DictionaryMessage secondKey = new DictionaryMessage();
     secondKey.setTableUniqueName(tableInfo.getTableUniqueName());
     secondKey.setColumnName(empColumnSchema.getColumnName());
     secondKey.setData("FirstKey");
@@ -127,14 +127,14 @@ public class ServerDictionaryGeneratorTest {
     ServerDictionaryGenerator serverDictionaryGenerator = new ServerDictionaryGenerator();
 
     // Generate dictionary for two different keys
-    DictionaryKey firstKey = new DictionaryKey();
+    DictionaryMessage firstKey = new DictionaryMessage();
     firstKey.setTableUniqueName(tableInfo.getTableUniqueName());
     firstKey.setColumnName(empColumnSchema.getColumnName());
     firstKey.setData("FirstKey");
     serverDictionaryGenerator.initializeGeneratorForTable(firstKey);
     Integer value = serverDictionaryGenerator.generateKey(firstKey);
     assertEquals(new Integer(2), value);
-    DictionaryKey secondKey = new DictionaryKey();
+    DictionaryMessage secondKey = new DictionaryMessage();
     secondKey.setTableUniqueName(tableInfo.getTableUniqueName());
     secondKey.setColumnName(empColumnSchema.getColumnName());
     secondKey.setData("SecondKey");
@@ -145,7 +145,7 @@ public class ServerDictionaryGeneratorTest {
   @Test public void size() throws Exception {
     ServerDictionaryGenerator serverDictionaryGenerator = new ServerDictionaryGenerator();
     //Add keys for first Column
-    DictionaryKey empKey = new DictionaryKey();
+    DictionaryMessage empKey = new DictionaryMessage();
     //Add key 1
     empKey.setTableUniqueName(tableInfo.getTableUniqueName());
     empKey.setColumnName(empColumnSchema.getColumnName());
@@ -155,7 +155,7 @@ public class ServerDictionaryGeneratorTest {
     assertEquals(new Integer(2), serverDictionaryGenerator.size(empKey));
 
     //Add key 2
-    empKey = new DictionaryKey();
+    empKey = new DictionaryMessage();
     empKey.setTableUniqueName(tableInfo.getTableUniqueName());
     empKey.setColumnName(empColumnSchema.getColumnName());
     empKey.setData("SecondKey");
@@ -163,7 +163,7 @@ public class ServerDictionaryGeneratorTest {
     assertEquals(new Integer(3), serverDictionaryGenerator.size(empKey));
 
     //Add key 3
-    empKey = new DictionaryKey();
+    empKey = new DictionaryMessage();
     empKey.setTableUniqueName(tableInfo.getTableUniqueName());
     empKey.setColumnName(empColumnSchema.getColumnName());
     empKey.setData("ThirdKey");
@@ -173,7 +173,7 @@ public class ServerDictionaryGeneratorTest {
 
   @Test public void writeDictionaryData() throws Exception {
     ServerDictionaryGenerator serverDictionaryGenerator = new ServerDictionaryGenerator();
-    DictionaryKey firstKey = new DictionaryKey();
+    DictionaryMessage firstKey = new DictionaryMessage();
     firstKey.setTableUniqueName(tableInfo.getTableUniqueName());
     firstKey.setColumnName(empColumnSchema.getColumnName());
     firstKey.setData("FirstKey");
@@ -182,7 +182,7 @@ public class ServerDictionaryGeneratorTest {
 
     //Update generator with a new dimension
 
-    DictionaryKey secondKey = new DictionaryKey();
+    DictionaryMessage secondKey = new DictionaryMessage();
     secondKey.setTableUniqueName(tableInfo.getTableUniqueName());
     secondKey.setColumnName(ageColumnSchema.getColumnName());
     secondKey.setData("SecondKey");

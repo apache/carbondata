@@ -21,7 +21,8 @@ import java.io.File;
 import java.util.Arrays;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType;
 import org.apache.carbondata.core.dictionary.server.DictionaryServer;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -93,53 +94,47 @@ public class DictionaryClientTest {
 
     // Start the server for testing the client
     server = new DictionaryServer();
-    server.startServer(5679);
+    server.startServer(5678);
   }
 
   @Test public void testClient() throws Exception {
     DictionaryClient client = new DictionaryClient();
-    client.startClient("localhost", 5679);
+    client.startClient("localhost", 5678);
 
+    Thread.sleep(1000);
     // Create a dictionary key
-    DictionaryKey empKey = new DictionaryKey();
+    DictionaryMessage empKey = new DictionaryMessage();
     empKey.setTableUniqueName(tableInfo.getTableUniqueName());
     empKey.setColumnName(empColumnSchema.getColumnName());
     empKey.setData("FirstKey");
-    empKey.setThreadNo("1");
 
     // Test dictionary initialization call
-    empKey.setType("TABLE_INTIALIZATION");
+    empKey.setType(DictionaryMessageType.TABLE_INTIALIZATION);
     client.getDictionary(empKey);
 
     // Test dictionary generation
     for (int count = 2; count <= 10000; count++) {
-      empKey.setType("DICTIONARY_GENERATION");
-      DictionaryKey val = client.getDictionary(empKey);
+      empKey.setType(DictionaryMessageType.DICT_GENERATION);
       empKey.setData("FirstKey" + count);
-      Assert.assertEquals(new Integer(count), val.getData());
+      DictionaryMessage val = client.getDictionary(empKey);
+      Assert.assertEquals(count, val.getDictionaryValue());
     }
     // Test size function
-    empKey.setType("SIZE");
-    DictionaryKey val = client.getDictionary(empKey);
-    Assert.assertEquals(new Integer(10000), val.getData());
+    empKey.setType(DictionaryMessageType.SIZE);
+    DictionaryMessage val = client.getDictionary(empKey);
+    Assert.assertEquals(10000, val.getDictionaryValue());
 
-    // Test writing dictionary call
-    empKey.setType("WRITE_DICTIONARY");
-    client.getDictionary(empKey);
-    File dictPath = new File(storePath + "/test/TestTable/Metadata/");
-    dictPath.mkdirs();
-    File empDictionaryFile = new File(dictPath, empColumnSchema.getColumnName() + ".dict");
-    empKey.setType("DICTIONARY_GENERATION");
+
     client.shutDown();
-    server.shutdown();
 
-    assertTrue(empDictionaryFile.exists());
+    // Shutdown the server
+    server.shutdown();
   }
 
   @After public void tearDown() {
     try {
 
-      // Shutdown the server
+
 
     } catch (Exception e) {
       e.printStackTrace();

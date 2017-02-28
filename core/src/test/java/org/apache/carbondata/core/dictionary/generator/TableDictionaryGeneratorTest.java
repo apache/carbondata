@@ -21,7 +21,7 @@ import java.io.File;
 import java.util.Arrays;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -94,7 +94,7 @@ public class TableDictionaryGeneratorTest {
     TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(empDimension);
 
     // Generate dictionary for one key
-    DictionaryKey empKey = new DictionaryKey();
+    DictionaryMessage empKey = new DictionaryMessage();
     empKey.setTableUniqueName(tableInfo.getTableUniqueName());
     empKey.setColumnName(empColumnSchema.getColumnName());
     empKey.setData("FirstKey");
@@ -107,13 +107,13 @@ public class TableDictionaryGeneratorTest {
     TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(empDimension);
 
     // Generate dictionary for same key twice
-    DictionaryKey firstKey = new DictionaryKey();
+    DictionaryMessage firstKey = new DictionaryMessage();
     firstKey.setTableUniqueName(tableInfo.getTableUniqueName());
     firstKey.setColumnName(empColumnSchema.getColumnName());
     firstKey.setData("FirstKey");
     Integer value = tableDictionaryGenerator.generateKey(firstKey);
     assertEquals(new Integer(2), value);
-    DictionaryKey secondKey = new DictionaryKey();
+    DictionaryMessage secondKey = new DictionaryMessage();
     secondKey.setTableUniqueName(tableInfo.getTableUniqueName());
     secondKey.setColumnName(empColumnSchema.getColumnName());
     secondKey.setData("FirstKey");
@@ -125,13 +125,13 @@ public class TableDictionaryGeneratorTest {
     TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(empDimension);
 
     // Generate dictionary for two different keys
-    DictionaryKey firstKey = new DictionaryKey();
+    DictionaryMessage firstKey = new DictionaryMessage();
     firstKey.setTableUniqueName(tableInfo.getTableUniqueName());
     firstKey.setColumnName(empColumnSchema.getColumnName());
     firstKey.setData("FirstKey");
     Integer value = tableDictionaryGenerator.generateKey(firstKey);
     assertEquals(new Integer(2), value);
-    DictionaryKey secondKey = new DictionaryKey();
+    DictionaryMessage secondKey = new DictionaryMessage();
     secondKey.setTableUniqueName(tableInfo.getTableUniqueName());
     secondKey.setColumnName(empColumnSchema.getColumnName());
     secondKey.setData("SecondKey");
@@ -141,7 +141,7 @@ public class TableDictionaryGeneratorTest {
 
   @Test public void updateGenerator() throws Exception {
     TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(empDimension);
-    DictionaryKey firstKey = new DictionaryKey();
+    DictionaryMessage firstKey = new DictionaryMessage();
     firstKey.setTableUniqueName(tableInfo.getTableUniqueName());
     firstKey.setColumnName(empColumnSchema.getColumnName());
     firstKey.setData("FirstKey");
@@ -151,7 +151,7 @@ public class TableDictionaryGeneratorTest {
     tableDictionaryGenerator.updateGenerator(ageDimension);
     //Update generator with a new dimension
 
-    DictionaryKey secondKey = new DictionaryKey();
+    DictionaryMessage secondKey = new DictionaryMessage();
     secondKey.setTableUniqueName(tableInfo.getTableUniqueName());
     secondKey.setColumnName(ageColumnSchema.getColumnName());
     secondKey.setData("SecondKey");
@@ -162,7 +162,7 @@ public class TableDictionaryGeneratorTest {
   @Test public void size() throws Exception {
     TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(empDimension);
     //Add keys for first Column
-    DictionaryKey empKey = new DictionaryKey();
+    DictionaryMessage empKey = new DictionaryMessage();
     //Add key 1
     empKey.setTableUniqueName(tableInfo.getTableUniqueName());
     empKey.setColumnName(empColumnSchema.getColumnName());
@@ -171,7 +171,7 @@ public class TableDictionaryGeneratorTest {
     assertEquals(new Integer(2), tableDictionaryGenerator.size(empKey));
 
     //Add key 2
-    empKey = new DictionaryKey();
+    empKey = new DictionaryMessage();
     empKey.setTableUniqueName(tableInfo.getTableUniqueName());
     empKey.setColumnName(empColumnSchema.getColumnName());
     empKey.setData("SecondKey");
@@ -179,7 +179,7 @@ public class TableDictionaryGeneratorTest {
     assertEquals(new Integer(3), tableDictionaryGenerator.size(empKey));
 
     //Add key 3
-    empKey = new DictionaryKey();
+    empKey = new DictionaryMessage();
     empKey.setTableUniqueName(tableInfo.getTableUniqueName());
     empKey.setColumnName(empColumnSchema.getColumnName());
     empKey.setData("ThirdKey");
@@ -189,7 +189,7 @@ public class TableDictionaryGeneratorTest {
 
   @Test public void writeDictionaryData() throws Exception {
     TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(empDimension);
-    DictionaryKey firstKey = new DictionaryKey();
+    DictionaryMessage firstKey = new DictionaryMessage();
     firstKey.setTableUniqueName(tableInfo.getTableUniqueName());
     firstKey.setColumnName(empColumnSchema.getColumnName());
     firstKey.setData("FirstKey");
@@ -198,7 +198,7 @@ public class TableDictionaryGeneratorTest {
     tableDictionaryGenerator.updateGenerator(ageDimension);
     //Update generator with a new dimension
 
-    DictionaryKey secondKey = new DictionaryKey();
+    DictionaryMessage secondKey = new DictionaryMessage();
     secondKey.setTableUniqueName(tableInfo.getTableUniqueName());
     secondKey.setColumnName(ageColumnSchema.getColumnName());
     secondKey.setData("SecondKey");
