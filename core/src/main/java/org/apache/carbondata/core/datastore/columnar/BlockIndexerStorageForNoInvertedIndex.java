@@ -16,12 +16,13 @@
  */
 package org.apache.carbondata.core.datastore.columnar;
 
+import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
  * Below class will be used to for no inverted index
  */
-public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStorage<short[]> {
+public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]> {
 
   /**
    * column data
@@ -36,8 +37,7 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
   private byte[] min;
   private byte[] max;
 
-  public BlockIndexerStorageForNoInvertedIndexForShort(byte[][] keyBlockInput,
-      boolean isNoDictionary) {
+  public BlockIndexerStorageForNoInvertedIndex(byte[][] keyBlockInput, boolean isNoDictionary) {
     this.keyBlock = keyBlockInput;
     min = keyBlock[0];
     max = keyBlock[0];
@@ -57,8 +57,8 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
     }
   }
 
-  @Override public short[] getDataIndexMap() {
-    return new short[0];
+  @Override public int[] getDataIndexMap() {
+    return new int[0];
   }
 
   @Override public int getTotalSize() {
@@ -74,8 +74,8 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
    *
    * @return
    */
-  @Override public short[] getDataAfterComp() {
-    return new short[0];
+  @Override public int[] getDataAfterComp() {
+    return new int[0];
   }
 
   /**
@@ -83,8 +83,8 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
    *
    * @return
    */
-  @Override public short[] getIndexMap() {
-    return new short[0];
+  @Override public int[] getIndexMap() {
+    return new int[0];
   }
 
   /**
