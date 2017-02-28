@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.scan.result.iterator;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -64,8 +65,8 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
    * file reader which will be used to execute the query
    */
   protected FileHolder fileReader;
+
   protected AbstractDataBlockIterator dataBlockIterator;
-  protected boolean nextBatch = false;
   /**
    * total time scan the blocks
    */
@@ -138,7 +139,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   }
 
   @Override public boolean hasNext() {
-    if ((dataBlockIterator != null && dataBlockIterator.hasNext()) || nextBatch) {
+    if ((dataBlockIterator != null && dataBlockIterator.hasNext())) {
       return true;
     } else if (blockExecutionInfos.size() > 0) {
       return true;
@@ -168,10 +169,10 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
       BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
       blockExecutionInfos.remove(executionInfo);
       queryStatisticsModel.setRecorder(recorder);
-      CarbonUtil.freeMemory(blocksChunkHolder.getDimensionDataChunk(),
-          blocksChunkHolder.getMeasureDataChunk());
+      CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),
+          blocksChunkHolder.getMeasureRawDataChunk());
       return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize, queryStatisticsModel,
-          blocksChunkHolder);
+          blocksChunkHolder, execService);
     }
     return null;
   }
@@ -191,8 +192,14 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   }
 
   @Override public void close() {
-    CarbonUtil.freeMemory(blocksChunkHolder.getDimensionDataChunk(),
-        blocksChunkHolder.getMeasureDataChunk());
+    try {
+      fileReader.finish();
+    } catch (IOException e) {
+      LOGGER.error(e);
+    } finally {
+      CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),
+          blocksChunkHolder.getMeasureRawDataChunk());
+    }
   }
 
 }

@@ -48,7 +48,7 @@ import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecor
  */
 public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoadProcessorStep {
 
-  private RowConverter converter;
+  private List<RowConverter> converters;
 
   private Partitioner<Object[]> partitioner;
 
@@ -65,8 +65,11 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
   @Override
   public void initialize() throws IOException {
     child.initialize();
+    converters = new ArrayList<>();
     BadRecordsLogger badRecordLogger = createBadRecordLogger();
-    converter = new RowConverterImpl(child.getOutput(), configuration, badRecordLogger);
+    RowConverter converter =
+        new RowConverterImpl(child.getOutput(), configuration, badRecordLogger);
+    converters.add(converter);
     converter.initialize();
     List<Integer> indexes = new ArrayList<>();
     List<ColumnSchema> columnSchemas = new ArrayList<>();
@@ -95,8 +98,14 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
   @Override
   protected Iterator<CarbonRowBatch> getIterator(final Iterator<CarbonRowBatch> childIter) {
     return new CarbonIterator<CarbonRowBatch>() {
-      RowConverter localConverter = converter.createCopyForNewThread();
+      RowConverter localConverter;
+      private boolean first = true;
       @Override public boolean hasNext() {
+        if (first) {
+          first = false;
+          localConverter = converters.get(0).createCopyForNewThread();
+          converters.add(localConverter);
+        }
         return childIter.hasNext();
       }
 
@@ -113,10 +122,9 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
    * @return processed row.
    */
   protected CarbonRowBatch processRowBatch(CarbonRowBatch rowBatch, RowConverter localConverter) {
-    CarbonRowBatch newBatch = new CarbonRowBatch();
-    Iterator<CarbonRow> batchIterator = rowBatch.getBatchIterator();
-    while (batchIterator.hasNext()) {
-      CarbonRow next = batchIterator.next();
+    CarbonRowBatch newBatch = new CarbonRowBatch(rowBatch.getSize());
+    while (rowBatch.hasNext()) {
+      CarbonRow next = rowBatch.next();
       CarbonRow convertRow = localConverter.convert(next);
       convertRow.bucketNumber = (short) partitioner.getPartition(next.getData());
       newBatch.addRow(convertRow);
@@ -182,8 +190,11 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
   public void close() {
     if (!closed) {
       super.close();
-      if (converter != null) {
-        converter.finish();
+      createBadRecordLogger().closeStreams();
+      if (converters != null) {
+        for (RowConverter converter : converters) {
+          converter.finish();
+        }
       }
     }
   }

@@ -53,7 +53,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            USING org.apache.spark.sql.CarbonSource
            OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t4")
       """)
-    LoadTable(Some("default"), "t4", s"$resourcesPath/dataDiff.csv", Nil,
+    LoadTable(Some("default"), "t4", s"$resourcesPath/source.csv", Nil,
       Map(("use_kettle", "false"))).run(sqlContext.sparkSession)
     val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_t4")
     if (table != null && table.getBucketingInfo("t4") != null) {
@@ -89,7 +89,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            USING org.apache.spark.sql.CarbonSource
            OPTIONS("tableName"="t5")
       """)
-    LoadTable(Some("default"), "t5", s"$resourcesPath/dataDiff.csv", Nil,
+    LoadTable(Some("default"), "t5", s"$resourcesPath/source.csv", Nil,
       Map(("use_kettle", "false"))).run(sqlContext.sparkSession)
 
     val plan = sql(
@@ -114,7 +114,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            USING org.apache.spark.sql.CarbonSource
            OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t6")
       """)
-    LoadTable(Some("default"), "t6", s"$resourcesPath/dataDiff.csv", Nil,
+    LoadTable(Some("default"), "t6", s"$resourcesPath/source.csv", Nil,
       Map(("use_kettle", "false"))).run(sqlContext.sparkSession)
 
     val plan = sql(
@@ -139,7 +139,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            USING org.apache.spark.sql.CarbonSource
            OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t7")
       """)
-    LoadTable(Some("default"), "t7", s"$resourcesPath/dataDiff.csv", Nil,
+    LoadTable(Some("default"), "t7", s"$resourcesPath/source.csv", Nil,
       Map(("use_kettle", "false"))).run(sqlContext.sparkSession)
 
     sql("DROP TABLE IF EXISTS bucketed_parquet_table")
@@ -170,7 +170,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            USING org.apache.spark.sql.CarbonSource
            OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t8")
       """)
-    LoadTable(Some("default"), "t8", s"$resourcesPath/dataDiff.csv", Nil,
+    LoadTable(Some("default"), "t8", s"$resourcesPath/source.csv", Nil,
       Map(("use_kettle", "false"))).run(sqlContext.sparkSession)
 
     sql("DROP TABLE IF EXISTS parquet_table")
@@ -189,6 +189,20 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
       case s: ShuffleExchange => shuffleExists = true
     }
     assert(shuffleExists, "shuffle should exist on non bucket tables")
+  }
+
+  test("test scalar subquery with equal") {
+    sql(
+      """select sum(salary) from t4 t1
+        |where ID = (select sum(ID) from t4 t2 where t1.name = t2.name)""".stripMargin)
+      .count()
+  }
+
+  test("test scalar subquery with lessthan") {
+    sql(
+      """select sum(salary) from t4 t1
+        |where ID < (select sum(ID) from t4 t2 where t1.name = t2.name)""".stripMargin)
+      .count()
   }
 
   override def afterAll {

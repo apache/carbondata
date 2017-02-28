@@ -34,7 +34,7 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
   test("test load data both file and ddl without file header exception") {
     try {
       sql(s"""
-           LOAD DATA LOCAL INPATH '$resourcesPath/windows.csv' into table t3
+           LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' into table t3
            """)
       assert(false)
     } catch {
@@ -46,7 +46,7 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
   test("test load data ddl provided  wrong file header exception") {
     try {
       sql(s"""
-           LOAD DATA LOCAL INPATH '$resourcesPath/windows.csv' into table t3
+           LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' into table t3
            options('fileheader'='no_column')
            """)
       assert(false)

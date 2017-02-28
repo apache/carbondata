@@ -112,6 +112,9 @@ class CarbonSource extends CreatableRelationProvider
     if (StringUtils.isBlank(tableName)) {
       throw new MalformedCarbonCommandException("The Specified Table Name is Blank")
     }
+    if (tableName.contains(" ")) {
+      throw new MalformedCarbonCommandException("Table Name Should not have spaces ")
+    }
     val options = new CarbonOption(parameters)
     try {
       CarbonEnv.get.carbonMetastore.lookupRelation(Option(dbName), tableName)(sparkSession)

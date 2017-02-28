@@ -19,12 +19,16 @@ package org.apache.carbondata.processing.newflow.converter.impl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
@@ -48,6 +52,9 @@ import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecor
  */
 public class RowConverterImpl implements RowConverter {
 
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(RowConverterImpl.class.getName());
+
   private CarbonDataLoadConfiguration configuration;
 
   private DataField[] fields;
@@ -58,9 +65,13 @@ public class RowConverterImpl implements RowConverter {
 
   private BadRecordLogHolder logHolder;
 
-  private DictionaryClient dictClient;
+  private List<DictionaryClient> dictClients = new ArrayList<>();
 
   private ExecutorService executorService;
+
+  private Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache;
+
+  private Map<Object, Integer>[] localCaches;
 
   public RowConverterImpl(DataField[] fields, CarbonDataLoadConfiguration configuration,
       BadRecordsLogger badRecordLogger) {
@@ -72,19 +83,38 @@ public class RowConverterImpl implements RowConverter {
   @Override
   public void initialize() throws IOException {
     CacheProvider cacheProvider = CacheProvider.getInstance();
-    Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache =
-        cacheProvider.createCache(CacheType.REVERSE_DICTIONARY,
-            configuration.getTableIdentifier().getStorePath());
+    cache = cacheProvider.createCache(CacheType.REVERSE_DICTIONARY,
+        configuration.getTableIdentifier().getStorePath());
     String nullFormat =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
             .toString();
     List<FieldConverter> fieldConverterList = new ArrayList<>();
-
+    localCaches = new Map[fields.length];
     long lruCacheStartTime = System.currentTimeMillis();
+    DictionaryClient client = createDictionaryClient();
+    dictClients.add(client);
 
+    for (int i = 0; i < fields.length; i++) {
+      localCaches[i] = new ConcurrentHashMap<>();
+      FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
+          .createFieldEncoder(fields[i], cache,
+              configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat,
+              client, configuration.getUseOnePass(),
+              configuration.getTableIdentifier().getStorePath(), true, localCaches[i]);
+      fieldConverterList.add(fieldConverter);
+    }
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
+        .recordLruCacheLoadTime((System.currentTimeMillis() - lruCacheStartTime) / 1000.0);
+    fieldConverters = fieldConverterList.toArray(new FieldConverter[fieldConverterList.size()]);
+    logHolder = new BadRecordLogHolder();
+  }
+
+  private DictionaryClient createDictionaryClient() {
     // for one pass load, start the dictionary client
     if (configuration.getUseOnePass()) {
-      executorService = Executors.newFixedThreadPool(1);
+      if (executorService == null) {
+        executorService = Executors.newCachedThreadPool();
+      }
       Future<DictionaryClient> result = executorService.submit(new Callable<DictionaryClient>() {
         @Override
         public DictionaryClient call() throws Exception {
@@ -100,27 +130,17 @@ public class RowConverterImpl implements RowConverter {
         // wait for client initialization finished, or will raise null pointer exception
         Thread.sleep(1000);
       } catch (InterruptedException e) {
-        e.printStackTrace();
+        LOGGER.error(e);
+        throw new RuntimeException(e);
       }
 
       try {
-        dictClient = result.get();
+        return result.get();
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }
     }
-    for (int i = 0; i < fields.length; i++) {
-      FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
-          .createFieldEncoder(fields[i], cache,
-              configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat,
-              dictClient, configuration.getUseOnePass(),
-              configuration.getTableIdentifier().getStorePath());
-      fieldConverterList.add(fieldConverter);
-    }
-    CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-        .recordLruCacheLoadTime((System.currentTimeMillis() - lruCacheStartTime) / 1000.0);
-    fieldConverters = fieldConverterList.toArray(new FieldConverter[fieldConverterList.size()]);
-    logHolder = new BadRecordLogHolder();
+    return null;
   }
 
   @Override
@@ -142,10 +162,12 @@ public class RowConverterImpl implements RowConverter {
   @Override
   public void finish() {
     List<Integer> dimCardinality = new ArrayList<>();
-    for (int i = 0; i < fieldConverters.length; i++) {
-      if (fieldConverters[i] instanceof AbstractDictionaryFieldConverterImpl) {
-        ((AbstractDictionaryFieldConverterImpl) fieldConverters[i])
-            .fillColumnCardinality(dimCardinality);
+    if (fieldConverters != null) {
+      for (int i = 0; i < fieldConverters.length; i++) {
+        if (fieldConverters[i] instanceof AbstractDictionaryFieldConverterImpl) {
+          ((AbstractDictionaryFieldConverterImpl) fieldConverters[i])
+              .fillColumnCardinality(dimCardinality);
+        }
       }
     }
     int[] cardinality = new int[dimCardinality.size()];
@@ -157,7 +179,11 @@ public class RowConverterImpl implements RowConverter {
 
     // close dictionary client when finish write
     if (configuration.getUseOnePass()) {
-      dictClient.shutDown();
+      for (DictionaryClient client : dictClients) {
+        if (client != null) {
+          client.shutDown();
+        }
+      }
       executorService.shutdownNow();
     }
   }
@@ -166,7 +192,27 @@ public class RowConverterImpl implements RowConverter {
   public RowConverter createCopyForNewThread() {
     RowConverterImpl converter =
         new RowConverterImpl(this.fields, this.configuration, this.badRecordLogger);
-    converter.fieldConverters = fieldConverters;
+    List<FieldConverter> fieldConverterList = new ArrayList<>();
+    DictionaryClient client = createDictionaryClient();
+    dictClients.add(client);
+    String nullFormat =
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
+            .toString();
+    for (int i = 0; i < fields.length; i++) {
+      FieldConverter fieldConverter = null;
+      try {
+        fieldConverter = FieldEncoderFactory.getInstance()
+            .createFieldEncoder(fields[i], cache,
+                configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat,
+                client, configuration.getUseOnePass(),
+                configuration.getTableIdentifier().getStorePath(), false, localCaches[i]);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+      fieldConverterList.add(fieldConverter);
+    }
+    converter.fieldConverters =
+        fieldConverterList.toArray(new FieldConverter[fieldConverterList.size()]);
     converter.logHolder = new BadRecordLogHolder();
     return converter;
   }

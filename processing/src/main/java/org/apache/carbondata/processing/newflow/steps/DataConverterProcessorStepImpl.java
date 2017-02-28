@@ -19,7 +19,9 @@ package org.apache.carbondata.processing.newflow.steps;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -42,7 +44,7 @@ import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecor
  */
 public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
-  private RowConverter converter;
+  private List<RowConverter> converters;
 
   public DataConverterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
@@ -57,8 +59,11 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
   @Override
   public void initialize() throws IOException {
     child.initialize();
+    converters = new ArrayList<>();
     BadRecordsLogger badRecordLogger = createBadRecordLogger();
-    converter = new RowConverterImpl(child.getOutput(), configuration, badRecordLogger);
+    RowConverter converter =
+        new RowConverterImpl(child.getOutput(), configuration, badRecordLogger);
+    converters.add(converter);
     converter.initialize();
   }
 
@@ -71,11 +76,15 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
   @Override
   protected Iterator<CarbonRowBatch> getIterator(final Iterator<CarbonRowBatch> childIter) {
     return new CarbonIterator<CarbonRowBatch>() {
-      RowConverter localConverter = converter.createCopyForNewThread();
+      private boolean first = true;
+      private RowConverter localConverter;
       @Override public boolean hasNext() {
+        if (first) {
+          first = false;
+          localConverter = converters.get(0).createCopyForNewThread();
+        }
         return childIter.hasNext();
       }
-
       @Override public CarbonRowBatch next() {
         return processRowBatch(childIter.next(), localConverter);
       }
@@ -89,10 +98,9 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
    * @return processed row.
    */
   protected CarbonRowBatch processRowBatch(CarbonRowBatch rowBatch, RowConverter localConverter) {
-    CarbonRowBatch newBatch = new CarbonRowBatch();
-    Iterator<CarbonRow> batchIterator = rowBatch.getBatchIterator();
-    while (batchIterator.hasNext()) {
-      newBatch.addRow(localConverter.convert(batchIterator.next()));
+    CarbonRowBatch newBatch = new CarbonRowBatch(rowBatch.getSize());
+    while (rowBatch.hasNext()) {
+      newBatch.addRow(localConverter.convert(rowBatch.next()));
     }
     rowCounter.getAndAdd(newBatch.getSize());
     return newBatch;
@@ -154,9 +162,12 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
   @Override
   public void close() {
     if (!closed) {
+      createBadRecordLogger().closeStreams();
       super.close();
-      if (converter != null) {
-        converter.finish();
+      if (converters != null) {
+        for (RowConverter converter : converters) {
+          converter.finish();
+        }
       }
     }
   }

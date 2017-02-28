@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.constants;
 
+import java.nio.charset.Charset;
+
 public final class CarbonCommonConstants {
   /**
    * integer size in bytes
@@ -81,7 +83,7 @@ public final class CarbonCommonConstants {
   /**
    * min blocklet size
    */
-  public static final int BLOCKLET_SIZE_MIN_VAL = 50;
+  public static final int BLOCKLET_SIZE_MIN_VAL = 2000;
   /**
    * max blocklet size
    */
@@ -134,6 +136,10 @@ public final class CarbonCommonConstants {
    * HDFSURL_PREFIX
    */
   public static final String HDFSURL_PREFIX = "hdfs://";
+  /**
+   * VIEWFSURL_PREFIX
+   */
+  public static final String VIEWFSURL_PREFIX = "viewfs://";
   /**
    * FS_DEFAULT_FS
    */
@@ -267,7 +273,7 @@ public final class CarbonCommonConstants {
   /**
    * SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE
    */
-  public static final String CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE = "50000";
+  public static final String CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE = "16384";
   /**
    * Number of cores to be used while loading
    */
@@ -582,10 +588,11 @@ public final class CarbonCommonConstants {
    */
   public static final String TABLEUPDATESTATUS_FILENAME = "tableupdatestatus";
   /**
-   * INMEMORY_REOCRD_SIZE
+   * The batch size of records which returns to client.
    */
   public static final String DETAIL_QUERY_BATCH_SIZE = "carbon.detail.batch.size";
-  public static final int DETAIL_QUERY_BATCH_SIZE_DEFAULT = 10000;
+
+  public static final int DETAIL_QUERY_BATCH_SIZE_DEFAULT = 100;
   /**
    * SPILL_OVER_DISK_PATH
    */
@@ -638,10 +645,15 @@ public final class CarbonCommonConstants {
    * for dimensions , one of ignore dictionary dimensions , one for measures.
    */
   public static final int ARRAYSIZE = 3;
+
   /**
    * CARBON_PREFETCH_BUFFERSIZE
    */
-  public static final int CARBON_PREFETCH_BUFFERSIZE = 20000;
+  public static final String CARBON_PREFETCH_BUFFERSIZE = "carbon.prefetch.buffersize";
+  /**
+   * CARBON_PREFETCH_BUFFERSIZE DEFAULT VALUE
+   */
+  public static final String CARBON_PREFETCH_BUFFERSIZE_DEFAULT = "1000";
   /**
    * CARBON_PREFETCH_IN_MERGE
    */
@@ -700,6 +712,11 @@ public final class CarbonCommonConstants {
    * default charset to be used for reading and writing
    */
   public static final String DEFAULT_CHARSET = "UTF-8";
+
+  /**
+   * default charset class to be used for reading and writing
+   */
+  public static final Charset DEFAULT_CHARSET_CLASS = Charset.forName(DEFAULT_CHARSET);
 
   /**
    * surrogate key that will be sent whenever in the dictionary chunks
@@ -774,7 +791,7 @@ public final class CarbonCommonConstants {
   public static final String CARBON_MERGE_SORT_PREFETCH_DEFAULT = "true";
 
   /**
-   *  default name of data base
+   * default name of data base
    */
   public static final String DATABASE_DEFAULT_NAME = "default";
 
@@ -787,12 +804,13 @@ public final class CarbonCommonConstants {
   public static final String COLUMN_PROPERTIES = "columnproperties";
   // table block size in MB
   public static final String TABLE_BLOCKSIZE = "table_blocksize";
+  // set in column level to disable inverted index
+  public static final String NO_INVERTED_INDEX = "no_inverted_index";
 
   /**
    * this variable is to enable/disable identify high cardinality during first data loading
    */
-  public static final String HIGH_CARDINALITY_IDENTIFY_ENABLE =
-      "high.cardinality.identify.enable";
+  public static final String HIGH_CARDINALITY_IDENTIFY_ENABLE = "high.cardinality.identify.enable";
   public static final String HIGH_CARDINALITY_IDENTIFY_ENABLE_DEFAULT = "true";
 
   /**
@@ -826,26 +844,23 @@ public final class CarbonCommonConstants {
   /**
    * ZOOKEEPERLOCK TYPE
    */
-  public static final String CARBON_LOCK_TYPE_ZOOKEEPER =
-      "ZOOKEEPERLOCK";
+  public static final String CARBON_LOCK_TYPE_ZOOKEEPER = "ZOOKEEPERLOCK";
 
   /**
    * LOCALLOCK TYPE
    */
-  public static final String CARBON_LOCK_TYPE_LOCAL =
-      "LOCALLOCK";
+  public static final String CARBON_LOCK_TYPE_LOCAL = "LOCALLOCK";
 
   /**
    * HDFSLOCK TYPE
    */
-  public static final String CARBON_LOCK_TYPE_HDFS =
-      "HDFSLOCK";
+  public static final String CARBON_LOCK_TYPE_HDFS = "HDFSLOCK";
 
   /**
    * Invalid filter member log string
    */
-  public static final String FILTER_INVALID_MEMBER = " Invalid Record(s) are present "
-                                                     + "while filter evaluation. ";
+  public static final String FILTER_INVALID_MEMBER =
+      " Invalid Record(s) are present while filter evaluation. ";
 
   /**
    * Number of unmerged segments to be merged.
@@ -863,24 +878,22 @@ public final class CarbonCommonConstants {
    * Only accepted Range is 0 - 10000. Outside this range system will pick default value.
    */
   public static final String UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION =
-          "carbon.horizontal.update.compaction.threshold";
+      "carbon.horizontal.update.compaction.threshold";
   /**
    * Default count of segments which act as a threshold for IUD compaction merge.
    */
   public static final String DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION = "1";
 
-
   /**
    * Number of Delete Delta files which is the Threshold for IUD compaction.
    * Only accepted Range is 0 - 10000. Outside this range system will pick default value.
    */
-  public static final String DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION  =
+  public static final String DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION =
       "carbon.horizontal.delete.compaction.threshold";
   /**
    * Default count of segments which act as a threshold for IUD compaction merge.
    */
   public static final String DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION = "1";
-
 
   /**
    * default location of the carbon metastore db
@@ -926,8 +939,7 @@ public final class CarbonCommonConstants {
    * @Deprecated : This property has been deprecated.
    * Property for enabling system level compaction lock.1 compaction can run at once.
    */
-  public static String ENABLE_CONCURRENT_COMPACTION =
-      "carbon.concurrent.compaction";
+  public static String ENABLE_CONCURRENT_COMPACTION = "carbon.concurrent.compaction";
 
   /**
    * Default value of Property for enabling system level compaction lock.1 compaction can run
@@ -1007,12 +1019,8 @@ public final class CarbonCommonConstants {
   /**
    * current data file version
    */
-  public static final String CARBON_DATA_FILE_DEFAULT_VERSION = "V2";
-  /**
-   * number of column data will read in IO operation
-   * during query execution
-   */
-  public static final short NUMBER_OF_COLUMN_READ_IN_IO = 10;
+  public static final String CARBON_DATA_FILE_DEFAULT_VERSION = "V3";
+
   /**
    * data file version header
    */
@@ -1088,7 +1096,6 @@ public final class CarbonCommonConstants {
 
   /**
    * Default carbon dictionary server port
-
    */
   public static final String DICTIONARY_SERVER_PORT_DEFAULT = "2030";
 

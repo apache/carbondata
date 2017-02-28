@@ -14,14 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.hadoop.csv;
+package org.apache.carbondata.processing.csvload;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
-import org.apache.carbondata.hadoop.io.StringArrayWritable;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
@@ -46,7 +44,7 @@ public class CSVInputFormatTest extends TestCase {
    * @throws Exception
    */
   public void generateCompressFiles() throws Exception {
-    String pwd = new File("src/test/resources").getCanonicalPath();
+    String pwd = new File("src/test/resources/csv").getCanonicalPath();
     String inputFile = pwd + "/data.csv";
     FileInputStream input = new FileInputStream(inputFile);
     Configuration conf = new Configuration();
@@ -136,7 +134,7 @@ public class CSVInputFormatTest extends TestCase {
     job.setNumReduceTasks(0);
     job.setInputFormatClass(CSVInputFormat.class);
 
-    String inputFolder = new File("src/test/resources").getCanonicalPath();
+    String inputFolder = new File("src/test/resources/csv").getCanonicalPath();
     FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "data.csv"));
     FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "data.csv.bz2"));
     FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "data.csv.gz"));

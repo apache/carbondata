@@ -14,15 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.hadoop.csv;
+package org.apache.carbondata.processing.csvload;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-
-import org.apache.carbondata.hadoop.io.BoundedInputStream;
-import org.apache.carbondata.hadoop.io.StringArrayWritable;
 
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
@@ -234,6 +231,9 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
 
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
+      if (csvParser == null) {
+        return false;
+      }
       columns = csvParser.parseNext();
       if (columns == null) {
         value = null;
@@ -278,9 +278,18 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
         if (reader != null) {
           reader.close();
         }
+        if (boundedInputStream != null) {
+          boundedInputStream.close();
+        }
       } finally {
+        reader = null;
+        boundedInputStream = null;
+        csvParser = null;
+        filePosition = null;
+        value = null;
         if (decompressor != null) {
           CodecPool.returnDecompressor(decompressor);
+          decompressor = null;
         }
       }
     }

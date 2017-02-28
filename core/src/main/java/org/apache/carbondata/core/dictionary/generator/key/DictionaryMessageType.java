@@ -14,21 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.hadoop.readsupport.impl;
+package org.apache.carbondata.core.dictionary.generator.key;
 
 /**
- * It decodes the dictionary values to actual values.
+ * Dictionary key types.
  */
-public class DictionaryDecodedReadSupportImpl
-    extends AbstractDictionaryDecodedReadSupport<Object[]> {
+public enum DictionaryMessageType {
 
-  @Override public Object[] readRow(Object[] data) {
-    assert (data.length == dictionaries.length);
-    for (int i = 0; i < dictionaries.length; i++) {
-      if (dictionaries[i] != null) {
-        data[i] = dictionaries[i].getDictionaryValueForKey((int) data[i]);
-      }
-    }
-    return data;
+  DICT_GENERATION((byte) 1),
+  TABLE_INTIALIZATION((byte) 2),
+  SIZE((byte) 3),
+  WRITE_DICTIONARY((byte) 4);
+
+  final byte type;
+
+  DictionaryMessageType(byte type) {
+    this.type = type;
+  }
+
+  public byte getType() {
+    return type;
   }
 }

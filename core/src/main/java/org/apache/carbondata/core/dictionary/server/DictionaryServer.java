@@ -16,22 +16,19 @@
  */
 package org.apache.carbondata.core.dictionary.server;
 
-import java.net.InetSocketAddress;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType;
 
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.jboss.netty.handler.codec.serialization.ClassResolvers;
-import org.jboss.netty.handler.codec.serialization.ObjectDecoder;
-import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 
 /**
@@ -42,9 +39,10 @@ public class DictionaryServer {
   private static final LogService LOGGER =
           LogServiceFactory.getLogService(DictionaryServer.class.getName());
 
-  private ServerBootstrap bootstrap;
-
   private DictionaryServerHandler dictionaryServerHandler;
+
+  private EventLoopGroup boss;
+  private EventLoopGroup worker;
 
   /**
    * start dictionary server
@@ -53,27 +51,31 @@ public class DictionaryServer {
    * @throws Exception
    */
   public void startServer(int port) {
-    bootstrap = new ServerBootstrap();
+    long start = System.currentTimeMillis();
     dictionaryServerHandler = new DictionaryServerHandler();
+    boss = new NioEventLoopGroup();
+    worker = new NioEventLoopGroup();
+    // Configure the server.
+    try {
+      ServerBootstrap bootstrap = new ServerBootstrap();
+      bootstrap.group(boss, worker);
+      bootstrap.channel(NioServerSocketChannel.class);
 
-    ExecutorService boss = Executors.newCachedThreadPool();
-    ExecutorService worker = Executors.newCachedThreadPool();
+      bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
+        @Override public void initChannel(SocketChannel ch) throws Exception {
+          ChannelPipeline pipeline = ch.pipeline();
+          pipeline.addLast("DictionaryServerHandler", dictionaryServerHandler);
+        }
+      });
+      bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
+      bootstrap.bind(port).sync();
 
-    bootstrap.setFactory(new NioServerSocketChannelFactory(boss, worker));
-
-    bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      @Override
-      public ChannelPipeline getPipeline() throws Exception {
-        ChannelPipeline pipeline = Channels.pipeline();
-        pipeline.addLast("ObjectDecoder", new ObjectDecoder(ClassResolvers.cacheDisabled(
-            getClass().getClassLoader())));
-        pipeline.addLast("ObjectEncoder", new ObjectEncoder());
-        pipeline.addLast("DictionaryServerHandler", dictionaryServerHandler);
-        return pipeline;
-      }
-    });
-    bootstrap.bind(new InetSocketAddress(port));
-    LOGGER.audit("Server Start!");
+      LOGGER.info("Dictionary Server started, Time spent " + (System.currentTimeMillis() - start)
+          + " Listening on port " + port);
+    } catch (Exception e) {
+      LOGGER.error(e, "Dictionary Server Start Failed");
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -82,10 +84,20 @@ public class DictionaryServer {
    * @throws Exception
    */
   public void shutdown() throws Exception {
-    DictionaryKey key = new DictionaryKey();
-    key.setType("WRITE_DICTIONARY");
+    worker.shutdownGracefully();
+    boss.shutdownGracefully();
+    // Wait until all threads are terminated.
+    boss.terminationFuture().sync();
+    worker.terminationFuture().sync();
+  }
+
+  /**
+   * Write dictionary to the store.
+   * @throws Exception
+   */
+  public void writeDictionary() throws Exception {
+    DictionaryMessage key = new DictionaryMessage();
+    key.setType(DictionaryMessageType.WRITE_DICTIONARY);
     dictionaryServerHandler.processMessage(key);
-    bootstrap.releaseExternalResources();
-    bootstrap.shutdown();
   }
 }

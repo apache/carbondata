@@ -20,8 +20,8 @@ import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.BTreeBuilderInfo;
 import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.CarbonDataReaderFactory;
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
@@ -84,9 +84,9 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    * @param blockIndexes indexes of the blocks need to be read
    * @return dimension data chunks
    */
-  @Override public DimensionColumnDataChunk[] getDimensionChunks(FileHolder fileReader,
+  @Override public DimensionRawColumnChunk[] getDimensionChunks(FileHolder fileReader,
       int[][] blockIndexes) throws IOException {
-    return dimensionChunksReader.readDimensionChunks(fileReader, blockIndexes);
+    return dimensionChunksReader.readRawDimensionChunks(fileReader, blockIndexes);
   }
 
   /**
@@ -96,9 +96,9 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    * @param blockIndex block index to be read
    * @return dimension data chunk
    */
-  @Override public DimensionColumnDataChunk getDimensionChunk(FileHolder fileReader,
+  @Override public DimensionRawColumnChunk getDimensionChunk(FileHolder fileReader,
       int blockIndex) throws IOException {
-    return dimensionChunksReader.readDimensionChunk(fileReader, blockIndex);
+    return dimensionChunksReader.readRawDimensionChunk(fileReader, blockIndex);
   }
 
   /**
@@ -108,9 +108,9 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    * @param blockIndexes block indexes to be read from file
    * @return measure column data chunk
    */
-  @Override public MeasureColumnDataChunk[] getMeasureChunks(FileHolder fileReader,
+  @Override public MeasureRawColumnChunk[] getMeasureChunks(FileHolder fileReader,
       int[][] blockIndexes) throws IOException {
-    return measureColumnChunkReader.readMeasureChunks(fileReader, blockIndexes);
+    return measureColumnChunkReader.readRawMeasureChunks(fileReader, blockIndexes);
   }
 
   /**
@@ -120,8 +120,8 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    * @param blockIndex block index to be read from file
    * @return measure data chunk
    */
-  @Override public MeasureColumnDataChunk getMeasureChunk(FileHolder fileReader, int blockIndex)
+  @Override public MeasureRawColumnChunk getMeasureChunk(FileHolder fileReader, int blockIndex)
       throws IOException {
-    return measureColumnChunkReader.readMeasureChunk(fileReader, blockIndex);
+    return measureColumnChunkReader.readRawMeasureChunk(fileReader, blockIndex);
   }
 }

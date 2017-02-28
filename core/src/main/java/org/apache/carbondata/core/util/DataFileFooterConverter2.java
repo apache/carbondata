@@ -98,8 +98,17 @@ public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
             blockletInfoThrift.getColumn_data_chunks_offsets().size());
     blockletInfo.setDimensionChunkOffsets(dimensionColumnChunkOffsets);
     blockletInfo.setMeasureChunkOffsets(measureColumnChunksOffsets);
-    blockletInfo.setDimensionChunksLength(dimensionColumnChunkLength);
-    blockletInfo.setMeasureChunksLength(measureColumnChunksLength);
+
+    List<Integer> dimensionColumnChunkLengthInteger = new ArrayList<Integer>();
+    List<Integer> measureColumnChunkLengthInteger = new ArrayList<Integer>();
+    for (int i = 0; i < dimensionColumnChunkLength.size(); i++) {
+      dimensionColumnChunkLengthInteger.add(dimensionColumnChunkLength.get(i).intValue());
+    }
+    for (int i = 0; i < measureColumnChunksLength.size(); i++) {
+      measureColumnChunkLengthInteger.add(measureColumnChunksLength.get(i).intValue());
+    }
+    blockletInfo.setDimensionChunksLength(dimensionColumnChunkLengthInteger);
+    blockletInfo.setMeasureChunksLength(measureColumnChunkLengthInteger);
     blockletInfo.setNumberOfRows(blockletInfoThrift.getNum_rows());
     return blockletInfo;
   }

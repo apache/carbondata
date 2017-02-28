@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -33,6 +34,7 @@ import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
+import org.apache.carbondata.core.util.BitSetGroup;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 
@@ -53,11 +55,18 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     BitSet bitSet = new BitSet(1);
     byte[][] filterValues = this.filterRangeValues;
     int columnIndex = this.dimColEvaluatorInfoList.get(0).getColumnIndex();
+    boolean isScanRequired = isScanRequired(blockMinValue[columnIndex], filterValues);
+    if (isScanRequired) {
+      bitSet.set(0);
+    }
+    return bitSet;
+  }
+
+  private boolean isScanRequired(byte[] blockMinValue, byte[][] filterValues) {
     boolean isScanRequired = false;
     for (int k = 0; k < filterValues.length; k++) {
       // and filter-min should be positive
-      int minCompare =
-          ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMinValue[columnIndex]);
+      int minCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMinValue);
 
       // if any filter applied is not in range of min and max of block
       // then since its a less than equal to fiter validate whether the block
@@ -67,26 +76,37 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
         break;
       }
     }
-    if (isScanRequired) {
-      bitSet.set(0);
-    }
-    return bitSet;
-
+    return isScanRequired;
   }
 
-  @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder)
+  @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
       throws FilterUnsupportedException, IOException {
     if (!dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
       return super.applyFilter(blockChunkHolder);
     }
     int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
         .get(dimColEvaluatorInfoList.get(0).getColumnIndex());
-    if (null == blockChunkHolder.getDimensionDataChunk()[blockIndex]) {
-      blockChunkHolder.getDimensionDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
+    if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
+      blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
           .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
     }
-    return getFilteredIndexes(blockChunkHolder.getDimensionDataChunk()[blockIndex],
-        blockChunkHolder.getDataBlock().nodeSize());
+    DimensionRawColumnChunk rawColumnChunk =
+        blockChunkHolder.getDimensionRawDataChunk()[blockIndex];
+    BitSetGroup bitSetGroup = new BitSetGroup(rawColumnChunk.getPagesCount());
+    for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
+      if (rawColumnChunk.getMinValues() != null) {
+        if (isScanRequired(rawColumnChunk.getMinValues()[i], this.filterRangeValues)) {
+          BitSet bitSet = getFilteredIndexes(rawColumnChunk.convertToDimColDataChunk(i),
+              rawColumnChunk.getRowCount()[i]);
+          bitSetGroup.setBitSet(bitSet, i);
+        }
+      } else {
+        BitSet bitSet = getFilteredIndexes(rawColumnChunk.convertToDimColDataChunk(i),
+            rawColumnChunk.getRowCount()[i]);
+        bitSetGroup.setBitSet(bitSet, i);
+      }
+    }
+    return bitSetGroup;
   }
 
   private BitSet getFilteredIndexes(DimensionColumnDataChunk dimensionColumnDataChunk,
@@ -151,7 +171,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
               filterValues[i], true);
       if (start < 0) {
         start = -(start + 1);
-        if (start == numerOfRows) {
+        if (start >= numerOfRows) {
           start = start - 1;
         }
         // Method will compare the tentative index value after binary search, this tentative
@@ -218,7 +238,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
             filterValues[k], true);
         if (start < 0) {
           start = -(start + 1);
-          if (start == numerOfRows) {
+          if (start >= numerOfRows) {
             start = start - 1;
           }
           // Method will compare the tentative index value after binary search, this tentative
@@ -243,4 +263,15 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     return bitSet;
   }
 
+  @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
+    if (!dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
+      super.readBlocks(blockChunkHolder);
+    }
+    int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
+        .get(dimColEvaluatorInfoList.get(0).getColumnIndex());
+    if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
+      blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
+          .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
+    }
+  }
 }

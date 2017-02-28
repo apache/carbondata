@@ -196,9 +196,8 @@ public class UnsafeCarbonRowPage {
           size += 2;
           CarbonUnsafe.unsafe.copyMemory(baseObject, address + size, bigDecimalInBytes,
               CarbonUnsafe.BYTE_ARRAY_OFFSET, bigDecimalInBytes.length);
-          BigDecimal val = DataTypeUtil.byteToBigDecimal(bigDecimalInBytes);
           size += bigDecimalInBytes.length;
-          rowToFill[dimensionSize + mesCount] = val;
+          rowToFill[dimensionSize + mesCount] = bigDecimalInBytes;
         }
       } else {
         rowToFill[dimensionSize + mesCount] = null;

@@ -21,29 +21,31 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.devapi.DictionaryGenerator;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 
 /**
  * This is the dictionary generator for all tables. It generates dictionary
- * based on @{@link DictionaryKey}.
+ * based on @{@link DictionaryMessage}.
  */
-public class ServerDictionaryGenerator implements DictionaryGenerator<Integer, DictionaryKey> {
+public class ServerDictionaryGenerator implements DictionaryGenerator<Integer, DictionaryMessage> {
 
   /**
    * the map of tableName to TableDictionaryGenerator
    */
   private Map<String, TableDictionaryGenerator> tableMap = new ConcurrentHashMap<>();
 
-  @Override public Integer generateKey(DictionaryKey value) throws DictionaryGenerationException {
+  @Override
+  public Integer generateKey(DictionaryMessage value)
+      throws DictionaryGenerationException {
     TableDictionaryGenerator generator = tableMap.get(value.getTableUniqueName());
     assert generator != null : "Table initialization for generator is not done";
     return generator.generateKey(value);
   }
 
-  public void initializeGeneratorForTable(DictionaryKey key) {
+  public void initializeGeneratorForTable(DictionaryMessage key) {
     CarbonMetadata metadata = CarbonMetadata.getInstance();
     CarbonTable carbonTable = metadata.getCarbonTable(key.getTableUniqueName());
     CarbonDimension dimension = carbonTable.getPrimitiveDimensionByName(
@@ -56,7 +58,7 @@ public class ServerDictionaryGenerator implements DictionaryGenerator<Integer, D
     }
   }
 
-  public Integer size(DictionaryKey key) {
+  public Integer size(DictionaryMessage key) {
     TableDictionaryGenerator generator = tableMap.get(key.getTableUniqueName());
     assert generator != null : "Table intialization for generator is not done";
     return generator.size(key);

@@ -89,9 +89,8 @@ class DummyThread implements Callable<Void> {
     try {
       while (iterator.hasNext()) {
         CarbonRowBatch batch = iterator.next();
-        Iterator<CarbonRow> batchIterator = batch.getBatchIterator();
-        while (batchIterator.hasNext()) {
-          CarbonRow row = batchIterator.next();
+        while (batch.hasNext()) {
+          CarbonRow row = batch.next();
           // do nothing
         }
       }

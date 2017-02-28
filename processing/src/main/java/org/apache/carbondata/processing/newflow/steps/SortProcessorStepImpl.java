@@ -87,7 +87,9 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
   public void close() {
     if (!closed) {
       super.close();
-      sorter.close();
+      if (sorter != null) {
+        sorter.close();
+      }
     }
   }
 

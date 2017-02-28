@@ -60,11 +60,13 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   val carbonMetadataLock: ICarbonLock = CarbonLockFactory
     .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.METADATA_LOCK)
 
-
   override def beforeAll {
+    sql("drop table if exists DataRetentionTable")
+    sql("drop table if exists retentionlock")
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK, "1")
     CarbonProperties.getInstance.addProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME, "1")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(
       "CREATE table DataRetentionTable (ID int, date String, country String, name " +
       "String," +
@@ -92,11 +94,9 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop table DataRetentionTable")
-    sql("drop table carbon_TABLE_1")
-    sql("drop table retentionlock")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+    sql("drop table if exists DataRetentionTable")
+    sql("drop table if exists retentionlock")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
 
 
@@ -178,7 +178,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   test("test delete segments by load date with case-insensitive table name") {
     sql(
       """
-      CREATE TABLE IF NOT EXISTS carbon_TABLE_1
+      CREATE TABLE IF NOT EXISTS carbon_table_1
       (ID Int, date Timestamp, country String,
       name String, phonetype String, serialname String, salary Int)
       STORED BY 'org.apache.carbondata.format'
@@ -186,18 +186,20 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       'DICTIONARY_INCLUDE'='ID')
       """)
 
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/emptyDimensionData.csv' into table CarBon_tAbLE_1")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/emptyDimensionData.csv' into table carbon_table_1")
 
     checkAnswer(
-      sql("select count(*) from cArbon_TaBlE_1"), Seq(Row(20)))
+      sql("select count(*) from carbon_table_1"), Seq(Row(20)))
 
-    sql("delete segments from table carbon_TABLE_1 " +
+    sql("delete segments from table carbon_table_1 " +
       "where starttime before '2099-07-28 11:00:00'")
 
     checkAnswer(
-      sql("select count(*) from caRbon_TabLe_1"), Seq(Row(0)))
+      sql("select count(*) from carbon_table_1"), Seq(Row(0)))
 
+    sql("DROP TABLE carbon_table_1")
   }
+
   test("RetentionTest_DeleteSegmentsByLoadTimeValiadtion") {
 
     try {
@@ -237,7 +239,6 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("RetentionTest_InvalidDeleteCommands") {
-
     // All these queries should fail.
     try {
       sql("DELETE LOADS FROM TABLE DataRetentionTable where STARTTIME before '2099-01-01'")
@@ -276,6 +277,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     carbonDeleteSegmentLock.lockWithRetries()
     carbonTableStatusLock.lockWithRetries()
     carbonCleanFilesLock.lockWithRetries()
+
     // delete segment 0 it should fail
     try {
       sql("DELETE SEGMENT 0 FROM TABLE retentionlock")
@@ -309,6 +311,8 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       case ex: Exception =>
         assert(true)
     }
+
+    sql("SHOW SEGMENTS FOR TABLE retentionlock").show
     carbonTableStatusLock.unlock()
     carbonCleanFilesLock.unlock()
     carbonDeleteSegmentLock.unlock()

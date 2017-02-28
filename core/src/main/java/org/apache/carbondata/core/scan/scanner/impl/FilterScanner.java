@@ -24,6 +24,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.mutate.data.BlockletDeleteDeltaCacheLoader;
 import org.apache.carbondata.core.mutate.data.DeleteDeltaCacheLoaderIntf;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
@@ -36,6 +38,7 @@ import org.apache.carbondata.core.scan.scanner.AbstractBlockletScanner;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
+import org.apache.carbondata.core.util.BitSetGroup;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 
@@ -66,7 +69,6 @@ public class FilterScanner extends AbstractBlockletScanner {
   public FilterScanner(BlockExecutionInfo blockExecutionInfo,
       QueryStatisticsModel queryStatisticsModel) {
     super(blockExecutionInfo);
-    scannedResult = new FilterQueryScannedResult(blockExecutionInfo);
     // to check whether min max is enabled or not
     String minMaxEnableValue = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_QUERY_MIN_MAX_ENABLED,
@@ -87,8 +89,26 @@ public class FilterScanner extends AbstractBlockletScanner {
    */
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
       throws IOException, FilterUnsupportedException {
-    fillScannedResult(blocksChunkHolder);
-    return scannedResult;
+    return fillScannedResult(blocksChunkHolder);
+  }
+
+  @Override public boolean isScanRequired(BlocksChunkHolder blocksChunkHolder) throws IOException {
+    // apply min max
+    if (isMinMaxEnabled) {
+      BitSet bitSet = this.filterExecuter
+          .isScanRequired(blocksChunkHolder.getDataBlock().getColumnsMaxValue(),
+              blocksChunkHolder.getDataBlock().getColumnsMinValue());
+      if (bitSet.isEmpty()) {
+        CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),
+            blocksChunkHolder.getMeasureRawDataChunk());
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @Override public void readBlocklet(BlocksChunkHolder blocksChunkHolder) throws IOException {
+    this.filterExecuter.readBlocks(blocksChunkHolder);
   }
 
   /**
@@ -107,35 +127,21 @@ public class FilterScanner extends AbstractBlockletScanner {
    * @param blocksChunkHolder
    * @throws FilterUnsupportedException
    */
-  private void fillScannedResult(BlocksChunkHolder blocksChunkHolder)
+  private AbstractScannedResult fillScannedResult(BlocksChunkHolder blocksChunkHolder)
       throws FilterUnsupportedException, IOException {
-    scannedResult.reset();
+    // apply filter on actual data
+    BitSetGroup bitSetGroup = this.filterExecuter.applyFilter(blocksChunkHolder);
+    // if indexes is empty then return with empty result
+    if (bitSetGroup.isEmpty()) {
+      CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),
+          blocksChunkHolder.getMeasureRawDataChunk());
+      return createEmptyResult();
+    }
+
+    AbstractScannedResult scannedResult = new FilterQueryScannedResult(blockExecutionInfo);
     scannedResult.setBlockletId(
         blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR + blocksChunkHolder
             .getDataBlock().nodeNumber());
-    // apply min max
-    if (isMinMaxEnabled) {
-      BitSet bitSet = this.filterExecuter
-          .isScanRequired(blocksChunkHolder.getDataBlock().getColumnsMaxValue(),
-              blocksChunkHolder.getDataBlock().getColumnsMinValue());
-      if (bitSet.isEmpty()) {
-        scannedResult.setNumberOfRows(0);
-        scannedResult.setIndexes(new int[0]);
-        CarbonUtil.freeMemory(blocksChunkHolder.getDimensionDataChunk(),
-            blocksChunkHolder.getMeasureDataChunk());
-        return;
-      }
-    }
-    // apply filter on actual data
-    BitSet bitSet = this.filterExecuter.applyFilter(blocksChunkHolder);
-    // if indexes is empty then return with empty result
-    if (bitSet.isEmpty()) {
-      scannedResult.setNumberOfRows(0);
-      scannedResult.setIndexes(new int[0]);
-      CarbonUtil.freeMemory(blocksChunkHolder.getDimensionDataChunk(),
-          blocksChunkHolder.getMeasureDataChunk());
-      return;
-    }
     // valid scanned blocklet
     QueryStatistic validScannedBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM);
@@ -143,11 +149,20 @@ public class FilterScanner extends AbstractBlockletScanner {
         .addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM,
             validScannedBlockletStatistic.getCount() + 1);
     queryStatisticsModel.getRecorder().recordStatistics(validScannedBlockletStatistic);
+    int[] rowCount = new int[bitSetGroup.getNumberOfPages()];
     // get the row indexes from bot set
-    int[] indexes = new int[bitSet.cardinality()];
-    int index = 0;
-    for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
-      indexes[index++] = i;
+    int[][] indexesGroup = new int[bitSetGroup.getNumberOfPages()][];
+    for (int k = 0; k < indexesGroup.length; k++) {
+      BitSet bitSet = bitSetGroup.getBitSet(k);
+      if (bitSet != null && !bitSet.isEmpty()) {
+        int[] indexes = new int[bitSet.cardinality()];
+        int index = 0;
+        for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
+          indexes[index++] = i;
+        }
+        rowCount[k] = indexes.length;
+        indexesGroup[k] = indexes;
+      }
     }
     // loading delete data cache in blockexecutioninfo instance
     DeleteDeltaCacheLoaderIntf deleteCacheLoader =
@@ -159,42 +174,91 @@ public class FilterScanner extends AbstractBlockletScanner {
     FileHolder fileReader = blocksChunkHolder.getFileReader();
     int[][] allSelectedDimensionBlocksIndexes =
         blockExecutionInfo.getAllSelectedDimensionBlocksIndexes();
-    DimensionColumnDataChunk[] projectionListDimensionChunk = blocksChunkHolder.getDataBlock()
+    DimensionRawColumnChunk[] projectionListDimensionChunk = blocksChunkHolder.getDataBlock()
         .getDimensionChunks(fileReader, allSelectedDimensionBlocksIndexes);
 
-    DimensionColumnDataChunk[] dimensionColumnDataChunk =
-        new DimensionColumnDataChunk[blockExecutionInfo.getTotalNumberDimensionBlock()];
+    DimensionRawColumnChunk[] dimensionRawColumnChunks =
+        new DimensionRawColumnChunk[blockExecutionInfo.getTotalNumberDimensionBlock()];
     // read dimension chunk blocks from file which is not present
-    for (int i = 0; i < dimensionColumnDataChunk.length; i++) {
-      if (null != blocksChunkHolder.getDimensionDataChunk()[i]) {
-        dimensionColumnDataChunk[i] = blocksChunkHolder.getDimensionDataChunk()[i];
+    for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
+      if (null != blocksChunkHolder.getDimensionRawDataChunk()[i]) {
+        dimensionRawColumnChunks[i] = blocksChunkHolder.getDimensionRawDataChunk()[i];
       }
     }
     for (int i = 0; i < allSelectedDimensionBlocksIndexes.length; i++) {
-      System.arraycopy(projectionListDimensionChunk, allSelectedDimensionBlocksIndexes[i][0],
-          dimensionColumnDataChunk, allSelectedDimensionBlocksIndexes[i][0],
-          allSelectedDimensionBlocksIndexes[i][1] + 1 - allSelectedDimensionBlocksIndexes[i][0]);
+      for (int j = allSelectedDimensionBlocksIndexes[i][0];
+           j <= allSelectedDimensionBlocksIndexes[i][1]; j++) {
+        dimensionRawColumnChunks[j] = projectionListDimensionChunk[j];
+      }
     }
-    MeasureColumnDataChunk[] measureColumnDataChunk =
-        new MeasureColumnDataChunk[blockExecutionInfo.getTotalNumberOfMeasureBlock()];
+    /**
+     * in case projection if the projected dimension are not loaded in the dimensionColumnDataChunk
+     * then loading them
+     */
+    int[] projectionListDimensionIndexes = blockExecutionInfo.getProjectionListDimensionIndexes();
+    int projectionListDimensionIndexesLength = projectionListDimensionIndexes.length;
+    for (int i = 0; i < projectionListDimensionIndexesLength; i++) {
+      if (null == dimensionRawColumnChunks[projectionListDimensionIndexes[i]]) {
+        dimensionRawColumnChunks[projectionListDimensionIndexes[i]] =
+            blocksChunkHolder.getDataBlock()
+                .getDimensionChunk(fileReader, projectionListDimensionIndexes[i]);
+      }
+    }
+    MeasureRawColumnChunk[] measureRawColumnChunks =
+        new MeasureRawColumnChunk[blockExecutionInfo.getTotalNumberOfMeasureBlock()];
     int[][] allSelectedMeasureBlocksIndexes =
         blockExecutionInfo.getAllSelectedMeasureBlocksIndexes();
-    MeasureColumnDataChunk[] projectionListMeasureChunk = blocksChunkHolder.getDataBlock()
+    MeasureRawColumnChunk[] projectionListMeasureChunk = blocksChunkHolder.getDataBlock()
         .getMeasureChunks(fileReader, allSelectedMeasureBlocksIndexes);
     // read the measure chunk blocks which is not present
-    for (int i = 0; i < measureColumnDataChunk.length; i++) {
-      if (null != blocksChunkHolder.getMeasureDataChunk()[i]) {
-        measureColumnDataChunk[i] = blocksChunkHolder.getMeasureDataChunk()[i];
+    for (int i = 0; i < measureRawColumnChunks.length; i++) {
+      if (null != blocksChunkHolder.getMeasureRawDataChunk()[i]) {
+        measureRawColumnChunks[i] = blocksChunkHolder.getMeasureRawDataChunk()[i];
       }
     }
     for (int i = 0; i < allSelectedMeasureBlocksIndexes.length; i++) {
-      System.arraycopy(projectionListMeasureChunk, allSelectedMeasureBlocksIndexes[i][0],
-          measureColumnDataChunk, allSelectedMeasureBlocksIndexes[i][0],
-          allSelectedMeasureBlocksIndexes[i][1] + 1 - allSelectedMeasureBlocksIndexes[i][0]);
+      for (int j = allSelectedMeasureBlocksIndexes[i][0];
+           j <= allSelectedMeasureBlocksIndexes[i][1]; j++) {
+        measureRawColumnChunks[j] = projectionListMeasureChunk[j];
+      }
     }
-    scannedResult.setDimensionChunks(dimensionColumnDataChunk);
-    scannedResult.setIndexes(indexes);
-    scannedResult.setMeasureChunks(measureColumnDataChunk);
-    scannedResult.setNumberOfRows(indexes.length);
+    /**
+     * in case projection if the projected measure are not loaded in the measureColumnDataChunk
+     * then loading them
+     */
+    int[] projectionListMeasureIndexes = blockExecutionInfo.getProjectionListMeasureIndexes();
+    int projectionListMeasureIndexesLength = projectionListMeasureIndexes.length;
+    for (int i = 0; i < projectionListMeasureIndexesLength; i++) {
+      if (null == measureRawColumnChunks[projectionListMeasureIndexes[i]]) {
+        measureRawColumnChunks[projectionListMeasureIndexes[i]] = blocksChunkHolder.getDataBlock()
+            .getMeasureChunk(fileReader, projectionListMeasureIndexes[i]);
+      }
+    }
+    DimensionColumnDataChunk[][] dimensionColumnDataChunks =
+        new DimensionColumnDataChunk[dimensionRawColumnChunks.length][indexesGroup.length];
+    MeasureColumnDataChunk[][] measureColumnDataChunks =
+        new MeasureColumnDataChunk[measureRawColumnChunks.length][indexesGroup.length];
+    for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
+      for (int j = 0; j < indexesGroup.length; j++) {
+        if (dimensionRawColumnChunks[i] != null) {
+          dimensionColumnDataChunks[i][j] =
+              dimensionRawColumnChunks[i].convertToDimColDataChunk(j);
+        }
+      }
+    }
+    for (int i = 0; i < measureRawColumnChunks.length; i++) {
+      for (int j = 0; j < indexesGroup.length; j++) {
+        if (measureRawColumnChunks[i] != null) {
+          measureColumnDataChunks[i][j] =
+              measureRawColumnChunks[i].convertToMeasureColDataChunk(j);
+        }
+      }
+    }
+    scannedResult.setDimensionChunks(dimensionColumnDataChunks);
+    scannedResult.setIndexes(indexesGroup);
+    scannedResult.setMeasureChunks(measureColumnDataChunks);
+    scannedResult.setRawColumnChunks(dimensionRawColumnChunks);
+    scannedResult.setNumberOfRows(rowCount);
+    return scannedResult;
   }
 }

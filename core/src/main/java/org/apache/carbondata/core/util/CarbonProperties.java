@@ -26,6 +26,7 @@ import java.util.Properties;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 
 public final class CarbonProperties {
@@ -84,6 +85,117 @@ public final class CarbonProperties {
     validateHighCardinalityInRowCountPercentage();
     validateCarbonDataFileVersion();
     validateExecutorStartUpTime();
+    validatePrefetchBufferSize();
+    validateNumberOfPagesPerBlocklet();
+    validateNumberOfColumnPerIORead();
+    validateNumberOfRowsPerBlockletColumnPage();
+  }
+
+  private void validatePrefetchBufferSize() {
+    String prefetchBufferSizeStr =
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE);
+
+    if (null == prefetchBufferSizeStr || prefetchBufferSizeStr.length() == 0) {
+      carbonProperties.setProperty(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
+          CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT);
+    } else {
+      try {
+        Integer.parseInt(prefetchBufferSizeStr);
+      } catch (NumberFormatException e) {
+        LOGGER.info("The prefetch buffer size value \"" + prefetchBufferSizeStr
+            + "\" is invalid. Using the default value \""
+            + CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT + "\"");
+        carbonProperties.setProperty(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
+            CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT);
+      }
+    }
+  }
+
+  /**
+   * This method validates the number of pages per blocklet column
+   */
+  private void validateNumberOfPagesPerBlocklet() {
+    String numberOfPagePerBlockletColumnString = carbonProperties
+        .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN,
+            CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE);
+    try {
+      short numberOfPagePerBlockletColumn = Short.parseShort(numberOfPagePerBlockletColumnString);
+      if (numberOfPagePerBlockletColumn
+          < CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_MIN
+          || numberOfPagePerBlockletColumn
+          > CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_MAX) {
+        LOGGER.info(
+            "The Number Of pages per blocklet column value \"" + numberOfPagePerBlockletColumnString
+                + "\" is invalid. Using the default value \""
+                + CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE);
+        carbonProperties.setProperty(CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN,
+            CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info(
+          "The Number Of pages per blocklet column value \"" + numberOfPagePerBlockletColumnString
+              + "\" is invalid. Using the default value \""
+              + CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE);
+      carbonProperties.setProperty(CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN,
+          CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE);
+    }
+  }
+
+  /**
+   * This method validates the number of column read in one IO
+   */
+  private void validateNumberOfColumnPerIORead() {
+    String numberofColumnPerIOString = carbonProperties
+        .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
+            CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+    try {
+      short numberofColumnPerIO = Short.parseShort(numberofColumnPerIOString);
+      if (numberofColumnPerIO < CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_MIN
+          || numberofColumnPerIO > CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_MAX) {
+        LOGGER.info("The Number Of pages per blocklet column value \"" + numberofColumnPerIOString
+            + "\" is invalid. Using the default value \""
+            + CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+        carbonProperties.setProperty(CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
+            CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info("The Number Of pages per blocklet column value \"" + numberofColumnPerIOString
+          + "\" is invalid. Using the default value \""
+          + CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+      carbonProperties.setProperty(CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
+          CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
+    }
+  }
+
+  /**
+   * This method validates the number of column read in one IO
+   */
+  private void validateNumberOfRowsPerBlockletColumnPage() {
+    String numberOfRowsPerBlockletColumnPageString = carbonProperties
+        .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
+            CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+    try {
+      short numberOfRowsPerBlockletColumnPage =
+          Short.parseShort(numberOfRowsPerBlockletColumnPageString);
+      if (numberOfRowsPerBlockletColumnPage
+          < CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_MIN
+          || numberOfRowsPerBlockletColumnPage
+          > CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_MAX) {
+        LOGGER.info("The Number Of rows per blocklet column pages value \""
+            + numberOfRowsPerBlockletColumnPageString + "\" is invalid. Using the default value \""
+            + CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+        carbonProperties
+            .setProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
+                CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info("The Number Of rows per blocklet column pages value \""
+          + numberOfRowsPerBlockletColumnPageString + "\" is invalid. Using the default value \""
+          + CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+      carbonProperties
+          .setProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
+              CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+    }
   }
 
   private void validateBadRecordsLocation() {
@@ -267,17 +379,16 @@ public final class CarbonProperties {
         carbonProperties.getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION);
     if (carbondataFileVersionString == null) {
       // use default property if user does not specify version property
-      carbonProperties
-          .setProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION,
-              CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION);
+      carbonProperties.setProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION,
+          CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION);
     } else {
       try {
         ColumnarFormatVersion.valueOf(carbondataFileVersionString);
       } catch (IllegalArgumentException e) {
         // use default property if user specifies an invalid version property
-        LOGGER.warn("Specified file version property is invalid: " +
-            carbondataFileVersionString + ". Using " +
-            CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION + " as default file version");
+        LOGGER.warn("Specified file version property is invalid: " + carbondataFileVersionString
+            + ". Using " + CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION
+            + " as default file version");
         carbonProperties.setProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION,
             CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION);
       }
@@ -548,6 +659,7 @@ public final class CarbonProperties {
 
   /**
    * Returns configured update deleta files value for IUD compaction
+   *
    * @return numberOfDeltaFilesThreshold
    */
   public int getNoUpdateDeltaFilesThresholdForIUDCompaction() {
@@ -567,8 +679,7 @@ public final class CarbonProperties {
       }
     } catch (NumberFormatException e) {
       LOGGER.error("The specified value for property "
-          + CarbonCommonConstants.UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION
-          + "is incorrect."
+          + CarbonCommonConstants.UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION + "is incorrect."
           + " Correct value should be in range of 0 -10000. Taking the default value.");
       numberOfDeltaFilesThreshold = Integer
           .parseInt(CarbonCommonConstants.DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);
@@ -578,6 +689,7 @@ public final class CarbonProperties {
 
   /**
    * Returns configured delete deleta files value for IUD compaction
+   *
    * @return numberOfDeltaFilesThreshold
    */
   public int getNoDeleteDeltaFilesThresholdForIUDCompaction() {
@@ -597,8 +709,7 @@ public final class CarbonProperties {
       }
     } catch (NumberFormatException e) {
       LOGGER.error("The specified value for property "
-          + CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION
-          + "is incorrect."
+          + CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION + "is incorrect."
           + " Correct value should be in range of 0 -10000. Taking the default value.");
       numberOfDeltaFilesThreshold = Integer
           .parseInt(CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);

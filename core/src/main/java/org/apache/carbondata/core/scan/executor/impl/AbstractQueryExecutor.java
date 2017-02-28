@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -33,6 +34,7 @@ import org.apache.carbondata.common.logging.impl.StandardLogService;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.BlockIndexStore;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
@@ -59,6 +61,7 @@ import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
@@ -103,7 +106,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     LOGGER.info("Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
         .getCarbonTableIdentifier().getTableName());
     // add executor service for query execution
-    queryProperties.executorService = Executors.newFixedThreadPool(1);
+    queryProperties.executorService = Executors.newCachedThreadPool();
     // Initializing statistics list to record the query statistics
     // creating copy on write to handle concurrent scenario
     queryProperties.queryStatisticsRecorder =
@@ -331,10 +334,14 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // setting all the dimension chunk indexes to be read from file
     int numberOfElementToConsider = 0;
     // list of dimensions to be projected
-    List<Integer> allProjectionListDimensionIdexes = new ArrayList<>();
+    Set<Integer> allProjectionListDimensionIdexes = new LinkedHashSet<>();
     int[] dimensionsBlockIndexes = QueryUtil.getDimensionsBlockIndexes(updatedQueryDimension,
         segmentProperties.getDimensionOrdinalToBlockMapping(), expressionDimensions,
         queryProperties.complexFilterDimension, allProjectionListDimensionIdexes);
+    int numberOfColumnToBeReadInOneIO = Integer.parseInt(CarbonProperties.getInstance()
+        .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
+            CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE));
+
     if (dimensionsBlockIndexes.length > 0) {
       numberOfElementToConsider = dimensionsBlockIndexes[dimensionsBlockIndexes.length - 1]
           == segmentProperties.getBlockTodimensionOrdinalMapping().size() - 1 ?
@@ -342,14 +349,16 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           dimensionsBlockIndexes.length;
       blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(CarbonUtil
           .getRangeIndex(dimensionsBlockIndexes, numberOfElementToConsider,
-              CarbonCommonConstants.NUMBER_OF_COLUMN_READ_IN_IO));
+              numberOfColumnToBeReadInOneIO));
     } else {
       blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(new int[0][0]);
     }
-
+    // list of measures to be projected
+    List<Integer> allProjectionListMeasureIdexes = new ArrayList<>();
     int[] measureBlockIndexes = QueryUtil
         .getMeasureBlockIndexes(queryModel.getQueryMeasures(), expressionMeasures,
-            segmentProperties.getMeasuresOrdinalToBlockMapping(), queryProperties.filterMeasures);
+            segmentProperties.getMeasuresOrdinalToBlockMapping(), queryProperties.filterMeasures,
+            allProjectionListMeasureIdexes);
     if (measureBlockIndexes.length > 0) {
 
       numberOfElementToConsider = measureBlockIndexes[measureBlockIndexes.length - 1]
@@ -359,10 +368,18 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       // setting all the measure chunk indexes to be read from file
       blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(CarbonUtil
           .getRangeIndex(measureBlockIndexes, numberOfElementToConsider,
-              CarbonCommonConstants.NUMBER_OF_COLUMN_READ_IN_IO));
+              numberOfColumnToBeReadInOneIO));
     } else {
       blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(new int[0][0]);
     }
+    // setting the indexes of list of dimension in projection list
+    blockExecutionInfo.setProjectionListDimensionIndexes(ArrayUtils.toPrimitive(
+        allProjectionListDimensionIdexes
+            .toArray(new Integer[allProjectionListDimensionIdexes.size()])));
+    // setting the indexes of list of measures in projection list
+    blockExecutionInfo.setProjectionListMeasureIndexes(ArrayUtils.toPrimitive(
+        allProjectionListMeasureIdexes
+            .toArray(new Integer[allProjectionListMeasureIdexes.size()])));
     // setting the key structure info which will be required
     // to update the older block key with new key generator
     blockExecutionInfo.setKeyStructureInfo(queryProperties.keyStructureInfo);

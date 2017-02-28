@@ -21,7 +21,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +31,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -119,10 +119,9 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * @param columnId
    */
   public PrimitiveDataType(String name, String parentname, String columnId,
-                           CarbonDimension carbonDimension,
-                           Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
-                           CarbonTableIdentifier carbonTableIdentifier,
-                           DictionaryClient client, Boolean useOnePass, String storePath) {
+      CarbonDimension carbonDimension, Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
+      CarbonTableIdentifier carbonTableIdentifier, DictionaryClient client, Boolean useOnePass,
+      String storePath, boolean tableInitialize, Map<Object, Integer> localCache) {
     this.name = name;
     this.parentname = parentname;
     this.columnId = columnId;
@@ -140,20 +139,19 @@ public class PrimitiveDataType implements GenericDataType<Object> {
           if (CarbonUtil.isFileExistsForGivenColumn(storePath, identifier)) {
             dictionary = cache.get(identifier);
           }
-          String threadNo = "initial";
-          DictionaryKey dictionaryKey = new DictionaryKey();
-          dictionaryKey.setColumnName(carbonDimension.getColName());
-          dictionaryKey.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
-          dictionaryKey.setThreadNo(threadNo);
+          DictionaryMessage dictionaryMessage = new DictionaryMessage();
+          dictionaryMessage.setColumnName(carbonDimension.getColName());
+          dictionaryMessage.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
           // for table initialization
-          dictionaryKey.setType("TABLE_INTIALIZATION");
-          dictionaryKey.setData("0");
-          client.getDictionary(dictionaryKey);
-          Map<Object, Integer> localCache = new HashMap<>();
+          dictionaryMessage.setType(DictionaryMessageType.TABLE_INTIALIZATION);
+          dictionaryMessage.setData("0");
+          if (tableInitialize) {
+            client.getDictionary(dictionaryMessage);
+          }
           // for generate dictionary
-          dictionaryKey.setType("DICTIONARY_GENERATION");
+          dictionaryMessage.setType(DictionaryMessageType.DICT_GENERATION);
           dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,
-                  dictionaryKey, localCache);
+              dictionaryMessage, localCache);
         } else {
           dictionary = cache.get(identifier);
           dictionaryGenerator = new PreCreatedDictionary(dictionary);

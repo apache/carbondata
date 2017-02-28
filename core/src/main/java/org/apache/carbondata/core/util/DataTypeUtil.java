@@ -23,6 +23,7 @@ import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -314,6 +315,87 @@ public final class DataTypeUtil {
       return null;
     }
 
+  }
+
+  /**
+   * Below method will be used to convert the data passed to its actual data
+   * type
+   *
+   * @param dataInBytes    data
+   * @param actualDataType actual data type
+   * @return actual data after conversion
+   */
+  public static Object getDataBasedOnDataType(byte[] dataInBytes, DataType actualDataType) {
+    if (null == dataInBytes || Arrays
+        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, dataInBytes)) {
+      return null;
+    }
+    try {
+      switch (actualDataType) {
+        case INT:
+          String data1 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+          if (data1.isEmpty()) {
+            return null;
+          }
+          return Integer.parseInt(data1);
+        case SHORT:
+          String data2 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+          if (data2.isEmpty()) {
+            return null;
+          }
+          return Short.parseShort(data2);
+        case DOUBLE:
+          String data3 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+          if (data3.isEmpty()) {
+            return null;
+          }
+          return Double.parseDouble(data3);
+        case LONG:
+          String data4 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+          if (data4.isEmpty()) {
+            return null;
+          }
+          return Long.parseLong(data4);
+        case DATE:
+          String data5 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+          if (data5.isEmpty()) {
+            return null;
+          }
+          try {
+            Date dateToStr = dateformatter.get().parse(data5);
+            return dateToStr.getTime() * 1000;
+          } catch (ParseException e) {
+            LOGGER.error("Cannot convert" + data5 + " to Time/Long type value" + e.getMessage());
+            return null;
+          }
+
+        case TIMESTAMP:
+          String data6 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+          if (data6.isEmpty()) {
+            return null;
+          }
+          try {
+            Date dateToStr = timeStampformatter.get().parse(data6);
+            return dateToStr.getTime() * 1000;
+          } catch (ParseException e) {
+            LOGGER.error("Cannot convert" + data6 + " to Time/Long type value" + e.getMessage());
+            return null;
+          }
+        case DECIMAL:
+          String data7 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+          if (data7.isEmpty()) {
+            return null;
+          }
+          java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data7);
+          return org.apache.spark.sql.types.Decimal.apply(javaDecVal);
+        default:
+          return UTF8String.fromBytes(dataInBytes);
+      }
+    } catch (NumberFormatException ex) {
+      String data = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+      LOGGER.error("Problem while converting data type" + data);
+      return null;
+    }
   }
 
   public static Object getMeasureDataBasedOnDataType(Object data, DataType dataType) {

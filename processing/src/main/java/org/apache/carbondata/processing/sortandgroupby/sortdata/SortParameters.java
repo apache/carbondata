@@ -386,7 +386,7 @@ public class SortParameters {
     } catch (NumberFormatException exc) {
       numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
     }
-    parameters.setNumberOfCores(numberOfCores);
+    parameters.setNumberOfCores(numberOfCores > 0 ? numberOfCores : 1);
 
     parameters.setFileWriteBufferSize(Integer.parseInt(carbonProperties
         .getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE,
@@ -425,7 +425,9 @@ public class SortParameters {
     }
 
     parameters.setPrefetch(CarbonCommonConstants.CARBON_PREFETCH_IN_MERGE_VALUE);
-    parameters.setBufferSize(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE);
+    parameters.setBufferSize(Integer.parseInt(carbonProperties.getProperty(
+        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
+        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
 
     char[] aggType = CarbonDataProcessorUtil
         .getAggType(parameters.getMeasureColCount(), parameters.getDatabaseName(),
@@ -487,7 +489,7 @@ public class SortParameters {
     } catch (NumberFormatException exc) {
       numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
     }
-    parameters.setNumberOfCores(numberOfCores);
+    parameters.setNumberOfCores(numberOfCores > 0 ? numberOfCores : 1);
 
     parameters.setFileWriteBufferSize(Integer.parseInt(carbonProperties
         .getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE,
@@ -525,8 +527,10 @@ public class SortParameters {
       LOGGER.info("Compression will be used for writing the sort temp File");
     }
 
-    parameters.setPrefetch(CarbonCommonConstants.CARBON_PREFETCH_IN_MERGE_VALUE);
-    parameters.setBufferSize(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE);
+    parameters.setPrefetch(CarbonCommonConstants. CARBON_PREFETCH_IN_MERGE_VALUE);
+    parameters.setBufferSize(Integer.parseInt(carbonProperties.getProperty(
+        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
+        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
 
     char[] aggType = CarbonDataProcessorUtil
         .getAggType(parameters.getMeasureColCount(), parameters.getDatabaseName(),

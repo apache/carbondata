@@ -35,7 +35,7 @@
   <inceptionYear>2016</inceptionYear>
   <packaging>pom</packaging>
 
-  <version>1.0.0-incubating-SNAPSHOT</version>
+  <version>1.1.0-incubating-SNAPSHOT</version>
 
   <licenses>
     <license>
@@ -126,6 +126,10 @@
     <repository>
       <id>pentaho-releases</id>
       <url>http://repository.pentaho.org/artifactory/repo/</url>
+    </repository>
+    <repository>
+      <id>carbondata-releases</id>
+      <url>http://136.243.101.176:9091/repository/carbondata/</url>
     </repository>
   </repositories>
 
@@ -414,7 +418,7 @@
           <plugin>
             <groupId>org.apache.rat</groupId>
             <artifactId>apache-rat-plugin</artifactId>
-            <version>0.11</version>
+            <version>0.12</version>
             <executions>
               <execution>
                 <phase>verify</phase>
@@ -426,27 +430,14 @@
             <configuration>
               <reportFile>${project.build.directory}/${project.build.finalName}.rat</reportFile>
               <excludeSubProjects>false</excludeSubProjects>
+              <consoleOutput>true</consoleOutput>
               <useDefaultExcludes>true</useDefaultExcludes>
               <excludes>
+                <exclude>**/target/**/*</exclude>
+                <exclude>.github/**/*</exclude>
                 <exclude>**/*.iml</exclude>
-                <exclude>**/*.csv</exclude>
-                <exclude>**/*.dictionary</exclude>
-                <exclude>**/*.ktr</exclude>
-                <exclude>**/*.rat</exclude>
-                <exclude>**/_SUCCESS</exclude>
-                <exclude>**/non-csv</exclude>
-                <exclude>**/.invisibilityfile</exclude>
-                <exclude>**/noneCsvFormat.cs</exclude>
-                <exclude>**/org.apache.spark.sql.sources.DataSourceRegister</exclude>
-                <exclude>**/org.apache.spark.sql.test.TestQueryExecutorRegister</exclude>
-                <exclude>**/derby.log</exclude>
-                <exclude>**/meta.lock</exclude>
-                <exclude>**/loadmetadata.metadata</exclude>
-                <exclude>**/modifiedTime.mdt</exclude>
-                <exclude>**/PULL_REQUEST_TEMPLATE.md</exclude>
-                <exclude>**/dict.txt</exclude>
-                <exclude>**/sample</exclude>
-                <exclude>**/test.json</exclude>
+                <exclude>**/src/test/**/*</exclude>
+                <exclude>examples/**/*.csv</exclude>
               </excludes>
             </configuration>
           </plugin>

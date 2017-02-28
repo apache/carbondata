@@ -18,8 +18,10 @@ package org.apache.carbondata.core.datastore.chunk.reader;
 
 import org.apache.carbondata.core.datastore.chunk.reader.dimension.v1.CompressedDimensionChunkFileBasedReaderV1;
 import org.apache.carbondata.core.datastore.chunk.reader.dimension.v2.CompressedDimensionChunkFileBasedReaderV2;
+import org.apache.carbondata.core.datastore.chunk.reader.dimension.v3.CompressedDimensionChunkFileBasedReaderV3;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.v1.CompressedMeasureChunkFileBasedReaderV1;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.v2.CompressedMeasureChunkFileBasedReaderV2;
+import org.apache.carbondata.core.datastore.chunk.reader.measure.v3.CompressedMeasureChunkFileBasedReaderV3;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 
@@ -65,8 +67,12 @@ public class CarbonDataReaderFactory {
       case V1:
         return new CompressedDimensionChunkFileBasedReaderV1(blockletInfo, eachColumnValueSize,
             filePath);
-      default:
+      case V2:
         return new CompressedDimensionChunkFileBasedReaderV2(blockletInfo, eachColumnValueSize,
+            filePath);
+      case V3:
+      default:
+        return new CompressedDimensionChunkFileBasedReaderV3(blockletInfo, eachColumnValueSize,
             filePath);
     }
   }
@@ -84,8 +90,12 @@ public class CarbonDataReaderFactory {
     switch (version) {
       case V1:
         return new CompressedMeasureChunkFileBasedReaderV1(blockletInfo, filePath);
-      default:
+      case V2:
         return new CompressedMeasureChunkFileBasedReaderV2(blockletInfo, filePath);
+      case V3:
+      default:
+        return new CompressedMeasureChunkFileBasedReaderV3(blockletInfo, filePath);
+
     }
 
   }
