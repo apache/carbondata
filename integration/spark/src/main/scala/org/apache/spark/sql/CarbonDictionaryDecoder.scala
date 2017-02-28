@@ -218,27 +218,27 @@ case class CarbonDictionaryDecoder(
 
   private def getDictionary(atiMap: Map[String, AbsoluteTableIdentifier],
                             cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
-    val dictionaryColumnIds = getDictionaryColumnIds.map { f =>
-      if (f._2 != null) {
+    val dictionaryColumnIds = getDictionaryColumnIds.map { dictionaryId =>
+      if (dictionaryId._2 != null) {
         new DictionaryColumnUniqueIdentifier(
-          atiMap(f._1).getCarbonTableIdentifier,
-          f._2, f._3)
+          atiMap(dictionaryId._1).getCarbonTableIdentifier,
+          dictionaryId._2, dictionaryId._3)
       } else {
         null
       }
     }
     try {
       val noDictionaryIndexes = new java.util.ArrayList[Int]()
-      dictionaryColumnIds.zipWithIndex.foreach { x =>
-        if (x._1 == null) {
-          noDictionaryIndexes.add(x._2)
+      dictionaryColumnIds.zipWithIndex.foreach { columnIndex =>
+        if (columnIndex._1 == null) {
+          noDictionaryIndexes.add(columnIndex._2)
         }
       }
       val dict = cache.getAll(dictionaryColumnIds.filter(_ != null).toSeq.asJava);
       val finalDict = new java.util.ArrayList[Dictionary]()
       var dictIndex: Int = 0
-      dictionaryColumnIds.zipWithIndex.foreach { x =>
-        if (!noDictionaryIndexes.contains(x._2)) {
+      dictionaryColumnIds.zipWithIndex.foreach { columnIndex =>
+        if (!noDictionaryIndexes.contains(columnIndex._2)) {
           finalDict.add(dict.get(dictIndex))
           dictIndex += 1
         } else {
