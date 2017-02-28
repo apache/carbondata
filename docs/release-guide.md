@@ -401,7 +401,7 @@ _Checklist to proceed to the final step:_
 
 Any issue identified during the community review and vote should be fixed in this step.
 
-To can a vote:
+To fully cacel a vote:
 
 * Cancel the current release and verify the version is back to the correct SNAPSHOT:
 
