@@ -76,7 +76,7 @@ import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
-import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
+import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 import org.apache.spark.sql.types.Decimal;
 
@@ -263,6 +263,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private long schemaUpdatedTimeStamp;
 
   private String segmentId;
+
+  private int taskExtension;
+
   /**
    * current data format version
    */
@@ -288,6 +291,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.aggKeyBlock = new boolean[columnStoreCount];
     this.isNoDictionary = new boolean[columnStoreCount];
     this.bucketNumber = carbonFactDataHandlerModel.getBucketId();
+    this.taskExtension = carbonFactDataHandlerModel.getTaskExtension();
     this.isUseInvertedIndex = new boolean[columnStoreCount];
     if (null != carbonFactDataHandlerModel.getIsUseInvertedIndex()) {
       for (int i = 0; i < isUseInvertedIndex.length; i++) {
@@ -784,7 +788,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       noDictionaryColumnsData = new byte[noDictionaryCount][noDictionaryData.length][];
       for (int i = 0; i < noDictionaryData.length; i++) {
         int complexColumnIndex = primitiveDimLens.length + noDictionaryCount;
-        byte[][] splitKey = RemoveDictionaryUtil
+        byte[][] splitKey = NonDictionaryUtil
             .splitNoDictionaryKey(noDictionaryData[i], noDictionaryCount + complexIndexMap.size());
 
         int complexTypeIndex = 0;
@@ -1013,9 +1017,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     byte[] composedNonDictEndKey = null;
     if (noDictionaryStartKey != null) {
       composedNonDictStartKey =
-          RemoveDictionaryUtil.packByteBufferIntoSingleByteArray(noDictionaryStartKey);
+          NonDictionaryUtil.packByteBufferIntoSingleByteArray(noDictionaryStartKey);
       composedNonDictEndKey =
-          RemoveDictionaryUtil.packByteBufferIntoSingleByteArray(noDictionaryEndKey);
+          NonDictionaryUtil.packByteBufferIntoSingleByteArray(noDictionaryEndKey);
     }
     return this.dataWriter
         .buildDataNodeHolder(blockStorage, dataHolderLocal, entryCountLocal, startkeyLocal,
@@ -1430,6 +1434,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     carbonDataWriterVo.setSegmentProperties(segmentProperties);
     carbonDataWriterVo.setTableBlocksize(tableBlockSize);
     carbonDataWriterVo.setBucketNumber(bucketNumber);
+    carbonDataWriterVo.setTaskExtension(taskExtension);
     carbonDataWriterVo.setSchemaUpdatedTimeStamp(schemaUpdatedTimeStamp);
     return carbonDataWriterVo;
   }

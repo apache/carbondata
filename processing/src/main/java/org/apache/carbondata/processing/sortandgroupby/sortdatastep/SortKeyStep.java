@@ -28,7 +28,7 @@ import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAn
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortIntermediateFileMerger;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
-import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
+import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -136,7 +136,7 @@ public class SortKeyStep extends BaseStep {
     }
 
     // check if all records are null than send empty row to next step
-    else if (RemoveDictionaryUtil.checkAllValuesForNull(row)) {
+    else if (NonDictionaryUtil.checkAllValuesForNull(row)) {
       // create empty row out size
       int outSize = Integer.parseInt(meta.getOutputRowSize());
 
@@ -171,10 +171,10 @@ public class SortKeyStep extends BaseStep {
       this.meta.getFields(data.getOutputRowMeta(), getStepname(), null, null, this);
 
       this.meta.setNoDictionaryCount(
-          RemoveDictionaryUtil.extractNoDictionaryCount(meta.getNoDictionaryDims()));
+          NonDictionaryUtil.extractNoDictionaryCount(meta.getNoDictionaryDims()));
 
       this.noDictionaryColMaping =
-          RemoveDictionaryUtil.convertStringToBooleanArr(meta.getNoDictionaryDimsMapping());
+          NonDictionaryUtil.convertStringToBooleanArr(meta.getNoDictionaryDimsMapping());
       SortParameters parameters =
           SortParameters.createSortParameters(meta.getDatabaseName(), meta.getTabelName(),
               meta.getDimensionCount(), meta.getComplexDimensionCount(), meta.getMeasureCount(),
