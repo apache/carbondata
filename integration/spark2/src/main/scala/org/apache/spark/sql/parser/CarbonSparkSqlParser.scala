@@ -63,7 +63,13 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
 
   override def visitCreateTable(ctx: CreateTableContext): LogicalPlan = {
     val fileStorage = Option(ctx.createFileFormat) match {
-      case Some(value) => value.storageHandler().STRING().getSymbol.getText
+      case Some(value) =>
+        if (value.children.get(1).getText.equalsIgnoreCase("by")) {
+          value.storageHandler().STRING().getSymbol.getText
+        } else {
+          // The case of "STORED AS PARQUET/ORC"
+          ""
+        }
       case _ => ""
     }
     if (fileStorage.equalsIgnoreCase("'carbondata'") ||
