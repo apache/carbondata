@@ -288,7 +288,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     initFileCount();
     String carbonDataFileName = carbonTablePath
         .getCarbonDataFileName(fileCount, dataWriterVo.getCarbonDataFileAttributes().getTaskId(),
-            dataWriterVo.getBucketNumber(),
+            dataWriterVo.getBucketNumber(), dataWriterVo.getTaskExtension(),
             dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
     String actualFileNameVal = carbonDataFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     FileData fileData = new FileData(actualFileNameVal, dataWriterVo.getStoreLocation());
@@ -340,7 +340,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   /**
    * Below method will be used to fill the vlock info details
    *
-   * @param infoList        info list
    * @param numberOfRows    number of rows in file
    * @param filePath        file path
    * @param currentPosition current offset
@@ -440,7 +439,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     List<BlockIndex> blockIndexThrift = CarbonMetadataUtil.getBlockIndexInfo(blockIndexInfoList);
     String fileName = dataWriterVo.getStoreLocation() + File.separator + carbonTablePath
         .getCarbonIndexFileName(dataWriterVo.getCarbonDataFileAttributes().getTaskId(),
-            dataWriterVo.getBucketNumber(),
+            dataWriterVo.getBucketNumber(), dataWriterVo.getTaskExtension(),
             dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
     CarbonIndexFileWriter writer = new CarbonIndexFileWriter();
     // open file

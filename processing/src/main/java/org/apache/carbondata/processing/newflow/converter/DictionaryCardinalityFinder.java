@@ -15,25 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.newflow.constants;
+package org.apache.carbondata.processing.newflow.converter;
 
 /**
- * Constants used in data loading.
+ * Finds the current cardinality of dimensions.
  */
-public final class DataLoadProcessorConstants {
+public interface DictionaryCardinalityFinder {
 
-  public static final String FACT_TIME_STAMP = "FACT_TIME_STAMP";
-
-  public static final String COMPLEX_DELIMITERS = "COMPLEX_DELIMITERS";
-
-  public static final String SERIALIZATION_NULL_FORMAT = "SERIALIZATION_NULL_FORMAT";
-
-  public static final String BAD_RECORDS_LOGGER_ENABLE = "BAD_RECORDS_LOGGER_ENABLE";
-
-  public static final String BAD_RECORDS_LOGGER_ACTION = "BAD_RECORDS_LOGGER_ACTION";
-
-  public static final String IS_EMPTY_DATA_BAD_RECORD = "IS_EMPTY_DATA_BAD_RECORD";
-
-  public static final String FACT_FILE_PATH = "FACT_FILE_PATH";
-
+  int[] getCardinality();
 }

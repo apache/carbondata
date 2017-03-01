@@ -54,7 +54,7 @@ import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.SingleThreadFinalSortFilesMerger;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
-import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
+import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMeta;
@@ -267,9 +267,9 @@ public class MDKeyGenStep extends BaseStep {
             String.valueOf(meta.getTaskNo()), meta.getPartitionID(), meta.getSegmentId() + "",
             false);
     isNoDictionaryDimension =
-        RemoveDictionaryUtil.convertStringToBooleanArr(meta.getNoDictionaryDimsMapping());
+        NonDictionaryUtil.convertStringToBooleanArr(meta.getNoDictionaryDimsMapping());
     isUseInvertedIndex =
-        RemoveDictionaryUtil.convertStringToBooleanArr(meta.getIsUseInvertedIndex());
+        NonDictionaryUtil.convertStringToBooleanArr(meta.getIsUseInvertedIndex());
     fileManager = new FileManager();
     fileManager.setName(CarbonCommonConstants.LOAD_FOLDER + meta.getSegmentId()
         + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
@@ -280,7 +280,7 @@ public class MDKeyGenStep extends BaseStep {
     }
 
     this.meta.setNoDictionaryCount(
-        RemoveDictionaryUtil.extractNoDictionaryCount(this.meta.getNoDictionaryDims()));
+        NonDictionaryUtil.extractNoDictionaryCount(this.meta.getNoDictionaryDims()));
 
     String levelCardinalityFilePath = storeLocation + File.separator +
         CarbonCommonConstants.LEVEL_METADATA_FILE + meta.getTableName()
@@ -460,18 +460,18 @@ public class MDKeyGenStep extends BaseStep {
     int index = 0;
     for (int i = 0; i < measureCount; i++) {
       if (aggType[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        outputRow[l++] = RemoveDictionaryUtil.getMeasure(index++, row);
+        outputRow[l++] = NonDictionaryUtil.getMeasure(index++, row);
       } else if (aggType[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
-        outputRow[l++] = (Long) RemoveDictionaryUtil.getMeasure(index++, row);
+        outputRow[l++] = (Long) NonDictionaryUtil.getMeasure(index++, row);
       } else {
-        outputRow[l++] = (Double) RemoveDictionaryUtil.getMeasure(index++, row);
+        outputRow[l++] = (Double) NonDictionaryUtil.getMeasure(index++, row);
       }
     }
-    outputRow[l] = RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row);
+    outputRow[l] = NonDictionaryUtil.getByteArrayForNoDictionaryCols(row);
 
     int[] highCardExcludedRows = new int[segmentProperties.getDimColumnsCardinality().length];
     for (int i = 0; i < highCardExcludedRows.length; i++) {
-      Object key = RemoveDictionaryUtil.getDimension(i, row);
+      Object key = NonDictionaryUtil.getDimension(i, row);
       highCardExcludedRows[i] = (Integer) key;
     }
     try {

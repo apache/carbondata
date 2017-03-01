@@ -97,4 +97,8 @@ public class UnsafeMemoryManager {
   public boolean isMemoryAvailable() {
     return getAvailableMemory() > minimumMemory;
   }
+
+  public long getUsableMemory() {
+    return totalMemory - minimumMemory;
+  }
 }

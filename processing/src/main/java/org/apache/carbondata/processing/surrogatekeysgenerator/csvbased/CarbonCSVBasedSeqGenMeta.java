@@ -36,7 +36,7 @@ import org.apache.carbondata.processing.schema.metadata.ColumnSchemaDetailsWrapp
 import org.apache.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.apache.carbondata.processing.schema.metadata.TableOptionWrapper;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
-import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
+import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Counter;
@@ -670,7 +670,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     tableOptionWrapper.populateTableOptions(tableOption);
 
     updateDimensions(carbondim, carbonmsr, noDictionaryDims);
-    dimColDataTypes = RemoveDictionaryUtil.extractDimColsDataTypeValues(columnsDataTypeString);
+    dimColDataTypes = NonDictionaryUtil.extractDimColsDataTypeValues(columnsDataTypeString);
     if (null != complexTypeString) {
       complexTypes = getComplexTypesMap(complexTypeString);
     } else {
@@ -1073,7 +1073,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     dimColNames = list.toArray(new String[list.size()]);
 
     // get high cardinality dimension Array
-    noDictionaryCols = RemoveDictionaryUtil.extractNoDictionaryDimsArr(noDictionaryDims);
+    noDictionaryCols = NonDictionaryUtil.extractNoDictionaryDimsArr(noDictionaryDims);
 
     String[] sm = null;
     if (null != msr) {

@@ -38,7 +38,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
-import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
+import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 public class SortDataRows {
   /**
@@ -279,28 +279,28 @@ public class SortDataRows {
         int fieldIndex = 0;
 
         for (int dimCount = 0; dimCount < dimColCount; dimCount++) {
-          stream.writeInt(RemoveDictionaryUtil.getDimension(fieldIndex++, row));
+          stream.writeInt(NonDictionaryUtil.getDimension(fieldIndex++, row));
         }
 
         // if any high cardinality dims are present then write it to the file.
 
         if (combinedDimCount > 0) {
-          stream.write(RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row));
+          stream.write(NonDictionaryUtil.getByteArrayForNoDictionaryCols(row));
         }
 
         // as measures are stored in separate array.
         fieldIndex = 0;
         for (int mesCount = 0; mesCount < parameters.getMeasureColCount(); mesCount++) {
-          if (null != RemoveDictionaryUtil.getMeasure(fieldIndex, row)) {
+          if (null != NonDictionaryUtil.getMeasure(fieldIndex, row)) {
             stream.write((byte) 1);
             if (aggType[mesCount] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-              Double val = (Double) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
+              Double val = (Double) NonDictionaryUtil.getMeasure(fieldIndex, row);
               stream.writeDouble(val);
             } else if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {
-              Long val = (Long) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
+              Long val = (Long) NonDictionaryUtil.getMeasure(fieldIndex, row);
               stream.writeLong(val);
             } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-              BigDecimal val = (BigDecimal) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
+              BigDecimal val = (BigDecimal) NonDictionaryUtil.getMeasure(fieldIndex, row);
               byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
               stream.writeInt(bigDecimalInBytes.length);
               stream.write(bigDecimalInBytes);

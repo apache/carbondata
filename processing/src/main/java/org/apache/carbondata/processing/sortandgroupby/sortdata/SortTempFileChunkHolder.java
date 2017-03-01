@@ -37,7 +37,7 @@ import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
-import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
+import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHolder> {
 
@@ -359,7 +359,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
         }
       }
 
-      RemoveDictionaryUtil.prepareOutObj(holder, dim, finalByteArr, measures);
+      NonDictionaryUtil.prepareOutObj(holder, dim, finalByteArr, measures);
 
       // increment number if record read
       this.numberOfObjectRead++;
@@ -425,7 +425,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
         }
       }
 
-      RemoveDictionaryUtil.prepareOutObj(holder, dim, nonDicArray, measures);
+      NonDictionaryUtil.prepareOutObj(holder, dim, nonDicArray, measures);
 
       // increment number if record read
       this.numberOfObjectRead++;
@@ -503,7 +503,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
         ByteBuffer buff1 = ByteBuffer.wrap(byteArr1);
 
         // extract a high card dims from complete byte[].
-        RemoveDictionaryUtil
+        NonDictionaryUtil
             .extractSingleHighCardDims(byteArr1, noDictionaryindex, noDictionaryCount, buff1);
 
         byte[] byteArr2 =
@@ -512,7 +512,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
         ByteBuffer buff2 = ByteBuffer.wrap(byteArr2);
 
         // extract a high card dims from complete byte[].
-        RemoveDictionaryUtil
+        NonDictionaryUtil
             .extractSingleHighCardDims(byteArr2, noDictionaryindex, noDictionaryCount, buff2);
 
         int difference = UnsafeComparer.INSTANCE.compareTo(buff1, buff2);
@@ -521,8 +521,8 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
         }
         noDictionaryindex++;
       } else {
-        int dimFieldA = RemoveDictionaryUtil.getDimension(normalIndex, returnRow);
-        int dimFieldB = RemoveDictionaryUtil.getDimension(normalIndex, other.returnRow);
+        int dimFieldA = NonDictionaryUtil.getDimension(normalIndex, returnRow);
+        int dimFieldB = NonDictionaryUtil.getDimension(normalIndex, other.returnRow);
         diff = dimFieldA - dimFieldB;
         if (diff != 0) {
           return diff;

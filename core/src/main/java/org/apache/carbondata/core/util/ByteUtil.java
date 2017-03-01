@@ -17,13 +17,10 @@
 
 package org.apache.carbondata.core.util;
 
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.memory.CarbonUnsafe;
 
 /**
  * Util class for byte comparision
@@ -106,43 +103,6 @@ public final class ByteUtil {
     INSTANCE;
 
     /**
-     * unsafe .
-     */
-    static final sun.misc.Unsafe THEUNSAFE;
-
-    /**
-     * The offset to the first element in a byte array.
-     */
-    static final int BYTE_ARRAY_BASE_OFFSET;
-    static final boolean LITTLEENDIAN = ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN);
-
-    static {
-      THEUNSAFE = (sun.misc.Unsafe) AccessController.doPrivileged(new PrivilegedAction<Object>() {
-        @Override public Object run() {
-          try {
-            Field f = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            return f.get(null);
-          } catch (NoSuchFieldException e) {
-            // It doesn't matter what we throw;
-            // it's swallowed in getBestComparer().
-            throw new Error();
-          } catch (IllegalAccessException e) {
-            throw new Error();
-          }
-        }
-      });
-
-      BYTE_ARRAY_BASE_OFFSET = THEUNSAFE.arrayBaseOffset(byte[].class);
-
-      // sanity check - this should never fail
-      if (THEUNSAFE.arrayIndexScale(byte[].class) != 1) {
-        throw new AssertionError();
-      }
-
-    }
-
-    /**
      * Returns true if x1 is less than x2, when both values are treated as
      * unsigned.
      */
@@ -169,8 +129,8 @@ public final class ByteUtil {
       }
       int minLength = Math.min(length1, length2);
       int minWords = minLength / SIZEOF_LONG;
-      int offset1Adj = offset1 + BYTE_ARRAY_BASE_OFFSET;
-      int offset2Adj = offset2 + BYTE_ARRAY_BASE_OFFSET;
+      int offset1Adj = offset1 + CarbonUnsafe.BYTE_ARRAY_OFFSET;
+      int offset2Adj = offset2 + CarbonUnsafe.BYTE_ARRAY_OFFSET;
 
       /*
        * Compare 8 bytes at a time. Benchmarking shows comparing 8 bytes
@@ -178,12 +138,12 @@ public final class ByteUtil {
        * 32-bit. On the other hand, it is substantially faster on 64-bit.
        */
       for (int i = 0; i < minWords * SIZEOF_LONG; i += SIZEOF_LONG) {
-        long lw = THEUNSAFE.getLong(buffer1, offset1Adj + (long) i);
-        long rw = THEUNSAFE.getLong(buffer2, offset2Adj + (long) i);
+        long lw = CarbonUnsafe.unsafe.getLong(buffer1, offset1Adj + (long) i);
+        long rw = CarbonUnsafe.unsafe.getLong(buffer2, offset2Adj + (long) i);
         long diff = lw ^ rw;
 
         if (diff != 0) {
-          if (!LITTLEENDIAN) {
+          if (!CarbonUnsafe.ISLITTLEENDIAN) {
             return lessThanUnsigned(lw, rw) ? -1 : 1;
           }
 
@@ -231,8 +191,11 @@ public final class ByteUtil {
       int len1 = buffer1.length;
       int len2 = buffer2.length;
       int minLength = (len1 <= len2) ? len1 : len2;
-      int minWords = 0;
+      return compareTo(buffer1, buffer2, len1, len2, minLength);
+    }
 
+    public int compareTo(byte[] buffer1, byte[] buffer2, int len1, int len2, int minLength) {
+      int minWords = 0;
       /*
        * Compare 8 bytes at a time. Benchmarking shows comparing 8 bytes
        * at a time is no slower than comparing 4 bytes at a time even on
@@ -241,12 +204,12 @@ public final class ByteUtil {
       if (minLength > 7) {
         minWords = minLength / SIZEOF_LONG;
         for (int i = 0; i < minWords * SIZEOF_LONG; i += SIZEOF_LONG) {
-          long lw = THEUNSAFE.getLong(buffer1, BYTE_ARRAY_BASE_OFFSET + (long) i);
-          long rw = THEUNSAFE.getLong(buffer2, BYTE_ARRAY_BASE_OFFSET + (long) i);
+          long lw = CarbonUnsafe.unsafe.getLong(buffer1, CarbonUnsafe.BYTE_ARRAY_OFFSET + (long) i);
+          long rw = CarbonUnsafe.unsafe.getLong(buffer2, CarbonUnsafe.BYTE_ARRAY_OFFSET + (long) i);
           long diff = lw ^ rw;
 
           if (diff != 0) {
-            if (!LITTLEENDIAN) {
+            if (!CarbonUnsafe.ISLITTLEENDIAN) {
               return lessThanUnsigned(lw, rw) ? -1 : 1;
             }
 
@@ -285,15 +248,78 @@ public final class ByteUtil {
       return len1 - len2;
     }
 
+    public int compareUnsafeTo(Object baseObject1, Object baseObject2, long address1, long address2,
+        int len1, int len2, int minLength) {
+
+      int minWords = 0;
+
+      /*
+       * Compare 8 bytes at a time. Benchmarking shows comparing 8 bytes
+       * at a time is no slower than comparing 4 bytes at a time even on
+       * 32-bit. On the other hand, it is substantially faster on 64-bit.
+       */
+      if (minLength > 7) {
+        minWords = minLength / SIZEOF_LONG;
+        for (int i = 0; i < minWords * SIZEOF_LONG; i += SIZEOF_LONG) {
+          long lw = CarbonUnsafe.unsafe
+              .getLong(baseObject1, CarbonUnsafe.BYTE_ARRAY_OFFSET + (long) i + address1);
+          long rw = CarbonUnsafe.unsafe
+              .getLong(baseObject2, CarbonUnsafe.BYTE_ARRAY_OFFSET + (long) i + address2);
+          long diff = lw ^ rw;
+
+          if (diff != 0) {
+            if (!CarbonUnsafe.ISLITTLEENDIAN) {
+              return lessThanUnsigned(lw, rw) ? -1 : 1;
+            }
+
+            // Use binary search
+            int k = 0;
+            int y;
+            int x = (int) diff;
+            if (x == 0) {
+              x = (int) (diff >>> 32);
+              k = 32;
+            }
+            y = x << 16;
+            if (y == 0) {
+              k += 16;
+            } else {
+              x = y;
+            }
+
+            y = x << 8;
+            if (y == 0) {
+              k += 8;
+            }
+            return (int) (((lw >>> k) & 0xFFL) - ((rw >>> k) & 0xFFL));
+          }
+        }
+      }
+
+      // The epilogue to cover the last (minLength % 8) elements.
+      for (int i = minWords * SIZEOF_LONG; i < minLength; i++) {
+        int a =
+            (CarbonUnsafe.unsafe.getByte(baseObject1, CarbonUnsafe.BYTE_ARRAY_OFFSET + i + address1)
+                & 0xff);
+        int b =
+            (CarbonUnsafe.unsafe.getByte(baseObject2, CarbonUnsafe.BYTE_ARRAY_OFFSET + i + address2)
+                & 0xff);
+        if (a != b) {
+          return a - b;
+        }
+      }
+      return len1 - len2;
+    }
+
     public boolean equals(byte[] buffer1, byte[] buffer2) {
       if (buffer1.length != buffer2.length) {
         return false;
       }
       int len = buffer1.length / 8;
-      long currentOffset = BYTE_ARRAY_BASE_OFFSET;
+      long currentOffset = CarbonUnsafe.BYTE_ARRAY_OFFSET;
       for (int i = 0; i < len; i++) {
-        long lw = THEUNSAFE.getLong(buffer1, currentOffset);
-        long rw = THEUNSAFE.getLong(buffer2, currentOffset);
+        long lw = CarbonUnsafe.unsafe.getLong(buffer1, currentOffset);
+        long rw = CarbonUnsafe.unsafe.getLong(buffer2, currentOffset);
         if (lw != rw) {
           return false;
         }
@@ -302,8 +328,8 @@ public final class ByteUtil {
       len = buffer1.length % 8;
       if (len > 0) {
         for (int i = 0; i < len; i += 1) {
-          long lw = THEUNSAFE.getByte(buffer1, currentOffset);
-          long rw = THEUNSAFE.getByte(buffer2, currentOffset);
+          long lw = CarbonUnsafe.unsafe.getByte(buffer1, currentOffset);
+          long rw = CarbonUnsafe.unsafe.getByte(buffer2, currentOffset);
           if (lw != rw) {
             return false;
           }

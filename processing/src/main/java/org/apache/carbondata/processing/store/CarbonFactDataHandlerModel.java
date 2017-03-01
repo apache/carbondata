@@ -185,13 +185,16 @@ public class CarbonFactDataHandlerModel {
    */
   private long schemaUpdatedTimeStamp;
 
+  private int taskExtension;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    * @param configuration
    * @return CarbonFactDataHandlerModel
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
-      CarbonDataLoadConfiguration configuration, String storeLocation, int bucketId) {
+      CarbonDataLoadConfiguration configuration, String storeLocation, int bucketId,
+      int taskExtension) {
 
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
@@ -200,8 +203,7 @@ public class CarbonFactDataHandlerModel {
     boolean[] isUseInvertedIndex =
         CarbonDataProcessorUtil.getIsUseInvertedIndex(configuration.getDataFields());
 
-    int[] dimLensWithComplex =
-        (int[]) configuration.getDataLoadProperty(DataLoadProcessorConstants.DIMENSION_LENGTHS);
+    int[] dimLensWithComplex = configuration.getCardinalityFinder().getCardinality();
     List<Integer> dimsLenList = new ArrayList<Integer>();
     for (int eachDimLen : dimLensWithComplex) {
       if (eachDimLen != 0) dimsLenList.add(eachDimLen);
@@ -293,6 +295,7 @@ public class CarbonFactDataHandlerModel {
     }
     carbonFactDataHandlerModel.bucketId = bucketId;
     carbonFactDataHandlerModel.segmentId = configuration.getSegmentId();
+    carbonFactDataHandlerModel.taskExtension = taskExtension;
     return carbonFactDataHandlerModel;
   }
 
@@ -523,6 +526,10 @@ public class CarbonFactDataHandlerModel {
 
   public void setSegmentId(String segmentId) {
     this.segmentId = segmentId;
+  }
+
+  public int getTaskExtension() {
+    return taskExtension;
   }
 }
 
