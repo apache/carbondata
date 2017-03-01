@@ -54,7 +54,7 @@ import org.apache.carbondata.processing.sortandgroupby.sortdatastep.SortKeyStepM
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedSeqGenMeta;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.processing.util.CarbonSchemaParser;
-import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
+import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.database.DatabaseMeta;
@@ -605,7 +605,7 @@ public class GraphGenerator {
   private StepMeta getMDKeyStep(GraphConfigurationInfo graphConfiguration) {
     MDKeyGenStepMeta carbonMdKey = new MDKeyGenStepMeta();
     carbonMdKey.setIsUseInvertedIndex(
-        RemoveDictionaryUtil.convertBooleanArrToString(graphConfiguration.getIsUseInvertedIndex()));
+        NonDictionaryUtil.convertBooleanArrToString(graphConfiguration.getIsUseInvertedIndex()));
     carbonMdKey.setPartitionID(partitionID);
     carbonMdKey.setSegmentId(segmentId);
     carbonMdKey.setNumberOfCores(graphConfiguration.getNumberOfCores());
@@ -616,7 +616,7 @@ public class GraphGenerator {
     carbonMdKey.setAggregateLevels(CarbonDataProcessorUtil
         .getLevelCardinalitiesString(graphConfiguration.getDimCardinalities(),
             graphConfiguration.getDimensions()));
-    carbonMdKey.setNoDictionaryDimsMapping(RemoveDictionaryUtil
+    carbonMdKey.setNoDictionaryDimsMapping(NonDictionaryUtil
         .convertBooleanArrToString(graphConfiguration.getIsNoDictionaryDimMapping()));
     carbonMdKey.setMeasureCount(graphConfiguration.getMeasureCount() + "");
     carbonMdKey.setColumnGroupsString(graphConfiguration.getColumnGroupsString());
@@ -766,7 +766,7 @@ public class GraphGenerator {
     sortRowsMeta.setMeasureCount(graphConfiguration.getMeasureCount() + "");
     sortRowsMeta.setNoDictionaryDims(graphConfiguration.getNoDictionaryDims());
     sortRowsMeta.setMeasureDataType(graphConfiguration.getMeasureDataTypeInfo());
-    sortRowsMeta.setNoDictionaryDimsMapping(RemoveDictionaryUtil
+    sortRowsMeta.setNoDictionaryDimsMapping(NonDictionaryUtil
         .convertBooleanArrToString(graphConfiguration.getIsNoDictionaryDimMapping()));
 
     StepMeta sortRowsStep = new StepMeta(

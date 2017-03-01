@@ -1172,6 +1172,19 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_BAD_RECORDS_ACTION_DEFAULT = "FORCE";
 
+  /**
+   * Sorts the data in batches and writes the batch data to store with index file.
+   */
+  public static final String LOAD_USE_BATCH_SORT = "carbon.load.use.batch.sort";
+
+  public static final String LOAD_USE_BATCH_SORT_DEFAULT = "true";
+
+  /**
+   * Size of batch data to keep in memory, as a thumb rule it supposed
+   * to be less than 45% of sort.inmemory.size.inmb otherwise it may spill intermediate data to disk
+   */
+  public static final String LOAD_BATCH_SORT_SIZE_INMB = "carbon.load.batch.sort.size.inmb";
+
   private CarbonCommonConstants() {
   }
 }

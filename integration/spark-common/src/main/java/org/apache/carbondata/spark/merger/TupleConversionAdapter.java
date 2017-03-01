@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
-import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
+import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 /**
  * This class will be used to convert the Result into the format used in data writer.
@@ -67,7 +67,7 @@ class TupleConversionAdapter {
       for (int i = 0; i < noDicCount; i++) {
         noDicByteArr.add(((ByteArrayWrapper) carbonTuple[0]).getNoDictionaryKeyByIndex(i));
       }
-      byte[] singleByteArr = RemoveDictionaryUtil.convertListByteArrToSingleArr(noDicByteArr);
+      byte[] singleByteArr = NonDictionaryUtil.convertListByteArrToSingleArr(noDicByteArr);
 
       row[index++] = singleByteArr;
     }

@@ -50,23 +50,20 @@ public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
     for (boolean isNoDictionary : noDictionaryColMaping) {
       if (isNoDictionary) {
         short aShort1 = CarbonUnsafe.unsafe.getShort(baseObject, rowA + sizeA);
-        byte[] byteArr1 = new byte[aShort1];
         sizeA += 2;
-        CarbonUnsafe.unsafe.copyMemory(baseObject, rowA + sizeA, byteArr1,
-            CarbonUnsafe.BYTE_ARRAY_OFFSET, aShort1);
-        sizeA += aShort1;
 
         short aShort2 = CarbonUnsafe.unsafe.getShort(baseObject, rowB + sizeB);
-        byte[] byteArr2 = new byte[aShort2];
         sizeB += 2;
-        CarbonUnsafe.unsafe.copyMemory(baseObject, rowB + sizeB, byteArr2,
-            CarbonUnsafe.BYTE_ARRAY_OFFSET, aShort2);
-        sizeB += aShort2;
+        int minLength = (aShort1 <= aShort2) ? aShort1 : aShort2;
+        int difference = UnsafeComparer.INSTANCE
+            .compareUnsafeTo(baseObject, baseObject, rowA + sizeA, rowB + sizeB, aShort1, aShort2,
+                minLength);
 
-        int difference = UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
         if (difference != 0) {
           return difference;
         }
+        sizeA += aShort1;
+        sizeB += aShort2;
       } else {
         int dimFieldA = CarbonUnsafe.unsafe.getInt(baseObject, rowA + sizeA);
         sizeA += 4;
@@ -95,25 +92,22 @@ public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
     for (boolean isNoDictionary : noDictionaryColMaping) {
       if (isNoDictionary) {
         short aShort1 = CarbonUnsafe.unsafe.getShort(baseObjectL, rowA + sizeA);
-        byte[] byteArr1 = new byte[aShort1];
         sizeA += 2;
-        CarbonUnsafe.unsafe
-            .copyMemory(baseObjectL, rowA + sizeA, byteArr1, CarbonUnsafe.BYTE_ARRAY_OFFSET,
-                aShort1);
-        sizeA += aShort1;
 
         short aShort2 = CarbonUnsafe.unsafe.getShort(baseObjectR, rowB + sizeB);
-        byte[] byteArr2 = new byte[aShort2];
         sizeB += 2;
-        CarbonUnsafe.unsafe
-            .copyMemory(baseObjectR, rowB + sizeB, byteArr2, CarbonUnsafe.BYTE_ARRAY_OFFSET,
-                aShort2);
-        sizeB += aShort2;
 
-        int difference = UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
+        int minLength = (aShort1 <= aShort2) ? aShort1 : aShort2;
+
+        int difference = UnsafeComparer.INSTANCE
+            .compareUnsafeTo(baseObjectL, baseObjectR, rowA + sizeA, rowB + sizeB, aShort1, aShort2,
+                minLength);
+
         if (difference != 0) {
           return difference;
         }
+        sizeA += aShort1;
+        sizeB += aShort2;
       } else {
         int dimFieldA = CarbonUnsafe.unsafe.getInt(baseObjectL, rowA + sizeA);
         sizeA += 4;

@@ -236,9 +236,9 @@ public class CarbonTablePath extends Path {
    * @return absolute path of data file stored in carbon data format
    */
   public String getCarbonDataFilePath(String partitionId, String segmentId, Integer filePartNo,
-      Integer taskNo, int bucketNumber, String factUpdateTimeStamp) {
+      Integer taskNo, int taskExtension, int bucketNumber, String factUpdateTimeStamp) {
     return getSegmentDir(partitionId, segmentId) + File.separator + getCarbonDataFileName(
-        filePartNo, taskNo, bucketNumber, factUpdateTimeStamp);
+        filePartNo, taskNo, bucketNumber, taskExtension, factUpdateTimeStamp);
   }
 
   /**
@@ -352,9 +352,9 @@ public class CarbonTablePath extends Path {
    * @return gets data file name only with out path
    */
   public String getCarbonDataFileName(Integer filePartNo, Integer taskNo, int bucketNumber,
-      String factUpdateTimeStamp) {
-    return DATA_PART_PREFIX + filePartNo + "-" + taskNo + "-" + bucketNumber + "-"
-        + factUpdateTimeStamp + CARBON_DATA_EXT;
+      int taskExtension, String factUpdateTimeStamp) {
+    return DATA_PART_PREFIX + filePartNo + "-" + taskNo + "_" + taskExtension + "-" + bucketNumber
+        + "-" + factUpdateTimeStamp + CARBON_DATA_EXT;
   }
 
   /**
@@ -364,8 +364,10 @@ public class CarbonTablePath extends Path {
    * @param factUpdatedTimeStamp time stamp
    * @return filename
    */
-  public String getCarbonIndexFileName(int taskNo, int bucketNumber, String factUpdatedTimeStamp) {
-    return taskNo + "-" + bucketNumber + "-" + factUpdatedTimeStamp + INDEX_FILE_EXT;
+  public String getCarbonIndexFileName(int taskNo, int bucketNumber, int taskExtension,
+      String factUpdatedTimeStamp) {
+    return taskNo + "_" + taskExtension + "-" + bucketNumber + "-" + factUpdatedTimeStamp
+        + INDEX_FILE_EXT;
   }
 
   /**

@@ -704,7 +704,7 @@ object CarbonDataRDDFactory {
               val index = taskNo + 1
               uniqueLoadStatusId = carbonLoadModel.getTableName +
                                    CarbonCommonConstants.UNDERSCORE +
-                                   index
+                                   (index + "_0")
 
               // convert timestamp
               val timeStampInLong = updateModel.get.updatedTimeStamp + ""

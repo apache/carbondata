@@ -33,7 +33,7 @@ import org.apache.carbondata.processing.newflow.sort.unsafe.holder.UnsafeInmemor
 import org.apache.carbondata.processing.newflow.sort.unsafe.holder.UnsafeSortTempFileChunkHolder;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
+import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   /**
@@ -125,7 +125,8 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
       for (final UnsafeCarbonRowPage rowPage : rowPages) {
 
         SortTempChunkHolder sortTempFileChunkHolder = new UnsafeInmemoryHolder(rowPage,
-            parameters.getDimColCount() + parameters.getMeasureColCount());
+            parameters.getDimColCount() + parameters.getComplexDimColCount() + parameters
+                .getMeasureColCount());
 
         // initialize
         sortTempFileChunkHolder.readRow();
@@ -137,7 +138,8 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
 
         SortTempChunkHolder sortTempFileChunkHolder =
             new UnsafeFinalMergePageHolder(merger, parameters.getNoDictionaryDimnesionColumn(),
-                parameters.getDimColCount() + parameters.getMeasureColCount());
+                parameters.getDimColCount() + parameters.getComplexDimColCount() + parameters
+                    .getMeasureColCount());
 
         // initialize
         sortTempFileChunkHolder.readRow();
@@ -284,7 +286,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
         allCount++;
       }
 
-      RemoveDictionaryUtil.prepareOutObj(holder, dim, nonDicArray, measures);
+      NonDictionaryUtil.prepareOutObj(holder, dim, nonDicArray, measures);
 
       // increment number if record read
     } catch (Exception e) {
