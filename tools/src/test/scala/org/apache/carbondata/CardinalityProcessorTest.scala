@@ -3,9 +3,9 @@ package org.apache.carbondata
 import org.apache.carbondata.cardinality.{CardinalityMatrix, CardinalityProcessor}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.{IntegerType, StringType}
-import org.scalatest.{BeforeAndAfter, FunSuite}
-import org.scalatest.mockito.MockitoSugar
 import org.mockito.Mockito._
+import org.scalatest.FunSuite
+import org.scalatest.mockito.MockitoSugar
 
 case class EmployeeRecord(name: String, age: Int)
 

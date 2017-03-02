@@ -10,11 +10,6 @@ trait DataFrameUtil {
 
   val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  def ifHeaderExists(dataFrame: DataFrame): DataFrame = {
-    //TODO: write code to test if header exists
-    dataFrame
-  }
-
   def getColumnNames(dataFrame: DataFrame): List[String] = dataFrame.columns.toList
 
   def getColumnNameFromFileHeader(parameters: CommandLineArguments, header_count: Int): List[String] ={
