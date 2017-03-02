@@ -53,7 +53,9 @@ public class BlockLevelTraverser {
           FilterUtil.prepareDefaultStartIndexKey(abstractIndex.getSegmentProperties());
 
     DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
-        abstractIndex.getSegmentProperties().getEachDimColumnValueSize());
+        abstractIndex.getSegmentProperties().getEachDimColumnValueSize(),
+        abstractIndex.getSegmentProperties().getNumberOfSortColumns(),
+        abstractIndex.getSegmentProperties().getNumberOfNoDictSortColumns());
     DataRefNode currentBlock =
         blockFinder.findFirstDataBlock(abstractIndex.getDataRefNode(), searchStartKey);
 
