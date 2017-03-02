@@ -34,6 +34,8 @@ public class UnsafeCarbonRowPage {
 
   private boolean[] noDictionaryDimensionMapping;
 
+  private boolean[] noDictionarySortColumnMapping;
+
   private int dimensionSize;
 
   private int measureSize;
@@ -52,9 +54,11 @@ public class UnsafeCarbonRowPage {
 
   private boolean saveToDisk;
 
-  public UnsafeCarbonRowPage(boolean[] noDictionaryDimensionMapping, int dimensionSize,
-      int measureSize, char[] aggType, MemoryBlock memoryBlock, boolean saveToDisk) {
+  public UnsafeCarbonRowPage(boolean[] noDictionaryDimensionMapping,
+      boolean[] noDictionarySortColumnMapping, int dimensionSize, int measureSize, char[] aggType,
+      MemoryBlock memoryBlock, boolean saveToDisk) {
     this.noDictionaryDimensionMapping = noDictionaryDimensionMapping;
+    this.noDictionarySortColumnMapping = noDictionarySortColumnMapping;
     this.dimensionSize = dimensionSize;
     this.measureSize = measureSize;
     this.aggType = aggType;
@@ -324,4 +328,7 @@ public class UnsafeCarbonRowPage {
     return noDictionaryDimensionMapping;
   }
 
+  public boolean[] getNoDictionarySortColumnMapping() {
+    return noDictionarySortColumnMapping;
+  }
 }
