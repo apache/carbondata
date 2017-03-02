@@ -4,24 +4,34 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-case class CommandLineArguments(inputPath: String, fileHeaders: Option[List[String]] = None, delimiter: String = ",", quoteCharacter: String = " \"",
+case class CommandLineArguments(inputPath: String, fileHeaders: Option[List[String]] = None, delimiter: String = ",", quoteCharacter: String = "\"",
                                 badRecordAction: String = "IGNORE")
 
-class DataFrameHandler {
+trait LoadHandler {
 
   val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  def startProcess(args: Array[String]): Boolean = {
-    try {
-      processDataFrame(getArguments(args))
-      true
-    }
-    catch {
-      case _: Exception => false
-    }
+  def getDataFrameAndArguments(args: Array[String]): (DataFrame, CommandLineArguments) = {
+    val conf = new SparkConf().setAppName("cardinality_demo").setMaster("local")
+    val sparkSession = SparkSession.builder().config(conf).getOrCreate()
+
+    sparkSession.sparkContext.setLogLevel("WARN")
+
+    val arguments = getArguments(args)
+    val headerExistInCSV = arguments.fileHeaders.fold(true) { _ => false }
+
+    val df: DataFrame = sparkSession.read
+      .format("com.databricks.spark.csv")
+      .option("header", headerExistInCSV.toString)
+      .option("inferSchema", "true")
+      .option("delimiter", arguments.delimiter)
+      .option("quote", arguments.quoteCharacter)
+      .load(arguments.inputPath)
+    df.printSchema()
+    (df, arguments)
   }
 
-  def getArguments(args: Array[String]): CommandLineArguments = {
+  private def getArguments(args: Array[String]): CommandLineArguments = {
     args.length match {
       case 1 => val inputPath: String = args(0)
         CommandLineArguments(inputPath)
@@ -46,28 +56,6 @@ class DataFrameHandler {
     }
   }
 
-  def processDataFrame(parameters: CommandLineArguments): Unit = {
-    val isHeaderExist = parameters.fileHeaders.isDefined
-    val dataFrame = loadData(parameters.inputPath, isHeaderExist)
-    val cardinalityProcessor = new CardinalityProcessor
-    println("Cardinality Matrix is : " + cardinalityProcessor.getCardinalityMatrix(dataFrame, parameters))
-  }
-
-  def loadData(filePath: String, isHeaderExist: Boolean): DataFrame = {
-    LOGGER.info("Starting with the demo project")
-    val conf = new SparkConf().setAppName("cardinality_demo").setMaster("local")
-    val sparkSession = SparkSession.builder().config(conf).getOrCreate()
-
-    sparkSession.sparkContext.setLogLevel("WARN")
-
-    val df: DataFrame = sparkSession.read
-      .format("com.databricks.spark.csv")
-      .option("header", "true")
-      .option("inferSchema", "true")
-      .load(filePath)
-    df.printSchema()
-    df
-  }
-
-
 }
+
+object LoadHandler extends LoadHandler

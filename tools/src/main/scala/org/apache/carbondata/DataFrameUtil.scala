@@ -1,11 +1,14 @@
 package org.apache.carbondata
 
+import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.{DataType, StringType}
 
 case class CsvHeaderSchema(columnName: String, dataType: DataType, isNullable: Boolean)
 
 class DataFrameUtil {
+
+  val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def ifHeaderExists(dataFrame: DataFrame): DataFrame = {
     //TODO: write code to test if header exists
@@ -14,10 +17,11 @@ class DataFrameUtil {
 
   def getColumnNames(dataFrame: DataFrame): List[String] = dataFrame.columns.toList
 
-  def getColumnNameFromFileHeader(parameters: CommandLineArguments): List[String] ={
+  def getColumnNameFromFileHeader(parameters: CommandLineArguments, header_count: Int): List[String] ={
     parameters.fileHeaders match {
       case Some(columnList) => columnList
-      case _ => throw new Exception("Headers not present !!")
+      case _ => LOGGER.info("Headers not present !!")
+        (0 until header_count).toList map { count => "_c" + count}
     }
   }
 
