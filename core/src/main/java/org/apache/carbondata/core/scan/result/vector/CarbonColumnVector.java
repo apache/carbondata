@@ -17,9 +17,14 @@
 
 package org.apache.carbondata.core.scan.result.vector;
 
+import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
 
 public interface CarbonColumnVector {
+
+  void putBoolean(int rowId, boolean value);
+
+  void putFloat(int rowId, float value);
 
   void putShort(int rowId, short value);
 
@@ -58,5 +63,7 @@ public interface CarbonColumnVector {
   Object getData(int rowId);
 
   void reset();
+
+  DataType getType();
 
 }

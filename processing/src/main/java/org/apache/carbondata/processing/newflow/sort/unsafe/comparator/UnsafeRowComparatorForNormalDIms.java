@@ -27,11 +27,11 @@ public class UnsafeRowComparatorForNormalDIms implements Comparator<UnsafeCarbon
 
   private Object baseObject;
 
-  private int dimCount;
+  private int numberOfSortColumns;
 
-  public UnsafeRowComparatorForNormalDIms(int dimCount, UnsafeCarbonRowPage rowPage) {
+  public UnsafeRowComparatorForNormalDIms(UnsafeCarbonRowPage rowPage) {
     this.baseObject = rowPage.getDataBlock().getBaseObject();
-    this.dimCount = dimCount;
+    this.numberOfSortColumns = rowPage.getNoDictionarySortColumnMapping().length;
   }
 
   /**
@@ -43,7 +43,7 @@ public class UnsafeRowComparatorForNormalDIms implements Comparator<UnsafeCarbon
     long rowB = rowR.address;
     int sizeA = 0;
     int sizeB = 0;
-    for (int i = 0; i < dimCount; i++) {
+    for (int i = 0; i < numberOfSortColumns; i++) {
       int dimFieldA = CarbonUnsafe.unsafe.getInt(baseObject, rowA + sizeA);
       sizeA += 4;
       int dimFieldB = CarbonUnsafe.unsafe.getInt(baseObject, rowB + sizeB);

@@ -86,10 +86,11 @@ public class RowResultMerger {
     this.rawResultIteratorList = iteratorList;
     // create the List of RawResultIterator.
 
+    this.segprop = segProp;
+
     recordHolderHeap = new PriorityQueue<RawResultIterator>(rawResultIteratorList.size(),
         new RowResultMerger.CarbonMdkeyComparator());
 
-    this.segprop = segProp;
     this.tempStoreLocation = tempStoreLocation;
 
     this.factStoreLocation = loadModel.getStorePath();
@@ -317,6 +318,19 @@ public class RowResultMerger {
    * Comparator class for comparing 2 raw row result.
    */
   private class CarbonMdkeyComparator implements Comparator<RawResultIterator> {
+    int[] columnValueSizes = segprop.getEachDimColumnValueSize();
+    public CarbonMdkeyComparator() {
+      initSortColumns();
+    }
+
+    private void initSortColumns() {
+      int numberOfSortColumns = segprop.getNumberOfSortColumns();
+      if (numberOfSortColumns != columnValueSizes.length) {
+        int[] sortColumnValueSizes = new int[numberOfSortColumns];
+        System.arraycopy(columnValueSizes, 0, sortColumnValueSizes, 0, numberOfSortColumns);
+        this.columnValueSizes = sortColumnValueSizes;
+      }
+    }
 
     @Override public int compare(RawResultIterator o1, RawResultIterator o2) {
 
@@ -334,7 +348,6 @@ public class RowResultMerger {
       ByteArrayWrapper key1 = (ByteArrayWrapper) row1[0];
       ByteArrayWrapper key2 = (ByteArrayWrapper) row2[0];
       int compareResult = 0;
-      int[] columnValueSizes = segprop.getEachDimColumnValueSize();
       int dictionaryKeyOffset = 0;
       byte[] dimCols1 = key1.getDictionaryKey();
       byte[] dimCols2 = key2.getDictionaryKey();
