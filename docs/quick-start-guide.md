@@ -113,6 +113,7 @@ import org.apache.spark.sql.CarbonContext
 ```
 val cc = new CarbonContext(sc, "<hdfs store path>")
 ```
+**NOTE**: If running on local machine without hdfs, configure the local machine's store path instead of hdfs store path
 
 #### Executing Queries
 
