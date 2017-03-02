@@ -13,12 +13,12 @@ import org.apache.spark.sql.types.{DataType, StringType}
   * @param dataType : datatype for the column
   * @param inputColumnName : Name of column as given in FileHeaders(command line arguments)
   */
-case class CardinalityMatrix(columnName: String, cardinality: Double, columnDataframe: DataFrame, dataType: DataType = StringType, inputColumnName: String = "")
+case class CardinalityMatrix(columnName: String, cardinality: Double, columnDataframe: DataFrame, dataType: DataType = StringType, inputColumnName: Option[String] = None)
 
 trait CardinalityProcessor{
 
   val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-  val dataFrameUtil = new DataFrameUtil
+  val dataFrameUtil: DataFrameUtil
 
   def computeCardinality(columnName: String, columnDataFrame: DataFrame): Double = {
     LOGGER.info(s"Computing Cardinality for Column $columnName")
@@ -56,12 +56,15 @@ trait CardinalityProcessor{
       val cardinality = computeCardinality(columnName, dataFrame.select(columnName))
       CardinalityMatrix(columnName, cardinality, columnDataFrame)
     }
+
     val inputFileSchema = dataFrameUtil.getColumnDataTypes(dataFrame)
     val columnList = dataFrameUtil.getColumnNameFromFileHeader(parameters, dataFrame.schema.fields.length)
     val cardinalityMatrix = setDataTypeWithCardinality(cardinalityMatrixList, inputFileSchema)
-    columnList.zip(cardinalityMatrix) map { case (column, matrix) => matrix.copy(inputColumnName = column)}
+    columnList.zip(cardinalityMatrix) map { case (column, matrix) => matrix.copy(inputColumnName = Some(column))}
   }
 
 }
 
-object CardinalityProcessor extends CardinalityProcessor
+object CardinalityProcessor extends CardinalityProcessor{
+  val dataFrameUtil:DataFrameUtil = DataFrameUtil
+}

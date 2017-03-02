@@ -6,15 +6,10 @@ import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfter, FunSuite}
 
-class ProcessCallerTest extends FunSuite with MockitoSugar with ProcessCaller with BeforeAndAfter {
+class ProcessCallerTest extends FunSuite with MockitoSugar with ProcessCaller {
 
 
   import TestHelper.sparkSession.implicits._
-
-
-  after {
-    TestHelper.sparkSession.stop()
-  }
 
   val uniqueNameList = List("Prabhat", "Sangeeta")
 

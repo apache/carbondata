@@ -6,7 +6,7 @@ import org.apache.spark.sql.types.{DataType, StringType}
 
 case class CsvHeaderSchema(columnName: String, dataType: DataType, isNullable: Boolean)
 
-class DataFrameUtil {
+trait DataFrameUtil {
 
   val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -32,3 +32,5 @@ class DataFrameUtil {
   def getColumnHeaderCount(dataFrame: DataFrame): Int = dataFrame.columns.length
 
 }
+
+object DataFrameUtil extends DataFrameUtil
