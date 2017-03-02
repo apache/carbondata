@@ -202,6 +202,7 @@ public class StoreCreator {
     date.setColumnUniqueId(UUID.randomUUID().toString());
     date.setDimensionColumn(true);
     date.setColumnGroup(2);
+    date.setSortColumn(true);
     columnSchemas.add(date);
 
     ColumnSchema country = new ColumnSchema();
@@ -212,6 +213,7 @@ public class StoreCreator {
     country.setColumnUniqueId(UUID.randomUUID().toString());
     country.setDimensionColumn(true);
     country.setColumnGroup(3);
+    country.setSortColumn(true);
     columnSchemas.add(country);
 
     ColumnSchema name = new ColumnSchema();
@@ -222,6 +224,7 @@ public class StoreCreator {
     name.setColumnUniqueId(UUID.randomUUID().toString());
     name.setDimensionColumn(true);
     name.setColumnGroup(4);
+    name.setSortColumn(true);
     columnSchemas.add(name);
 
     ColumnSchema phonetype = new ColumnSchema();
@@ -232,6 +235,7 @@ public class StoreCreator {
     phonetype.setColumnUniqueId(UUID.randomUUID().toString());
     phonetype.setDimensionColumn(true);
     phonetype.setColumnGroup(5);
+    phonetype.setSortColumn(true);
     columnSchemas.add(phonetype);
 
     ColumnSchema serialname = new ColumnSchema();
@@ -242,6 +246,7 @@ public class StoreCreator {
     serialname.setColumnUniqueId(UUID.randomUUID().toString());
     serialname.setDimensionColumn(true);
     serialname.setColumnGroup(6);
+    serialname.setSortColumn(true);
     columnSchemas.add(serialname);
 
     ColumnSchema salary = new ColumnSchema();
