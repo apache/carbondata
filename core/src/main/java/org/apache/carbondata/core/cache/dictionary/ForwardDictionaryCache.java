@@ -19,7 +19,9 @@ package org.apache.carbondata.core.cache.dictionary;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,15 +37,17 @@ import org.apache.carbondata.core.cache.CarbonLRUCache;
  * This class implements methods to create dictionary cache which will hold
  * dictionary chunks for look up of surrogate keys and values
  */
-public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
-                                    V extends Dictionary>
-    extends AbstractDictionaryCache<K, V> {
+public class ForwardDictionaryCache<K extends
+    DictionaryColumnUniqueIdentifier, V extends Dictionary> extends AbstractDictionaryCache<K, V> {
 
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(ForwardDictionaryCache.class.getName());
+
+  private static final Map<DictionaryColumnUniqueIdentifier, Object> DICTIONARY_LOCK_OBJECT =
+      new HashMap<>();
 
   /**
    * @param carbonStorePath
@@ -77,8 +81,7 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
    * @throws IOException in case memory is not sufficient to load dictionary into memory
    */
   @Override public List<Dictionary> getAll(
-      List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers)
-      throws IOException {
+      List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers) throws IOException {
     boolean exceptionOccurredInDictionaryLoading = false;
     String exceptionMessage = "";
     List<Dictionary> forwardDictionaryObjectList =
@@ -89,7 +92,27 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
     for (final DictionaryColumnUniqueIdentifier uniqueIdent : dictionaryColumnUniqueIdentifiers) {
       taskSubmitList.add(executorService.submit(new Callable<Dictionary>() {
         @Override public Dictionary call() throws IOException {
-          Dictionary dictionary = getDictionary(uniqueIdent);
+          // in case of multiple task for same query same executor
+          // only one task should load the dictionary
+          // others will wait on monitor and get the loaded dictionary values
+          Object lockObject = DICTIONARY_LOCK_OBJECT.get(uniqueIdent);
+          // if lock object is null
+          if (null == lockObject) {
+            // Acquire the lock on map
+            synchronized (DICTIONARY_LOCK_OBJECT) {
+              // double checking the dictionary lock object
+              lockObject = DICTIONARY_LOCK_OBJECT.get(uniqueIdent);
+              // if still it is null add new lock object
+              if (null == lockObject) {
+                lockObject = new Object();
+                DICTIONARY_LOCK_OBJECT.put(uniqueIdent, lockObject);
+              }
+            }
+          }
+          Dictionary dictionary = null;
+          synchronized (lockObject) {
+            dictionary = getDictionary(uniqueIdent);
+          }
           return dictionary;
         }
       }));
@@ -161,8 +184,7 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
    * @throws IOException in case memory is not sufficient to load dictionary into memory
    */
   private Dictionary getDictionary(
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier)
-      throws IOException {
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) throws IOException {
     Dictionary forwardDictionary = null;
     // dictionary is only for primitive data type
     assert (!dictionaryColumnUniqueIdentifier.getDataType().isComplexType());
