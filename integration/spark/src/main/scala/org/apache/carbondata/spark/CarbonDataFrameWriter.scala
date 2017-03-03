@@ -166,7 +166,6 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
       case LongType => CarbonType.LONG.getName
       case FloatType => CarbonType.DOUBLE.getName
       case DoubleType => CarbonType.DOUBLE.getName
-      case BooleanType => CarbonType.DOUBLE.getName
       case TimestampType => CarbonType.TIMESTAMP.getName
       case DateType => CarbonType.DATE.getName
       case other => sys.error(s"unsupported type: $other")
