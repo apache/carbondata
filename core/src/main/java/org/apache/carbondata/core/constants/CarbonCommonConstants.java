@@ -1148,6 +1148,8 @@ public final class CarbonCommonConstants {
   public static final String USE_KETTLE = "use_kettle";
 
   public static final String USE_KETTLE_DEFAULT = "false";
+  public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION = "carbon.custom.block.distribution";
+  public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT = "false";
 
   private CarbonCommonConstants() {
   }

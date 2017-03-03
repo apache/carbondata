@@ -91,6 +91,8 @@ carbon.enable.quick.filter=false
 #carbon.tempstore.location=/opt/Carbon/TempStoreLoc
 ##data loading records count logger
 #carbon.load.log.counter=500000
+##To dissable/enable carbon block distribution
+#carbon.custom.block.distribution=false
 ######## Compaction Configuration ########
 ##to specify number of segments to be preserved from compaction
 #carbon.numberof.preserve.segments=0

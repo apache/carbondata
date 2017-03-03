@@ -31,13 +31,14 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.hive.DistributionUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
-import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
 import org.apache.carbondata.hadoop._
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
@@ -116,8 +117,9 @@ class CarbonScanRDD(
           i += 1
           result.add(partition)
         }
-      } else if (sparkContext.getConf.contains("spark.carbon.custom.distribution") &&
-                 sparkContext.getConf.getBoolean("spark.carbon.custom.distribution", false)) {
+      } else if (CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION,
+          CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT).toBoolean) {
         // create a list of block based on split
         val blockList = splits.asScala.map(_.asInstanceOf[Distributable])
 
@@ -207,10 +209,10 @@ class CarbonScanRDD(
         private var finished = false
         private var count = 0
 
-      context.addTaskCompletionListener { context =>
-        logStatistics(queryStartTime, count, model.getStatisticsRecorder)
-        reader.close()
-      }
+        context.addTaskCompletionListener { context =>
+          logStatistics(queryStartTime, count, model.getStatisticsRecorder)
+          reader.close()
+        }
 
         override def hasNext: Boolean = {
           if (context.isInterrupted) {
@@ -267,7 +269,7 @@ class CarbonScanRDD(
   }
 
   def logStatistics(queryStartTime: Long, recordCount: Int,
-                    recorder: QueryStatisticsRecorder): Unit = {
+      recorder: QueryStatisticsRecorder): Unit = {
     var queryStatistic = new QueryStatistic()
     queryStatistic.addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
       System.currentTimeMillis - queryStartTime)
