@@ -93,14 +93,6 @@ class CarbonSource extends CreatableRelationProvider
     CarbonEnv.init(sqlContext.sparkSession)
     addLateDecodeOptimization(sqlContext.sparkSession)
     val path = createTableIfNotExists(sqlContext.sparkSession, parameters, dataSchema)
-//    var pathOption = parameters.get("tablePath")
-//    if (pathOption.isEmpty) {
-//      pathOption = parameters.get("path")
-//    }
-//    if (pathOption.isEmpty) {
-//      sys.error("Create relation failed, need path/tablePath parameter")
-//    }
-
     CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(path), parameters,
       Option(dataSchema))
   }
