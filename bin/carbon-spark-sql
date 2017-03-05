@@ -22,7 +22,6 @@
 
 # Enter posix mode for bash
 set -o posix
-
 export CLASS="org.apache.spark.sql.hive.cli.CarbonSQLCLIDriver"
 
 # Figure out where Spark is installed
@@ -33,7 +32,12 @@ fi
 
 export FWDIR=$SPARK_HOME
 export CARBON_SOURCE="$(cd "`dirname "$0"`"/..; pwd)"
+
 ASSEMBLY_DIR="$CARBON_SOURCE/assembly/target/scala-2.10"
+if [ -d "$CARBON_SOURCE/assembly/target/scala-2.11" ]; then
+  ASSEMBLY_DIR="$CARBON_SOURCE/assembly/target/scala-2.11"
+fi
+
 GREP_OPTIONS=
 num_jars="$(ls -1 "$ASSEMBLY_DIR" | grep "^carbondata.*hadoop.*\.jar$" | wc -l)"
 if [ "$num_jars" -eq "0" -a -z "$ASSEMBLY_DIR" ]; then
@@ -76,7 +80,6 @@ fi
 
 #split options and cli_options, final submit example is spark-submit options --class xxx xxx.jar cli_options
 options=""
-cmd
 while true ; do
     case "$1" in
         -d|--define|-f|-i|--hiveconf|--hivevar|--database|-e|-S|--silent) cmd="$1"; break;;
@@ -86,4 +89,5 @@ while true ; do
     esac
 done
 
+echo "$FWDIR"/bin/spark-submit $options --class "$CLASS" "$JAR" "$@"
 exec "$FWDIR"/bin/spark-submit $options --class "$CLASS" "$JAR" "$@"
