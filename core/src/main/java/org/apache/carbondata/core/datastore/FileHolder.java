@@ -27,12 +27,12 @@ public interface FileHolder {
    * and length(number of bytes) need to read
    *
    * @param filePath fully qualified file path
-   * @param byteBuffer
    * @param offset reading start position,
    * @param length number of bytes to be read
+   * @return ByteBuffer
    * @throws IOException
    */
-  void readByteBuffer(String filePath, ByteBuffer byteBuffer, long offset, int length)
+  ByteBuffer readByteBuffer(String filePath, long offset, int length)
       throws IOException;
   /**
    * This method will be used to read the byte array from file based on offset

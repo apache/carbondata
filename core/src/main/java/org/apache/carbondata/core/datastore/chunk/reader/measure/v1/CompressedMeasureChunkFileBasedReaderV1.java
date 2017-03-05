@@ -82,10 +82,9 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
   @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int blockIndex)
       throws IOException {
     DataChunk dataChunk = measureColumnChunks.get(blockIndex);
-    ByteBuffer buffer =
-        ByteBuffer.allocateDirect(dataChunk.getDataPageLength());
-    fileReader
-        .readByteBuffer(filePath, buffer, dataChunk.getDataPageOffset(),
+    ByteBuffer buffer =null;
+    buffer = fileReader
+        .readByteBuffer(filePath, dataChunk.getDataPageOffset(),
             dataChunk.getDataPageLength());
     MeasureRawColumnChunk rawColumnChunk = new MeasureRawColumnChunk(blockIndex, buffer, 0,
         dataChunk.getDataPageLength(), this);
@@ -104,15 +103,12 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
     ReaderCompressModel compressModel = ValueCompressionUtil.getReaderCompressModel(meta);
 
     ValueCompressionHolder values = compressModel.getValueCompressionHolder();
-    byte[] dataPage = new byte[measureRawColumnChunk.getLength()];
     ByteBuffer rawData = measureRawColumnChunk.getRawData();
-    rawData.position(measureRawColumnChunk.getOffSet());
-    rawData.get(dataPage);
 
     // unCompress data
-    values.uncompress(compressModel.getConvertedDataType(), dataPage, 0,
-        dataChunk.getDataPageLength(), compressModel.getMantissa(),
-        compressModel.getMaxValue(), numberOfRows);
+    values.uncompress(compressModel.getConvertedDataType(), rawData.array(),
+        measureRawColumnChunk.getOffSet(), dataChunk.getDataPageLength(),
+        compressModel.getMantissa(), compressModel.getMaxValue(), numberOfRows);
 
     CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values);
 

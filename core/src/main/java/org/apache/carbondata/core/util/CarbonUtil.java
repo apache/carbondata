@@ -1351,26 +1351,22 @@ public final class CarbonUtil {
 
   public static DataChunk3 readDataChunk3(ByteBuffer dataChunkBuffer, int offset, int length)
       throws IOException {
-    byte[] data = new byte[length];
-    dataChunkBuffer.position(offset);
-    dataChunkBuffer.get(data);
+    byte[] data = dataChunkBuffer.array();
     return (DataChunk3) read(data, new ThriftReader.TBaseCreator() {
       @Override public TBase create() {
         return new DataChunk3();
       }
-    }, 0, length);
+    }, offset, length);
   }
 
   public static DataChunk2 readDataChunk(ByteBuffer dataChunkBuffer, int offset, int length)
       throws IOException {
-    byte[] data = new byte[length];
-    dataChunkBuffer.position(offset);
-    dataChunkBuffer.get(data);
+    byte[] data = dataChunkBuffer.array();
     return (DataChunk2) read(data, new ThriftReader.TBaseCreator() {
       @Override public TBase create() {
         return new DataChunk2();
       }
-    }, 0, length);
+    }, offset, length);
   }
 
   /**

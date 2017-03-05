@@ -88,11 +88,10 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     } else {
       length = (int) (dimensionChunksOffset.get(blockletColumnIndex + 1) - currentDimensionOffset);
     }
-    // allocate the buffer
-    ByteBuffer buffer = ByteBuffer.allocateDirect(length);
+    ByteBuffer buffer = null;
     // read the data from carbon data file
     synchronized (fileReader) {
-      fileReader.readByteBuffer(filePath, buffer, currentDimensionOffset, length);
+      buffer = fileReader.readByteBuffer(filePath, currentDimensionOffset, length);
     }
     // get the data chunk which will have all the details about the data pages
     DataChunk3 dataChunk = CarbonUtil.readDataChunk3(buffer, 0, length);
@@ -148,11 +147,10 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     // column we can subtract the offset of start column offset with
     // end column+1 offset and get the total length.
     long currentDimensionOffset = dimensionChunksOffset.get(startBlockletColumnIndex);
-    ByteBuffer buffer = ByteBuffer.allocateDirect(
-        (int) (dimensionChunksOffset.get(endBlockletColumnIndex + 1) - currentDimensionOffset));
+    ByteBuffer buffer = null;
     // read the data from carbon data file
     synchronized (fileReader) {
-      fileReader.readByteBuffer(filePath, buffer, currentDimensionOffset,
+      buffer = fileReader.readByteBuffer(filePath, currentDimensionOffset,
           (int) (dimensionChunksOffset.get(endBlockletColumnIndex + 1) - currentDimensionOffset));
     }
     // create raw chunk for each dimension column
@@ -218,11 +216,9 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     // data chunk length + page offset
     int copySourcePoint = dimensionRawColumnChunk.getOffSet() + dimensionChunksLength
         .get(dimensionRawColumnChunk.getBlockletId()) + dataChunk3.getPage_offset().get(pageNumber);
-    byte[] data = new byte[dimensionColumnChunk.data_page_length];
-    rawData.position(copySourcePoint);
-    rawData.get(data);
     // first read the data and uncompressed it
-    dataPage = COMPRESSOR.unCompressByte(data, 0, dimensionColumnChunk.data_page_length);
+    dataPage = COMPRESSOR
+        .unCompressByte(rawData.array(), copySourcePoint, dimensionColumnChunk.data_page_length);
     copySourcePoint += dimensionColumnChunk.data_page_length;
     // if row id block is present then read the row id chunk and uncompress it
     if (hasEncoding(dimensionColumnChunk.encoders, Encoding.INVERTED_INDEX)) {
