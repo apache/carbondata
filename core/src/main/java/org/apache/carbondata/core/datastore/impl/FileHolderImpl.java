@@ -192,13 +192,15 @@ public class FileHolderImpl implements FileHolder {
     ByteBuffer byteBffer = read(fileChannel, CarbonCommonConstants.LONG_SIZE_IN_BYTE, offset);
     return byteBffer.getLong();
   }
-  @Override
-  public void readByteBuffer(String filePath, ByteBuffer byteBuffer,
-      long offset, int length) throws IOException {
+
+  @Override public ByteBuffer readByteBuffer(String filePath, long offset, int length)
+      throws IOException {
+    ByteBuffer byteBuffer = ByteBuffer.allocate(length);
     FileChannel fileChannel = updateCache(filePath);
     fileChannel.position(offset);
     fileChannel.read(byteBuffer);
     byteBuffer.rewind();
+    return byteBuffer;
   }
 
 }
