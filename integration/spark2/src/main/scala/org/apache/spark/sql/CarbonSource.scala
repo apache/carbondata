@@ -93,6 +93,14 @@ class CarbonSource extends CreatableRelationProvider
     CarbonEnv.init(sqlContext.sparkSession)
     addLateDecodeOptimization(sqlContext.sparkSession)
     val path = createTableIfNotExists(sqlContext.sparkSession, parameters, dataSchema)
+//    var pathOption = parameters.get("tablePath")
+//    if (pathOption.isEmpty) {
+//      pathOption = parameters.get("path")
+//    }
+//    if (pathOption.isEmpty) {
+//      sys.error("Create relation failed, need path/tablePath parameter")
+//    }
+
     CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(path), parameters,
       Option(dataSchema))
   }
@@ -103,6 +111,7 @@ class CarbonSource extends CreatableRelationProvider
       ss.sessionState.experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
     }
   }
+
 
   private def createTableIfNotExists(sparkSession: SparkSession, parameters: Map[String, String],
       dataSchema: StructType): String = {
@@ -152,7 +161,7 @@ class CarbonSource extends CreatableRelationProvider
             None
           }
 
-        val cm = TableCreator.prepareTableModel(false, Option(dbName),
+        val cm = TableCreator.prepareTableModel(ifNotExistPresent = false, Option(dbName),
           tableName, fields, Nil, bucketFields, map)
         CreateTable(cm, false).run(sparkSession)
         CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
