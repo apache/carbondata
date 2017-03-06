@@ -18,8 +18,7 @@
 package org.apache.spark.sql.hive.cli
 
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{SparkSession, SQLContext}
 import org.apache.spark.sql.hive.thriftserver.{SparkSQLCLIDriver, SparkSQLEnv}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -48,7 +47,7 @@ object CarbonSQLCLIDriver {
       val warehouse = System.getenv("CARBON_HOME") + "/warehouse"
       val carbon = SparkSession
           .builder()
-          .master("local")
+          .master(System.getProperty("spark.master"))
           .appName("CarbonSQLCLIDriver")
           .config("spark.sql.warehouse.dir", warehouse)
           .getOrCreateCarbonSession(storePath, storePath)
