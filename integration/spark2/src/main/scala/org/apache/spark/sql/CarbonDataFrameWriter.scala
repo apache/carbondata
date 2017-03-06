@@ -152,6 +152,8 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       case DoubleType => CarbonType.DOUBLE.getName
       case TimestampType => CarbonType.TIMESTAMP.getName
       case DateType => CarbonType.DATE.getName
+      case decimal: DecimalType => s"${CarbonType.DECIMAL.getName} (${decimal.precision}" +
+                                   s", ${decimal.scale})"
       case other => sys.error(s"unsupported type: $other")
     }
   }

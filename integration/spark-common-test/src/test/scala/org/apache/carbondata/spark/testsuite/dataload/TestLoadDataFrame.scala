@@ -17,24 +17,42 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
+import java.math.BigDecimal
+
 import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.types.{DecimalType, DoubleType, StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
 class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
   var df: DataFrame = _
+  var dataFrame: DataFrame = _
+
 
   def buildTestData() = {
     import sqlContext.implicits._
     df = sqlContext.sparkContext.parallelize(1 to 1000)
       .map(x => ("a", "b", x))
       .toDF("c1", "c2", "c3")
+
+    val rdd = sqlContext.sparkContext.parallelize(
+      Row(52.23, BigDecimal.valueOf(1234.4440), "Warsaw") ::
+      Row(42.30, BigDecimal.valueOf(9999.9990), "Corte") :: Nil)
+
+    val schema = StructType(
+      StructField("double", DoubleType, nullable = false) ::
+      StructField("decimal", DecimalType(9, 2), nullable = false) ::
+      StructField("string", StringType, nullable = false) :: Nil)
+
+    dataFrame = sqlContext.createDataFrame(rdd, schema)
   }
 
   def dropTable() = {
     sql("DROP TABLE IF EXISTS carbon1")
     sql("DROP TABLE IF EXISTS carbon2")
     sql("DROP TABLE IF EXISTS carbon3")
+    sql("DROP TABLE IF EXISTS carbon4")
+
   }
 
 
@@ -83,6 +101,17 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select count(*) from carbon3 where c3 > 500"), Row(500)
     )
+  }
+
+  test("test decimal values for dataframe load"){
+    dataFrame.write
+      .format("carbondata")
+      .option("tableName", "carbon4")
+      .option("compress", "true")
+      .mode(SaveMode.Overwrite)
+      .save()
+    checkAnswer(
+      sql("SELECT decimal FROM carbon4"),Seq(Row(BigDecimal.valueOf(10000.00)),Row(BigDecimal.valueOf(1234.44))))
   }
 
   override def afterAll {
