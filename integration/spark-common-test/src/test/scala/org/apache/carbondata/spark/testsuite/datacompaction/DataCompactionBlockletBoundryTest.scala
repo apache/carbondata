@@ -34,7 +34,7 @@ class DataCompactionBlockletBoundryTest extends QueryTest with BeforeAndAfterAll
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-        "120")
+        "125")
     sql(
       "CREATE TABLE IF NOT EXISTS blocklettest (country String, ID String, date Timestamp, name " +
         "String, " +

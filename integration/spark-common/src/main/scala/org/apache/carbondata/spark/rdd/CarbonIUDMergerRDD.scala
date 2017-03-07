@@ -81,13 +81,12 @@ class CarbonIUDMergerRDD[K, V](
     // group blocks by segment.
     val splitsGroupedMySegment = carbonInputSplits.groupBy(_.getSegmentId)
 
-    var i = 0
+    var i = -1
 
     // No need to get a new SegmentUpdateStatus Manager as the Object is passed
     // in CarbonLoadModel.
     // val manager = new SegmentUpdateStatusManager(absoluteTableIdentifier)
     val updateStatusManager = carbonLoadModel.getSegmentUpdateStatusManager
-
 
     // make one spark partition for one segment
     val resultSplits = splitsGroupedMySegment.map(entry => {
@@ -100,6 +99,7 @@ class CarbonIUDMergerRDD[K, V](
 
       if (!validSplits.isEmpty) {
         val locations = validSplits(0).getLocations
+        i += 1
         new CarbonSparkPartition(id, i,
           new CarbonMultiBlockSplit(absoluteTableIdentifier, validSplits.asJava, locations))
       }
