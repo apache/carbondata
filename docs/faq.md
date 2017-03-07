@@ -21,8 +21,9 @@
 
 * [What are Bad Records?](#what-are-bad-records)
 * [Where are Bad Records Stored in CarbonData?](#where-are-bad-records-stored-in-carbondata)
-* [How to handle Bad Records?](#how-to-handle-bad-records)
-* [How to resolve store location can’t be found?](#how-to-resolve-store-location-can-not-be-found)
+* [How to enable Bad Record Logging?](#how-to-enable-bad-record-logging)
+* [How to ignore the Bad Records?](#how-to-ignore-the-bad-records)
+* [How to specify store location while creating carbon session?](#how-to-specify-store-location-while-creating-carbon-session)
 * [What is Carbon Lock Type?](#what-is-carbon-lock-type)
 * [How to resolve Abstract Method Error?](#how-to-resolve-abstract-method-error)
 
@@ -33,8 +34,8 @@ Records that fail to get loaded into the CarbonData due to data type incompatibi
 The bad records are stored at the location set in carbon.badRecords.location in carbon.properties file.
 By default **carbon.badRecords.location** specifies the following location ``/opt/Carbon/Spark/badrecords``.
 
-## How to handle Bad Records?
-While loading data we can specify the approach to handle Bad Records. In order to analyse the cause of the Bad Records the parameter ``BAD_RECORDS_LOGGER_ENABLE`` must be set to value ``TRUE``. There are three approaches to handle Bad Records which can be specified  by the parameter ``BAD_RECORDS_ACTION``.
+## How to enable Bad Record Logging?
+While loading data we can specify the approach to handle Bad Records. In order to analyse the cause of the Bad Records the parameter ``BAD_RECORDS_LOGGER_ENABLE`` must be set to value ``TRUE``. There are multiple approaches to handle Bad Records which can be specified  by the parameter ``BAD_RECORDS_ACTION``.
 
 - To pad the incorrect values of the csv rows with NULL value and load the data in CarbonData, set the following in the query :
 ```
@@ -46,12 +47,13 @@ While loading data we can specify the approach to handle Bad Records. In order t
 'BAD_RECORDS_ACTION'='REDIRECT'
 ```
 
-- To ignore the Bad Records from getting stored in the raw csv, we need to set the following in the query :
+## How to ignore the Bad Records?
+To ignore the Bad Records from getting stored in the raw csv, we need to set the following in the query :
 ```
-'BAD_RECORDS_ACTION'='INDIRECT'
+'BAD_RECORDS_ACTION'='IGNORE'
 ```
 
-## How to resolve store location can not be found?
+## How to specify store location while creating carbon session?
 The store location specified while creating carbon session is used by the CarbonData to store the meta data like the schema, dictionary files, dictionary meta data and sort indexes.
 
 Try creating ``carbonsession`` with ``storepath`` specified in the following manner :
@@ -64,6 +66,7 @@ val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession(
 ```
 
 ## What is Carbon Lock Type?
+The Apache CarbonData acquires lock on the files to prevent concurrent operation from modifying the same files. The lock can be of the following types depending on the storage location, for HDFS we specify it to be of type HDFSLOCK. By default it is set to type LOCALLOCK.
 The property carbon.lock.type configuration specifies the type of lock to be acquired during concurrent operations on table. This property can be set with the following values :
 - **LOCALLOCK** : This Lock is created on local file system as file. This lock is useful when only one spark driver (thrift server) runs on a machine and no other CarbonData spark application is launched concurrently.
 - **HDFSLOCK** : This Lock is created on HDFS file system as file. This lock is useful when multiple CarbonData spark applications are launched and no ZooKeeper is running on cluster and the HDFS supports, file based locking.
