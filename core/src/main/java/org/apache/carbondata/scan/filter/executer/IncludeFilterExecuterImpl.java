@@ -175,21 +175,6 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
 	    	  }
 	      }
 	  
-	      //below comments code is used to confirm the binary range search is correct  
-	/*      System.out.println("optimizied time: "+(System.currentTimeMillis() - start));
-
-		  start = System.currentTimeMillis();
-	      for (int k = 0; k < filterValues.length; k++) {
-	        for (int j = 0; j < numerOfRows; j++) {
-	          if (ByteUtil.UnsafeComparer.INSTANCE
-	              .compareTo(fixedDimensionChunk.getCompleteDataChunk(), j * filterValues[k].length,
-	                  filterValues[k].length, filterValues[k], 0, filterValues[k].length) == 0) {
-	            bitSet1.set(j);
-	          }
-	        }
-	      }  
-	      System.out.println("non-optimized time: "+(System.currentTimeMillis() - start));
-	      System.out.println("set equal: " + bitSet.equals(bitSet1));*/  
 	    }
 	    return bitSet;
 	  }

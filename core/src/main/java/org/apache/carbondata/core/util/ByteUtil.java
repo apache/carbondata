@@ -152,42 +152,12 @@ public final class ByteUtil {
       return (x1 + Long.MIN_VALUE) < (x2 + Long.MIN_VALUE);
     }
 
-
-/*		public static int binarySearch(byte[] a, int fromIndex, int toIndex, byte[] key) {
-			int keyLength = key.length;
-			rangeCheck(a.length, fromIndex, toIndex, keyLength);
-			return binarySearch0(a, fromIndex, toIndex / keyLength, key);
-		}
-
-		// Like public version, but without range checks.
-		private static int binarySearch0(byte[] a, int fromIndex, int toIndex, byte[] key) {
-			int low = fromIndex;
-			int high = toIndex - 1;
-			int keyLength = key.length;
-			// int high = toIndex/keyLength;
-
-			while (low <= high) {
-				int mid = (low + high) >>> 1;
-				// byte midVal = a[mid];
-
-				int result = ByteUtil.UnsafeComparer.INSTANCE.compareTo(a, mid * keyLength, keyLength, key, 0,
-						keyLength);
-
-				if (result < 0)
-					low = mid + keyLength;
-				else if (result > 0)
-					high = mid - keyLength;
-				else
-					return mid; // key found
-			}
-			return -(low + 1); // key not found.
-		}*/
 	/**
 	 * Checks that {@code fromIndex} and {@code toIndex} are in the range and toIndex % keyLength = 0
 	 * and throws an exception if they aren't.
 	 */
 	private static void rangeCheck(int arrayLength, int fromIndex, int toIndex, int keyWordLength) {
-		if (fromIndex > toIndex || toIndex % keyWordLength != 0) {
+		if (fromIndex > toIndex) {
 			throw new IllegalArgumentException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
 		}
 		if (fromIndex < 0) {
@@ -195,6 +165,9 @@ public final class ByteUtil {
 		}
 		if (toIndex > arrayLength) {
 			throw new ArrayIndexOutOfBoundsException(toIndex);
+		}		
+		if (toIndex % keyWordLength != 0) {
+			throw new IllegalArgumentException("toIndex(" + toIndex + ") % keyWordLength(" + keyWordLength + ") != 0");
 		}
 	}
 	
