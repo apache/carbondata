@@ -864,7 +864,7 @@ public class CarbonMetadataUtil {
         firstBuffer = ByteBuffer.allocate(8);
         firstBuffer.put(first);
         secondBuffer = ByteBuffer.allocate(8);
-        secondBuffer.put(first);
+        secondBuffer.put(second);
         firstBuffer.flip();
         secondBuffer.flip();
         return (int) (firstBuffer.getDouble() - secondBuffer.getDouble());
@@ -874,7 +874,7 @@ public class CarbonMetadataUtil {
         firstBuffer = ByteBuffer.allocate(8);
         firstBuffer.put(first);
         secondBuffer = ByteBuffer.allocate(8);
-        secondBuffer.put(first);
+        secondBuffer.put(second);
         firstBuffer.flip();
         secondBuffer.flip();
         return (int) (firstBuffer.getLong() - secondBuffer.getLong());
