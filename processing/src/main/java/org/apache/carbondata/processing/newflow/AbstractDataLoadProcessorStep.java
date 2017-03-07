@@ -27,6 +27,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
+import sun.rmi.runtime.Log;
 
 /**
  * This base abstract class for data loading.
@@ -157,6 +158,7 @@ public abstract class AbstractDataLoadProcessorStep {
   public void close() {
     if (!closed) {
       closed = true;
+      LOGGER.info("Total rows processed in step: " + rowCounter.get());
       if (child != null) {
         child.close();
       }
