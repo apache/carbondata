@@ -133,6 +133,238 @@ public class ByteUtilTest extends TestCase {
         prepareBuffers();
         assertTrue(UnsafeComparer.INSTANCE.compareTo(buff1, buff2) < 0);
     }
+    
+
+	@Test
+	public void testBinaryRangeSearch() {
+
+		byte[] dataChunk = new byte[10];
+
+		dataChunk = "abbcccddddeffgggh".getBytes();
+		byte[] key = new byte[1];
+		int[] range;
+
+		key[0] = Byte.valueOf("97");
+		range = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeSearch(dataChunk, 0, dataChunk.length, key);
+		this.assertEquals(0, range[0]);
+		this.assertEquals(0, range[1]);
+
+		key[0] = Byte.valueOf("104");
+		range = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeSearch(dataChunk, 0, dataChunk.length, key);
+		this.assertEquals(16, range[0]);
+		this.assertEquals(16, range[1]);
+
+		key[0] = Byte.valueOf("101");
+		range = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeSearch(dataChunk, 0, dataChunk.length, key);
+		this.assertEquals(10, range[0]);
+		this.assertEquals(10, range[1]);
+
+		key[0] = Byte.valueOf("99");
+		range = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeSearch(dataChunk, 0, dataChunk.length, key);
+		this.assertEquals(3, range[0]);
+		this.assertEquals(5, range[1]);
+
+		dataChunk = "ab".getBytes();
+
+		key[0] = Byte.valueOf("97");
+		range = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeSearch(dataChunk, 0, dataChunk.length, key);
+		this.assertEquals(0, range[0]);
+		this.assertEquals(0, range[1]);
+
+		key[0] = Byte.valueOf("98");
+		range = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeSearch(dataChunk, 0, dataChunk.length, key);
+		this.assertEquals(1, range[0]);
+		this.assertEquals(1, range[1]);
+
+		dataChunk = "aabb".getBytes();
+
+		key[0] = Byte.valueOf("97");
+		range = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeSearch(dataChunk, 0, dataChunk.length, key);
+		this.assertEquals(0, range[0]);
+		this.assertEquals(1, range[1]);
+
+		key[0] = Byte.valueOf("98");
+		range = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeSearch(dataChunk, 0, dataChunk.length, key);
+		this.assertEquals(2, range[0]);
+		this.assertEquals(3, range[1]);
+
+		dataChunk = "a".getBytes();
+
+		key[0] = Byte.valueOf("97");
+		range = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeSearch(dataChunk, 0, dataChunk.length, key);
+		this.assertEquals(0, range[0]);
+		this.assertEquals(0, range[1]);
+
+		dataChunk = "aa".getBytes();
+
+		key[0] = Byte.valueOf("97");
+		range = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeSearch(dataChunk, 0, dataChunk.length, key);
+		this.assertEquals(0, range[0]);
+		this.assertEquals(1, range[1]);
+
+		dataChunk = "aabbbbbbbbbbcc".getBytes();
+		key[0] = Byte.valueOf("98");
+		range = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeSearch(dataChunk, 0, dataChunk.length, key);
+		this.assertEquals(2, range[0]);
+		this.assertEquals(11, range[1]);
+
+	}
+
+	@Test
+	public void testBinaryRangeSearchLengthTwo() {
+
+		byte[] dataChunk = new byte[10];
+
+		dataChunk = "aabbbbbbbbbbcc".getBytes();
+		byte[] keyWord = new byte[2];
+		int[] range;
+
+		keyWord[0] = Byte.valueOf("98");
+		keyWord[1] = Byte.valueOf("98");
+		range = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeSearch(dataChunk, 0, dataChunk.length ,
+				keyWord);
+		this.assertEquals(1, range[0]);
+		this.assertEquals(5, range[1]);
+
+		keyWord[0] = Byte.valueOf("97");
+		keyWord[1] = Byte.valueOf("97");
+		range = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeSearch(dataChunk, 0, dataChunk.length ,
+				keyWord);
+		this.assertEquals(0, range[0]);
+		this.assertEquals(0, range[1]);
+
+		keyWord[0] = Byte.valueOf("99");
+		keyWord[1] = Byte.valueOf("99");
+		range = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeSearch(dataChunk, 0, dataChunk.length ,
+				keyWord);
+		this.assertEquals(6, range[0]);
+		this.assertEquals(6, range[1]);
+
+	}
+
+	@Test
+	public void testBinaryRangeSearchLengthThree() {
+
+		byte[] dataChunk = new byte[10];
+
+		dataChunk = "aaabbbbbbbbbccc".getBytes();
+		byte[] keyWord = new byte[3];
+		int[] range;
+
+		keyWord[0] = Byte.valueOf("98");
+		keyWord[1] = Byte.valueOf("98");
+		keyWord[2] = Byte.valueOf("98");
+		range = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeSearch(dataChunk, 0, dataChunk.length ,
+				keyWord);
+		this.assertEquals(1, range[0]);
+		this.assertEquals(3, range[1]);
+
+	}
+
+	@Test
+	public void testbinaryRangeBoundarySearchLengthTwo() {
+
+		byte[] dataChunk = new byte[10];
+		byte[] keyWord = new byte[2];
+		int[] expectRangeIndex = new int[2];
+		int[] lowRangeIndex = new int[2];
+		int[] midRangeIndex = new int[2];
+		int[] highRangeIndex = new int[2];
+
+		// 0-4 5-10 11-17
+		dataChunk = "abababababacacacacacacadadadadadadad".getBytes();
+
+		keyWord[0] = Byte.valueOf("97");
+		keyWord[1] = Byte.valueOf("100");
+		expectRangeIndex[0] = 11;
+		expectRangeIndex[1] = 17;
+		lowRangeIndex[0] = 0;
+		lowRangeIndex[1] = 11;
+		midRangeIndex[0] = 11;
+		midRangeIndex[1] = 17;
+		highRangeIndex[0] = 17;
+		highRangeIndex[1] = 17;
+
+		testRangeboundary(dataChunk, keyWord, expectRangeIndex, lowRangeIndex, midRangeIndex, highRangeIndex);
+
+		keyWord[0] = Byte.valueOf("97");
+		keyWord[1] = Byte.valueOf("98");
+		expectRangeIndex[0] = 0;
+		expectRangeIndex[1] = 4;
+		lowRangeIndex[0] = 0;
+		lowRangeIndex[1] = 0;
+		midRangeIndex[0] = 0;
+		midRangeIndex[1] = 4;
+		highRangeIndex[0] = 4;
+		highRangeIndex[1] = 17;
+
+		testRangeboundary(dataChunk, keyWord, expectRangeIndex, lowRangeIndex, midRangeIndex, highRangeIndex);
+
+		keyWord[0] = Byte.valueOf("97");
+		keyWord[1] = Byte.valueOf("99");
+		expectRangeIndex[0] = 5;
+		expectRangeIndex[1] = 10;
+		lowRangeIndex[0] = 0;
+		lowRangeIndex[1] = 5;
+		midRangeIndex[0] = 5;
+		midRangeIndex[1] = 10;
+		highRangeIndex[0] = 10;
+		highRangeIndex[1] = 17;
+
+		testRangeboundary(dataChunk, keyWord, expectRangeIndex, lowRangeIndex, midRangeIndex, highRangeIndex);
+		
+		
+		// 0-4
+		dataChunk = "aaaaaaaaaa".getBytes();
+		keyWord[0] = Byte.valueOf("97");
+		keyWord[1] = Byte.valueOf("97");
+		expectRangeIndex[0] = 0;
+		expectRangeIndex[1] = 4;
+		lowRangeIndex[0] = 0;
+		lowRangeIndex[1] = 0;
+		midRangeIndex[0] = 0;
+		midRangeIndex[1] = 4;
+		highRangeIndex[0] = 4;
+		highRangeIndex[1] = 4;
+
+		testRangeboundary(dataChunk, keyWord, expectRangeIndex, lowRangeIndex, midRangeIndex, highRangeIndex);
+
+	}
+
+	/**
+	 * use to test a specific key's range bound in sorted byte array
+	 *
+	 * @param dataChunk
+	 *            is a sorted byte array according to filter value's
+	 * @param keyWord
+	 *            is a specific value
+	 * @param expectRangeIndex
+	 * @param lowRangeIndex
+	 * @param midRangeIndex
+	 * @param highRangeIndex
+	 * @return
+	 */
+	private void testRangeboundary(byte[] dataChunk, byte[] keyWord, int[] expectRangeIndex, int[] lowRangeIndex,
+			int[] midRangeIndex, int[] highRangeIndex) {
+		for (int low = lowRangeIndex[0]; low <= lowRangeIndex[1]; low++) {
+			for (int mid = midRangeIndex[0]; mid <= midRangeIndex[1]; mid++) {
+				for (int high = highRangeIndex[0]; high <= highRangeIndex[1]; high++) {
+//					System.out.print("");
+//					System.out.print("low: " + low);
+//					System.out.print(" mid: " + mid);
+//					System.out.println(" high: " + high);
+					int boundIndex;
+					// lower limit
+					boundIndex = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeBoundarySearch(dataChunk, low, mid, keyWord, false);
+					this.assertEquals(expectRangeIndex[0], boundIndex);
+					// upper limit
+					boundIndex = ByteUtil.UnsafeComparer.INSTANCE.binaryRangeBoundarySearch(dataChunk, mid, high, keyWord, true);
+					this.assertEquals(expectRangeIndex[1], boundIndex);
+				}
+			}
+		}
+	}
+    
 
     /**
      * This will prepare the byte buffers in the required format for comparision.
