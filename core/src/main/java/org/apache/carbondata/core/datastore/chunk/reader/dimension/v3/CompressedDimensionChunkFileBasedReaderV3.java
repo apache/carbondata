@@ -40,10 +40,12 @@ import org.apache.commons.lang.ArrayUtils;
  * V3 format data
  * data format
  * Data Format
+ * <FileHeader>
  * <Column1 Data ChunkV3><Column1<Page1><Page2><Page3><Page4>>
  * <Column2 Data ChunkV3><Column2<Page1><Page2><Page3><Page4>>
  * <Column3 Data ChunkV3><Column3<Page1><Page2><Page3><Page4>>
  * <Column4 Data ChunkV3><Column4<Page1><Page2><Page3><Page4>>
+ * <File Footer>
  */
 public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkReaderV2V3Format {
 
