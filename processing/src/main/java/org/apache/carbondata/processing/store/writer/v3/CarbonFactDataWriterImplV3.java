@@ -158,7 +158,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
           compressedDataIndex[i] = getByteArray(keyStorageArray[i].getDataIndexMap());
           dataIndexMapLength[i] = compressedDataIndex[i].length;
         } catch (Exception e) {
-          throw new CarbonDataWriterException(e.getMessage());
+          throw new CarbonDataWriterException(e.getMessage(), e);
         }
       }
     }
@@ -227,7 +227,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
    */
   private byte[] getByteArray(short[] data) {
     ByteBuffer buffer = ByteBuffer.allocate(data.length * 2);
-    for (short i = 0; i < data.length; i++) {
+    for (int i = 0; i < data.length; i++) {
       buffer.putShort(data[i]);
     }
     buffer.flip();
@@ -459,6 +459,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
             < 0) {
           currentMaxValue[j] = maxValue.clone();
         }
+        measureIndex++;
       }
     }
     BlockletBTreeIndex btree =
