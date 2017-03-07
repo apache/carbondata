@@ -54,6 +54,8 @@ import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 import org.apache.carbondata.format.Encoding;
 import org.apache.carbondata.format.FileFooter;
+import org.apache.carbondata.format.FileFooter3;
+import org.apache.carbondata.format.FileHeader;
 import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.format.PresenceMeta;
 import org.apache.carbondata.format.SegmentInfo;
@@ -114,17 +116,18 @@ public class CarbonMetadataUtil {
   }
 
   /**
-   * It converts list of BlockletInfoColumnar to FileFooter thrift objects
+   * Below method prepares the file footer object for carbon data file version 3
    *
    * @param infoList
    * @param numCols
    * @param cardinalities
    * @return FileFooter
    */
-  public static FileFooter convertFileFooter3(List<BlockletInfo3> infoList,
-      List<BlockletIndex> blockletIndexs, int[] cardinalities, List<ColumnSchema> columnSchemaList,
+  public static FileFooter3 convertFileFooterVersion3(List<BlockletInfo3> infoList,
+      List<BlockletIndex> blockletIndexs, int[] cardinalities, int numberOfColumns,
       SegmentProperties segmentProperties) throws IOException {
-    FileFooter footer = getFileFooter3(infoList, blockletIndexs, cardinalities, columnSchemaList);
+    FileFooter3 footer =
+        getFileFooter3(infoList, blockletIndexs, cardinalities, numberOfColumns);
     for (BlockletInfo3 info : infoList) {
       footer.addToBlocklet_info_list3(info);
     }
@@ -139,18 +142,14 @@ public class CarbonMetadataUtil {
    * @param columnSchemaList column schema list
    * @return file footer
    */
-  private static FileFooter getFileFooter3(List<BlockletInfo3> infoList,
-      List<BlockletIndex> blockletIndexs, int[] cardinalities,
-      List<ColumnSchema> columnSchemaList) {
+  private static FileFooter3 getFileFooter3(List<BlockletInfo3> infoList,
+      List<BlockletIndex> blockletIndexs, int[] cardinalities, int numberOfColumns) {
     SegmentInfo segmentInfo = new SegmentInfo();
-    segmentInfo.setNum_cols(columnSchemaList.size());
+    segmentInfo.setNum_cols(numberOfColumns);
     segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(cardinalities));
-    ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
-    FileFooter footer = new FileFooter();
-    footer.setVersion(version.number());
+    FileFooter3 footer = new FileFooter3();
     footer.setNum_rows(getNumberOfRowForFooter(infoList));
     footer.setSegment_info(segmentInfo);
-    footer.setTable_columns(columnSchemaList);
     for (BlockletIndex info : blockletIndexs) {
       footer.addToBlocklet_index_list(info);
     }
@@ -851,7 +850,7 @@ public class CarbonMetadataUtil {
         b.flip();
         return b.array();
       case DECIMAL:
-        return DataTypeUtil.bigDecimalToByte((BigDecimal)data);
+        return DataTypeUtil.bigDecimalToByte((BigDecimal) data);
       default:
         throw new IllegalArgumentException("Invalid data type");
     }
@@ -887,4 +886,20 @@ public class CarbonMetadataUtil {
     }
   }
 
+  /**
+   * Below method will be used to prepare the file header object for carbondata file
+   *
+   * @param isFooterPresent  is footer present in carbon data file
+   * @param columnSchemaList list of column schema
+   * @return file header thrift object
+   */
+  public static FileHeader getFileHeader(boolean isFooterPresent,
+      List<ColumnSchema> columnSchemaList) {
+    FileHeader fileHeader = new FileHeader();
+    ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
+    fileHeader.setIs_footer_present(isFooterPresent);
+    fileHeader.setColumn_schema(columnSchemaList);
+    fileHeader.setVersion(version.number());
+    return fileHeader;
+  }
 }

@@ -244,4 +244,14 @@ public class BTreeNonLeafNode implements BTreeNode {
   public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
     return deleteDeltaDataCache;
   }
+
+  /**
+   * number of pages in blocklet
+   * @return
+   */
+  @Override
+  public int numberOfPages() {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unsupported operation");
+  }
 }
