@@ -52,7 +52,7 @@ object CarbonSQLCLIDriver {
           .config("spark.sql.warehouse.dir", warehouse)
           .getOrCreateCarbonSession(storePath, storePath)
 
-      hiveContext = new CarbonContext(carbon)
+      hiveContext = carbon.sqlContext
       hiveContext.conf.getAllConfs.toSeq.sorted.foreach { case (k, v) =>
         LOGGER.debug(s"HiveConf var: $k=$v")
       }
