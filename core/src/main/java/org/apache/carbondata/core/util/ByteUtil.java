@@ -152,6 +152,159 @@ public final class ByteUtil {
       return (x1 + Long.MIN_VALUE) < (x2 + Long.MIN_VALUE);
     }
 
+
+/*		public static int binarySearch(byte[] a, int fromIndex, int toIndex, byte[] key) {
+			int keyLength = key.length;
+			rangeCheck(a.length, fromIndex, toIndex, keyLength);
+			return binarySearch0(a, fromIndex, toIndex / keyLength, key);
+		}
+
+		// Like public version, but without range checks.
+		private static int binarySearch0(byte[] a, int fromIndex, int toIndex, byte[] key) {
+			int low = fromIndex;
+			int high = toIndex - 1;
+			int keyLength = key.length;
+			// int high = toIndex/keyLength;
+
+			while (low <= high) {
+				int mid = (low + high) >>> 1;
+				// byte midVal = a[mid];
+
+				int result = ByteUtil.UnsafeComparer.INSTANCE.compareTo(a, mid * keyLength, keyLength, key, 0,
+						keyLength);
+
+				if (result < 0)
+					low = mid + keyLength;
+				else if (result > 0)
+					high = mid - keyLength;
+				else
+					return mid; // key found
+			}
+			return -(low + 1); // key not found.
+		}*/
+	/**
+	 * Checks that {@code fromIndex} and {@code toIndex} are in the range and toIndex % keyLength = 0
+	 * and throws an exception if they aren't.
+	 */
+	private static void rangeCheck(int arrayLength, int fromIndex, int toIndex, int keyWordLength) {
+		if (fromIndex > toIndex || toIndex % keyWordLength != 0) {
+			throw new IllegalArgumentException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
+		}
+		if (fromIndex < 0) {
+			throw new ArrayIndexOutOfBoundsException(fromIndex);
+		}
+		if (toIndex > arrayLength) {
+			throw new ArrayIndexOutOfBoundsException(toIndex);
+		}
+	}
+	
+	/**
+	 * search a specific key's range boundary in sorted byte array
+	 * 
+	 * @param dataChunk
+	 * @param fromIndex
+	 * @param toIndex
+	 *            it's max value should be word Number in dataChunk, equal to indataChunk.length/keyWord.length
+	 * @param keyWord
+	 * @return int[] contains a range's lower boundary and upper boundary
+	 */
+	public static int[] binaryRangeSearch(byte[] dataChunk, int fromIndex, int toIndex, byte[] keyWord) {
+
+
+		int keyLength = keyWord.length;
+		rangeCheck(dataChunk.length, fromIndex, toIndex, keyLength);
+		
+		// reset to index =  word total number in the dataChunk
+		toIndex = toIndex/keyWord.length;	
+		
+		int[] rangeIndex = new int[2];
+		int low = fromIndex;
+		int high = toIndex - 1;
+
+		while (low <= high) {
+			int mid = (low + high) >>> 1;
+
+			int result = ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataChunk, mid * keyLength, keyLength, keyWord, 0,
+					keyLength);
+
+			if (result < 0)
+				low = mid + 1;
+			else if (result > 0)
+				high = mid - 1;
+			else {
+				// key found  then find the range bound
+				rangeIndex[0] = binaryRangeBoundarySearch(dataChunk, low, mid, keyWord, false);
+				rangeIndex[1] = binaryRangeBoundarySearch(dataChunk, mid, high, keyWord, true);
+				return rangeIndex;
+			}
+
+		}
+		// key not found. return a not exist range
+		rangeIndex[0] = 0;
+		rangeIndex[1] = -1;
+		return rangeIndex;
+	}
+
+  /**
+   * use to search a specific keyword's lower boundary and upper boundary according to upFindFlg
+   * @param dataChunk
+   * @param fromIndex
+   * @param toIndex
+   * @param keyWord
+   * @param upFindFlg true:find upper boundary  false: find lower boundary
+   * @return boundary index 
+   */
+	public static int binaryRangeBoundarySearch(byte[] dataChunk, int fromIndex, int toIndex, byte[] keyWord, boolean upFindFlg) {
+		int low = fromIndex;
+		int high = toIndex;
+		int keyLength = keyWord.length;
+
+		while (low <= high) {
+			int mid = (low + high) >>> 1;
+
+			int result1 = ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataChunk, mid * keyLength, keyLength, keyWord, 0,
+					keyLength);
+
+			if (upFindFlg) {
+				if (result1 == 0) {
+
+					low = mid + 1;
+				} else if (result1 > 0) {
+
+					high = mid - 1;
+					int result2 = ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataChunk, high * keyLength, keyLength, keyWord, 0,
+							keyLength);
+					if (result2 == 0) {
+						return high;
+					}
+				} else {
+					throw new UnsupportedOperationException();
+				}
+			} else {
+
+				if (result1 == 0) {
+
+					high = mid - 1;
+				} else if (result1 < 0) {
+					low = mid + 1;
+					int result2 = ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataChunk, low * keyLength, keyLength, keyWord, 0,
+							keyLength);
+					if (result2 == 0) {
+						return low;
+					}
+				} else {
+					throw new UnsupportedOperationException();
+				}
+
+			}
+		}
+		if (upFindFlg) {
+			return high;
+		} else {
+			return low;
+		}
+	}
+
     /**
      * Lexicographically compare two arrays.
      *
