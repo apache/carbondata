@@ -250,6 +250,10 @@ public final class CarbonCommonConstants {
    */
   public static final String SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE = "20";
   /**
+   * BAD_RECORD_KEY_VALUE
+   */
+  public static final String BAD_RECORD_KEY = "BADRECORD";
+  /**
    * MERGERD_EXTENSION
    */
   public static final String MERGERD_EXTENSION = ".merge";

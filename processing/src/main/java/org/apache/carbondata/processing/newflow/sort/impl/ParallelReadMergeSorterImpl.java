@@ -58,6 +58,8 @@ public class ParallelReadMergeSorterImpl implements Sorter {
 
   private ExecutorService executorService;
 
+  private ThreadStatusObserver threadStatusObserver;
+
   private SingleThreadFinalSortFilesMerger finalMerger;
 
   private AtomicLong rowCounter;
@@ -97,18 +99,22 @@ public class ParallelReadMergeSorterImpl implements Sorter {
       throw new CarbonDataLoadingException(e);
     }
     this.executorService = Executors.newFixedThreadPool(iterators.length);
+    this.threadStatusObserver = new ThreadStatusObserver(executorService);
 
     try {
       for (int i = 0; i < iterators.length; i++) {
         executorService.submit(
-            new SortIteratorThread(iterators[i], sortDataRow, batchSize, rowCounter));
+            new SortIteratorThread(iterators[i], sortDataRow, batchSize, rowCounter,
+                threadStatusObserver));
       }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
       processRowToNextStep(sortDataRow, sortParameters);
     } catch (Exception e) {
+      checkError();
       throw new CarbonDataLoadingException("Problem while shutdown the server ", e);
     }
+    checkError();
     try {
       intermediateFileMerger.finish();
       intermediateFileMerger = null;
@@ -147,6 +153,18 @@ public class ParallelReadMergeSorterImpl implements Sorter {
     }
   }
 
+  /**
+   * Below method will be used to check error in exception
+   */
+  private void checkError() {
+    if (threadStatusObserver.getThrowable() != null) {
+      if (threadStatusObserver.getThrowable() instanceof CarbonDataLoadingException) {
+        throw (CarbonDataLoadingException) threadStatusObserver.getThrowable();
+      } else {
+        throw new CarbonDataLoadingException(threadStatusObserver.getThrowable());
+      }
+    }
+  }
   /**
    * Below method will be used to process data to next step
    */
@@ -190,12 +208,16 @@ public class ParallelReadMergeSorterImpl implements Sorter {
 
     private AtomicLong rowCounter;
 
-    public SortIteratorThread(Iterator<CarbonRowBatch> iterator,
-        SortDataRows sortDataRows, int batchSize, AtomicLong rowCounter) {
+    private ThreadStatusObserver observer;
+
+    public SortIteratorThread(Iterator<CarbonRowBatch> iterator, SortDataRows sortDataRows,
+        int batchSize, AtomicLong rowCounter, ThreadStatusObserver observer) {
       this.iterator = iterator;
       this.sortDataRows = sortDataRows;
       this.buffer = new Object[batchSize][];
       this.rowCounter = rowCounter;
+      this.observer = observer;
+
     }
 
     @Override
@@ -217,6 +239,7 @@ public class ParallelReadMergeSorterImpl implements Sorter {
         }
       } catch (Exception e) {
         LOGGER.error(e);
+        observer.notifyFailed(e);
         throw new CarbonDataLoadingException(e);
       }
       return null;
