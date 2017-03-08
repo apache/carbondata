@@ -28,7 +28,7 @@ object DataUpdateDeleteExample {
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
     val testData1 = ExampleUtils.currentPath + "/src/main/resources/data_update.csv"
 
-    // Specify timestamp format based on raw data
+    // Specify date format based on raw data
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
 

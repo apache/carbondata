@@ -36,7 +36,7 @@ object AlluxioExample {
     cc.sparkContext.hadoopConfiguration.set("fs.alluxio.impl", "alluxio.hadoop.FileSystem")
     FileFactory.getConfiguration.set("fs.alluxio.impl", "alluxio.hadoop.FileSystem")
 
-    // Specify timestamp format based on raw data
+    // Specify date format based on raw data
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
 

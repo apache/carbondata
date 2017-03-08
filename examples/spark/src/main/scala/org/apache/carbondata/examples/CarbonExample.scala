@@ -27,7 +27,7 @@ object CarbonExample {
     val cc = ExampleUtils.createCarbonContext("CarbonExample")
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
 
-    // Specify DATE format based on raw data
+    // Specify date format based on raw data
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
 

@@ -31,7 +31,7 @@ object AllDictionaryExample {
     // extract all dictionary files from source data
     AllDictionaryUtil.extractDictionary(cc.sparkContext,
       testData, allDictFile, csvHeader, dictCol)
-    // Specify timestamp format based on raw data
+    // Specify date format based on raw data
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
 

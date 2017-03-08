@@ -390,7 +390,7 @@ public final class CarbonCommonConstants {
   /**
    * CARBON_DATE_DEFAULT_FORMAT
    */
-  public static final String CARBON_DATE_DEFAULT_FORMAT = "yyyy/MM/dd";
+  public static final String CARBON_DATE_DEFAULT_FORMAT = "yyyy-MM-dd";
   /**
    * CARBON_DATE_FORMAT,ONE PROPERTY FOR SPECIFYING DATATYPE IS DATE
    */
