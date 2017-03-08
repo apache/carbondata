@@ -54,6 +54,7 @@ import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
+import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DataManagementFunc, DictionaryLoadModel}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, GlobalDictionaryUtil}
@@ -416,7 +417,11 @@ case class LoadTable(
       val columnDict = options.getOrElse("columndict", null)
       val serializationNullFormat = options.getOrElse("serialization_null_format", "\\N")
       val badRecordsLoggerEnable = options.getOrElse("bad_records_logger_enable", "false")
-      val badRecordsLoggerRedirect = options.getOrElse("bad_records_action", "force")
+      val badRecordActionValue = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+          CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
+      val badRecordsAction = options.getOrElse("bad_records_action", badRecordActionValue)
+      val isEmptyDataBadRecord = options.getOrElse("is_empty_data_bad_record", "false")
       val allDictionaryPath = options.getOrElse("all_dictionary_path", "")
       val complex_delimiter_level_1 = options.getOrElse("complex_delimiter_level_1", "\\$")
       val complex_delimiter_level_2 = options.getOrElse("complex_delimiter_level_2", "\\:")
@@ -443,7 +448,10 @@ case class LoadTable(
           TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName + "," + badRecordsLoggerEnable)
       carbonLoadModel
         .setBadRecordsAction(
-          TableOptionConstant.BAD_RECORDS_ACTION.getName + "," + badRecordsLoggerRedirect)
+          TableOptionConstant.BAD_RECORDS_ACTION.getName + "," + badRecordsAction)
+      carbonLoadModel
+        .setIsEmptyDataBadRecord(
+          DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + "," + isEmptyDataBadRecord)
       // when single_pass=true, and use_kettle=false, and not use all dict
       val useOnePass = options.getOrElse("single_pass", "false").trim.toLowerCase match {
         case "true" =>

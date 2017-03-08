@@ -57,19 +57,21 @@ public class FieldEncoderFactory {
    * @param cache                 dicionary cache.
    * @param carbonTableIdentifier table identifier
    * @param index                 index of column in the row.
+   * @param isEmptyBadRecord
    * @return
    */
   public FieldConverter createFieldEncoder(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, int index, String nullFormat,
       DictionaryClient client, Boolean useOnePass, String storePath, boolean tableInitialize,
-      Map<Object, Integer> localCache)
+      Map<Object, Integer> localCache, boolean isEmptyBadRecord)
       throws IOException {
     // Converters are only needed for dimensions and measures it return null.
     if (dataField.getColumn().isDimesion()) {
       if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY) &&
           !dataField.getColumn().isComplex()) {
-        return new DirectDictionaryFieldConverterImpl(dataField, nullFormat, index);
+        return new DirectDictionaryFieldConverterImpl(dataField, nullFormat, index,
+            isEmptyBadRecord);
       } else if (dataField.getColumn().hasEncoding(Encoding.DICTIONARY) &&
           !dataField.getColumn().isComplex()) {
         return new DictionaryFieldConverterImpl(dataField, cache, carbonTableIdentifier, nullFormat,
@@ -79,10 +81,10 @@ public class FieldEncoderFactory {
             createComplexType(dataField, cache, carbonTableIdentifier,
                     client, useOnePass, storePath, tableInitialize, localCache), index);
       } else {
-        return new NonDictionaryFieldConverterImpl(dataField, nullFormat, index);
+        return new NonDictionaryFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
       }
     } else {
-      return new MeasureFieldConverterImpl(dataField, nullFormat, index);
+      return new MeasureFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
     }
   }
 
