@@ -383,16 +383,16 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_TIMESTAMP_DEFAULT_FORMAT = "yyyy-MM-dd HH:mm:ss";
   /**
-   * CARBON_TIMESTAMP_DEFAULT_FORMAT
+   * CARBON_TIMESTAMP_FORMAT,ONE PROPERTY FOR SPECIFYING DATATYPE IS TIMESTAMPE
    */
   public static final String CARBON_TIMESTAMP_FORMAT = "carbon.timestamp.format";
 
   /**
    * CARBON_DATE_DEFAULT_FORMAT
    */
-  public static final String CARBON_DATE_DEFAULT_FORMAT = "yyyy-MM-dd";
+  public static final String CARBON_DATE_DEFAULT_FORMAT = "yyyy/MM/dd";
   /**
-   * CARBON_DATE_DEFAULT_FORMAT
+   * CARBON_DATE_FORMAT,ONE PROPERTY FOR SPECIFYING DATATYPE IS DATE
    */
   public static final String CARBON_DATE_FORMAT = "carbon.date.format";
   /**
