@@ -15,24 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.constants;
+package org.apache.carbondata.processing.newflow.sort.impl;
 
-/**
- * enum to hold the bad record logger action
- */
-public enum LoggerAction {
+import java.util.concurrent.ExecutorService;
 
-  FORCE("FORCE"), // data will be converted to null
-  REDIRECT("REDIRECT"), // no null conversion moved to bad record and written to raw csv
-  IGNORE("IGNORE"), // no null conversion moved to bad record and not written to raw csv
-  FAIL("FAIL");  //data loading will fail if a bad record is found
-  private String name;
+public class ThreadStatusObserver {
 
-  LoggerAction(String name) {
-    this.name = name;
+  private ExecutorService executorService;
+
+  private Throwable throwable;
+
+  public ThreadStatusObserver(ExecutorService executorService) {
+    this.executorService = executorService;
   }
 
-  @Override public String toString() {
-    return this.name;
+  public void notifyFailed(Throwable throwable) {
+    executorService.shutdownNow();
+    this.throwable = throwable;
+  }
+
+  public Throwable getThrowable() {
+    return throwable;
   }
 }
