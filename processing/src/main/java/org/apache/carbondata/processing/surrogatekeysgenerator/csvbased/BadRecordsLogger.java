@@ -85,11 +85,13 @@ public class BadRecordsLogger {
 
   private boolean badRecordConvertNullDisable;
 
+  private boolean isDataLoadFail;
+
   // private final Object syncObject =new Object();
 
   public BadRecordsLogger(String key, String fileName, String storePath,
       boolean badRecordsLogRedirect, boolean badRecordLoggerEnable,
-      boolean badRecordConvertNullDisable) {
+      boolean badRecordConvertNullDisable, boolean isDataLoadFail) {
     // Initially no bad rec
     taskKey = key;
     this.fileName = fileName;
@@ -97,10 +99,11 @@ public class BadRecordsLogger {
     this.badRecordsLogRedirect = badRecordsLogRedirect;
     this.badRecordLoggerEnable = badRecordLoggerEnable;
     this.badRecordConvertNullDisable = badRecordConvertNullDisable;
+    this.isDataLoadFail = isDataLoadFail;
   }
 
   /**
-   * @param key DatabaseName/TableName/tablename
+   * @param key DatabaseNaame/TableName/tablename
    * @return return "Partially" and remove from map
    */
   public static String hasBadRecord(String key) {
@@ -234,6 +237,10 @@ public class BadRecordsLogger {
 
   public boolean isBadRecordConvertNullDisable() {
     return badRecordConvertNullDisable;
+  }
+
+  public boolean isDataLoadFail() {
+    return isDataLoadFail;
   }
 
   /**

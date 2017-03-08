@@ -145,6 +145,7 @@ public class DataGraphExecuter {
             model.getCsvFilePath() != null && model.getCsvFilePath().startsWith("hdfs:");
         trans.setVariable("modifiedDimNames", model.getDimTables());
         trans.setVariable("csvInputFilePath", model.getCsvFilePath());
+        trans.setVariable(CarbonCommonConstants.BAD_RECORD_KEY, null);
         if (hdfsReadMode) {
           trans.addParameterDefinition("vfs.hdfs.dfs.client.read.shortcircuit", "true", "");
           trans.addParameterDefinition("vfs.hdfs.dfs.domain.socket.path",
@@ -175,12 +176,18 @@ public class DataGraphExecuter {
     String key = model.getDatabaseName() + '/' + model.getTableName() + '_' + model.getTableName();
 
     if (trans.getErrors() > 0) {
+      if (null != trans.getVariable(CarbonCommonConstants.BAD_RECORD_KEY)) {
+        LOGGER.error(trans.getVariable(CarbonCommonConstants.BAD_RECORD_KEY));
+        throw new DataLoadingException(
+            "Data load failed due to bad record ," + trans
+                .getVariable(CarbonCommonConstants.BAD_RECORD_KEY));
+      }
       LOGGER.error("Graph Execution had errors");
       throw new DataLoadingException("Due to internal errors, please check logs for more details.");
     } else if (null != BadRecordsLogger.hasBadRecord(key)) {
-      LOGGER.error("Graph Execution is partcially success");
+      LOGGER.error("Data load is partially success");
       throw new DataLoadingException(DataProcessorConstants.BAD_REC_FOUND,
-          "Graph Execution is partcially success");
+          "Data load is partially success");
     } else {
       LOGGER.info("Graph execution task is over with No error.");
     }
