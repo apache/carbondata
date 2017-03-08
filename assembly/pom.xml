@@ -95,6 +95,7 @@
                 <exclude>META-INF/*.DSA</exclude>
                 <exclude>META-INF/*.RSA</exclude>
                 <exclude>META-INF/vfs-providers.xml</exclude>
+                <exclude>io/netty/**</exclude>
               </excludes>
             </filter>
           </filters>
