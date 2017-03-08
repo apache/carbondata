@@ -1,7 +1,7 @@
 package org.apache.carbondata.cardinality
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
-import org.apache.carbondata.{CommandLineArguments, CsvHeaderSchema, DataFrameUtil}
+import org.apache.carbondata.utils.{CsvHeaderSchema, DataFrameUtil, LoadProperties}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.{DataType, StringType}
 
@@ -50,7 +50,7 @@ trait CardinalityProcessor{
     * @param dataFrame
     * @return
     */
-  def getCardinalityMatrix(dataFrame: DataFrame, parameters: CommandLineArguments): List[CardinalityMatrix] = {
+  def getCardinalityMatrix(dataFrame: DataFrame, properties: LoadProperties): List[CardinalityMatrix] = {
     val cardinalityMatrixList = dataFrameUtil.getColumnNames(dataFrame) map { columnName =>
       val columnDataFrame = dataFrame.select(columnName)
       val cardinality = computeCardinality(columnName, dataFrame.select(columnName))
@@ -58,7 +58,7 @@ trait CardinalityProcessor{
     }
 
     val inputFileSchema = dataFrameUtil.getColumnDataTypes(dataFrame)
-    val columnList = dataFrameUtil.getColumnNameFromFileHeader(parameters, dataFrame.schema.fields.length)
+    val columnList = dataFrameUtil.getColumnNameFromFileHeader(properties, dataFrame.schema.fields.length)
     val cardinalityMatrix = setDataTypeWithCardinality(cardinalityMatrixList, inputFileSchema)
     columnList.zip(cardinalityMatrix) map { case (column, matrix) => matrix.copy(inputColumnName = Some(column))}
   }
