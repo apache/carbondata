@@ -178,6 +178,8 @@ public class CarbonFactDataHandlerModel {
 
   private int bucketId = 0;
 
+  private String segmentId;
+
   /**
    * schema updated time stamp to be used for restructure scenarios
    */
@@ -290,6 +292,7 @@ public class CarbonFactDataHandlerModel {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount);
     }
     carbonFactDataHandlerModel.bucketId = bucketId;
+    carbonFactDataHandlerModel.segmentId = configuration.getSegmentId();
     return carbonFactDataHandlerModel;
   }
 
@@ -512,6 +515,14 @@ public class CarbonFactDataHandlerModel {
 
   public void setSchemaUpdatedTimeStamp(long schemaUpdatedTimeStamp) {
     this.schemaUpdatedTimeStamp = schemaUpdatedTimeStamp;
+  }
+
+  public String getSegmentId() {
+    return segmentId;
+  }
+
+  public void setSegmentId(String segmentId) {
+    this.segmentId = segmentId;
   }
 }
 

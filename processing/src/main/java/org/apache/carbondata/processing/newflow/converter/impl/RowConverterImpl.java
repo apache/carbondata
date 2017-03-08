@@ -88,6 +88,9 @@ public class RowConverterImpl implements RowConverter {
     String nullFormat =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
             .toString();
+    boolean isEmptyBadRecord = Boolean.parseBoolean(
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
+            .toString());
     List<FieldConverter> fieldConverterList = new ArrayList<>();
     localCaches = new Map[fields.length];
     long lruCacheStartTime = System.currentTimeMillis();
@@ -98,9 +101,9 @@ public class RowConverterImpl implements RowConverter {
       localCaches[i] = new ConcurrentHashMap<>();
       FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
           .createFieldEncoder(fields[i], cache,
-              configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat,
-              client, configuration.getUseOnePass(),
-              configuration.getTableIdentifier().getStorePath(), true, localCaches[i]);
+              configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat, client,
+              configuration.getUseOnePass(), configuration.getTableIdentifier().getStorePath(),
+              true, localCaches[i], isEmptyBadRecord);
       fieldConverterList.add(fieldConverter);
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
@@ -121,7 +124,7 @@ public class RowConverterImpl implements RowConverter {
           Thread.currentThread().setName("Dictionary client");
           DictionaryClient dictionaryClient = new DictionaryClient();
           dictionaryClient.startClient(configuration.getDictionaryServerHost(),
-                  configuration.getDictionaryServerPort());
+              configuration.getDictionaryServerPort());
           return dictionaryClient;
         }
       });
@@ -146,15 +149,18 @@ public class RowConverterImpl implements RowConverter {
   @Override
   public CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException {
     CarbonRow copy = row.getCopy();
+    logHolder.setLogged(false);
+    logHolder.clear();
     for (int i = 0; i < fieldConverters.length; i++) {
       fieldConverters[i].convert(row, logHolder);
-      if (logHolder.isBadRecordNotAdded()) {
+      if (!logHolder.isLogged() && logHolder.isBadRecordNotAdded()) {
         if (badRecordLogger.isDataLoadFail()) {
           String error = "Data load failed due to bad bad record: " + logHolder.getReason();
           throw new CarbonDataLoadingException(error);
         }
         badRecordLogger.addBadRecordsToBuilder(copy.getData(), logHolder.getReason());
         logHolder.clear();
+        logHolder.setLogged(true);
         if (badRecordLogger.isBadRecordConvertNullDisable()) {
           return null;
         }
@@ -202,14 +208,16 @@ public class RowConverterImpl implements RowConverter {
     String nullFormat =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
             .toString();
+    boolean isEmptyBadRecord = Boolean.parseBoolean(
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD)
+            .toString());
     for (int i = 0; i < fields.length; i++) {
       FieldConverter fieldConverter = null;
       try {
-        fieldConverter = FieldEncoderFactory.getInstance()
-            .createFieldEncoder(fields[i], cache,
-                configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat,
-                client, configuration.getUseOnePass(),
-                configuration.getTableIdentifier().getStorePath(), false, localCaches[i]);
+        fieldConverter = FieldEncoderFactory.getInstance().createFieldEncoder(fields[i], cache,
+            configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat, client,
+            configuration.getUseOnePass(), configuration.getTableIdentifier().getStorePath(), false,
+            localCaches[i], isEmptyBadRecord);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }

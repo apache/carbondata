@@ -35,8 +35,10 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
   private String nullFormat;
 
   private CarbonColumn column;
+  private boolean isEmptyBadRecord;
 
-  public DirectDictionaryFieldConverterImpl(DataField dataField, String nullFormat, int index) {
+  public DirectDictionaryFieldConverterImpl(DataField dataField, String nullFormat, int index,
+      boolean isEmptyBadRecord) {
     this.nullFormat = nullFormat;
     this.column = dataField.getColumn();
     if (dataField.getDateFormat() != null && !dataField.getDateFormat().isEmpty()) {
@@ -49,6 +51,7 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
           .getDirectDictionaryGenerator(dataField.getColumn().getDataType());
     }
     this.index = index;
+    this.isEmptyBadRecord = isEmptyBadRecord;
   }
 
   @Override
@@ -65,10 +68,12 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
     } else {
       int key = directDictionaryGenerator.generateDirectSurrogateKey(value);
       if (key == 1) {
-        logHolder.setReason(
-            "The value " + " \"" + row.getString(index) + "\"" + " with column name " + column
-                .getColName() + " and column data type " + column.getDataType() + " is not a valid "
-                + column.getDataType() + " type.");
+        if ((value.length() > 0) || (value.length() == 0 && isEmptyBadRecord)) {
+          logHolder.setReason(
+              "The value " + " \"" + row.getString(index) + "\"" + " with column name " + column
+                  .getColName() + " and column data type " + column.getDataType()
+                  + " is not a valid " + column.getDataType() + " type.");
+        }
       }
       row.update(key, index);
     }

@@ -44,11 +44,15 @@ public class MeasureFieldConverterImpl implements FieldConverter {
 
   private String nullformat;
 
-  public MeasureFieldConverterImpl(DataField dataField, String nullformat, int index) {
+  private boolean isEmptyBadRecord;
+
+  public MeasureFieldConverterImpl(DataField dataField, String nullformat, int index,
+      boolean isEmptyBadRecord) {
     this.dataType = dataField.getColumn().getDataType();
     this.measure = (CarbonMeasure) dataField.getColumn();
     this.nullformat = nullformat;
     this.index = index;
+    this.isEmptyBadRecord = isEmptyBadRecord;
   }
 
   @Override
@@ -57,10 +61,17 @@ public class MeasureFieldConverterImpl implements FieldConverter {
     String value = row.getString(index);
     Object output;
     boolean isNull = CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(value);
-    if (value == null || value.length() == 0 || isNull) {
+    if (value == null || isNull) {
       logHolder.setReason(
           "The value " + " \"" + value + "\"" + " with column name " + measure.getColName()
               + " and column data type " + dataType + " is not a valid " + dataType + " type.");
+      row.update(null, index);
+    } else if (value.length() == 0) {
+      if (isEmptyBadRecord) {
+        logHolder.setReason(
+            "The value " + " \"" + value + "\"" + " with column name " + measure.getColName()
+                + " and column data type " + dataType + " is not a valid " + dataType + " type.");
+      }
       row.update(null, index);
     } else if (value.equals(nullformat)) {
       row.update(null, index);

@@ -215,6 +215,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
       parserSettings.getFormat().setComment(job.get(COMMENT, COMMENT_DEFAULT).charAt(0));
       parserSettings.setLineSeparatorDetectionEnabled(true);
       parserSettings.setNullValue("");
+      parserSettings.setEmptyValue("");
       parserSettings.setIgnoreLeadingWhitespaces(false);
       parserSettings.setIgnoreTrailingWhitespaces(false);
       parserSettings.setSkipEmptyLines(false);

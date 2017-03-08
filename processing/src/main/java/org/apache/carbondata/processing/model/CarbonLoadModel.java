@@ -141,6 +141,11 @@ public class CarbonLoadModel implements Serializable {
 
   private String carbondataFileName = "";
 
+  /**
+   * defines the string to specify whether empty data is good or bad
+   */
+  private String isEmptyDataBadRecord;
+
   public String getCarbondataFileName() {
     return carbondataFileName;
   }
@@ -387,6 +392,7 @@ public class CarbonLoadModel implements Serializable {
     copy.dictionaryServerHost = dictionaryServerHost;
     copy.dictionaryServerPort = dictionaryServerPort;
     copy.preFetch = preFetch;
+    copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
     return copy;
   }
 
@@ -437,6 +443,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.dictionaryServerHost = dictionaryServerHost;
     copyObj.dictionaryServerPort = dictionaryServerPort;
     copyObj.preFetch = preFetch;
+    copyObj.isEmptyDataBadRecord = isEmptyDataBadRecord;
     return copyObj;
   }
 
@@ -759,5 +766,13 @@ public class CarbonLoadModel implements Serializable {
 
   public void setDefaultDateFormat(String defaultDateFormat) {
     this.defaultDateFormat = defaultDateFormat;
+  }
+
+  public String getIsEmptyDataBadRecord() {
+    return isEmptyDataBadRecord;
+  }
+
+  public void setIsEmptyDataBadRecord(String isEmptyDataBadRecord) {
+    this.isEmptyDataBadRecord = isEmptyDataBadRecord;
   }
 }

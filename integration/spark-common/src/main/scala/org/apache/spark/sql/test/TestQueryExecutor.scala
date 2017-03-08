@@ -24,6 +24,8 @@ import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.util.Utils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * the sql executor of spark-common-test
@@ -50,7 +52,8 @@ object TestQueryExecutor {
   val timestampFormat = "dd-MM-yyyy"
 
   val INSTANCE = lookupQueryExecutor.newInstance().asInstanceOf[TestQueryExecutorRegister]
-
+  CarbonProperties.getInstance()
+    .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
   private def lookupQueryExecutor: Class[_] = {
     ServiceLoader.load(classOf[TestQueryExecutorRegister], Utils.getContextOrSparkClassLoader)
       .iterator().next().getClass
