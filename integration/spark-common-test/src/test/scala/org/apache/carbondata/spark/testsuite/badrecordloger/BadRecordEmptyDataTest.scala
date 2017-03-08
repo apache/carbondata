@@ -32,79 +32,26 @@ import org.apache.carbondata.core.util.CarbonProperties
  *
  *
  */
-class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
+class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
 
   override def beforeAll {
     try {
-      sql("drop table IF EXISTS sales")
-      sql("drop table IF EXISTS serializable_values")
-      sql("drop table IF EXISTS serializable_values_false")
-      sql("drop table IF EXISTS insufficientColumn")
-      sql("drop table IF EXISTS insufficientColumn_false")
       sql("drop table IF EXISTS emptyColumnValues")
       sql("drop table IF EXISTS emptyColumnValues_false")
       sql("drop table IF EXISTS empty_timestamp")
       sql("drop table IF EXISTS empty_timestamp_false")
       sql("drop table IF EXISTS dataloadOptionTests")
-      sql(
-        """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
-
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
           new File("./target/test/badRecords")
             .getCanonicalPath)
-
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-      var csvFilePath = s"$resourcesPath/badrecords/datasample.csv"
-      sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS"
-          +
-          "('bad_records_logger_enable'='true','bad_records_action'='redirect', 'DELIMITER'=" +
-          " ',', 'QUOTECHAR'= '\"')");
+      var csvFilePath = ""
 
-      // 1.0 "\N" which should be treated as NULL
-      // 1.1 Time stamp "\N" which should be treated as NULL
-      csvFilePath = s"$resourcesPath/badrecords/seriazableValue.csv"
-      sql(
-        """CREATE TABLE IF NOT EXISTS serializable_values(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'
-        """)
-      sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE serializable_values OPTIONS"
-          +
-          "('bad_records_logger_enable'='true', 'bad_records_action'='ignore', " +
-          "'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
-      // load with bad_records_logger_enable false
-      sql(
-        """CREATE TABLE IF NOT EXISTS serializable_values_false(ID BigInt, date Timestamp,
-           country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'
-        """)
-      sql(
-        "LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE serializable_values_false OPTIONS"
-        + "('bad_records_logger_enable'='false', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
-      // 2. insufficient columns - Bad records/Null value based on configuration
-      sql(
-        """CREATE TABLE IF NOT EXISTS insufficientColumn(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'
-        """)
-      csvFilePath = s"$resourcesPath/badrecords/insufficientColumns.csv"
-      sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE insufficientColumn OPTIONS"
-          +
-          "('bad_records_logger_enable'='true', 'bad_records_action'='ignore', " +
-          "'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
-      // load with bad_records_logger_enable false
-      sql(
-        """CREATE TABLE IF NOT EXISTS insufficientColumn_false(ID BigInt, date Timestamp, country
-            String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'
-        """)
-      sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE insufficientColumn_false OPTIONS"
-          + "('bad_records_logger_enable'='false', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
-
-      // 3. empty data for string data type - take empty value
-      // 4. empty data for non-string data type - Bad records/Null value based on configuration
+      // 1. empty data for string data type - take empty value
+      // 2. empty data for non-string data type - Bad records/Null value based on configuration
       //table should have only two records.
       sql(
         """CREATE TABLE IF NOT EXISTS emptyColumnValues(ID BigInt, date Timestamp, country String,
@@ -113,7 +60,7 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
       csvFilePath = s"$resourcesPath/badrecords/emptyValues.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE emptyColumnValues OPTIONS"
           +
-          "('bad_records_logger_enable'='true','IS_EMPTY_DATA_BAD_RECORD'='true'," +
+          "('bad_records_logger_enable'='true','IS_EMPTY_DATA_BAD_RECORD'='false'," +
           " 'bad_records_action'='ignore', " +
           "'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
       // load with bad_records_logger_enable to false
@@ -138,7 +85,7 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
       csvFilePath = s"$resourcesPath/badrecords/emptyTimeStampValue.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE empty_timestamp OPTIONS"
           +
-          "('bad_records_logger_enable'='true','IS_EMPTY_DATA_BAD_RECORD'='true' ," +
+          "('bad_records_logger_enable'='true','IS_EMPTY_DATA_BAD_RECORD'='false' ," +
           "'bad_records_action'='ignore', " +
           "'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
       // load with bad_records_logger_enable to false
@@ -149,7 +96,8 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
         """)
       csvFilePath = s"$resourcesPath/badrecords/emptyTimeStampValue.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE empty_timestamp_false OPTIONS"
-          + "('bad_records_logger_enable'='false', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
+          + "('bad_records_logger_enable'='false','IS_EMPTY_DATA_BAD_RECORD'='false'," +
+          " 'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
 
 
     } catch {
@@ -158,59 +106,18 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("select count(*) from sales") {
-    checkAnswer(
-      sql("select count(*) from sales"),
-      Seq(Row(2)
-      )
-    )
-  }
-
-  test("select count(*) from serializable_values") {
-    checkAnswer(
-      sql("select count(*) from serializable_values"),
-      Seq(Row(2)
-      )
-    )
-  }
-
-  test("select count(*) from serializable_values_false") {
-    checkAnswer(
-      sql("select count(*) from serializable_values_false"),
-      Seq(Row(2)
-      )
-    )
-  }
-
-  test("select count(*) from empty_timestamp") {
+   test("select count(*) from empty_timestamp") {
     checkAnswer(
       sql("select count(*) from empty_timestamp"),
-      Seq(Row(1)
+      Seq(Row(2)
       )
     )
   }
-
-  test("select count(*) from insufficientColumn") {
-    checkAnswer(
-      sql("select count(*) from insufficientColumn"),
-      Seq(Row(1)
-      )
-    )
-  }
-
-  test("select count(*) from insufficientColumn_false") {
-    checkAnswer(
-      sql("select count(*) from insufficientColumn_false"),
-      Seq(Row(3)
-      )
-    )
-  }
-
 
   test("select count(*) from emptyColumnValues") {
     checkAnswer(
       sql("select count(*) from emptyColumnValues"),
-      Seq(Row(2)
+      Seq(Row(7)
       )
     )
   }
@@ -240,20 +147,15 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
     val csvFilePath = s"$resourcesPath/badrecords/emptyTimeStampValue.csv"
     try {
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE dataloadOptionTests OPTIONS"
-          + "('bad_records_action'='FORCA', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
+          + "('IS_EMPTY_DATA_BAD_RECORD'='xyz', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')");
     } catch {
       case ex: Exception =>
-        assert("option BAD_RECORDS_ACTION can have only either FORCE or IGNORE or REDIRECT"
+        assert("option IS_EMPTY_DATA_BAD_RECORD can have option either true or false"
           .equals(ex.getMessage))
     }
   }
 
   override def afterAll {
-    sql("drop table sales")
-    sql("drop table serializable_values")
-    sql("drop table serializable_values_false")
-    sql("drop table insufficientColumn")
-    sql("drop table insufficientColumn_false")
     sql("drop table emptyColumnValues")
     sql("drop table emptyColumnValues_false")
     sql("drop table empty_timestamp")

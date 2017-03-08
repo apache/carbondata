@@ -84,6 +84,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val SERIALIZATION_NULL_FORMAT = carbonKeyWord("SERIALIZATION_NULL_FORMAT")
   protected val BAD_RECORDS_LOGGER_ENABLE = carbonKeyWord("BAD_RECORDS_LOGGER_ENABLE")
   protected val BAD_RECORDS_ACTION = carbonKeyWord("BAD_RECORDS_ACTION")
+  protected val IS_EMPTY_DATA_BAD_RECORD = carbonKeyWord("IS_EMPTY_DATA_BAD_RECORD")
+  protected val IS_EMPTY_COMMA_DATA_BAD_RECORD = carbonKeyWord("IS_NULL_DATA_BAD_RECORD")
   protected val FILES = carbonKeyWord("FILES")
   protected val FROM = carbonKeyWord("FROM")
   protected val HIERARCHIES = carbonKeyWord("HIERARCHIES")
@@ -750,7 +752,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       "COMPLEX_DELIMITER_LEVEL_1", "COMPLEX_DELIMITER_LEVEL_2", "COLUMNDICT",
       "SERIALIZATION_NULL_FORMAT", "BAD_RECORDS_LOGGER_ENABLE", "BAD_RECORDS_ACTION",
       "ALL_DICTIONARY_PATH", "MAXCOLUMNS", "COMMENTCHAR", "USE_KETTLE", "DATEFORMAT",
-      "SINGLE_PASS"
+      "SINGLE_PASS", "IS_EMPTY_DATA_BAD_RECORD"
     )
     var isSupported = true
     val invalidOptions = StringBuilder.newBuilder
@@ -795,6 +797,13 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         case e: IllegalArgumentException =>
           throw new MalformedCarbonCommandException(
             "option BAD_RECORDS_ACTION can have only either FORCE or IGNORE or REDIRECT")
+      }
+    }
+    if (options.exists(_._1.equalsIgnoreCase("IS_EMPTY_DATA_BAD_RECORD"))) {
+      val optionValue: String = options.get("is_empty_data_bad_record").get.head._2
+      if (!("true".equalsIgnoreCase(optionValue) || "false".equalsIgnoreCase(optionValue))) {
+        throw new MalformedCarbonCommandException(
+          "option IS_EMPTY_DATA_BAD_RECORD can have option either true or false")
       }
     }
 

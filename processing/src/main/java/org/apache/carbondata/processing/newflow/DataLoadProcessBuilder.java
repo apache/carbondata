@@ -130,6 +130,8 @@ public final class DataLoadProcessBuilder {
         loadModel.getBadRecordsLoggerEnable().split(",")[1]);
     configuration.setDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ACTION,
         loadModel.getBadRecordsAction().split(",")[1]);
+    configuration.setDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD,
+        loadModel.getIsEmptyDataBadRecord().split(",")[1]);
     configuration.setDataLoadProperty(DataLoadProcessorConstants.FACT_FILE_PATH,
         loadModel.getFactFilePath());
     if (CarbonMetadata.getInstance().getCarbonTable(carbonTable.getTableUniqueName()) == null) {
