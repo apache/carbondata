@@ -103,7 +103,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     byte[][] complexTypeKeyArray;
 
     DirectDictionaryGenerator[] directDictionaryGenerators = new DirectDictionaryGenerator[dimSize];
-    for (int i = 0; i < dimSize; i++){
+    for (int i = 0; i < dimSize; i++) {
       directDictionaryGenerators[i] = DirectDictionaryKeyGeneratorFactory
               .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
     }
