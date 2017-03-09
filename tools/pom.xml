@@ -31,7 +31,7 @@
     <name>Apache CarbonData :: Tools</name>
 
     <properties>
-        <dev.path>${basedir}/../../dev</dev.path>
+        <dev.path>${basedir}/../dev</dev.path>
         <scala.version>2.11.8</scala.version>
         <spark.version>2.1.0</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
@@ -42,6 +42,17 @@
             <groupId>org.apache.carbondata</groupId>
             <artifactId>carbondata-common</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.carbondata</groupId>
+            <artifactId>carbondata-core</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.spark</groupId>
+                    <artifactId>spark-sql_2.10</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>

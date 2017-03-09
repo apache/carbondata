@@ -2,12 +2,14 @@ package org.apache.carbondata
 
 import org.apache.carbondata.cardinality.{CardinalityMatrix, CardinalityProcessor}
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.dictionary.CarbonTableUtil
 import org.apache.carbondata.exception.InvalidParameterException
 
 trait ProcessCaller {
 
   val loadHandler: LoadHandler
   val cardinalityProcessor: CardinalityProcessor
+  val carbonTableUtil: CarbonTableUtil
 
   def startProcess(args: Array[String]): List[CardinalityMatrix] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
@@ -19,12 +21,17 @@ trait ProcessCaller {
       val (dataFrame, arguments) = loadHandler.getDataFrameAndArguments(args)
 
       cardinalityProcessor.getCardinalityMatrix(dataFrame, arguments)
+      val cardinalityMatrix = cardinalityProcessor.getCardinalityMatrix(dataFrame, arguments)
+      carbonTableUtil.createDictionary(cardinalityMatrix, dataFrame)
+      LOGGER.info("Dictionary created successfully.")
+      cardinalityMatrix
     }
   }
 
 }
 
-object ProcessCaller extends ProcessCaller{
+object ProcessCaller extends ProcessCaller {
   val loadHandler: LoadHandler = LoadHandler
   val cardinalityProcessor: CardinalityProcessor = CardinalityProcessor
+  val carbonTableUtil: CarbonTableUtil = CarbonTableUtil
 }

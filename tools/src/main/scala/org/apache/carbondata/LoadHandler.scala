@@ -3,6 +3,7 @@ package org.apache.carbondata
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.carbondata.dictionary.CarbonTableUtil
 
 case class CommandLineArguments(inputPath: String, fileHeaders: Option[List[String]] = None, delimiter: String = ",", quoteCharacter: String = "\"",
                                 badRecordAction: String = "IGNORE")
