@@ -35,7 +35,6 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-
 /**
  * It is not a collector it is just a scanned result holder.
  */
