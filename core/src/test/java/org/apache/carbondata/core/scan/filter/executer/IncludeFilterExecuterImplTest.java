@@ -28,272 +28,264 @@ import junit.framework.TestCase;
 
 public class IncludeFilterExecuterImplTest extends TestCase {
 
-	/**
-	 * @throws Exception
-	 */
-	@Before
-	public void setUp() throws Exception {
+  /**
+   * @throws Exception
+   */
+  @Before
+  public void setUp() throws Exception {
 
-	}
+  }
 
-	private BitSet setFilterdIndexToBitSetNew(DimensionColumnDataChunk dimensionColumnDataChunk, int numerOfRows,
-			byte[][] filterValues) {
-		BitSet bitSet = new BitSet(numerOfRows);
-		if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
-			// byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-			for (int i = 0; i < numerOfRows; i++) {
+  private BitSet setFilterdIndexToBitSetNew(DimensionColumnDataChunk dimensionColumnDataChunk, int numerOfRows,
+      byte[][] filterValues) {
+    BitSet bitSet = new BitSet(numerOfRows);
+    if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
+      // byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+      for (int i = 0; i < numerOfRows; i++) {
 
-				int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length,
-						dimensionColumnDataChunk.getChunkData(i));
+        int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length,
+            dimensionColumnDataChunk.getChunkData(i));
 
-				if (index >= 0) {
-					bitSet.set(i);
-				}
+        if (index >= 0) {
+          bitSet.set(i);
+        }
 
-			}
-		}
-		return bitSet;
-	}
+      }
+    }
+    return bitSet;
+  }
 
-	private BitSet setFilterdIndexToBitSet(DimensionColumnDataChunk dimensionColumnDataChunk, int numerOfRows,
-			byte[][] filterValues) {
-		BitSet bitSet = new BitSet(numerOfRows);
-		if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
-			// byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-			for (int k = 0; k < filterValues.length; k++) {
-				for (int j = 0; j < numerOfRows; j++) {
-					if (dimensionColumnDataChunk.compareTo(j, filterValues[k]) == 0) {
-						bitSet.set(j);
-					}
-				}
-			}
-		}
-		return bitSet;
-	}
+  private BitSet setFilterdIndexToBitSet(DimensionColumnDataChunk dimensionColumnDataChunk, int numerOfRows,
+      byte[][] filterValues) {
+    BitSet bitSet = new BitSet(numerOfRows);
+    if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
+      // byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+      for (int k = 0; k < filterValues.length; k++) {
+        for (int j = 0; j < numerOfRows; j++) {
+          if (dimensionColumnDataChunk.compareTo(j, filterValues[k]) == 0) {
+            bitSet.set(j);
+          }
+        }
+      }
+    }
+    return bitSet;
+  }
 
-	/**
-	 * short int to byte
-	 * 
-	 * @param s
-	 *            short int
-	 * @return byte[]
-	 */
-	private byte[] unsignedShortToByte2(int s) {
-		byte[] targets = new byte[2];
-		targets[0] = (byte) (s >> 8 & 0xFF);
-		targets[1] = (byte) (s & 0xFF);
-		return targets;
-	}
+  /**
+   * short int to byte
+   * 
+   * @param s
+   *          short int
+   * @return byte[]
+   */
+  private byte[] unsignedShortToByte2(int s) {
+    byte[] targets = new byte[2];
+    targets[0] = (byte) (s >> 8 & 0xFF);
+    targets[1] = (byte) (s & 0xFF);
+    return targets;
+  }
 
-	@Test
-	public void testPerformance() {
+  @Test
+  public void testPerformance() {
 
-		long oldTime = 0;
-		long newTime = 0;
-		long start;
-		int dataCnt = 120000;
-		int filterCnt = 800;
-		int queryCnt = 5;
-		int repeatCnt = 20;
-		byte[] keyWord = new byte[2];
-		FixedLengthDimensionDataChunk dimensionColumnDataChunk;
-		DimColumnExecuterFilterInfo dim = new DimColumnExecuterFilterInfo();
+    long oldTime = 0;
+    long newTime = 0;
+    long start;
+    int dataCnt = 120000;
+    int filterCnt = 800;
+    int queryCnt = 5;
+    int repeatCnt = 20;
+    byte[] keyWord = new byte[2];
+    FixedLengthDimensionDataChunk dimensionColumnDataChunk;
+    DimColumnExecuterFilterInfo dim = new DimColumnExecuterFilterInfo();
 
-		byte[] dataChunk = new byte[dataCnt * keyWord.length];
-		for (int i = 0; i < dataCnt; i++) {
+    byte[] dataChunk = new byte[dataCnt * keyWord.length];
+    for (int i = 0; i < dataCnt; i++) {
 
-			if (i % repeatCnt == 0) {
-				repeatCnt++;
-			}
+      if (i % repeatCnt == 0) {
+        repeatCnt++;
+      }
 
-			byte[] data = unsignedShortToByte2(repeatCnt);
-			dataChunk[2 * i] = data[0];
-			dataChunk[2 * i + 1] = data[1];
+      byte[] data = unsignedShortToByte2(repeatCnt);
+      dataChunk[2 * i] = data[0];
+      dataChunk[2 * i + 1] = data[1];
 
-		}
+    }
 
-		byte[][] filterKeys = new byte[filterCnt][2];
-		for (int ii = 0; ii < filterCnt; ii++) {
-			filterKeys[ii] = unsignedShortToByte2(100 + ii);
-		}
-		dim.setFilterKeys(filterKeys);
+    byte[][] filterKeys = new byte[filterCnt][2];
+    for (int ii = 0; ii < filterCnt; ii++) {
+      filterKeys[ii] = unsignedShortToByte2(100 + ii);
+    }
+    dim.setFilterKeys(filterKeys);
 
-		dimensionColumnDataChunk = new FixedLengthDimensionDataChunk(dataChunk, null, null,
-				dataChunk.length / keyWord.length, keyWord.length);
+    dimensionColumnDataChunk = new FixedLengthDimensionDataChunk(dataChunk, null, null,
+        dataChunk.length / keyWord.length, keyWord.length);
 
-		for (int j = 0; j < queryCnt; j++) {
+    for (int j = 0; j < queryCnt; j++) {
 
-			start = System.currentTimeMillis();
-			BitSet bitOld = this.setFilterdIndexToBitSet(dimensionColumnDataChunk, dataCnt, filterKeys);
-			oldTime = oldTime + System.currentTimeMillis() - start;
+      start = System.currentTimeMillis();
+      BitSet bitOld = this.setFilterdIndexToBitSet(dimensionColumnDataChunk, dataCnt, filterKeys);
+      oldTime = oldTime + System.currentTimeMillis() - start;
 
-			start = System.currentTimeMillis();
-			BitSet bitNew = this.setFilterdIndexToBitSetNew((FixedLengthDimensionDataChunk) dimensionColumnDataChunk,
-					dataCnt, filterKeys);
-			newTime = newTime + System.currentTimeMillis() - start;
+      start = System.currentTimeMillis();
+      BitSet bitNew = this.setFilterdIndexToBitSetNew((FixedLengthDimensionDataChunk) dimensionColumnDataChunk, dataCnt,
+          filterKeys);
+      newTime = newTime + System.currentTimeMillis() - start;
 
-			assertTrue(bitOld.equals(bitNew));
+      assertTrue(bitOld.equals(bitNew));
 
-		}
+    }
 
-		assertTrue(newTime < oldTime);
+    assertTrue(newTime < oldTime);
 
-		System.out.println("old code performance time: " + oldTime);
-		System.out.println("new code performance time: " + newTime);
+    System.out.println("old code performance time: " + oldTime);
+    System.out.println("new code performance time: " + newTime);
 
-	}
-	
-	
-	  private BitSet setFilterdIndexToBitSetWithColumnIndex(
-		      FixedLengthDimensionDataChunk dimensionColumnDataChunk, int numerOfRows,byte[][] filterValues) {
-		    BitSet bitSet = new BitSet(numerOfRows);
-		    int start = 0;
-		    int last = 0;
-		    int startIndex = 0;
-		    //byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-		    for (int i = 0; i < filterValues.length; i++) {
-		      start = CarbonUtil
-		          .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-		              filterValues[i], false);
-		      if (start < 0) {
-		        continue;
-		      }
-		      bitSet.set(start);
-		      last = start;
-		      for (int j = start + 1; j < numerOfRows; j++) {
-		        if (dimensionColumnDataChunk.compareTo(j, filterValues[i]) == 0) {
-		          bitSet.set(j);
-		          last++;
-		        } else {
-		          break;
-		        }
-		      }
-		      startIndex = last;
-		      if (startIndex >= numerOfRows) {
-		        break;
-		      }
-		    }
-		    return bitSet;
-		  }
-	 
-	  
-	  
-	  private BitSet setFilterdIndexToBitSetWithColumnIndexOld(
-		      FixedLengthDimensionDataChunk dimensionColumnDataChunk, int numerOfRows,byte[][] filterValues) {
-		    BitSet bitSet = new BitSet(numerOfRows);
-		    int start = 0;
-		    int last = 0;
-		    int startIndex = 0;
-		    //byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-		    for (int i = 0; i < filterValues.length; i++) {
-		      start = CarbonUtil
-		          .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-		              filterValues[i], false);
-		      if (start < 0) {
-		        continue;
-		      }
-		      bitSet.set(start);
-		      last = start;
-		      for (int j = start + 1; j < numerOfRows; j++) {
-		        if (dimensionColumnDataChunk.compareTo(j, filterValues[i]) == 0) {
-		          bitSet.set(j);
-		          last++;
-		        } else {
-		          break;
-		        }
-		      }
-		      startIndex = last;
-		      if (startIndex >= numerOfRows) {
-		        break;
-		      }
-		    }
-		    return bitSet;
-		  }
+  }
 
-		  private BitSet setFilterdIndexToBitSetWithColumnIndexNew(
-			      FixedLengthDimensionDataChunk dimensionColumnDataChunk, int numerOfRows, byte[][] filterValues ) {
-			    BitSet bitSet = new BitSet(numerOfRows);
-			    int startIndex = 0;
-			    //byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-			    for (int i = 0; i < filterValues.length; i++) {
-					int[] rangeIndex = CarbonUtil.getRangeIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-							filterValues[i]);
-					for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
+  private BitSet setFilterdIndexToBitSetWithColumnIndex(FixedLengthDimensionDataChunk dimensionColumnDataChunk,
+      int numerOfRows, byte[][] filterValues) {
+    BitSet bitSet = new BitSet(numerOfRows);
+    int start = 0;
+    int last = 0;
+    int startIndex = 0;
+    // byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+    for (int i = 0; i < filterValues.length; i++) {
+      start = CarbonUtil.getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
+          filterValues[i], false);
+      if (start < 0) {
+        continue;
+      }
+      bitSet.set(start);
+      last = start;
+      for (int j = start + 1; j < numerOfRows; j++) {
+        if (dimensionColumnDataChunk.compareTo(j, filterValues[i]) == 0) {
+          bitSet.set(j);
+          last++;
+        } else {
+          break;
+        }
+      }
+      startIndex = last;
+      if (startIndex >= numerOfRows) {
+        break;
+      }
+    }
+    return bitSet;
+  }
 
-						bitSet.set(j);
-					}
+  private BitSet setFilterdIndexToBitSetWithColumnIndexOld(FixedLengthDimensionDataChunk dimensionColumnDataChunk,
+      int numerOfRows, byte[][] filterValues) {
+    BitSet bitSet = new BitSet(numerOfRows);
+    int start = 0;
+    int last = 0;
+    int startIndex = 0;
+    // byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+    for (int i = 0; i < filterValues.length; i++) {
+      start = CarbonUtil.getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
+          filterValues[i], false);
+      if (start < 0) {
+        continue;
+      }
+      bitSet.set(start);
+      last = start;
+      for (int j = start + 1; j < numerOfRows; j++) {
+        if (dimensionColumnDataChunk.compareTo(j, filterValues[i]) == 0) {
+          bitSet.set(j);
+          last++;
+        } else {
+          break;
+        }
+      }
+      startIndex = last;
+      if (startIndex >= numerOfRows) {
+        break;
+      }
+    }
+    return bitSet;
+  }
 
-					if (rangeIndex[1] > -1) {
-						startIndex = rangeIndex[1];
-					}
-			    }
-			    return bitSet;
-			  }
-		  
-		  
-		  @Test
-			public void testRangBinarySearch() {
+  private BitSet setFilterdIndexToBitSetWithColumnIndexNew(FixedLengthDimensionDataChunk dimensionColumnDataChunk,
+      int numerOfRows, byte[][] filterValues) {
+    BitSet bitSet = new BitSet(numerOfRows);
+    int startIndex = 0;
+    // byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+    for (int i = 0; i < filterValues.length; i++) {
+      int[] rangeIndex = CarbonUtil.getRangeIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex,
+          numerOfRows - 1, filterValues[i]);
+      for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
 
-				long oldTime = 0;
-				long newTime = 0;
-				long start;
-				long end;
-				int dataCnt = 120000;
-				int filterCnt = 800;
-				int queryCnt = 10000;
-				int repeatCnt = 200;
-				byte[] keyWord = new byte[2];
-				FixedLengthDimensionDataChunk dimensionColumnDataChunk;
-				DimColumnExecuterFilterInfo dim = new DimColumnExecuterFilterInfo();
+        bitSet.set(j);
+      }
 
-				byte[] dataChunk = new byte[dataCnt * keyWord.length];
-				for (int i = 0; i < dataCnt; i++) {
+      if (rangeIndex[1] > -1) {
+        startIndex = rangeIndex[1];
+      }
+    }
+    return bitSet;
+  }
 
-					if (i % repeatCnt == 0) {
-						repeatCnt++;
-					}
+  @Test
+  public void testRangBinarySearch() {
 
-					byte[] data = unsignedShortToByte2(repeatCnt);
-					dataChunk[2 * i] = data[0];
-					dataChunk[2 * i + 1] = data[1];
+    long oldTime = 0;
+    long newTime = 0;
+    long start;
+    long end;
+    int dataCnt = 120000;
+    int filterCnt = 800;
+    int queryCnt = 10000;
+    int repeatCnt = 200;
+    byte[] keyWord = new byte[2];
+    FixedLengthDimensionDataChunk dimensionColumnDataChunk;
+    DimColumnExecuterFilterInfo dim = new DimColumnExecuterFilterInfo();
 
-				}
+    byte[] dataChunk = new byte[dataCnt * keyWord.length];
+    for (int i = 0; i < dataCnt; i++) {
 
-				byte[][] filterKeys = new byte[filterCnt][2];
-				for (int ii = 0; ii < filterCnt; ii++) {
-					filterKeys[ii] = unsignedShortToByte2(100 + ii);
-				}
-				dim.setFilterKeys(filterKeys);
+      if (i % repeatCnt == 0) {
+        repeatCnt++;
+      }
 
-				dimensionColumnDataChunk = new FixedLengthDimensionDataChunk(dataChunk, null, null,
-						dataChunk.length / keyWord.length, keyWord.length);
+      byte[] data = unsignedShortToByte2(repeatCnt);
+      dataChunk[2 * i] = data[0];
+      dataChunk[2 * i + 1] = data[1];
 
-				// initial  to run
-				BitSet bitOld = this.setFilterdIndexToBitSetWithColumnIndexOld(dimensionColumnDataChunk, dataCnt, filterKeys);
-				BitSet bitNew = this.setFilterdIndexToBitSetWithColumnIndexNew(dimensionColumnDataChunk, dataCnt, filterKeys);
+    }
 
-				
-				// performance run
-				for (int j = 0; j < queryCnt; j++) {
+    byte[][] filterKeys = new byte[filterCnt][2];
+    for (int ii = 0; ii < filterCnt; ii++) {
+      filterKeys[ii] = unsignedShortToByte2(100 + ii);
+    }
+    dim.setFilterKeys(filterKeys);
 
-					start = System.currentTimeMillis();
-					bitOld = this.setFilterdIndexToBitSetWithColumnIndexOld(dimensionColumnDataChunk, dataCnt, filterKeys);
-					end = System.currentTimeMillis();
-					oldTime = oldTime + end - start;
-		
-					start = System.currentTimeMillis();
-					bitNew = this.setFilterdIndexToBitSetWithColumnIndexNew(dimensionColumnDataChunk, dataCnt, filterKeys);
-					end = System.currentTimeMillis();
-					newTime = newTime + end - start;
+    dimensionColumnDataChunk = new FixedLengthDimensionDataChunk(dataChunk, null, null,
+        dataChunk.length / keyWord.length, keyWord.length);
 
-					assertTrue(bitOld.equals(bitNew));
+    // initial to run
+    BitSet bitOld = this.setFilterdIndexToBitSetWithColumnIndexOld(dimensionColumnDataChunk, dataCnt, filterKeys);
+    BitSet bitNew = this.setFilterdIndexToBitSetWithColumnIndexNew(dimensionColumnDataChunk, dataCnt, filterKeys);
 
-				}
+    // performance run
+    for (int j = 0; j < queryCnt; j++) {
 
+      start = System.currentTimeMillis();
+      bitOld = this.setFilterdIndexToBitSetWithColumnIndexOld(dimensionColumnDataChunk, dataCnt, filterKeys);
+      end = System.currentTimeMillis();
+      oldTime = oldTime + end - start;
 
-				System.out.println("old code performance time: " + oldTime);
-				System.out.println("new code performance time: " + newTime);
+      start = System.currentTimeMillis();
+      bitNew = this.setFilterdIndexToBitSetWithColumnIndexNew(dimensionColumnDataChunk, dataCnt, filterKeys);
+      end = System.currentTimeMillis();
+      newTime = newTime + end - start;
 
-			}
+      assertTrue(bitOld.equals(bitNew));
+
+    }
+
+    System.out.println("old code performance time: " + oldTime);
+    System.out.println("new code performance time: " + newTime);
+
+  }
 
 }
