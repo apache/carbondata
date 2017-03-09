@@ -123,7 +123,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
           startIndex, numerOfRows - 1, filterValues[i]);
       for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
 
-        bitSet.set(j);
+        bitSet.set(dimensionColumnDataChunk.getInvertedIndex(j));
       }
 
       if (rangeIndex[1] >= 0) {
