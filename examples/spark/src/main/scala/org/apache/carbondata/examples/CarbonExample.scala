@@ -49,7 +49,7 @@ object CarbonExample {
            LOAD DATA LOCAL INPATH '$testData' into table t3
            """)
 
-    // Perform a query
+ /*   // Perform a query
     cc.sql("""
            SELECT country, count(salary) AS amount
            FROM t3
@@ -72,7 +72,7 @@ object CarbonExample {
            """).show()
 
     // Drop table
-    cc.sql("DROP TABLE IF EXISTS t3")
+    cc.sql("DROP TABLE IF EXISTS t3")*/
   }
 
 }
