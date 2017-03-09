@@ -74,6 +74,7 @@ import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -417,9 +418,9 @@ public final class CarbonUtil {
     }
     return -(low + 1);
   }
-  
-  public static int[] getRangeIndexUsingBinarySearch(FixedLengthDimensionDataChunk dimColumnDataChunk, int low,
-      int high, byte[] compareValue) {
+
+  public static int[] getRangeIndexUsingBinarySearch(
+      FixedLengthDimensionDataChunk dimColumnDataChunk, int low, int high, byte[] compareValue) {
 
     int[] rangeIndex = new int[2];
     int cmpResult = 0;
@@ -433,13 +434,15 @@ public final class CarbonUtil {
       } else {
 
         int currentIndex = mid;
-        while (currentIndex - 1 >= 0 && dimColumnDataChunk.compareTo(currentIndex - 1, compareValue) == 0) {
+        while (currentIndex - 1 >= 0
+            && dimColumnDataChunk.compareTo(currentIndex - 1, compareValue) == 0) {
           --currentIndex;
         }
         rangeIndex[0] = currentIndex;
 
         currentIndex = mid;
-        while (currentIndex + 1 <= high && dimColumnDataChunk.compareTo(currentIndex + 1, compareValue) == 0) {
+        while (currentIndex + 1 <= high
+            && dimColumnDataChunk.compareTo(currentIndex + 1, compareValue) == 0) {
           currentIndex++;
         }
         rangeIndex[1] = currentIndex;
@@ -469,14 +472,15 @@ public final class CarbonUtil {
 
   /**
    * search a specific key in sorted byte array
-   * 
+   *
    * @param filterValues
    * @param fromIndex
    * @param toIndex
    * @param keyWord
    * @return the keyWord's index in the filterValues
    */
-  public static int binarySearch(byte[][] filterValues, int fromIndex, int toIndex, byte[] keyWord) {
+  public static int binarySearch(byte[][] filterValues, int fromIndex, int toIndex,
+      byte[] keyWord) {
 
     rangeCheck(fromIndex, toIndex);
 
@@ -488,11 +492,11 @@ public final class CarbonUtil {
 
       int result = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[mid], keyWord);
 
-      if (result < 0)
+      if (result < 0) {
         low = mid + 1;
-      else if (result > 0)
+      } else if (result > 0) {
         high = mid - 1;
-      else {
+      } else {
 
         return mid; // key found
       }
