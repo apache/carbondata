@@ -102,10 +102,10 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     String[] noDictionaryKeys;
     byte[][] complexTypeKeyArray;
 
-    ArrayList<DirectDictionaryGenerator> directDictionaryGenerators = new ArrayList<>(dimSize);
+    DirectDictionaryGenerator[] directDictionaryGenerators = new DirectDictionaryGenerator[dimSize];
     for (int i = 0; i < dimSize; i++){
-      directDictionaryGenerators.add(DirectDictionaryKeyGeneratorFactory
-              .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType()));
+      directDictionaryGenerators[i] = DirectDictionaryKeyGeneratorFactory
+              .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
     }
     while (scannedResult.hasNext() && rowCounter < batchSize) {
       Object[] row = new Object[dimSize + queryMeasures.length];
@@ -134,8 +134,8 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
                       queryDimensions[i].getDimension().getDataType());
             }
           } else if (directDictionaryEncodingArray[i]) {
-            if (directDictionaryGenerators.get(i) != null) {
-              row[order[i]] = directDictionaryGenerators.get(i).getValueFromSurrogate(
+            if (directDictionaryGenerators[i] != null) {
+              row[order[i]] = directDictionaryGenerators[i].getValueFromSurrogate(
                   surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]]);
             }
           } else if (complexDataTypeArray[i]) {
