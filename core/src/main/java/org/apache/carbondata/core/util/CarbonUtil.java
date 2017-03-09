@@ -432,57 +432,7 @@ public final class CarbonUtil {
 	      } else if (cmpResult > 0) {
 	        high = mid - 1;
 	      } else {
-	        
-/*	        int currentLow = mid;
-	        int currentHigh = mid;
-	        int currentMid;
-	        
-	        
-	        while (currentLow <= high) {
-	        	currentMid = (currentLow + high) >>> 1;
-
-				int result1 = dimColumnDataChunk.compareTo(currentMid, compareValue);//ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataChunk, mid * keyLength, keyLength, keyWord, 0, keyLength);
-
-	
-					if (result1 == 0) {
-
-						currentLow = currentMid + 1;
-					} else if (result1 > 0) {
-
-						high = currentMid - 1;
-						int result2 = dimColumnDataChunk.compareTo(high, compareValue);//ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataChunk, high * keyLength, keyLength, keyWord, 0, keyLength);
-						if (result2 == 0) {
-							rangeIndex[1] = high;
-						}
-					} else {
-						throw new UnsupportedOperationException();
-					}
-	        }	
-	        
-	
-	        
-			while (low <= currentHigh) {
-				currentMid = (currentLow + high) >>> 1;
-
-				int result1 = dimColumnDataChunk.compareTo(currentMid, compareValue);//ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataChunk, mid * keyLength, keyLength, keyWord, 0, keyLength);
-
-
-					if (result1 == 0) {
-
-						currentHigh = mid - 1;
-					} else if (result1 < 0) {
-						low = currentMid + 1;
-						int result2 = dimColumnDataChunk.compareTo(low, compareValue);//ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataChunk, low * keyLength, keyLength, keyWord, 0, keyLength);
-						if (result2 == 0) {
-							rangeIndex[1] = low;
-						}
-					} else {
-						throw new UnsupportedOperationException();
-					}
-
-				
-			}*/
-					
+	        		
 	    	int currentIndex = mid;          
 	        while (currentIndex - 1 >= 0
 		              && dimColumnDataChunk.compareTo(currentIndex - 1, compareValue) == 0) {
@@ -502,7 +452,7 @@ public final class CarbonUtil {
 	    }
 	    
 		// key not found. return a not exist range
-		rangeIndex[0] = 0;
+		//rangeIndex[0] = 0;
 		rangeIndex[1] = -1;
 		return rangeIndex;
 	  }
@@ -522,161 +472,13 @@ public final class CarbonUtil {
 	}
 	
 	/**
-	 * search a specific key's range boundary in sorted byte array
+	 * search a specific key in sorted byte array
 	 * 
-	 * @param dimColumnDataChunk
+	 * @param filterValues
 	 * @param fromIndex
 	 * @param toIndex
-	 *            it's max value should be word Number in dataChunk, equal to indataChunk.length/keyWord.length
 	 * @param keyWord
-	 * @return int[] contains a range's lower boundary and upper boundary
-	 */
-	public static int[] binaryRangeSearch(DimensionColumnDataChunk dimColumnDataChunk, int fromIndex, int toIndex, byte[] keyWord) {
-
-
-	
-		//rangeCheck(fromIndex, toIndex, keyLength);
-		
-		// reset to index =  word total number in the dataChunk
-		//toIndex = toIndex/keyWord.length;	
-		
-		int[] rangeIndex = new int[2];
-		int low = fromIndex;
-		int high = toIndex - 1;
-
-		while (low <= high) {
-			int mid = (low + high) >>> 1;
-
-			int result = dimColumnDataChunk.compareTo(mid, keyWord);//ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataChunk, mid * keyLength, keyLength, keyWord, 0, keyLength);
-
-			if (result < 0)
-				low = mid + 1;
-			else if (result > 0)
-				high = mid - 1;
-			else {
-				// key found  then find the range bound
-				rangeIndex[0] = binaryRangeBoundarySearch(dimColumnDataChunk, low, mid, keyWord, false);
-				rangeIndex[1] = binaryRangeBoundarySearch(dimColumnDataChunk, mid, high, keyWord, true);
-				return rangeIndex;
-			}
-
-		}
-		// key not found. return a not exist range
-		rangeIndex[0] = 0;
-		rangeIndex[1] = -1;
-		return rangeIndex;
-	}
-
-/**
-* use to search a specific keyword's lower boundary and upper boundary according to upFindFlg
-* @param dimColumnDataChunk
-* @param fromIndex
-* @param toIndex
-* @param keyWord
-* @param upFindFlg true:find upper boundary  false: find lower boundary
-* @return boundary index 
-*/
-	public static int binaryRangeBoundarySearch(DimensionColumnDataChunk dimColumnDataChunk, int fromIndex, int toIndex, byte[] keyWord, boolean upFindFlg) {
-		int low = fromIndex;
-		int high = toIndex;
-		//int keyLength = keyWord.length;
-
-		while (low <= high) {
-			int mid = (low + high) >>> 1;
-
-			int result1 = dimColumnDataChunk.compareTo(mid, keyWord);//ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataChunk, mid * keyLength, keyLength, keyWord, 0, keyLength);
-
-			if (upFindFlg) {
-				if (result1 == 0) {
-
-					low = mid + 1;
-				} else if (result1 > 0) {
-
-					high = mid - 1;
-					int result2 = dimColumnDataChunk.compareTo(high, keyWord);//ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataChunk, high * keyLength, keyLength, keyWord, 0, keyLength);
-					if (result2 == 0) {
-						return high;
-					}
-				} else {
-					throw new UnsupportedOperationException();
-				}
-			} else {
-
-				if (result1 == 0) {
-
-					high = mid - 1;
-				} else if (result1 < 0) {
-					low = mid + 1;
-					int result2 = dimColumnDataChunk.compareTo(low, keyWord);//ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataChunk, low * keyLength, keyLength, keyWord, 0, keyLength);
-					if (result2 == 0) {
-						return low;
-					}
-				} else {
-					throw new UnsupportedOperationException();
-				}
-
-			}
-		}
-		if (upFindFlg) {
-			return high;
-		} else {
-			return low;
-		}
-	}
-	
-	
-	/**
-	 * search a specific key's range boundary in sorted byte array
-	 * 
-	 * @param dimColumnDataChunk
-	 * @param fromIndex
-	 * @param toIndex
-	 *            it's max value should be word Number in dataChunk, equal to indataChunk.length/keyWord.length
-	 * @param keyWord
-	 * @return int[] contains a range's lower boundary and upper boundary
-	 */
-	public static int[] binaryRangeSearch(byte[][] filterValues, int fromIndex, int toIndex, byte[] keyWord) {
-
-		
-		int[] rangeIndex = new int[2];
-		int low = fromIndex;
-		int high = toIndex - 1;
-
-		while (low <= high) {
-			int mid = (low + high) >>> 1;
-
-			
-			int result = byteArryCompare(filterValues[mid], keyWord);//filterValues[mid].compare keyWord);//ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataChunk, mid * keyLength, keyLength, keyWord, 0, keyLength);
-
-			if (result < 0)
-				low = mid + 1;
-			else if (result > 0)
-				high = mid - 1;
-			else {
-				// key found  then find the range bound
-				rangeIndex[0] = binaryRangeBoundarySearch(filterValues, low, mid, keyWord, false);
-				rangeIndex[1] = binaryRangeBoundarySearch(filterValues, mid, high, keyWord, true);
-				return rangeIndex;
-			}
-
-		}
-		// key not found. return a not exist range
-		rangeIndex[0] = 0;
-		rangeIndex[1] = -1;
-		return rangeIndex;
-	}
-
-	
-	
-	/**
-	 * search a specific key's range boundary in sorted byte array
-	 * 
-	 * @param dimColumnDataChunk
-	 * @param fromIndex
-	 * @param toIndex
-	 *            it's max value should be word Number in dataChunk, equal to indataChunk.length/keyWord.length
-	 * @param keyWord
-	 * @return int[] contains a range's lower boundary and upper boundary
+	 * @return  the keyWord's index in the filterValues
 	 */
 	public static int binarySearch(byte[][] filterValues, int fromIndex, int toIndex, byte[] keyWord) {
   
@@ -704,76 +506,6 @@ public final class CarbonUtil {
 		return -(low + 1);
 	}
 
-	private static int byteArryCompare(byte[] filterValue, byte[] keyWord) {
-		int result = 0;
-		for(int i = 0 ; i< filterValue.length; i++){
-			
-			 result = Byte.compare(filterValue[i], keyWord[i]);
-
-			if(result != 0){
-				break;
-			}		
-		}
-		
-		return result;
-	}
-
-/**
-* use to search a specific keyword's lower boundary and upper boundary according to upFindFlg
-* @param dimColumnDataChunk
-* @param fromIndex
-* @param toIndex
-* @param keyWord
-* @param upFindFlg true:find upper boundary  false: find lower boundary
-* @return boundary index 
-*/
-	public static int binaryRangeBoundarySearch(byte[][] filterValues, int fromIndex, int toIndex, byte[] keyWord, boolean upFindFlg) {
-		int low = fromIndex;
-		int high = toIndex;
-
-		while (low <= high) {
-			int mid = (low + high) >>> 1;
-
-			int result1 = byteArryCompare(filterValues[mid], keyWord);
-			
-			
-			if (upFindFlg) {
-				if (result1 == 0) {
-
-					low = mid + 1;
-				} else if (result1 > 0) {
-
-					high = mid - 1;
-					int result2 = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[high], keyWord);
-					if (result2 == 0) {
-						return high;
-					}
-				} else {
-					throw new UnsupportedOperationException();
-				}
-			} else {
-
-				if (result1 == 0) {
-
-					high = mid - 1;
-				} else if (result1 < 0) {
-					low = mid + 1;
-					int result2 = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[low], keyWord);
-					if (result2 == 0) {
-						return low;
-					}
-				} else {
-					throw new UnsupportedOperationException();
-				}
-
-			}
-		}
-		if (upFindFlg) {
-			return high;
-		} else {
-			return low;
-		}
-	}
 
   /**
    * Method will identify the value which is lesser than the pivot element
