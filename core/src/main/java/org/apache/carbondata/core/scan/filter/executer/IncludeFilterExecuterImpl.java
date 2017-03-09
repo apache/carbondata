@@ -113,14 +113,14 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
 
   }
 
-  private BitSet setFilterdIndexToBitSetWithColumnIndex(FixedLengthDimensionDataChunk dimensionColumnDataChunk,
-      int numerOfRows) {
+  private BitSet setFilterdIndexToBitSetWithColumnIndex(
+      FixedLengthDimensionDataChunk dimensionColumnDataChunk, int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
     int startIndex = 0;
     byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
     for (int i = 0; i < filterValues.length; i++) {
-      int[] rangeIndex = CarbonUtil.getRangeIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex,
-          numerOfRows - 1, filterValues[i]);
+      int[] rangeIndex = CarbonUtil.getRangeIndexUsingBinarySearch(dimensionColumnDataChunk,
+          startIndex, numerOfRows - 1, filterValues[i]);
       for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
 
         bitSet.set(j);
@@ -133,7 +133,8 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     return bitSet;
   }
 
-  private BitSet setFilterdIndexToBitSet(DimensionColumnDataChunk dimensionColumnDataChunk, int numerOfRows) {
+  private BitSet setFilterdIndexToBitSet(DimensionColumnDataChunk dimensionColumnDataChunk,
+      int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
     if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
       byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
