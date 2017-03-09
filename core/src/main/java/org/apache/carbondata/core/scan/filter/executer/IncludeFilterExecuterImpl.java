@@ -113,44 +113,43 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
 
   }
 
-  private BitSet setFilterdIndexToBitSetWithColumnIndex(
-	      FixedLengthDimensionDataChunk dimensionColumnDataChunk, int numerOfRows) {
-	    BitSet bitSet = new BitSet(numerOfRows);
-	    int startIndex = 0;
-	    byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-	    for (int i = 0; i < filterValues.length; i++) {
-			int[] rangeIndex = CarbonUtil.getRangeIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-					filterValues[i]);
-			for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
+  private BitSet setFilterdIndexToBitSetWithColumnIndex(FixedLengthDimensionDataChunk dimensionColumnDataChunk,
+      int numerOfRows) {
+    BitSet bitSet = new BitSet(numerOfRows);
+    int startIndex = 0;
+    byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+    for (int i = 0; i < filterValues.length; i++) {
+      int[] rangeIndex = CarbonUtil.getRangeIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex,
+          numerOfRows - 1, filterValues[i]);
+      for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
 
-				bitSet.set(j);
-			}
+        bitSet.set(j);
+      }
 
-			if (rangeIndex[1] >=0) {
-				startIndex = rangeIndex[1];
-			}
-	    }
-	    return bitSet;
-	  }
-  
-  
-	private BitSet setFilterdIndexToBitSet(DimensionColumnDataChunk dimensionColumnDataChunk, int numerOfRows) {
-		BitSet bitSet = new BitSet(numerOfRows);
-	    if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
-			byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-			for (int i = 0; i < numerOfRows; i++) {
-	
-				int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length,
-						dimensionColumnDataChunk.getChunkData(i));
-	
-				if (index >= 0) {
-					bitSet.set(i);
-				}
-	
-			}
-	    }
-		return bitSet;
-	}
+      if (rangeIndex[1] >= 0) {
+        startIndex = rangeIndex[1];
+      }
+    }
+    return bitSet;
+  }
+
+  private BitSet setFilterdIndexToBitSet(DimensionColumnDataChunk dimensionColumnDataChunk, int numerOfRows) {
+    BitSet bitSet = new BitSet(numerOfRows);
+    if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
+      byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+      for (int i = 0; i < numerOfRows; i++) {
+
+        int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length,
+            dimensionColumnDataChunk.getChunkData(i));
+
+        if (index >= 0) {
+          bitSet.set(i);
+        }
+
+      }
+    }
+    return bitSet;
+  }
 
   public BitSet isScanRequired(byte[][] blkMaxVal, byte[][] blkMinVal) {
     BitSet bitSet = new BitSet(1);
