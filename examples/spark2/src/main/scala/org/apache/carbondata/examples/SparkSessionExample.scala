@@ -117,8 +117,8 @@ object SparkSessionExample {
       s"""
          | INSERT INTO TABLE carbon_table
          | SELECT shortField, intField, bigintField, doubleField, stringField,
-         | from_unixtime(unix_timestamp(timestampField,'yyyy/MM/dd HH:mm:ss')) timestampField, decimalField,
-         | from_unixtime(unix_timestamp(dateField,'yyyy/MM/dd')), charField
+         | from_unixtime(unix_timestamp(timestampField,'yyyy/MM/dd HH:mm:ss')) timestampField,
+         | decimalField,from_unixtime(unix_timestamp(dateField,'yyyy/MM/dd')), charField
          | FROM csv_table
        """.stripMargin)
 
@@ -130,7 +130,8 @@ object SparkSessionExample {
 
     // Shows with raw data's timestamp format
     spark.sql("""
-             SELECT stringField, date_format(timestampField, "yyyy/MM/dd HH:mm:ss") as timestampField
+             SELECT
+             stringField, date_format(timestampField, "yyyy/MM/dd HH:mm:ss") as timestampField
              FROM carbon_table where length(stringField) = 5
               """).show
 
