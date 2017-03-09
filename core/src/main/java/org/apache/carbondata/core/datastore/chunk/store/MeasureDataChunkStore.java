@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.datastore.chunk.store;
 
-import java.math.BigDecimal;
-
 /**
  * Responsibility is store the measure data in memory,
  * memory can be on heap or offheap based on the user configuration
@@ -73,12 +71,12 @@ public interface MeasureDataChunkStore<T> {
   double getDouble(int index);
 
   /**
-   * To get the bigdecimal value
+   * To get the backend array value
    *
    * @param index
    * @return bigdecimal value based on index
    */
-  BigDecimal getBigDecimal(int index);
+  byte[] getBigDecimalBackendArray(int index);
 
   /**
    * To free the occupied memory

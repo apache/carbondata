@@ -20,6 +20,7 @@ package org.apache.carbondata.core.util;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 
 public class NodeHolder {
   /**
@@ -149,6 +150,8 @@ public class NodeHolder {
    * total length of all measure values
    */
   private int totalMeasureArrayLength;
+
+  private DecimalConverterFactory.DecimalConverter[] decimalConverters;
 
   /**
    * @return the keyArray
@@ -426,5 +429,13 @@ public class NodeHolder {
 
   public void setMeasureColumnMinData(byte[][] measureColumnMinData) {
     this.measureColumnMinData = measureColumnMinData;
+  }
+
+  public DecimalConverterFactory.DecimalConverter[] getDecimalConverters() {
+    return decimalConverters;
+  }
+
+  public void setDecimalConverters(DecimalConverterFactory.DecimalConverter[] decimalConverters) {
+    this.decimalConverters = decimalConverters;
   }
 }

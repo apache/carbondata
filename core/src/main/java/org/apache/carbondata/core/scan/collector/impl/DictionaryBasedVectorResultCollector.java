@@ -21,6 +21,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.QueryDimension;
@@ -91,6 +93,11 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
           .getMeasureVectorFiller(queryMeasures[i].getMeasure().getDataType());
       columnVectorInfo.ordinal = queryMeasures[i].getMeasure().getOrdinal();
       columnVectorInfo.measure = queryMeasures[i];
+      if (queryMeasures[i].getMeasure().getDataType().equals(DataType.DECIMAL)) {
+        columnVectorInfo.decimalConverter = DecimalConverterFactory.INSTANCE
+            .getDecimalConverter(queryMeasures[i].getMeasure().getPrecision(),
+                queryMeasures[i].getMeasure().getScale());
+      }
       measureInfo[i] = columnVectorInfo;
       allColumnInfo[queryMeasures[i].getQueryOrder()] = columnVectorInfo;
     }

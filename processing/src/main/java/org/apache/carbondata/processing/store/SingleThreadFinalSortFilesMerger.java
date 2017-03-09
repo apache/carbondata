@@ -30,6 +30,7 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortTempFileChunkHolder;
@@ -103,9 +104,12 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    */
   private boolean[] isNoDictionaryColumn;
 
+  private DecimalConverterFactory.DecimalConverter[] decimalConverters;
+
   public SingleThreadFinalSortFilesMerger(String tempFileLocation, String tableName,
       int dimensionCount, int complexDimensionCount, int measureCount, int noDictionaryCount,
-      char[] aggType, boolean[] isNoDictionaryColumn, boolean useKettle) {
+      char[] aggType, DecimalConverterFactory.DecimalConverter[] decimalConverters,
+      boolean[] isNoDictionaryColumn, boolean useKettle) {
     this.tempFileLocation = tempFileLocation;
     this.tableName = tableName;
     this.dimensionCount = dimensionCount;
@@ -115,6 +119,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
     this.noDictionaryCount = noDictionaryCount;
     this.isNoDictionaryColumn = isNoDictionaryColumn;
     this.useKettle = useKettle;
+    this.decimalConverters = decimalConverters;
   }
 
   /**
@@ -183,8 +188,8 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
           // create chunk holder
           SortTempFileChunkHolder sortTempFileChunkHolder =
               new SortTempFileChunkHolder(tempFile, dimensionCount, complexDimensionCount,
-                  measureCount, fileBufferSize, noDictionaryCount, aggType, isNoDictionaryColumn,
-                  useKettle);
+                  measureCount, fileBufferSize, noDictionaryCount, aggType, decimalConverters,
+                  isNoDictionaryColumn, useKettle);
 
           // initialize
           sortTempFileChunkHolder.initialize();

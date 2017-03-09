@@ -16,11 +16,9 @@
  */
 package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * Responsibility is store the big decimal measure data in memory,
@@ -37,9 +35,14 @@ public class SafeBigDecimalMeasureChunkStore extends SafeAbstractMeasureDataChun
    */
   private int[] dataOffsets;
 
-  public SafeBigDecimalMeasureChunkStore(int numberOfRows) {
+  private short fixedLength;
+
+  public SafeBigDecimalMeasureChunkStore(int numberOfRows, short fixedLength) {
     super(numberOfRows);
-    this.dataOffsets = new int[numberOfRows];
+    if (fixedLength <= 0) {
+      this.dataOffsets = new int[numberOfRows];
+    }
+    this.fixedLength = fixedLength;
   }
 
   @Override public void putData(byte[] data) {
@@ -53,25 +56,26 @@ public class SafeBigDecimalMeasureChunkStore extends SafeAbstractMeasureDataChun
     // [5,14,24]
     // to store this value we need to get the actual data length + 4 bytes used for storing the
     // length
-
-    // start position will be used to store the current data position
-    int startOffset = 0;
-    // as first position will be start from 4 byte as data is stored first in the memory block
-    // we need to skip first two bytes this is because first two bytes will be length of the data
-    // which we have to skip
-    dataOffsets[0] = CarbonCommonConstants.INT_SIZE_IN_BYTE;
-    // creating a byte buffer which will wrap the length of the row
-    ByteBuffer buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE);
-    for (int i = 1; i < numberOfRows; i++) {
-      buffer.put(data, startOffset, CarbonCommonConstants.INT_SIZE_IN_BYTE);
-      buffer.flip();
-      // so current row position will be
-      // previous row length + 4 bytes used for storing previous row data
-      startOffset += buffer.getInt() + CarbonCommonConstants.INT_SIZE_IN_BYTE;
-      // as same byte buffer is used to avoid creating many byte buffer for each row
-      // we need to clear the byte buffer
-      buffer.clear();
-      dataOffsets[i] = startOffset + CarbonCommonConstants.INT_SIZE_IN_BYTE;
+    if (fixedLength <= 0) {
+      // start position will be used to store the current data position
+      int startOffset = 0;
+      // as first position will be start from 4 byte as data is stored first in the memory block
+      // we need to skip first two bytes this is because first two bytes will be length of the data
+      // which we have to skip
+      dataOffsets[0] = CarbonCommonConstants.INT_SIZE_IN_BYTE;
+      // creating a byte buffer which will wrap the length of the row
+      ByteBuffer buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE);
+      for (int i = 1; i < numberOfRows; i++) {
+        buffer.put(data, startOffset, CarbonCommonConstants.INT_SIZE_IN_BYTE);
+        buffer.flip();
+        // so current row position will be
+        // previous row length + 4 bytes used for storing previous row data
+        startOffset += buffer.getInt() + CarbonCommonConstants.INT_SIZE_IN_BYTE;
+        // as same byte buffer is used to avoid creating many byte buffer for each row
+        // we need to clear the byte buffer
+        buffer.clear();
+        dataOffsets[i] = startOffset + CarbonCommonConstants.INT_SIZE_IN_BYTE;
+      }
     }
   }
 
@@ -81,18 +85,26 @@ public class SafeBigDecimalMeasureChunkStore extends SafeAbstractMeasureDataChun
    * @param index
    * @return byte value based on index
    */
-  @Override public BigDecimal getBigDecimal(int index) {
-    int currentDataOffset = dataOffsets[index];
-    int length = 0;
-    // calculating the length of data
-    if (index < numberOfRows - 1) {
-      length = (int) (dataOffsets[index + 1] - (currentDataOffset
-          + CarbonCommonConstants.INT_SIZE_IN_BYTE));
+  @Override public byte[] getBigDecimalBackendArray(int index) {
+    if (fixedLength > 0) {
+      byte[] data = new byte[fixedLength];
+      System.arraycopy(dataChunk, fixedLength * index, data, 0, fixedLength);
+      return data;
     } else {
-      // for last record
-      length = (int) (this.dataChunk.length - currentDataOffset);
+      int currentDataOffset = dataOffsets[index];
+      int length = 0;
+      // calculating the length of data
+      if (index < numberOfRows - 1) {
+        length = (int) (dataOffsets[index + 1] - (currentDataOffset
+            + CarbonCommonConstants.INT_SIZE_IN_BYTE));
+      } else {
+        // for last record
+        length = (int) (this.dataChunk.length - currentDataOffset);
+      }
+      byte[] data = new byte[length];
+      System.arraycopy(dataChunk, currentDataOffset, data, 0, length);
+      return data;
     }
-    return DataTypeUtil.byteToBigDecimal(dataChunk, currentDataOffset, length);
   }
 
 }

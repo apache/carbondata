@@ -32,6 +32,7 @@ import java.util.concurrent.Future;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
@@ -134,6 +135,8 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
 
   private Comparator<Object[]> comparator;
 
+  private DecimalConverterFactory.DecimalConverter[] decimalConverters;
+
   /**
    * Constructor to initialize
    */
@@ -151,6 +154,8 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
     this.fileBufferSize = parameters.getFileBufferSize();
     this.executorService = Executors.newFixedThreadPool(1);
     this.aggType = parameters.getAggType();
+    this.decimalConverters =
+        parameters.getDecimalConverters();
     this.isNoDictionaryDimensionColumn = parameters.getNoDictionaryDimnesionColumn();
     this.nullSetWordsLength = ((measureCount - 1) >> 6) + 1;
     comparator = new NewRowComparator(isNoDictionaryDimensionColumn);
@@ -329,7 +334,10 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
           } else if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {
             row[dimensionCount + mesCount] = stream.readLong();
           } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-            short aShort = stream.readShort();
+            int aShort = decimalConverters[mesCount].getSize();
+            if (aShort < 0) {
+              aShort = stream.readShort();
+            }
             byte[] bigDecimalInBytes = new byte[aShort];
             stream.readFully(bigDecimalInBytes);
             row[dimensionCount + mesCount] = bigDecimalInBytes;

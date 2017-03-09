@@ -39,6 +39,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -478,6 +479,26 @@ public final class CarbonDataProcessorUtil {
       aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
     }
     return aggType;
+  }
+
+  /**
+   * get decimal converters.
+   */
+  public static DecimalConverterFactory.DecimalConverter[] getDecimalConverter(int measureCount,
+      String databaseName, String tableName) {
+    DecimalConverterFactory.DecimalConverter[] converters =
+        new DecimalConverterFactory.DecimalConverter[measureCount];
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
+    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
+    for (int i = 0; i < converters.length; i++) {
+      CarbonMeasure carbonMeasure = measures.get(i);
+      if (carbonMeasure.getDataType().equals(DataType.DECIMAL)) {
+        converters[i] = DecimalConverterFactory.INSTANCE
+            .getDecimalConverter(carbonMeasure.getPrecision(), carbonMeasure.getScale());
+      }
+    }
+    return converters;
   }
 
   /**

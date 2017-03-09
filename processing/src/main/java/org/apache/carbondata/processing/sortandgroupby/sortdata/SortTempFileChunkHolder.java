@@ -33,6 +33,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.IgnoreDictionary;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -137,6 +138,8 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   // TODO temporary configuration, remove after kettle removal
   private boolean useKettle;
 
+  private DecimalConverterFactory.DecimalConverter[] decimalConverters;
+
   /**
    * Constructor to initialize
    *
@@ -151,6 +154,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    */
   public SortTempFileChunkHolder(File tempFile, int dimensionCount, int complexDimensionCount,
       int measureCount, int fileBufferSize, int noDictionaryCount, char[] aggType,
+      DecimalConverterFactory.DecimalConverter[] decimalConverters,
       boolean[] isNoDictionaryDimensionColumn, boolean useKettle) {
     // set temp file
     this.tempFile = tempFile;
@@ -167,6 +171,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     this.aggType = aggType;
     this.isNoDictionaryDimensionColumn = isNoDictionaryDimensionColumn;
     this.useKettle = useKettle;
+    this.decimalConverters = decimalConverters;
   }
 
   /**
@@ -349,7 +354,10 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
           } else if (aggType[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
             measures[index++] = stream.readLong();
           } else {
-            int len = stream.readInt();
+            int len = decimalConverters[i].getSize();
+            if (len < 0) {
+              len = stream.readInt();
+            }
             byte[] buff = new byte[len];
             stream.readFully(buff);
             measures[index++] = buff;
@@ -415,7 +423,10 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
           } else if (aggType[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
             measures[index++] = stream.readLong();
           } else {
-            int len = stream.readInt();
+            int len = decimalConverters[i].getSize();
+            if (len < 0) {
+              len = stream.readInt();
+            }
             byte[] buff = new byte[len];
             stream.readFully(buff);
             measures[index++] = buff;

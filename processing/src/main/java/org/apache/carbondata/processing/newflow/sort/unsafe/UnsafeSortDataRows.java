@@ -96,7 +96,8 @@ public class UnsafeSortDataRows {
   public void initialize() throws CarbonSortKeyAndGroupByException {
     MemoryBlock baseBlock = getMemoryBlock(inMemoryChunkSizeInMB * 1024 * 1024);
     this.rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
-        parameters.getDimColCount(), parameters.getMeasureColCount(), parameters.getAggType(),
+        parameters.getDimColCount() + parameters.getComplexDimColCount(),
+        parameters.getMeasureColCount(), parameters.getAggType(), parameters.getDecimalConverters(),
         baseBlock, !UnsafeMemoryManager.INSTANCE.isMemoryAvailable());
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
@@ -154,9 +155,9 @@ public class UnsafeSortDataRows {
             MemoryBlock memoryBlock = getMemoryBlock(inMemoryChunkSizeInMB * 1024 * 1024);
             boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
             rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
-                parameters.getDimColCount(), parameters.getMeasureColCount(),
-                parameters.getAggType(), memoryBlock,
-                saveToDisk);
+                parameters.getDimColCount() + parameters.getComplexDimColCount(),
+                parameters.getMeasureColCount(), parameters.getAggType(),
+                parameters.getDecimalConverters(), memoryBlock, saveToDisk);
             rowPage.addRow(rowBatch[i]);
           } catch (Exception e) {
             LOGGER.error(

@@ -40,6 +40,8 @@ public class CompressByteArray extends ValueCompressionHolder<byte[]> {
 
   private MeasureDataChunkStore<byte[]> measureChunkStore;
 
+  private short fixedLength;
+
   /**
    * value.
    */
@@ -91,7 +93,8 @@ public class CompressByteArray extends ValueCompressionHolder<byte[]> {
   }
 
   @Override public BigDecimal getBigDecimalValue(int index) {
-    return this.measureChunkStore.getBigDecimal(index);
+    throw new UnsupportedOperationException(
+        "Big decimal value is not defined for CompressionMaxMinDefault");
   }
 
   @Override public void freeMemory() {
@@ -101,7 +104,15 @@ public class CompressByteArray extends ValueCompressionHolder<byte[]> {
   @Override
   public void setValue(byte[] data, int numberOfRows, Object maxValueObject, int decimalPlaces) {
     this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
-        .getMeasureDataChunkStore(DataType.DATA_BIGDECIMAL, numberOfRows);
+        .getMeasureDataChunkStore(DataType.DATA_BIGDECIMAL, numberOfRows, fixedLength);
     this.measureChunkStore.putData(data);
+  }
+
+  @Override public void setFixedLength(short fixedLength) {
+    this.fixedLength = fixedLength;
+  }
+
+  @Override public byte[] getBackendByteArray(int index) {
+    return measureChunkStore.getBigDecimalBackendArray(index);
   }
 }

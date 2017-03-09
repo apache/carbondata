@@ -459,6 +459,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
             < 0) {
           currentMaxValue[j] = maxValue.clone();
         }
+        measureIndex++;
       }
     }
     BlockletBTreeIndex btree =

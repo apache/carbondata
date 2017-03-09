@@ -39,7 +39,9 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -72,6 +74,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
   private Map<Integer, GenericQueryType> complexDimensionInfoMap;
 
+  private DecimalConverterFactory.DecimalConverter[] decimalConverters;
+
   public RowLevelFilterExecuterImpl(List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties,
@@ -91,6 +95,16 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     this.exp = exp;
     this.tableIdentifier = tableIdentifier;
     this.complexDimensionInfoMap = complexDimensionInfoMap;
+    this.decimalConverters =
+        new DecimalConverterFactory.DecimalConverter[msrColEvalutorInfoList.size()];
+    for (int i = 0; i < decimalConverters.length; i++) {
+      CarbonColumn column = msrColEvalutorInfoList.get(i).getColumn();
+      if (column.getDataType().equals(DataType.DECIMAL)) {
+        decimalConverters[i] = DecimalConverterFactory.INSTANCE
+            .getDecimalConverter(column.getColumnSchema().getPrecision(),
+                column.getColumnSchema().getScale());
+      }
+    }
   }
 
   @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
@@ -212,8 +226,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
     DataType msrType;
 
+    int i = 0;
     for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
-      switch (msrColumnEvalutorInfo.getType()) {
+      switch (msrColumnEvalutorInfo.getColumn().getDataType()) {
         case INT:
         case LONG:
           msrType = DataType.LONG;
@@ -236,8 +251,13 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
               measureColumnDataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
           break;
         case DECIMAL:
-          msrValue = measureColumnDataChunk.getMeasureDataHolder()
-              .getReadableBigDecimalValueByIndex(index);
+          if (measureColumnDataChunk.getMeasureDataHolder().isLatestDecimalConverion()) {
+            msrValue = decimalConverters[i].getDecimal(
+                measureColumnDataChunk.getMeasureDataHolder().getBigDecimalByteArrayByIndex(index));
+          } else {
+            msrValue = DecimalConverterFactory.LegacyDecimalConverter.INSTANCE.getDecimal(
+                measureColumnDataChunk.getMeasureDataHolder().getBigDecimalByteArrayByIndex(index));
+          }
           break;
         default:
           msrValue =
@@ -245,6 +265,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       }
       record[msrColumnEvalutorInfo.getRowIndex()] =
           measureColumnDataChunk.getNullValueIndexHolder().getBitSet().get(index) ? null : msrValue;
+      i++;
     }
     row.setValues(record);
   }

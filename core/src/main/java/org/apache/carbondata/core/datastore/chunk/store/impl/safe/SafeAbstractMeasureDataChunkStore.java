@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 
-import java.math.BigDecimal;
-
 import org.apache.carbondata.core.datastore.chunk.store.MeasureDataChunkStore;
 
 /**
@@ -97,8 +95,7 @@ public abstract class SafeAbstractMeasureDataChunkStore<T> implements
    * @param index
    * @return bigdecimal value based on index
    */
-  @Override
-  public BigDecimal getBigDecimal(int index) {
+  @Override public byte[] getBigDecimalBackendArray(int index) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 

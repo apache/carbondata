@@ -19,7 +19,6 @@ package org.apache.carbondata.core.scan.result;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
@@ -502,18 +501,6 @@ public abstract class AbstractScannedResult {
   protected double getDoubleMeasureValue(int ordinal, int rowIndex) {
     return measureDataChunks[ordinal][pageCounter].getMeasureDataHolder()
         .getReadableDoubleValueByIndex(rowIndex);
-  }
-
-  /**
-   * Below method will be used to get the measure type of big decimal data type
-   *
-   * @param ordinal  ordinal of the of the measure
-   * @param rowIndex row number
-   * @return measure of big decimal type
-   */
-  protected BigDecimal getBigDecimalMeasureValue(int ordinal, int rowIndex) {
-    return measureDataChunks[ordinal][pageCounter].getMeasureDataHolder()
-        .getReadableBigDecimalValueByIndex(rowIndex);
   }
 
   public int getRowCounter() {

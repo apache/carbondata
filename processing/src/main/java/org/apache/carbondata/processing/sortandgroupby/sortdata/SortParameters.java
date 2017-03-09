@@ -22,6 +22,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.schema.metadata.SortObserver;
@@ -119,6 +120,8 @@ public class SortParameters {
    */
   private boolean useKettle = true;
 
+  private DecimalConverterFactory.DecimalConverter[] decimalConverters;
+
   public SortParameters getCopy() {
     SortParameters parameters = new SortParameters();
     parameters.tempFileLocation = tempFileLocation;
@@ -144,6 +147,7 @@ public class SortParameters {
     parameters.noDictionaryDimnesionColumn = noDictionaryDimnesionColumn;
     parameters.numberOfCores = numberOfCores;
     parameters.useKettle = useKettle;
+    parameters.decimalConverters = decimalConverters;
     return parameters;
   }
 
@@ -331,6 +335,14 @@ public class SortParameters {
     this.useKettle = useKettle;
   }
 
+  public DecimalConverterFactory.DecimalConverter[] getDecimalConverters() {
+    return decimalConverters;
+  }
+
+  public void setDecimalConverters(DecimalConverterFactory.DecimalConverter[] decimalConverters) {
+    this.decimalConverters = decimalConverters;
+  }
+
   public static SortParameters createSortParameters(CarbonDataLoadConfiguration configuration) {
     SortParameters parameters = new SortParameters();
     CarbonTableIdentifier tableIdentifier =
@@ -433,6 +445,10 @@ public class SortParameters {
         .getAggType(parameters.getMeasureColCount(), parameters.getDatabaseName(),
             parameters.getTableName());
     parameters.setAggType(aggType);
+    DecimalConverterFactory.DecimalConverter[] decimalConverter = CarbonDataProcessorUtil
+        .getDecimalConverter(parameters.getMeasureColCount(), parameters.getDatabaseName(),
+            parameters.getTableName());
+    parameters.setDecimalConverters(decimalConverter);
     parameters.setUseKettle(false);
     return parameters;
   }
@@ -536,6 +552,10 @@ public class SortParameters {
         .getAggType(parameters.getMeasureColCount(), parameters.getDatabaseName(),
             parameters.getTableName());
     parameters.setAggType(aggType);
+    DecimalConverterFactory.DecimalConverter[] decimalConverter = CarbonDataProcessorUtil
+        .getDecimalConverter(parameters.getMeasureColCount(), parameters.getDatabaseName(),
+            parameters.getTableName());
+    parameters.setDecimalConverters(decimalConverter);
     return parameters;
   }
 

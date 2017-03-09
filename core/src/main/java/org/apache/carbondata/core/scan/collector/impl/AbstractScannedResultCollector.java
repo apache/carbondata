@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.scan.collector.impl;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -23,6 +24,8 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.collector.ScannedResultCollector;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
@@ -72,6 +75,8 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
    */
   protected DataType[] measureDatatypes;
 
+  protected DecimalConverterFactory.DecimalConverter[] decimalConverters;
+
   public AbstractScannedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     this.tableBlockExecutionInfos = blockExecutionInfos;
     restructureInfos = blockExecutionInfos.getKeyStructureInfo();
@@ -79,6 +84,15 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
     isMeasureExistsInCurrentBlock = tableBlockExecutionInfos.getAggregatorInfo().getMeasureExists();
     measureDefaultValue = tableBlockExecutionInfos.getAggregatorInfo().getDefaultValues();
     this.measureDatatypes = tableBlockExecutionInfos.getAggregatorInfo().getMeasureDataTypes();
+    this.decimalConverters = new DecimalConverterFactory.DecimalConverter[tableBlockExecutionInfos
+        .getQueryMeasures().length];
+    for (int i = 0; i < decimalConverters.length; i++) {
+      CarbonMeasure measure = tableBlockExecutionInfos.getQueryMeasures()[i].getMeasure();
+      if (measure.getDataType().equals(DataType.DECIMAL)) {
+        decimalConverters[i] = DecimalConverterFactory.INSTANCE
+            .getDecimalConverter(measure.getPrecision(), measure.getScale());
+      }
+    }
   }
 
   protected void fillMeasureData(Object[] msrValues, int offset,
@@ -88,7 +102,7 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
       // data chunk to the collector
       if (isMeasureExistsInCurrentBlock[i]) {
         msrValues[i + offset] = getMeasureData(scannedResult.getMeasureChunk(measuresOrdinal[i]),
-            scannedResult.getCurrenrRowId(), measureDatatypes[i]);
+            scannedResult.getCurrenrRowId(), measureDatatypes[i], decimalConverters[i]);
       } else {
         // if not then get the default value and use that value in aggregation
         msrValues[i + offset] = measureDefaultValue[i];
@@ -96,7 +110,8 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
     }
   }
 
-  private Object getMeasureData(MeasureColumnDataChunk dataChunk, int index, DataType dataType) {
+  private Object getMeasureData(MeasureColumnDataChunk dataChunk, int index, DataType dataType,
+      DecimalConverterFactory.DecimalConverter converter) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
       switch (dataType) {
         case SHORT:
@@ -104,8 +119,16 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
         case LONG:
           return dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
         case DECIMAL:
-          return org.apache.spark.sql.types.Decimal
-              .apply(dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
+          BigDecimal decimal = null;
+          if (dataChunk.getMeasureDataHolder().isLatestDecimalConverion()) {
+            decimal = converter
+                .getDecimal(dataChunk.getMeasureDataHolder().getBigDecimalByteArrayByIndex(index));
+            return org.apache.spark.sql.types.Decimal.apply(decimal);
+          } else {
+            decimal = DecimalConverterFactory.LegacyDecimalConverter.INSTANCE
+                .getDecimal(dataChunk.getMeasureDataHolder().getBigDecimalByteArrayByIndex(index));
+          }
+          return org.apache.spark.sql.types.Decimal.apply(decimal);
         default:
           return dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
       }

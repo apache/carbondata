@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -178,6 +179,8 @@ public class CarbonFactDataHandlerModel {
 
   private int bucketId = 0;
 
+  private DecimalConverterFactory.DecimalConverter[] decimalConverters;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    * @param configuration
@@ -270,6 +273,9 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setDataWritingRequest(true);
     carbonFactDataHandlerModel.setAggType(CarbonDataProcessorUtil
         .getAggType(measureCount, identifier.getDatabaseName(), identifier.getTableName()));
+    carbonFactDataHandlerModel.setDecimalConverters(CarbonDataProcessorUtil
+        .getDecimalConverter(measureCount, identifier.getDatabaseName(),
+            identifier.getTableName()));
     carbonFactDataHandlerModel.setFactDimLens(dimLens);
     carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
     carbonFactDataHandlerModel.setPrimitiveDimLens(simpleDimsLen);
@@ -498,6 +504,14 @@ public class CarbonFactDataHandlerModel {
 
   public int getBucketId() {
     return bucketId;
+  }
+
+  public DecimalConverterFactory.DecimalConverter[] getDecimalConverters() {
+    return decimalConverters;
+  }
+
+  public void setDecimalConverters(DecimalConverterFactory.DecimalConverter[] decimalConverters) {
+    this.decimalConverters = decimalConverters;
   }
 }
 

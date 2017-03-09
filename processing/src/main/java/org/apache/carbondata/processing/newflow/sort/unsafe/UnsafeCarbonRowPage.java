@@ -25,7 +25,7 @@ import java.util.Arrays;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryBlock;
-import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 
 /**
  * It can keep the data of prescribed size data in offheap/onheap memory and returns it when needed
@@ -52,8 +52,11 @@ public class UnsafeCarbonRowPage {
 
   private boolean saveToDisk;
 
+  private DecimalConverterFactory.DecimalConverter[] decimalConverters;
+
   public UnsafeCarbonRowPage(boolean[] noDictionaryDimensionMapping, int dimensionSize,
-      int measureSize, char[] aggType, MemoryBlock memoryBlock, boolean saveToDisk) {
+      int measureSize, char[] aggType, DecimalConverterFactory.DecimalConverter[] decimalConverters,
+      MemoryBlock memoryBlock, boolean saveToDisk) {
     this.noDictionaryDimensionMapping = noDictionaryDimensionMapping;
     this.dimensionSize = dimensionSize;
     this.measureSize = measureSize;
@@ -64,6 +67,7 @@ public class UnsafeCarbonRowPage {
     this.dataBlock = buffer.getBaseBlock();
     // TODO Only using 98% of space for safe side.May be we can have different logic.
     sizeToBeUsed = dataBlock.size() - (dataBlock.size() * 5) / 100;
+    this.decimalConverters = decimalConverters;
   }
 
   public void addRow(Object[] row) {
@@ -121,10 +125,12 @@ public class UnsafeCarbonRowPage {
           size += 8;
         } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
           BigDecimal val = (BigDecimal) value;
-          byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
-          CarbonUnsafe.unsafe.putShort(baseObject, address + size,
-              (short) bigDecimalInBytes.length);
-          size += 2;
+          byte[] bigDecimalInBytes = decimalConverters[mesCount].convert(val);
+          if (decimalConverters[mesCount].getSize() < 0) {
+            CarbonUnsafe.unsafe
+                .putShort(baseObject, address + size, (short) bigDecimalInBytes.length);
+            size += 2;
+          }
           CarbonUnsafe.unsafe
               .copyMemory(bigDecimalInBytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
                   address + size, bigDecimalInBytes.length);
@@ -191,9 +197,12 @@ public class UnsafeCarbonRowPage {
           size += 8;
           rowToFill[dimensionSize + mesCount] = val;
         } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-          short aShort = CarbonUnsafe.unsafe.getShort(baseObject, address + size);
+          int aShort = decimalConverters[mesCount].getSize();
+          if (aShort < 0) {
+            aShort = CarbonUnsafe.unsafe.getShort(baseObject, address + size);
+            size += 2;
+          }
           byte[] bigDecimalInBytes = new byte[aShort];
-          size += 2;
           CarbonUnsafe.unsafe.copyMemory(baseObject, address + size, bigDecimalInBytes,
               CarbonUnsafe.BYTE_ARRAY_OFFSET, bigDecimalInBytes.length);
           size += bigDecimalInBytes.length;
@@ -262,13 +271,16 @@ public class UnsafeCarbonRowPage {
           size += 8;
           stream.writeLong(val);
         } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-          short aShort = CarbonUnsafe.unsafe.getShort(baseObject, address + size);
+          int aShort = decimalConverters[mesCount].getSize();
+          if (aShort < 0) {
+            aShort = CarbonUnsafe.unsafe.getShort(baseObject, address + size);
+            size += 2;
+            stream.writeShort(aShort);
+          }
           byte[] bigDecimalInBytes = new byte[aShort];
-          size += 2;
           CarbonUnsafe.unsafe.copyMemory(baseObject, address + size, bigDecimalInBytes,
               CarbonUnsafe.BYTE_ARRAY_OFFSET, bigDecimalInBytes.length);
           size += bigDecimalInBytes.length;
-          stream.writeShort(aShort);
           stream.write(bigDecimalInBytes);
         }
       }
