@@ -93,7 +93,7 @@
 
   <modules>
     <module>common</module>
-	<module>core</module>
+    <module>core</module>
     <module>processing</module>
     <module>hadoop</module>
     <module>integration/spark-common</module>
