@@ -36,18 +36,26 @@ public class IncludeFilterExecuterImplTest extends TestCase {
 
   }
 
-  private BitSet setFilterdIndexToBitSetNew(DimensionColumnDataChunk dimensionColumnDataChunk, int numerOfRows,
-      byte[][] filterValues) {
+  private BitSet setFilterdIndexToBitSetNew(DimensionColumnDataChunk dimensionColumnDataChunk,
+      int numerOfRows, byte[][] filterValues) {
     BitSet bitSet = new BitSet(numerOfRows);
     if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
       // byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
       for (int i = 0; i < numerOfRows; i++) {
 
-        int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length,
-            dimensionColumnDataChunk.getChunkData(i));
+        if (filterValues.length > 1) {
+          int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
+              dimensionColumnDataChunk.getChunkData(i));
 
-        if (index >= 0) {
-          bitSet.set(i);
+          if (index >= 0) {
+            bitSet.set(i);
+          }
+        } else if (filterValues.length == 1) {
+          if (dimensionColumnDataChunk.compareTo(i, filterValues[0]) == 0) {
+            bitSet.set(i);
+          }
+        } else {
+          break;
         }
 
       }
