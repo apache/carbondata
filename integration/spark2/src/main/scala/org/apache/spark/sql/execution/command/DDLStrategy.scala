@@ -71,6 +71,33 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         } else {
           throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
         }
+      case dataTypeChange@AlterTableDataTypeChange(alterTableChangeDataTypeModel) =>
+        val isCarbonTable = CarbonEnv.get.carbonMetastore
+          .tableExists(TableIdentifier(alterTableChangeDataTypeModel.tableName,
+            alterTableChangeDataTypeModel.databaseName))(sparkSession)
+        if (isCarbonTable) {
+          ExecutedCommandExec(dataTypeChange) :: Nil
+        } else {
+          throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
+        }
+      case addColumn@AlterTableAddColumns(alterTableAddColumnsModel) =>
+        val isCarbonTable = CarbonEnv.get.carbonMetastore
+          .tableExists(TableIdentifier(alterTableAddColumnsModel.tableName,
+            alterTableAddColumnsModel.databaseName))(sparkSession)
+        if (isCarbonTable) {
+          ExecutedCommandExec(addColumn) :: Nil
+        } else {
+          throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
+        }
+      case dropColumn@AlterTableDropColumns(alterTableDropColumnModel) =>
+        val isCarbonTable = CarbonEnv.get.carbonMetastore
+          .tableExists(TableIdentifier(alterTableDropColumnModel.tableName,
+            alterTableDropColumnModel.databaseName))(sparkSession)
+        if (isCarbonTable) {
+          ExecutedCommandExec(dropColumn) :: Nil
+        } else {
+          throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
+        }
       case desc@DescribeTableCommand(identifier, partitionSpec, isExtended, isFormatted)
         if CarbonEnv.get.carbonMetastore.tableExists(identifier)(sparkSession) && isFormatted =>
         val resolvedTable =

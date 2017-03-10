@@ -24,6 +24,8 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.commons.lang3.StringUtils
@@ -33,7 +35,7 @@ import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.hive.{CarbonMetastore, CarbonRelation}
+import org.apache.spark.sql.hive.{CarbonMetastore, CarbonRelation, HiveExternalCatalog}
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
 
@@ -44,18 +46,20 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension, ColumnSchema}
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.format.{ColumnSchema, SchemaEvolutionEntry}
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonSparkUtil, CommonUtil, GlobalDictionaryUtil}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonSparkUtil, CommonUtil, DataTypeConverterUtil, GlobalDictionaryUtil}
 
 object Checker {
   def validateTableExists(
@@ -131,6 +135,298 @@ case class AlterTableCompaction(alterTableModel: AlterTableModel) extends Runnab
         } else {
           sys.error("Exception in compaction. Please check logs for more info.")
         }
+    }
+    Seq.empty
+  }
+}
+
+private[sql] case class AlterTableDataTypeChange(
+    alterTableDataTypeChangeModel: AlterTableDataTypeChangeModel) extends RunnableCommand {
+
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  def run(sparkSession: SparkSession): Seq[Row] = {
+    val tableName = alterTableDataTypeChangeModel.tableName
+    val dbName = alterTableDataTypeChangeModel.databaseName
+      .getOrElse(sparkSession.catalog.currentDatabase)
+    LOGGER.audit(s"Alter table change data type request has been received for $dbName.$tableName")
+    val relation =
+      CarbonEnv.get.carbonMetastore
+        .lookupRelation(Option(dbName), tableName)(sparkSession)
+        .asInstanceOf[CarbonRelation]
+    if (relation == null) {
+      LOGGER.audit(s"Alter table change data type request has failed. " +
+                   s"Table $dbName.$tableName does not exist")
+      sys.error(s"Table $dbName.$tableName does not exist")
+    }
+    // acquire the lock first
+    val table = relation.tableMeta.carbonTable
+    val carbonLock = CarbonLockFactory
+      .getCarbonLockObj(table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+        LockUsage.METADATA_LOCK)
+    try {
+      // get the latest carbon table and check for column existence
+      val carbonTable = CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)
+      val columnName = alterTableDataTypeChangeModel.columnName
+      var carbonColumnToBeModified: CarbonColumn = null
+      val carbonColumns = carbonTable.getCreateOrderColumn(tableName).asScala
+      // read the latest schema file
+      val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
+        carbonTable.getCarbonTableIdentifier)
+      val tableMetadataFile = carbonTablePath.getSchemaFilePath
+      val tableInfo: org.apache.carbondata.format.TableInfo = CarbonEnv.get.carbonMetastore
+        .readSchemaFile(tableMetadataFile)
+      // maintain the added column for schema evolution history
+      var addColumnSchema: org.apache.carbondata.format.ColumnSchema = null
+      var deletedColumnSchema: org.apache.carbondata.format.ColumnSchema = null
+      val columnSchemaList = tableInfo.fact_table.table_columns.asScala
+      columnSchemaList.foreach { columnSchema =>
+        if (columnSchema.column_name.equalsIgnoreCase(columnName)) {
+          deletedColumnSchema = CarbonScalaUtil.createColumnSchemaCopyObject(columnSchema)
+          columnSchema.setData_type(DataTypeConverterUtil
+            .convertToThriftDataType(alterTableDataTypeChangeModel.dataTypeInfo.dataType))
+          columnSchema.setPrecision(alterTableDataTypeChangeModel.dataTypeInfo.precision)
+          columnSchema.setScale(alterTableDataTypeChangeModel.dataTypeInfo.scale)
+          addColumnSchema = columnSchema
+        }
+      }
+      val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
+      schemaEvolutionEntry.setAdded(List(addColumnSchema).asJava)
+      schemaEvolutionEntry.setRemoved(List(deletedColumnSchema).asJava)
+      tableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
+        .setTime_stamp(System.currentTimeMillis)
+      CarbonEnv.get.carbonMetastore
+        .updateTableSchema(carbonTable.getCarbonTableIdentifier,
+          tableInfo,
+          schemaEvolutionEntry,
+          carbonTable.getStorePath)(sparkSession)
+
+      val tableIdentifier = TableIdentifier(tableName, Some(dbName))
+      val schema = CarbonEnv.get.carbonMetastore
+        .lookupRelation(tableIdentifier)(sparkSession).schema.json
+      sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client.runSqlHive(
+        s"ALTER TABLE $dbName.$tableName SET TBLPROPERTIES('spark.sql.sources.schema'='$schema')")
+      sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
+      LOGGER.info(s"Alter table for data type change is successful for table $dbName.$tableName")
+      LOGGER.audit(s"Alter table for data type change is successful for table $dbName.$tableName")
+    } catch {
+      case e: Exception =>
+        LOGGER.error("Alter table change datatype failed : " + e.getMessage)
+        throw e
+    } finally {
+      // release lock after command execution completion
+      if (carbonLock != null) {
+        if (carbonLock.unlock()) {
+          LOGGER.info("Alter table change data type lock released successfully")
+        } else {
+          LOGGER.error("Unable to release lock during alter table change data type operation")
+        }
+      }
+    }
+    Seq.empty
+  }
+}
+
+private[sql] case class AlterTableAddColumns(
+    alterTableAddColumnsModel: AlterTableAddColumnsModel) extends RunnableCommand {
+
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  def run(sparkSession: SparkSession): Seq[Row] = {
+    val tableName = alterTableAddColumnsModel.tableName
+    val dbName = alterTableAddColumnsModel.databaseName
+      .getOrElse(sparkSession.catalog.currentDatabase)
+    LOGGER.audit(s"Alter table add columns request has been received for $dbName.$tableName")
+    val relation =
+      CarbonEnv.get.carbonMetastore
+        .lookupRelation(Option(dbName), tableName)(sparkSession)
+        .asInstanceOf[CarbonRelation]
+    if (relation == null) {
+      LOGGER.audit(s"Alter table add columns request has failed. " +
+                   s"Table $dbName.$tableName does not exist")
+      sys.error(s"Table $dbName.$tableName does not exist")
+    }
+    // acquire the lock first
+    val table = relation.tableMeta.carbonTable
+    val carbonLock = CarbonLockFactory
+      .getCarbonLockObj(table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+        LockUsage.METADATA_LOCK)
+    try {
+      // get the latest carbon table and check for column existence
+      val carbonTable = CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)
+      // read the latest schema file
+      val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
+        carbonTable.getCarbonTableIdentifier)
+      val tableMetadataFile = carbonTablePath.getSchemaFilePath
+      val thriftTableInfo: org.apache.carbondata.format.TableInfo = CarbonEnv.get.carbonMetastore
+        .readSchemaFile(tableMetadataFile)
+      val schemaConverter = new ThriftWrapperSchemaConverterImpl()
+      val wrapperTableInfo = schemaConverter
+        .fromExternalToWrapperTableInfo(thriftTableInfo,
+          dbName,
+          tableName,
+          carbonTable.getStorePath)
+      val newCols = new AlterTableProcessor(alterTableAddColumnsModel,
+        dbName,
+        wrapperTableInfo,
+        carbonTablePath,
+        carbonTable.getCarbonTableIdentifier,
+        carbonTable.getStorePath).process
+      val schemaEvolutionEntry = new org.apache.carbondata.core.metadata
+      .schema.SchemaEvolutionEntry()
+      schemaEvolutionEntry.setTimeStamp(System.currentTimeMillis)
+      schemaEvolutionEntry.setAdded(newCols.toList.asJava)
+
+      val thriftTable = schemaConverter
+        .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
+      thriftTable.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
+        .setTime_stamp(System.currentTimeMillis)
+      CarbonEnv.get.carbonMetastore
+        .updateTableSchema(carbonTable.getCarbonTableIdentifier,
+          thriftTable,
+          schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
+          carbonTable.getStorePath)(sparkSession)
+
+      val tableIdentifier = TableIdentifier(tableName, Some(dbName))
+      val schema = CarbonEnv.get.carbonMetastore
+        .lookupRelation(tableIdentifier)(sparkSession).schema.json
+      sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client.runSqlHive(
+        s"ALTER TABLE $dbName.$tableName SET TBLPROPERTIES('spark.sql.sources.schema'='$schema')")
+      sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
+      LOGGER.info(s"Alter table for add columns is successful for table $dbName.$tableName")
+      LOGGER.audit(s"Alter table for add columns is successful for table $dbName.$tableName")
+    } catch {
+      case e: Exception =>
+        LOGGER.error("Alter table add columns failed : " + e.getMessage)
+        throw e
+    } finally {
+      // release lock after command execution completion
+      if (carbonLock != null) {
+        if (carbonLock.unlock()) {
+          LOGGER.info("Alter table add columns lock released successfully")
+        } else {
+          LOGGER.error("Unable to release lock during alter table add columns operation")
+        }
+      }
+    }
+    Seq.empty
+  }
+}
+
+private[sql] case class AlterTableDropColumns(
+    alterTableDropColumnModel: AlterTableDropColumnModel) extends RunnableCommand {
+
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  def run(sparkSession: SparkSession): Seq[Row] = {
+    val tableName = alterTableDropColumnModel.tableName
+    val dbName = alterTableDropColumnModel.databaseName
+      .getOrElse(sparkSession.catalog.currentDatabase)
+    LOGGER.audit(s"Alter table drop columns request has been received for $dbName.$tableName")
+    val relation =
+      CarbonEnv.get.carbonMetastore
+        .lookupRelation(Option(dbName), tableName)(sparkSession)
+        .asInstanceOf[CarbonRelation]
+    if (relation == null) {
+      LOGGER.audit(s"Alter table drop columns request has failed. " +
+                   s"Table $dbName.$tableName does not exist")
+      sys.error(s"Table $dbName.$tableName does not exist")
+    }
+    // acquire the lock first
+    val table = relation.tableMeta.carbonTable
+    val carbonLock = CarbonLockFactory
+      .getCarbonLockObj(table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+        LockUsage.METADATA_LOCK)
+    try {
+      // get the latest carbon table and check for column existence
+      val carbonTable = CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)
+      // check each column existence in the table
+      val tableColumns = carbonTable.getCreateOrderColumn(tableName).asScala
+      var dictionaryColumns = ListBuffer[CarbonColumn]()
+      var keyColumnCountToBeDeleted = 0
+      // TODO: if deleted column list includes shared dictionary/bucketted column throw an error
+      alterTableDropColumnModel.columns.foreach { column =>
+        var columnExist = false
+        tableColumns.foreach { tableColumn =>
+          // column should not be already deleted and should exist in the table
+          if (!tableColumn.isInvisible && column.equalsIgnoreCase(tableColumn.getColName)) {
+            if (tableColumn.isDimesion) {
+              keyColumnCountToBeDeleted += 1
+              if (tableColumn.hasEncoding(Encoding.DICTIONARY)) {
+                dictionaryColumns += tableColumn
+              }
+            }
+            columnExist = true
+          }
+        }
+        if (!columnExist) {
+          sys.error(s"Column $column does not exists in the table $dbName.$tableName")
+        }
+      }
+      // take the total key column count. key column to be deleted should not
+      // be >= key columns in schema
+      var totalKeyColumnInSchema = 0
+      tableColumns.foreach { tableColumn =>
+        // column should not be already deleted and should exist in the table
+        if (!tableColumn.isInvisible && tableColumn.isDimesion) {
+          totalKeyColumnInSchema += 1
+        }
+      }
+      if (keyColumnCountToBeDeleted >= totalKeyColumnInSchema) {
+        sys.error(s"Alter drop operation failed. AtLeast one key column should exist after drop.")
+      }
+      // read the latest schema file
+      val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
+        carbonTable.getCarbonTableIdentifier)
+      val tableMetadataFile = carbonTablePath.getSchemaFilePath
+      val tableInfo: org.apache.carbondata.format.TableInfo = CarbonEnv.get.carbonMetastore
+        .readSchemaFile(tableMetadataFile)
+      // maintain the deleted columns for schema evolution history
+      var deletedColumnSchema = ListBuffer[org.apache.carbondata.format.ColumnSchema]()
+      val columnSchemaList = tableInfo.fact_table.table_columns.asScala
+      alterTableDropColumnModel.columns.foreach { column =>
+        columnSchemaList.foreach { columnSchema =>
+          if (!columnSchema.invisible && column.equalsIgnoreCase(columnSchema.column_name)) {
+            deletedColumnSchema += CarbonScalaUtil.createColumnSchemaCopyObject(columnSchema)
+            columnSchema.invisible = true
+          }
+        }
+      }
+      // add deleted columns to schema evolution history and update the schema
+      tableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
+        .setTime_stamp(System.currentTimeMillis)
+      val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
+      schemaEvolutionEntry.setRemoved(deletedColumnSchema.toList.asJava)
+      CarbonEnv.get.carbonMetastore
+        .updateTableSchema(carbonTable.getCarbonTableIdentifier,
+          tableInfo,
+          schemaEvolutionEntry,
+          carbonTable.getStorePath)(sparkSession)
+
+      val tableIdentifier = TableIdentifier(tableName, Some(dbName))
+      val schema = CarbonEnv.get.carbonMetastore
+        .lookupRelation(tableIdentifier)(sparkSession).schema.json
+      sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client.runSqlHive(
+        s"ALTER TABLE $dbName.$tableName SET TBLPROPERTIES('spark.sql.sources.schema'='$schema')")
+      sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
+      // TODO: 1. add check for deletion of index tables
+      // delete dictionary files for dictionary column and clear dictionary cache from memory
+      CarbonUtil.deleteDictionaryFileAndCache(dictionaryColumns.toList.asJava, carbonTable)
+      LOGGER.info(s"Alter table for drop columns is successful for table $dbName.$tableName")
+      LOGGER.audit(s"Alter table for drop columns is successful for table $dbName.$tableName")
+    } catch {
+      case e: Exception =>
+        LOGGER.error("Alter table drop columns failed : " + e.getMessage)
+        throw e
+    } finally {
+      // release lock after command execution completion
+      if (carbonLock != null) {
+        if (carbonLock.unlock()) {
+          LOGGER.info("Alter table drop columns lock released successfully")
+        } else {
+          LOGGER.error("Unable to release lock during alter table drop columns operation")
+        }
+      }
     }
     Seq.empty
   }
@@ -783,13 +1079,15 @@ private[sql] case class DescribeCommandFormatted(
       .lookupRelation(tblIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
     val mapper = new ObjectMapper()
     val colProps = StringBuilder.newBuilder
+    val dims = relation.metaData.dims.map(x => x.toLowerCase)
     var results: Seq[(String, String, String)] = child.schema.fields.map { field =>
-      val comment = if (relation.metaData.dims.contains(field.name)) {
+      val fieldName = field.name.toLowerCase
+      val comment = if (dims.contains(fieldName)) {
         val dimension = relation.metaData.carbonTable.getDimensionByName(
           relation.tableMeta.carbonTableIdentifier.getTableName,
-          field.name)
+          fieldName)
         if (null != dimension.getColumnProperties && dimension.getColumnProperties.size() > 0) {
-          colProps.append(field.name).append(".")
+          colProps.append(fieldName).append(".")
             .append(mapper.writeValueAsString(dimension.getColumnProperties))
             .append(",")
         }

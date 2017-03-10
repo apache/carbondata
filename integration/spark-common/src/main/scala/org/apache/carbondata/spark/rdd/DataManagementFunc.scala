@@ -194,7 +194,7 @@ object DataManagementFunc {
         )
       } catch {
         case e: Exception =>
-          LOGGER.error(s"Exception in compaction thread ${ e.getMessage }")
+          LOGGER.error(e, s"Exception in compaction thread ${ e.getMessage }")
           throw e
       }
 

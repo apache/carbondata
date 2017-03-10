@@ -154,6 +154,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val ARRAY = carbonKeyWord("ARRAY")
   protected val STRUCT = carbonKeyWord("STRUCT")
 
+  protected val CHANGE = carbonKeyWord("CHANGE")
+  protected val TBLPROPERTIES = carbonKeyWord("TBLPROPERTIES")
+
   protected val doubleQuotedString = "\"([^\"]+)\"".r
   protected val singleQuotedString = "'([^']+)'".r
 
@@ -229,14 +232,14 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       , tableName: String, fields: Seq[Field],
       partitionCols: Seq[PartitionerField],
       tableProperties: mutable.Map[String, String],
-      bucketFields: Option[BucketFields]): TableModel = {
+      bucketFields: Option[BucketFields], isAlterFlow: Boolean = false): TableModel = {
 
     fields.zipWithIndex.foreach { x =>
       x._1.schemaOrdinal = x._2
     }
     val (dims: Seq[Field], noDictionaryDims: Seq[String]) = extractDimColsAndNoDictionaryFields(
       fields, tableProperties)
-    if (dims.isEmpty) {
+    if (dims.isEmpty && !isAlterFlow) {
       throw new MalformedCarbonCommandException(s"Table ${
         dbName.getOrElse(
           CarbonCommonConstants.DATABASE_DEFAULT_NAME)
@@ -826,6 +829,19 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case _ => ("", "")
     }
 
+  protected lazy val valueOptions: Parser[(Int, Int)] =
+    (numericLit <~ ",") ~ numericLit ^^ {
+      case opt ~ optvalue => (opt.toInt, optvalue.toInt)
+      case _ => (0, 0)
+    }
+
+  protected lazy val columnOptions: Parser[(String, String)] =
+    (stringLit <~ ",") ~ stringLit ^^ {
+      case opt ~ optvalue => (opt, optvalue)
+      case _ =>
+        throw new MalformedCarbonCommandException(s"value cannot be empty")
+    }
+
   protected lazy val dimCol: Parser[Field] = anyFieldDef
 
   protected lazy val primitiveTypes =
@@ -1010,4 +1026,39 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       p.getClass.getSimpleName.equals("FloatLit") ||
       p.getClass.getSimpleName.equals("DecimalLit")
     }) ^^ (_.chars)
+
+  /**
+   * This method will parse the given data type and validate against the allowed data types
+   *
+   * @param dataType
+   * @param values
+   * @return
+   */
+  protected def parseDataType(dataType: String, values: Option[List[(Int, Int)]]): DataTypeInfo = {
+    dataType match {
+      case "bigint" =>
+        if (values.isDefined) {
+          throw new MalformedCarbonCommandException("Invalid data type")
+        }
+        DataTypeInfo(dataType)
+      case "decimal" =>
+        var precision: Int = 0
+        var scale: Int = 0
+        if (values.isDefined) {
+          precision = values.get(0)._1
+          scale = values.get(0)._2
+        } else {
+          throw new MalformedCarbonCommandException("Decimal format provided is invalid")
+        }
+        // precision should be > 0 and <= 38 and scale should be >= 0 and <= 38
+        if (precision < 1 || precision > 38) {
+          throw new MalformedCarbonCommandException("Invalid value for precision")
+        } else if (scale < 0 || scale > 38) {
+          throw new MalformedCarbonCommandException("Invalid value for scale")
+        }
+        DataTypeInfo("decimal", precision, scale)
+      case _ =>
+        throw new MalformedCarbonCommandException("Data type provided is invalid.")
+    }
+  }
 }
