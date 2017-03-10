@@ -39,6 +39,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
+import org.apache.carbondata.core.fileoperations.FileWriteOperation
 import org.apache.carbondata.core.locks.ZookeeperInit
 import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
@@ -251,18 +252,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
                 if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
                   val tableName = tableFolder.getName
                   val tableUniqueName = databaseFolder.getName + "_" + tableFolder.getName
-
-
-                  val createTBase = new ThriftReader.TBaseCreator() {
-                    override def create(): org.apache.thrift.TBase[TableInfo, TableInfo._Fields] = {
-                      new TableInfo()
-                    }
-                  }
-                  val thriftReader = new ThriftReader(tableMetadataFile, createTBase)
-                  thriftReader.open()
-                  val tableInfo: TableInfo = thriftReader.read().asInstanceOf[TableInfo]
-                  thriftReader.close()
-
+                  val tableInfo: TableInfo = readSchemaFile(tableMetadataFile)
                   val schemaConverter = new ThriftWrapperSchemaConverterImpl
                   val wrapperTableInfo = schemaConverter
                     .fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, basePath)
@@ -292,9 +282,56 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
   }
 
   /**
+   * This method will read the schema file from a given path
+   *
+   * @param schemaFilePath
+   * @return
+   */
+  def readSchemaFile(schemaFilePath: String): TableInfo = {
+    val createTBase = new ThriftReader.TBaseCreator() {
+      override def create(): org.apache.thrift.TBase[TableInfo, TableInfo._Fields] = {
+        new TableInfo()
+      }
+    }
+    val thriftReader = new ThriftReader(schemaFilePath, createTBase)
+    thriftReader.open()
+    val tableInfo: TableInfo = thriftReader.read().asInstanceOf[TableInfo]
+    thriftReader.close()
+    tableInfo
+  }
+
+  /**
+   * This method will overwrite the existing schema and update it with the gievn details
+   *
+   * @param carbonTableIdentifier
+   * @param thriftTableInfo
+   * @param schemaEvolutionEntry
+   * @param carbonStorePath
+   * @param sparkSession
+   */
+  def updateTableSchema(carbonTableIdentifier: CarbonTableIdentifier,
+      thriftTableInfo: org.apache.carbondata.format.TableInfo,
+      schemaEvolutionEntry: SchemaEvolutionEntry,
+      carbonStorePath: String)
+    (sparkSession: SparkSession): Unit = {
+    val schemaConverter = new ThriftWrapperSchemaConverterImpl
+    val wrapperTableInfo = schemaConverter
+      .fromExternalToWrapperTableInfo(thriftTableInfo,
+        carbonTableIdentifier.getDatabaseName,
+        carbonTableIdentifier.getTableName,
+        carbonStorePath)
+    thriftTableInfo.fact_table.schema_evolution.schema_evolution_history.add(schemaEvolutionEntry)
+    createSchemaThriftFile(wrapperTableInfo,
+      thriftTableInfo,
+      carbonTableIdentifier.getDatabaseName,
+      carbonTableIdentifier.getTableName)(sparkSession)
+    // add a logger after completion saying update schema is success for given db and table name
+  }
+
+  /**
    *
    * Prepare Thrift Schema from wrapper TableInfo and write to Schema file.
-   * Load CarbonTable from wrapper tableinfo
+   * Load CarbonTable from wrapper tableInfo
    *
    */
   def createTableFromThrift(
@@ -304,13 +341,36 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
     if (tableExists(tableName, Some(dbName))(sparkSession)) {
       sys.error(s"Table [$tableName] already exists under Database [$dbName]")
     }
+    val schemaEvolutionEntry = new SchemaEvolutionEntry(tableInfo.getLastUpdatedTime)
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val thriftTableInfo = schemaConverter
       .fromWrapperToExternalTableInfo(tableInfo, dbName, tableName)
-    val schemaEvolutionEntry = new SchemaEvolutionEntry(tableInfo.getLastUpdatedTime)
     thriftTableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history
       .add(schemaEvolutionEntry)
+    val carbonTablePath = createSchemaThriftFile(tableInfo,
+      thriftTableInfo,
+      dbName,
+      tableName)(sparkSession)
+    updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
+    LOGGER.info(s"Table $tableName for Database $dbName created successfully.")
+    carbonTablePath
+  }
 
+  /**
+   * This method will write the schema thrift file in carbon store and load table metadata
+   *
+   * @param tableInfo
+   * @param thriftTableInfo
+   * @param dbName
+   * @param tableName
+   * @param sparkSession
+   * @return
+   */
+  private def createSchemaThriftFile(
+      tableInfo: org.apache.carbondata.core.metadata.schema.table.TableInfo,
+      thriftTableInfo: org.apache.carbondata.format.TableInfo,
+      dbName: String, tableName: String)
+    (sparkSession: SparkSession): String = {
     val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName,
       tableInfo.getFactTable.getTableId)
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier)
@@ -318,22 +378,37 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
     val schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath)
     tableInfo.setMetaDataFilepath(schemaMetadataPath)
     tableInfo.setStorePath(storePath)
-    CarbonMetadata.getInstance().loadTableMetadata(tableInfo)
-    val tableMeta = new TableMeta(carbonTableIdentifier, storePath,
-      CarbonMetadata.getInstance().getCarbonTable(dbName + "_" + tableName))
-
     val fileType = FileFactory.getFileType(schemaMetadataPath)
     if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
       FileFactory.mkdirs(schemaMetadataPath, fileType)
     }
     val thriftWriter = new ThriftWriter(schemaFilePath, false)
-    thriftWriter.open()
+    thriftWriter.open(FileWriteOperation.OVERWRITE)
     thriftWriter.write(thriftTableInfo)
     thriftWriter.close()
+    removeTableFromMetadata(dbName, tableName)
+    CarbonMetadata.getInstance().loadTableMetadata(tableInfo)
+    val tableMeta = new TableMeta(carbonTableIdentifier, storePath,
+        CarbonMetadata.getInstance().getCarbonTable(dbName + '_' + tableName))
     metadata.tablesMeta += tableMeta
-    LOGGER.info(s"Table $tableName for Database $dbName created successfully.")
-    updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
     carbonTablePath.getPath
+  }
+
+  /**
+   * This method will remove the table meta from catalog metadata array
+   *
+   * @param dbName
+   * @param tableName
+   */
+  private def removeTableFromMetadata(dbName: String, tableName: String) = {
+    val metadataToBeRemoved: Option[TableMeta] = getTableFromMetadata(dbName, tableName)
+    metadataToBeRemoved match {
+      case Some(tableMeta) =>
+        metadata.tablesMeta -= tableMeta
+        CarbonMetadata.getInstance.removeTable(dbName + "_" + tableName)
+      case None =>
+        LOGGER.debug(s"No entry for table $tableName in database $dbName")
+    }
   }
 
   private def updateMetadataByWrapperTable(
@@ -612,7 +687,7 @@ object CarbonMetastoreTypes extends RegexParsers {
     "binary" ^^^ BinaryType |
     "boolean" ^^^ BooleanType |
     fixedDecimalType |
-    "decimal" ^^^ "decimal" ^^^ DecimalType(18, 2) |
+    "decimal" ^^^ "decimal" ^^^ DecimalType(10, 0) |
     "varchar\\((\\d+)\\)".r ^^^ StringType |
     "date" ^^^ DateType |
     "timestamp" ^^^ TimestampType
@@ -798,8 +873,6 @@ case class CarbonRelation(
         val output = CarbonMetastoreTypes.toDataType {
           column.getDataType.toString
             .toLowerCase match {
-            case "int" => "long"
-            case "short" => "long"
             case "decimal" => "decimal(" + column.getColumnSchema.getPrecision + "," + column
               .getColumnSchema.getScale + ")"
             case others => others

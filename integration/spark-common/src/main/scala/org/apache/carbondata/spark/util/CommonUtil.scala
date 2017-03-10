@@ -345,4 +345,11 @@ object CommonUtil {
 
     csvColumns
   }
+
+  def validateColumnNames(columnName: String, columnNameCopy: String): Unit = {
+    if (!columnName.equalsIgnoreCase(columnNameCopy)) {
+      throw new MalformedCarbonCommandException(
+        "Column names provided are different. Both the column names should be same")
+    }
+  }
 }

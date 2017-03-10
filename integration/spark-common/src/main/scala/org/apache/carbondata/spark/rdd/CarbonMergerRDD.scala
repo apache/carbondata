@@ -139,6 +139,7 @@ class CarbonMergerRDD[K, V](
             .toList
         }
 
+        val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
         // get destination segment properties as sent from driver which is of last segment.
         val segmentProperties = new SegmentProperties(
           carbonMergerMapping.maxSegmentColumnSchemaList.asJava,
@@ -153,7 +154,7 @@ class CarbonMergerRDD[K, V](
         carbonLoadModel.setStorePath(hdfsStoreLocation)
 
         exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties,
-          carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable, dataFileMetadataSegMapping)
+          carbonTable, dataFileMetadataSegMapping)
 
         // fire a query and get the results.
         var result2: java.util.List[RawResultIterator] = null
@@ -196,7 +197,6 @@ class CarbonMergerRDD[K, V](
             segmentProperties,
             tempStoreLoc,
             carbonLoadModel,
-            carbonMergerMapping.maxSegmentColCardinality,
             carbonMergerMapping.campactionType
           )
         mergeStatus = merger.mergerSlice()
@@ -235,21 +235,6 @@ class CarbonMergerRDD[K, V](
       }
     }
     iter
-  }
-
-
-  def calculateCardanility(targetCardinality: Array[Int],
-      sourceCardinality: Array[Int],
-      columnSize: Int): Unit = {
-    var cols = columnSize
-
-    // Choose the highest cardinality among all the blocks.
-    while (cols > 0) {
-      if (targetCardinality(cols - 1) < sourceCardinality(cols - 1)) {
-        targetCardinality(cols - 1) = sourceCardinality(cols - 1)
-      }
-      cols -= 1
-    }
   }
 
   override def getPartitions: Array[Partition] = {
@@ -319,13 +304,9 @@ class CarbonMergerRDD[K, V](
           logError("Exception in preparing the data file footer for compaction " + e.getMessage)
           throw e
       }
-
-      columnSize = dataFileFooter.getSegmentInfo.getColumnCardinality.size
-      carbonMergerMapping.maxSegmentColumnSchemaList = dataFileFooter.getColumnInTable.asScala
-        .toList
     }
 
-    var cardinality = new Array[Int](columnSize)
+    val columnToCardinalityMap = new util.HashMap[java.lang.String, Integer]()
 
     carbonInputSplits.foreach(splits => {
       val taskNo = splits.taskId
@@ -350,14 +331,21 @@ class CarbonMergerRDD[K, V](
           logError("Exception in preparing the data file footer for compaction " + e.getMessage)
           throw e
       }
-
-      // Calculate the Cardinality of the new segment
-      calculateCardanility(cardinality,
-        dataFileFooter.getSegmentInfo.getColumnCardinality,
-        columnSize)
+      // add all the column and cardinality to the map
+      CarbonCompactionUtil
+        .addColumnCardinalityToMap(columnToCardinalityMap,
+          dataFileFooter.getColumnInTable,
+          dataFileFooter.getSegmentInfo.getColumnCardinality)
     }
     )
-
+    val updatedMaxSegmentColumnList = new util.ArrayList[ColumnSchema]()
+    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    // update cardinality and column schema list according to master schema
+    val cardinality = CarbonCompactionUtil
+      .updateColumnSchemaAndGetCardinality(columnToCardinalityMap,
+        carbonTable,
+        updatedMaxSegmentColumnList)
+    carbonMergerMapping.maxSegmentColumnSchemaList = updatedMaxSegmentColumnList.asScala.toList
     // Set cardinality for new segment.
     carbonMergerMapping.maxSegmentColCardinality = cardinality
 

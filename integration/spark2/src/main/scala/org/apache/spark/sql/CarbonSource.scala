@@ -37,11 +37,30 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
  * Carbon relation provider compliant to data source api.
  * Creates carbon relations
  */
-class CarbonSource extends CreatableRelationProvider
+class CarbonSource extends CreatableRelationProvider with RelationProvider
   with SchemaRelationProvider with DataSourceRegister {
 
   override def shortName(): String = "carbondata"
 
+  // will be called if hive supported create table command is provided
+  override def createRelation(sqlContext: SQLContext,
+      parameters: Map[String, String]): BaseRelation = {
+    CarbonEnv.init(sqlContext.sparkSession)
+    // if path is provided we can directly create Hadoop relation. \
+    // Otherwise create datasource relation
+    parameters.get("tablePath") match {
+      case Some(path) => CarbonDatasourceHadoopRelation(sqlContext.sparkSession,
+        Array(path),
+        parameters,
+        None)
+      case _ =>
+        val options = new CarbonOption(parameters)
+        val storePath = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.STORE_LOCATION)
+        val tablePath = storePath + "/" + options.dbName + "/" + options.tableName
+        CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(tablePath), parameters, None)
+    }
+  }
   // called by any write operation like INSERT INTO DDL or DataFrame.write API
   override def createRelation(
       sqlContext: SQLContext,
@@ -108,8 +127,9 @@ class CarbonSource extends CreatableRelationProvider
   private def createTableIfNotExists(sparkSession: SparkSession, parameters: Map[String, String],
       dataSchema: StructType): String = {
 
-    val dbName: String = parameters.getOrElse("dbName", CarbonCommonConstants.DATABASE_DEFAULT_NAME)
-    val tableName: String = parameters.getOrElse("tableName", "default_table")
+    val dbName: String = parameters.getOrElse("dbName",
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
+    val tableName: String = parameters.getOrElse("tableName", "default_table").toLowerCase
     if (StringUtils.isBlank(tableName)) {
       throw new MalformedCarbonCommandException("The Specified Table Name is Blank")
     }
@@ -125,7 +145,8 @@ class CarbonSource extends CreatableRelationProvider
         val fields = dataSchema.map { col =>
           val dataType = Option(col.dataType.toString)
           // This is to parse complex data types
-          val f: Field = Field(col.name, dataType, Option(col.name), None, null)
+          val colName = col.name.toLowerCase
+          val f: Field = Field(colName, dataType, Option(colName), None, null)
           // the data type of the decimal type will be like decimal(10,0)
           // so checking the start of the string and taking the precision and scale.
           // resetting the data type with decimal
@@ -139,7 +160,7 @@ class CarbonSource extends CreatableRelationProvider
           f
         }
         val map = scala.collection.mutable.Map[String, String]()
-        parameters.foreach { parameter => map.put(parameter._1, parameter._2) }
+        parameters.foreach { parameter => map.put(parameter._1, parameter._2.toLowerCase) }
         val bucketFields = if (options.isBucketingEnabled) {
             if (options.bucketNumber.toString.contains("-") ||
                 options.bucketNumber.toString.contains("+") ) {
@@ -147,7 +168,8 @@ class CarbonSource extends CreatableRelationProvider
                                                         options.bucketNumber.toString)
             }
             else {
-              Some(BucketFields(options.bucketColumns.split(","), options.bucketNumber))
+              Some(BucketFields(options.bucketColumns.toLowerCase.split(",").map(_.trim),
+                options.bucketNumber))
             }
           } else {
             None
