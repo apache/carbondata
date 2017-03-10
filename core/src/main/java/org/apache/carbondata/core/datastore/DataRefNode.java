@@ -122,4 +122,10 @@ public interface DataRefNode {
    * @return
    */
   BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache();
+
+  /**
+   * number of pages in blocklet
+   * @return
+   */
+  int numberOfPages();
 }

@@ -43,6 +43,11 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
   private MeasureColumnChunkReader measureColumnChunkReader;
 
   /**
+   * number of pages in blocklet
+   */
+  private int numberOfPages;
+
+  /**
    * Create a leaf node
    *
    * @param builderInfos builder infos which have required metadata to create a leaf node
@@ -123,5 +128,13 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
   @Override public MeasureRawColumnChunk getMeasureChunk(FileHolder fileReader, int blockIndex)
       throws IOException {
     return measureColumnChunkReader.readRawMeasureChunk(fileReader, blockIndex);
+  }
+
+  /**
+   * @return the number of pages in blocklet
+   */
+  @Override
+  public int numberOfPages() {
+    return numberOfPages;
   }
 }

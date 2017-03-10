@@ -166,6 +166,7 @@ struct BlockletInfo3{
     3: required list<i32> column_data_chunks_length;	// Information about length all column chunks in this blocklet
     4: required i64 dimension_offsets;
     5: required i64 measure_offsets;
+    6: required i32 number_number_of_pages; // this is rquired for alter table, in case of alter table when filter is only selected on new added column this will help
   }
 /**
 * Footer for indexed carbon file
@@ -178,8 +179,18 @@ struct FileFooter{
     5: required list<BlockletIndex> blocklet_index_list;	// blocklet index of all blocklets in this file
     6: optional list<BlockletInfo> blocklet_info_list;	// Information about blocklets of all columns in this file
     7: optional list<BlockletInfo2> blocklet_info_list2;	// Information about blocklets of all columns in this file
-    8: optional list<BlockletInfo3> blocklet_info_list3;	// Information about blocklets of all columns in this file
-    9: optional dictionary.ColumnDictionaryChunk dictionary; // blocklet local dictionary
+    8: optional dictionary.ColumnDictionaryChunk dictionary; // blocklet local dictionary
+}
+
+/**
+* Footer for indexed carbon file for V3 format
+*/
+struct FileFooter3{
+    1: required i64 num_rows; // Total number of rows in this file
+    2: required SegmentInfo segment_info;	// Segment info (will be same/repeated for all files in this segment)
+    3: required list<BlockletIndex> blocklet_index_list;	// blocklet index of all blocklets in this file
+    4: optional list<BlockletInfo3> blocklet_info_list3;	// Information about blocklets of all columns in this file
+    5: optional dictionary.ColumnDictionaryChunk dictionary; // blocklet local dictionary
 }
 
 /**
@@ -187,7 +198,8 @@ struct FileFooter{
  */
 struct FileHeader{
 	1: required i32 version; // version used for data compatibility
-	2: required list<schema.ColumnSchema> table_columns;  // Description of columns in this file
+	2: required list<schema.ColumnSchema> column_schema;  // Description of columns in this file
+	3: optional bool is_footer_present; //  to check whether footer is present or not      
 }
 
 /**

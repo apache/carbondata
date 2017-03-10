@@ -61,9 +61,21 @@ public class BlockletInfo implements Serializable {
    */
   private BlockletIndex blockletIndex;
 
+  /**
+   * last dimension end offset
+   */
   private long dimensionOffset;
 
+  /**
+   * last measure end offsets
+   */
   private long measureOffsets;
+
+  /**
+   * number of pages in blocklet
+   * default value is one for V1 and V2 version
+   */
+  private int numberOfPages = 1;
 
   /**
    * @return the numberOfRows
@@ -167,6 +179,14 @@ public class BlockletInfo implements Serializable {
 
   public void setMeasureOffsets(long measureOffsets) {
     this.measureOffsets = measureOffsets;
+  }
+
+  public int getNumberOfPages() {
+    return numberOfPages;
+  }
+
+  public void setNumberOfPages(int numberOfPages) {
+    this.numberOfPages = numberOfPages;
   }
 
 }

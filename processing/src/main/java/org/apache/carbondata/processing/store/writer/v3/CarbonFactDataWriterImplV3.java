@@ -26,7 +26,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
-import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
@@ -35,9 +34,8 @@ import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.NodeHolder;
-import org.apache.carbondata.core.writer.CarbonFooterWriter;
 import org.apache.carbondata.format.BlockletInfo3;
-import org.apache.carbondata.format.FileFooter;
+import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.processing.store.colgroup.ColGroupBlockStorage;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
@@ -45,6 +43,10 @@ import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterE
 
 /**
  * Below class will be used to write the data in V3 format
+ * <Column1 Data ChunkV3><Column1<Page1><Page2><Page3><Page4>>
+ * <Column2 Data ChunkV3><Column2<Page1><Page2><Page3><Page4>>
+ * <Column3 Data ChunkV3><Column3<Page1><Page2><Page3><Page4>>
+ * <Column4 Data ChunkV3><Column4<Page1><Page2><Page3><Page4>>
  */
 public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> {
 
@@ -61,8 +63,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
   public CarbonFactDataWriterImplV3(CarbonDataWriterVo dataWriterVo) {
     super(dataWriterVo);
     this.numberOfChunksInBlocklet = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN,
-              CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE));
+        .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN,
+            CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE));
     dataWriterHolder = new DataWriterHolder();
   }
 
@@ -239,15 +241,20 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     try {
       // get the current file position
       long currentPosition = channel.size();
-      CarbonFooterWriter writer = new CarbonFooterWriter(filePath);
       // get thrift file footer instance
-      FileFooter convertFileMeta = CarbonMetadataUtil
-          .convertFileFooter3(blockletMetadata, blockletIndex, localCardinality,
-              thriftColumnSchemaList, dataWriterVo.getSegmentProperties());
+      FileFooter3 convertFileMeta = CarbonMetadataUtil
+          .convertFileFooterVersion3(blockletMetadata, blockletIndex, localCardinality,
+              thriftColumnSchemaList.size(), dataWriterVo.getSegmentProperties());
       // fill the carbon index details
       fillBlockIndexInfoDetails(convertFileMeta.getNum_rows(), filePath, currentPosition);
       // write the footer
-      writer.writeFooter(convertFileMeta, currentPosition);
+      byte[] byteArray = CarbonUtil.getByteArray(convertFileMeta);
+      ByteBuffer buffer =
+          ByteBuffer.allocate(byteArray.length + CarbonCommonConstants.LONG_SIZE_IN_BYTE);
+      buffer.put(byteArray);
+      buffer.putLong(currentPosition);
+      buffer.flip();
+      channel.write(buffer);
     } catch (IOException e) {
       throw new CarbonDataWriterException("Problem while writing the carbon file: ", e);
     }
@@ -319,11 +326,12 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     // write the header
     try {
       if (fileChannel.size() == 0) {
-        ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
-        byte[] header = (CarbonCommonConstants.CARBON_DATA_VERSION_HEADER + version).getBytes();
-        ByteBuffer buffer = ByteBuffer.allocate(header.length);
-        buffer.put(header);
-        buffer.rewind();
+        // below code is to write the file header
+        byte[] fileHeader =
+            CarbonUtil.getByteArray(CarbonMetadataUtil.getFileHeader(true, thriftColumnSchemaList));
+        ByteBuffer buffer = ByteBuffer.allocate(fileHeader.length);
+        buffer.put(fileHeader);
+        buffer.flip();
         fileChannel.write(buffer);
       }
       offset = channel.size();
@@ -411,7 +419,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
         .getBlockletIndex(nodeHolderList, dataWriterVo.getSegmentProperties().getMeasures()));
     BlockletInfo3 blockletInfo3 =
         new BlockletInfo3(numberOfRows, currentDataChunksOffset, currentDataChunksLength,
-            dimensionOffset, measureOffset);
+            dimensionOffset, measureOffset, dataWriterHolder.getNumberOfPagesAdded());
     blockletMetadata.add(blockletInfo3);
   }
 
