@@ -172,8 +172,7 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
 
   private void compressDataMyOwnWay(ColumnWithShortIndex[] indexes) {
     byte[] prvKey = indexes[0].getColumn();
-    List<ColumnWithShortIndex> list =
-        new ArrayList<ColumnWithShortIndex>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    List<ColumnWithShortIndex> list = new ArrayList<ColumnWithShortIndex>(indexes.length / 2);
     list.add(indexes[0]);
     short counter = 1;
     short start = 0;
@@ -192,12 +191,25 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     }
     map.add(start);
     map.add(counter);
-    this.keyBlock = convertToKeyArray(list);
-    if (indexes.length == keyBlock.length) {
-      dataIndexMap = new short[0];
-    } else {
+    // if rle is index size is more than 70% then rle wont give any benefit
+    // so better to avoid rle index and write data as it is
+    boolean useRle = (((list.size() + map.size()) * 100) / indexes.length) < 70;
+    if (useRle) {
+      this.keyBlock = convertToKeyArray(list);
       dataIndexMap = convertToArray(map);
+    } else {
+      this.keyBlock = convertToKeyArray(indexes);
+      dataIndexMap = new short[0];
     }
+  }
+
+  private byte[][] convertToKeyArray(ColumnWithShortIndex[] indexes) {
+    byte[][] shortArray = new byte[indexes.length][];
+    for (int i = 0; i < shortArray.length; i++) {
+      shortArray[i] = indexes[i].getColumn();
+      totalSize += shortArray[i].length;
+    }
+    return shortArray;
   }
 
   private byte[][] convertToKeyArray(List<ColumnWithShortIndex> list) {
