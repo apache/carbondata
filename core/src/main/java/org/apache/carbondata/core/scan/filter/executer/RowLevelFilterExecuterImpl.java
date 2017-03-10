@@ -494,10 +494,12 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     }
 
     if (null != msrColEvalutorInfoList) {
-      if (null == blockChunkHolder.getMeasureRawDataChunk()[measureBlocksIndex[0]]) {
-        blockChunkHolder.getMeasureRawDataChunk()[measureBlocksIndex[0]] =
-            blockChunkHolder.getDataBlock()
-                .getMeasureChunk(blockChunkHolder.getFileReader(), measureBlocksIndex[0]);
+      for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
+        if (null == blockChunkHolder.getMeasureRawDataChunk()[measureBlocksIndex[0]]) {
+          blockChunkHolder.getMeasureRawDataChunk()[measureBlocksIndex[0]] =
+              blockChunkHolder.getDataBlock()
+                  .getMeasureChunk(blockChunkHolder.getFileReader(), measureBlocksIndex[0]);
+        }
       }
     }
   }

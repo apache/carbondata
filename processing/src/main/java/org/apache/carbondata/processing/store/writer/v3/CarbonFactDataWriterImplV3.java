@@ -375,8 +375,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     try {
       if (fileChannel.size() == 0) {
         // below code is to write the file header
-        byte[] fileHeader =
-            CarbonUtil.getByteArray(CarbonMetadataUtil.getFileHeader(true, thriftColumnSchemaList));
+        byte[] fileHeader = CarbonUtil.getByteArray(CarbonMetadataUtil
+            .getFileHeader(true, thriftColumnSchemaList, dataWriterVo.getSchemaUpdatedTimeStamp()));
         ByteBuffer buffer = ByteBuffer.allocate(fileHeader.length);
         buffer.put(fileHeader);
         buffer.flip();

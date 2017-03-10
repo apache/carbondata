@@ -399,7 +399,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
    * @param dbName
    * @param tableName
    */
-  def removeTableFromMetadata(dbName: String, tableName: String) = {
+  def removeTableFromMetadata(dbName: String, tableName: String): Unit = {
     val metadataToBeRemoved: Option[TableMeta] = getTableFromMetadata(dbName, tableName)
     metadataToBeRemoved match {
       case Some(tableMeta) =>

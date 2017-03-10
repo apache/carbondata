@@ -259,6 +259,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   private int bucketNumber;
 
+  private long schemaUpdatedTimeStamp;
+
   /**
    * current data format version
    */
@@ -354,6 +356,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.completeDimLens = carbonFactDataHandlerModel.getDimLens();
     this.dimLens = this.segmentProperties.getDimColumnsCardinality();
     this.carbonDataFileAttributes = carbonFactDataHandlerModel.getCarbonDataFileAttributes();
+    this.schemaUpdatedTimeStamp = carbonFactDataHandlerModel.getSchemaUpdatedTimeStamp();
     //TODO need to pass carbon table identifier to metadata
     CarbonTable carbonTable = CarbonMetadata.getInstance()
         .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
@@ -1420,6 +1423,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     carbonDataWriterVo.setSegmentProperties(segmentProperties);
     carbonDataWriterVo.setTableBlocksize(tableBlockSize);
     carbonDataWriterVo.setBucketNumber(bucketNumber);
+    carbonDataWriterVo.setSchemaUpdatedTimeStamp(schemaUpdatedTimeStamp);
     return carbonDataWriterVo;
   }
 
