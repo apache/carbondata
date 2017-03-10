@@ -1,7 +1,5 @@
 package org.apache.carbondata
 
-import org.apache.carbondata.cardinality.CardinalityProcessor
-import org.apache.carbondata.utils.LoadProperties
 import org.apache.spark.sql.DataFrame
 import org.mockito.Mockito._
 import org.scalatest.FunSuite
@@ -9,14 +7,19 @@ import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.apache.carbondata.dictionary.CarbonTableUtil
 
-class DictionaryFileGenerationTest extends FunSuite with MockitoSugar with DictionaryFileGeneration {
+import org.apache.carbondata.cardinality.CardinalityProcessor
+import org.apache.carbondata.utils.LoadProperties
+
+class DictionaryFileGenerationTest
+  extends FunSuite with MockitoSugar with DictionaryFileGeneration {
 
 
   import TestHelper.sparkSession.implicits._
 
   val uniqueNameList = List("Prabhat", "Sangeeta")
 
-  val dataFrames: DataFrame = TestHelper.sparkSession.sparkContext.parallelize(uniqueNameList).toDF("name")
+  val dataFrames: DataFrame = TestHelper.sparkSession.sparkContext.parallelize(uniqueNameList)
+    .toDF("name")
 
   val dataReader: DataReader = mock[DataReader]
   val cardinalityProcessor: CardinalityProcessor = mock[CardinalityProcessor]
@@ -27,7 +30,8 @@ class DictionaryFileGenerationTest extends FunSuite with MockitoSugar with Dicti
 
 
   test("Start Process with valid arguments") {
-    when(dataReader.getDataFrameAndArguments(arguments)) thenReturn ((dataFrames, commandLineArguments))
+    when(dataReader.getDataFrameAndArguments(arguments)) thenReturn
+    ((dataFrames, commandLineArguments))
     when(cardinalityProcessor.getCardinalityMatrix(dataFrames, commandLineArguments)) thenReturn Nil
     assert(startGeneration(arguments) === Nil)
   }

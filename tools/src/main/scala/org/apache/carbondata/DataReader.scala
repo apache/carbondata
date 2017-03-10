@@ -2,11 +2,12 @@ package org.apache.carbondata
 
 import java.io.{BufferedReader, File, FileNotFoundException, FileReader}
 
+import org.apache.spark.SparkConf
+import org.apache.spark.sql.{DataFrame, SparkSession}
+
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.exception.{EmptyFileException, InvalidHeaderException}
 import org.apache.carbondata.utils.{ArgumentParser, LoadProperties}
-import org.apache.spark.SparkConf
-import org.apache.spark.sql.{DataFrame, SparkSession}
 
 trait DataReader {
 
@@ -15,17 +16,18 @@ trait DataReader {
   val argumentParser: ArgumentParser
 
   /**
-    * This method reads and return dataframe and command line arguments
-    * @param args
-    * @return
-    */
+   * This method reads and return dataframe and command line arguments
+   *
+   * @param args
+   * @return
+   */
   def getDataFrameAndArguments(args: Array[String]): (DataFrame, LoadProperties) = {
     val conf = new SparkConf().setAppName("cardinality_demo").setMaster("local")
     val sparkSession = SparkSession.builder().config(conf).getOrCreate()
     sparkSession.sparkContext.setLogLevel("WARN")
     val arguments = argumentParser.getProperties(args.head)
     val headerExist: Boolean = arguments.fileHeaders.fold(true) { _ => false }
-      checkCSVHeader(arguments.inputPath, arguments.delimiter ,headerExist)
+    checkCSVHeader(arguments.inputPath, arguments.delimiter, headerExist)
     val df: DataFrame = sparkSession.read
       .format("com.databricks.spark.csv")
       .option("header", headerExist.toString)
@@ -36,15 +38,17 @@ trait DataReader {
     (df, arguments)
   }
 
-  private def checkCSVHeader(csvFile: String, delimiter: String, isCommandLineHeaderExist: Boolean) = {
+  private def checkCSVHeader(csvFile: String,
+      delimiter: String,
+      isCommandLineHeaderExist: Boolean) = {
     val path = new File(csvFile)
     if (!path.exists()) {
       throw new FileNotFoundException("File not found : " + path.getAbsolutePath)
     }
     if (path.isFile) {
 
-      if(path.length == 0) {
-        throw new EmptyFileException("Input File is Empty : " + path.getAbsolutePath)
+      if (path.length == 0) {
+        throw EmptyFileException("Input File is Empty : " + path.getAbsolutePath)
       } else {
         val file: BufferedReader = new BufferedReader(new FileReader(path))
         val fileHeaders = file.readLine().split(delimiter).toList

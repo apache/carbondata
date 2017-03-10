@@ -1,8 +1,8 @@
 package org.apache.carbondata.utils
 
-import org.apache.carbondata.exception.InvalidParameterException
-
 import scala.util.parsing.combinator.RegexParsers
+
+import org.apache.carbondata.exception.InvalidParameterException
 
 trait ArgumentParser extends RegexParsers {
 
@@ -12,8 +12,15 @@ trait ArgumentParser extends RegexParsers {
       case _ => ("", "")
     }
 
-  private lazy val loadsValue: Parser[Map[String, String]] = repsep(loadProperties, ",") ^^ (_.toMap)
+  private lazy val loadsValue: Parser[Map[String, String]] = repsep(loadProperties, ",") ^^
+                                                             (_.toMap)
 
+  /**
+   * This method with parse command line arguments.
+   *
+   * @param arguments
+   * @return
+   */
   def getProperties(arguments: String): LoadProperties = {
     parse(loadsValue, arguments) match {
       case Success(properties, _) => convertProperties(properties)
@@ -24,22 +31,31 @@ trait ArgumentParser extends RegexParsers {
 
   private def convertProperties(loadProperties: Map[String, String]): LoadProperties = {
     val inputPath: Option[String] = loadProperties.get("inputpath")
-    val fileHeader: Option[List[String]] = loadProperties.get("fileheader").map { header => header.split(",").toList }
+    val fileHeader: Option[List[String]] = loadProperties.get("fileheader")
+      .map { header => header.split(",").toList }
     val delimiter: String = loadProperties.get("delimiter").fold(",")(delimiter => delimiter)
     val quoteChar: String = loadProperties.get("quotecharacter").fold("\"")(quoteChar => quoteChar)
-    val badRecordAction: String = loadProperties.get("badrecordaction").fold("IGNORE")(badRecordAction => badRecordAction)
-    val storeLocation: String = loadProperties.get("storelocation").fold("../tools/target")(storeLocation => storeLocation)
+    val badRecordAction: String = loadProperties.get("badrecordaction")
+      .fold("IGNORE")(badRecordAction => badRecordAction)
+    val storeLocation: String = loadProperties.get("storelocation")
+      .fold("../tools/target")(storeLocation => storeLocation)
     if (inputPath.isDefined) {
-      LoadProperties(inputPath.get, fileHeader, delimiter, quoteChar, badRecordAction, storeLocation)
+      LoadProperties(inputPath.get,
+        fileHeader,
+        delimiter,
+        quoteChar,
+        badRecordAction,
+        storeLocation)
     } else {
       throw InvalidParameterException("Input file path missing")
     }
   }
 
-  private def word: Parser[String] =
+  private def word: Parser[String] = {
     """\w+""".r ^^ {
       _.toString
     }
+  }
 
 }
 

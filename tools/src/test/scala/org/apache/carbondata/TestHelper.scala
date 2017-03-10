@@ -5,8 +5,8 @@ import org.apache.spark.sql.SparkSession
 
 object TestHelper {
 
-  val conf = new SparkConf().setAppName("cardinality_demo").setMaster("local")
-  val sparkSession = SparkSession.builder().config(conf).getOrCreate()
+  val conf: SparkConf = new SparkConf().setAppName("cardinality_demo").setMaster("local")
+  val sparkSession: SparkSession = SparkSession.builder().config(conf).getOrCreate()
   sparkSession.sparkContext.setLogLevel("ERROR")
 
 }
