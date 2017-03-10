@@ -6,38 +6,53 @@ import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.types._
 
 import org.apache.carbondata.cardinality.CardinalityMatrix
+import org.apache.carbondata.common.CarbonToolConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata,
-CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.ThriftWriter
-import org.apache.carbondata.format.SchemaEvolutionEntry
 
 trait CarbonTableUtil {
 
-  val globalDictionaryUtil: GlobalDictionaryUtil
+  val dictionaryGenerator: DictionaryGenerator
 
+  /**
+   * This method creates Dictionary from Input Data
+   *
+   * @param cardinalityMatrix
+   * @param dataFrame
+   * @return
+   */
   def createDictionary(cardinalityMatrix: List[CardinalityMatrix],
-      dataFrame: DataFrame): Unit = {
+      dataFrame: DataFrame): String = {
     val (carbonTable, absoluteTableIdentifier) = createCarbonTableMeta(cardinalityMatrix, dataFrame)
-    globalDictionaryUtil.writeDictionary(carbonTable, cardinalityMatrix, absoluteTableIdentifier)
+    dictionaryGenerator.writeDictionary(carbonTable, cardinalityMatrix, absoluteTableIdentifier)
+    absoluteTableIdentifier.getStorePath
   }
 
-  def createCarbonTableMeta(cardinalityMatrix: List[CardinalityMatrix],
+  /**
+   * Creates Metastore for Dictionary Creation
+   *
+   * @param cardinalityMatrix
+   * @param dataFrame
+   * @return
+   */
+  private def createCarbonTableMeta(cardinalityMatrix: List[CardinalityMatrix],
       dataFrame: DataFrame): (CarbonTable, AbsoluteTableIdentifier) = {
     val tableInfo: TableInfo = new TableInfo()
     val tableSchema: TableSchema = new TableSchema()
     val absoluteTableIdentifier: AbsoluteTableIdentifier = new AbsoluteTableIdentifier(
-      globalDictionaryUtil.getStorePath(),
-      new CarbonTableIdentifier("", "", UUID.randomUUID().toString()))
+      dictionaryGenerator.getStorePath(),
+      new CarbonTableIdentifier(CarbonToolConstants.DefaultDatabase,
+        CarbonToolConstants.DefaultTable,
+        UUID.randomUUID().toString))
     val columnSchemas = getColumnSchemas(cardinalityMatrix)
     tableSchema.setListOfColumns(columnSchemas)
     val schemaEvol: SchemaEvolution = new SchemaEvolution()
@@ -50,10 +65,7 @@ trait CarbonTableUtil {
     val thriftTableInfo = schemaConverter
       .fromWrapperToExternalTableInfo(tableInfo,
         tableInfo.getDatabaseName,
-        tableInfo.getFactTable().getTableName)
-    val schemaEvolutionEntry = new SchemaEvolutionEntry(tableInfo.getLastUpdatedTime())
-    val schemaEvolutionEntries = thriftTableInfo.getFact_table().getSchema_evolution()
-      .getSchema_evolution_history().add(schemaEvolutionEntry)
+        tableInfo.getFactTable.getTableName)
     val fileType = FileFactory.getFileType(schemaMetadataPath)
     if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
       FileFactory.mkdirs(schemaMetadataPath, fileType)
@@ -63,20 +75,30 @@ trait CarbonTableUtil {
     thriftWriter.write(thriftTableInfo)
     thriftWriter.close()
     (CarbonMetadata.getInstance()
-      .getCarbonTable(tableInfo.getTableUniqueName()), absoluteTableIdentifier)
+      .getCarbonTable(tableInfo.getTableUniqueName), absoluteTableIdentifier)
   }
 
-  def setTableSchemaDetails(tableSchema: TableSchema,
+  /**
+   * Configures Table Schema details
+   *
+   * @param tableSchema
+   * @param schemaEvol
+   * @param tableInfo
+   * @param absoluteTableIdentifier
+   * @return
+   */
+  private def setTableSchemaDetails(tableSchema: TableSchema,
       schemaEvol: SchemaEvolution,
       tableInfo: TableInfo,
       absoluteTableIdentifier: AbsoluteTableIdentifier): (String, String) = {
-    tableInfo.setStorePath(globalDictionaryUtil.getStorePath())
-    tableInfo.setDatabaseName("")
-    tableSchema.setTableName("")
+    tableInfo.setStorePath(dictionaryGenerator.getStorePath())
+    tableInfo.setDatabaseName(CarbonToolConstants.DefaultDatabase)
+    tableSchema.setTableName(CarbonToolConstants.DefaultTable)
     tableSchema.setSchemaEvalution(schemaEvol)
     tableSchema.setTableId(UUID.randomUUID().toString)
     tableInfo.setTableUniqueName(
-      absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName + "_" +
+      absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName +
+      CarbonToolConstants.DefaultSeparator +
       absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
@@ -84,50 +106,39 @@ trait CarbonTableUtil {
     val carbonTablePath = CarbonStorePath
       .getCarbonTablePath(absoluteTableIdentifier.getStorePath,
         absoluteTableIdentifier.getCarbonTableIdentifier)
-    val schemaFilePath = carbonTablePath.getSchemaFilePath()
+    val schemaFilePath = carbonTablePath.getSchemaFilePath
     val schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath)
     tableInfo.setMetaDataFilepath(schemaMetadataPath)
     CarbonMetadata.getInstance().loadTableMetadata(tableInfo)
     (schemaMetadataPath, schemaFilePath)
   }
 
-  def getColumnSchemas(cardinalityMatrix: List[CardinalityMatrix]): List[ColumnSchema] = {
+  /**
+   * This method returns list of ColumnSchema
+   *
+   * @param cardinalityMatrix
+   * @return
+   */
+  private def getColumnSchemas(cardinalityMatrix: List[CardinalityMatrix]): List[ColumnSchema] = {
 
     val encoding = List(Encoding.DICTIONARY).asJava
     cardinalityMatrix.zipWithIndex.map { case (element, columnGroupId) =>
       val columnSchema = new ColumnSchema()
       columnSchema.setColumnName(element.columnName)
       columnSchema.setColumnar(true)
-      columnSchema.setDataType(parseDataType(element.dataType))
+      columnSchema.setDataType(dictionaryGenerator.parseDataType(element.dataType))
       columnSchema.setEncodingList(encoding)
       columnSchema.setColumnUniqueId(element.columnName)
-      columnSchema.setDimensionColumn(globalDictionaryUtil.isDictionaryColumn(element.cardinality))
+      columnSchema
+        .setDimensionColumn(dictionaryGenerator
+          .isDictionaryColumn(element.cardinality, element.dataType))
       // TODO: assign column group id to all columns
       columnSchema.setColumnGroup(columnGroupId)
       columnSchema
     }
   }
-
-  import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType}
-
-  def parseDataType(dataType: DataType): CarbonDataType = {
-    dataType match {
-      case StringType => CarbonDataType.STRING
-      case FloatType => CarbonDataType.FLOAT
-      case IntegerType => CarbonDataType.INT
-      case ByteType => CarbonDataType.SHORT
-      case ShortType => CarbonDataType.SHORT
-      case DoubleType => CarbonDataType.DOUBLE
-      case LongType => CarbonDataType.LONG
-      case BooleanType => CarbonDataType.BOOLEAN
-      case DateType => CarbonDataType.DATE
-      case DecimalType.USER_DEFAULT => CarbonDataType.DECIMAL
-      case TimestampType => CarbonDataType.TIMESTAMP
-      case _ => CarbonDataType.STRING
-    }
-  }
 }
 
 object CarbonTableUtil extends CarbonTableUtil {
-  val globalDictionaryUtil = GlobalDictionaryUtil
+  val dictionaryGenerator = DictionaryGenerator
 }

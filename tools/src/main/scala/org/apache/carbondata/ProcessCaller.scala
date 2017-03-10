@@ -22,8 +22,8 @@ trait ProcessCaller {
 
       cardinalityProcessor.getCardinalityMatrix(dataFrame, arguments)
       val cardinalityMatrix = cardinalityProcessor.getCardinalityMatrix(dataFrame, arguments)
-      carbonTableUtil.createDictionary(cardinalityMatrix, dataFrame)
-      LOGGER.info("Dictionary created successfully.")
+      val dictionaryPath: String =carbonTableUtil.createDictionary(cardinalityMatrix, dataFrame)
+      LOGGER.info(s"Dictionary created successfully.\n Location : $dictionaryPath")
       cardinalityMatrix
     }
   }
