@@ -70,14 +70,15 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
   protected void fillMeasureData(Object[] msrValues, int offset,
       AbstractScannedResult scannedResult) {
     int measureExistIndex = 0;
-    for (short i = 0; i < tableBlockExecutionInfos.getActualQueryMeasures().length; i++) {
+    for (short i = 0; i < measureInfo.getMeasureDataTypes().length; i++) {
       // if measure exists is block then pass measure column
       // data chunk to the collector
       if (measureInfo.getMeasureExists()[i]) {
-        QueryMeasure queryMeasure = tableBlockExecutionInfos.getActualQueryMeasures()[i];
+        QueryMeasure queryMeasure = tableBlockExecutionInfos.getQueryMeasures()[measureExistIndex];
         msrValues[i + offset] = getMeasureData(
-            scannedResult.getMeasureChunk(measureInfo.getMeasureOrdinals()[measureExistIndex++]),
+            scannedResult.getMeasureChunk(measureInfo.getMeasureOrdinals()[measureExistIndex]),
             scannedResult.getCurrenrRowId(), queryMeasure.getMeasure());
+        measureExistIndex++;
       } else {
         // if not then get the default value and use that value in aggregation
         Object defaultValue = measureInfo.getDefaultValues()[i];

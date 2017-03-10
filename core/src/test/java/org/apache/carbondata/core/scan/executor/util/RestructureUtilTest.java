@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.scan.executor.util;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -35,6 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 public class RestructureUtilTest {
 
@@ -44,18 +46,23 @@ public class RestructureUtilTest {
     encodingList.add(Encoding.DICTIONARY);
     ColumnSchema columnSchema1 = new ColumnSchema();
     columnSchema1.setColumnName("Id");
+    columnSchema1.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema1.setEncodingList(encodingList);
     ColumnSchema columnSchema2 = new ColumnSchema();
     columnSchema2.setColumnName("Name");
+    columnSchema2.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema2.setEncodingList(encodingList);
     ColumnSchema columnSchema3 = new ColumnSchema();
     columnSchema3.setColumnName("Age");
+    columnSchema3.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema3.setEncodingList(encodingList);
     ColumnSchema columnSchema4 = new ColumnSchema();
     columnSchema4.setColumnName("Salary");
+    columnSchema4.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema4.setEncodingList(encodingList);
     ColumnSchema columnSchema5 = new ColumnSchema();
     columnSchema5.setColumnName("Address");
+    columnSchema5.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema5.setEncodingList(encodingList);
 
     CarbonDimension tableBlockDimension1 = new CarbonDimension(columnSchema1, 1, 1, 1, 1);
@@ -80,19 +87,29 @@ public class RestructureUtilTest {
 
     List<QueryDimension> result = null;
     result = RestructureUtil
-        .createDimensionInfoAndGetUpdatedQueryDimension(blockExecutionInfo, queryDimensions, tableBlockDimensions,
-            tableComplexDimensions);
-
-    assertThat(result, is(equalTo(Arrays.asList(queryDimension1, queryDimension2))));
+        .createDimensionInfoAndGetUpdatedQueryDimension(blockExecutionInfo, queryDimensions,
+            tableBlockDimensions, tableComplexDimensions);
+    List<CarbonDimension> resultDimension = new ArrayList<>(result.size());
+    for (QueryDimension queryDimension : result) {
+      resultDimension.add(queryDimension.getDimension());
+    }
+    assertThat(resultDimension,
+        is(equalTo(Arrays.asList(queryDimension1.getDimension(), queryDimension2.getDimension()))));
   }
 
   @Test public void testToGetAggregatorInfos() {
     ColumnSchema columnSchema1 = new ColumnSchema();
     columnSchema1.setColumnName("Id");
+    columnSchema1.setDataType(DataType.STRING);
+    columnSchema1.setColumnUniqueId(UUID.randomUUID().toString());
     ColumnSchema columnSchema2 = new ColumnSchema();
     columnSchema2.setColumnName("Name");
+    columnSchema2.setDataType(DataType.STRING);
+    columnSchema2.setColumnUniqueId(UUID.randomUUID().toString());
     ColumnSchema columnSchema3 = new ColumnSchema();
     columnSchema3.setColumnName("Age");
+    columnSchema3.setDataType(DataType.STRING);
+    columnSchema3.setColumnUniqueId(UUID.randomUUID().toString());
 
     CarbonMeasure carbonMeasure1 = new CarbonMeasure(columnSchema1, 1);
     CarbonMeasure carbonMeasure2 = new CarbonMeasure(columnSchema2, 2);
@@ -113,7 +130,7 @@ public class RestructureUtilTest {
     MeasureInfo measureInfo = blockExecutionInfo.getMeasureInfo();
     boolean[] measuresExist = { true, true, false };
     assertThat(measureInfo.getMeasureExists(), is(equalTo(measuresExist)));
-    Object[] defaultValues = { null, null, "3".getBytes() };
+    Object[] defaultValues = { null, null, "3" };
     assertThat(measureInfo.getDefaultValues(), is(equalTo(defaultValues)));
   }
 }

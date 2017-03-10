@@ -1729,59 +1729,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * This method will prepare the cardinality of dictionary columns based on the latest schema
-   *
-   * @param lookUpDimensions         dimensions list where a given dimension will be searched to get
-   *                                 the index for getting the cardinality of that column
-   * @param masterSchemaDimensions   latest schema dimensions
-   * @param mappingColumnCardinality cardinality of columns in the given carbondata file
-   * @return
-   */
-  public static int[] getUpdatedColumnCardinalities(List<ColumnSchema> lookUpDimensions,
-      List<CarbonDimension> masterSchemaDimensions, int[] mappingColumnCardinality) {
-    List<Integer> updatedDictionaryColumnCardinalities =
-        new ArrayList<>(masterSchemaDimensions.size());
-    for (CarbonDimension masterDimension : masterSchemaDimensions) {
-      // dimension should be visible and should be a dictionary column
-      if (!masterDimension.isInvisible() && hasEncoding(masterDimension.getEncoder(),
-          Encoding.DICTIONARY)) {
-        int destinationDimensionIndex = 0;
-        boolean isDimensionFoundInDestinationSegment = false;
-        for (ColumnSchema destinationDimension : lookUpDimensions) {
-          if (masterDimension.getColumnId().equals(destinationDimension.getColumnUniqueId())) {
-            isDimensionFoundInDestinationSegment = true;
-            break;
-          }
-          destinationDimensionIndex++;
-        }
-        if (!isDimensionFoundInDestinationSegment) {
-          if (hasEncoding(masterDimension.getEncoder(), Encoding.DIRECT_DICTIONARY)) {
-            updatedDictionaryColumnCardinalities.add(Integer.MAX_VALUE);
-          } else {
-            if (null != masterDimension.getDefaultValue()) {
-              // added +1 because if default value is provided then the cardinality of
-              // column will be 2. 1 for member default value and 1 for the value
-              // provided by the user
-              updatedDictionaryColumnCardinalities
-                  .add(CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY + 1);
-            } else {
-              updatedDictionaryColumnCardinalities
-                  .add(CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY);
-            }
-          }
-        } else {
-          // add the cardinality of the existing column in the schema
-          updatedDictionaryColumnCardinalities
-              .add(mappingColumnCardinality[destinationDimensionIndex]);
-        }
-      }
-    }
-    int[] updatedCardinalities = ArrayUtils.toPrimitive(updatedDictionaryColumnCardinalities
-        .toArray(new Integer[updatedDictionaryColumnCardinalities.size()]));
-    return updatedCardinalities;
-  }
-
-  /**
    * Below method will be used to convert byte data to surrogate key based
    * column value size
    *

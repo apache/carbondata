@@ -74,7 +74,10 @@ public class RestructureUtil {
       } else {
         for (CarbonDimension tableDimension : tableBlockDimensions) {
           if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
-            presentDimension.add(queryDimension);
+            QueryDimension currentBlockDimension = new QueryDimension(tableDimension.getColName());
+            currentBlockDimension.setDimension(tableDimension);
+            currentBlockDimension.setQueryOrder(queryDimension.getQueryOrder());
+            presentDimension.add(currentBlockDimension);
             isDimensionExists[dimIndex] = true;
             break;
           }
@@ -91,7 +94,10 @@ public class RestructureUtil {
     for (QueryDimension queryDimension : queryDimensions) {
       for (CarbonDimension tableDimension : tableComplexDimension) {
         if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
-          presentDimension.add(queryDimension);
+          QueryDimension currentBlockDimension = new QueryDimension(tableDimension.getColName());
+          currentBlockDimension.setDimension(tableDimension);
+          currentBlockDimension.setQueryOrder(queryDimension.getQueryOrder());
+          presentDimension.add(currentBlockDimension);
           isDimensionExists[dimIndex] = true;
           break;
         }
@@ -302,7 +308,10 @@ public class RestructureUtil {
       // otherwise adding a default value of a measure
       for (CarbonMeasure carbonMeasure : currentBlockMeasures) {
         if (carbonMeasure.getColumnId().equals(queryMeasure.getMeasure().getColumnId())) {
-          presentMeasure.add(queryMeasure);
+          QueryMeasure currentBlockMeasure = new QueryMeasure(carbonMeasure.getColName());
+          currentBlockMeasure.setMeasure(carbonMeasure);
+          currentBlockMeasure.setQueryOrder(queryMeasure.getQueryOrder());
+          presentMeasure.add(currentBlockMeasure);
           measureOrdinalList.add(carbonMeasure.getOrdinal());
           measureExistsInCurrentBlock[index] = true;
           break;

@@ -19,6 +19,7 @@ package org.apache.carbondata.spark.merger;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -93,13 +94,17 @@ public class CarbonCompactionExecutor {
       String segmentId = taskMap.getKey();
       List<DataFileFooter> listMetadata = dataFileMetadataSegMapping.get(segmentId);
 
-      List<ColumnSchema> updatedColumnSchemaList = CarbonUtil
-          .getColumnSchemaList(carbonTable.getDimensionByTableName(carbonTable.getFactTableName()),
-              carbonTable.getMeasureByTableName(carbonTable.getFactTableName()));
-      int[] updatedColumnCardinalities = CarbonUtil
-          .getUpdatedColumnCardinalities(listMetadata.get(0).getColumnInTable(),
-              carbonTable.getDimensionByTableName(carbonTable.getFactTableName()),
+      // update cardinality of source segment according to new schema
+      Map<String, Integer> columnToCardinalityMap =
+          new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+      CarbonCompactionUtil
+          .addColumnCardinalityToMap(columnToCardinalityMap, listMetadata.get(0).getColumnInTable(),
               listMetadata.get(0).getSegmentInfo().getColumnCardinality());
+      List<ColumnSchema> updatedColumnSchemaList =
+          new ArrayList<>(listMetadata.get(0).getColumnInTable().size());
+      int[] updatedColumnCardinalities = CarbonCompactionUtil
+          .updateColumnSchemaAndGetCardinality(columnToCardinalityMap, carbonTable,
+              updatedColumnSchemaList);
       SegmentProperties sourceSegProperties =
           new SegmentProperties(updatedColumnSchemaList, updatedColumnCardinalities);
 
