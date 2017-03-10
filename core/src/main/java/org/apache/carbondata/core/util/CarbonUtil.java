@@ -419,6 +419,15 @@ public final class CarbonUtil {
     return -(low + 1);
   }
 
+  /**
+   * search a specific compareValue's range index in a sorted byte array
+   *
+   * @param dimColumnDataChunk
+   * @param low
+   * @param high
+   * @param compareValue
+   * @return the compareValue's range index in the dimColumnDataChunk
+   */
   public static int[] getRangeIndexUsingBinarySearch(
       FixedLengthDimensionDataChunk dimColumnDataChunk, int low, int high, byte[] compareValue) {
 
@@ -474,23 +483,20 @@ public final class CarbonUtil {
    * search a specific key in sorted byte array
    *
    * @param filterValues
-   * @param fromIndex
-   * @param toIndex
-   * @param keyWord
-   * @return the keyWord's index in the filterValues
+   * @param low
+   * @param high
+   * @param compareValue
+   * @return the compareValue's index in the filterValues
    */
-  public static int binarySearch(byte[][] filterValues, int fromIndex, int toIndex,
-      byte[] keyWord) {
+  public static int binarySearch(byte[][] filterValues, int low, int high,
+      byte[] compareValue) {
 
-    rangeCheck(fromIndex, toIndex);
-
-    int low = fromIndex;
-    int high = toIndex - 1;
+    rangeCheck(low, high);
 
     while (low <= high) {
       int mid = (low + high) >>> 1;
 
-      int result = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[mid], keyWord);
+      int result = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[mid], compareValue);
 
       if (result < 0) {
         low = mid + 1;

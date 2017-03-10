@@ -140,11 +140,19 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
       for (int i = 0; i < numerOfRows; i++) {
 
-        int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length,
-            dimensionColumnDataChunk.getChunkData(i));
+        if (filterValues.length > 1) {
+          int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
+              dimensionColumnDataChunk.getChunkData(i));
 
-        if (index >= 0) {
-          bitSet.set(i);
+          if (index >= 0) {
+            bitSet.set(i);
+          }
+        } else if (filterValues.length == 1) {
+          if (dimensionColumnDataChunk.compareTo(i, filterValues[0]) == 0) {
+            bitSet.set(i);
+          }
+        } else {
+          break;
         }
 
       }
