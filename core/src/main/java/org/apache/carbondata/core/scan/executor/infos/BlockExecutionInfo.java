@@ -49,10 +49,10 @@ public class BlockExecutionInfo {
   private boolean isFixedKeyUpdateRequired;
 
   /**
-   * below to store all the information required for aggregation during query
+   * below to store all the information required for measures during query
    * execution
    */
-  private AggregatorInfo aggregatorInfo;
+  private MeasureInfo measureInfo;
 
   /**
    * this will be used to get the first tentative block from which query
@@ -69,13 +69,6 @@ public class BlockExecutionInfo {
   private IndexKey endKey;
 
   private String blockId;
-
-  /**
-   * masked byte for block which will be used to unpack the fixed length key,
-   * this will be used for updating the older block key with new block key
-   * generator
-   */
-  private int[] maskedByteForBlock;
 
   /**
    * total number of dimension in block
@@ -196,19 +189,41 @@ public class BlockExecutionInfo {
   }
 
   /**
-   * list of dimension selected for in query
+   * list of dimension present in the current block. This will be
+   * different in case of restructured block
    */
   private QueryDimension[] queryDimensions;
 
   /**
-   * list of measure selected in query
+   * list of dimension selected for in query
+   */
+  private QueryDimension[] actualQueryDimensions;
+
+  /**
+   * list of dimension present in the current block. This will be
+   * different in case of restructured block
    */
   private QueryMeasure[] queryMeasures;
+
+  /**
+   * list of measure selected in query
+   */
+  private QueryMeasure[] actualQueryMeasures;
+
+  /**
+   * variable to maintain dimension existence and default value info
+   */
+  private DimensionInfo dimensionInfo;
 
   /**
    * whether it needs to read data in vector/columnar format.
    */
   private boolean vectorBatchCollector;
+
+  /**
+   * flag to specify that whether the current block is with latest schema or old schema
+   */
+  private boolean isRestructuredBlock;
 
   /**
    * absolute table identifier
@@ -247,15 +262,15 @@ public class BlockExecutionInfo {
   /**
    * @return the aggregatorInfos
    */
-  public AggregatorInfo getAggregatorInfo() {
-    return aggregatorInfo;
+  public MeasureInfo getMeasureInfo() {
+    return measureInfo;
   }
 
   /**
-   * @param aggregatorInfo the aggregatorInfos to set
+   * @param measureInfo the aggregatorInfos to set
    */
-  public void setAggregatorInfo(AggregatorInfo aggregatorInfo) {
-    this.aggregatorInfo = aggregatorInfo;
+  public void setMeasureInfo(MeasureInfo measureInfo) {
+    this.measureInfo = measureInfo;
   }
 
   /**
@@ -284,22 +299,6 @@ public class BlockExecutionInfo {
    */
   public void setEndKey(IndexKey endKey) {
     this.endKey = endKey;
-  }
-
-  /**
-   * @return the maskedByteForBlock
-   */
-  public int[] getMaskedByteForBlock() {
-    return maskedByteForBlock;
-  }
-
-
-
-  /**
-   * @param maskedByteForBlock the maskedByteForBlock to set
-   */
-  public void setMaskedByteForBlock(int[] maskedByteForBlock) {
-    this.maskedByteForBlock = maskedByteForBlock;
   }
 
   /**
@@ -356,20 +355,6 @@ public class BlockExecutionInfo {
    */
   public void setAllSelectedMeasureBlocksIndexes(int[][] allSelectedMeasureBlocksIndexes) {
     this.allSelectedMeasureBlocksIndexes = allSelectedMeasureBlocksIndexes;
-  }
-
-  /**
-   * @return the restructureInfos
-   */
-  public KeyStructureInfo getKeyStructureInfo() {
-    return keyStructureInfo;
-  }
-
-  /**
-   * @param keyStructureInfo the restructureInfos to set
-   */
-  public void setKeyStructureInfo(KeyStructureInfo keyStructureInfo) {
-    this.keyStructureInfo = keyStructureInfo;
   }
 
   /**
@@ -608,6 +593,38 @@ public class BlockExecutionInfo {
 
   public void setBlockId(String blockId) {
     this.blockId = blockId;
+  }
+
+  public boolean isRestructuredBlock() {
+    return isRestructuredBlock;
+  }
+
+  public void setRestructuredBlock(boolean restructuredBlock) {
+    isRestructuredBlock = restructuredBlock;
+  }
+
+  public DimensionInfo getDimensionInfo() {
+    return dimensionInfo;
+  }
+
+  public void setDimensionInfo(DimensionInfo dimensionInfo) {
+    this.dimensionInfo = dimensionInfo;
+  }
+
+  public QueryDimension[] getActualQueryDimensions() {
+    return actualQueryDimensions;
+  }
+
+  public void setActualQueryDimensions(QueryDimension[] actualQueryDimensions) {
+    this.actualQueryDimensions = actualQueryDimensions;
+  }
+
+  public QueryMeasure[] getActualQueryMeasures() {
+    return actualQueryMeasures;
+  }
+
+  public void setActualQueryMeasures(QueryMeasure[] actualQueryMeasures) {
+    this.actualQueryMeasures = actualQueryMeasures;
   }
 
   public int[] getProjectionListDimensionIndexes() {

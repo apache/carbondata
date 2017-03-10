@@ -26,13 +26,13 @@ public class DictionaryBasedResultCollectorTest {
 //    blockExecutionInfo = new BlockExecutionInfo();
 //    KeyStructureInfo keyStructureInfo = new KeyStructureInfo();
 //    blockExecutionInfo.setKeyStructureInfo(keyStructureInfo);
-//    AggregatorInfo aggregatorInfo = new AggregatorInfo();
+//    MeasureInfo aggregatorInfo = new MeasureInfo();
 //    aggregatorInfo.setMeasureOrdinals(new int[] { 10, 20, 30, 40 });
 //    aggregatorInfo.setMeasureExists(new boolean[] { true, false, false, false });
 //    aggregatorInfo.setDefaultValues(new Object[] { 1, 2, 3, 4 });
 //    aggregatorInfo.setMeasureDataTypes(
 //        new DataType[] { DataType.INT, DataType.TIMESTAMP, DataType.INT, DataType.INT });
-//    blockExecutionInfo.setAggregatorInfo(aggregatorInfo);
+//    blockExecutionInfo.setMeasureInfo(aggregatorInfo);
 //    QueryDimension queryDimension1 = new QueryDimension("QDCol1");
 //    queryDimension1.setQueryOrder(1);
 //    ColumnSchema columnSchema = new ColumnSchema();

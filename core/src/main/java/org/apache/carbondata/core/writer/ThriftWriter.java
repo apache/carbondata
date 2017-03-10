@@ -21,6 +21,9 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
+import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
+import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -56,6 +59,11 @@ public class ThriftWriter {
   private TProtocol binaryOut;
 
   /**
+   * Identifier for performing atomic file operations
+   */
+  private AtomicFileOperations atomicFileOperationsWriter;
+
+  /**
    * flag to append to existing file
    */
   private boolean append;
@@ -74,6 +82,19 @@ public class ThriftWriter {
   public void open() throws IOException {
     FileFactory.FileType fileType = FileFactory.getFileType(fileName);
     dataOutputStream = FileFactory.getDataOutputStream(fileName, fileType, bufferSize, append);
+    binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
+  }
+
+  /**
+   * Method for opening file writing for atomic operations
+   *
+   * @param fileWriteOperation
+   * @throws IOException
+   */
+  public void open(FileWriteOperation fileWriteOperation) throws IOException {
+    FileFactory.FileType fileType = FileFactory.getFileType(fileName);
+    atomicFileOperationsWriter = new AtomicFileOperationsImpl(fileName, fileType);
+    dataOutputStream = atomicFileOperationsWriter.openForWrite(fileWriteOperation);
     binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
   }
 
@@ -113,8 +134,22 @@ public class ThriftWriter {
   /**
    * Close the file stream.
    */
-  public void close() {
+  public void close() throws IOException {
+    closeAtomicFileWriter();
     CarbonUtil.closeStreams(dataOutputStream);
+  }
+
+  /**
+   * This method will close the atomic file operations writer
+   *
+   * @throws IOException
+   */
+  private void closeAtomicFileWriter() throws IOException {
+    if (null != atomicFileOperationsWriter) {
+      atomicFileOperationsWriter.close();
+      // set output stream to null as atomic writer will close the data output stream internally
+      dataOutputStream = null;
+    }
   }
 
   /**

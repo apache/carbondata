@@ -1157,6 +1157,8 @@ public final class CarbonCommonConstants {
   public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION = "carbon.custom.block.distribution";
   public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT = "false";
 
+  public static final int DICTIONARY_DEFAULT_CARDINALITY = 1;
+
   private CarbonCommonConstants() {
   }
 }

@@ -84,9 +84,8 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
     return null;
   }
 
-  @Override
-  public void getStartKey(long[] startKey, SortedMap<Integer, byte[]> setOfStartKeyByteArray,
-      List<long[]> startKeyList) {
+  @Override public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
+      SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList) {
 
   }
 

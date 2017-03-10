@@ -20,7 +20,9 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.scan.executor.infos.AggregatorInfo;
+import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
+import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
+import org.apache.carbondata.core.scan.executor.infos.MeasureInfo;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 
@@ -37,6 +39,7 @@ import java.util.List;
 public class RestructureUtilTest {
 
   @Test public void testToGetUpdatedQueryDimension() {
+    BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     List<Encoding> encodingList = new ArrayList<Encoding>();
     encodingList.add(Encoding.DICTIONARY);
     ColumnSchema columnSchema1 = new ColumnSchema();
@@ -75,8 +78,10 @@ public class RestructureUtilTest {
     List<QueryDimension> queryDimensions =
         Arrays.asList(queryDimension1, queryDimension2, queryDimension3);
 
-    List<QueryDimension> result = RestructureUtil
-        .getUpdatedQueryDimension(queryDimensions, tableBlockDimensions, tableComplexDimensions);
+    List<QueryDimension> result = null;
+    result = RestructureUtil
+        .createDimensionInfoAndGetUpdatedQueryDimension(blockExecutionInfo, queryDimensions, tableBlockDimensions,
+            tableComplexDimensions);
 
     assertThat(result, is(equalTo(Arrays.asList(queryDimension1, queryDimension2))));
   }
@@ -92,7 +97,7 @@ public class RestructureUtilTest {
     CarbonMeasure carbonMeasure1 = new CarbonMeasure(columnSchema1, 1);
     CarbonMeasure carbonMeasure2 = new CarbonMeasure(columnSchema2, 2);
     CarbonMeasure carbonMeasure3 = new CarbonMeasure(columnSchema3, 3);
-    carbonMeasure3.setDefaultValue("3".getBytes());
+    carbonMeasure3.getColumnSchema().setDefaultValue("3".getBytes());
     List<CarbonMeasure> currentBlockMeasures = Arrays.asList(carbonMeasure1, carbonMeasure2);
 
     QueryMeasure queryMeasure1 = new QueryMeasure("Id");
@@ -102,12 +107,13 @@ public class RestructureUtilTest {
     QueryMeasure queryMeasure3 = new QueryMeasure("Age");
     queryMeasure3.setMeasure(carbonMeasure3);
     List<QueryMeasure> queryMeasures = Arrays.asList(queryMeasure1, queryMeasure2, queryMeasure3);
-
-    AggregatorInfo aggregatorInfo =
-        RestructureUtil.getAggregatorInfos(queryMeasures, currentBlockMeasures);
+    BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
+    RestructureUtil.createMeasureInfoAndGetUpdatedQueryMeasures(blockExecutionInfo, queryMeasures,
+        currentBlockMeasures);
+    MeasureInfo measureInfo = blockExecutionInfo.getMeasureInfo();
     boolean[] measuresExist = { true, true, false };
-    assertThat(aggregatorInfo.getMeasureExists(), is(equalTo(measuresExist)));
+    assertThat(measureInfo.getMeasureExists(), is(equalTo(measuresExist)));
     Object[] defaultValues = { null, null, "3".getBytes() };
-    assertThat(aggregatorInfo.getDefaultValues(), is(equalTo(defaultValues)));
+    assertThat(measureInfo.getDefaultValues(), is(equalTo(defaultValues)));
   }
 }

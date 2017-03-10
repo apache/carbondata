@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -50,9 +51,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
-import org.apache.carbondata.core.scan.executor.infos.AggregatorInfo;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
-import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
@@ -134,11 +133,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
-    //
-    // // updating the restructuring infos for the query
-    queryProperties.keyStructureInfo = getKeyStructureInfo(queryModel,
-        queryProperties.dataBlocks.get(queryProperties.dataBlocks.size() - 1).getSegmentProperties()
-            .getDimensionKeyGenerator());
 
     // calculating the total number of aggeragted columns
     int aggTypeCount = queryModel.getQueryMeasures().size();
@@ -188,35 +182,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     return tableBlockUniqueIdentifiers;
   }
 
-  /**
-   * Below method will be used to get the key structure info for the query
-   *
-   * @param queryModel   query model
-   * @param keyGenerator
-   * @return key structure info
-   */
-  private KeyStructureInfo getKeyStructureInfo(QueryModel queryModel, KeyGenerator keyGenerator) {
-    // getting the masked byte range for dictionary column
-    int[] maskByteRanges =
-        QueryUtil.getMaskedByteRange(queryModel.getQueryDimension(), keyGenerator);
-
-    // max key for the dictionary dimension present in the query
-    byte[] maxKey = null;
-    try {
-      // getting the max key which will be used to masked and get the
-      // masked key
-      maxKey = QueryUtil.getMaxKeyBasedOnDimensions(queryModel.getQueryDimension(), keyGenerator);
-    } catch (KeyGenException e) {
-      LOGGER.error(e, "problem while getting the max key");
-    }
-
-    KeyStructureInfo restructureInfos = new KeyStructureInfo();
-    restructureInfos.setKeyGenerator(keyGenerator);
-    restructureInfos.setMaskByteRanges(maskByteRanges);
-    restructureInfos.setMaxKey(maxKey);
-    return restructureInfos;
-  }
-
   protected List<BlockExecutionInfo> getBlockExecutionInfos(QueryModel queryModel)
       throws IOException, QueryExecutionException {
     initQuery(queryModel);
@@ -260,13 +225,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // below is to get only those dimension in query which is present in the
     // table block
     List<QueryDimension> updatedQueryDimension = RestructureUtil
-        .getUpdatedQueryDimension(queryModel.getQueryDimension(), tableBlockDimensions,
+        .createDimensionInfoAndGetUpdatedQueryDimension(blockExecutionInfo,
+            queryModel.getQueryDimension(), tableBlockDimensions,
             segmentProperties.getComplexDimensions());
-    // TODO add complex dimension children
-    int[] maskByteRangesForBlock =
-        QueryUtil.getMaskedByteRange(updatedQueryDimension, blockKeyGenerator);
-    int[] maksedByte =
-        QueryUtil.getMaskedByte(blockKeyGenerator.getKeySizeInBytes(), maskByteRangesForBlock);
     int tableFactPathLength = CarbonStorePath
         .getCarbonTablePath(queryModel.getAbsoluteTableIdentifier().getStorePath(),
             queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier()).getFactDir()
@@ -276,17 +237,15 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setNumberOfBlockletToScan(numberOfBlockletToScan);
     blockExecutionInfo.setQueryDimensions(
         updatedQueryDimension.toArray(new QueryDimension[updatedQueryDimension.size()]));
-    blockExecutionInfo.setQueryMeasures(queryModel.getQueryMeasures()
-        .toArray(new QueryMeasure[queryModel.getQueryMeasures().size()]));
+    // get measures present in the current block
+    List<QueryMeasure> updatedQueryMeasures =
+        getUpdatedQueryMeasures(blockExecutionInfo, queryModel, blockIndex);
+    blockExecutionInfo.setQueryMeasures(
+        updatedQueryMeasures.toArray(new QueryMeasure[updatedQueryMeasures.size()]));
     blockExecutionInfo.setDataBlock(blockIndex);
     blockExecutionInfo.setBlockKeyGenerator(blockKeyGenerator);
-    // adding aggregation info for query
-    blockExecutionInfo.setAggregatorInfo(getAggregatorInfoForBlock(queryModel, blockIndex));
     // setting whether raw record query or not
     blockExecutionInfo.setRawRecordDetailQuery(queryModel.isForcedDetailRawQuery());
-    // setting the masked byte of the block which will be
-    // used to update the unpack the older block keys
-    blockExecutionInfo.setMaskedByteForBlock(maksedByte);
     // total number dimension
     blockExecutionInfo
         .setTotalNumberDimensionBlock(segmentProperties.getDimensionOrdinalToBlockMapping().size());
@@ -298,9 +257,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             segmentProperties.getDimensionOrdinalToBlockMapping(),
             segmentProperties.getEachComplexDimColumnValueSize(),
             queryProperties.columnToDictionayMapping, queryProperties.complexFilterDimension));
-    // to check whether older block key update is required or not
-    blockExecutionInfo.setFixedKeyUpdateRequired(
-        !blockKeyGenerator.equals(queryProperties.keyStructureInfo.getKeyGenerator()));
     IndexKey startIndexKey = null;
     IndexKey endIndexKey = null;
     if (null != queryModel.getFilterExpressionResolverTree()) {
@@ -335,9 +291,19 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     int numberOfElementToConsider = 0;
     // list of dimensions to be projected
     Set<Integer> allProjectionListDimensionIdexes = new LinkedHashSet<>();
+    // maintain a mapping of actual query column position in carbon data file with
+    // position of column in current block. It will used in case of restructure
+    Map<Integer, Integer> queryDimensionToCurrentBlockDimensionOrdinalMapping = QueryUtil
+        .getQueryDimensionToCurrentBlockDimensionOrdinalMapping(updatedQueryDimension,
+            segmentProperties.getDimensions());
+    // create a list of filter dimensions present in the current block
+    Set<CarbonDimension> updatedFilterDimensions = QueryUtil
+        .getUpdatedFilterDimensions(queryProperties.complexFilterDimension,
+            segmentProperties.getDimensions());
     int[] dimensionsBlockIndexes = QueryUtil.getDimensionsBlockIndexes(updatedQueryDimension,
-        segmentProperties.getDimensionOrdinalToBlockMapping(), expressionDimensions,
-        queryProperties.complexFilterDimension, allProjectionListDimensionIdexes);
+        segmentProperties.getDimensionOrdinalToBlockMapping(),
+        queryDimensionToCurrentBlockDimensionOrdinalMapping, expressionDimensions,
+        updatedFilterDimensions, allProjectionListDimensionIdexes);
     int numberOfColumnToBeReadInOneIO = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
             CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE));
@@ -353,12 +319,21 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     } else {
       blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(new int[0][0]);
     }
+    // maintain a mapping of actual query column position in carbon data file with
+    // position of column in current block. It will used in case of restructure
+    Map<Integer, Integer> queryMeasuresToCurrentBlockMeasuresOrdinalMapping = QueryUtil
+        .getQueryMeasuresToCurrentBlockMeasuresOrdinalMapping(updatedQueryMeasures,
+            segmentProperties.getMeasures());
+    // get the list of updated filter measures present in the current block
+    Set<CarbonMeasure> updatedFilterMeasures = QueryUtil
+        .getUpdatedFilterMeasures(queryProperties.filterMeasures, segmentProperties.getMeasures());
     // list of measures to be projected
-    List<Integer> allProjectionListMeasureIdexes = new ArrayList<>();
+    List<Integer> allProjectionListMeasureIndexes = new ArrayList<>();
     int[] measureBlockIndexes = QueryUtil
-        .getMeasureBlockIndexes(queryModel.getQueryMeasures(), expressionMeasures,
-            segmentProperties.getMeasuresOrdinalToBlockMapping(), queryProperties.filterMeasures,
-            allProjectionListMeasureIdexes);
+        .getMeasureBlockIndexes(updatedQueryMeasures, expressionMeasures,
+            segmentProperties.getMeasuresOrdinalToBlockMapping(),
+            queryMeasuresToCurrentBlockMeasuresOrdinalMapping, updatedFilterMeasures,
+            allProjectionListMeasureIndexes);
     if (measureBlockIndexes.length > 0) {
 
       numberOfElementToConsider = measureBlockIndexes[measureBlockIndexes.length - 1]
@@ -378,19 +353,22 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             .toArray(new Integer[allProjectionListDimensionIdexes.size()])));
     // setting the indexes of list of measures in projection list
     blockExecutionInfo.setProjectionListMeasureIndexes(ArrayUtils.toPrimitive(
-        allProjectionListMeasureIdexes
-            .toArray(new Integer[allProjectionListMeasureIdexes.size()])));
+        allProjectionListMeasureIndexes
+            .toArray(new Integer[allProjectionListMeasureIndexes.size()])));
     // setting the key structure info which will be required
     // to update the older block key with new key generator
-    blockExecutionInfo.setKeyStructureInfo(queryProperties.keyStructureInfo);
+    // blockExecutionInfo.setKeyStructureInfo(queryProperties.keyStructureInfo);
     // setting the size of fixed key column (dictionary column)
-    blockExecutionInfo.setFixedLengthKeySize(getKeySize(updatedQueryDimension, segmentProperties));
+    blockExecutionInfo.setFixedLengthKeySize(
+        getKeySize(updatedQueryDimension, queryDimensionToCurrentBlockDimensionOrdinalMapping,
+            segmentProperties));
     Set<Integer> dictionaryColumnBlockIndex = new HashSet<Integer>();
     List<Integer> noDictionaryColumnBlockIndex = new ArrayList<Integer>();
     // get the block index to be read from file for query dimension
     // for both dictionary columns and no dictionary columns
     QueryUtil.fillQueryDimensionsBlockIndexes(updatedQueryDimension,
-        segmentProperties.getDimensionOrdinalToBlockMapping(), dictionaryColumnBlockIndex,
+        segmentProperties.getDimensionOrdinalToBlockMapping(),
+        queryDimensionToCurrentBlockDimensionOrdinalMapping, dictionaryColumnBlockIndex,
         noDictionaryColumnBlockIndex);
     int[] queryDictionaryColumnBlockIndexes = ArrayUtils.toPrimitive(
         dictionaryColumnBlockIndex.toArray(new Integer[dictionaryColumnBlockIndex.size()]));
@@ -418,6 +396,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     } catch (KeyGenException e) {
       throw new QueryExecutionException(e);
     }
+    // set actual query dimensions and measures. It may differ in case of restructure scenarios
+    blockExecutionInfo.setActualQueryDimensions(queryModel.getQueryDimension()
+        .toArray(new QueryDimension[queryModel.getQueryDimension().size()]));
+    blockExecutionInfo.setActualQueryMeasures(queryModel.getQueryMeasures()
+        .toArray(new QueryMeasure[queryModel.getQueryMeasures().size()]));
     return blockExecutionInfo;
   }
 
@@ -429,7 +412,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @param blockMetadataInfo block metadata info
    * @return key size
    */
-  private int getKeySize(List<QueryDimension> queryDimension, SegmentProperties blockMetadataInfo) {
+  private int getKeySize(List<QueryDimension> queryDimension,
+      Map<Integer, Integer> queryDimensionToCurrentBlockDimensionOrdinalMapping,
+      SegmentProperties blockMetadataInfo) {
     List<Integer> fixedLengthDimensionOrdinal =
         new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     int counter = 0;
@@ -441,36 +426,42 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           Encoding.DICTIONARY)) {
         counter++;
       } else {
-        fixedLengthDimensionOrdinal.add(queryDimension.get(counter).getDimension().getKeyOrdinal());
+        fixedLengthDimensionOrdinal.add(queryDimensionToCurrentBlockDimensionOrdinalMapping
+            .get(queryDimension.get(counter).getDimension().getOrdinal()));
         counter++;
       }
     }
-    int[] dictioanryColumnOrdinal = ArrayUtils.toPrimitive(
+    int[] dictionaryColumnOrdinal = ArrayUtils.toPrimitive(
         fixedLengthDimensionOrdinal.toArray(new Integer[fixedLengthDimensionOrdinal.size()]));
-    if (dictioanryColumnOrdinal.length > 0) {
-      return blockMetadataInfo.getFixedLengthKeySplitter()
-          .getKeySizeByBlock(dictioanryColumnOrdinal);
+    if (dictionaryColumnOrdinal.length > 0) {
+      int[] eachColumnValueSize = blockMetadataInfo.getEachDimColumnValueSize();
+      int keySize = 0;
+      for (int i = 0; i < dictionaryColumnOrdinal.length; i++) {
+        keySize += eachColumnValueSize[dictionaryColumnOrdinal[i]];
+      }
+      return keySize;
     }
     return 0;
   }
 
   /**
-   * Below method will be used to get the aggrgator info for the query
+   * Below method will be used to get the measures present in the current block
    *
-   * @param queryModel query model
-   * @param tableBlock table block
-   * @return aggregator info
+   * @param blockExecutionInfo
+   * @param queryModel         query model
+   * @param tableBlock         table block
+   * @return
    */
-  private AggregatorInfo getAggregatorInfoForBlock(QueryModel queryModel,
-      AbstractIndex tableBlock) {
+  private List<QueryMeasure> getUpdatedQueryMeasures(BlockExecutionInfo blockExecutionInfo,
+      QueryModel queryModel, AbstractIndex tableBlock) throws QueryExecutionException {
     // getting the aggregate infos which will be used during aggregation
-    AggregatorInfo aggregatorInfos = RestructureUtil
-        .getAggregatorInfos(queryModel.getQueryMeasures(),
-            tableBlock.getSegmentProperties().getMeasures());
+    List<QueryMeasure> updatedQueryMeasures = RestructureUtil
+        .createMeasureInfoAndGetUpdatedQueryMeasures(blockExecutionInfo,
+            queryModel.getQueryMeasures(), tableBlock.getSegmentProperties().getMeasures());
     // setting the measure aggregator for all aggregation function selected
     // in query
-    aggregatorInfos.setMeasureDataTypes(queryProperties.measureDataTypes);
-    return aggregatorInfos;
+    blockExecutionInfo.getMeasureInfo().setMeasureDataTypes(queryProperties.measureDataTypes);
+    return updatedQueryMeasures;
   }
 
   private int[] getComplexDimensionParentBlockIndexes(List<QueryDimension> queryDimensions) {

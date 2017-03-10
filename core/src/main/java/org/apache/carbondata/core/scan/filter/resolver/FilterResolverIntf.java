@@ -68,11 +68,13 @@ public interface FilterResolverIntf extends Serializable {
   /**
    * API will get the start key based on the filter applied based on the key generator
    *
+   * @param segmentProperties
    * @param startKey
    * @param setOfStartKeyByteArray
+   * @param startKeyList
    */
-  void getStartKey(long[] startKey, SortedMap<Integer, byte[]> setOfStartKeyByteArray,
-      List<long[]> startKeyList);
+  void getStartKey(SegmentProperties segmentProperties, long[] startKey,
+      SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList);
 
   /**
    * API will read the end key based on the max surrogate of

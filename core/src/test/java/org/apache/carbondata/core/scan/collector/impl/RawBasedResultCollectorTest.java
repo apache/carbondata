@@ -44,7 +44,7 @@ public class RawBasedResultCollectorTest {
 //    keyStructureInfo.setMaskedBytes(new int[] { 1, 2 });
 //    keyStructureInfo.setMaskByteRanges(new int[] { 1, 2 });
 //    blockExecutionInfo.setKeyStructureInfo(keyStructureInfo);
-//    AggregatorInfo aggregatorInfo = new AggregatorInfo();
+//    MeasureInfo aggregatorInfo = new MeasureInfo();
 //    aggregatorInfo.setMeasureOrdinals(new int[] { 10, 20, 30, 40 });
 //    aggregatorInfo.setMeasureExists(new boolean[] { true, false, false, false });
 //    aggregatorInfo.setDefaultValues(new Object[] { 1, 2, 3, 4 });
@@ -77,7 +77,7 @@ public class RawBasedResultCollectorTest {
 //    blockExecutionInfo.setQueryMeasures(
 //        new QueryMeasure[] { queryMeasure1, queryMeasure2, queryMeasure3, queryMeasure4 });
 //    blockExecutionInfo.setFixedKeyUpdateRequired(true);
-//    blockExecutionInfo.setAggregatorInfo(aggregatorInfo);
+//    blockExecutionInfo.setMeasureInfo(aggregatorInfo);
 //    blockExecutionInfo.setMaskedByteForBlock(new int[] { 1, 2 });
 //    blockExecutionInfo.setBlockKeyGenerator(keyGenerator);
 //    rawBasedResultCollector = new RawBasedResultCollector(blockExecutionInfo);
