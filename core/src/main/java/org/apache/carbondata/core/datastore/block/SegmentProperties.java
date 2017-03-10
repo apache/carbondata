@@ -75,6 +75,11 @@ public class SegmentProperties {
   private int[] dimColumnsCardinality;
 
   /**
+   * partition index of each dictionary column
+   */
+  private int[] dimensionPartitions;
+
+  /**
    * cardinality of complex dimension
    */
   private int[] complexDimColumnCardinality;
@@ -484,7 +489,7 @@ public class SegmentProperties {
       counter++;
     }
     // get the partitioner
-    int[] dimensionPartitions = ArrayUtils
+    dimensionPartitions = ArrayUtils
         .toPrimitive(dimensionPartitionList.toArray(new Integer[dimensionPartitionList.size()]));
     // get the bit length of each column
     int[] bitLength = CarbonUtil.getDimensionBitLength(dimColumnsCardinality, dimensionPartitions);
@@ -641,6 +646,13 @@ public class SegmentProperties {
    */
   public int[] getDimColumnsCardinality() {
     return dimColumnsCardinality;
+  }
+
+  /**
+   * @return
+   */
+  public int[] getDimensionPartitions() {
+    return dimensionPartitions;
   }
 
   /**

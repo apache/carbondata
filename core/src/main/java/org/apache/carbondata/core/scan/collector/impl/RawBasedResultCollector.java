@@ -66,7 +66,6 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
       listBasedResult.add(row);
       rowCounter++;
     }
-    updateData(listBasedResult);
     return listBasedResult;
   }
 }

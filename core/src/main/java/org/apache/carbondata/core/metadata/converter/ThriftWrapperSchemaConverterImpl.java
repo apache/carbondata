@@ -43,20 +43,23 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         new org.apache.carbondata.format.SchemaEvolutionEntry(
             wrapperSchemaEvolutionEntry.getTimeStamp());
 
-    List<org.apache.carbondata.format.ColumnSchema> thriftAddedColumns =
-        new ArrayList<org.apache.carbondata.format.ColumnSchema>();
-    for (ColumnSchema wrapperColumnSchema : wrapperSchemaEvolutionEntry.getAdded()) {
-      thriftAddedColumns.add(fromWrapperToExternalColumnSchema(wrapperColumnSchema));
+    if (null != wrapperSchemaEvolutionEntry.getAdded()) {
+      List<org.apache.carbondata.format.ColumnSchema> thriftAddedColumns =
+          new ArrayList<org.apache.carbondata.format.ColumnSchema>();
+      for (ColumnSchema wrapperColumnSchema : wrapperSchemaEvolutionEntry.getAdded()) {
+        thriftAddedColumns.add(fromWrapperToExternalColumnSchema(wrapperColumnSchema));
+      }
+      thriftSchemaEvolutionEntry.setAdded(thriftAddedColumns);
+    }
+    if (null != wrapperSchemaEvolutionEntry.getRemoved()) {
+      List<org.apache.carbondata.format.ColumnSchema> thriftRemovedColumns =
+          new ArrayList<org.apache.carbondata.format.ColumnSchema>();
+      for (ColumnSchema wrapperColumnSchema : wrapperSchemaEvolutionEntry.getRemoved()) {
+        thriftRemovedColumns.add(fromWrapperToExternalColumnSchema(wrapperColumnSchema));
+      }
+      thriftSchemaEvolutionEntry.setRemoved(thriftRemovedColumns);
     }
 
-    List<org.apache.carbondata.format.ColumnSchema> thriftRemovedColumns =
-        new ArrayList<org.apache.carbondata.format.ColumnSchema>();
-    for (ColumnSchema wrapperColumnSchema : wrapperSchemaEvolutionEntry.getRemoved()) {
-      thriftRemovedColumns.add(fromWrapperToExternalColumnSchema(wrapperColumnSchema));
-    }
-
-    thriftSchemaEvolutionEntry.setAdded(thriftAddedColumns);
-    thriftSchemaEvolutionEntry.setRemoved(thriftRemovedColumns);
     return thriftSchemaEvolutionEntry;
   }
 

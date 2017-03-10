@@ -55,7 +55,7 @@ public class CarbonIndexFileWriter {
   /**
    * Below method will be used to close the thrift object
    */
-  public void close() {
+  public void close() throws IOException {
     thriftWriter.close();
   }
 }

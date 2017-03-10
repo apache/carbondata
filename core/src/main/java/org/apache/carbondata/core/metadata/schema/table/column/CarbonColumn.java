@@ -46,11 +46,6 @@ public class CarbonColumn implements Serializable {
    * order in which user has created table
    */
   protected int schemaOrdinal;
-  /**
-   * default value for in case of restructuring will be used when older
-   * segment does not have particular column
-   */
-  protected byte[] defaultValue;
 
   /**
    * Column identifier
@@ -117,14 +112,7 @@ public class CarbonColumn implements Serializable {
    * @return the defaultValue
    */
   public byte[] getDefaultValue() {
-    return defaultValue;
-  }
-
-  /**
-   * @param defaultValue the defaultValue to set
-   */
-  public void setDefaultValue(byte[] defaultValue) {
-    this.defaultValue = defaultValue;
+    return columnSchema.getDefaultValue();
   }
 
   /**

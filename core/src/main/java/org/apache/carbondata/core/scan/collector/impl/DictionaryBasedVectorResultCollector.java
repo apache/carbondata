@@ -41,7 +41,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
 
   private ColumnVectorInfo[] complexInfo;
 
-  private ColumnVectorInfo[] measureInfo;
+  private ColumnVectorInfo[] measureColumnInfo;
 
   private ColumnVectorInfo[] allColumnInfo;
 
@@ -49,7 +49,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     super(blockExecutionInfos);
     QueryDimension[] queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
     QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
-    measureInfo = new ColumnVectorInfo[queryMeasures.length];
+    measureColumnInfo = new ColumnVectorInfo[queryMeasures.length];
     allColumnInfo = new ColumnVectorInfo[queryDimensions.length + queryMeasures.length];
     List<ColumnVectorInfo> dictInfoList = new ArrayList<>();
     List<ColumnVectorInfo> noDictInfoList = new ArrayList<>();
@@ -91,7 +91,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
           .getMeasureVectorFiller(queryMeasures[i].getMeasure().getDataType());
       columnVectorInfo.ordinal = queryMeasures[i].getMeasure().getOrdinal();
       columnVectorInfo.measure = queryMeasures[i];
-      measureInfo[i] = columnVectorInfo;
+      this.measureColumnInfo[i] = columnVectorInfo;
       allColumnInfo[queryMeasures[i].getQueryOrder()] = columnVectorInfo;
     }
     dictionaryInfo = dictInfoList.toArray(new ColumnVectorInfo[dictInfoList.size()]);
@@ -131,7 +131,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
 
       scannedResult.fillColumnarDictionaryBatch(dictionaryInfo);
       scannedResult.fillColumnarNoDictionaryBatch(noDictionaryInfo);
-      scannedResult.fillColumnarMeasureBatch(measureInfo, measuresOrdinal);
+      scannedResult.fillColumnarMeasureBatch(measureColumnInfo, measureInfo.getMeasureOrdinals());
       scannedResult.fillColumnarComplexBatch(complexInfo);
       // it means fetched all data out of page so increment the page counter
       if (availableRows == requiredRows) {

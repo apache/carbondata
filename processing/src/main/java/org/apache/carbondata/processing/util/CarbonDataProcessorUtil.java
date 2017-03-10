@@ -397,34 +397,15 @@ public final class CarbonDataProcessorUtil {
    */
   public static Set<String> getSchemaColumnNames(CarbonDataLoadSchema schema, String tableName) {
     Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
     String factTableName = schema.getCarbonTable().getFactTableName();
     if (tableName.equals(factTableName)) {
-
       List<CarbonDimension> dimensions =
           schema.getCarbonTable().getDimensionByTableName(factTableName);
-
       for (CarbonDimension dimension : dimensions) {
-
-        String foreignKey = null;
-        for (CarbonDataLoadSchema.DimensionRelation dimRel : schema.getDimensionRelationList()) {
-          for (String field : dimRel.getColumns()) {
-            if (dimension.getColName().equals(field)) {
-              foreignKey = dimRel.getRelation().getFactForeignKeyColumn();
-              break;
-            }
-          }
-          if (null != foreignKey) {
-            break;
-          }
-        }
-        if (null == foreignKey) {
+        if (!dimension.isInvisible()) {
           columnNames.add(dimension.getColName());
-        } else {
-          columnNames.add(foreignKey);
         }
       }
-
       List<CarbonMeasure> measures = schema.getCarbonTable().getMeasureByTableName(factTableName);
       for (CarbonMeasure msr : measures) {
         if (!msr.getColumnSchema().isInvisible()) {
@@ -436,15 +417,12 @@ public final class CarbonDataProcessorUtil {
       for (CarbonDimension dimension : dimensions) {
         columnNames.add(dimension.getColName());
       }
-
       List<CarbonMeasure> measures = schema.getCarbonTable().getMeasureByTableName(tableName);
       for (CarbonMeasure msr : measures) {
         columnNames.add(msr.getColName());
       }
     }
-
     return columnNames;
-
   }
 
   /**
@@ -476,6 +454,18 @@ public final class CarbonDataProcessorUtil {
     List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
     for (int i = 0; i < aggType.length; i++) {
       aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
+    }
+    return aggType;
+  }
+
+  /**
+   * get agg type
+   */
+  public static char[] getAggType(int measureCount, DataField[] measureFields) {
+    char[] aggType = new char[measureCount];
+    Arrays.fill(aggType, 'n');
+    for (int i = 0; i < measureFields.length; i++) {
+      aggType[i] = DataTypeUtil.getAggType(measureFields[i].getColumn().getDataType());
     }
     return aggType;
   }

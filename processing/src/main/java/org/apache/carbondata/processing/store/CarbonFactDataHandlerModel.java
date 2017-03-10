@@ -269,7 +269,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setColCardinality(colCardinality);
     carbonFactDataHandlerModel.setDataWritingRequest(true);
     carbonFactDataHandlerModel.setAggType(CarbonDataProcessorUtil
-        .getAggType(measureCount, identifier.getDatabaseName(), identifier.getTableName()));
+        .getAggType(configuration.getMeasureCount(), configuration.getMeasureFields()));
     carbonFactDataHandlerModel.setFactDimLens(dimLens);
     carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
     carbonFactDataHandlerModel.setPrimitiveDimLens(simpleDimsLen);

@@ -1155,6 +1155,8 @@ public final class CarbonCommonConstants {
 
   public static final String USE_KETTLE_DEFAULT = "false";
 
+  public static final int DICTIONARY_DEFAULT_CARDINALITY = 1;
+
   private CarbonCommonConstants() {
   }
 }
