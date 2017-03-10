@@ -141,12 +141,12 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
   }
 
   def lookupRelation(dbName: Option[String], tableName: String)
-                    (sparkSession: SparkSession): LogicalPlan = {
+    (sparkSession: SparkSession): LogicalPlan = {
     lookupRelation(TableIdentifier(tableName, dbName))(sparkSession)
   }
 
   def lookupRelation(tableIdentifier: TableIdentifier, alias: Option[String] = None)
-                    (sparkSession: SparkSession): LogicalPlan = {
+    (sparkSession: SparkSession): LogicalPlan = {
     checkSchemasModifiedTimeAndReloadTables()
     val database = tableIdentifier.database.getOrElse(
       sparkSession.catalog.currentDatabase
@@ -313,7 +313,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       schemaEvolutionEntry: SchemaEvolutionEntry,
       carbonStorePath: String)
-    (sparkSession: SparkSession): Unit = {
+    (sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val wrapperTableInfo = schemaConverter
       .fromExternalToWrapperTableInfo(thriftTableInfo,
@@ -325,7 +325,6 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
       thriftTableInfo,
       carbonTableIdentifier.getDatabaseName,
       carbonTableIdentifier.getTableName)(sparkSession)
-    // add a logger after completion saying update schema is success for given db and table name
   }
 
   /**
@@ -389,7 +388,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
     removeTableFromMetadata(dbName, tableName)
     CarbonMetadata.getInstance().loadTableMetadata(tableInfo)
     val tableMeta = new TableMeta(carbonTableIdentifier, storePath,
-        CarbonMetadata.getInstance().getCarbonTable(dbName + '_' + tableName))
+      CarbonMetadata.getInstance().getCarbonTable(dbName + '_' + tableName))
     metadata.tablesMeta += tableMeta
     carbonTablePath.getPath
   }
@@ -400,7 +399,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
    * @param dbName
    * @param tableName
    */
-  private def removeTableFromMetadata(dbName: String, tableName: String) = {
+  def removeTableFromMetadata(dbName: String, tableName: String) = {
     val metadataToBeRemoved: Option[TableMeta] = getTableFromMetadata(dbName, tableName)
     metadataToBeRemoved match {
       case Some(tableMeta) =>
@@ -908,7 +907,7 @@ case class CarbonRelation(
     var dType = dataType
     if (dimval.getDataType == DECIMAL) {
       dType +=
-        "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema.getScale + ")"
+      "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema.getScale + ")"
     }
     dType
   }

@@ -112,6 +112,7 @@ struct SchemaEvolutionEntry{
 	1: required i64 time_stamp;
 	2: optional list<ColumnSchema> added;
 	3: optional list<ColumnSchema> removed;
+	4: optional string tableName;
 }
 
 /**
