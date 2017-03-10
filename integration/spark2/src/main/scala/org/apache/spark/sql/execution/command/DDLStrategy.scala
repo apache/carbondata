@@ -35,6 +35,16 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if CarbonEnv.get.carbonMetastore.tableExists(identifier)(sparkSession) =>
         ExecutedCommandExec(LoadTable(identifier.database, identifier.table.toLowerCase, path,
           Seq(), Map(), isOverwrite)) :: Nil
+      case alter@AlterTableRenameCommand(oldTableIdentifier, newTableIdentifier, _) =>
+        val isCarbonTable = CarbonEnv.get.carbonMetastore
+          .tableExists(oldTableIdentifier)(
+            sparkSession)
+        if (isCarbonTable) {
+          val renameModel = AlterTableRenameModel(oldTableIdentifier, newTableIdentifier)
+          ExecutedCommandExec(AlterTableRenameTable(renameModel)) :: Nil
+        } else {
+          ExecutedCommandExec(alter) :: Nil
+        }
       case DropTableCommand(identifier, ifNotExists, isView, _)
         if CarbonEnv.get.carbonMetastore
           .isTablePathExists(identifier)(sparkSession) =>
