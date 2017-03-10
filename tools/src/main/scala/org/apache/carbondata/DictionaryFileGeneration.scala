@@ -15,7 +15,8 @@ trait DictionaryFileGeneration {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
     if (args.length != 1) {
       LOGGER.error("Invalid input parameters.")
-      LOGGER.error("[Usage]: \"<Path> <File Header(Comma-separated)>[Optional] <Delimiter>[Optional] <Quote Character>[Optional] <Bad Record Action>[Optional]\"")
+      LOGGER.error("[Usage]: \"inputpath=<Path>, fileheader=<File Header(Comma-separated)>[Optional], delimiter=<Delimiter>[Optional], quotecharacter=<Quote Character>[Optional], badrecordaction=<Bad Record Action>[Optional]\"")
+
       throw InvalidParameterException("Invalid Parameter Exception")
     } else {
       val (dataFrame, arguments) = dataReader.getDataFrameAndArguments(args)

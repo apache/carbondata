@@ -3,7 +3,7 @@ package org.apache.carbondata
 import java.io.{BufferedReader, File, FileNotFoundException, FileReader}
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
-import org.apache.carbondata.exception.InvalidHeaderException
+import org.apache.carbondata.exception.{EmptyFileException, InvalidHeaderException}
 import org.apache.carbondata.utils.{ArgumentParser, LoadProperties}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -19,11 +19,11 @@ trait DataReader {
     val sparkSession = SparkSession.builder().config(conf).getOrCreate()
     sparkSession.sparkContext.setLogLevel("WARN")
     val arguments = argumentParser.getProperties(args.head)
-    val headerExist: String = arguments.fileHeaders.fold(true) { _ => false }.toString
-    checkCSVHeader(arguments.inputPath, arguments.delimiter)
+    val headerExist: Boolean = arguments.fileHeaders.fold(true) { _ => false }
+      checkCSVHeader(arguments.inputPath, arguments.delimiter ,headerExist)
     val df: DataFrame = sparkSession.read
       .format("com.databricks.spark.csv")
-      .option("header", headerExist)
+      .option("header", headerExist.toString)
       .option("inferSchema", "true")
       .option("delimiter", arguments.delimiter)
       .option("quote", arguments.quoteCharacter)
@@ -31,33 +31,43 @@ trait DataReader {
     (df, arguments)
   }
 
-  private def checkCSVHeader(csvFile: String, delimiter: String) = {
+  private def checkCSVHeader(csvFile: String, delimiter: String, isCommandLineHeaderExist: Boolean) = {
     val path = new File(csvFile)
-    if (path.exists()) {
+    if (!path.exists()) {
       throw new FileNotFoundException("File not found : " + path.getAbsolutePath)
     }
     if (path.isFile) {
-      val file = new BufferedReader(new FileReader(path))
-      val fileHeaders = file.readLine().split(delimiter).toList
-      if (fileHeaders.distinct.size != fileHeaders.size) {
-        throw InvalidHeaderException("Duplicate Header")
+
+      if(path.length == 0) {
+        throw new EmptyFileException("Input File is Empty : " + path.getAbsolutePath)
       } else {
-        val listOfHeaders = path.listFiles().map { file =>
+        val file: BufferedReader = new BufferedReader(new FileReader(path))
+        val fileHeaders = file.readLine().split(delimiter).toList
+        if (fileHeaders.distinct.size != fileHeaders.size) {
+          throw InvalidHeaderException("Duplicate Header")
+        }
+
+      }
+
+    } else {
+
+      if (isCommandLineHeaderExist) {
+        val listOfHeaders: Array[List[String]] = path.listFiles().map { file =>
           val bufferedReader: BufferedReader = new BufferedReader(new FileReader(file))
           val headers = bufferedReader.readLine().split(delimiter).toList
           bufferedReader.close()
           headers
         }
-        if (listOfHeaders.distinct.length != listOfHeaders.length) {
+
+        if (listOfHeaders.distinct.length != 1) {
           throw InvalidHeaderException("Headers of CSV files provided are not same.")
         } else {
-          val headOfList = listOfHeaders.head
+          val headOfList: List[String] = listOfHeaders.head
           if (headOfList.distinct.length != headOfList.length) {
             throw InvalidHeaderException("CSV files contains duplicate headers")
           }
         }
       }
-      file.close()
     }
   }
 

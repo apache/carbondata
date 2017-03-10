@@ -7,3 +7,7 @@ case class InvalidParameterException(message: String = "", casue: Option[Throwab
 case class InvalidHeaderException(message: String = "", cause: Option[Throwable] = None) extends Exception(message) {
   cause foreach initCause
 }
+
+case class EmptyFileException(message: String = "", cause: Option[Throwable] = None) extends Exception(message) {
+  cause foreach initCause
+}

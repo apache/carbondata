@@ -23,7 +23,7 @@ class DictionaryFileGenerationTest extends FunSuite with MockitoSugar with Dicti
   val carbonTableUtil: CarbonTableUtil = mock[CarbonTableUtil]
 
   val commandLineArguments = LoadProperties("file_path")
-  val arguments = Array("filePath", "File Header", "Delimiter", "QuoteCharacter", "Bad Record Action")
+  val arguments = Array("inputpath=file_path")
 
 
   test("Start Process with valid arguments") {
