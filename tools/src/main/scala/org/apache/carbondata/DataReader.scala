@@ -14,6 +14,11 @@ trait DataReader {
 
   val argumentParser: ArgumentParser
 
+  /**
+    * This method reads and return dataframe and command line arguments
+    * @param args
+    * @return
+    */
   def getDataFrameAndArguments(args: Array[String]): (DataFrame, LoadProperties) = {
     val conf = new SparkConf().setAppName("cardinality_demo").setMaster("local")
     val sparkSession = SparkSession.builder().config(conf).getOrCreate()

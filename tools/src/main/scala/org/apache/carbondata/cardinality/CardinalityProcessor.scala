@@ -20,6 +20,12 @@ trait CardinalityProcessor{
   val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   val dataFrameUtil: DataFrameUtil
 
+  /**
+    * This method computes Cardinality for a column
+    * @param columnName Name of the column whose cardinality needs to be computed
+    * @param columnDataFrame Dataframe Of Column records
+    * @return Cardinality Value
+    */
   def computeCardinality(columnName: String, columnDataFrame: DataFrame): Double = {
     LOGGER.info(s"Computing Cardinality for Column $columnName")
     if(columnDataFrame.count == 0){
@@ -31,7 +37,13 @@ trait CardinalityProcessor{
     }
   }
 
-  //TODO: Validation needs to be added so that no two columns in csv have same name
+  /**
+    * This method adds datatype for each column
+    *
+    * @param cardinalityMatrixList
+    * @param inputFileSchemaList
+    * @return
+    */
   def setDataTypeWithCardinality(cardinalityMatrixList: List[CardinalityMatrix], inputFileSchemaList: List[CsvHeaderSchema]): List[CardinalityMatrix]= {
     cardinalityMatrixList map { cardinalityMatrix =>
       val filteredColumnHeader: Option[CsvHeaderSchema] = inputFileSchemaList.find { inputFileSchema =>
@@ -46,6 +58,7 @@ trait CardinalityProcessor{
   }
 
   /**
+    *
     * This method returns the list of cardinality of each column
     * @param dataFrame
     * @return

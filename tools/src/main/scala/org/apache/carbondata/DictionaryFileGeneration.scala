@@ -11,6 +11,12 @@ trait DictionaryFileGeneration {
   val cardinalityProcessor: CardinalityProcessor
   val carbonTableUtil: CarbonTableUtil
 
+  /**
+    *
+    * @param args Command Line Arguments accepting "path_to_input_source, fileheader(optional), delimiter(optional), quotecharacter(optional)"
+    *             ,badrecordaction(optional)
+    * @return
+    */
   def startGeneration(args: Array[String]): List[CardinalityMatrix] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
     if (args.length != 1) {
