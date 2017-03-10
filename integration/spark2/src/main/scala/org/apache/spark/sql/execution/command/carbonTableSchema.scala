@@ -18,13 +18,9 @@
 package org.apache.spark.sql.execution.command
 
 import java.io.File
-import java.util.concurrent.Callable
-import java.util.concurrent.Executors
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Future
+import java.util.concurrent.{Callable, ExecutorService, Executors, Future}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
@@ -45,15 +41,15 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
-import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
-import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension, ColumnSchema}
+import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.format.{ColumnSchema, SchemaEvolutionEntry}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.format.SchemaEvolutionEntry
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
@@ -276,7 +272,6 @@ private[sql] case class AlterTableAddColumns(
       .schema.SchemaEvolutionEntry()
       schemaEvolutionEntry.setTimeStamp(System.currentTimeMillis)
       schemaEvolutionEntry.setAdded(newCols.toList.asJava)
-
       val thriftTable = schemaConverter
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
       thriftTable.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
@@ -286,7 +281,6 @@ private[sql] case class AlterTableAddColumns(
           thriftTable,
           schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
           carbonTable.getStorePath)(sparkSession)
-
       val tableIdentifier = TableIdentifier(tableName, Some(dbName))
       val schema = CarbonEnv.get.carbonMetastore
         .lookupRelation(tableIdentifier)(sparkSession).schema.json
@@ -306,6 +300,100 @@ private[sql] case class AlterTableAddColumns(
           LOGGER.info("Alter table add columns lock released successfully")
         } else {
           LOGGER.error("Unable to release lock during alter table add columns operation")
+        }
+      }
+    }
+    Seq.empty
+  }
+}
+
+private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableRenameModel)
+  extends RunnableCommand {
+
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  def run(sparkSession: SparkSession): Seq[Row] = {
+    val oldTableIdentifier = alterTableRenameModel.oldTableIdentifier
+    val newTableIdentifier = alterTableRenameModel.newTableIdentifier
+    val oldDatabaseName = oldTableIdentifier.database
+      .getOrElse(sparkSession.catalog.currentDatabase)
+    val newDatabaseName = newTableIdentifier.database
+      .getOrElse(sparkSession.catalog.currentDatabase)
+    if (!oldDatabaseName.equalsIgnoreCase(newDatabaseName)) {
+      throw new MalformedCarbonCommandException("Database name should be same for both tables")
+    }
+    val tableExists = sparkSession.catalog.tableExists(oldDatabaseName, newTableIdentifier.table)
+    if (tableExists) {
+      throw new MalformedCarbonCommandException(s"Table with name $newTableIdentifier " +
+                                                s"already exists")
+    }
+    val oldTableName = oldTableIdentifier.table.toLowerCase
+    val newTableName = newTableIdentifier.table.toLowerCase
+    LOGGER.audit(s"Rename table request has been received for $oldDatabaseName.$oldTableName")
+    LOGGER.info(s"Rename table request has been received for $oldDatabaseName.$oldTableName")
+    val relation: CarbonRelation =
+      CarbonEnv.get.carbonMetastore
+        .lookupRelation(oldTableIdentifier.database, oldTableName)(sparkSession)
+        .asInstanceOf[CarbonRelation]
+    if (relation == null) {
+      LOGGER.audit(s"Rename table request has failed. " +
+                   s"Table $oldDatabaseName.$oldTableName does not exist")
+    }
+    val carbonTable = relation.tableMeta.carbonTable
+    val carbonLock = CarbonLockFactory
+      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+        LockUsage.METADATA_LOCK)
+    if (carbonLock.lockWithRetries()) {
+      LOGGER.info("Successfully able to get the table metadata file lock")
+    } else {
+      sys.error("Table is locked for updation. Please try after some time")
+    }
+    try {
+      // get the latest carbon table and check for column existence
+      val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
+        carbonTable.getCarbonTableIdentifier)
+      val tableMetadataFile = carbonTablePath.getSchemaFilePath
+      val tableInfo: org.apache.carbondata.format.TableInfo = CarbonEnv.get.carbonMetastore
+        .readSchemaFile(tableMetadataFile)
+      val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
+      schemaEvolutionEntry.setTableName(newTableName)
+      val fileType = FileFactory.getFileType(tableMetadataFile)
+      if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
+        val rename = FileFactory.getCarbonFile(carbonTablePath.getPath, fileType)
+          .renameForce(carbonTablePath.getParent.toString + CarbonCommonConstants.FILE_SEPARATOR +
+                       newTableName)
+        if (!rename) {
+          sys.error(s"Rename failed for table $oldTableName")
+        }
+      }
+      val newTableIdentifier = new CarbonTableIdentifier(oldDatabaseName,
+        newTableName,
+        carbonTable.getCarbonTableIdentifier.getTableId)
+      val newTablePath = CarbonEnv.get.carbonMetastore.updateTableSchema(newTableIdentifier,
+        tableInfo,
+        schemaEvolutionEntry,
+        carbonTable.getStorePath)(sparkSession)
+      CarbonEnv.get.carbonMetastore.removeTableFromMetadata(oldDatabaseName, oldTableName)
+      sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client
+        .runSqlHive(
+          s"ALTER TABLE $oldDatabaseName.$oldTableName RENAME TO $newTableName")
+      sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client
+        .runSqlHive(
+          s"ALTER TABLE $oldDatabaseName.$newTableName SET SERDEPROPERTIES" +
+          s"('tableName'='$newTableName', " +
+          s"'dbName'='$oldDatabaseName', 'tablePath'='$newTablePath')")
+      LOGGER.audit(s"Table $oldTableName has been successfully renamed to $newTableName")
+      LOGGER.info(s"Table $oldTableName has been successfully renamed to $newTableName")
+    } catch {
+      case e: Exception => LOGGER.error("Rename table failed: " + e.getMessage)
+        throw e
+    } finally {
+      // release lock after command execution completion
+      if (carbonLock != null) {
+        if (carbonLock.unlock()) {
+          LOGGER.info("Lock released successfully")
+        } else {
+          LOGGER.error("Unable to release lock during rename table")
         }
       }
     }
@@ -468,8 +556,8 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
           cm.msrCols.foreach(f => fields(f.schemaOrdinal) = f)
           sparkSession.sql(
             s"""CREATE TABLE $dbName.$tbName
-                |(${fields.map(f => f.rawSchema).mkString(",")})
-                |USING org.apache.spark.sql.CarbonSource""".stripMargin +
+               |(${fields.map(f => f.rawSchema).mkString(",")})
+               |USING org.apache.spark.sql.CarbonSource""".stripMargin +
             s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath "$tablePath") """)
         } catch {
           case e: Exception =>
@@ -593,7 +681,7 @@ case class LoadTableByInsert(relation: CarbonDatasourceHadoopRelation, child: Lo
       Some(df)).run(sparkSession)
     // updating relation metadata. This is in case of auto detect high cardinality
     relation.carbonRelation.metaData =
-        CarbonSparkUtil.createSparkMeta(relation.carbonRelation.tableMeta.carbonTable)
+      CarbonSparkUtil.createSparkMeta(relation.carbonRelation.tableMeta.carbonTable)
     load
   }
 }
@@ -637,7 +725,7 @@ case class LoadTable(
     }
 
     val relation = CarbonEnv.get.carbonMetastore
-        .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
+      .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
     if (relation == null) {
       sys.error(s"Table $dbName.$tableName does not exist")
     }
@@ -650,10 +738,10 @@ case class LoadTable(
     try {
       // take lock only in case of normal data load.
       if (!updateModel.isDefined) {
-      if (carbonLock.lockWithRetries()) {
-        LOGGER.info("Successfully able to get the table metadata file lock")
-      } else {
-        sys.error("Table is locked for updation. Please try after some time")
+        if (carbonLock.lockWithRetries()) {
+          LOGGER.info("Successfully able to get the table metadata file lock")
+        } else {
+          sys.error("Table is locked for updation. Please try after some time")
         }
       }
 
@@ -676,8 +764,8 @@ case class LoadTable(
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
 
       val partitionLocation = relation.tableMeta.storePath + "/partition/" +
-          relation.tableMeta.carbonTableIdentifier.getDatabaseName + "/" +
-          relation.tableMeta.carbonTableIdentifier.getTableName + "/"
+                              relation.tableMeta.carbonTableIdentifier.getDatabaseName + "/" +
+                              relation.tableMeta.carbonTableIdentifier.getTableName + "/"
 
 
       val columnar = sparkSession.conf.get("carbon.is.columnar.storage", "true").toBoolean
@@ -747,14 +835,14 @@ case class LoadTable(
             true
           } else {
             LOGGER.error("Can't use single_pass, because SINGLE_PASS and ALL_DICTIONARY_PATH" +
-              "can not be used together, and USE_KETTLE must be set as false")
+                         "can not be used together, and USE_KETTLE must be set as false")
             false
           }
         case "false" =>
           false
         case illegal =>
           LOGGER.error(s"Can't use single_pass, because illegal syntax found: [" + illegal + "] " +
-            "Please set it as 'true' or 'false'")
+                       "Please set it as 'true' or 'false'")
           false
       }
       carbonLoadModel.setUseOnePass(useOnePass)

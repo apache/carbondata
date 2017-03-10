@@ -16,7 +16,9 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     // clean data folder
     CarbonProperties.getInstance()
     sql("CREATE TABLE restructure (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
-    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE restructure OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""");
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE restructure OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
+    sql("CREATE TABLE restructure_test (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE restructure_test OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
   }
 
   test("test add dictionary column") {
@@ -105,7 +107,45 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
         assert(true)
     }
   }
+
+  test("test to rename table") {
+    sql("alter table restructure_test rename to restructure_new")
+    val result = sql("select * from restructure_new")
+    assert(result.count().equals(10L))
+  }
+
+  test("test to rename table with invalid table name") {
+    try {
+      sql("alter table restructure_invalid rename to restructure_new")
+      assert(false)
+    } catch{
+      case e:Exception =>
+        println(e.getMessage)
+        assert(true)
+    }
+  }
+
+  test("test to rename table with table already exists") {
+    try {
+      sql("alter table restructure rename to restructure")
+      assert(false)
+    } catch {
+      case e:Exception =>
+        println(e.getMessage)
+        assert(true)
+    }
+  }
+
+  test("test to load data after rename") {
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE restructure_new OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
+    val result = sql("select * from restructure_new")
+    assert(result.count().equals(20L))
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS restructure")
+    sql("DROP TABLE IF EXISTS restructure_new")
+    sql("DROP TABLE IF EXISTS restructure_test")
   }
+
 }

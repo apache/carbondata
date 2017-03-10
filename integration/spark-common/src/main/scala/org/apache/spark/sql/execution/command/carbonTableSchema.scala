@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
 
 import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -133,6 +134,11 @@ case class AlterTableDataTypeChangeModel(dataTypeInfo: DataTypeInfo,
     tableName: String,
     columnName: String,
     newColumnName: String)
+
+case class AlterTableRenameModel(
+    oldTableIdentifier: TableIdentifier,
+    newTableIdentifier: TableIdentifier
+)
 
 case class AlterTableAddColumnsModel(
     databaseName: Option[String],
