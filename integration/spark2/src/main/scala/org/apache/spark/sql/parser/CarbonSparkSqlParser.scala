@@ -120,7 +120,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         else {
           '`' + col.name + '`' + ' ' + col.dataType.catalogString
         }
-        val f: Field = parser.anyFieldDef(new parser.lexical.Scanner(x))
+        val f: Field = parser.anyFieldDef(new parser.lexical.Scanner(x.toLowerCase))
         match {
           case parser.Success(field, _) => field.asInstanceOf[Field]
           case failureOrError => throw new MalformedCarbonCommandException(
@@ -156,14 +156,15 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
           throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED")
         }
         else {
-          Some(BucketFields(options.bucketColumns.split(","), options.bucketNumber))
+          Some(BucketFields(options.bucketColumns.toLowerCase.split(",").map(_.trim),
+            options.bucketNumber))
         }
       } else {
         None
       }
 
       val tableProperties = mutable.Map[String, String]()
-      properties.foreach(tableProperties += _)
+      properties.foreach(f => tableProperties.put(f._1, f._2.toLowerCase))
       // prepare table model of the collected tokens
       val tableModel: TableModel = parser.prepareTableModel(ifNotExists,
         convertDbNameToLowerCase(name.database),

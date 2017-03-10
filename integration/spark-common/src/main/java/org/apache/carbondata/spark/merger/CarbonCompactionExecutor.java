@@ -35,6 +35,7 @@ import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
@@ -92,10 +93,15 @@ public class CarbonCompactionExecutor {
       String segmentId = taskMap.getKey();
       List<DataFileFooter> listMetadata = dataFileMetadataSegMapping.get(segmentId);
 
-      int[] colCardinality = listMetadata.get(0).getSegmentInfo().getColumnCardinality();
-
+      List<ColumnSchema> updatedColumnSchemaList = CarbonUtil
+          .getColumnSchemaList(carbonTable.getDimensionByTableName(carbonTable.getFactTableName()),
+              carbonTable.getMeasureByTableName(carbonTable.getFactTableName()));
+      int[] updatedColumnCardinalities = CarbonUtil
+          .getUpdatedColumnCardinalities(listMetadata.get(0).getColumnInTable(),
+              carbonTable.getDimensionByTableName(carbonTable.getFactTableName()),
+              listMetadata.get(0).getSegmentInfo().getColumnCardinality());
       SegmentProperties sourceSegProperties =
-          new SegmentProperties(listMetadata.get(0).getColumnInTable(), colCardinality);
+          new SegmentProperties(updatedColumnSchemaList, updatedColumnCardinalities);
 
       // for each segment get taskblock info
       TaskBlockInfo taskBlockInfo = taskMap.getValue();
@@ -171,16 +177,28 @@ public class CarbonCompactionExecutor {
 
     List<QueryDimension> dims = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    for (CarbonDimension dim : destinationSegProperties.getDimensions()) {
-      QueryDimension queryDimension = new QueryDimension(dim.getColName());
-      dims.add(queryDimension);
+    List<CarbonDimension> dimensions =
+        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+    for (CarbonDimension dim : dimensions) {
+      // check if dimension is deleted
+      if (!dim.isInvisible()) {
+        QueryDimension queryDimension = new QueryDimension(dim.getColName());
+        queryDimension.setDimension(dim);
+        dims.add(queryDimension);
+      }
     }
     model.setQueryDimension(dims);
 
     List<QueryMeasure> msrs = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    for (CarbonMeasure carbonMeasure : destinationSegProperties.getMeasures()) {
-      QueryMeasure queryMeasure = new QueryMeasure(carbonMeasure.getColName());
-      msrs.add(queryMeasure);
+    List<CarbonMeasure> measures =
+        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
+    for (CarbonMeasure carbonMeasure : measures) {
+      // check if measure is deleted
+      if (!carbonMeasure.isInvisible()) {
+        QueryMeasure queryMeasure = new QueryMeasure(carbonMeasure.getColName());
+        queryMeasure.setMeasure(carbonMeasure);
+        msrs.add(queryMeasure);
+      }
     }
     model.setQueryMeasures(msrs);
     model.setQueryId(System.nanoTime() + "");

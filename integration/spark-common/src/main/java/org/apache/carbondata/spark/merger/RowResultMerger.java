@@ -79,7 +79,7 @@ public class RowResultMerger {
 
   public RowResultMerger(List<RawResultIterator> iteratorList, String databaseName,
       String tableName, SegmentProperties segProp, String tempStoreLocation,
-      CarbonLoadModel loadModel, int[] colCardinality, CompactionType compactionType) {
+      CarbonLoadModel loadModel, CompactionType compactionType) {
 
     CarbonDataFileAttributes carbonDataFileAttributes;
 
@@ -131,7 +131,7 @@ public class RowResultMerger {
     } else {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount);
     }
-    carbonFactDataHandlerModel.setColCardinality(colCardinality);
+    carbonFactDataHandlerModel.setColCardinality(segProp.getDimColumnsCardinality());
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
 
@@ -202,6 +202,7 @@ public class RowResultMerger {
       }
       mergeStatus = true;
     } catch (Exception e) {
+      LOGGER.error(e, e.getMessage());
       LOGGER.error("Exception in compaction merger " + e.getMessage());
       mergeStatus = false;
     } finally {

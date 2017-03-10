@@ -21,12 +21,14 @@ import java.io.File
 import java.text.SimpleDateFormat
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.execution.command.DataTypeInfo
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType}
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.util.CarbonProperties
 
 object CarbonScalaUtil {
@@ -193,5 +195,103 @@ object CarbonScalaUtil {
         case other => other.toString
       }
     }
+  }
+
+  /**
+   * This method will validate a column for its data type and check whether the column data type
+   * can be modified and update if conditions are met
+   *
+   * @param dataTypeInfo
+   * @param carbonColumn
+   */
+  def validateColumnDataType(dataTypeInfo: DataTypeInfo, carbonColumn: CarbonColumn): Unit = {
+    carbonColumn.getDataType.getName match {
+      case "INT" =>
+        if (!dataTypeInfo.dataType.equals("bigint")) {
+          sys
+            .error(s"Given column ${ carbonColumn.getColName } with data type ${
+              carbonColumn
+                .getDataType.getName
+            } cannot be modified. Int can only be changed to bigInt")
+        }
+      case "DECIMAL" =>
+        if (!dataTypeInfo.dataType.equals("decimal")) {
+          sys
+            .error(s"Given column ${ carbonColumn.getColName } with data type ${
+              carbonColumn.getDataType.getName
+            } cannot be modified. Decimal can be only be changed to Decimal of higher precision")
+        }
+        if (dataTypeInfo.precision <= carbonColumn.getColumnSchema.getPrecision) {
+          sys
+            .error(s"Given column ${
+              carbonColumn
+                .getColName
+            } cannot be modified. Specified precision value ${
+              dataTypeInfo
+                .precision
+            } should be greater or equal to current precision value ${
+              carbonColumn.getColumnSchema
+                .getPrecision
+            }")
+        } else if (dataTypeInfo.scale <= carbonColumn.getColumnSchema.getScale) {
+          sys
+            .error(s"Given column ${
+              carbonColumn
+                .getColName
+            } cannot be modified. Specified scale value ${
+              dataTypeInfo
+                .scale
+            } should be greater or equal to current scale value ${
+              carbonColumn.getColumnSchema
+                .getScale
+            }")
+        } else {
+          // difference of precision and scale specified by user should not be less than the
+          // difference of already existing precision and scale else it will result in data loss
+          val carbonColumnPrecisionScaleDiff = carbonColumn.getColumnSchema.getPrecision -
+                                               carbonColumn.getColumnSchema.getScale
+          val dataInfoPrecisionScaleDiff = dataTypeInfo.precision - dataTypeInfo.scale
+          if (dataInfoPrecisionScaleDiff < carbonColumnPrecisionScaleDiff) {
+            sys
+              .error(s"Given column ${
+                carbonColumn
+                  .getColName
+              } cannot be modified. Specified precision and scale values will lead to data loss")
+          }
+        }
+      case _ =>
+        sys
+          .error(s"Given column ${ carbonColumn.getColName } with data type ${
+            carbonColumn
+              .getDataType.getName
+          } cannot be modified. Only Int and Decimal data types are allowed for modification")
+    }
+  }
+
+  /**
+   * This method will create a copy of the same object
+   *
+   * @param thriftColumnSchema object to be cloned
+   * @return
+   */
+  def createColumnSchemaCopyObject(thriftColumnSchema: org.apache.carbondata.format.ColumnSchema)
+  : org.apache.carbondata.format.ColumnSchema = {
+    val columnSchema = new org.apache.carbondata.format.ColumnSchema
+    columnSchema.column_group_id = thriftColumnSchema.column_group_id
+    columnSchema.column_name = thriftColumnSchema.column_name
+    columnSchema.columnProperties = thriftColumnSchema.columnProperties
+    columnSchema.columnReferenceId = thriftColumnSchema.columnReferenceId
+    columnSchema.column_id = thriftColumnSchema.column_id
+    columnSchema.data_type = thriftColumnSchema.data_type
+    columnSchema.default_value = thriftColumnSchema.default_value
+    columnSchema.encoders = thriftColumnSchema.encoders
+    columnSchema.invisible = thriftColumnSchema.invisible
+    columnSchema.columnar = thriftColumnSchema.columnar
+    columnSchema.dimension = thriftColumnSchema.dimension
+    columnSchema.num_child = thriftColumnSchema.num_child
+    columnSchema.precision = thriftColumnSchema.precision
+    columnSchema.scale = thriftColumnSchema.scale
+    columnSchema.schemaOrdinal = thriftColumnSchema.schemaOrdinal
+    columnSchema
   }
 }
