@@ -447,7 +447,7 @@ public class CarbonTable implements Serializable {
   public CarbonMeasure getMeasureByName(String tableName, String columnName) {
     List<CarbonMeasure> measureList = tableMeasuresMap.get(tableName);
     for (CarbonMeasure measure : measureList) {
-      if (measure.getColName().equalsIgnoreCase(columnName)) {
+      if (!measure.isInvisible() && measure.getColName().equalsIgnoreCase(columnName)) {
         return measure;
       }
     }
@@ -465,7 +465,7 @@ public class CarbonTable implements Serializable {
     CarbonDimension carbonDimension = null;
     List<CarbonDimension> dimList = tableDimensionsMap.get(tableName);
     for (CarbonDimension dim : dimList) {
-      if (dim.getColName().equalsIgnoreCase(columnName)) {
+      if (!dim.isInvisible() && dim.getColName().equalsIgnoreCase(columnName)) {
         carbonDimension = dim;
         break;
       }
@@ -490,7 +490,7 @@ public class CarbonTable implements Serializable {
     Iterator<CarbonColumn> colItr = columns.iterator();
     while (colItr.hasNext()) {
       CarbonColumn col = colItr.next();
-      if (col.getColName().equalsIgnoreCase(columnName)) {
+      if (!col.isInvisible() && col.getColName().equalsIgnoreCase(columnName)) {
         return col;
       }
     }
@@ -521,7 +521,7 @@ public class CarbonTable implements Serializable {
    */
   public List<CarbonDimension> getChildren(String dimName, List<CarbonDimension> dimensions) {
     for (CarbonDimension carbonDimension : dimensions) {
-      if (carbonDimension.getColName().equals(dimName)) {
+      if (!carbonDimension.isInvisible() && carbonDimension.getColName().equals(dimName)) {
         return carbonDimension.getListOfChildDimensions();
       } else if (null != carbonDimension.getListOfChildDimensions()
           && carbonDimension.getListOfChildDimensions().size() > 0) {
@@ -574,7 +574,7 @@ public class CarbonTable implements Serializable {
   public CarbonDimension getPrimitiveDimensionByName(String tableName, String columnName) {
     List<CarbonDimension> dimList = tablePrimitiveDimensionsMap.get(tableName);
     for (CarbonDimension dim : dimList) {
-      if (dim.getColName().equalsIgnoreCase(columnName)) {
+      if (!dim.isInvisible() && dim.getColName().equalsIgnoreCase(columnName)) {
         return dim;
       }
     }

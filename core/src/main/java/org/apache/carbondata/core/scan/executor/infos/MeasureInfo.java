@@ -22,7 +22,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
  * Info class which store all the details
  * which is required during aggregation
  */
-public class AggregatorInfo {
+public class MeasureInfo {
 
   /**
    * selected query measure ordinal

@@ -29,6 +29,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
@@ -42,6 +43,7 @@ import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverImpl {
 
@@ -78,9 +80,13 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
       return noDictFilterValuesList.toArray((new byte[noDictFilterValuesList.size()][]));
     } else if (null != dimColEvaluatorInfoList.get(0).getFilterValues() && dimColEvaluatorInfoList
         .get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-      return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(),
-          this.dimColEvaluatorInfoList.get(0).getDimension(),
-          segmentProperties);
+      CarbonDimension dimensionFromCurrentBlock = CarbonUtil
+          .getDimensionFromCurrentBlock(segmentProperties.getDimensions(),
+              this.dimColEvaluatorInfoList.get(0).getDimension());
+      if (null != dimensionFromCurrentBlock) {
+        return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(),
+            dimensionFromCurrentBlock, segmentProperties);
+      }
     }
     return null;
 
@@ -91,15 +97,16 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    *
    * @return start IndexKey
    */
-  public void getStartKey(long[] startKey, SortedMap<Integer, byte[]> noDictStartKeys,
-      List<long[]> startKeyList) {
+  public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
+      SortedMap<Integer, byte[]> noDictStartKeys, List<long[]> startKeyList) {
     switch (exp.getFilterExpressionType()) {
       case GREATERTHAN:
       case GREATERTHAN_EQUALTO:
         FilterUtil.getStartKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
-            startKey, startKeyList);
+            segmentProperties, startKey, startKeyList);
         FilterUtil
-            .getStartKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), noDictStartKeys);
+            .getStartKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), segmentProperties,
+                noDictStartKeys);
         break;
       default:
         //do nothing
@@ -119,7 +126,9 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
         FilterUtil
             .getEndKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(), endKeys,
                 segmentProperties, endKeyList);
-        FilterUtil.getEndKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), noDicEndKeys);
+        FilterUtil
+            .getEndKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), segmentProperties,
+                noDicEndKeys);
         break;
       default:
         //do nothing

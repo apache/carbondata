@@ -430,8 +430,7 @@ public class SortParameters {
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
 
     char[] aggType = CarbonDataProcessorUtil
-        .getAggType(parameters.getMeasureColCount(), parameters.getDatabaseName(),
-            parameters.getTableName());
+        .getAggType(configuration.getMeasureCount(), configuration.getMeasureFields());
     parameters.setAggType(aggType);
     parameters.setUseKettle(false);
     return parameters;

@@ -172,7 +172,7 @@ public class QueryModel implements Serializable {
 
   private static CarbonMeasure getCarbonMetadataMeasure(String name, List<CarbonMeasure> measures) {
     for (CarbonMeasure measure : measures) {
-      if (measure.getColName().equalsIgnoreCase(name)) {
+      if (!measure.isInvisible() && measure.getColName().equalsIgnoreCase(name)) {
         return measure;
       }
     }

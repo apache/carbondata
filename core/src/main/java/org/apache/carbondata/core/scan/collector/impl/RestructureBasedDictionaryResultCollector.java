@@ -17,7 +17,10 @@
 package org.apache.carbondata.core.scan.collector.impl;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -34,13 +37,12 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.commons.lang3.ArrayUtils;
-
 /**
  * It is not a collector it is just a scanned result holder.
  */
-public class DictionaryBasedResultCollector extends AbstractScannedResultCollector {
+public class RestructureBasedDictionaryResultCollector extends AbstractScannedResultCollector {
 
-  public DictionaryBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
+  public RestructureBasedDictionaryResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
   }
 
@@ -53,7 +55,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     boolean isMsrsPresent = measureInfo.getMeasureDataTypes().length > 0;
 
-    QueryDimension[] queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
+    QueryDimension[] queryDimensions = tableBlockExecutionInfos.getActualQueryDimensions();
     List<Integer> dictionaryIndexes = new ArrayList<Integer>();
     for (int i = 0; i < queryDimensions.length; i++) {
       if (queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY) || queryDimensions[i]
@@ -74,7 +76,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       }
     }
 
-    QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
+    QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getActualQueryMeasures();
     BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
         scannedResult.getDeleteDeltaDataCache();
     Map<Integer, GenericQueryType> comlexDimensionInfoMap =
@@ -101,12 +103,6 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     int[] surrogateResult;
     String[] noDictionaryKeys;
     byte[][] complexTypeKeyArray;
-
-    DirectDictionaryGenerator[] directDictionaryGenerators = new DirectDictionaryGenerator[dimSize];
-    for (int i = 0; i < dimSize; i++) {
-      directDictionaryGenerators[i] = DirectDictionaryKeyGeneratorFactory
-              .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
-    }
     while (scannedResult.hasNext() && rowCounter < batchSize) {
       Object[] row = new Object[dimSize + queryMeasures.length];
       if (isDimensionsExist) {
@@ -117,6 +113,16 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         noDictionaryColumnIndex = 0;
         complexTypeColumnIndex = 0;
         for (int i = 0; i < dimSize; i++) {
+          // fill default value in case the dimension does not exist in the current block
+          if (!dimensionInfo.getDimensionExists()[i]) {
+            if (dictionaryEncodingArray[i] || directDictionaryEncodingArray[i]) {
+              row[order[i]] = dimensionInfo.getDefaultValues()[i];
+              dictionaryColumnIndex++;
+            } else {
+              row[order[i]] = dimensionInfo.getDefaultValues()[i];
+            }
+            continue;
+          }
           if (!dictionaryEncodingArray[i]) {
             if (implictColumnArray[i]) {
               if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
@@ -134,8 +140,11 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
                       queryDimensions[i].getDimension().getDataType());
             }
           } else if (directDictionaryEncodingArray[i]) {
-            if (directDictionaryGenerators[i] != null) {
-              row[order[i]] = directDictionaryGenerators[i].getValueFromSurrogate(
+            DirectDictionaryGenerator directDictionaryGenerator =
+                DirectDictionaryKeyGeneratorFactory
+                    .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
+            if (directDictionaryGenerator != null) {
+              row[order[i]] = directDictionaryGenerator.getValueFromSurrogate(
                   surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]]);
             }
           } else if (complexDataTypeArray[i]) {

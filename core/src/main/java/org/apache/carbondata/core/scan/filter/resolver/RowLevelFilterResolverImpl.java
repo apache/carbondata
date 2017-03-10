@@ -68,6 +68,7 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
           dimColEvaluatorInfoList.add(dimColumnEvaluatorInfo);
         } else {
           msrColumnEvalutorInfo = new MeasureColumnResolvedFilterInfo();
+          msrColumnEvalutorInfo.setCarbonColumn(columnExpression.getCarbonColumn());
           msrColumnEvalutorInfo.setRowIndex(index++);
           msrColumnEvalutorInfo
               .setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());

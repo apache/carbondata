@@ -17,7 +17,9 @@
 
 package org.apache.carbondata.processing.newflow;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -26,6 +28,10 @@ import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 public class CarbonDataLoadConfiguration {
 
   private DataField[] dataFields;
+
+  private DataField[] dimensionFields;
+
+  private DataField[] measureFields;
 
   private AbsoluteTableIdentifier tableIdentifier;
 
@@ -58,17 +64,43 @@ public class CarbonDataLoadConfiguration {
 
   private boolean preFetch;
 
+  private int dimensionCount;
+
+  private int measureCount;
+
   public CarbonDataLoadConfiguration() {
   }
 
-  public int getDimensionCount() {
-    int dimCount = 0;
+  private void initDimensionFields() {
+    List<Integer> dimensionIndexes = new ArrayList<>(dataFields.length);
     for (int i = 0; i < dataFields.length; i++) {
       if (dataFields[i].getColumn().isDimesion()) {
-        dimCount++;
+        dimensionIndexes.add(i);
+        dimensionCount++;
       }
     }
-    return dimCount;
+    dimensionFields = new DataField[dimensionCount];
+    for (int i = 0; i < dimensionCount; i++) {
+      dimensionFields[i] = dataFields[dimensionIndexes.get(i)];
+    }
+  }
+
+  private void initMeasureFields() {
+    List<Integer> measureIndexes = new ArrayList<>(dataFields.length);
+    for (int i = 0; i < dataFields.length; i++) {
+      if (!dataFields[i].getColumn().isDimesion()) {
+        measureIndexes.add(i);
+        measureCount++;
+      }
+    }
+    measureFields = new DataField[measureCount];
+    for (int i = 0; i < measureCount; i++) {
+      measureFields[i] = dataFields[measureIndexes.get(i)];
+    }
+  }
+
+  public int getDimensionCount() {
+    return dimensionCount;
   }
 
   public int getNoDictionaryCount() {
@@ -92,13 +124,7 @@ public class CarbonDataLoadConfiguration {
   }
 
   public int getMeasureCount() {
-    int msrCount = 0;
-    for (int i = 0; i < dataFields.length; i++) {
-      if (!dataFields[i].getColumn().isDimesion()) {
-        msrCount++;
-      }
-    }
-    return msrCount;
+    return measureCount;
   }
 
   public DataField[] getDataFields() {
@@ -107,6 +133,8 @@ public class CarbonDataLoadConfiguration {
 
   public void setDataFields(DataField[] dataFields) {
     this.dataFields = dataFields;
+    initDimensionFields();
+    initMeasureFields();
   }
 
   public String[] getHeader() {
@@ -195,5 +223,13 @@ public class CarbonDataLoadConfiguration {
 
   public void setPreFetch(boolean preFetch) {
     this.preFetch = preFetch;
+  }
+
+  public DataField[] getDimensionFields() {
+    return dimensionFields;
+  }
+
+  public DataField[] getMeasureFields() {
+    return measureFields;
   }
 }

@@ -20,6 +20,7 @@ package org.apache.carbondata.core.util;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -31,9 +32,12 @@ import java.util.Map;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 import org.apache.spark.unsafe.types.UTF8String;
 
@@ -47,19 +51,17 @@ public final class DataTypeUtil {
   private static final Map<String, String> dataTypeDisplayNames;
 
   private static final ThreadLocal<DateFormat> timeStampformatter = new ThreadLocal<DateFormat>() {
-    @Override
-    protected DateFormat initialValue() {
-      return new SimpleDateFormat(
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+    @Override protected DateFormat initialValue() {
+      return new SimpleDateFormat(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
               CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
     }
   };
 
   private static final ThreadLocal<DateFormat> dateformatter = new ThreadLocal<DateFormat>() {
-    @Override
-    protected DateFormat initialValue() {
-      return new SimpleDateFormat(
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+    @Override protected DateFormat initialValue() {
+      return new SimpleDateFormat(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
               CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
     }
   };
@@ -198,6 +200,7 @@ public final class DataTypeUtil {
     BigInteger sig = new BigInteger(unscale);
     return new BigDecimal(sig, scale);
   }
+
   /**
    * returns the SqlStatement.Type of corresponding string value
    *
@@ -242,6 +245,36 @@ public final class DataTypeUtil {
         dataType = DataType.STRING;
     }
     return dataType;
+  }
+
+  /**
+   * This method will convert the data according to its data type and perform a
+   * special handling for decimal data types
+   *
+   * @param dataInBytes
+   * @param dimension
+   * @return
+   */
+  public static Object getDataBasedOnDataType(byte[] dataInBytes, CarbonDimension dimension) {
+    if (null == dataInBytes || Arrays
+        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, dataInBytes)) {
+      return null;
+    }
+    switch (dimension.getDataType()) {
+      case DECIMAL:
+        String data = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+        if (data.isEmpty()) {
+          return null;
+        }
+        java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data);
+        if (dimension.getColumnSchema().getScale() > javaDecVal.scale()) {
+          javaDecVal =
+              javaDecVal.setScale(dimension.getColumnSchema().getScale(), RoundingMode.HALF_UP);
+        }
+        return org.apache.spark.sql.types.Decimal.apply(javaDecVal);
+      default:
+        return getDataBasedOnDataType(dataInBytes, dimension.getDataType());
+    }
   }
 
   /**
@@ -538,6 +571,7 @@ public final class DataTypeUtil {
     }
     return null;
   }
+
   /**
    * This method will compare double values it will preserve
    * the -0.0 and 0.0 equality as per == ,also preserve NaN equality check as per
@@ -554,5 +588,100 @@ public final class DataTypeUtil {
       return -1;
     }
     return 1;
+  }
+
+  /**
+   * Below method will be used to convert the data into byte[]
+   *
+   * @param data
+   * @param actualDataType actual data type
+   * @return actual data in byte[]
+   */
+  public static byte[] convertDataToBytesBasedOnDataType(String data, DataType actualDataType) {
+    if (null == data) {
+      return null;
+    } else if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
+      LOGGER.error("Default value should not be carbon specific null value : " + data);
+      return null;
+    }
+    try {
+      long parsedIntVal = 0;
+      switch (actualDataType) {
+        case INT:
+          parsedIntVal = (long) Integer.parseInt(data);
+          return String.valueOf(parsedIntVal)
+              .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        case SHORT:
+          parsedIntVal = (long) Short.parseShort(data);
+          return String.valueOf(parsedIntVal)
+              .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        case DOUBLE:
+          return String.valueOf(Double.parseDouble(data))
+              .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        case LONG:
+          return String.valueOf(Long.parseLong(data))
+              .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        case DATE:
+        case TIMESTAMP:
+          DirectDictionaryGenerator directDictionaryGenerator =
+              DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(actualDataType);
+          int value = directDictionaryGenerator.generateDirectSurrogateKey(data);
+          return String.valueOf(value)
+              .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        case DECIMAL:
+          java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data);
+          return bigDecimalToByte(javaDecVal);
+        default:
+          return UTF8String.fromString(data).getBytes();
+      }
+    } catch (NumberFormatException ex) {
+      LOGGER.error("Problem while converting data type" + data);
+      return null;
+    }
+  }
+
+  /**
+   * This method will parse a given string value corresponding to its data type
+   *
+   * @param value     value to parse
+   * @param columnSchema dimension to get data type and precision and scale in case of decimal
+   *                  data type
+   * @return
+   */
+  public static String normalizeColumnValueForItsDataType(String value, ColumnSchema columnSchema) {
+    try {
+      Object parsedValue = null;
+      switch (columnSchema.getDataType()) {
+        case DECIMAL:
+          return parseStringToBigDecimal(value, columnSchema);
+        case SHORT:
+        case INT:
+        case LONG:
+          parsedValue = normalizeIntAndLongValues(value, columnSchema.getDataType());
+          break;
+        case DOUBLE:
+          parsedValue = Double.parseDouble(value);
+          break;
+        default:
+          return value;
+      }
+      if (null != parsedValue) {
+        return value;
+      }
+      return null;
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  private static String parseStringToBigDecimal(String value, ColumnSchema columnSchema) {
+    BigDecimal bigDecimal = new BigDecimal(value)
+        .setScale(columnSchema.getScale(), RoundingMode.HALF_UP);
+    BigDecimal normalizedValue =
+        normalizeDecimalValue(bigDecimal, columnSchema.getPrecision());
+    if (null != normalizedValue) {
+      return normalizedValue.toString();
+    }
+    return null;
   }
 }

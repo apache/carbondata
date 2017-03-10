@@ -19,6 +19,8 @@ package org.apache.carbondata.core.scan.filter.resolver.resolverinfo;
 
 import java.io.Serializable;
 
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+
 public class MeasureColumnResolvedFilterInfo implements Serializable {
   /**
    *
@@ -30,6 +32,8 @@ public class MeasureColumnResolvedFilterInfo implements Serializable {
   private int rowIndex = -1;
 
   private Object defaultValue;
+
+  private CarbonColumn carbonColumn;
 
   private org.apache.carbondata.core.metadata.datatype.DataType type;
 
@@ -65,4 +69,11 @@ public class MeasureColumnResolvedFilterInfo implements Serializable {
     return defaultValue;
   }
 
+  public CarbonColumn getCarbonColumn() {
+    return carbonColumn;
+  }
+
+  public void setCarbonColumn(CarbonColumn carbonColumn) {
+    this.carbonColumn = carbonColumn;
+  }
 }

@@ -185,12 +185,12 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
   /**
    * method will calculates the start key based on the filter surrogates
    */
-  public void getStartKey(long[] startKey,
+  public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
       SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList) {
     FilterUtil.getStartKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(),
-        startKey, startKeyList);
+        segmentProperties, startKey, startKeyList);
     FilterUtil.getStartKeyForNoDictionaryDimension(dimColResolvedFilterInfo,
-        setOfStartKeyByteArray);
+        segmentProperties, setOfStartKeyByteArray);
   }
 
   /**
@@ -200,7 +200,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
       SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> endKeyList) {
     FilterUtil.getEndKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(), endKeys,
         segmentProperties, endKeyList);
-    FilterUtil.getEndKeyForNoDictionaryDimension(dimColResolvedFilterInfo,
+    FilterUtil.getEndKeyForNoDictionaryDimension(dimColResolvedFilterInfo, segmentProperties,
         setOfEndKeyByteArray);
   }
 
