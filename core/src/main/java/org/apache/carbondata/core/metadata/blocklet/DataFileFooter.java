@@ -70,6 +70,11 @@ public class DataFileFooter implements Serializable {
   private BlockInfo blockInfo;
 
   /**
+   * schema updated time stamp to be used for restructure scenarios
+   */
+  private long schemaUpdatedTimeStamp;
+
+  /**
    * @return the versionId
    */
   public ColumnarFormatVersion getVersionId() {
@@ -165,5 +170,13 @@ public class DataFileFooter implements Serializable {
    */
   public void setBlockInfo(BlockInfo tableBlockInfo) {
     this.blockInfo = tableBlockInfo;
+  }
+
+  public long getSchemaUpdatedTimeStamp() {
+    return schemaUpdatedTimeStamp;
+  }
+
+  public void setSchemaUpdatedTimeStamp(long schemaUpdatedTimeStamp) {
+    this.schemaUpdatedTimeStamp = schemaUpdatedTimeStamp;
   }
 }

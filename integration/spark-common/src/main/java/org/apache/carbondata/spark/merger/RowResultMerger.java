@@ -131,7 +131,6 @@ public class RowResultMerger {
     } else {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount);
     }
-    carbonFactDataHandlerModel.setColCardinality(segProp.getDimColumnsCardinality());
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
 
@@ -261,6 +260,10 @@ public class RowResultMerger {
         .getColumnSchemaList(carbonTable.getDimensionByTableName(tableName),
             carbonTable.getMeasureByTableName(tableName));
     carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
+    // get the cardinality for all all the columns including no dictionary columns
+    int[] formattedCardinality =
+        CarbonUtil.getFormattedCardinality(segprop.getDimColumnsCardinality(), wrapperColumnSchema);
+    carbonFactDataHandlerModel.setColCardinality(formattedCardinality);
     //TO-DO Need to handle complex types here .
     Map<Integer, GenericDataType> complexIndexMap =
         new HashMap<Integer, GenericDataType>(segprop.getComplexDimensions().size());

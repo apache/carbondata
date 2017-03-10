@@ -208,7 +208,6 @@ public class QueryUtil {
    */
   public static int[] getDimensionsBlockIndexes(List<QueryDimension> queryDimensions,
       Map<Integer, Integer> dimensionOrdinalToBlockMapping,
-      Map<Integer, Integer> queryDimensionToCurrentBlockDimensionOrdinalMapping,
       List<CarbonDimension> customAggregationDimension, Set<CarbonDimension> filterDimensions,
       Set<Integer> allProjectionListDimensionIndexes) {
     // using set as in row group columns will point to same block
@@ -220,17 +219,15 @@ public class QueryUtil {
         continue;
       }
 
-      Integer dimensionOrdinal = queryDimensionToCurrentBlockDimensionOrdinalMapping
-          .get(queryDimensions.get(i).getDimension().getOrdinal());
-      allProjectionListDimensionIndexes.add(dimensionOrdinal);
+      Integer dimensionOrdinal = queryDimensions.get(i).getDimension().getOrdinal();
+      allProjectionListDimensionIndexes.add(dimensionOrdinalToBlockMapping.get(dimensionOrdinal));
       if (queryDimensions.get(i).getDimension().numberOfChild() > 0) {
         addChildrenBlockIndex(allProjectionListDimensionIndexes,
             queryDimensions.get(i).getDimension());
       }
 
       if (!filterDimensionOrdinal.contains(dimensionOrdinal)) {
-        blockIndex =
-            dimensionOrdinalToBlockMapping.get(dimensionOrdinal);
+        blockIndex = dimensionOrdinalToBlockMapping.get(dimensionOrdinal);
         dimensionBlockIndex.add(blockIndex);
         if (queryDimensions.get(i).getDimension().numberOfChild() > 0) {
           addChildrenBlockIndex(dimensionBlockIndex, queryDimensions.get(i).getDimension());
@@ -251,30 +248,6 @@ public class QueryUtil {
   }
 
   /**
-   * This method will maintain a position mapping of query dimensions to current block dimensions
-   *
-   * @param queryDimensions
-   * @param currentBlockDimensions
-   * @return
-   */
-  public static Map<Integer, Integer> getQueryDimensionToCurrentBlockDimensionOrdinalMapping(
-      List<QueryDimension> queryDimensions, List<CarbonDimension> currentBlockDimensions) {
-    Map<Integer, Integer> queryToCurrentBlockDimensionOrdinals =
-        new HashMap<>(queryDimensions.size());
-    for (QueryDimension queryDimension : queryDimensions) {
-      if (queryDimension.getDimension().hasEncoding(Encoding.IMPLICIT)) {
-        continue;
-      }
-      int ordinalOfDimensionFromCurrentBlock =
-          getOrdinalOfDimensionFromCurrentBlock(currentBlockDimensions,
-              queryDimension.getDimension());
-      queryToCurrentBlockDimensionOrdinals
-          .put(queryDimension.getDimension().getOrdinal(), ordinalOfDimensionFromCurrentBlock);
-    }
-    return queryToCurrentBlockDimensionOrdinals;
-  }
-
-  /**
    * This method will return the key ordinal of the query dimension from the current block
    *
    * @param blockDimensions
@@ -291,48 +264,6 @@ public class QueryUtil {
       }
     }
     return keyOrdinalInCurrentDimensionBlock;
-  }
-
-  /**
-   * This method will return the ordinal of the query dimension from the current block
-   *
-   * @param blockDimensions
-   * @param queryDimension
-   * @return
-   */
-  public static int getOrdinalOfDimensionFromCurrentBlock(List<CarbonDimension> blockDimensions,
-      CarbonDimension queryDimension) {
-    int keyOrdinalInCurrentDimensionBlock = -1;
-    for (CarbonDimension blockDimension : blockDimensions) {
-      if (queryDimension.getColumnId().equals(blockDimension.getColumnId())) {
-        keyOrdinalInCurrentDimensionBlock = blockDimension.getOrdinal();
-        break;
-      }
-    }
-    return keyOrdinalInCurrentDimensionBlock;
-  }
-
-  /**
-   * This method will maintain a position mapping of query measures to current block measures
-   *
-   * @param queryMeasures
-   * @param currentBlockMeasures
-   * @return
-   */
-  public static Map<Integer, Integer> getQueryMeasuresToCurrentBlockMeasuresOrdinalMapping(
-      List<QueryMeasure> queryMeasures, List<CarbonMeasure> currentBlockMeasures) {
-    Map<Integer, Integer> queryToCurrentBlockDimensionOrdinals =
-        new HashMap<>(queryMeasures.size());
-    for (QueryMeasure queryMeasure : queryMeasures) {
-      for (CarbonMeasure currentBlockMeasure : currentBlockMeasures) {
-        if (queryMeasure.getMeasure().getColumnId().equals(currentBlockMeasure.getColumnId())) {
-          queryToCurrentBlockDimensionOrdinals
-              .put(queryMeasure.getMeasure().getOrdinal(), currentBlockMeasure.getOrdinal());
-          break;
-        }
-      }
-    }
-    return queryToCurrentBlockDimensionOrdinals;
   }
 
   /**
@@ -487,21 +418,18 @@ public class QueryUtil {
    */
   public static int[] getMeasureBlockIndexes(List<QueryMeasure> queryMeasures,
       List<CarbonMeasure> expressionMeasure, Map<Integer, Integer> ordinalToBlockIndexMapping,
-      Map<Integer, Integer> queryMeasuresToCurrentBlockMeasuresOrdinalMapping,
       Set<CarbonMeasure> filterMeasures, List<Integer> allProjectionListMeasureIdexes) {
     Set<Integer> measureBlockIndex = new HashSet<Integer>();
     Set<Integer> filterMeasureOrdinal = getFilterMeasureOrdinal(filterMeasures);
     for (int i = 0; i < queryMeasures.size(); i++) {
-      Integer measureOrdinal = queryMeasuresToCurrentBlockMeasuresOrdinalMapping
-          .get(queryMeasures.get(i).getMeasure().getOrdinal());
-      allProjectionListMeasureIdexes.add(queryMeasures.get(i).getMeasure().getOrdinal());
+      Integer measureOrdinal = queryMeasures.get(i).getMeasure().getOrdinal();
+      allProjectionListMeasureIdexes.add(measureOrdinal);
       if (!filterMeasureOrdinal.contains(measureOrdinal)) {
         measureBlockIndex.add(ordinalToBlockIndexMapping.get(measureOrdinal));
       }
     }
     for (int i = 0; i < expressionMeasure.size(); i++) {
-      measureBlockIndex.add(queryMeasuresToCurrentBlockMeasuresOrdinalMapping
-          .get(ordinalToBlockIndexMapping.get(expressionMeasure.get(i).getOrdinal())));
+      measureBlockIndex.add(ordinalToBlockIndexMapping.get(expressionMeasure.get(i).getOrdinal()));
     }
     int[] measureIndexes =
         ArrayUtils.toPrimitive(measureBlockIndex.toArray(new Integer[measureBlockIndex.size()]));
@@ -746,20 +674,17 @@ public class QueryUtil {
    */
   public static void fillQueryDimensionsBlockIndexes(List<QueryDimension> queryDimensions,
       Map<Integer, Integer> columnOrdinalToBlockIndexMapping,
-      Map<Integer, Integer> queryDimensionToCurrentBlockDimensionOrdinalMapping,
       Set<Integer> dictionaryDimensionBlockIndex, List<Integer> noDictionaryDimensionBlockIndex) {
     for (QueryDimension queryDimension : queryDimensions) {
       if (CarbonUtil.hasEncoding(queryDimension.getDimension().getEncoder(), Encoding.DICTIONARY)
           && queryDimension.getDimension().numberOfChild() == 0) {
-        dictionaryDimensionBlockIndex.add(columnOrdinalToBlockIndexMapping.get(
-            queryDimensionToCurrentBlockDimensionOrdinalMapping
-                .get(queryDimension.getDimension().getOrdinal())));
+        dictionaryDimensionBlockIndex
+            .add(columnOrdinalToBlockIndexMapping.get(queryDimension.getDimension().getOrdinal()));
       } else if (
           !CarbonUtil.hasEncoding(queryDimension.getDimension().getEncoder(), Encoding.IMPLICIT)
               && queryDimension.getDimension().numberOfChild() == 0) {
-        noDictionaryDimensionBlockIndex.add(columnOrdinalToBlockIndexMapping.get(
-            queryDimensionToCurrentBlockDimensionOrdinalMapping
-                .get(queryDimension.getDimension().getOrdinal())));
+        noDictionaryDimensionBlockIndex
+            .add(columnOrdinalToBlockIndexMapping.get(queryDimension.getDimension().getOrdinal()));
       }
     }
   }
@@ -897,11 +822,12 @@ public class QueryUtil {
     if (null != filterDimensions) {
       for (CarbonDimension filterDimension : filterDimensions) {
         // do not fill nay details for implicit dimension type
-        if (filterDimension.hasEncoding(Encoding.IMPLICIT)) {
+        if (filterDimension.hasEncoding(Encoding.IMPLICIT)
+            || filterDimension.getNumberOfChild() == 0) {
           continue;
         }
-        // fillParentDetails(dimensionToBlockIndexMap, filterDimension, complexTypeMap,
-        //     eachComplexColumnValueSize, columnIdToDictionaryMap);
+        fillParentDetails(dimensionToBlockIndexMap, filterDimension, complexTypeMap,
+            eachComplexColumnValueSize, columnIdToDictionaryMap);
       }
     }
     return complexTypeMap;

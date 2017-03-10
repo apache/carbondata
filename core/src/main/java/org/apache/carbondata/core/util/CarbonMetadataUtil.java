@@ -890,15 +890,17 @@ public class CarbonMetadataUtil {
    *
    * @param isFooterPresent  is footer present in carbon data file
    * @param columnSchemaList list of column schema
+   * @param schemaUpdatedTimeStamp  schema updated time stamp to be used for restructure scenarios
    * @return file header thrift object
    */
   public static FileHeader getFileHeader(boolean isFooterPresent,
-      List<ColumnSchema> columnSchemaList) {
+      List<ColumnSchema> columnSchemaList, long schemaUpdatedTimeStamp) {
     FileHeader fileHeader = new FileHeader();
     ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
     fileHeader.setIs_footer_present(isFooterPresent);
     fileHeader.setColumn_schema(columnSchemaList);
     fileHeader.setVersion(version.number());
+    fileHeader.setTime_stamp(schemaUpdatedTimeStamp);
     return fileHeader;
   }
 

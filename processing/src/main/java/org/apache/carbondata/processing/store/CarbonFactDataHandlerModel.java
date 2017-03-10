@@ -179,6 +179,11 @@ public class CarbonFactDataHandlerModel {
   private int bucketId = 0;
 
   /**
+   * schema updated time stamp to be used for restructure scenarios
+   */
+  private long schemaUpdatedTimeStamp;
+
+  /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    * @param configuration
    * @return CarbonFactDataHandlerModel
@@ -253,6 +258,7 @@ public class CarbonFactDataHandlerModel {
     String carbonDataDirectoryPath = getCarbonDataFolderLocation(configuration);
 
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
+    carbonFactDataHandlerModel.setSchemaUpdatedTimeStamp(configuration.getSchemaUpdatedTimeStamp());
     carbonFactDataHandlerModel.setDatabaseName(
         identifier.getDatabaseName());
     carbonFactDataHandlerModel
@@ -498,6 +504,14 @@ public class CarbonFactDataHandlerModel {
 
   public int getBucketId() {
     return bucketId;
+  }
+
+  public long getSchemaUpdatedTimeStamp() {
+    return schemaUpdatedTimeStamp;
+  }
+
+  public void setSchemaUpdatedTimeStamp(long schemaUpdatedTimeStamp) {
+    this.schemaUpdatedTimeStamp = schemaUpdatedTimeStamp;
   }
 }
 

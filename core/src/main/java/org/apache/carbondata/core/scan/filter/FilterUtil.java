@@ -24,6 +24,7 @@ import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -45,6 +46,7 @@ import org.apache.carbondata.core.cache.dictionary.DictionaryChunksWrapper;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.cache.dictionary.ForwardDictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
@@ -80,6 +82,7 @@ import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelFilterResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
+import org.apache.carbondata.core.util.BitSetGroup;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -1457,6 +1460,33 @@ public final class FilterUtil {
     }
     return false;
 
+  }
+
+  /**
+   * This method will create default bitset group. Applicable for restructure scenarios.
+   *
+   * @param pageCount
+   * @param totalRowCount
+   * @param defaultValue
+   * @return
+   */
+  public static BitSetGroup createBitSetGroupWithDefaultValue(int pageCount, int totalRowCount,
+      boolean defaultValue) {
+    BitSetGroup bitSetGroup = new BitSetGroup(pageCount);
+    int numberOfRows = Integer
+        .parseInt(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+    int pagesTobeFullFilled = totalRowCount / numberOfRows;
+    int rowCountForLastPage = totalRowCount % numberOfRows;
+    for (int i = 0; i < pagesTobeFullFilled; i++) {
+      BitSet bitSet = new BitSet(numberOfRows);
+      bitSet.set(0, numberOfRows, defaultValue);
+      bitSetGroup.setBitSet(bitSet, i);
+    }
+    // create and fill bitset for the last page
+    BitSet bitSet = new BitSet(rowCountForLastPage);
+    bitSet.set(0, rowCountForLastPage, defaultValue);
+    bitSetGroup.setBitSet(bitSet, pageCount);
+    return bitSetGroup;
   }
 
 }

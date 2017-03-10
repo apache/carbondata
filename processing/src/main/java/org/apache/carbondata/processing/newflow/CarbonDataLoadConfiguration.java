@@ -68,6 +68,11 @@ public class CarbonDataLoadConfiguration {
 
   private int measureCount;
 
+  /**
+   * schema updated time stamp to be used for restructure scenarios
+   */
+  private long schemaUpdatedTimeStamp;
+
   public CarbonDataLoadConfiguration() {
   }
 
@@ -231,5 +236,13 @@ public class CarbonDataLoadConfiguration {
 
   public DataField[] getMeasureFields() {
     return measureFields;
+  }
+
+  public long getSchemaUpdatedTimeStamp() {
+    return schemaUpdatedTimeStamp;
+  }
+
+  public void setSchemaUpdatedTimeStamp(long schemaUpdatedTimeStamp) {
+    this.schemaUpdatedTimeStamp = schemaUpdatedTimeStamp;
   }
 }

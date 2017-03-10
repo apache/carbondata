@@ -33,6 +33,7 @@ import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -318,6 +319,14 @@ public class CarbonCompactionUtil {
           updatedCardinalityList.add(value);
         }
         updatedColumnSchemaList.add(dimension.getColumnSchema());
+      }
+    }
+    // add measures to the column schema list
+    List<CarbonMeasure> masterSchemaMeasures =
+        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
+    for (CarbonMeasure measure : masterSchemaMeasures) {
+      if (!measure.isInvisible()) {
+        updatedColumnSchemaList.add(measure.getColumnSchema());
       }
     }
     int[] updatedCardinality = ArrayUtils
