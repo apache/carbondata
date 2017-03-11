@@ -71,6 +71,14 @@ may be generally interesting, we also encourage conversations on the developerâ€
 We use GitHubâ€™s pull request functionality to review proposed code changes.
 If you do not already have a personal GitHub account, sign up [here](https://github.com).
 
+### Git config
+
+Ensure to finish the below config(user.email, user.name) before starting PR works.
+```
+$ git config --global user.email "you@example.com"
+$ git config --global user.name "Your Name"
+```
+
 #### Fork the repository on GitHub
 
 Go to the [Apache CarbonData GitHub mirror](https://github.com/apache/incubator-carbondata) and
