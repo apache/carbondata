@@ -41,20 +41,21 @@ public class IncludeFilterExecuterImplTest extends TestCase {
     BitSet bitSet = new BitSet(numerOfRows);
     if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
       // byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-      if (filterValues.length > 1) {
-        for (int i = 0; i < numerOfRows; i++) {
+      for (int i = 0; i < numerOfRows; i++) {
+
+        if (filterValues.length > 1) {
           int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
               dimensionColumnDataChunk.getChunkData(i));
 
           if (index >= 0) {
             bitSet.set(i);
           }
-        }
-      } else if (filterValues.length == 1) {
-        for (int i = 0; i < numerOfRows; i++) {
+        } else if (filterValues.length == 1) {
           if (dimensionColumnDataChunk.compareTo(i, filterValues[0]) == 0) {
             bitSet.set(i);
           }
+        } else {
+          break;
         }
 
       }
@@ -95,39 +96,13 @@ public class IncludeFilterExecuterImplTest extends TestCase {
   @Test
   public void testPerformance() {
 
-    int dataCnt = 120000;
-    int queryCnt = 5;
-    int repeatCnt = 200;
-    
-    int filterCnt = 800;
-    comparePerformance(dataCnt, filterCnt, queryCnt, repeatCnt);
-    
-    filterCnt = 100;
-    comparePerformance(dataCnt, filterCnt, queryCnt, repeatCnt);
-
-  }
-  
-  @Test
-  public void testBoundary() {
-
-    int dataCnt = 120000;
-    int queryCnt = 5;
-    int repeatCnt = 20;
-    
-    int filterCnt = 1;
-    comparePerformance(dataCnt, filterCnt, queryCnt, repeatCnt);
-    
-    filterCnt = 0;
-    comparePerformance(dataCnt, filterCnt, queryCnt, repeatCnt);
-
-  }
-
-  private void comparePerformance(int dataCnt, int filterCnt,
-      int queryCnt, int repeatCnt) {
-    long start;
     long oldTime = 0;
     long newTime = 0;
-    
+    long start;
+    int dataCnt = 120000;
+    int filterCnt = 800;
+    int queryCnt = 5;
+    int repeatCnt = 20;
     byte[] keyWord = new byte[2];
     FixedLengthDimensionDataChunk dimensionColumnDataChunk;
     DimColumnExecuterFilterInfo dim = new DimColumnExecuterFilterInfo();
@@ -169,15 +144,43 @@ public class IncludeFilterExecuterImplTest extends TestCase {
 
     }
 
-    if (filterCnt >= 100) {
-      assertTrue(newTime < oldTime);
-    }
+    assertTrue(newTime < oldTime);
 
     System.out.println("old code performance time: " + oldTime);
     System.out.println("new code performance time: " + newTime);
 
   }
 
+  private BitSet setFilterdIndexToBitSetWithColumnIndex(FixedLengthDimensionDataChunk dimensionColumnDataChunk,
+      int numerOfRows, byte[][] filterValues) {
+    BitSet bitSet = new BitSet(numerOfRows);
+    int start = 0;
+    int last = 0;
+    int startIndex = 0;
+    // byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+    for (int i = 0; i < filterValues.length; i++) {
+      start = CarbonUtil.getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
+          filterValues[i], false);
+      if (start < 0) {
+        continue;
+      }
+      bitSet.set(start);
+      last = start;
+      for (int j = start + 1; j < numerOfRows; j++) {
+        if (dimensionColumnDataChunk.compareTo(j, filterValues[i]) == 0) {
+          bitSet.set(j);
+          last++;
+        } else {
+          break;
+        }
+      }
+      startIndex = last;
+      if (startIndex >= numerOfRows) {
+        break;
+      }
+    }
+    return bitSet;
+  }
 
   private BitSet setFilterdIndexToBitSetWithColumnIndexOld(FixedLengthDimensionDataChunk dimensionColumnDataChunk,
       int numerOfRows, byte[][] filterValues) {

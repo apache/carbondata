@@ -138,23 +138,23 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     BitSet bitSet = new BitSet(numerOfRows);
     if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
       byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-      if (filterValues.length > 1) {
+      for (int i = 0; i < numerOfRows; i++) {
 
-        for (int i = 0; i < numerOfRows; i++) {
+        if (filterValues.length > 1) {
           int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
               dimensionColumnDataChunk.getChunkData(i));
 
           if (index >= 0) {
             bitSet.set(i);
           }
-        }
-      } else if (filterValues.length == 1) {
-
-        for (int i = 0; i < numerOfRows; i++) {
+        } else if (filterValues.length == 1) {
           if (dimensionColumnDataChunk.compareTo(i, filterValues[0]) == 0) {
             bitSet.set(i);
           }
+        } else {
+          break;
         }
+
       }
     }
     return bitSet;
