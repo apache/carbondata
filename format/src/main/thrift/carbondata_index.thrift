@@ -41,6 +41,6 @@ struct IndexHeader{
 struct BlockIndex{
   1: required i64 num_rows; // Total number of rows in this file
   2: required string file_name; // Block file name
-  3: required i64 offset; // Offset of block
+  3: required i64 offset; // Offset of the footer
   4: required carbondata.BlockletIndex block_index;	// Block index
 }

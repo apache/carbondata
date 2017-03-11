@@ -154,8 +154,68 @@ class DataCompactionTest extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+
+  test("check if compaction with Updates") {
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+    sql("drop table if exists  cardinalityUpdatetest")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
+
+    sql(
+      "CREATE TABLE IF NOT EXISTS cardinalityUpdateTest (FirstName String, LastName String, date Timestamp," +
+      "phonetype String, serialname String, ID int, salary Int) STORED BY 'org.apache.carbondata" +
+      ".format'"
+    )
+
+    val csvFilePath1 = s"$resourcesPath/compaction/compactionIUD1.csv"
+    val csvFilePath2 = s"$resourcesPath/compaction/compactionIUD2.csv"
+    val csvFilePath3 = s"$resourcesPath/compaction/compactionIUD3.csv"
+    val csvFilePath4 = s"$resourcesPath/compaction/compactionIUD4.csv"
+
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE cardinalityUpdateTest OPTIONS" +
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+    )
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE cardinalityUpdateTest OPTIONS" +
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+    )
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath3 + "' INTO TABLE cardinalityUpdateTest OPTIONS" +
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+    )
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath4 + "' INTO TABLE cardinalityUpdateTest OPTIONS" +
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+    )
+
+    // update the first segment
+    sql("update cardinalityUpdateTest set (FirstName) = ('FirstTwentyOne') where ID = 2").show()
+
+    // alter table.
+    sql("alter table cardinalityUpdateTest compact 'major'").show()
+
+    // Verify the new updated value in compacted segment.
+    // now check the answers it should be same.
+    checkAnswer(
+      sql("select FirstName from cardinalityUpdateTest where FirstName = ('FirstTwentyOne')"),
+      Seq(Row("FirstTwentyOne")
+      )
+    )
+
+    checkAnswer(
+      sql("select count(*) from cardinalityUpdateTest where FirstName = ('FirstTwentyOne')"),
+      Seq(Row(1)
+      )
+    )
+
+    checkAnswer(
+      sql("select count(*) from cardinalityUpdateTest"),
+      Seq(Row(20)
+      )
+    )
+  }
+
   override def afterAll {
-    sql("drop table if exists  normalcompaction")
+    sql("drop table if exists normalcompaction")
+    sql("drop table if exists cardinalityUpdatetest")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")

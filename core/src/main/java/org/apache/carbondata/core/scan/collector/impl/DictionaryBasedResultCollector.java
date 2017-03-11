@@ -17,10 +17,7 @@
 package org.apache.carbondata.core.scan.collector.impl;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -37,6 +34,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.commons.lang3.ArrayUtils;
+
 /**
  * It is not a collector it is just a scanned result holder.
  */
@@ -103,6 +101,12 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     int[] surrogateResult;
     String[] noDictionaryKeys;
     byte[][] complexTypeKeyArray;
+
+    DirectDictionaryGenerator[] directDictionaryGenerators = new DirectDictionaryGenerator[dimSize];
+    for (int i = 0; i < dimSize; i++) {
+      directDictionaryGenerators[i] = DirectDictionaryKeyGeneratorFactory
+              .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
+    }
     while (scannedResult.hasNext() && rowCounter < batchSize) {
       Object[] row = new Object[dimSize + queryMeasures.length];
       if (isDimensionsExist) {
@@ -130,11 +134,8 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
                       queryDimensions[i].getDimension().getDataType());
             }
           } else if (directDictionaryEncodingArray[i]) {
-            DirectDictionaryGenerator directDictionaryGenerator =
-                DirectDictionaryKeyGeneratorFactory
-                    .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
-            if (directDictionaryGenerator != null) {
-              row[order[i]] = directDictionaryGenerator.getValueFromSurrogate(
+            if (directDictionaryGenerators[i] != null) {
+              row[order[i]] = directDictionaryGenerators[i].getValueFromSurrogate(
                   surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]]);
             }
           } else if (complexDataTypeArray[i]) {

@@ -104,6 +104,7 @@ class CarbonSource extends CreatableRelationProvider
     }
   }
 
+
   private def createTableIfNotExists(sparkSession: SparkSession, parameters: Map[String, String],
       dataSchema: StructType): String = {
 
@@ -152,7 +153,7 @@ class CarbonSource extends CreatableRelationProvider
             None
           }
 
-        val cm = TableCreator.prepareTableModel(false, Option(dbName),
+        val cm = TableCreator.prepareTableModel(ifNotExistPresent = false, Option(dbName),
           tableName, fields, Nil, bucketFields, map)
         CreateTable(cm, false).run(sparkSession)
         CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"

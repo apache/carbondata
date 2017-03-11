@@ -59,4 +59,13 @@ public class BlockBTreeLeafNode extends AbstractBTreeLeafNode {
     return blockInfo.getTableBlockInfo();
   }
 
+  /**
+   * number of pages in blocklet
+   * @return
+   */
+  @Override
+  public int numberOfPages() {
+    throw new UnsupportedOperationException("Unsupported operation");
+  }
+
 }

@@ -26,18 +26,21 @@ import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.reader.CarbonFooterReader;
-import org.apache.carbondata.format.FileFooter;
+import org.apache.carbondata.core.reader.CarbonFooterReaderV3;
+import org.apache.carbondata.core.reader.CarbonHeaderReader;
+import org.apache.carbondata.format.FileFooter3;
+import org.apache.carbondata.format.FileHeader;
 
 public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
 
   /**
    * Below method will be used to convert thrift file meta to wrapper file meta
    * This method will read the footer from footer offset present in the data file
-   * 1. It will set the stream offset
-   * 2. It will read the footer data from file
-   * 3. parse the footer to thrift object
-   * 4. convert to wrapper object
+   * 1. It will read the header from carbon data file, header starts from 0 offset
+   * 2. It will set the stream offset
+   * 3. It will read the footer data from file
+   * 4. parse the footer to thrift object
+   * 5. convert to wrapper object
    *
    * @param tableBlockInfo
    *        table block info
@@ -46,19 +49,20 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
   @Override public DataFileFooter readDataFileFooter(TableBlockInfo tableBlockInfo)
       throws IOException {
     DataFileFooter dataFileFooter = new DataFileFooter();
-    CarbonFooterReader reader =
-        new CarbonFooterReader(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset());
-    FileFooter footer = reader.readFooter();
-    dataFileFooter.setVersionId(ColumnarFormatVersion.valueOf((short) footer.getVersion()));
+    CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(tableBlockInfo.getFilePath());
+    FileHeader fileHeader = carbonHeaderReader.readHeader();
+    CarbonFooterReaderV3 reader =
+        new CarbonFooterReaderV3(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset());
+    FileFooter3 footer = reader.readFooterVersion3();
+    dataFileFooter.setVersionId(ColumnarFormatVersion.valueOf((short) fileHeader.getVersion()));
     dataFileFooter.setNumberOfRows(footer.getNum_rows());
     dataFileFooter.setSegmentInfo(getSegmentInfo(footer.getSegment_info()));
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-    List<org.apache.carbondata.format.ColumnSchema> table_columns = footer.getTable_columns();
+    List<org.apache.carbondata.format.ColumnSchema> table_columns = fileHeader.getColumn_schema();
     for (int i = 0; i < table_columns.size(); i++) {
       columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
     }
     dataFileFooter.setColumnInTable(columnSchemaList);
-
     List<org.apache.carbondata.format.BlockletIndex> leaf_node_indices_Thrift =
         footer.getBlocklet_index_list();
     List<BlockletIndex> blockletIndexList = new ArrayList<BlockletIndex>();
@@ -107,6 +111,7 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     blockletInfo.setNumberOfRows(blockletInfoThrift.getNum_rows());
     blockletInfo.setDimensionOffset(blockletInfoThrift.getDimension_offsets());
     blockletInfo.setMeasureOffsets(blockletInfoThrift.getMeasure_offsets());
+    blockletInfo.setNumberOfPages(blockletInfoThrift.getNumber_number_of_pages());
     return blockletInfo;
   }
 

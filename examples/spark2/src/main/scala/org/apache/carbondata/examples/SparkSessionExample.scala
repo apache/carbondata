@@ -60,7 +60,8 @@ object SparkSessionExample {
     spark.sparkContext.setLogLevel("WARN")
 
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
+        .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
 
     // Create table
     spark.sql(
@@ -116,8 +117,8 @@ object SparkSessionExample {
       s"""
          | INSERT INTO TABLE carbon_table
          | SELECT shortField, intField, bigintField, doubleField, stringField,
-         | from_unixtime(unix_timestamp(timestampField,'yyyy/M/dd')) timestampField, decimalField,
-         | cast(to_date(from_unixtime(unix_timestamp(dateField,'yyyy/M/dd'))) as date), charField
+         | from_unixtime(unix_timestamp(timestampField,'yyyy/MM/dd HH:mm:ss')) timestampField,
+         | decimalField,from_unixtime(unix_timestamp(dateField,'yyyy/MM/dd')), charField
          | FROM csv_table
        """.stripMargin)
 
@@ -127,8 +128,10 @@ object SparkSessionExample {
              where stringfield = 'spark' and decimalField > 40
               """).show
 
+    // Shows with raw data's timestamp format
     spark.sql("""
-             SELECT *
+             SELECT
+             stringField, date_format(timestampField, "yyyy/MM/dd HH:mm:ss") as timestampField
              FROM carbon_table where length(stringField) = 5
               """).show
 

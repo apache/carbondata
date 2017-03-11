@@ -112,6 +112,7 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
     )
   }
 
+
   override def afterAll {
     sql("drop table if exists  cardinalityTest")
     CarbonProperties.getInstance()
