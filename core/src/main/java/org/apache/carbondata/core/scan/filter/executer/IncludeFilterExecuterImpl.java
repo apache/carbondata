@@ -139,7 +139,6 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
       byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
       if (filterValues.length > 1) {
-
         for (int i = 0; i < numerOfRows; i++) {
           int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
               dimensionColumnDataChunk.getChunkData(i));
@@ -149,7 +148,6 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
           }
         }
       } else if (filterValues.length == 1) {
-
         for (int i = 0; i < numerOfRows; i++) {
           if (dimensionColumnDataChunk.compareTo(i, filterValues[0]) == 0) {
             bitSet.set(i);

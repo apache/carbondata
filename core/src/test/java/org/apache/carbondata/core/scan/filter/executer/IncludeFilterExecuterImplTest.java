@@ -45,7 +45,6 @@ public class IncludeFilterExecuterImplTest extends TestCase {
         for (int i = 0; i < numerOfRows; i++) {
           int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
               dimensionColumnDataChunk.getChunkData(i));
-
           if (index >= 0) {
             bitSet.set(i);
           }
@@ -56,7 +55,6 @@ public class IncludeFilterExecuterImplTest extends TestCase {
             bitSet.set(i);
           }
         }
-
       }
     }
     return bitSet;
