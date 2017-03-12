@@ -44,7 +44,7 @@ object CarbonExample {
     // Currently there are two data loading flows in CarbonData, one uses Kettle as ETL tool
     // in each node to do data loading, another uses a multi-thread framework without Kettle (See
     // AbstractDataLoadProcessorStep)
-    // Load data with Kettle
+    // Load data without Kettle(by Default,use_kettle='false')
     cc.sql(s"""
            LOAD DATA LOCAL INPATH '$testData' into table t3
            """)
@@ -57,10 +57,21 @@ object CarbonExample {
            GROUP BY country
            """).show()
 
-    // Load data without kettle
+    // Not rebuilding table will cause the query result doubled,which is confusing.
+    cc.sql("DROP TABLE IF EXISTS t3")
+
+    // Create table, 6 dimensions, 1 measure
+    cc.sql("""
+           CREATE TABLE IF NOT EXISTS t3
+           (ID Int, date Date, country String,
+           name String, phonetype String, serialname char(10), salary Int)
+           STORED BY 'carbondata'
+           """)
+    
+    // Load data with kettle
     cc.sql(s"""
            LOAD DATA LOCAL INPATH '$testData' into table t3
-           OPTIONS('USE_KETTLE'='false')
+           OPTIONS('USE_KETTLE'='true')
            """)
 
     // Perform a query
