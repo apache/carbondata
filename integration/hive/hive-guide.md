@@ -75,6 +75,8 @@ mkdir hive/auxlibs/
 cp carbondata/assembly/target/scala-2.11/carbondata_2.11*.jar hive/auxlibs/
 cp carbondata/integration/hive/target/carbondata-hive-*.jar hive/auxlibs/
 cp $SPARK_HOME/jars/spark-catalyst*.jar hive/auxlibs/
+cp <scala-library-2.11.1.jar path> hive/auxlibs/
+cp <scala-reflect-2.11.1.jar path> hive/auxlibs/
 export HIVE_AUX_JARS_PATH=hive/auxlibs/
 ```
 
