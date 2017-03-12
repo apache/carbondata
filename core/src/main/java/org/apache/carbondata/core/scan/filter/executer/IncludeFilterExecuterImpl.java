@@ -142,7 +142,6 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
         for (int i = 0; i < numerOfRows; i++) {
           int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
               dimensionColumnDataChunk.getChunkData(i));
-
           if (index >= 0) {
             bitSet.set(i);
           }
