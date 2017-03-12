@@ -176,7 +176,7 @@ object CommonUtil {
     if (!key.startsWith(CarbonCommonConstants.COLUMN_PROPERTIES)) {
       return true
     }
-    val columnPropertyKey = CarbonCommonConstants.COLUMN_PROPERTIES + "." + column + "."
+    val columnPropertyKey = CarbonCommonConstants.COLUMN_PROPERTIES + "." + column.toLowerCase + "."
     if (key.startsWith(columnPropertyKey)) {
       true
     } else {
