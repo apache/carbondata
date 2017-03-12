@@ -97,11 +97,11 @@ public class IncludeFilterExecuterImplTest extends TestCase {
     int queryCnt = 5;
     int repeatCnt = 200;
     
-    int filterCnt = 800;
-    comparePerformance(dataCnt, filterCnt, queryCnt, repeatCnt);
+    int filteredValueCnt = 800;
+    comparePerformance(dataCnt, filteredValueCnt, queryCnt, repeatCnt);
     
-    filterCnt = 100;
-    comparePerformance(dataCnt, filterCnt, queryCnt, repeatCnt);
+    filteredValueCnt = 100;
+    comparePerformance(dataCnt, filteredValueCnt, queryCnt, repeatCnt);
 
   }
   
@@ -111,30 +111,43 @@ public class IncludeFilterExecuterImplTest extends TestCase {
   @Test
   public void testBoundary() {
 
-    int dataCnt = 120000;
-    int queryCnt = 5;
+	// dimension's data number in a blocklet, usually default is 120000
+    int dataChunkSize = 120000; 
+    //  repeat query count in the test
+    int queryCnt = 5;    
+    // use to generate repeated dictionary value
     int repeatCnt = 20;
+    //filtered value count in a blocklet
+    int filteredValueCnt = 1;
+    comparePerformance(dataChunkSize, filteredValueCnt, queryCnt, repeatCnt);
     
-    int filterCnt = 1;
-    comparePerformance(dataCnt, filterCnt, queryCnt, repeatCnt);
-    
-    filterCnt = 0;
-    comparePerformance(dataCnt, filterCnt, queryCnt, repeatCnt);
+    filteredValueCnt = 0;
+    comparePerformance(dataChunkSize, filteredValueCnt, queryCnt, repeatCnt);
 
   }
 
-  private void comparePerformance(int dataCnt, int filterCnt,
+  /**
+   * comapre result and performance
+   * 
+   * @param dataChunkSize dataChunk's stored data size
+   * @param filteredValueCnt filtered dictionary value count
+   * @param queryCnt repeat query count in the test
+   * @param repeatCnt use to generate repeated test dictionary value
+   * @return 
+   */
+  private void comparePerformance(int dataChunkSize, int filteredValueCnt,
       int queryCnt, int repeatCnt) {
     long start;
     long oldTime = 0;
     long newTime = 0;
     
-    byte[] keyWord = new byte[2];
+    // column size
+    int dimColumnSize = 2;
     FixedLengthDimensionDataChunk dimensionColumnDataChunk;
     DimColumnExecuterFilterInfo dim = new DimColumnExecuterFilterInfo();
 
-    byte[] dataChunk = new byte[dataCnt * keyWord.length];
-    for (int i = 0; i < dataCnt; i++) {
+    byte[] dataChunk = new byte[dataChunkSize * dimColumnSize];
+    for (int i = 0; i < dataChunkSize; i++) {
 
       if (i % repeatCnt == 0) {
         repeatCnt++;
@@ -146,23 +159,24 @@ public class IncludeFilterExecuterImplTest extends TestCase {
 
     }
 
-    byte[][] filterKeys = new byte[filterCnt][2];
-    for (int ii = 0; ii < filterCnt; ii++) {
+    byte[][] filterKeys = new byte[filteredValueCnt][2];
+    for (int ii = 0; ii < filteredValueCnt; ii++) {
       filterKeys[ii] = unsignedShortToByte2(100 + ii);
     }
     dim.setFilterKeys(filterKeys);
 
     dimensionColumnDataChunk = new FixedLengthDimensionDataChunk(dataChunk, null, null,
-        dataChunk.length / keyWord.length, keyWord.length);
+        dataChunkSize, dimColumnSize);
 
+    // repeat query and compare 2 result between old code and new optimized code
     for (int j = 0; j < queryCnt; j++) {
 
       start = System.currentTimeMillis();
-      BitSet bitOld = this.setFilterdIndexToBitSet(dimensionColumnDataChunk, dataCnt, filterKeys);
+      BitSet bitOld = this.setFilterdIndexToBitSet(dimensionColumnDataChunk, dataChunkSize, filterKeys);
       oldTime = oldTime + System.currentTimeMillis() - start;
 
       start = System.currentTimeMillis();
-      BitSet bitNew = this.setFilterdIndexToBitSetNew((FixedLengthDimensionDataChunk) dimensionColumnDataChunk, dataCnt,
+      BitSet bitNew = this.setFilterdIndexToBitSetNew((FixedLengthDimensionDataChunk) dimensionColumnDataChunk, dataChunkSize,
           filterKeys);
       newTime = newTime + System.currentTimeMillis() - start;
 
@@ -170,12 +184,12 @@ public class IncludeFilterExecuterImplTest extends TestCase {
 
     }
 
-    if (filterCnt >= 100) {
+    if (filteredValueCnt >= 100) {
       assertTrue(newTime < oldTime);
     }
 
-    System.out.println("old code performance time: " + oldTime);
-    System.out.println("new code performance time: " + newTime);
+    System.out.println("old code performance time: " + oldTime + " ms");
+    System.out.println("new code performance time: " + newTime + " ms");
 
   }
 
@@ -289,8 +303,8 @@ public class IncludeFilterExecuterImplTest extends TestCase {
 
     }
 
-    System.out.println("old code performance time: " + oldTime);
-    System.out.println("new code performance time: " + newTime);
+    System.out.println("old code performance time: " + oldTime + " ms");
+    System.out.println("new code performance time: " + newTime + " ms");
 
   }
 
