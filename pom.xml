@@ -99,6 +99,7 @@
     <module>integration/spark-common</module>
     <module>integration/spark-common-test</module>
     <module>assembly</module>
+    <module>integration/presto</module>
   </modules>
 
   <properties>
