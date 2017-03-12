@@ -36,26 +36,12 @@ public class DataWriterHolder {
 
   public void addNodeHolder(NodeHolder holder) {
     this.nodeHolder.add(holder);
-
-    int size = 0;
-    // add row id index length
-    for (int i = 0; i < holder.getKeyBlockIndexLength().length; i++) {
-      if (!holder.getIsSortedKeyBlock()[i]) {
-        size += holder.getKeyBlockIndexLength()[i];
-      }
-    }
-    // add rle index length
-    for (int i = 0; i < holder.getDataIndexMapLength().length; i++) {
-      if (holder.getAggBlocks()[i]) {
-        size += holder.getDataIndexMapLength()[i];
-      }
-    }
-    currentSize +=
-        holder.getTotalDimensionArrayLength() + holder.getTotalMeasureArrayLength() + size;
+    currentSize += holder.getHolderSize();
   }
 
   public long getSize() {
-    return currentSize;
+    // increasing it by 15 percent for data chunk 3 of each column each page
+    return currentSize + ((currentSize * 15) / 100);
   }
 
   public int getNumberOfPagesAdded() {

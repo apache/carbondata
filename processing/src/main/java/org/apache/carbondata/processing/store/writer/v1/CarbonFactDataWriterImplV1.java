@@ -20,6 +20,7 @@ package org.apache.carbondata.processing.store.writer.v1;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.BitSet;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -38,8 +39,8 @@ import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterE
 
 public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
 
-  private static final LogService LOGGER = LogServiceFactory
-      .getLogService(CarbonFactDataWriterImplV1.class.getName());
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CarbonFactDataWriterImplV1.class.getName());
 
   public CarbonFactDataWriterImplV1(CarbonDataWriterVo dataWriterVo) {
     super(dataWriterVo);
@@ -48,7 +49,8 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
   @Override
   public NodeHolder buildDataNodeHolder(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
       int entryCount, byte[] startKey, byte[] endKey, WriterCompressModel compressionModel,
-      byte[] noDictionaryStartKey, byte[] noDictionaryEndKey) throws CarbonDataWriterException {
+      byte[] noDictionaryStartKey, byte[] noDictionaryEndKey, BitSet[] nullValueIndexBitSet)
+      throws CarbonDataWriterException {
     // if there are no NO-Dictionary column present in the table then
     // set the empty byte array
     if (null == noDictionaryEndKey) {
@@ -149,6 +151,7 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
     NodeHolder holder = new NodeHolder();
     holder.setDataArray(dataArray);
     holder.setKeyArray(keyBlockData);
+    holder.setMeasureNullValueIndex(nullValueIndexBitSet);
     // end key format will be <length of dictionary key><length of no
     // dictionary key><DictionaryKey><No Dictionary key>
     byte[] updatedNoDictionaryEndKey = updateNoDictionaryStartAndEndKey(noDictionaryEndKey);
@@ -362,8 +365,8 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
   /**
    * This method will write metadata at the end of file file format in thrift format
    */
-  protected void writeBlockletInfoToFile(FileChannel channel,
-      String filePath) throws CarbonDataWriterException {
+  protected void writeBlockletInfoToFile(FileChannel channel, String filePath)
+      throws CarbonDataWriterException {
     try {
       long currentPosition = channel.size();
       CarbonFooterWriter writer = new CarbonFooterWriter(filePath);

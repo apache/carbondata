@@ -151,6 +151,11 @@ public class NodeHolder {
   private int totalMeasureArrayLength;
 
   /**
+   * data size this node holder is holding
+   */
+  private int holderSize;
+
+  /**
    * @return the keyArray
    */
   public byte[][] getKeyArray() {
@@ -426,5 +431,13 @@ public class NodeHolder {
 
   public void setMeasureColumnMinData(byte[][] measureColumnMinData) {
     this.measureColumnMinData = measureColumnMinData;
+  }
+
+  public int getHolderSize() {
+    return holderSize;
+  }
+
+  public void setHolderSize(int holderSize) {
+    this.holderSize = holderSize;
   }
 }

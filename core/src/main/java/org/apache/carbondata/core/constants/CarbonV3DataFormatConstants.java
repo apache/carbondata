@@ -22,24 +22,19 @@ package org.apache.carbondata.core.constants;
 public interface CarbonV3DataFormatConstants {
 
   /**
-   * number of page per blocklet column
+   * each blocklet group size in mb
    */
-  String NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN = "carbon.number.of.page.in.blocklet.column";
+  String BLOCKLET_SIZE_IN_MB = "carbon.blockletgroup.size.in.mb";
 
   /**
-   * number of page per blocklet column default value
+   * blocklet group size default value
    */
-  String NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE = "10";
+  String BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE = "64";
 
   /**
-   * number of page per blocklet column max value
+   * blocklet group size min value
    */
-  short NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_MAX = 20;
-
-  /**
-   * number of page per blocklet column min value
-   */
-  short NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_MIN = 1;
+  short BLOCKLET_SIZE_IN_MB_MIN = 16;
 
   /**
    * number of column to be read in one IO in query

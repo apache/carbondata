@@ -86,7 +86,7 @@ public final class CarbonProperties {
     validateCarbonDataFileVersion();
     validateExecutorStartUpTime();
     validatePrefetchBufferSize();
-    validateNumberOfPagesPerBlocklet();
+    validateBlockletGroupSizeInMB();
     validateNumberOfColumnPerIORead();
     validateNumberOfRowsPerBlockletColumnPage();
   }
@@ -114,31 +114,29 @@ public final class CarbonProperties {
   /**
    * This method validates the number of pages per blocklet column
    */
-  private void validateNumberOfPagesPerBlocklet() {
+  private void validateBlockletGroupSizeInMB() {
     String numberOfPagePerBlockletColumnString = carbonProperties
-        .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN,
-            CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE);
+        .getProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB,
+            CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE);
     try {
       short numberOfPagePerBlockletColumn = Short.parseShort(numberOfPagePerBlockletColumnString);
-      if (numberOfPagePerBlockletColumn
-          < CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_MIN
-          || numberOfPagePerBlockletColumn
-          > CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_MAX) {
-        LOGGER.info(
-            "The Number Of pages per blocklet column value \"" + numberOfPagePerBlockletColumnString
-                + "\" is invalid. Using the default value \""
-                + CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE);
-        carbonProperties.setProperty(CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN,
-            CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE);
+      if (numberOfPagePerBlockletColumn < CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_MIN) {
+        LOGGER.info("Blocklet Size Configured value \"" + numberOfPagePerBlockletColumnString
+            + "\" is invalid. Using the default value \""
+            + CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE);
+        carbonProperties.setProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB,
+            CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE);
       }
     } catch (NumberFormatException e) {
-      LOGGER.info(
-          "The Number Of pages per blocklet column value \"" + numberOfPagePerBlockletColumnString
-              + "\" is invalid. Using the default value \""
-              + CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE);
-      carbonProperties.setProperty(CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN,
-          CarbonV3DataFormatConstants.NUMBER_OF_PAGE_IN_BLOCKLET_COLUMN_DEFAULT_VALUE);
+      LOGGER.info("Blocklet Size Configured value \"" + numberOfPagePerBlockletColumnString
+          + "\" is invalid. Using the default value \""
+          + CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE);
+      carbonProperties.setProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB,
+          CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE);
     }
+    LOGGER.info("Blocklet Size Configured value is \"" + carbonProperties
+        .getProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB,
+            CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE));
   }
 
   /**
@@ -393,6 +391,9 @@ public final class CarbonProperties {
             CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION);
       }
     }
+    LOGGER.info("Carbon Current data file version: " + carbonProperties
+        .setProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION,
+            CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION));
   }
 
   /**
