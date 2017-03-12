@@ -151,6 +151,8 @@ public class IncludeFilterExecuterImplTest extends TestCase {
     long start;
     long oldTime = 0;
     long newTime = 0;
+    
+    // used to generate filter value
     int baseFilteredValue = 100;
     // column dictionary size
     int dimColumnSize = 2;
@@ -175,7 +177,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
 
     byte[][] filterKeys = new byte[filteredValueCnt][2];
     for (int k = 0; k < filteredValueCnt; k++) {
-      filterKeys[k] = transferIntToByteArr(baseFilteredValue+k, dimColumnSize);
+      filterKeys[k] = transferIntToByteArr(baseFilteredValue + k, dimColumnSize);
     }
     dim.setFilterKeys(filterKeys);
 
