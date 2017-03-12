@@ -43,7 +43,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
  * Carbon input split to allow distributed read of CarbonInputFormat.
  */
 public class CarbonInputSplit extends FileSplit
-    implements Distributable, Serializable, Writable, Block {
+    implements Distributable, Serializable, Writable, Block, org.apache.hadoop.mapred.InputSplit {
 
   private static final long serialVersionUID = 3520344046772190207L;
   public String taskId;
