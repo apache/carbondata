@@ -104,6 +104,9 @@ public class RestructureBasedVectorResultCollector extends AbstractScannedResult
     int measureExistIndex = 0;
     for (int i = 0; i < queryMeasures.length; i++) {
       if (!measureInfo.getMeasureExists()[i]) {
+        // add a dummy column vector result collector object
+        ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
+        allColumnInfo[queryMeasures[i].getQueryOrder()] = columnVectorInfo;
         continue;
       }
       QueryMeasure currentBlockMeasure =
@@ -174,7 +177,7 @@ public class RestructureBasedVectorResultCollector extends AbstractScannedResult
    * This method will fill the default values of non existing dimensions in the current block
    */
   private void fillDataForNonExistingDimensions() {
-    for (int i = 0; i < tableBlockExecutionInfos.getActualQueryMeasures().length; i++) {
+    for (int i = 0; i < tableBlockExecutionInfos.getActualQueryDimensions().length; i++) {
       if (!dimensionInfo.getDimensionExists()[i]) {
         CarbonDimension dimension =
             tableBlockExecutionInfos.getActualQueryDimensions()[i].getDimension();
@@ -200,6 +203,7 @@ public class RestructureBasedVectorResultCollector extends AbstractScannedResult
    *
    * @param vector
    * @param columnVectorInfo
+   *
    * @param defaultValue
    */
   private void fillDictionaryData(CarbonColumnVector vector, ColumnVectorInfo columnVectorInfo,
