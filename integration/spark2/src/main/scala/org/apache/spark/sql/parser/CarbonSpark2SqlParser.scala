@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.CarbonDDLSqlParser
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -163,11 +164,17 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         }
         val tableProps = if (tblProp.isDefined) {
           // default value should not be converted to lower case
-          val tblProps = tblProp.get.map(f => if (f._1.toLowerCase.startsWith("default.value.")) {
-            f._1 -> f._2
-          } else {
-            f._1 -> f._2.toLowerCase
-          })
+          val tblProps = tblProp.get
+            .map(f => if (CarbonCommonConstants.TABLE_BLOCKSIZE.equalsIgnoreCase(f._1) ||
+                          CarbonCommonConstants.NO_INVERTED_INDEX.equalsIgnoreCase(f._1) ||
+                          CarbonCommonConstants.COLUMN_GROUPS.equalsIgnoreCase(f._1)) {
+              throw new MalformedCarbonCommandException(
+                s"Unsupported Table property in add column: ${ f._1 }")
+            } else if (f._1.toLowerCase.startsWith("default.value.")) {
+              f._1 -> f._2
+            } else {
+              f._1 -> f._2.toLowerCase
+            })
           scala.collection.mutable.Map(tblProps: _*)
         } else {
           scala.collection.mutable.Map.empty[String, String]

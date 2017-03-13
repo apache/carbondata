@@ -165,7 +165,22 @@ private[sql] case class AlterTableDataTypeChange(
       val carbonTable = CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)
       val columnName = alterTableDataTypeChangeModel.columnName
       var carbonColumnToBeModified: CarbonColumn = null
-      val carbonColumns = carbonTable.getCreateOrderColumn(tableName).asScala
+      val carbonColumns = carbonTable.getCreateOrderColumn(tableName).asScala.filter(!_.isInvisible)
+
+      if (!carbonColumns.exists(_.getColName.equalsIgnoreCase(columnName))) {
+        LOGGER.audit(s"Alter table change data type request has failed. " +
+                     s"Column $columnName does not exist")
+        sys.error(s"Column does not exist: $columnName")
+      }
+      val carbonColumn = carbonColumns.filter(_.getColName.equalsIgnoreCase(columnName))
+      if (carbonColumn.size == 1) {
+        CarbonScalaUtil
+          .validateColumnDataType(alterTableDataTypeChangeModel.dataTypeInfo, carbonColumn(0))
+      } else {
+        LOGGER.audit(s"Alter table change data type request has failed. " +
+                     s"Column $columnName is invalid")
+        sys.error(s"Invalid Column: $columnName")
+      }
       // read the latest schema file
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
         carbonTable.getCarbonTableIdentifier)
@@ -175,7 +190,7 @@ private[sql] case class AlterTableDataTypeChange(
       // maintain the added column for schema evolution history
       var addColumnSchema: org.apache.carbondata.format.ColumnSchema = null
       var deletedColumnSchema: org.apache.carbondata.format.ColumnSchema = null
-      val columnSchemaList = tableInfo.fact_table.table_columns.asScala
+      val columnSchemaList = tableInfo.fact_table.table_columns.asScala.filter(!_.isInvisible)
       columnSchemaList.foreach { columnSchema =>
         if (columnSchema.column_name.equalsIgnoreCase(columnName)) {
           deletedColumnSchema = CarbonScalaUtil.createColumnSchemaCopyObject(columnSchema)
@@ -200,8 +215,10 @@ private[sql] case class AlterTableDataTypeChange(
       val tableIdentifier = TableIdentifier(tableName, Some(dbName))
       val schema = CarbonEnv.get.carbonMetastore
         .lookupRelation(tableIdentifier)(sparkSession).schema.json
+      val schemaParts = CarbonScalaUtil
+        .prepareSchemaJsonForAlterTable(sparkSession.sparkContext.getConf, schema)
       sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client.runSqlHive(
-        s"ALTER TABLE $dbName.$tableName SET TBLPROPERTIES('spark.sql.sources.schema'='$schema')")
+        s"ALTER TABLE $dbName.$tableName SET TBLPROPERTIES($schemaParts)")
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
       LOGGER.info(s"Alter table for data type change is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for data type change is successful for table $dbName.$tableName")
@@ -284,8 +301,10 @@ private[sql] case class AlterTableAddColumns(
       val tableIdentifier = TableIdentifier(tableName, Some(dbName))
       val schema = CarbonEnv.get.carbonMetastore
         .lookupRelation(tableIdentifier)(sparkSession).schema.json
+      val schemaParts = CarbonScalaUtil
+        .prepareSchemaJsonForAlterTable(sparkSession.sparkContext.getConf, schema)
       sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client.runSqlHive(
-        s"ALTER TABLE $dbName.$tableName SET TBLPROPERTIES('spark.sql.sources.schema'='$schema')")
+        s"ALTER TABLE $dbName.$tableName SET TBLPROPERTIES($schemaParts)")
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
       LOGGER.info(s"Alter table for add columns is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for add columns is successful for table $dbName.$tableName")
@@ -494,8 +513,10 @@ private[sql] case class AlterTableDropColumns(
       val tableIdentifier = TableIdentifier(tableName, Some(dbName))
       val schema = CarbonEnv.get.carbonMetastore
         .lookupRelation(tableIdentifier)(sparkSession).schema.json
+      val schemaParts = CarbonScalaUtil
+        .prepareSchemaJsonForAlterTable(sparkSession.sparkContext.getConf, schema)
       sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client.runSqlHive(
-        s"ALTER TABLE $dbName.$tableName SET TBLPROPERTIES('spark.sql.sources.schema'='$schema')")
+        s"ALTER TABLE $dbName.$tableName SET TBLPROPERTIES($schemaParts)")
       sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
       // TODO: 1. add check for deletion of index tables
       // delete dictionary files for dictionary column and clear dictionary cache from memory

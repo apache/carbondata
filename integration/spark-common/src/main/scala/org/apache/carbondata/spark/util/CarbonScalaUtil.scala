@@ -20,8 +20,11 @@ package org.apache.carbondata.spark.util
 import java.io.File
 import java.text.SimpleDateFormat
 
+import org.apache.spark.SparkConf
 import org.apache.spark.sql._
 import org.apache.spark.sql.execution.command.DataTypeInfo
+import org.apache.spark.sql.hive.HiveExternalCatalog._
+import org.apache.spark.sql.internal.StaticSQLConf._
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -293,5 +296,19 @@ object CarbonScalaUtil {
     columnSchema.scale = thriftColumnSchema.scale
     columnSchema.schemaOrdinal = thriftColumnSchema.schemaOrdinal
     columnSchema
+  }
+
+  def prepareSchemaJsonForAlterTable(sparkConf: SparkConf, schemaJsonString: String): String = {
+    val threshold = sparkConf
+      .getInt(CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD,
+        CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT)
+    // Split the JSON string.
+    val parts = schemaJsonString.grouped(threshold).toSeq
+    var schemaParts: Seq[String] = Seq.empty
+    schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_NUMPARTS'='${ parts.size }'"
+    parts.zipWithIndex.foreach { case (part, index) =>
+      schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_PART_PREFIX$index'='$part'"
+    }
+    schemaParts.mkString(",")
   }
 }

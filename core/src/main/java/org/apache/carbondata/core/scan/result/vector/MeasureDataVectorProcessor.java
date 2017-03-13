@@ -166,6 +166,7 @@ public class MeasureDataVectorProcessor {
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
+      int newMeasureScale = info.measure.getMeasure().getScale();
       BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
       for (int i = offset; i < len; i++) {
         if (nullBitSet.get(i)) {
@@ -173,6 +174,9 @@ public class MeasureDataVectorProcessor {
         } else {
           BigDecimal decimal =
               dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(i);
+          if (decimal.scale() < newMeasureScale) {
+            decimal = decimal.setScale(newMeasureScale);
+          }
           Decimal toDecimal = org.apache.spark.sql.types.Decimal.apply(decimal);
           vector.putDecimal(vectorOffset, toDecimal, precision);
         }
