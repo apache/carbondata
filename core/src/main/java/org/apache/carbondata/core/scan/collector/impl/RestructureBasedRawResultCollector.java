@@ -244,7 +244,7 @@ public class RestructureBasedRawResultCollector extends AbstractScannedResultCol
           byte[] newColumnDefaultValue = null;
           Object defaultValue = dimensionInfo.getDefaultValues()[i];
           if (null != defaultValue) {
-            newColumnDefaultValue = UTF8String.fromString((String) defaultValue).getBytes();
+            newColumnDefaultValue = ((UTF8String)defaultValue).getBytes();
           } else {
             newColumnDefaultValue =
                 UTF8String.fromString(CarbonCommonConstants.MEMBER_DEFAULT_VAL).getBytes();
