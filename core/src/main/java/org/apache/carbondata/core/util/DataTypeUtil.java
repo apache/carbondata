@@ -507,12 +507,25 @@ public final class DataTypeUtil {
       switch (dimension.getDataType()) {
         case DECIMAL:
           return parseStringToBigDecimal(value, dimension);
+        case INT:
+          Integer.parseInt(value);
+          break;
+        case DOUBLE:
+          Double.parseDouble(value);
+          break;
+        case LONG:
+          Long.parseLong(value);
+          break;
+        case FLOAT:
+          Float.parseFloat(value);
+          break;
         default:
-          return value;
+          // do nothing
       }
-    } catch (Exception e) {
+    } catch (NumberFormatException e) {
       return null;
     }
+    return value;
   }
 
   private static String parseStringToBigDecimal(String value, CarbonDimension dimension) {
