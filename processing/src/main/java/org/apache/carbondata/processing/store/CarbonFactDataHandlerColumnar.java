@@ -602,8 +602,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             .clone();
     NodeHolder nodeHolder =
         getNodeHolderObject(writableMeasureDataArray, byteArrayValues, dataRows.size(), startKey,
-            endKey, compressionModel, noDictionaryValueHolder, noDictStartKey, noDictEndKey);
-    nodeHolder.setMeasureNullValueIndex(nullValueIndexBitSet);
+            endKey, compressionModel, noDictionaryValueHolder, noDictStartKey, noDictEndKey,
+            nullValueIndexBitSet);
     LOGGER.info("Number Of records processed: " + dataRows.size());
     return nodeHolder;
   }
@@ -748,8 +748,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     NodeHolder nodeHolder =
         getNodeHolderObjectWithOutKettle(writableMeasureDataArray, byteArrayValues, dataRows.size(),
             startKey, endKey, compressionModel, noDictionaryValueHolder, noDictStartKey,
-            noDictEndKey);
-    nodeHolder.setMeasureNullValueIndex(nullValueIndexBitSet);
+            noDictEndKey, nullValueIndexBitSet);
     LOGGER.info("Number Of records processed: " + dataRows.size());
     return nodeHolder;
   }
@@ -758,7 +757,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private NodeHolder getNodeHolderObject(byte[][] dataHolderLocal, byte[][] byteArrayValues,
       int entryCountLocal, byte[] startkeyLocal, byte[] endKeyLocal,
       WriterCompressModel compressionModel, byte[][] noDictionaryData, byte[] noDictionaryStartKey,
-      byte[] noDictionaryEndKey) throws CarbonDataWriterException {
+      byte[] noDictionaryEndKey, BitSet[] nullValueIndexBitSet) throws CarbonDataWriterException {
     byte[][][] noDictionaryColumnsData = null;
     List<ArrayList<byte[]>> colsAndValues = new ArrayList<ArrayList<byte[]>>();
     int complexColCount = getComplexColsCount();
@@ -878,13 +877,15 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
     return this.dataWriter
         .buildDataNodeHolder(blockStorage, dataHolderLocal, entryCountLocal, startkeyLocal,
-            endKeyLocal, compressionModel, noDictionaryStartKey, noDictionaryEndKey);
+            endKeyLocal, compressionModel, noDictionaryStartKey, noDictionaryEndKey,
+            nullValueIndexBitSet);
   }
 
   private NodeHolder getNodeHolderObjectWithOutKettle(byte[][] dataHolderLocal,
       byte[][] byteArrayValues, int entryCountLocal, byte[] startkeyLocal, byte[] endKeyLocal,
       WriterCompressModel compressionModel, byte[][][] noDictionaryData,
-      byte[][] noDictionaryStartKey, byte[][] noDictionaryEndKey) throws CarbonDataWriterException {
+      byte[][] noDictionaryStartKey, byte[][] noDictionaryEndKey, BitSet[] nullValueIndexBitSet)
+      throws CarbonDataWriterException {
     byte[][][] noDictionaryColumnsData = null;
     List<ArrayList<byte[]>> colsAndValues = new ArrayList<ArrayList<byte[]>>();
     int complexColCount = getComplexColsCount();
@@ -1012,7 +1013,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
     return this.dataWriter
         .buildDataNodeHolder(blockStorage, dataHolderLocal, entryCountLocal, startkeyLocal,
-            endKeyLocal, compressionModel, composedNonDictStartKey, composedNonDictEndKey);
+            endKeyLocal, compressionModel, composedNonDictStartKey, composedNonDictEndKey,
+            nullValueIndexBitSet);
   }
 
   /**

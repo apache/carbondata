@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.processing.store.writer;
 
+import java.util.BitSet;
+
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.util.NodeHolder;
@@ -40,7 +42,8 @@ public interface CarbonFactDataWriter<T> {
 
   NodeHolder buildDataNodeHolder(IndexStorage<T>[] keyStorageArray, byte[][] dataArray,
       int entryCount, byte[] startKey, byte[] endKey, WriterCompressModel compressionModel,
-      byte[] noDictionaryStartKey, byte[] noDictionaryEndKey) throws CarbonDataWriterException;
+      byte[] noDictionaryStartKey, byte[] noDictionaryEndKey, BitSet[] nullValueIndexBitSet)
+      throws CarbonDataWriterException;
 
   /**
    * If node holder flag is enabled the object will be added to list
