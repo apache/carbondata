@@ -139,6 +139,7 @@ struct DataChunk3{
     1: required list<DataChunk2> data_chunk_list; // list of data chunk
     2: optional list<i32> page_offset; // offset of each chunk
     3: optional list<i32> page_length; // length of each chunk
+    4: optional i16 fixedLength // fixed length of the type, it is useful for decimal type and char(fixed length) types
    
  }
 /**

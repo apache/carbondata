@@ -71,7 +71,7 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
           msrColumnEvalutorInfo.setRowIndex(index++);
           msrColumnEvalutorInfo
               .setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
-          msrColumnEvalutorInfo.setType(columnExpression.getCarbonColumn().getDataType());
+          msrColumnEvalutorInfo.setColumn(columnExpression.getCarbonColumn());
           msrColEvalutorInfoList.add(msrColumnEvalutorInfo);
         }
       }

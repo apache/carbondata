@@ -30,6 +30,7 @@ import java.util.concurrent.Callable;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
@@ -260,8 +261,8 @@ public class IntermediateFileMerger implements Callable<Void> {
           new SortTempFileChunkHolder(tempFile, mergerParameters.getDimColCount(),
               mergerParameters.getComplexDimColCount(), mergerParameters.getMeasureColCount(),
               mergerParameters.getFileBufferSize(), mergerParameters.getNoDictionaryCount(),
-              mergerParameters.getAggType(), mergerParameters.getNoDictionaryDimnesionColumn(),
-              mergerParameters.isUseKettle());
+              mergerParameters.getAggType(), mergerParameters.getDecimalConverters(),
+              mergerParameters.getNoDictionaryDimnesionColumn(), mergerParameters.isUseKettle());
 
       // initialize
       sortTempFileChunkHolder.initialize();
@@ -332,6 +333,8 @@ public class IntermediateFileMerger implements Callable<Void> {
     try {
       int fieldIndex = 0;
       char[] aggType = mergerParameters.getAggType();
+      DecimalConverterFactory.DecimalConverter[] decimalConverters =
+          mergerParameters.getDecimalConverters();
 
       for (int counter = 0; counter < mergerParameters.getDimColCount(); counter++) {
         stream.writeInt((Integer) RemoveDictionaryUtil.getDimension(fieldIndex++, row));
@@ -358,7 +361,9 @@ public class IntermediateFileMerger implements Callable<Void> {
             stream.writeLong(val);
           } else if (aggType[counter] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
             byte[] bigDecimalInBytes = (byte[]) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
-            stream.writeInt(bigDecimalInBytes.length);
+            if (decimalConverters[counter].getSize() < 0) {
+              stream.writeInt(bigDecimalInBytes.length);
+            }
             stream.write(bigDecimalInBytes);
           }
         } else {
@@ -396,6 +401,8 @@ public class IntermediateFileMerger implements Callable<Void> {
     }
     try {
       char[] aggType = mergerParameters.getAggType();
+      DecimalConverterFactory.DecimalConverter[] decimalConverters =
+          mergerParameters.getDecimalConverters();
       int[] mdkArray = (int[]) row[0];
       byte[][] nonDictArray = (byte[][]) row[1];
       int mdkIndex = 0;
@@ -426,7 +433,9 @@ public class IntermediateFileMerger implements Callable<Void> {
             stream.writeLong(val);
           } else if (aggType[counter] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
             byte[] bigDecimalInBytes = (byte[]) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
-            stream.writeInt(bigDecimalInBytes.length);
+            if (decimalConverters[counter].getSize() < 0) {
+              stream.writeInt(bigDecimalInBytes.length);
+            }
             stream.write(bigDecimalInBytes);
           }
         } else {

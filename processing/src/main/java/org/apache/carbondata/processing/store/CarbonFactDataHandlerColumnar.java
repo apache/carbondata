@@ -57,6 +57,7 @@ import org.apache.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengt
 import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -264,6 +265,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private ColumnarFormatVersion version;
 
+  private DecimalConverterFactory.DecimalConverter[] decimalConverters;
+
   /**
    * CarbonFactDataHandler constructor
    */
@@ -342,6 +345,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.tableBlockSize = carbonFactDataHandlerModel.getBlockSizeInMB();
     this.tableName = carbonFactDataHandlerModel.getTableName();
     this.type = carbonFactDataHandlerModel.getAggType();
+    this.decimalConverters = carbonFactDataHandlerModel.getDecimalConverters();
     this.segmentProperties = carbonFactDataHandlerModel.getSegmentProperties();
     this.wrapperColumnSchemaList = carbonFactDataHandlerModel.getWrapperColumnSchema();
     this.colCardinality = carbonFactDataHandlerModel.getColCardinality();
@@ -715,21 +719,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             b = (byte[]) row[customMeasureIndex[i]];
           }
         }
-        BigDecimal value = DataTypeUtil.byteToBigDecimal(b);
-        String[] bigdVals = value.toPlainString().split("\\.");
-        long[] bigDvalue = new long[2];
-        if (bigdVals.length == 2) {
-          bigDvalue[0] = Long.parseLong(bigdVals[0]);
-          BigDecimal bd = new BigDecimal(CarbonCommonConstants.POINT + bigdVals[1]);
-          bigDvalue[1] = (long) (bd.doubleValue() * Math.pow(10, value.scale()));
-        } else {
-          bigDvalue[0] = Long.parseLong(bigdVals[0]);
-        }
-        byteBuffer = ByteBuffer.allocate(b.length + CarbonCommonConstants.INT_SIZE_IN_BYTE);
-        byteBuffer.putInt(b.length);
-        byteBuffer.put(b);
-        byteBuffer.flip();
-        b = byteBuffer.array();
         dataHolder[customMeasureIndex[i]].setWritableByteArrayValueByIndex(count, b);
       }
       calculateMaxMin(max, min, decimal, customMeasureIndex, row);
@@ -750,6 +739,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             startKey, endKey, compressionModel, noDictionaryValueHolder, noDictStartKey,
             noDictEndKey);
     nodeHolder.setMeasureNullValueIndex(nullValueIndexBitSet);
+    nodeHolder.setDecimalConverters(decimalConverters);
     LOGGER.info("Number Of records processed: " + dataRows.size());
     return nodeHolder;
   }

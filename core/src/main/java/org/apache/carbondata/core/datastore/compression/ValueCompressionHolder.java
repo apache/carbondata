@@ -92,6 +92,11 @@ public abstract class ValueCompressionHolder<T> {
     }
   }
 
+  public void setFixedLength(short fixedLength) {
+    // Nothing can be implemented here, only it is used for bigdecimal compression for now.
+    // so subclasses uses it.
+  }
+
   public abstract void setValue(T value);
 
   public abstract void setValue(T data, int numberOfRows, Object maxValueObject, int decimalPlaces);
@@ -114,6 +119,10 @@ public abstract class ValueCompressionHolder<T> {
   public abstract double getDoubleValue(int index);
 
   public abstract BigDecimal getBigDecimalValue(int index);
+
+  public byte[] getBackendByteArray(int index) {
+    throw new UnsupportedOperationException("it is not supported in this class " + getClass());
+  }
 
   public abstract void freeMemory();
 

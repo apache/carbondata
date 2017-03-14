@@ -803,6 +803,12 @@ public class CarbonMetadataUtil {
     dataChunk.setData_chunk_list(dataChunksList);
     dataChunk.setPage_length(pageLengths);
     dataChunk.setPage_offset(pageOffsets);
+    if (!isDimensionColumn && nodeHolderList.size() > 0) {
+      NodeHolder nodeHolder = nodeHolderList.get(0);
+      if (nodeHolder.getDecimalConverters()[index] != null) {
+        dataChunk.setFixedLength((short) nodeHolder.getDecimalConverters()[index].getSize());
+      }
+    }
     return dataChunk;
   }
 

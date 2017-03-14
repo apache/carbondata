@@ -228,10 +228,12 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     ByteBuffer rawData = measureRawColumnChunk.getRawData();
     rawData.position(copyPoint);
     rawData.get(data);
+    values.setFixedLength(dataChunk3.fixedLength);
     values.uncompress(compressionModel.getConvertedDataType()[0], data, 0,
         measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
         compressionModel.getMaxValue()[0], measureRawColumnChunk.getRowCount()[pageNumber]);
     CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values);
+    measureDataHolder.setLatestDecimalConverion(true);
     // set the data chunk
     datChunk.setMeasureDataHolder(measureDataHolder);
     // set the null value indexes

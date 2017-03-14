@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.datastore.chunk.store.impl.unsafe;
 
-import java.math.BigDecimal;
-
 import org.apache.carbondata.core.datastore.chunk.store.MeasureDataChunkStore;
 import org.apache.carbondata.core.memory.MemoryAllocatorFactory;
 import org.apache.carbondata.core.memory.MemoryBlock;
@@ -103,13 +101,7 @@ public abstract class UnsafeAbstractMeasureDataChunkStore<T> implements MeasureD
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  /**
-   * To get the bigdecimal value
-   *
-   * @param index
-   * @return bigdecimal value based on index
-   */
-  @Override public BigDecimal getBigDecimal(int index) {
+  @Override public byte[] getBigDecimalBackendArray(int index) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 

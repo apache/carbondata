@@ -57,6 +57,7 @@ public class MeasureChunkStoreFactory {
   private MeasureChunkStoreFactory() {
   }
 
+
   /**
    * Below method will be used to get the measure data chunk store based on data type
    *
@@ -65,6 +66,18 @@ public class MeasureChunkStoreFactory {
    * @return measure chunk store
    */
   public MeasureDataChunkStore getMeasureDataChunkStore(DataType dataType, int numberOfRows) {
+    return getMeasureDataChunkStore(dataType, numberOfRows, (short)-1);
+  }
+
+  /**
+   * Below method will be used to get the measure data chunk store based on data type
+   *
+   * @param dataType     data type
+   * @param numberOfRows number of rows
+   * @return measure chunk store
+   */
+  public MeasureDataChunkStore getMeasureDataChunkStore(DataType dataType, int numberOfRows,
+      short fixedLength) {
     if (!isUnsafe) {
       switch (dataType) {
         case DATA_BYTE:
@@ -76,7 +89,7 @@ public class MeasureChunkStoreFactory {
         case DATA_LONG:
           return new SafeLongMeasureChunkStore(numberOfRows);
         case DATA_BIGDECIMAL:
-          return new SafeBigDecimalMeasureChunkStore(numberOfRows);
+          return new SafeBigDecimalMeasureChunkStore(numberOfRows, fixedLength);
         case DATA_DOUBLE:
         default:
           return new SafeDoubleMeasureChunkStore(numberOfRows);
@@ -92,7 +105,7 @@ public class MeasureChunkStoreFactory {
         case DATA_LONG:
           return new UnsafeLongMeasureChunkStore(numberOfRows);
         case DATA_BIGDECIMAL:
-          return new UnsafeBigDecimalMeasureChunkStore(numberOfRows);
+          return new UnsafeBigDecimalMeasureChunkStore(numberOfRows, fixedLength);
         case DATA_DOUBLE:
         default:
           return new UnsafeDoubleMeasureChunkStore(numberOfRows);

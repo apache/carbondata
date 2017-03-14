@@ -21,6 +21,7 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 
 import org.apache.spark.sql.types.Decimal;
 
@@ -166,15 +167,23 @@ public class MeasureDataVectorProcessor {
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
+      DecimalConverterFactory.DecimalConverter decimalConverter = info.decimalConverter;
       BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
       for (int i = offset; i < len; i++) {
         if (nullBitSet.get(i)) {
           vector.putNull(vectorOffset);
         } else {
-          BigDecimal decimal =
-              dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(i);
-          Decimal toDecimal = org.apache.spark.sql.types.Decimal.apply(decimal);
-          vector.putDecimal(vectorOffset, toDecimal, precision);
+          if (dataChunk.getMeasureDataHolder().isLatestDecimalConverion()) {
+            decimalConverter.writeToColumnVector(
+                dataChunk.getMeasureDataHolder().getBigDecimalByteArrayByIndex(i), vector,
+                vectorOffset);
+          } else {
+            // Backward compatability with older versions. Can be removed later.
+            BigDecimal decimal = DecimalConverterFactory.LegacyDecimalConverter.INSTANCE
+                .getDecimal(dataChunk.getMeasureDataHolder().getBigDecimalByteArrayByIndex(i));
+            Decimal toDecimal = org.apache.spark.sql.types.Decimal.apply(decimal);
+            vector.putDecimal(vectorOffset, toDecimal, precision);
+          }
         }
         vectorOffset++;
       }
@@ -188,16 +197,23 @@ public class MeasureDataVectorProcessor {
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
+      DecimalConverterFactory.DecimalConverter decimalConverter = info.decimalConverter;
       BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
       for (int i = offset; i < len; i++) {
         int currentRow = rowMapping[i];
         if (nullBitSet.get(currentRow)) {
           vector.putNull(vectorOffset);
         } else {
-          BigDecimal decimal =
-              dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(currentRow);
-          Decimal toDecimal = org.apache.spark.sql.types.Decimal.apply(decimal);
-          vector.putDecimal(vectorOffset, toDecimal, precision);
+          if (dataChunk.getMeasureDataHolder().isLatestDecimalConverion()) {
+            decimalConverter.writeToColumnVector(
+                dataChunk.getMeasureDataHolder().getBigDecimalByteArrayByIndex(currentRow), vector,
+                vectorOffset);
+          } else {
+            BigDecimal decimal = DecimalConverterFactory.LegacyDecimalConverter.INSTANCE.getDecimal(
+                dataChunk.getMeasureDataHolder().getBigDecimalByteArrayByIndex(currentRow));
+            Decimal toDecimal = org.apache.spark.sql.types.Decimal.apply(decimal);
+            vector.putDecimal(vectorOffset, toDecimal, precision);
+          }
         }
         vectorOffset++;
       }

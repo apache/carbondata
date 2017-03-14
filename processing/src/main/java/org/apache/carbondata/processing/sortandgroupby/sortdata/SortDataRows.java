@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -272,6 +273,8 @@ public class SortDataRows {
       int dimColCount = parameters.getDimColCount();
       int combinedDimCount = parameters.getNoDictionaryCount() + parameters.getComplexDimColCount();
       char[] aggType = parameters.getAggType();
+      DecimalConverterFactory.DecimalConverter[] decimalConverters =
+          parameters.getDecimalConverters();
       Object[] row = null;
       for (int i = 0; i < entryCountLocal; i++) {
         // get row from record holder list
@@ -302,7 +305,9 @@ public class SortDataRows {
             } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
               BigDecimal val = (BigDecimal) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
               byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
-              stream.writeInt(bigDecimalInBytes.length);
+              if (decimalConverters[mesCount].getSize() < 0) {
+                stream.writeInt(bigDecimalInBytes.length);
+              }
               stream.write(bigDecimalInBytes);
             }
           } else {
@@ -332,6 +337,8 @@ public class SortDataRows {
       int complexDimColCount = parameters.getComplexDimColCount();
       int dimColCount = parameters.getDimColCount() + complexDimColCount;
       char[] aggType = parameters.getAggType();
+      DecimalConverterFactory.DecimalConverter[] converters =
+          parameters.getDecimalConverters();
       boolean[] noDictionaryDimnesionMapping = parameters.getNoDictionaryDimnesionColumn();
       Object[] row = null;
       for (int i = 0; i < entryCountLocal; i++) {
@@ -368,8 +375,10 @@ public class SortDataRows {
               stream.writeLong(val);
             } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
               BigDecimal val = (BigDecimal) value;
-              byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
-              stream.writeInt(bigDecimalInBytes.length);
+              byte[] bigDecimalInBytes = converters[mesCount].convert(val);
+              if (converters[mesCount].getSize() < 0) {
+                stream.writeInt(bigDecimalInBytes.length);
+              }
               stream.write(bigDecimalInBytes);
             }
           } else {

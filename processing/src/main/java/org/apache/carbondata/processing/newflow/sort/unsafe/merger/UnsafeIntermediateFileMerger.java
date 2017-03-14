@@ -32,6 +32,7 @@ import java.util.concurrent.Callable;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.newflow.sort.unsafe.holder.SortTempChunkHolder;
@@ -279,6 +280,8 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     int dimCount = 0;
     int size = 0;
     char[] aggType = mergerParameters.getAggType();
+    DecimalConverterFactory.DecimalConverter[] decimalConverters =
+        mergerParameters.getDecimalConverters();
     for (; dimCount < noDictionarycolumnMapping.length; dimCount++) {
       if (noDictionarycolumnMapping[dimCount]) {
         byte[] col = (byte[]) row[dimCount];
@@ -293,7 +296,8 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     }
 
     // write complex dimensions here.
-    int dimensionSize = mergerParameters.getDimColCount();
+    int dimensionSize =
+        mergerParameters.getDimColCount() + mergerParameters.getComplexDimColCount();
     int measureSize = mergerParameters.getMeasureColCount();
     for (; dimCount < dimensionSize; dimCount++) {
       byte[] col = (byte[]) row[dimCount];
@@ -319,8 +323,10 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
           size += 8;
         } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
           byte[] bigDecimalInBytes = (byte[]) value;
-          rowData.putShort(size, (short)bigDecimalInBytes.length);
-          size += 2;
+          if (decimalConverters[mesCount].getSize() < 0) {
+            rowData.putShort(size, (short) bigDecimalInBytes.length);
+            size += 2;
+          }
           for (int i = 0; i < bigDecimalInBytes.length; i++) {
             rowData.put(size++, bigDecimalInBytes[i]);
           }

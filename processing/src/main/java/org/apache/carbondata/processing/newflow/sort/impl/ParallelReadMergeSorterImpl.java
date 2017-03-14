@@ -80,9 +80,9 @@ public class ParallelReadMergeSorterImpl implements Sorter {
         storeLocation + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
     finalMerger =
         new SingleThreadFinalSortFilesMerger(dataFolderLocation, sortParameters.getTableName(),
-            sortParameters.getDimColCount(),
-            sortParameters.getComplexDimColCount(), sortParameters.getMeasureColCount(),
-            sortParameters.getNoDictionaryCount(), sortParameters.getAggType(),
+            sortParameters.getDimColCount(), sortParameters.getComplexDimColCount(),
+            sortParameters.getMeasureColCount(), sortParameters.getNoDictionaryCount(),
+            sortParameters.getAggType(), sortParameters.getDecimalConverters(),
             sortParameters.getNoDictionaryDimnesionColumn(), sortParameters.isUseKettle());
   }
 
