@@ -37,7 +37,7 @@ public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
    * @param visitableObj
    * @param metadata
    * @throws FilterUnsupportedException,if exception occurs while evaluating
-   * filter models.
+   *                                       filter models.
    * @throws IOException
    * @throws FilterUnsupportedException
    */
@@ -56,8 +56,14 @@ public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
     if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
       // Adding default surrogate key of null member inorder to not display the same while
       // displaying the report as per hive compatibility.
-      resolvedFilterObject.getFilterList()
-          .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
+      // first check of surrogate key for null value is already added then
+      // no need to add again otherwise result will be wrong in case of exclude filter
+      // this is because two times it will flip the same bit
+      if (resolvedFilterObject.getFilterList()
+          .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
+        resolvedFilterObject.getFilterList()
+            .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
+      }
       Collections.sort(resolvedFilterObject.getFilterList());
     }
     visitableObj.setFilterValues(resolvedFilterObject);
