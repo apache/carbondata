@@ -24,6 +24,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.IgnoreDictionary;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
@@ -35,12 +36,12 @@ import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
-import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
- * It reads data from sorted files which are generated in previous sort step.
- * And it writes data to carbondata file. It also generates mdk key while writing to carbondata file
+ * It reads data from batch of sorted files(it could be in-memory/disk based files)
+ * which are generated in previous sort step. And it writes data to carbondata file.
+ * It also generates mdk key while writing to carbondata file
  */
 public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
@@ -100,13 +101,12 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
       int i = 0;
       for (Iterator<CarbonRowBatch> iterator : iterators) {
         String storeLocation = getStoreLocation(tableIdentifier, String.valueOf(i));
-        CarbonFactHandler dataHandler = null;
         int k = 0;
         while (iterator.hasNext()) {
           CarbonRowBatch next = iterator.next();
           CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
               .createCarbonFactDataHandlerModel(configuration, storeLocation, i, k++);
-          dataHandler = CarbonFactHandlerFactory
+          CarbonFactHandler dataHandler = CarbonFactHandlerFactory
               .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
           dataHandler.initialise();
           processBatch(next, dataHandler, model.getSegmentProperties());
@@ -114,20 +114,15 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
         }
         i++;
       }
-
-    } catch (CarbonDataWriterException e) {
-      LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterProcessorStepImpl");
-      throw new CarbonDataLoadingException(
-          "Error while initializing data handler : " + e.getMessage());
     } catch (Exception e) {
-      LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterProcessorStepImpl");
+      LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterBatchProcessorStepImpl");
       throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage());
     }
     return null;
   }
 
   @Override protected String getStepName() {
-    return "Data Writer";
+    return "Data Batch Writer";
   }
 
   private void finish(String tableName, CarbonFactHandler dataHandler) {
@@ -145,56 +140,46 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
         .recordMdkGenerateTotalTime(configuration.getPartitionId(), System.currentTimeMillis());
   }
 
-  private void processingComplete(CarbonFactHandler dataHandler) throws CarbonDataLoadingException {
+  private void processingComplete(CarbonFactHandler dataHandler) {
     if (null != dataHandler) {
       try {
         dataHandler.closeHandler();
-      } catch (CarbonDataWriterException e) {
-        LOGGER.error(e, e.getMessage());
-        throw new CarbonDataLoadingException(e.getMessage());
       } catch (Exception e) {
-        LOGGER.error(e, e.getMessage());
-        throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage());
+        LOGGER.error(e);
+        throw new CarbonDataLoadingException(
+            "There is an unexpected error while closing data handler", e);
       }
     }
   }
 
   private void processBatch(CarbonRowBatch batch, CarbonFactHandler dataHandler,
-      SegmentProperties segmentProperties)
-      throws CarbonDataLoadingException {
+      SegmentProperties segmentProperties) throws Exception {
     int batchSize = 0;
-    try {
-      while (batch.hasNext()) {
-        CarbonRow row = batch.next();
-        batchSize++;
-        Object[] outputRow;
-        // adding one for the high cardinality dims byte array.
-        if (noDictionaryCount > 0 || complexDimensionCount > 0) {
-          outputRow = new Object[measureCount + 1 + 1];
-        } else {
-          outputRow = new Object[measureCount + 1];
-        }
-
-        int l = 0;
-        int index = 0;
-        Object[] measures = row.getObjectArray(measureIndex);
-        for (int i = 0; i < measureCount; i++) {
-          outputRow[l++] = measures[index++];
-        }
-        outputRow[l] = row.getObject(noDimByteArrayIndex);
-
-        int[] highCardExcludedRows = new int[segmentProperties.getDimColumnsCardinality().length];
-        int[] dimsArray = row.getIntArray(dimsArrayIndex);
-        for (int i = 0; i < highCardExcludedRows.length; i++) {
-          highCardExcludedRows[i] = dimsArray[i];
-        }
-
-        outputRow[outputRow.length - 1] =
-            segmentProperties.getDimensionKeyGenerator().generateKey(highCardExcludedRows);
-        dataHandler.addDataToStore(outputRow);
+    KeyGenerator keyGenerator = segmentProperties.getDimensionKeyGenerator();
+    while (batch.hasNext()) {
+      CarbonRow row = batch.next();
+      batchSize++;
+      /*
+      * The order of the data is as follows,
+      * Measuredata, nodictionary/complex byte array data, dictionary(MDK generated key)
+      */
+      int len;
+      // adding one for the high cardinality dims byte array.
+      if (noDictionaryCount > 0 || complexDimensionCount > 0) {
+        len = measureCount + 1 + 1;
+      } else {
+        len = measureCount + 1;
       }
-    } catch (Exception e) {
-      throw new CarbonDataLoadingException("unable to generate the mdkey", e);
+      Object[] outputRow = new Object[len];;
+
+      int l = 0;
+      Object[] measures = row.getObjectArray(measureIndex);
+      for (int i = 0; i < measureCount; i++) {
+        outputRow[l++] = measures[i];
+      }
+      outputRow[l] = row.getObject(noDimByteArrayIndex);
+      outputRow[len - 1] = keyGenerator.generateKey(row.getIntArray(dimsArrayIndex));
+      dataHandler.addDataToStore(outputRow);
     }
     rowCounter.getAndAdd(batchSize);
   }

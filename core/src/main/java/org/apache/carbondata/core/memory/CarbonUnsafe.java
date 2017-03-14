@@ -35,7 +35,7 @@ public final class CarbonUnsafe {
 
   public static final int DOUBLE_ARRAY_OFFSET;
 
-  public static final boolean LITTLEENDIAN =
+  public static final boolean ISLITTLEENDIAN =
       ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN);
 
   public static Unsafe unsafe;

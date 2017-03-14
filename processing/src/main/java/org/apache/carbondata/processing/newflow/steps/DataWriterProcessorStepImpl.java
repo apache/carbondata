@@ -183,29 +183,27 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       while (batch.hasNext()) {
         CarbonRow row = batch.next();
         readCounter++;
-        Object[] outputRow;
+        /*
+        * The order of the data is as follows,
+        * Measuredata, nodictionary/complex byte array data, dictionary(MDK generated key)
+        */
+        int len;
         // adding one for the high cardinality dims byte array.
         if (noDictionaryCount > 0 || complexDimensionCount > 0) {
-          outputRow = new Object[measureCount + 1 + 1];
+          len = measureCount + 1 + 1;
         } else {
-          outputRow = new Object[measureCount + 1];
+          len = measureCount + 1;
         }
+        Object[] outputRow = new Object[len];
+
 
         int l = 0;
-        int index = 0;
         Object[] measures = row.getObjectArray(measureIndex);
         for (int i = 0; i < measureCount; i++) {
-          outputRow[l++] = measures[index++];
+          outputRow[l++] = measures[i];
         }
         outputRow[l] = row.getObject(noDimByteArrayIndex);
-
-        int[] highCardExcludedRows = new int[segmentProperties.getDimColumnsCardinality().length];
-        int[] dimsArray = row.getIntArray(dimsArrayIndex);
-        for (int i = 0; i < highCardExcludedRows.length; i++) {
-          highCardExcludedRows[i] = dimsArray[i];
-        }
-
-        outputRow[outputRow.length - 1] = keyGenerator.generateKey(highCardExcludedRows);
+        outputRow[len - 1] = keyGenerator.generateKey(row.getIntArray(dimsArrayIndex));
         dataHandler.addDataToStore(outputRow);
       }
     } catch (Exception e) {

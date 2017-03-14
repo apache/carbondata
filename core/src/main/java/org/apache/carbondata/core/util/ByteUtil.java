@@ -143,7 +143,7 @@ public final class ByteUtil {
         long diff = lw ^ rw;
 
         if (diff != 0) {
-          if (!CarbonUnsafe.LITTLEENDIAN) {
+          if (!CarbonUnsafe.ISLITTLEENDIAN) {
             return lessThanUnsigned(lw, rw) ? -1 : 1;
           }
 
@@ -209,7 +209,7 @@ public final class ByteUtil {
           long diff = lw ^ rw;
 
           if (diff != 0) {
-            if (!CarbonUnsafe.LITTLEENDIAN) {
+            if (!CarbonUnsafe.ISLITTLEENDIAN) {
               return lessThanUnsigned(lw, rw) ? -1 : 1;
             }
 
@@ -268,7 +268,7 @@ public final class ByteUtil {
           long diff = lw ^ rw;
 
           if (diff != 0) {
-            if (!CarbonUnsafe.LITTLEENDIAN) {
+            if (!CarbonUnsafe.ISLITTLEENDIAN) {
               return lessThanUnsigned(lw, rw) ? -1 : 1;
             }
 

@@ -62,13 +62,12 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
     boolean batchSort = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT,
             CarbonCommonConstants.LOAD_USE_BATCH_SORT_DEFAULT));
-    if (offheapsort) {
+    if (batchSort) {
+      sorter = new UnsafeBatchParallelReadMergeSorterImpl(rowCounter);
+    } else if (offheapsort) {
       sorter = new UnsafeParallelReadMergeSorterImpl(rowCounter);
     } else {
       sorter = new ParallelReadMergeSorterImpl(rowCounter);
-    }
-    if (batchSort) {
-      sorter = new UnsafeBatchParallelReadMergeSorterImpl(rowCounter);
     }
     if (configuration.getBucketingInfo() != null) {
       sorter = new ParallelReadMergeSorterWithBucketingImpl(rowCounter,
