@@ -21,9 +21,10 @@ import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.errors.attachTree
-import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.expressions.{AttributeSet, _}
+import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode, ExpressionCanonicalizer}
 import org.apache.spark.sql.catalyst.plans.physical.Partitioning
-import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
+import org.apache.spark.sql.execution.{CodegenSupport, SparkPlan, UnaryExecNode}
 import org.apache.spark.sql.hive.{CarbonMetastoreTypes, CarbonRelation}
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types._
@@ -46,7 +47,7 @@ case class CarbonDictionaryDecoder(
     profile: CarbonProfile,
     aliasMap: CarbonAliasDecoderRelation,
     child: SparkPlan)
-  extends UnaryExecNode {
+  extends UnaryExecNode with CodegenSupport {
 
   override val output: Seq[Attribute] = {
     child.output.map { a =>
@@ -200,6 +201,123 @@ case class CarbonDictionaryDecoder(
     }
   }
 
+  override def doConsume(ctx: CodegenContext, input: Seq[ExprCode], row: ExprCode): String = {
+
+    val storePath = CarbonEnv.get.carbonMetastore.storePath
+    val absoluteTableIdentifiers = relations.map { relation =>
+      val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
+      (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
+    }.toMap
+
+    if (isRequiredToDecode) {
+      val cacheProvider: CacheProvider = CacheProvider.getInstance
+      val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+      val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryWrapper(absoluteTableIdentifiers,
+        forwardDictionaryCache, storePath)
+
+      val exprs = child.output.map(x =>
+        ExpressionCanonicalizer.execute(BindReferences.bindReference(x, child.output)))
+      ctx.currentVars = input
+      val resultVars = exprs.zipWithIndex.map { e =>
+        if (dicts(e._2) != null) {
+          val ev = e._1.genCode(ctx)
+          val value = ctx.freshName("value")
+          val valueIntern = ctx.freshName("valueIntern")
+          val isNull = ctx.freshName("isNull")
+          val dictsRef = ctx.addReferenceObj("dictsRef", dicts(e._2))
+          var code =
+            s"""
+               |${ev.code}
+             """.stripMargin
+          code +=
+            s"""
+             |boolean $isNull = false;
+             |byte[] $valueIntern = $dictsRef.getDictionaryValueForKeyInBytes(${ ev.value });
+             |if (java.util.Arrays.equals(org.apache.carbondata.core.constants
+             |.CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, $valueIntern)) {
+             |  $isNull = true;
+             |}
+             """.stripMargin
+
+            val caseCode = getDictionaryColumnIds(e._2)._3 match {
+              case DataType.INT =>
+                s"""
+                   |int $value = Integer.parseInt(new String($valueIntern,
+                   |org.apache.carbondata.core.constants.CarbonCommonConstants
+                   |.DEFAULT_CHARSET_CLASS));
+                 """.stripMargin
+              case DataType.SHORT =>
+                s"""
+                   |short $value =
+                   |Short.parseShort(new String($valueIntern,
+                   |org.apache.carbondata.core.constants.CarbonCommonConstants
+                   |.DEFAULT_CHARSET_CLASS));
+                 """.stripMargin
+              case DataType.DOUBLE =>
+                s"""
+                   |double $value =
+                   |Double.parseDouble(new String($valueIntern,
+                   |org.apache.carbondata.core.constants.CarbonCommonConstants
+                   |.DEFAULT_CHARSET_CLASS));
+                 """.stripMargin
+              case DataType.LONG =>
+                s"""
+                   |long $value =
+                   |Long.parseLong(new String($valueIntern,
+                   |org.apache.carbondata.core.constants.CarbonCommonConstants
+                   |.DEFAULT_CHARSET_CLASS));
+                 """.stripMargin
+              case DataType.DECIMAL =>
+                s"""
+                   |org.apache.spark.sql.types.Decimal $value =
+                   |Decimal.apply(new java.math.BigDecimal(
+                   |new String($valueIntern, org.apache.carbondata.core.constants
+                   |.CarbonCommonConstants.DEFAULT_CHARSET_CLASS)));
+                 """.stripMargin
+              case _ =>
+                s"""
+                   | UTF8String $value = UTF8String.fromBytes($valueIntern);
+                 """.stripMargin
+            }
+          code +=
+            s"""
+               |$caseCode
+             """.stripMargin
+
+          ExprCode(code, isNull, value)
+        } else {
+          e._1.genCode(ctx)
+        }
+      }
+      // Evaluation of non-deterministic expressions can't be deferred.
+      s"""
+         |${consume(ctx, resultVars)}
+     """.stripMargin
+
+    } else {
+
+      val exprs = child.output.map(x =>
+        ExpressionCanonicalizer.execute(BindReferences.bindReference(x, child.output)))
+      ctx.currentVars = input
+      val resultVars = exprs.map(_.genCode(ctx))
+      // Evaluation of non-deterministic expressions can't be deferred.
+      s"""
+         |${consume(ctx, resultVars)}
+     """.stripMargin
+
+    }
+  }
+
+
+  override def inputRDDs(): Seq[RDD[InternalRow]] = {
+    child.asInstanceOf[CodegenSupport].inputRDDs()
+  }
+
+  protected override def doProduce(ctx: CodegenContext): String = {
+    child.asInstanceOf[CodegenSupport].produce(ctx, this)
+  }
+
   private def isRequiredToDecode = {
     getDictionaryColumnIds.find(p => p._1 != null) match {
       case Some(value) => true
@@ -215,6 +333,25 @@ case class CarbonDictionaryDecoder(
           cache.get(new DictionaryColumnUniqueIdentifier(
             atiMap(f._1).getCarbonTableIdentifier,
             f._2, f._3))
+        } catch {
+          case _: Throwable => null
+        }
+      } else {
+        null
+      }
+    }
+    dicts
+  }
+
+  private def getDictionaryWrapper(atiMap: Map[String, AbsoluteTableIdentifier],
+      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary], storePath: String) = {
+    val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryColumnIds.map { f =>
+      if (f._2 != null) {
+        try {
+          new ForwardDictionaryWrapper(storePath, atiMap(f._1), f._2, f._3,
+            cache.get(new DictionaryColumnUniqueIdentifier(
+            atiMap(f._1).getCarbonTableIdentifier,
+            f._2, f._3)))
         } catch {
           case _: Throwable => null
         }
@@ -367,4 +504,43 @@ class CarbonDecoderRDD(
   }
 
   override protected def getPartitions: Array[Partition] = firstParent[InternalRow].partitions
+}
+
+/**
+ * It is a wrapper around Dictionary, it is a work around to keep the dictionary serializable in
+ * case of codegen
+ * @param storePath
+ * @param absoluteTableIdentifier
+ * @param columnIdentifier
+ * @param dataType
+ * @param dictionary
+ */
+class ForwardDictionaryWrapper(val storePath: String,
+    val absoluteTableIdentifier: AbsoluteTableIdentifier,
+    columnIdentifier: ColumnIdentifier,
+    dataType: DataType, @transient var dictionary: Dictionary) extends Serializable {
+
+
+  def getDictionaryValueForKeyInBytes (surrogateKey: Int): Array[Byte] = {
+    if (dictionary == null) {
+      createDictionary
+    }
+    dictionary.getDictionaryValueForKeyInBytes(surrogateKey)
+  }
+
+  private def createDictionary = {
+    val cacheProvider: CacheProvider = CacheProvider.getInstance
+    val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
+      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+    dictionary = forwardDictionaryCache.get(new DictionaryColumnUniqueIdentifier(
+      absoluteTableIdentifier.getCarbonTableIdentifier,
+      columnIdentifier, dataType))
+  }
+
+  def clear(): Unit = {
+    if (dictionary == null) {
+      createDictionary
+    }
+    dictionary.clear()
+  }
 }
