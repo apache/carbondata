@@ -46,7 +46,7 @@ class DataFrameUtilTest extends FunSuite with DataFrameUtil {
   }
 
   test("get column Header Count") {
-    val headerCount = getColumnHeaderCount(employeeDataframe)
+    val headerCount = getHeaderCount(employeeDataframe)
     assert(headerCount === 2)
   }
 }

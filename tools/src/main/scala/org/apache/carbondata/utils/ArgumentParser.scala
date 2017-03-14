@@ -23,7 +23,8 @@ trait ArgumentParser extends RegexParsers {
    */
   def getProperties(arguments: String): LoadProperties = {
     parse(loadsValue, arguments) match {
-      case Success(properties, _) => convertProperties(properties)
+      case Success(properties, _) =>
+        convertProperties(filterProperties(properties))
       case Failure(msg, _) => throw InvalidParameterException(msg)
       case Error(msg, _) => throw InvalidParameterException(msg)
     }
@@ -34,7 +35,7 @@ trait ArgumentParser extends RegexParsers {
     val fileHeader: Option[List[String]] = loadProperties.get("fileheader")
       .map { header => header.split(",").toList }
     val delimiter: String = loadProperties.get("delimiter").fold(",")(delimiter => delimiter)
-    val quoteChar: String = loadProperties.get("quotecharacter").fold("\"")(quoteChar => quoteChar)
+    val quoteChar: String = loadProperties.get("quotechar").fold("\"")(quoteChar => quoteChar)
     val badRecordAction: String = loadProperties.get("badrecordaction")
       .fold("IGNORE")(badRecordAction => badRecordAction)
     val storeLocation: String = loadProperties.get("storelocation")
@@ -51,8 +52,16 @@ trait ArgumentParser extends RegexParsers {
     }
   }
 
+  private def filterProperties(properties: Map[String, String]): Map[String, String] = {
+    properties.map { case (key, value) =>
+      key.substring(1, key.length - 1) -> value.substring(1, value.length-1)
+    }
+
+
+  }
+
   private def word: Parser[String] = {
-    """\w+""".r ^^ {
+    """(["'])(?:(?=(\\?))\2.)*?\1""".r ^^ {
       _.toString
     }
   }

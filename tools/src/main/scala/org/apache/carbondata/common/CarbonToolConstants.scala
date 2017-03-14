@@ -2,11 +2,11 @@ package org.apache.carbondata.common
 
 object CarbonToolConstants {
 
-  val DefaultStorePath: String = "./opt/store/"
+  val DefaultStorePath: String = "/opt/store"
 
   val DictionaryExtension: String = ".dict"
 
-  val DictionaryFolder: String = "/MetaData/"
+  val DictionaryFolder: String = "/Metadata/"
 
   val DefaultDatabase: String = ""
 
