@@ -350,7 +350,6 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
       thriftTableInfo,
       dbName,
       tableName)(sparkSession)
-    updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
     LOGGER.info(s"Table $tableName for Database $dbName created successfully.")
     carbonTablePath
   }
@@ -390,6 +389,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
     val tableMeta = new TableMeta(carbonTableIdentifier, storePath,
       CarbonMetadata.getInstance().getCarbonTable(dbName + '_' + tableName))
     metadata.tablesMeta += tableMeta
+    updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
     carbonTablePath.getPath
   }
 
