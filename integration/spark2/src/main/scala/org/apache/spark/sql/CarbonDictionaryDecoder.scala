@@ -216,16 +216,17 @@ case class CarbonDictionaryDecoder(
       val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryWrapper(absoluteTableIdentifiers,
         forwardDictionaryCache, storePath)
 
-      val exprs = child.output.map(x =>
-        ExpressionCanonicalizer.execute(BindReferences.bindReference(x, child.output)))
+      val exprs = child.output.map { exp =>
+        ExpressionCanonicalizer.execute(BindReferences.bindReference(exp, child.output))
+      }
       ctx.currentVars = input
-      val resultVars = exprs.zipWithIndex.map { e =>
-        if (dicts(e._2) != null) {
-          val ev = e._1.genCode(ctx)
+      val resultVars = exprs.zipWithIndex.map { case (expr, index) =>
+        if (dicts(index) != null) {
+          val ev = expr.genCode(ctx)
           val value = ctx.freshName("value")
           val valueIntern = ctx.freshName("valueIntern")
           val isNull = ctx.freshName("isNull")
-          val dictsRef = ctx.addReferenceObj("dictsRef", dicts(e._2))
+          val dictsRef = ctx.addReferenceObj("dictsRef", dicts(index))
           var code =
             s"""
                |${ev.code}
@@ -240,7 +241,7 @@ case class CarbonDictionaryDecoder(
              |}
              """.stripMargin
 
-            val caseCode = getDictionaryColumnIds(e._2)._3 match {
+            val caseCode = getDictionaryColumnIds(index)._3 match {
               case DataType.INT =>
                 s"""
                    |int $value = Integer.parseInt(new String($valueIntern,
@@ -287,7 +288,7 @@ case class CarbonDictionaryDecoder(
 
           ExprCode(code, isNull, value)
         } else {
-          e._1.genCode(ctx)
+          expr.genCode(ctx)
         }
       }
       // Evaluation of non-deterministic expressions can't be deferred.
@@ -345,13 +346,13 @@ case class CarbonDictionaryDecoder(
 
   private def getDictionaryWrapper(atiMap: Map[String, AbsoluteTableIdentifier],
       cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary], storePath: String) = {
-    val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryColumnIds.map { f =>
-      if (f._2 != null) {
+    val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryColumnIds.map { dictInfo =>
+      if (dictInfo._2 != null) {
         try {
-          new ForwardDictionaryWrapper(storePath, atiMap(f._1), f._2, f._3,
+          new ForwardDictionaryWrapper(storePath, atiMap(dictInfo._1), dictInfo._2, dictInfo._3,
             cache.get(new DictionaryColumnUniqueIdentifier(
-            atiMap(f._1).getCarbonTableIdentifier,
-            f._2, f._3)))
+            atiMap(dictInfo._1).getCarbonTableIdentifier,
+            dictInfo._2, dictInfo._3)))
         } catch {
           case _: Throwable => null
         }
