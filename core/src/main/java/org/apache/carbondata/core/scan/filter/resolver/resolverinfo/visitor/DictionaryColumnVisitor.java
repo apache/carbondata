@@ -59,7 +59,7 @@ public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
       // first check of surrogate key for null value is already added then
       // no need to add again otherwise result will be wrong in case of exclude filter
       // this is because two times it will flip the same bit
-      if (resolvedFilterObject.getFilterList()
+      if (!resolvedFilterObject.getFilterList()
           .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
         resolvedFilterObject.getFilterList()
             .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
