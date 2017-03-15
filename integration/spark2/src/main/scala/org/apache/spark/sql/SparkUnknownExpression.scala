@@ -25,11 +25,12 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericInternalRow}
 
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.scan.expression.{ColumnExpression, ExpressionResult, UnknownExpression}
+import org.apache.carbondata.core.scan.expression.{ColumnExpression, Expression, ExpressionResult, UnknownExpression}
 import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpression
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException
 import org.apache.carbondata.core.scan.filter.intf.{ExpressionType, RowIntf}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
+
 
 class SparkUnknownExpression(var sparkExp: SparkExpression)
   extends UnknownExpression with ConditionalExpression {
@@ -75,12 +76,15 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
     isExecutor = true
   }
 
+  override def findAndSetChild(oldExpr: Expression, newExpr: Expression): Unit = {}
+
   def getColumnList: java.util.List[ColumnExpression] = {
 
     val lst = new java.util.ArrayList[ColumnExpression]()
     getColumnListFromExpressionTree(sparkExp, lst)
     lst
   }
+
   def getLiterals: java.util.List[ExpressionResult] = {
 
     val lst = new java.util.ArrayList[ExpressionResult]()

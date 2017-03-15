@@ -15,48 +15,52 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.scan.expression.conditional;
+package org.apache.carbondata.core.scan.expression.logical;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.BinaryConditionalExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 
-public class ListExpression extends Expression {
-  private static final long serialVersionUID = 1L;
+/**
+ * This class will form an expression whose evaluation will be always true.
+ */
+public class TrueExpression extends BinaryConditionalExpression {
 
-  public ListExpression(List<Expression> children) {
-    this.children = children;
+
+  private static final long serialVersionUID = -8390184061336799370L;
+
+  public TrueExpression(Expression child1) {
+    super(child1, new LiteralExpression(null,null));
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
-    List<ExpressionResult> listOfExprRes = new ArrayList<ExpressionResult>(10);
-
-    for (Expression expr : children) {
-      try {
-        listOfExprRes.add(expr.evaluate(value));
-      } catch (FilterIllegalMemberException e) {
-        continue;
-      }
-    }
-    return new ExpressionResult(listOfExprRes);
+  /**
+   * This method will always return false, mainly used in the filter expressions
+   * which are illogical.
+   * eg: columnName NOT IN('Java',NULL)
+   * @param value
+   * @return
+   * @throws FilterUnsupportedException
+   * @throws FilterIllegalMemberException
+   */
+  @Override public ExpressionResult evaluate(RowIntf value)
+      throws FilterUnsupportedException, FilterIllegalMemberException {
+    return new ExpressionResult(DataType.BOOLEAN,true);
   }
 
+  /**
+   * This method will return the expression types
+   * @return
+   */
   @Override public ExpressionType getFilterExpressionType() {
-    // TODO Auto-generated method stub
-    return ExpressionType.LIST;
+    return ExpressionType.TRUE;
   }
-
   @Override public String getString() {
-    // TODO Auto-generated method stub
     return null;
-  }
-
-  @Override public void findAndSetChild(Expression oldExpr, Expression newExpr) {
   }
 }
