@@ -33,19 +33,19 @@ object CarbonHiveMetadataUtil {
   /**
    * This method invalidates the table from HiveMetastoreCatalog before dropping table
    *
-   * @param schemaName
-   * @param cubeName
+   * @param databaseName
+   * @param tableName
    * @param sparkSession
    */
-  def invalidateAndDropTable(schemaName: String,
-      cubeName: String,
+  def invalidateAndDropTable(databaseName: String,
+      tableName: String,
       sparkSession: SparkSession): Unit = {
     try {
-      sparkSession.sql(s"DROP TABLE IF EXISTS $schemaName.$cubeName")
+      sparkSession.sql(s"DROP TABLE IF EXISTS $databaseName.$tableName")
     } catch {
       case e: Exception =>
         LOGGER.audit(
-          s"Error While deleting the table $schemaName.$cubeName during drop carbon table" +
+          s"Error While deleting the table $databaseName.$tableName during drop carbon table" +
           e.getMessage)
     }
   }
