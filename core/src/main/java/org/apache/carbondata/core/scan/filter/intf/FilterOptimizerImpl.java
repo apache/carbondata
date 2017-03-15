@@ -14,13 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.scan.filter.intf;
 
-import java.io.Serializable;
+import org.apache.carbondata.core.scan.expression.Expression;
 
-public enum FilterExecuterType implements Serializable {
+public class FilterOptimizerImpl implements FilterOptimizer {
 
-  INCLUDE, EXCLUDE, OR, AND, RESTRUCTURE, ROWLEVEL, RANGE, ROWLEVEL_GREATERTHAN,
-  ROWLEVEL_GREATERTHAN_EQUALTO, ROWLEVEL_LESSTHAN_EQUALTO, ROWLEVEL_LESSTHAN, TRUE
+  protected FilterOptimizer filterOptimizer;
+  protected Expression filterExpression;
 
+  public FilterOptimizerImpl(FilterOptimizer filterOptimizer, Expression filterExpression) {
+    this.filterOptimizer = filterOptimizer;
+    this.filterExpression = filterExpression;
+  }
+
+  @Override public Expression optimizeFilter() {
+    return this.optimizeFilter();
+  }
 }

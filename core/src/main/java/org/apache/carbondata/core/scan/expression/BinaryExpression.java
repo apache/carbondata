@@ -38,4 +38,17 @@ public abstract class BinaryExpression extends Expression {
     return right;
   }
 
+  @Override public void findAndSetChild(Expression oldExpr, Expression newExpr) {
+    for (int i = 0; i < children.size(); i++) {
+      if (oldExpr.equals(children.get(i))) {
+        if (this.left.equals(children.get(i))) {
+          this.left = newExpr;
+        } else if (this.right.equals(children.get(i))) {
+          this.right = newExpr;
+        }
+        children.remove(i);
+        children.add(newExpr);
+      }
+    }
+  }
 }
