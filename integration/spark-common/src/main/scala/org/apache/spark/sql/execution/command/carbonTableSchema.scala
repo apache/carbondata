@@ -239,7 +239,7 @@ class AlterTableProcessor(
         if (elem._1.toLowerCase.startsWith(defaultValueString)) {
           if (col.getColumnName.equalsIgnoreCase(elem._1.substring(defaultValueString.length))) {
             rawData = elem._2
-            val data = DataTypeUtil.convertDataToBytesBasedOnDataType(elem._2, col.getDataType)
+            val data = DataTypeUtil.convertDataToBytesBasedOnDataType(elem._2, col)
             if (null != data) {
               col.setDefaultValue(data)
             } else {
