@@ -347,7 +347,7 @@ object CarbonDataRDDFactory {
       storePath: String,
       columnar: Boolean,
       partitionStatus: String = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS,
-      result: Future[DictionaryServer],
+      result: Option[DictionaryServer],
       dataFrame: Option[DataFrame] = None,
       updateModel: Option[UpdateTableModel] = None): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
@@ -890,30 +890,27 @@ object CarbonDataRDDFactory {
         LOGGER.audit(s"Data load is failed for " +
             s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         LOGGER.warn("Cannot write load metadata file as data load failed")
-        shutDownDictionaryServer(carbonLoadModel, result, false)
         throw new Exception(errorMessage)
       } else {
         val metadataDetails = status(0)._2
         if (!isAgg) {
-          val status = CarbonLoaderUtil.recordLoadMetadata(currentLoadCount, metadataDetails,
-            carbonLoadModel, loadStatus, loadStartTime)
-          if (!status) {
-            val errorMessage = "Dataload failed due to failure in table status updation."
-            LOGGER.audit("Data load is failed for " +
-                s"${ carbonLoadModel.getDatabaseName }.${
-                  carbonLoadModel
-                      .getTableName
-                }")
-            LOGGER.error("Dataload failed due to failure in table status updation.")
-            shutDownDictionaryServer(carbonLoadModel, result, false)
-            throw new Exception(errorMessage)
-          }
+            writeDictionary(carbonLoadModel, result, false)
+            val status = CarbonLoaderUtil.recordLoadMetadata(currentLoadCount, metadataDetails,
+              carbonLoadModel, loadStatus, loadStartTime)
+            if (!status) {
+              val errorMessage = "Dataload failed due to failure in table status updation."
+              LOGGER.audit("Data load is failed for " +
+                           s"${ carbonLoadModel.getDatabaseName }.${
+                             carbonLoadModel
+                               .getTableName
+                           }")
+              LOGGER.error("Dataload failed due to failure in table status updation.")
+              throw new Exception(errorMessage)
+            }
         } else if (!carbonLoadModel.isRetentionRequest) {
           // TODO : Handle it
           LOGGER.info("********Database updated**********")
         }
-
-        shutDownDictionaryServer(carbonLoadModel, result)
 
         if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS.equals(loadStatus)) {
           LOGGER.audit("Data load is partially successful for " +
@@ -935,22 +932,27 @@ object CarbonDataRDDFactory {
 
   }
 
-  private def shutDownDictionaryServer(carbonLoadModel: CarbonLoadModel,
-      result: Future[DictionaryServer], writeDictionary: Boolean = true): Unit = {
+  private def writeDictionary(carbonLoadModel: CarbonLoadModel,
+      result: Option[DictionaryServer], writeAll: Boolean) = {
     // write dictionary file and shutdown dictionary server
-    if (carbonLoadModel.getUseOnePass) {
-      try {
-        val server = result.get()
-        if (writeDictionary) {
-          server.writeDictionary()
+    val uniqueTableName: String = s"${ carbonLoadModel.getDatabaseName }_${
+      carbonLoadModel.getTableName }"
+    result match {
+      case Some(server) =>
+        try {
+          if (writeAll) {
+            server.writeDictionary()
+          }
+          else {
+            server.writeTableDictionary(uniqueTableName)
+          }
+        } catch {
+          case ex: Exception =>
+            LOGGER.error(s"Error while writing dictionary file for $uniqueTableName")
+            throw new Exception("Dataload failed due to error while writing dictionary file!")
         }
-        server.shutdown()
-      } catch {
-        case ex: Exception =>
-          LOGGER.error("Error while close dictionary server and write dictionary file for " +
-                       s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-          throw new Exception("Dataload failed due to error while write dictionary file!")
-      }
+      case _ =>
     }
   }
+
 }

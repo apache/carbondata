@@ -101,6 +101,9 @@ public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
       case WRITE_DICTIONARY :
         generatorForServer.writeDictionaryData();
         return 0;
+      case WRITE_TABLE_DICTIONARY:
+        generatorForServer.writeTableDictionaryData(key.getTableUniqueName());
+        return 0;
       default:
         return -1;
     }
