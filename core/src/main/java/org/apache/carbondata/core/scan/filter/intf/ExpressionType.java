@@ -38,6 +38,7 @@ public enum ExpressionType {
   UNKNOWN,
   LITERAL,
   RANGE,
-  FALSE
+  FALSE,
+  TRUE
 
 }
