@@ -26,7 +26,7 @@ import scala.collection.mutable.ListBuffer
 import scala.util.Random
 import scala.util.control.Breaks._
 
-import org.apache.hadoop.conf.{Configurable, Configuration}
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
@@ -360,7 +360,7 @@ object CarbonDataRDDFactory {
       storePath: String,
       columnar: Boolean,
       partitionStatus: String = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS,
-      result: Future[DictionaryServer],
+      result: Option[DictionaryServer],
       dataFrame: Option[DataFrame] = None,
       updateModel: Option[UpdateTableModel] = None): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
@@ -807,7 +807,6 @@ object CarbonDataRDDFactory {
         LOGGER.audit(s"Data load is failed for " +
             s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         LOGGER.warn("Cannot write load metadata file as data load failed")
-        shutdownDictionaryServer(carbonLoadModel, result, false)
         throw new Exception(errorMessage)
       } else {
         // if segment is empty then fail the data load
@@ -818,11 +817,11 @@ object CarbonDataRDDFactory {
                        s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }" +
                        " as there is no data to load")
           LOGGER.warn("Cannot write load metadata file as data load failed")
-          shutdownDictionaryServer(carbonLoadModel, result, false)
           throw new Exception("No Data to load")
         }
         val metadataDetails = status(0)._2
         if (!isAgg) {
+          writeDictionary(carbonLoadModel, result, false)
           val status = CarbonLoaderUtil.recordLoadMetadata(currentLoadCount, metadataDetails,
             carbonLoadModel, loadStatus, loadStartTime)
           if (!status) {
@@ -833,7 +832,6 @@ object CarbonDataRDDFactory {
                       .getTableName
                 }")
             LOGGER.error("Dataload failed due to failure in table status updation.")
-            shutdownDictionaryServer(carbonLoadModel, result, false)
             throw new Exception(errorMessage)
           }
         } else if (!carbonLoadModel.isRetentionRequest) {
@@ -841,7 +839,6 @@ object CarbonDataRDDFactory {
           LOGGER.info("********Database updated**********")
         }
 
-        shutdownDictionaryServer(carbonLoadModel, result)
         if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS.equals(loadStatus)) {
           LOGGER.audit("Data load is partially successful for " +
                        s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
@@ -862,22 +859,26 @@ object CarbonDataRDDFactory {
 
   }
 
-  private def shutdownDictionaryServer(carbonLoadModel: CarbonLoadModel,
-      result: Future[DictionaryServer], writeDictionary: Boolean = true) = {
+  private def writeDictionary(carbonLoadModel: CarbonLoadModel,
+      result: Option[DictionaryServer], writeAll: Boolean) = {
     // write dictionary file and shutdown dictionary server
-    if (carbonLoadModel.getUseOnePass) {
-      try {
-        val server = result.get()
-        if (writeDictionary) {
-          server.writeDictionary()
+    val uniqueTableName: String = s"${ carbonLoadModel.getDatabaseName }_${
+      carbonLoadModel.getTableName
+    }"
+    result match {
+      case Some(server) =>
+        try {
+          if (writeAll) {
+            server.writeDictionary()
+          } else {
+            server.writeTableDictionary(uniqueTableName)
+          }
+        } catch {
+          case ex: Exception =>
+            LOGGER.error(s"Error while writing dictionary file for $uniqueTableName")
+            throw new Exception("Dataload failed due to error while writing dictionary file!")
         }
-        server.shutdown()
-      } catch {
-        case ex: Exception =>
-          LOGGER.error("Error while close dictionary server and write dictionary file for " +
-                       s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-          throw new Exception("Dataload failed due to error while write dictionary file!")
-      }
+      case _ =>
     }
   }
 }

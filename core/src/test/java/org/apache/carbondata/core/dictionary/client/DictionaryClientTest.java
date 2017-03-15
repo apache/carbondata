@@ -91,8 +91,7 @@ public class DictionaryClientTest {
     metadata.addCarbonTable(carbonTable);
 
     // Start the server for testing the client
-    server = new DictionaryServer();
-    server.startServer(5678);
+    server = DictionaryServer.getInstance(5678);
   }
 
   @Test public void testClient() throws Exception {
@@ -159,7 +158,6 @@ public class DictionaryClientTest {
     client.shutDown();
 
     // Shutdown the server
-    server.shutdown();
   }
 
   @After public void tearDown() {

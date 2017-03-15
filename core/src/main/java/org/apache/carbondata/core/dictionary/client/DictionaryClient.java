@@ -49,8 +49,10 @@ public class DictionaryClient {
    * @param port
    */
   public void startClient(String address, int port) {
+    LOGGER.audit("Starting client on " + address + " " + port);
     long start = System.currentTimeMillis();
-    workerGroup = new NioEventLoopGroup();
+    // Create an Event with 1 thread.
+    workerGroup = new NioEventLoopGroup(1);
     Bootstrap clientBootstrap = new Bootstrap();
     clientBootstrap.group(workerGroup).channel(NioSocketChannel.class)
         .handler(new ChannelInitializer<SocketChannel>() {
@@ -58,7 +60,9 @@ public class DictionaryClient {
             ChannelPipeline pipeline = ch.pipeline();
             // Based on length provided at header, it collects all packets
             pipeline
-                .addLast("LengthDecoder", new LengthFieldBasedFrameDecoder(1048576, 0, 2, 0, 2));
+                .addLast("LengthDecoder",
+                    new LengthFieldBasedFrameDecoder(1048576, 0,
+                        2, 0, 2));
             pipeline.addLast("DictionaryClientHandler", dictionaryClientHandler);
           }
         });
