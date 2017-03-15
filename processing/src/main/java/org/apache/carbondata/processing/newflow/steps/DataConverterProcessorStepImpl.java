@@ -114,6 +114,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
   private BadRecordsLogger createBadRecordLogger() {
     boolean badRecordsLogRedirect = false;
     boolean badRecordConvertNullDisable = false;
+    boolean isDataLoadFail = false;
     boolean badRecordsLoggerEnable = Boolean.parseBoolean(
         configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ENABLE)
             .toString());
@@ -139,6 +140,9 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
           badRecordsLogRedirect = false;
           badRecordConvertNullDisable = true;
           break;
+        case FAIL:
+          isDataLoadFail = true;
+          break;
       }
     }
     CarbonTableIdentifier identifier =
@@ -147,7 +151,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
         identifier.getTableName() + '_' + System.currentTimeMillis(), getBadLogStoreLocation(
         identifier.getDatabaseName() + File.separator + identifier.getTableName() + File.separator
             + configuration.getTaskNo()), badRecordsLogRedirect, badRecordsLoggerEnable,
-        badRecordConvertNullDisable);
+        badRecordConvertNullDisable, isDataLoadFail);
     return badRecordsLogger;
   }
 
