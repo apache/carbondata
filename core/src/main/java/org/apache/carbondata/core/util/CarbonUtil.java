@@ -39,9 +39,6 @@ import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.cache.Cache;
-import org.apache.carbondata.core.cache.CacheProvider;
-import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -56,18 +53,13 @@ import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastore.compression.MeasureMetaDataModel;
 import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -1068,22 +1060,20 @@ public final class CarbonUtil {
     List<Boolean> isDictionaryDimensions = new ArrayList<Boolean>();
     Set<Integer> processedColumnGroup = new HashSet<Integer>();
     for (CarbonDimension carbonDimension : tableDimensionList) {
-      if (!carbonDimension.isInvisible()) {
-        List<CarbonDimension> childs = carbonDimension.getListOfChildDimensions();
-        //assuming complex dimensions will always be atlast
-        if (null != childs && childs.size() > 0) {
-          break;
-        }
-        if (carbonDimension.isColumnar() && hasEncoding(carbonDimension.getEncoder(),
-            Encoding.DICTIONARY)) {
+      List<CarbonDimension> childs = carbonDimension.getListOfChildDimensions();
+      //assuming complex dimensions will always be atlast
+      if (null != childs && childs.size() > 0) {
+        break;
+      }
+      if (carbonDimension.isColumnar() && hasEncoding(carbonDimension.getEncoder(),
+          Encoding.DICTIONARY)) {
+        isDictionaryDimensions.add(true);
+      } else if (!carbonDimension.isColumnar()) {
+        if (processedColumnGroup.add(carbonDimension.columnGroupId())) {
           isDictionaryDimensions.add(true);
-        } else if (!carbonDimension.isColumnar()) {
-          if (processedColumnGroup.add(carbonDimension.columnGroupId())) {
-            isDictionaryDimensions.add(true);
-          }
-        } else {
-          isDictionaryDimensions.add(false);
         }
+      } else {
+        isDictionaryDimensions.add(false);
       }
     }
     boolean[] primitive = ArrayUtils
@@ -1157,7 +1147,7 @@ public final class CarbonUtil {
   public static CarbonDimension findDimension(List<CarbonDimension> dimensions, String carbonDim) {
     CarbonDimension findDim = null;
     for (CarbonDimension dimension : dimensions) {
-      if (!dimension.isInvisible() && dimension.getColName().equalsIgnoreCase(carbonDim)) {
+      if (dimension.getColName().equalsIgnoreCase(carbonDim)) {
         findDim = dimension;
         break;
       }
@@ -1243,9 +1233,7 @@ public final class CarbonUtil {
     List<ColumnSchema> wrapperColumnSchemaList = new ArrayList<ColumnSchema>();
     fillCollumnSchemaListForComplexDims(carbonDimensionsList, wrapperColumnSchemaList);
     for (CarbonMeasure carbonMeasure : carbonMeasureList) {
-      if (!carbonMeasure.isInvisible()) {
-        wrapperColumnSchemaList.add(carbonMeasure.getColumnSchema());
-      }
+      wrapperColumnSchemaList.add(carbonMeasure.getColumnSchema());
     }
     return wrapperColumnSchemaList;
   }
@@ -1253,12 +1241,10 @@ public final class CarbonUtil {
   private static void fillCollumnSchemaListForComplexDims(
       List<CarbonDimension> carbonDimensionsList, List<ColumnSchema> wrapperColumnSchemaList) {
     for (CarbonDimension carbonDimension : carbonDimensionsList) {
-      if (!carbonDimension.isInvisible()) {
-        wrapperColumnSchemaList.add(carbonDimension.getColumnSchema());
-        List<CarbonDimension> childDims = carbonDimension.getListOfChildDimensions();
-        if (null != childDims && childDims.size() > 0) {
-          fillCollumnSchemaListForComplexDims(childDims, wrapperColumnSchemaList);
-        }
+      wrapperColumnSchemaList.add(carbonDimension.getColumnSchema());
+      List<CarbonDimension> childDims = carbonDimension.getListOfChildDimensions();
+      if (null != childDims && childDims.size() > 0) {
+        fillCollumnSchemaListForComplexDims(childDims, wrapperColumnSchemaList);
       }
     }
   }
@@ -1663,69 +1649,6 @@ public final class CarbonUtil {
       default:
         return null;
     }
-  }
-
-  /**
-   * This method will delete the dictionary files for the given column IDs and
-   * clear the dictionary cache
-   *
-   * @param dictionaryColumns
-   * @param carbonTable
-   */
-  public static void deleteDictionaryFileAndCache(List<CarbonColumn> dictionaryColumns,
-      CarbonTable carbonTable) {
-    if (!dictionaryColumns.isEmpty()) {
-      CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
-      CarbonTablePath carbonTablePath =
-          CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath(), carbonTableIdentifier);
-      String metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath();
-      CarbonFile metadataDir = FileFactory
-          .getCarbonFile(metadataDirectoryPath, FileFactory.getFileType(metadataDirectoryPath));
-      for (final CarbonColumn column : dictionaryColumns) {
-        // sort index file is created with dictionary size appended to it. So all the files
-        // with a given column ID need to be listed
-        CarbonFile[] listFiles = metadataDir.listFiles(new CarbonFileFilter() {
-          @Override public boolean accept(CarbonFile path) {
-            if (path.getName().startsWith(column.getColumnId())) {
-              return true;
-            }
-            return false;
-          }
-        });
-        for (CarbonFile file : listFiles) {
-          // try catch is inside for loop because even if one deletion fails, other files
-          // still need to be deleted
-          try {
-            FileFactory.deleteFile(file.getCanonicalPath(),
-                FileFactory.getFileType(file.getCanonicalPath()));
-          } catch (IOException e) {
-            LOGGER.error(
-                "Failed to delete dictionary or sortIndex file for column " + column.getColName()
-                    + "with column ID " + column.getColumnId());
-          }
-        }
-        // remove dictionary cache
-        removeDictionaryColumnFromCache(carbonTable, column.getColumnId());
-      }
-    }
-  }
-
-  /**
-   * This method will remove dictionary cache from driver for both reverse and forward dictionary
-   *
-   * @param carbonTable
-   * @param columnId
-   */
-  public static void removeDictionaryColumnFromCache(CarbonTable carbonTable, String columnId) {
-    Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache = CacheProvider.getInstance()
-        .createCache(CacheType.REVERSE_DICTIONARY, carbonTable.getStorePath());
-    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(carbonTable.getCarbonTableIdentifier(),
-            new ColumnIdentifier(columnId, null, null));
-    dictCache.invalidate(dictionaryColumnUniqueIdentifier);
-    dictCache = CacheProvider.getInstance()
-        .createCache(CacheType.FORWARD_DICTIONARY, carbonTable.getStorePath());
-    dictCache.invalidate(dictionaryColumnUniqueIdentifier);
   }
 
   /**

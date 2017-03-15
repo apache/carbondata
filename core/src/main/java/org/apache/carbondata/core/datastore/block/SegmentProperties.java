@@ -761,4 +761,24 @@ public class SegmentProperties {
     return blockTodimensionOrdinalMapping;
   }
 
+  /**
+   * This method will search a given dimension and return the dimension from current block
+   *
+   * @param queryDimension
+   * @return
+   */
+  public CarbonDimension getDimensionFromCurrentBlock(CarbonDimension queryDimension) {
+    return CarbonUtil.getDimensionFromCurrentBlock(this.dimensions, queryDimension);
+  }
+
+  /**
+   * This method will search for a given measure in the current block measures list
+   *
+   * @param columnId
+   * @return
+   */
+  public CarbonMeasure getMeasureFromCurrentBlock(String columnId) {
+    return CarbonUtil.getMeasureFromCurrentBlock(this.measures, columnId);
+  }
+
 }

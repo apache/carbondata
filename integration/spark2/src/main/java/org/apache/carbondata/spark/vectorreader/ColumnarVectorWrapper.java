@@ -34,24 +34,54 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     columnVector.putShort(rowId, value);
   }
 
+  @Override public void putShorts(int rowId, int count, short value) {
+    columnVector.putShorts(rowId, count, value);
+  }
+
   @Override public void putInt(int rowId, int value) {
     columnVector.putInt(rowId, value);
+  }
+
+  @Override public void putInts(int rowId, int count, int value) {
+    columnVector.putInts(rowId, count, value);
   }
 
   @Override public void putLong(int rowId, long value) {
     columnVector.putLong(rowId, value);
   }
 
+  @Override public void putLongs(int rowId, int count, long value) {
+    columnVector.putLongs(rowId, count, value);
+  }
+
   @Override public void putDecimal(int rowId, Decimal value, int precision) {
     columnVector.putDecimal(rowId, value, precision);
+  }
+
+  @Override public void putDecimals(int rowId, int count, Decimal value, int precision) {
+    for (int i = 0; i < count; i++) {
+      rowId += i;
+      putDecimal(rowId, value, precision);
+    }
   }
 
   @Override public void putDouble(int rowId, double value) {
     columnVector.putDouble(rowId, value);
   }
 
+  @Override public void putDoubles(int rowId, int count, double value) {
+    columnVector.putDoubles(rowId, count, value);
+  }
+
   @Override public void putBytes(int rowId, byte[] value) {
     columnVector.putByteArray(rowId, value);
+  }
+
+  @Override public void putBytes(int rowId, int count, byte[] value) {
+    for (int i = 0; i < count; i++) {
+      rowId += i;
+      putBytes(rowId, value);
+    }
   }
 
   @Override public void putBytes(int rowId, int offset, int length, byte[] value) {
@@ -60,6 +90,10 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void putNull(int rowId) {
     columnVector.putNull(rowId);
+  }
+
+  @Override public void putNulls(int rowId, int count) {
+    columnVector.putNulls(rowId, count);
   }
 
   @Override public boolean isNull(int rowId) {

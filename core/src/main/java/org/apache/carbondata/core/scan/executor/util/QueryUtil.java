@@ -248,25 +248,6 @@ public class QueryUtil {
   }
 
   /**
-   * This method will return the key ordinal of the query dimension from the current block
-   *
-   * @param blockDimensions
-   * @param queryDimension
-   * @return
-   */
-  public static int getKeyOrdinalOfDimensionFromCurrentBlock(List<CarbonDimension> blockDimensions,
-      CarbonDimension queryDimension) {
-    int keyOrdinalInCurrentDimensionBlock = -1;
-    for (CarbonDimension blockDimension : blockDimensions) {
-      if (queryDimension.getColumnId().equals(blockDimension.getColumnId())) {
-        keyOrdinalInCurrentDimensionBlock = blockDimension.getKeyOrdinal();
-        break;
-      }
-    }
-    return keyOrdinalInCurrentDimensionBlock;
-  }
-
-  /**
    * Below method will be used to add the children block index
    * this will be basically for complex dimension which will have children
    *
@@ -435,54 +416,6 @@ public class QueryUtil {
         ArrayUtils.toPrimitive(measureBlockIndex.toArray(new Integer[measureBlockIndex.size()]));
     Arrays.sort(measureIndexes);
     return measureIndexes;
-  }
-
-  /**
-   * This method will create the updated list of filter measures present in the current block
-   *
-   * @param queryFilterMeasures
-   * @param currentBlockMeasures
-   * @return
-   */
-  public static Set<CarbonMeasure> getUpdatedFilterMeasures(Set<CarbonMeasure> queryFilterMeasures,
-      List<CarbonMeasure> currentBlockMeasures) {
-    if (!queryFilterMeasures.isEmpty()) {
-      Set<CarbonMeasure> updatedFilterMeasures = new HashSet<>(queryFilterMeasures.size());
-      for (CarbonMeasure queryMeasure : queryFilterMeasures) {
-        CarbonMeasure measureFromCurrentBlock =
-            CarbonUtil.getMeasureFromCurrentBlock(currentBlockMeasures, queryMeasure.getColumnId());
-        if (null != measureFromCurrentBlock) {
-          updatedFilterMeasures.add(measureFromCurrentBlock);
-        }
-      }
-      return updatedFilterMeasures;
-    } else {
-      return queryFilterMeasures;
-    }
-  }
-
-  /**
-   * This method will create the updated list of filter dimensions present in the current block
-   *
-   * @param queryFilterDimensions
-   * @param currentBlockDimensions
-   * @return
-   */
-  public static Set<CarbonDimension> getUpdatedFilterDimensions(
-      Set<CarbonDimension> queryFilterDimensions, List<CarbonDimension> currentBlockDimensions) {
-    if (!queryFilterDimensions.isEmpty()) {
-      Set<CarbonDimension> updatedFilterDimensions = new HashSet<>(queryFilterDimensions.size());
-      for (CarbonDimension queryDimension : queryFilterDimensions) {
-        CarbonDimension dimensionFromCurrentBlock =
-            CarbonUtil.getDimensionFromCurrentBlock(currentBlockDimensions, queryDimension);
-        if (null != dimensionFromCurrentBlock) {
-          updatedFilterDimensions.add(dimensionFromCurrentBlock);
-        }
-      }
-      return updatedFilterDimensions;
-    } else {
-      return queryFilterDimensions;
-    }
   }
 
   /**

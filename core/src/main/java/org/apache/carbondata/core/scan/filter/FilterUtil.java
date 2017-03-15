@@ -55,7 +55,6 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
@@ -170,9 +169,8 @@ public final class FilterUtil {
       DimColumnResolvedFilterInfo dimColResolvedFilterInfo, SegmentProperties segmentProperties) {
 
     if (dimColResolvedFilterInfo.getDimension().isColumnar()) {
-      CarbonDimension dimensionFromCurrentBlock = CarbonUtil
-          .getDimensionFromCurrentBlock(segmentProperties.getDimensions(),
-              dimColResolvedFilterInfo.getDimension());
+      CarbonDimension dimensionFromCurrentBlock =
+          segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
       if (null != dimensionFromCurrentBlock) {
         // update dimension and column index according to the dimension position in current block
         DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
@@ -200,9 +198,8 @@ public final class FilterUtil {
       DimColumnResolvedFilterInfo dimColResolvedFilterInfo, SegmentProperties segmentProperties) {
 
     if (dimColResolvedFilterInfo.getDimension().isColumnar()) {
-      CarbonDimension dimensionFromCurrentBlock = CarbonUtil
-          .getDimensionFromCurrentBlock(segmentProperties.getDimensions(),
-              dimColResolvedFilterInfo.getDimension());
+      CarbonDimension dimensionFromCurrentBlock =
+          segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
       if (null != dimensionFromCurrentBlock) {
         // update dimension and column index according to the dimension position in current block
         DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
@@ -603,53 +600,6 @@ public final class FilterUtil {
   }
 
   /**
-   * This method will check whether a default value for the non-existing column is present
-   * in the filter values list
-   *
-   * @param dimColumnEvaluatorInfo
-   * @return
-   */
-  public static boolean isDimensionDefaultValuePresentInFilterValues(
-      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo) {
-    boolean isDefaultValuePresentInFilterValues = false;
-    DimColumnFilterInfo filterValues = dimColumnEvaluatorInfo.getFilterValues();
-    CarbonDimension dimension = dimColumnEvaluatorInfo.getDimension();
-    byte[] defaultValue = dimension.getDefaultValue();
-    if (!dimension.hasEncoding(Encoding.DICTIONARY)) {
-      // for no dictionary cases
-      // 3 cases: is NUll, is Not Null and filter on default value of newly added column
-      if (null == defaultValue) {
-        // default value for case where user gives is Null condition
-        defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL
-            .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-      }
-      List<byte[]> noDictionaryFilterValuesList = filterValues.getNoDictionaryFilterValuesList();
-      for (byte[] filterValue : noDictionaryFilterValuesList) {
-        int compare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(defaultValue, filterValue);
-        if (compare == 0) {
-          isDefaultValuePresentInFilterValues = true;
-          break;
-        }
-      }
-    } else {
-      // for dictionary and direct dictionary cases
-      // 3 cases: is NUll, is Not Null and filter on default value of newly added column
-      int defaultSurrogateValueToCompare = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
-      if (null != defaultValue) {
-        defaultSurrogateValueToCompare++;
-      }
-      List<Integer> filterList = filterValues.getFilterList();
-      for (Integer filterValue : filterList) {
-        if (defaultSurrogateValueToCompare == filterValue) {
-          isDefaultValuePresentInFilterValues = true;
-          break;
-        }
-      }
-    }
-    return isDefaultValuePresentInFilterValues;
-  }
-
-  /**
    * Below method will be used to covert the filter surrogate keys
    * to mdkey
    *
@@ -906,14 +856,15 @@ public final class FilterUtil {
       if (isExcludePresent) {
         continue;
       }
-      int keyOrdinalOfDimensionFromCurrentBlock = QueryUtil
-          .getKeyOrdinalOfDimensionFromCurrentBlock(segmentProperties.getDimensions(),
-              entry.getKey());
-      // if key ordinal is -1 that means this dimension does not exist in the current block.
+      // search the query dimension in current block dimensions. If the dimension is not found
+      // that means the key cannot be included in start key formation.
       // Applicable for restructure scenarios
-      if (keyOrdinalOfDimensionFromCurrentBlock == -1) {
+      CarbonDimension dimensionFromCurrentBlock =
+          segmentProperties.getDimensionFromCurrentBlock(entry.getKey());
+      if (null == dimensionFromCurrentBlock) {
         continue;
       }
+      int keyOrdinalOfDimensionFromCurrentBlock = dimensionFromCurrentBlock.getKeyOrdinal();
       for (DimColumnFilterInfo info : values) {
         if (startKey[keyOrdinalOfDimensionFromCurrentBlock] < info.getFilterList().get(0)) {
           startKey[keyOrdinalOfDimensionFromCurrentBlock] = info.getFilterList().get(0);
@@ -970,14 +921,15 @@ public final class FilterUtil {
       if (isExcludeFilterPresent) {
         continue;
       }
-      int keyOrdinalOfDimensionFromCurrentBlock = QueryUtil
-          .getKeyOrdinalOfDimensionFromCurrentBlock(segmentProperties.getDimensions(),
-              entry.getKey());
-      // if key ordinal is -1 that means this dimension does not exist in the current block.
+      // search the query dimension in current block dimensions. If the dimension is not found
+      // that means the key cannot be included in start key formation.
       // Applicable for restructure scenarios
-      if (keyOrdinalOfDimensionFromCurrentBlock == -1) {
+      CarbonDimension dimensionFromCurrentBlock =
+          segmentProperties.getDimensionFromCurrentBlock(entry.getKey());
+      if (null == dimensionFromCurrentBlock) {
         continue;
       }
+      int keyOrdinalOfDimensionFromCurrentBlock = dimensionFromCurrentBlock.getKeyOrdinal();
       for (DimColumnFilterInfo info : values) {
         if (endKey[keyOrdinalOfDimensionFromCurrentBlock] > info.getFilterList()
             .get(info.getFilterList().size() - 1)) {
@@ -1485,7 +1437,7 @@ public final class FilterUtil {
     // create and fill bitset for the last page
     BitSet bitSet = new BitSet(rowCountForLastPage);
     bitSet.set(0, rowCountForLastPage, defaultValue);
-    bitSetGroup.setBitSet(bitSet, pageCount);
+    bitSetGroup.setBitSet(bitSet, pagesTobeFullFilled);
     return bitSetGroup;
   }
 

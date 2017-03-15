@@ -422,16 +422,22 @@ class CarbonGlobalDictionaryGenerateRDD(
           val t3 = System.currentTimeMillis()
           val dictWriteTask = new DictionaryWriterTask(valuesBuffer,
             dictionaryForDistinctValueLookUp,
-            model,
-            split.index)
+            model.table,
+            model.columnIdentifier(split.index),
+            model.hdfsLocation,
+            model.primDimensions(split.index).getColumnSchema,
+            model.dictFileExists(split.index)
+          )
           // execute dictionary writer task to get distinct values
           val distinctValues = dictWriteTask.execute()
           val dictWriteTime = System.currentTimeMillis() - t3
           val t4 = System.currentTimeMillis()
           // if new data came than rewrite sort index file
           if (distinctValues.size() > 0) {
-            val sortIndexWriteTask = new SortIndexWriterTask(model,
-              split.index,
+            val sortIndexWriteTask = new SortIndexWriterTask(model.table,
+              model.columnIdentifier(split.index),
+              model.primDimensions(split.index).getDataType,
+              model.hdfsLocation,
               dictionaryForDistinctValueLookUp,
               distinctValues)
             sortIndexWriteTask.execute()

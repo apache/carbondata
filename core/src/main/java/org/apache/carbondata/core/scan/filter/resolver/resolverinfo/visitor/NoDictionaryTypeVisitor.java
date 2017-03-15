@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.scan.expression.ExpressionResult;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.DimColumnFilterInfo;
@@ -45,16 +45,17 @@ public class NoDictionaryTypeVisitor implements ResolvedFilterInfoVisitorIntf {
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
     DimColumnFilterInfo resolvedFilterObject = null;
-    List<String> evaluateResultListFinal;
+    List<String> evaluateResultListFinal = null;
     try {
-      ExpressionResult result = metadata.getExpression().evaluate(null);
-      Boolean booleanResult = result.getBoolean();
       // handling for is null case scenarios
-      if (null != booleanResult && booleanResult == metadata.isIncludeFilter()) {
-        evaluateResultListFinal = new ArrayList<>(1);
-        evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
+      if (metadata.getExpression() instanceof EqualToExpression) {
+        EqualToExpression expression = (EqualToExpression) metadata.getExpression();
+        if (expression.isNull) {
+          evaluateResultListFinal = new ArrayList<>(1);
+          evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
+        }
       } else {
-        evaluateResultListFinal = result.getListAsString();
+        evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
       }
       // Adding default  null member inorder to not display the same while
       // displaying the report as per hive compatibility.

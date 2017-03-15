@@ -223,8 +223,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
 
     // below is to get only those dimension in query which is present in the
     // table block
-    List<QueryDimension> updatedQueryDimension = RestructureUtil
-        .createDimensionInfoAndGetUpdatedQueryDimension(blockExecutionInfo,
+    List<QueryDimension> currentBlockQueryDimensions = RestructureUtil
+        .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo,
             queryModel.getQueryDimension(), tableBlockDimensions,
             segmentProperties.getComplexDimensions());
     int tableFactPathLength = CarbonStorePath
@@ -234,13 +234,13 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setBlockId(filePath.substring(tableFactPathLength));
     blockExecutionInfo.setStartBlockletIndex(startBlockletIndex);
     blockExecutionInfo.setNumberOfBlockletToScan(numberOfBlockletToScan);
-    blockExecutionInfo.setQueryDimensions(
-        updatedQueryDimension.toArray(new QueryDimension[updatedQueryDimension.size()]));
+    blockExecutionInfo.setQueryDimensions(currentBlockQueryDimensions
+        .toArray(new QueryDimension[currentBlockQueryDimensions.size()]));
     // get measures present in the current block
-    List<QueryMeasure> updatedQueryMeasures =
-        getUpdatedQueryMeasures(blockExecutionInfo, queryModel, blockIndex);
+    List<QueryMeasure> currentBlockQueryMeasures =
+        getCurrentBlockQueryMeasures(blockExecutionInfo, queryModel, blockIndex);
     blockExecutionInfo.setQueryMeasures(
-        updatedQueryMeasures.toArray(new QueryMeasure[updatedQueryMeasures.size()]));
+        currentBlockQueryMeasures.toArray(new QueryMeasure[currentBlockQueryMeasures.size()]));
     blockExecutionInfo.setDataBlock(blockIndex);
     blockExecutionInfo.setBlockKeyGenerator(blockKeyGenerator);
     // setting whether raw record query or not
@@ -252,7 +252,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .setTotalNumberOfMeasureBlock(segmentProperties.getMeasuresOrdinalToBlockMapping().size());
     blockExecutionInfo.setAbsoluteTableIdentifier(queryModel.getAbsoluteTableIdentifier());
     blockExecutionInfo.setComplexDimensionInfoMap(QueryUtil
-        .getComplexDimensionsMap(updatedQueryDimension,
+        .getComplexDimensionsMap(currentBlockQueryDimensions,
             segmentProperties.getDimensionOrdinalToBlockMapping(),
             segmentProperties.getEachComplexDimColumnValueSize(),
             queryProperties.columnToDictionayMapping, queryProperties.complexFilterDimension));
@@ -291,12 +291,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // list of dimensions to be projected
     Set<Integer> allProjectionListDimensionIdexes = new LinkedHashSet<>();
     // create a list of filter dimensions present in the current block
-    Set<CarbonDimension> updatedFilterDimensions = QueryUtil
-        .getUpdatedFilterDimensions(queryProperties.complexFilterDimension,
-            segmentProperties.getDimensions());
-    int[] dimensionsBlockIndexes = QueryUtil.getDimensionsBlockIndexes(updatedQueryDimension,
+    Set<CarbonDimension> currentBlockFilterDimensions =
+        getCurrentBlockFilterDimensions(queryProperties.complexFilterDimension, segmentProperties);
+    int[] dimensionsBlockIndexes = QueryUtil.getDimensionsBlockIndexes(currentBlockQueryDimensions,
         segmentProperties.getDimensionOrdinalToBlockMapping(), expressionDimensions,
-        updatedFilterDimensions, allProjectionListDimensionIdexes);
+        currentBlockFilterDimensions, allProjectionListDimensionIdexes);
     int numberOfColumnToBeReadInOneIO = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
             CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE));
@@ -313,13 +312,13 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(new int[0][0]);
     }
     // get the list of updated filter measures present in the current block
-    Set<CarbonMeasure> updatedFilterMeasures = QueryUtil
-        .getUpdatedFilterMeasures(queryProperties.filterMeasures, segmentProperties.getMeasures());
+    Set<CarbonMeasure> currentBlockFilterMeasures =
+        getCurrentBlockFilterMeasures(queryProperties.filterMeasures, segmentProperties);
     // list of measures to be projected
     List<Integer> allProjectionListMeasureIndexes = new ArrayList<>();
     int[] measureBlockIndexes = QueryUtil
-        .getMeasureBlockIndexes(updatedQueryMeasures, expressionMeasures,
-            segmentProperties.getMeasuresOrdinalToBlockMapping(), updatedFilterMeasures,
+        .getMeasureBlockIndexes(currentBlockQueryMeasures, expressionMeasures,
+            segmentProperties.getMeasuresOrdinalToBlockMapping(), currentBlockFilterMeasures,
             allProjectionListMeasureIndexes);
     if (measureBlockIndexes.length > 0) {
 
@@ -342,16 +341,14 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setProjectionListMeasureIndexes(ArrayUtils.toPrimitive(
         allProjectionListMeasureIndexes
             .toArray(new Integer[allProjectionListMeasureIndexes.size()])));
-    // setting the key structure info which will be required
-    // to update the older block key with new key generator
-    // blockExecutionInfo.setKeyStructureInfo(queryProperties.keyStructureInfo);
     // setting the size of fixed key column (dictionary column)
-    blockExecutionInfo.setFixedLengthKeySize(getKeySize(updatedQueryDimension, segmentProperties));
+    blockExecutionInfo
+        .setFixedLengthKeySize(getKeySize(currentBlockQueryDimensions, segmentProperties));
     Set<Integer> dictionaryColumnBlockIndex = new HashSet<Integer>();
     List<Integer> noDictionaryColumnBlockIndex = new ArrayList<Integer>();
     // get the block index to be read from file for query dimension
     // for both dictionary columns and no dictionary columns
-    QueryUtil.fillQueryDimensionsBlockIndexes(updatedQueryDimension,
+    QueryUtil.fillQueryDimensionsBlockIndexes(currentBlockQueryDimensions,
         segmentProperties.getDimensionOrdinalToBlockMapping(), dictionaryColumnBlockIndex,
         noDictionaryColumnBlockIndex);
     int[] queryDictionaryColumnBlockIndexes = ArrayUtils.toPrimitive(
@@ -368,7 +365,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // setting each column value size
     blockExecutionInfo.setEachColumnValueSize(segmentProperties.getEachDimColumnValueSize());
     blockExecutionInfo.setComplexColumnParentBlockIndexes(
-        getComplexDimensionParentBlockIndexes(updatedQueryDimension));
+        getComplexDimensionParentBlockIndexes(currentBlockQueryDimensions));
     blockExecutionInfo.setVectorBatchCollector(queryModel.isVectorReader());
     try {
       // to set column group and its key structure info which will be used
@@ -376,7 +373,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       // for getting the column group column data in case of final row
       // and in case of dimension aggregation
       blockExecutionInfo.setColumnGroupToKeyStructureInfo(
-          QueryUtil.getColumnGroupKeyStructureInfo(updatedQueryDimension, segmentProperties));
+          QueryUtil.getColumnGroupKeyStructureInfo(currentBlockQueryDimensions, segmentProperties));
     } catch (KeyGenException e) {
       throw new QueryExecutionException(e);
     }
@@ -398,6 +395,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   private int getKeySize(List<QueryDimension> queryDimension,
       SegmentProperties blockMetadataInfo) {
+    // add the dimension block ordinal for each dictionary column
+    // existing in the current block dimensions. Set is used because in case of column groups
+    // ordinal of columns in a column group will be same
     Set<Integer> fixedLengthDimensionOrdinal =
         new HashSet<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     int counter = 0;
@@ -416,6 +416,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     }
     int[] dictionaryColumnOrdinal = ArrayUtils.toPrimitive(
         fixedLengthDimensionOrdinal.toArray(new Integer[fixedLengthDimensionOrdinal.size()]));
+    // calculate the size of existing query dictionary columns in this block
     if (dictionaryColumnOrdinal.length > 0) {
       int[] eachColumnValueSize = blockMetadataInfo.getEachDimColumnValueSize();
       int keySize = 0;
@@ -435,11 +436,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @param tableBlock         table block
    * @return
    */
-  private List<QueryMeasure> getUpdatedQueryMeasures(BlockExecutionInfo blockExecutionInfo,
+  private List<QueryMeasure> getCurrentBlockQueryMeasures(BlockExecutionInfo blockExecutionInfo,
       QueryModel queryModel, AbstractIndex tableBlock) throws QueryExecutionException {
-    // getting the aggregate infos which will be used during aggregation
+    // getting the measure info which will be used while filling up measure data
     List<QueryMeasure> updatedQueryMeasures = RestructureUtil
-        .createMeasureInfoAndGetUpdatedQueryMeasures(blockExecutionInfo,
+        .createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo,
             queryModel.getQueryMeasures(), tableBlock.getSegmentProperties().getMeasures());
     // setting the measure aggregator for all aggregation function selected
     // in query
@@ -457,6 +458,54 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     }
     return ArrayUtils
         .toPrimitive(parentBlockIndexList.toArray(new Integer[parentBlockIndexList.size()]));
+  }
+
+  /**
+   * This method will create the updated list of filter measures present in the current block
+   *
+   * @param queryFilterMeasures
+   * @param segmentProperties
+   * @return
+   */
+  private Set<CarbonMeasure> getCurrentBlockFilterMeasures(Set<CarbonMeasure> queryFilterMeasures,
+      SegmentProperties segmentProperties) {
+    if (!queryFilterMeasures.isEmpty()) {
+      Set<CarbonMeasure> updatedFilterMeasures = new HashSet<>(queryFilterMeasures.size());
+      for (CarbonMeasure queryMeasure : queryFilterMeasures) {
+        CarbonMeasure measureFromCurrentBlock =
+            segmentProperties.getMeasureFromCurrentBlock(queryMeasure.getColumnId());
+        if (null != measureFromCurrentBlock) {
+          updatedFilterMeasures.add(measureFromCurrentBlock);
+        }
+      }
+      return updatedFilterMeasures;
+    } else {
+      return queryFilterMeasures;
+    }
+  }
+
+  /**
+   * This method will create the updated list of filter dimensions present in the current block
+   *
+   * @param queryFilterDimensions
+   * @param segmentProperties
+   * @return
+   */
+  private Set<CarbonDimension> getCurrentBlockFilterDimensions(
+      Set<CarbonDimension> queryFilterDimensions, SegmentProperties segmentProperties) {
+    if (!queryFilterDimensions.isEmpty()) {
+      Set<CarbonDimension> updatedFilterDimensions = new HashSet<>(queryFilterDimensions.size());
+      for (CarbonDimension queryDimension : queryFilterDimensions) {
+        CarbonDimension dimensionFromCurrentBlock =
+            segmentProperties.getDimensionFromCurrentBlock(queryDimension);
+        if (null != dimensionFromCurrentBlock) {
+          updatedFilterDimensions.add(dimensionFromCurrentBlock);
+        }
+      }
+      return updatedFilterDimensions;
+    } else {
+      return queryFilterDimensions;
+    }
   }
 
   /**

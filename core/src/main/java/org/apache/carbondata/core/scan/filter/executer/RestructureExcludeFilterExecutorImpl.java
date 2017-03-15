@@ -25,7 +25,7 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnRes
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.core.util.BitSetGroup;
 
-public class RestructureExcludeFilterExecutorImpl implements FilterExecuter {
+public class RestructureExcludeFilterExecutorImpl extends RestructureEvaluatorImpl {
 
   protected DimColumnResolvedFilterInfo dimColEvaluatorInfo;
   protected SegmentProperties segmentProperties;
@@ -41,16 +41,14 @@ public class RestructureExcludeFilterExecutorImpl implements FilterExecuter {
     this.dimColEvaluatorInfo = dimColEvaluatorInfo;
     this.segmentProperties = segmentProperties;
     isDefaultValuePresentInFilterValues =
-        FilterUtil.isDimensionDefaultValuePresentInFilterValues(dimColEvaluatorInfo);
+        isDimensionDefaultValuePresentInFilterValues(dimColEvaluatorInfo);
   }
 
   @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder) throws IOException {
     int numberOfRows = blockChunkHolder.getDataBlock().nodeSize();
-    BitSetGroup bitSetGroup = new BitSetGroup(1);
-    BitSet bitSet = new BitSet(numberOfRows);
-    bitSet.set(0, numberOfRows, !isDefaultValuePresentInFilterValues);
-    bitSetGroup.setBitSet(bitSet, 0);
-    return bitSetGroup;
+    return FilterUtil
+        .createBitSetGroupWithDefaultValue(blockChunkHolder.getDataBlock().numberOfPages(),
+            numberOfRows, !isDefaultValuePresentInFilterValues);
   }
 
   @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {

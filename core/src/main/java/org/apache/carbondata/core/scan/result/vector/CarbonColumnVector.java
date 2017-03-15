@@ -23,19 +23,33 @@ public interface CarbonColumnVector {
 
   void putShort(int rowId, short value);
 
+  void putShorts(int rowId, int count, short value);
+
   void putInt(int rowId, int value);
+
+  void putInts(int rowId, int count, int value);
 
   void putLong(int rowId, long value);
 
+  void putLongs(int rowId, int count, long value);
+
   void putDecimal(int rowId, Decimal value, int precision);
+
+  void putDecimals(int rowId, int count, Decimal value, int precision);
 
   void putDouble(int rowId, double value);
 
+  void putDoubles(int rowId, int count, double value);
+
   void putBytes(int rowId, byte[] value);
+
+  void putBytes(int rowId, int count, byte[] value);
 
   void putBytes(int rowId, int offset, int length, byte[] value);
 
   void putNull(int rowId);
+
+  void putNulls(int rowId, int count);
 
   boolean isNull(int rowId);
 

@@ -22,22 +22,30 @@ import scala.collection.mutable
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.service.CarbonCommonFactory
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter
-import org.apache.carbondata.spark.rdd.DictionaryLoadModel
 
 /**
  *
  * @param valuesBuffer
  * @param dictionary
- * @param model
- * @param columnIndex
+ * @param carbonTableIdentifier
+ * @param columnIdentifier
+ * @param carbonStoreLocation
+ * @param columnSchema
+ * @param isDictionaryFileExist
  * @param writer
  */
 class DictionaryWriterTask(valuesBuffer: mutable.HashSet[String],
     dictionary: Dictionary,
-    model: DictionaryLoadModel, columnIndex: Int,
+    carbonTableIdentifier: CarbonTableIdentifier,
+    columnIdentifier: ColumnIdentifier,
+    carbonStoreLocation: String,
+    columnSchema: ColumnSchema,
+    isDictionaryFileExist: Boolean,
     var writer: CarbonDictionaryWriter = null) {
 
   /**
@@ -50,22 +58,22 @@ class DictionaryWriterTask(valuesBuffer: mutable.HashSet[String],
     java.util.Arrays.sort(values, Ordering[String])
     val dictService = CarbonCommonFactory.getDictionaryService
     writer = dictService.getDictionaryWriter(
-      model.table,
-      model.columnIdentifier(columnIndex),
-      model.hdfsLocation)
+      carbonTableIdentifier,
+      columnIdentifier,
+      carbonStoreLocation)
     val distinctValues: java.util.List[String] = new java.util.ArrayList()
 
     try {
-      if (!model.dictFileExists(columnIndex)) {
+      if (!isDictionaryFileExist) {
         writer.write(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
         distinctValues.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
       }
 
       if (values.length >= 1) {
-        if (model.dictFileExists(columnIndex)) {
+        if (isDictionaryFileExist) {
           for (value <- values) {
             val parsedValue = DataTypeUtil.normalizeColumnValueForItsDataType(value,
-                model.primDimensions(columnIndex))
+              columnSchema)
             if (null != parsedValue && dictionary.getSurrogateKey(parsedValue) ==
               CarbonCommonConstants.INVALID_SURROGATE_KEY) {
               writer.write(parsedValue)
@@ -76,7 +84,7 @@ class DictionaryWriterTask(valuesBuffer: mutable.HashSet[String],
         } else {
           for (value <- values) {
             val parsedValue = DataTypeUtil.normalizeColumnValueForItsDataType(value,
-                model.primDimensions(columnIndex))
+              columnSchema)
             if (null != parsedValue) {
               writer.write(parsedValue)
               distinctValues.add(parsedValue)
