@@ -33,10 +33,13 @@ import java.util.Set;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.IgnoreDictionary;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
+import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -53,6 +56,7 @@ import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
 import org.apache.carbondata.processing.datatypes.StructDataType;
 import org.apache.carbondata.processing.model.CarbonDataLoadSchema;
 import org.apache.carbondata.processing.newflow.DataField;
+import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -429,6 +433,45 @@ public final class CarbonDataProcessorUtil {
       }
     }
     return dateformatsHashMap;
+  }
+
+  /**
+   * This method will convert surrogate key to MD key and fill the row in format
+   * required by the writer for further processing
+   *
+   * @param row
+   * @param segmentProperties
+   * @param measureCount
+   * @param noDictionaryCount
+   * @param complexDimensionCount
+   * @return
+   * @throws KeyGenException
+   */
+  public static Object[] convertToMDKeyAndFillRow(CarbonRow row,
+      SegmentProperties segmentProperties, int measureCount, int noDictionaryCount,
+      int complexDimensionCount) throws KeyGenException {
+    Object[] outputRow = null;
+    // adding one for the high cardinality dims byte array.
+    if (noDictionaryCount > 0 || complexDimensionCount > 0) {
+      outputRow = new Object[measureCount + 1 + 1];
+    } else {
+      outputRow = new Object[measureCount + 1];
+    }
+    int l = 0;
+    int index = 0;
+    Object[] measures = row.getObjectArray(IgnoreDictionary.MEASURES_INDEX_IN_ROW.getIndex());
+    for (int i = 0; i < measureCount; i++) {
+      outputRow[l++] = measures[index++];
+    }
+    outputRow[l] = row.getObject(IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex());
+    int[] highCardExcludedRows = new int[segmentProperties.getDimColumnsCardinality().length];
+    int[] dimsArray = row.getIntArray(IgnoreDictionary.DIMENSION_INDEX_IN_ROW.getIndex());
+    for (int i = 0; i < highCardExcludedRows.length; i++) {
+      highCardExcludedRows[i] = dimsArray[i];
+    }
+    outputRow[outputRow.length - 1] =
+        segmentProperties.getDimensionKeyGenerator().generateKey(highCardExcludedRows);
+    return outputRow;
   }
 
 }

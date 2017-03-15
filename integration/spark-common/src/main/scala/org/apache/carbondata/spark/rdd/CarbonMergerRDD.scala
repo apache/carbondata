@@ -152,9 +152,13 @@ class CarbonMergerRDD[K, V](
           CarbonCompactionUtil.createDataFileFooterMappingForSegments(tableBlockInfoList)
 
         carbonLoadModel.setStorePath(hdfsStoreLocation)
-
+        // check for restructured block
+        val restructuredBlockExists: Boolean = CarbonCompactionUtil
+          .checkIfAnyRestructuredBlockExists(segmentMapping,
+            dataFileMetadataSegMapping,
+            carbonTable.getTableLastUpdatedTime)
         exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties,
-          carbonTable, dataFileMetadataSegMapping)
+          carbonTable, dataFileMetadataSegMapping, restructuredBlockExists)
 
         // fire a query and get the results.
         var result2: java.util.List[RawResultIterator] = null
@@ -190,17 +194,25 @@ class CarbonMergerRDD[K, V](
 
         carbonLoadModel.setSegmentId(mergeNumber)
         carbonLoadModel.setPartitionId("0")
-        val merger =
-          new RowResultMerger(result2,
-            databaseName,
-            factTableName,
+        var processor: AbstractResultProcessor = null
+        if (restructuredBlockExists) {
+          processor = new CompactionResultSortProcessor(carbonLoadModel, carbonTable,
             segmentProperties,
-            tempStoreLoc,
-            carbonLoadModel,
-            carbonMergerMapping.campactionType
+            carbonMergerMapping.campactionType,
+            factTableName
           )
-        mergeStatus = merger.mergerSlice()
-
+        } else {
+          processor =
+            new RowResultMerger(
+              databaseName,
+              factTableName,
+              segmentProperties,
+              tempStoreLoc,
+              carbonLoadModel,
+              carbonMergerMapping.campactionType
+            )
+        }
+        mergeStatus = processor.execute(result2)
         mergeResult = tableBlockInfoList.get(0).getSegmentId + ',' + mergeNumber
 
       } catch {

@@ -1,65 +1,56 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.carbondata.spark.merger;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.scan.result.BatchResult;
+import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
-import org.apache.carbondata.processing.schema.metadata.SortObserver;
+import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortIntermediateFileMerger;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
-import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
-import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
+import org.apache.carbondata.processing.store.CarbonFactHandler;
+import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
 import org.apache.carbondata.processing.store.SingleThreadFinalSortFilesMerger;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
-
-import org.pentaho.di.core.exception.KettleException;
 
 /**
  * This class will process the query result and convert the data
  * into a format compatible for data load
  */
-public class CompactionResultSortProcessor {
+public class CompactionResultSortProcessor extends AbstractResultProcessor {
 
   /**
    * LOGGER
@@ -71,17 +62,13 @@ public class CompactionResultSortProcessor {
    */
   private CarbonLoadModel carbonLoadModel;
   /**
+   * carbon table
+   */
+  private CarbonTable carbonTable;
+  /**
    * sortDataRows instance for sorting each row read ad writing to sort temp file
    */
   private SortDataRows sortDataRows;
-  /**
-   * segment proeprties which contains required information for a segment
-   */
-  private SegmentProperties segmentProperties;
-  /**
-   * segment information of parent table
-   */
-  private SegmentProperties srcSegmentProperties;
   /**
    * final merger for merge sort
    */
@@ -89,19 +76,15 @@ public class CompactionResultSortProcessor {
   /**
    * data handler VO object
    */
-  private CarbonFactDataHandlerColumnar dataHandler;
+  private CarbonFactHandler dataHandler;
   /**
-   * column cardinality
+   * segment properties for getting dimension cardinality and other required information of a block
    */
-  private int[] columnCardinality;
+  private SegmentProperties segmentProperties;
   /**
-   * Fact Table To Index Table Column Mapping order
+   * compaction type to decide whether taskID need to be extracted from carbondata files
    */
-  private int[] factToIndexColumnMapping;
-  /**
-   * Fact Table Dict Column to Index Table Dict Column Mapping
-   */
-  private int[] factToIndexDictColumnMapping;
+  private CompactionType compactionType;
   /**
    * boolean mapping for no dictionary columns in schema
    */
@@ -115,25 +98,17 @@ public class CompactionResultSortProcessor {
    */
   private String segmentId;
   /**
-   * index table name
-   */
-  private String indexTableName;
-  /**
    * temp store location to be sued during data load
    */
   private String tempStoreLocation;
   /**
-   * data base name
+   * table name
    */
-  private String databaseName;
+  private String tableName;
   /**
    * no dictionary column count in schema
    */
   private int noDictionaryCount;
-  /**
-   * implicit column count in schema
-   */
-  private int implicitColumnCount;
   /**
    * total count of measures in schema
    */
@@ -143,49 +118,40 @@ public class CompactionResultSortProcessor {
    */
   private int dimensionColumnCount;
   /**
-   * complex dimension count in schema
-   */
-  private int complexDimensionCount;
-  /**
-   * carbon table
-   */
-  private CarbonTable carbonTable;
-  /**
    * whether the allocated tasks has any record
    */
   private boolean isRecordFound;
 
   /**
    * @param carbonLoadModel
-   * @param columnCardinality
-   * @param segmentId
-   * @param indexTableName
+   * @param carbonTable
+   * @param segmentProperties
+   * @param compactionType
+   * @param tableName
    */
-  public CompactionResultSortProcessor(CarbonLoadModel carbonLoadModel, int[] columnCardinality,
-      String segmentId, String indexTableName, int[] factToIndexColumnMapping,
-      int[] factToIndexDictColumnMapping) {
+  public CompactionResultSortProcessor(CarbonLoadModel carbonLoadModel, CarbonTable carbonTable,
+      SegmentProperties segmentProperties, CompactionType compactionType, String tableName) {
     this.carbonLoadModel = carbonLoadModel;
-    this.columnCardinality = columnCardinality;
-    this.segmentId = segmentId;
-    this.indexTableName = indexTableName;
-    this.databaseName = carbonLoadModel.getDatabaseName();
-    this.factToIndexColumnMapping = factToIndexColumnMapping;
-    this.factToIndexDictColumnMapping = factToIndexDictColumnMapping;
-    initSegmentProperties();
+    this.carbonTable = carbonTable;
+    this.segmentProperties = segmentProperties;
+    this.segmentId = carbonLoadModel.getSegmentId();
+    this.compactionType = compactionType;
+    this.tableName = tableName;
   }
 
   /**
    * This method will iterate over the query result and convert it into a format compatible
    * for data loading
    *
-   * @param detailQueryResultIteratorList
+   * @param resultIteratorList
    */
-  public void processQueryResult(List<CarbonIterator<BatchResult>> detailQueryResultIteratorList)
-      throws Exception {
+  public boolean execute(List<RawResultIterator> resultIteratorList) {
+    boolean isCompactionSuccess = false;
     try {
       initTempStoreLocation();
       initSortDataRows();
-      processResult(detailQueryResultIteratorList);
+      initAggType();
+      processResult(resultIteratorList);
       // After delete command, if no records are fetched from one split,
       // below steps are not required to be initialized.
       if (isRecordFound) {
@@ -193,22 +159,25 @@ public class CompactionResultSortProcessor {
         initDataHandler();
         readAndLoadDataFromSortTempFiles();
       }
+      isCompactionSuccess = true;
+    } catch (Exception e) {
+      LOGGER.error(e, "Compaction failed: " + e.getMessage());
     } finally {
-      // clear temp files and folders created during secondary index creation
+      // clear temp files and folders created during compaction
       deleteTempStoreLocation();
     }
+    return isCompactionSuccess;
   }
 
   /**
-   * This method will clean up the local folders and files created for secondary index creation
+   * This method will clean up the local folders and files created during compaction process
    */
   private void deleteTempStoreLocation() {
     if (null != tempStoreLocation) {
       try {
         CarbonUtil.deleteFoldersAndFiles(new File[] { new File(tempStoreLocation) });
       } catch (IOException | InterruptedException e) {
-        LOGGER.error(
-            "Problem deleting local folders during secondary index creation: " + e.getMessage());
+        LOGGER.error("Problem deleting local folders during compaction: " + e.getMessage());
       }
     }
   }
@@ -216,24 +185,21 @@ public class CompactionResultSortProcessor {
   /**
    * This method will iterate over the query result and perform row sorting operation
    *
-   * @param detailQueryResultIteratorList
+   * @param resultIteratorList
    */
-  private void processResult(List<CarbonIterator<BatchResult>> detailQueryResultIteratorList)
+  private void processResult(List<RawResultIterator> resultIteratorList)
       throws Exception {
-    for (CarbonIterator<BatchResult> detailQueryIterator : detailQueryResultIteratorList) {
-      while (detailQueryIterator.hasNext()) {
-        BatchResult batchResult = detailQueryIterator.next();
-        while (batchResult.hasNext()) {
-          addRowForSorting(prepareRowObjectForSorting(batchResult.next()));
-          isRecordFound = true;
-        }
+    for (RawResultIterator resultIterator : resultIteratorList) {
+      while (resultIterator.hasNext()) {
+        addRowForSorting(prepareRowObjectForSorting(resultIterator.next()));
+        isRecordFound = true;
       }
     }
     try {
       sortDataRows.startSorting();
     } catch (CarbonSortKeyAndGroupByException e) {
       LOGGER.error(e);
-      throw new Exception("Problem loading data while creating secondary index: " + e.getMessage());
+      throw new Exception("Problem loading data during compaction: " + e.getMessage());
     }
   }
 
@@ -246,25 +212,18 @@ public class CompactionResultSortProcessor {
   private Object[] prepareRowObjectForSorting(Object[] row) {
     ByteArrayWrapper wrapper = (ByteArrayWrapper) row[0];
     // ByteBuffer[] noDictionaryBuffer = new ByteBuffer[noDictionaryCount];
-
     List<CarbonDimension> dimensions = segmentProperties.getDimensions();
     Object[] preparedRow = new Object[dimensions.size() + measureCount];
-
     // convert the dictionary from MDKey to surrogate key
     byte[] dictionaryKey = wrapper.getDictionaryKey();
-    long[] keyArray = srcSegmentProperties.getDimensionKeyGenerator().getKeyArray(dictionaryKey);
+    long[] keyArray = segmentProperties.getDimensionKeyGenerator().getKeyArray(dictionaryKey);
     Object[] dictionaryValues = new Object[dimensionColumnCount + measureCount];
-    // Re-ordering is required as per index table column dictionary order,
-    // as output dictionary Byte Array is as per parent table schema order
     for (int i = 0; i < keyArray.length; i++) {
-      dictionaryValues[factToIndexDictColumnMapping[i]] = Long.valueOf(keyArray[i]).intValue();
+      dictionaryValues[i] = Long.valueOf(keyArray[i]).intValue();
     }
-
     int noDictionaryIndex = 0;
     int dictionaryIndex = 0;
-    int i = 0;
-    // loop excluding last dimension as last one is implicit column.
-    for (; i < dimensions.size() - 1; i++) {
+    for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dims = dimensions.get(i);
       if (dims.hasEncoding(Encoding.DICTIONARY)) {
         // dictionary
@@ -274,11 +233,31 @@ public class CompactionResultSortProcessor {
         preparedRow[i] = wrapper.getNoDictionaryKeyByIndex(noDictionaryIndex++);
       }
     }
-
-    // at last add implicit column position reference(PID)
-
-    preparedRow[i] = wrapper.getImplicitColumnByteArray();
+    // fill all the measures
+    // measures will always start from 1st index in the row object array
+    int measureIndexInRow = 1;
+    for (int i = 0; i < measureCount; i++) {
+      preparedRow[dimensionColumnCount + i] =
+          getConvertedMeasureValue(row[measureIndexInRow++], aggType[i]);
+    }
     return preparedRow;
+  }
+
+  /**
+   * This method will convert the spark decimal to java big decimal type
+   *
+   * @param value
+   * @param aggType
+   * @return
+   */
+  private Object getConvertedMeasureValue(Object value, char aggType) {
+    switch (aggType) {
+      case CarbonCommonConstants.BIG_DECIMAL_MEASURE:
+        value = ((org.apache.spark.sql.types.Decimal) value).toJavaBigDecimal();
+        return value;
+      default:
+        return value;
+    }
   }
 
   /**
@@ -286,15 +265,14 @@ public class CompactionResultSortProcessor {
    */
   private void readAndLoadDataFromSortTempFiles() throws Exception {
     try {
-      Object[] previousRow = null;
       finalMerger.startFinalMerge();
       while (finalMerger.hasNext()) {
         Object[] rowRead = finalMerger.next();
+        CarbonRow row = new CarbonRow(rowRead);
         // convert the row from surrogate key to MDKey
-        //        Object[] outputRow = CarbonDataProcessorUtil
-        //            .processNoKettle(rowRead, segmentProperties, aggType, measureCount, noDictionaryCount,
-        //                complexDimensionCount);
-        Object[] outputRow = null;
+        Object[] outputRow = CarbonDataProcessorUtil
+            .convertToMDKeyAndFillRow(row, segmentProperties, measureCount, noDictionaryCount,
+                segmentProperties.getComplexDimensions().size());
         dataHandler.addDataToStore(outputRow);
       }
       dataHandler.finish();
@@ -317,105 +295,6 @@ public class CompactionResultSortProcessor {
   }
 
   /**
-   * This method is used to process the row with out kettle.
-   *
-   * @param row               input row
-   * @param segmentProperties
-   * @param aggType
-   * @param measureCount
-   * @param noDictionaryCount
-   * @param complexDimCount
-   * @return
-   * @throws KettleException
-   */
-  public static Object[] processNoKettle(Object[] row, SegmentProperties segmentProperties,
-      char[] aggType, int measureCount, int noDictionaryCount, int complexDimCount)
-      throws KettleException {
-
-    //    int measureIndex = IgnoreDictionary.MEASURES_INDEX_IN_ROW.getIndex();
-    //
-    //    int noDimByteArrayIndex = IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex();
-    //
-    //    int dimsArrayIndex = IgnoreDictionary.DIMENSION_INDEX_IN_ROW.getIndex();
-
-    int measureIndex = 0;
-
-    int noDimByteArrayIndex = 0;
-
-    int dimsArrayIndex = 0;
-
-    Object[] outputRow;
-    // adding one for the high cardinality dims byte array.
-    if (noDictionaryCount > 0 || complexDimCount > 0) {
-      outputRow = new Object[measureCount + 1 + 1];
-    } else {
-      outputRow = new Object[measureCount + 1];
-    }
-
-    int l = 0;
-    int index = 0;
-    Object[] measures = (Object[]) row[measureIndex];
-    for (int i = 0; i < measureCount; i++) {
-      outputRow[l++] = measures[index++];
-    }
-    outputRow[l] = row[noDimByteArrayIndex];
-
-    int[] highCardExcludedRows = new int[segmentProperties.getDimColumnsCardinality().length];
-    int[] dimsArray = (int[]) row[dimsArrayIndex];
-    for (int i = 0; i < highCardExcludedRows.length; i++) {
-      highCardExcludedRows[i] = dimsArray[i];
-    }
-    try {
-      outputRow[outputRow.length - 1] =
-          segmentProperties.getDimensionKeyGenerator().generateKey(highCardExcludedRows);
-    } catch (KeyGenException e) {
-      throw new KettleException("unable to generate the mdkey", e);
-    }
-    return outputRow;
-  }
-
-  /**
-   * initialise segment properties
-   */
-  private void initSegmentProperties() {
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + indexTableName);
-    List<ColumnSchema> columnSchemaList = CarbonUtil
-        .getColumnSchemaList(carbonTable.getDimensionByTableName(indexTableName),
-            carbonTable.getMeasureByTableName(indexTableName));
-    segmentProperties = new SegmentProperties(columnSchemaList, columnCardinality);
-    srcSegmentProperties =
-        new SegmentProperties(getParentColumnOrder(columnSchemaList), getParentOrderCardinality());
-  }
-
-  /**
-   * Convert index table column order into parent table column order
-   */
-  private List<ColumnSchema> getParentColumnOrder(List<ColumnSchema> columnSchemaList) {
-    List<ColumnSchema> parentColumnList = new ArrayList<ColumnSchema>(columnSchemaList.size());
-    for (int i = 0; i < columnSchemaList.size(); i++) {
-      // Extra cols are dummy_measure & positionId implicit column
-      if (i >= columnCardinality.length) {
-        parentColumnList.add(columnSchemaList.get(i));
-      } else {
-        parentColumnList.add(columnSchemaList.get(factToIndexColumnMapping[i]));
-      }
-    }
-    return parentColumnList;
-  }
-
-  /**
-   * Convert index table column cardinality order into parent table column order
-   */
-  private int[] getParentOrderCardinality() {
-    int[] parentColumnCardinality = new int[columnCardinality.length];
-    for (int i = 0; i < columnCardinality.length; i++) {
-      parentColumnCardinality[i] = columnCardinality[factToIndexColumnMapping[i]];
-    }
-    return parentColumnCardinality;
-  }
-
-  /**
    * add row to a temp array which will we written to a sort temp file after sorting
    *
    * @param row
@@ -426,8 +305,7 @@ public class CompactionResultSortProcessor {
       sortDataRows.addRow(row);
     } catch (CarbonSortKeyAndGroupByException e) {
       LOGGER.error(e);
-      throw new Exception(
-          "Row addition for sorting failed while creating secondary index: " + e.getMessage());
+      throw new Exception("Row addition for sorting failed during compaction: " + e.getMessage());
     }
   }
 
@@ -435,12 +313,8 @@ public class CompactionResultSortProcessor {
    * create an instance of sort data rows
    */
   private void initSortDataRows() throws Exception {
-    CarbonTable indexTable = CarbonMetadata.getInstance().getCarbonTable(
-        carbonLoadModel.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + indexTableName);
-    measureCount = indexTable.getMeasureByTableName(indexTableName).size();
-    implicitColumnCount = indexTable.getImplicitDimensionByTableName(indexTableName).size();
-    SortObserver observer = new SortObserver();
-    List<CarbonDimension> dimensions = indexTable.getDimensionByTableName(indexTableName);
+    measureCount = carbonTable.getMeasureByTableName(tableName).size();
+    List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(tableName);
     noDictionaryColMapping = new boolean[dimensions.size()];
     int i = 0;
     for (CarbonDimension dimension : dimensions) {
@@ -460,8 +334,7 @@ public class CompactionResultSortProcessor {
     } catch (CarbonSortKeyAndGroupByException e) {
       LOGGER.error(e);
       throw new Exception(
-          "Error initializing sort data rows object while creating secondary index: " + e
-              .getMessage());
+          "Error initializing sort data rows object during compaction: " + e.getMessage());
     }
   }
 
@@ -471,10 +344,9 @@ public class CompactionResultSortProcessor {
    * @return
    */
   private SortParameters createSortParameters() {
-    boolean useKettle = false;
     SortParameters parameters = SortParameters
-        .createSortParameters(databaseName, indexTableName, dimensionColumnCount,
-            complexDimensionCount, measureCount, noDictionaryCount,
+        .createSortParameters(carbonLoadModel.getDatabaseName(), tableName, dimensionColumnCount,
+            segmentProperties.getComplexDimensions().size(), measureCount, noDictionaryCount,
             carbonLoadModel.getPartitionId(), segmentId, carbonLoadModel.getTaskNo(),
             noDictionaryColMapping);
     return parameters;
@@ -487,55 +359,29 @@ public class CompactionResultSortProcessor {
   private void initializeFinalThreadMergerForMergeSort() {
     String sortTempFileLocation = tempStoreLocation + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
-    initAggType();
-    // kettle will not be used
-    boolean useKettle = false;
-    finalMerger = new SingleThreadFinalSortFilesMerger(sortTempFileLocation, indexTableName,
-        dimensionColumnCount, complexDimensionCount, measureCount, noDictionaryCount, aggType,
-        noDictionaryColMapping, useKettle);
+    finalMerger =
+        new SingleThreadFinalSortFilesMerger(sortTempFileLocation, tableName, dimensionColumnCount,
+            segmentProperties.getComplexDimensions().size(), measureCount, noDictionaryCount,
+            aggType, noDictionaryColMapping);
   }
 
   /**
    * initialise carbon data writer instance
    */
   private void initDataHandler() throws Exception {
-    CarbonFactDataHandlerModel carbonFactDataHandlerModel = getCarbonFactDataHandlerModel();
-    carbonFactDataHandlerModel.setPrimitiveDimLens(segmentProperties.getDimColumnsCardinality());
-    CarbonDataFileAttributes carbonDataFileAttributes =
-        new CarbonDataFileAttributes(Integer.parseInt(carbonLoadModel.getTaskNo()),
-            carbonLoadModel.getFactTimeStamp());
-    carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
-    if (segmentProperties.getNumberOfNoDictionaryDimension() > 0
-        || segmentProperties.getComplexDimensions().size() > 0) {
-      carbonFactDataHandlerModel.setMdKeyIndex(measureCount + 1);
-    } else {
-      carbonFactDataHandlerModel.setMdKeyIndex(measureCount);
-    }
-    carbonFactDataHandlerModel.setColCardinality(columnCardinality);
-    carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
-    // NO-Kettle.
-    carbonFactDataHandlerModel.setUseKettle(false);
-    dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
+    CarbonFactDataHandlerModel carbonFactDataHandlerModel =
+        getCarbonFactDataHandlerModel(carbonLoadModel, carbonTable, segmentProperties, tableName,
+            tempStoreLocation);
+    setDataFileAttributesInModel(carbonLoadModel, compactionType, carbonTable,
+        carbonFactDataHandlerModel);
+    dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(carbonFactDataHandlerModel,
+        CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
     try {
       dataHandler.initialise();
     } catch (CarbonDataWriterException e) {
       LOGGER.error(e);
-      throw new Exception(
-          "Problem initialising data handler while creating secondary index: " + e.getMessage());
+      throw new Exception("Problem initialising data handler during compaction: " + e.getMessage());
     }
-  }
-
-  /**
-   * This method will create a model object for carbon fact data handler
-   *
-   * @return
-   */
-  private CarbonFactDataHandlerModel getCarbonFactDataHandlerModel() {
-    CarbonFactDataHandlerModel carbonFactDataHandlerModel = null;
-    //    CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonLoaderUtil
-    //        .getCarbonFactDataHandlerModel(carbonLoadModel, segmentProperties, databaseName,
-    //            indexTableName, tempStoreLocation, carbonLoadModel.getStorePath());
-    return carbonFactDataHandlerModel;
   }
 
   /**
@@ -543,8 +389,8 @@ public class CompactionResultSortProcessor {
    */
   private void initTempStoreLocation() {
     tempStoreLocation = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(databaseName, indexTableName, carbonLoadModel.getTaskNo(),
-            carbonLoadModel.getPartitionId(), segmentId, false);
+        .getLocalDataFolderLocation(carbonLoadModel.getDatabaseName(), tableName,
+            carbonLoadModel.getTaskNo(), carbonLoadModel.getPartitionId(), segmentId, false);
   }
 
   /**
@@ -553,9 +399,7 @@ public class CompactionResultSortProcessor {
   private void initAggType() {
     aggType = new char[measureCount];
     Arrays.fill(aggType, 'n');
-    carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + indexTableName);
-    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(indexTableName);
+    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
     for (int i = 0; i < measureCount; i++) {
       aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
     }

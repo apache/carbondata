@@ -63,18 +63,29 @@ public class CarbonCompactionExecutor {
   private QueryModel queryModel;
 
   /**
+   * flag to check whether any restructured block exists in the blocks selected for compaction.
+   * Based on this decision will be taken whether complete data has to be sorted again
+   */
+  private boolean restructuredBlockExists;
+
+  /**
    * Constructor
-   *  @param segmentMapping
+   *
+   * @param segmentMapping
    * @param segmentProperties
    * @param carbonTable
+   * @param dataFileMetadataSegMapping
+   * @param restructuredBlockExists
    */
   public CarbonCompactionExecutor(Map<String, TaskBlockInfo> segmentMapping,
       SegmentProperties segmentProperties, CarbonTable carbonTable,
-      Map<String, List<DataFileFooter>> dataFileMetadataSegMapping) {
+      Map<String, List<DataFileFooter>> dataFileMetadataSegMapping,
+      boolean restructuredBlockExists) {
     this.segmentMapping = segmentMapping;
     this.destinationSegProperties = segmentProperties;
     this.carbonTable = carbonTable;
     this.dataFileMetadataSegMapping = dataFileMetadataSegMapping;
+    this.restructuredBlockExists = restructuredBlockExists;
   }
 
   /**
@@ -83,17 +94,39 @@ public class CarbonCompactionExecutor {
    * @return List of Carbon iterators
    */
   public List<RawResultIterator> processTableBlocks() throws QueryExecutionException, IOException {
-
     List<RawResultIterator> resultList =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
     List<TableBlockInfo> list = null;
     queryModel = prepareQueryModel(list);
     // iterate each seg ID
     for (Map.Entry<String, TaskBlockInfo> taskMap : segmentMapping.entrySet()) {
       String segmentId = taskMap.getKey();
       List<DataFileFooter> listMetadata = dataFileMetadataSegMapping.get(segmentId);
+      SegmentProperties sourceSegProperties = getSourceSegmentProperties(listMetadata);
+      // for each segment get taskblock info
+      TaskBlockInfo taskBlockInfo = taskMap.getValue();
+      Set<String> taskBlockListMapping = taskBlockInfo.getTaskSet();
+      for (String task : taskBlockListMapping) {
+        list = taskBlockInfo.getTableBlockInfoList(task);
+        Collections.sort(list);
+        LOGGER.info("for task -" + task + "-block size is -" + list.size());
+        queryModel.setTableBlockInfos(list);
+        resultList.add(new RawResultIterator(executeBlockList(list), sourceSegProperties,
+            destinationSegProperties));
+      }
+    }
+    return resultList;
+  }
 
+  /**
+   * This method will create the source segment properties based on restructured block existence
+   *
+   * @param listMetadata
+   * @return
+   */
+  private SegmentProperties getSourceSegmentProperties(List<DataFileFooter> listMetadata) {
+    SegmentProperties sourceSegProperties = null;
+    if (restructuredBlockExists) {
       // update cardinality of source segment according to new schema
       Map<String, Integer> columnToCardinalityMap =
           new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -105,26 +138,13 @@ public class CarbonCompactionExecutor {
       int[] updatedColumnCardinalities = CarbonCompactionUtil
           .updateColumnSchemaAndGetCardinality(columnToCardinalityMap, carbonTable,
               updatedColumnSchemaList);
-      SegmentProperties sourceSegProperties =
+      sourceSegProperties =
           new SegmentProperties(updatedColumnSchemaList, updatedColumnCardinalities);
-
-      // for each segment get taskblock info
-      TaskBlockInfo taskBlockInfo = taskMap.getValue();
-      Set<String> taskBlockListMapping = taskBlockInfo.getTaskSet();
-
-      for (String task : taskBlockListMapping) {
-
-        list = taskBlockInfo.getTableBlockInfoList(task);
-        Collections.sort(list);
-        LOGGER.info("for task -" + task + "-block size is -" + list.size());
-        queryModel.setTableBlockInfos(list);
-        resultList.add(new RawResultIterator(executeBlockList(list), sourceSegProperties,
-            destinationSegProperties));
-
-      }
+    } else {
+      sourceSegProperties = new SegmentProperties(listMetadata.get(0).getColumnInTable(),
+          listMetadata.get(0).getSegmentInfo().getColumnCardinality());
     }
-
-    return resultList;
+    return sourceSegProperties;
   }
 
   /**

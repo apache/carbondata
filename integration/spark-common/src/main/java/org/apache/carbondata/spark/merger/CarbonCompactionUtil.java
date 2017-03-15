@@ -351,4 +351,33 @@ public class CarbonCompactionUtil {
     }
     return cardinality;
   }
+
+  /**
+   * This method will check for any restructured block in the blocks selected for compaction
+   *
+   * @param segmentMapping
+   * @param dataFileMetadataSegMapping
+   * @param tableLastUpdatedTime
+   * @return
+   */
+  public static boolean checkIfAnyRestructuredBlockExists(Map<String, TaskBlockInfo> segmentMapping,
+      Map<String, List<DataFileFooter>> dataFileMetadataSegMapping, long tableLastUpdatedTime) {
+    boolean restructuredBlockExists = false;
+    for (Map.Entry<String, TaskBlockInfo> taskMap : segmentMapping.entrySet()) {
+      String segmentId = taskMap.getKey();
+      List<DataFileFooter> listMetadata = dataFileMetadataSegMapping.get(segmentId);
+      for (DataFileFooter dataFileFooter : listMetadata) {
+        // if schema modified timestamp is greater than footer stored schema timestamp,
+        // it indicates it is a restructured block
+        if (tableLastUpdatedTime > dataFileFooter.getSchemaUpdatedTimeStamp()) {
+          restructuredBlockExists = true;
+          break;
+        }
+      }
+      if (restructuredBlockExists) {
+        break;
+      }
+    }
+    return restructuredBlockExists;
+  }
 }

@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.locks;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -27,6 +29,11 @@ import org.apache.carbondata.core.util.CarbonProperties;
  */
 public class CarbonLockFactory {
 
+  /**
+   * Attribute for LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CarbonLockFactory.class.getName());
   /**
    * lockTypeConfigured to check if zookeeper feature is enabled or not for carbon.
    */
@@ -88,6 +95,7 @@ public class CarbonLockFactory {
   private static void getLockTypeConfigured() {
     lockTypeConfigured = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT);
+    LOGGER.info("Configured lock type is: " + lockTypeConfigured);
   }
 
 }

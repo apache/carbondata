@@ -17,6 +17,8 @@
 
 package org.apache.spark.util
 
+import scala.collection.mutable.ListBuffer
+
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -30,9 +32,11 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 
 object AlterTableUtil {
-
-  def validateTableAndAcquireLock(dbName: String, tableName: String, LOGGER: LogService)
-    (sparkSession: SparkSession): ICarbonLock = {
+  def validateTableAndAcquireLock(dbName: String,
+      tableName: String,
+      locksToBeAcquired: List[String],
+      LOGGER: LogService)
+    (sparkSession: SparkSession): List[ICarbonLock] = {
     val relation =
       CarbonEnv.get.carbonMetastore
         .lookupRelation(Option(dbName), tableName)(sparkSession)
@@ -44,15 +48,50 @@ object AlterTableUtil {
     }
     // acquire the lock first
     val table = relation.tableMeta.carbonTable
+    var acquiredLocks = ListBuffer[ICarbonLock]()
+    locksToBeAcquired.foreach { lock =>
+      acquiredLocks += getLockObject(table, lock, LOGGER)
+    }
+    acquiredLocks.toList
+  }
+
+  /**
+   * Given a lock type this method will return a new lock object if not acquired by any other
+   * operation
+   *
+   * @param carbonTable
+   * @param lockType
+   * @param LOGGER
+   * @return
+   */
+  private def getLockObject(carbonTable: CarbonTable,
+      lockType: String,
+      LOGGER: LogService): ICarbonLock = {
     val carbonLock = CarbonLockFactory
-      .getCarbonLockObj(table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
-        LockUsage.METADATA_LOCK)
+      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+        lockType)
     if (carbonLock.lockWithRetries()) {
-      LOGGER.info("Successfully able to get the table metadata file lock")
+      LOGGER.info(s"Successfully acquired the lock $lockType")
     } else {
       sys.error("Table is locked for updation. Please try after some time")
     }
     carbonLock
+  }
+
+  /**
+   * This method will release the locks acquired for an operation
+   *
+   * @param locks
+   * @param LOGGER
+   */
+  def releaseLocks(locks: List[ICarbonLock], LOGGER: LogService): Unit = {
+    locks.foreach { carbonLock =>
+      if (carbonLock.unlock()) {
+        LOGGER.info("Alter table lock released successfully")
+      } else {
+        LOGGER.error("Unable to release lock during alter table operation")
+      }
+    }
   }
 
   def updateSchemaInfo(carbonTable: CarbonTable,

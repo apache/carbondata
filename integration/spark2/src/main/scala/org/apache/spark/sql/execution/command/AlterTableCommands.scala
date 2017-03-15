@@ -50,8 +50,9 @@ private[sql] case class AlterTableAddColumns(
     val dbName = alterTableAddColumnsModel.databaseName
       .getOrElse(sparkSession.catalog.currentDatabase)
     LOGGER.audit(s"Alter table add columns request has been received for $dbName.$tableName")
-    val carbonLock = AlterTableUtil
-      .validateTableAndAcquireLock(dbName, tableName, LOGGER)(sparkSession)
+    val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
+    val locks = AlterTableUtil
+      .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired, LOGGER)(sparkSession)
     // get the latest carbon table and check for column existence
     val carbonTable = CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)
     var newCols = Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]()
@@ -102,13 +103,7 @@ private[sql] case class AlterTableAddColumns(
         sys.error("Alter table add column operation failed. Please check the logs")
     } finally {
       // release lock after command execution completion
-      if (carbonLock != null) {
-        if (carbonLock.unlock()) {
-          LOGGER.info("Alter table add columns lock released successfully")
-        } else {
-          LOGGER.error("Unable to release lock during alter table add columns operation")
-        }
-      }
+      AlterTableUtil.releaseLocks(locks, LOGGER)
     }
     Seq.empty
   }
@@ -147,15 +142,15 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
                    s"Table $oldDatabaseName.$oldTableName does not exist")
       sys.error(s"Table $oldDatabaseName.$oldTableName does not exist")
     }
+    val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
+      LockUsage.COMPACTION_LOCK,
+      LockUsage.DELETE_SEGMENT_LOCK,
+      LockUsage.CLEAN_FILES_LOCK,
+      LockUsage.DROP_TABLE_LOCK)
+    val locks = AlterTableUtil
+      .validateTableAndAcquireLock(oldDatabaseName, oldTableName, locksToBeAcquired, LOGGER)(
+        sparkSession)
     val carbonTable = relation.tableMeta.carbonTable
-    val carbonLock = CarbonLockFactory
-      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
-        LockUsage.METADATA_LOCK)
-    if (carbonLock.lockWithRetries()) {
-      LOGGER.info("Successfully able to get the table metadata file lock")
-    } else {
-      sys.error("Table is locked for updation. Please try after some time")
-    }
     try {
       // get the latest carbon table and check for column existence
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
@@ -200,6 +195,7 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
         sys.error("Alter table rename table operation failed. Please check the logs")
     } finally {
       // release lock after command execution completion
+      AlterTableUtil.releaseLocks(locks, LOGGER)
       if (carbonLock != null) {
         if (carbonLock.unlock()) {
           LOGGER.info("Lock released successfully")
@@ -251,8 +247,9 @@ private[sql] case class AlterTableDropColumns(
     val dbName = alterTableDropColumnModel.databaseName
       .getOrElse(sparkSession.catalog.currentDatabase)
     LOGGER.audit(s"Alter table drop columns request has been received for $dbName.$tableName")
-    val carbonLock = AlterTableUtil
-      .validateTableAndAcquireLock(dbName, tableName, LOGGER)(sparkSession)
+    val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
+    val locks = AlterTableUtil
+      .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired, LOGGER)(sparkSession)
     try {
       // get the latest carbon table and check for column existence
       val carbonTable = CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)
@@ -333,13 +330,7 @@ private[sql] case class AlterTableDropColumns(
         sys.error("Alter table drop column operation failed. Please check the logs")
     } finally {
       // release lock after command execution completion
-      if (carbonLock != null) {
-        if (carbonLock.unlock()) {
-          LOGGER.info("Alter table drop columns lock released successfully")
-        } else {
-          LOGGER.error("Unable to release lock during alter table drop columns operation")
-        }
-      }
+      AlterTableUtil.releaseLocks(locks, LOGGER)
     }
     Seq.empty
   }
@@ -355,8 +346,9 @@ private[sql] case class AlterTableDataTypeChange(
     val dbName = alterTableDataTypeChangeModel.databaseName
       .getOrElse(sparkSession.catalog.currentDatabase)
     LOGGER.audit(s"Alter table change data type request has been received for $dbName.$tableName")
-    val carbonLock = AlterTableUtil
-      .validateTableAndAcquireLock(dbName, tableName, LOGGER)(sparkSession)
+    val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
+    val locks = AlterTableUtil
+      .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired, LOGGER)(sparkSession)
     try {
       // get the latest carbon table and check for column existence
       val carbonTable = CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)
@@ -416,13 +408,7 @@ private[sql] case class AlterTableDataTypeChange(
         sys.error("Alter table data type change operation failed. Please check the logs")
     } finally {
       // release lock after command execution completion
-      if (carbonLock != null) {
-        if (carbonLock.unlock()) {
-          LOGGER.info("Alter table change data type lock released successfully")
-        } else {
-          LOGGER.error("Unable to release lock during alter table change data type operation")
-        }
-      }
+      AlterTableUtil.releaseLocks(locks, LOGGER)
     }
     Seq.empty
   }

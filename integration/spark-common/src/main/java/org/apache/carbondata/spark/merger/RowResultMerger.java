@@ -18,12 +18,8 @@ package org.apache.carbondata.spark.merger;
 
 import java.io.File;
 import java.util.AbstractQueue;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.PriorityQueue;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -32,22 +28,11 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
-import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
@@ -57,15 +42,9 @@ import org.apache.carbondata.spark.merger.exeception.SliceMergerException;
 /**
  * This is the Merger class responsible for the merging of the segments.
  */
-public class RowResultMerger {
+public class RowResultMerger extends AbstractResultProcessor {
 
-  private final String databaseName;
-  private final String tableName;
-  private final String tempStoreLocation;
-  private final String factStoreLocation;
   private CarbonFactHandler dataHandler;
-  private List<RawResultIterator> rawResultIteratorList =
-      new ArrayList<RawResultIterator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   private SegmentProperties segprop;
   /**
    * record holder heap
@@ -77,78 +56,44 @@ public class RowResultMerger {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(RowResultMerger.class.getName());
 
-  public RowResultMerger(List<RawResultIterator> iteratorList, String databaseName,
+  public RowResultMerger(String databaseName,
       String tableName, SegmentProperties segProp, String tempStoreLocation,
       CarbonLoadModel loadModel, CompactionType compactionType) {
-
-    CarbonDataFileAttributes carbonDataFileAttributes;
-
-    this.rawResultIteratorList = iteratorList;
-    // create the List of RawResultIterator.
-
-    recordHolderHeap = new PriorityQueue<RawResultIterator>(rawResultIteratorList.size(),
-        new RowResultMerger.CarbonMdkeyComparator());
-
     this.segprop = segProp;
-    this.tempStoreLocation = tempStoreLocation;
-
-    this.factStoreLocation = loadModel.getStorePath();
-
     if (!new File(tempStoreLocation).mkdirs()) {
       LOGGER.error("Error while new File(tempStoreLocation).mkdirs() ");
     }
-
-    this.databaseName = databaseName;
-    this.tableName = tableName;
-
-    int measureCount = segprop.getMeasures().size();
     CarbonTable carbonTable = CarbonMetadata.getInstance()
             .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     CarbonFactDataHandlerModel carbonFactDataHandlerModel =
-        getCarbonFactDataHandlerModel(loadModel);
-    carbonFactDataHandlerModel.setPrimitiveDimLens(segprop.getDimColumnsCardinality());
-
-    if (compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
-      int taskNo = CarbonUpdateUtil.getLatestTaskIdForSegment(loadModel.getSegmentId(),
-          CarbonStorePath.getCarbonTablePath(loadModel.getStorePath(),
-              carbonTable.getCarbonTableIdentifier()));
-
-      // Increase the Task Index as in IUD_UPDDEL_DELTA_COMPACTION the new file will
-      // be written in same segment. So the TaskNo should be incremented by 1 from max val.
-      int index = taskNo + 1;
-      carbonDataFileAttributes = new CarbonDataFileAttributes(index, loadModel.getFactTimeStamp());
-    }
-    else {
-      carbonDataFileAttributes =
-          new CarbonDataFileAttributes(Integer.parseInt(loadModel.getTaskNo()),
-              loadModel.getFactTimeStamp());
-    }
-
-    carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
-    if (segProp.getNumberOfNoDictionaryDimension() > 0
-        || segProp.getComplexDimensions().size() > 0) {
-      carbonFactDataHandlerModel.setMdKeyIndex(measureCount + 1);
-    } else {
-      carbonFactDataHandlerModel.setMdKeyIndex(measureCount);
-    }
-    carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
+        getCarbonFactDataHandlerModel(loadModel, carbonTable, segProp, tableName,
+            tempStoreLocation);
+    setDataFileAttributesInModel(loadModel, compactionType, carbonTable,
+        carbonFactDataHandlerModel);
+    carbonFactDataHandlerModel.setCompactionFlow(true);
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
-
     tupleConvertor = new TupleConversionAdapter(segProp);
+  }
+
+  private void initRecordHolderHeap(List<RawResultIterator> rawResultIteratorList) {
+    // create the List of RawResultIterator.
+    recordHolderHeap = new PriorityQueue<RawResultIterator>(rawResultIteratorList.size(),
+        new RowResultMerger.CarbonMdkeyComparator());
   }
 
   /**
    * Merge function
    *
    */
-  public boolean mergerSlice() {
+  public boolean execute(List<RawResultIterator> resultIteratorList) {
+    initRecordHolderHeap(resultIteratorList);
     boolean mergeStatus = false;
     int index = 0;
     boolean isDataPresent = false;
     try {
 
       // add all iterators to the queue
-      for (RawResultIterator leaftTupleIterator : this.rawResultIteratorList) {
+      for (RawResultIterator leaftTupleIterator : resultIteratorList) {
         this.recordHolderHeap.add(leaftTupleIterator);
         index++;
       }
@@ -232,85 +177,6 @@ public class RowResultMerger {
     } catch (CarbonDataWriterException e) {
       throw new SliceMergerException("Problem in merging the slice", e);
     }
-  }
-
-  /**
-   * This method will create a model object for carbon fact data handler
-   *
-   * @param loadModel
-   * @return
-   */
-  private CarbonFactDataHandlerModel getCarbonFactDataHandlerModel(CarbonLoadModel loadModel) {
-    CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
-    carbonFactDataHandlerModel.setDatabaseName(databaseName);
-    carbonFactDataHandlerModel.setTableName(tableName);
-    carbonFactDataHandlerModel.setMeasureCount(segprop.getMeasures().size());
-    carbonFactDataHandlerModel.setCompactionFlow(true);
-    carbonFactDataHandlerModel
-        .setMdKeyLength(segprop.getDimensionKeyGenerator().getKeySizeInBytes());
-    carbonFactDataHandlerModel.setStoreLocation(tempStoreLocation);
-    carbonFactDataHandlerModel.setDimLens(segprop.getDimColumnsCardinality());
-    carbonFactDataHandlerModel.setSegmentProperties(segprop);
-    carbonFactDataHandlerModel.setNoDictionaryCount(segprop.getNumberOfNoDictionaryDimension());
-    carbonFactDataHandlerModel.setDimensionCount(
-        segprop.getDimensions().size() - carbonFactDataHandlerModel.getNoDictionaryCount());
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
-    List<ColumnSchema> wrapperColumnSchema = CarbonUtil
-        .getColumnSchemaList(carbonTable.getDimensionByTableName(tableName),
-            carbonTable.getMeasureByTableName(tableName));
-    carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
-    // get the cardinality for all all the columns including no dictionary columns
-    int[] formattedCardinality =
-        CarbonUtil.getFormattedCardinality(segprop.getDimColumnsCardinality(), wrapperColumnSchema);
-    carbonFactDataHandlerModel.setColCardinality(formattedCardinality);
-    //TO-DO Need to handle complex types here .
-    Map<Integer, GenericDataType> complexIndexMap =
-        new HashMap<Integer, GenericDataType>(segprop.getComplexDimensions().size());
-    carbonFactDataHandlerModel.setComplexIndexMap(complexIndexMap);
-    carbonFactDataHandlerModel.setDataWritingRequest(true);
-
-    char[] aggType = new char[segprop.getMeasures().size()];
-    Arrays.fill(aggType, 'n');
-    int i = 0;
-    for (CarbonMeasure msr : segprop.getMeasures()) {
-      aggType[i++] = DataTypeUtil.getAggType(msr.getDataType());
-    }
-    carbonFactDataHandlerModel.setAggType(aggType);
-    carbonFactDataHandlerModel.setFactDimLens(segprop.getDimColumnsCardinality());
-
-    String carbonDataDirectoryPath =
-        checkAndCreateCarbonStoreLocation(this.factStoreLocation, databaseName, tableName,
-            loadModel.getPartitionId(), loadModel.getSegmentId());
-    carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
-
-    List<CarbonDimension> dimensionByTableName =
-        loadModel.getCarbonDataLoadSchema().getCarbonTable().getDimensionByTableName(tableName);
-    boolean[] isUseInvertedIndexes = new boolean[dimensionByTableName.size()];
-    int index = 0;
-    for (CarbonDimension dimension : dimensionByTableName) {
-      isUseInvertedIndexes[index++] = dimension.isUseInvertedIndex();
-    }
-    carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndexes);
-    return carbonFactDataHandlerModel;
-  }
-
-  /**
-   * This method will get the store location for the given path, segment id and partition id
-   *
-   * @return data directory path
-   */
-  private String checkAndCreateCarbonStoreLocation(String factStoreLocation, String databaseName,
-      String tableName, String partitionId, String segmentId) {
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
-    CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(factStoreLocation, carbonTableIdentifier);
-    String carbonDataDirectoryPath =
-        carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
-    CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
-    return carbonDataDirectoryPath;
   }
 
   /**

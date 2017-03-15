@@ -22,9 +22,7 @@ import java.util.Iterator;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.IgnoreDictionary;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
@@ -50,8 +48,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private SegmentProperties segmentProperties;
 
-  private KeyGenerator keyGenerator;
-
   private int noDictionaryCount;
 
   private int complexDimensionCount;
@@ -59,12 +55,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
   private int measureCount;
 
   private long readCounter;
-
-  private int measureIndex = IgnoreDictionary.MEASURES_INDEX_IN_ROW.getIndex();
-
-  private int noDimByteArrayIndex = IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex();
-
-  private int dimsArrayIndex = IgnoreDictionary.DIMENSION_INDEX_IN_ROW.getIndex();
 
   public DataWriterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
@@ -101,8 +91,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       complexDimensionCount = configuration.getComplexDimensionCount();
       measureCount = dataHandlerModel.getMeasureCount();
       segmentProperties = dataHandlerModel.getSegmentProperties();
-      keyGenerator = segmentProperties.getDimensionKeyGenerator();
-
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
           .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
               System.currentTimeMillis());
@@ -183,27 +171,10 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       while (batch.hasNext()) {
         CarbonRow row = batch.next();
         readCounter++;
-        /*
-        * The order of the data is as follows,
-        * Measuredata, nodictionary/complex byte array data, dictionary(MDK generated key)
-        */
-        int len;
-        // adding one for the high cardinality dims byte array.
-        if (noDictionaryCount > 0 || complexDimensionCount > 0) {
-          len = measureCount + 1 + 1;
-        } else {
-          len = measureCount + 1;
-        }
-        Object[] outputRow = new Object[len];
-
-
-        int l = 0;
-        Object[] measures = row.getObjectArray(measureIndex);
-        for (int i = 0; i < measureCount; i++) {
-          outputRow[l++] = measures[i];
-        }
-        outputRow[l] = row.getObject(noDimByteArrayIndex);
-        outputRow[len - 1] = keyGenerator.generateKey(row.getIntArray(dimsArrayIndex));
+        // convert the row from surrogate key to MDKey
+        Object[] outputRow = CarbonDataProcessorUtil
+            .convertToMDKeyAndFillRow(row, segmentProperties, measureCount, noDictionaryCount,
+                complexDimensionCount);
         dataHandler.addDataToStore(outputRow);
       }
     } catch (Exception e) {
