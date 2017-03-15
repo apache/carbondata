@@ -33,7 +33,6 @@ import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
-import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -153,7 +152,6 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
   @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getActualQueryMeasures();
-    ByteArrayWrapper wrapper = null;
     BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
         scannedResult.getDeleteDeltaDataCache();
     // scan the record and add to list

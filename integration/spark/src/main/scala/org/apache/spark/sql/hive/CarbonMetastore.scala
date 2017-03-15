@@ -47,7 +47,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFa
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.spark.merger.TableMeta
+import org.apache.carbondata.processing.merger.TableMeta
 
 case class MetaData(var tablesMeta: ArrayBuffer[TableMeta])
 

@@ -46,11 +46,11 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, CarbonInputSplitTaskInfo}
+import org.apache.carbondata.processing.merger._
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark.MergeResult
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
-import org.apache.carbondata.spark.merger._
 import org.apache.carbondata.spark.splits.TableSplit
 
 class CarbonMergerRDD[K, V](
@@ -152,9 +152,14 @@ class CarbonMergerRDD[K, V](
           CarbonCompactionUtil.createDataFileFooterMappingForSegments(tableBlockInfoList)
 
         carbonLoadModel.setStorePath(hdfsStoreLocation)
-
+        // check for restructured block
+        // TODO: only in case of add and drop this variable should be true
+        val restructuredBlockExists: Boolean = CarbonCompactionUtil
+          .checkIfAnyRestructuredBlockExists(segmentMapping,
+            dataFileMetadataSegMapping,
+            carbonTable.getTableLastUpdatedTime)
         exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties,
-          carbonTable, dataFileMetadataSegMapping)
+          carbonTable, dataFileMetadataSegMapping, restructuredBlockExists)
 
         // fire a query and get the results.
         var result2: java.util.List[RawResultIterator] = null
@@ -190,17 +195,25 @@ class CarbonMergerRDD[K, V](
 
         carbonLoadModel.setSegmentId(mergeNumber)
         carbonLoadModel.setPartitionId("0")
-        val merger =
-          new RowResultMerger(result2,
-            databaseName,
-            factTableName,
+        var processor: AbstractResultProcessor = null
+        if (restructuredBlockExists) {
+          processor = new CompactionResultSortProcessor(carbonLoadModel, carbonTable,
             segmentProperties,
-            tempStoreLoc,
-            carbonLoadModel,
-            carbonMergerMapping.campactionType
+            carbonMergerMapping.campactionType,
+            factTableName
           )
-        mergeStatus = merger.mergerSlice()
-
+        } else {
+          processor =
+            new RowResultMergerProcessor(
+              databaseName,
+              factTableName,
+              segmentProperties,
+              tempStoreLoc,
+              carbonLoadModel,
+              carbonMergerMapping.campactionType
+            )
+        }
+        mergeStatus = processor.execute(result2)
         mergeResult = tableBlockInfoList.get(0).getSegmentId + ',' + mergeNumber
 
       } catch {

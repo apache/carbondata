@@ -382,7 +382,7 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test to check if the lock file is successfully deleted") {
-    sql("create table lock_check(id int, name string) stored by 'carbondata'")
+      sql("create table lock_check(id int, name string) stored by 'carbondata'")
     sql("alter table lock_check rename to lock_rename")
     assert(!new File(s"${ CarbonCommonConstants.STORE_LOCATION } + /default/lock_rename/meta.lock")
       .exists())

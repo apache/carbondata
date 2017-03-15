@@ -31,9 +31,9 @@ import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
+import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.MergeResult
-import org.apache.carbondata.spark.merger.CarbonDataMergerUtil
 
 /**
  * IUD carbon merger RDD

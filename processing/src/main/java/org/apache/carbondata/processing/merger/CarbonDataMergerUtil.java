@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.merger;
+package org.apache.carbondata.processing.merger;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,7 +55,6 @@ import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
-import org.apache.carbondata.spark.load.CarbonLoaderUtil;
 
 /**
  * utility class for load merging.
@@ -664,12 +663,27 @@ public final class CarbonDataMergerUtil {
    */
   private static long getSizeOfSegment(String storeLocation,
       CarbonTableIdentifier tableIdentifier, String segId) {
-    String loadPath = CarbonLoaderUtil
-        .getStoreLocation(storeLocation, tableIdentifier, segId);
+    String loadPath = getStoreLocation(storeLocation, tableIdentifier, segId);
     CarbonFile segmentFolder =
         FileFactory.getCarbonFile(loadPath, FileFactory.getFileType(loadPath));
     return getSizeOfFactFileInLoad(segmentFolder);
   }
+
+  /**
+   * This method will get the store location for the given path, segemnt id and partition id
+   *
+   * @param storePath
+   * @param carbonTableIdentifier
+   * @param segmentId
+   * @return
+   */
+  private static String getStoreLocation(String storePath,
+      CarbonTableIdentifier carbonTableIdentifier, String segmentId) {
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier);
+    return carbonTablePath.getCarbonDataDirectoryPath("0", segmentId);
+  }
+
 
   /**
    * Identify the segments to be merged based on the segment count

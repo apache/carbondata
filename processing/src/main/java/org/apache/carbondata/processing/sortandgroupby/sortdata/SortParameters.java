@@ -423,8 +423,7 @@ public class SortParameters {
 
   public static SortParameters createSortParameters(String databaseName, String tableName,
       int dimColCount, int complexDimColCount, int measureColCount, int noDictionaryCount,
-      String partitionID, String segmentId, String taskNo,
-      boolean[] noDictionaryColMaping) {
+      String partitionID, String segmentId, String taskNo, boolean[] noDictionaryColMaping) {
     SortParameters parameters = new SortParameters();
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
     parameters.setDatabaseName(databaseName);
