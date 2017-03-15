@@ -58,13 +58,17 @@ public class RestructureUtil {
    * @param tableComplexDimension
    * @return list of query dimension which is present in the table block
    */
-  public static List<QueryDimension> createDimensionInfoAndGetUpdatedQueryDimension(
+  public static List<QueryDimension> createDimensionInfoAndGetCurrentBlockQueryDimension(
       BlockExecutionInfo blockExecutionInfo, List<QueryDimension> queryDimensions,
       List<CarbonDimension> tableBlockDimensions, List<CarbonDimension> tableComplexDimension) {
     List<QueryDimension> presentDimension =
         new ArrayList<QueryDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     boolean[] isDimensionExists = new boolean[queryDimensions.size()];
     Object[] defaultValues = new Object[queryDimensions.size()];
+    // create dimension information instance
+    DimensionInfo dimensionInfo = new DimensionInfo(isDimensionExists, defaultValues);
+    int newDictionaryColumnCount = 0;
+    int newNoDictionaryColumnCount = 0;
     // selecting only those dimension which is present in the query
     int dimIndex = 0;
     for (QueryDimension queryDimension : queryDimensions) {
@@ -90,35 +94,43 @@ public class RestructureUtil {
             break;
           }
         }
+        // if dimension is found then no need to search in the complex dimensions list
+        if (isDimensionExists[dimIndex]) {
+          dimIndex++;
+          continue;
+        }
+        for (CarbonDimension tableDimension : tableComplexDimension) {
+          if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
+            QueryDimension currentBlockDimension = new QueryDimension(tableDimension.getColName());
+            // TODO: for complex dimension set scale and precision by traversing
+            // the child dimensions
+            currentBlockDimension.setDimension(tableDimension);
+            currentBlockDimension.setQueryOrder(queryDimension.getQueryOrder());
+            presentDimension.add(currentBlockDimension);
+            isDimensionExists[dimIndex] = true;
+            break;
+          }
+        }
         // add default value only in case query dimension is not found in the current block
         if (!isDimensionExists[dimIndex]) {
           defaultValues[dimIndex] = validateAndGetDefaultValue(queryDimension.getDimension());
           blockExecutionInfo.setRestructuredBlock(true);
+          // set the flag to say whether a new dictionary column or no dictionary column
+          // has been added. This will be useful after restructure for compaction scenarios where
+          // newly added columns data need to be filled
+          if (queryDimension.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+            dimensionInfo.setDictionaryColumnAdded(true);
+            newDictionaryColumnCount++;
+          } else {
+            dimensionInfo.setNoDictionaryColumnAdded(true);
+            newNoDictionaryColumnCount++;
+          }
         }
       }
       dimIndex++;
     }
-    dimIndex = 0;
-    for (QueryDimension queryDimension : queryDimensions) {
-      for (CarbonDimension tableDimension : tableComplexDimension) {
-        if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
-          QueryDimension currentBlockDimension = new QueryDimension(tableDimension.getColName());
-          currentBlockDimension.setDimension(tableDimension);
-          currentBlockDimension.setQueryOrder(queryDimension.getQueryOrder());
-          presentDimension.add(currentBlockDimension);
-          isDimensionExists[dimIndex] = true;
-          break;
-        }
-      }
-      // add default value only in case query dimension is not found in the current block
-      if (!isDimensionExists[dimIndex]) {
-        defaultValues[dimIndex] =
-            validateAndGetDefaultValue(queryDimension.getDimension());
-      }
-      dimIndex++;
-    }
-    DimensionInfo dimensionInfo =
-        new DimensionInfo(isDimensionExists, defaultValues);
+    dimensionInfo.setNewDictionaryColumnCount(newDictionaryColumnCount);
+    dimensionInfo.setNewNoDictionaryColumnCount(newNoDictionaryColumnCount);
     blockExecutionInfo.setDimensionInfo(dimensionInfo);
     return presentDimension;
   }
@@ -300,7 +312,7 @@ public class RestructureUtil {
    * @param currentBlockMeasures current block measures
    * @return measures present in the block
    */
-  public static List<QueryMeasure> createMeasureInfoAndGetUpdatedQueryMeasures(
+  public static List<QueryMeasure> createMeasureInfoAndGetCurrentBlockQueryMeasures(
       BlockExecutionInfo blockExecutionInfo, List<QueryMeasure> queryMeasures,
       List<CarbonMeasure> currentBlockMeasures) {
     MeasureInfo measureInfo = new MeasureInfo();

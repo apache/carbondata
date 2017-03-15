@@ -34,6 +34,28 @@ public class DimensionInfo {
   private Object[] defaultValues;
 
   /**
+   * flag to check whether there exist a dictionary column in the query which
+   * does not exist in the current block
+   */
+  private boolean isDictionaryColumnAdded;
+
+  /**
+   * flag to check whether there exist a no dictionary column in the query which
+   * does not exist in the current block
+   */
+  private boolean isNoDictionaryColumnAdded;
+
+  /**
+   * count of dictionary column not existing in the current block
+   */
+  private int newDictionaryColumnCount;
+
+  /**
+   * count of no dictionary columns not existing in the current block
+   */
+  private int newNoDictionaryColumnCount;
+
+  /**
    * @param dimensionExists
    * @param defaultValues
    */
@@ -54,5 +76,37 @@ public class DimensionInfo {
    */
   public Object[] getDefaultValues() {
     return defaultValues;
+  }
+
+  public boolean isDictionaryColumnAdded() {
+    return isDictionaryColumnAdded;
+  }
+
+  public void setDictionaryColumnAdded(boolean dictionaryColumnAdded) {
+    isDictionaryColumnAdded = dictionaryColumnAdded;
+  }
+
+  public boolean isNoDictionaryColumnAdded() {
+    return isNoDictionaryColumnAdded;
+  }
+
+  public void setNoDictionaryColumnAdded(boolean noDictionaryColumnAdded) {
+    isNoDictionaryColumnAdded = noDictionaryColumnAdded;
+  }
+
+  public int getNewDictionaryColumnCount() {
+    return newDictionaryColumnCount;
+  }
+
+  public void setNewDictionaryColumnCount(int newDictionaryColumnCount) {
+    this.newDictionaryColumnCount = newDictionaryColumnCount;
+  }
+
+  public int getNewNoDictionaryColumnCount() {
+    return newNoDictionaryColumnCount;
+  }
+
+  public void setNewNoDictionaryColumnCount(int newNoDictionaryColumnCount) {
+    this.newNoDictionaryColumnCount = newNoDictionaryColumnCount;
   }
 }

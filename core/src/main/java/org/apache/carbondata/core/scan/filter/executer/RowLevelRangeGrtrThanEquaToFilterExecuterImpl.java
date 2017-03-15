@@ -29,6 +29,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
+import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -53,13 +54,13 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier, segmentProperties,
         null);
     this.filterRangeValues = filterRangeValues;
-    checkIfDefaultValueIsPresentInFilterList();
+    ifDefaultValueMatchesFilter();
   }
 
   /**
    * This method will check whether default value is present in the given filter values
    */
-  private void checkIfDefaultValueIsPresentInFilterList() {
+  private void ifDefaultValueMatchesFilter() {
     if (!this.isDimensionPresentInCurrentBlock[0]) {
       CarbonDimension dimension = this.dimColEvaluatorInfoList.get(0).getDimension();
       byte[] defaultValue = dimension.getDefaultValue();
@@ -111,7 +112,10 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       throws FilterUnsupportedException, IOException {
     // select all rows if dimension does not exists in the current block
     if (!isDimensionPresentInCurrentBlock[0]) {
-      return getDefaultBitSetGroup(blockChunkHolder.getDataBlock().nodeSize());
+      int numberOfRows = blockChunkHolder.getDataBlock().nodeSize();
+      return FilterUtil
+          .createBitSetGroupWithDefaultValue(blockChunkHolder.getDataBlock().numberOfPages(),
+              numberOfRows, true);
     }
     if (!dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
       return super.applyFilter(blockChunkHolder);

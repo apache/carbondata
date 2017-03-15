@@ -43,7 +43,6 @@ import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.CarbonUtil;
 
 public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverImpl {
 
@@ -80,9 +79,8 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
       return noDictFilterValuesList.toArray((new byte[noDictFilterValuesList.size()][]));
     } else if (null != dimColEvaluatorInfoList.get(0).getFilterValues() && dimColEvaluatorInfoList
         .get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-      CarbonDimension dimensionFromCurrentBlock = CarbonUtil
-          .getDimensionFromCurrentBlock(segmentProperties.getDimensions(),
-              this.dimColEvaluatorInfoList.get(0).getDimension());
+      CarbonDimension dimensionFromCurrentBlock = segmentProperties
+          .getDimensionFromCurrentBlock(this.dimColEvaluatorInfoList.get(0).getDimension());
       if (null != dimensionFromCurrentBlock) {
         return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(),
             dimensionFromCurrentBlock, segmentProperties);

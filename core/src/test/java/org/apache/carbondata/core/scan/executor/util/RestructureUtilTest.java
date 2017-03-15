@@ -21,7 +21,6 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.infos.MeasureInfo;
 import org.apache.carbondata.core.scan.model.QueryDimension;
@@ -87,7 +86,7 @@ public class RestructureUtilTest {
 
     List<QueryDimension> result = null;
     result = RestructureUtil
-        .createDimensionInfoAndGetUpdatedQueryDimension(blockExecutionInfo, queryDimensions,
+        .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo, queryDimensions,
             tableBlockDimensions, tableComplexDimensions);
     List<CarbonDimension> resultDimension = new ArrayList<>(result.size());
     for (QueryDimension queryDimension : result) {
@@ -125,7 +124,7 @@ public class RestructureUtilTest {
     queryMeasure3.setMeasure(carbonMeasure3);
     List<QueryMeasure> queryMeasures = Arrays.asList(queryMeasure1, queryMeasure2, queryMeasure3);
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
-    RestructureUtil.createMeasureInfoAndGetUpdatedQueryMeasures(blockExecutionInfo, queryMeasures,
+    RestructureUtil.createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo, queryMeasures,
         currentBlockMeasures);
     MeasureInfo measureInfo = blockExecutionInfo.getMeasureInfo();
     boolean[] measuresExist = { true, true, false };

@@ -147,20 +147,18 @@ public final class DataLoadProcessBuilder {
     // First add dictionary and non dictionary dimensions because these are part of mdk key.
     // And then add complex data types and measures.
     for (CarbonColumn column : dimensions) {
-      if (!column.isInvisible()) {
-        DataField dataField = new DataField(column);
-        dataField.setDateFormat(dateFormatMap.get(column.getColName()));
-        if (column.isComplex()) {
-          complexDataFields.add(dataField);
-        } else {
-          dataFields.add(dataField);
-        }
+      DataField dataField = new DataField(column);
+      dataField.setDateFormat(dateFormatMap.get(column.getColName()));
+      if (column.isComplex()) {
+        complexDataFields.add(dataField);
+      } else {
+        dataFields.add(dataField);
       }
     }
     dataFields.addAll(complexDataFields);
     for (CarbonColumn column : measures) {
       // This dummy measure is added when no measure was present. We no need to load it.
-      if (!column.isInvisible() && !(column.getColName().equals("default_dummy_measure"))) {
+      if (!(column.getColName().equals("default_dummy_measure"))) {
         dataFields.add(new DataField(column));
       }
     }

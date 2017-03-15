@@ -124,9 +124,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   private void initDimensionBlockIndexes() {
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
       // find the dimension in the current block dimensions list
-      CarbonDimension dimensionFromCurrentBlock = CarbonUtil
-          .getDimensionFromCurrentBlock(segmentProperties.getDimensions(),
-              dimColEvaluatorInfoList.get(i).getDimension());
+      CarbonDimension dimensionFromCurrentBlock = segmentProperties
+          .getDimensionFromCurrentBlock(dimColEvaluatorInfoList.get(i).getDimension());
       if (null != dimensionFromCurrentBlock) {
         dimColEvaluatorInfoList.get(i).setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
         this.dimensionBlocksIndex[i] = segmentProperties.getDimensionOrdinalToBlockMapping()
@@ -143,9 +142,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   private void initMeasureBlockIndexes() {
     for (int i = 0; i < msrColEvalutorInfoList.size(); i++) {
       // find the measure in the current block measures list
-      CarbonMeasure measureFromCurrentBlock = CarbonUtil
-          .getMeasureFromCurrentBlock(segmentProperties.getMeasures(),
-              msrColEvalutorInfoList.get(i).getCarbonColumn().getColumnId());
+      CarbonMeasure measureFromCurrentBlock = segmentProperties.getMeasureFromCurrentBlock(
+          msrColEvalutorInfoList.get(i).getCarbonColumn().getColumnId());
       if (null != measureFromCurrentBlock) {
         msrColEvalutorInfoList.get(i).setColumnIndex(measureFromCurrentBlock.getOrdinal());
         this.measureBlocksIndex[i] = segmentProperties.getMeasuresOrdinalToBlockMapping()
@@ -248,8 +246,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
               memberBytes = null;
             }
             record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
-                .getDataBasedOnDataType(memberBytes,
-                    dimColumnEvaluatorInfo.getDimension().getDataType());
+                .getDataBasedOnDataType(memberBytes, dimColumnEvaluatorInfo.getDimension());
           } else {
             continue;
           }
@@ -461,20 +458,6 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     BitSet bitSet = new BitSet(1);
     bitSet.set(0);
     return bitSet;
-  }
-
-  /**
-   * This method will set the bitset to true by default for a given number of rows
-   *
-   * @param numberOfRows
-   * @return
-   */
-  protected BitSetGroup getDefaultBitSetGroup(int numberOfRows) {
-    BitSetGroup bitSetGroup = new BitSetGroup(1);
-    BitSet bitSet = new BitSet(numberOfRows);
-    bitSet.set(0, numberOfRows, true);
-    bitSetGroup.setBitSet(bitSet, 0);
-    return bitSetGroup;
   }
 
   @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {

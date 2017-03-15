@@ -186,11 +186,9 @@ public class CarbonCompactionExecutor {
         carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
     for (CarbonDimension dim : dimensions) {
       // check if dimension is deleted
-      if (!dim.isInvisible()) {
-        QueryDimension queryDimension = new QueryDimension(dim.getColName());
-        queryDimension.setDimension(dim);
-        dims.add(queryDimension);
-      }
+      QueryDimension queryDimension = new QueryDimension(dim.getColName());
+      queryDimension.setDimension(dim);
+      dims.add(queryDimension);
     }
     model.setQueryDimension(dims);
 
@@ -199,11 +197,9 @@ public class CarbonCompactionExecutor {
         carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
     for (CarbonMeasure carbonMeasure : measures) {
       // check if measure is deleted
-      if (!carbonMeasure.isInvisible()) {
-        QueryMeasure queryMeasure = new QueryMeasure(carbonMeasure.getColName());
-        queryMeasure.setMeasure(carbonMeasure);
-        msrs.add(queryMeasure);
-      }
+      QueryMeasure queryMeasure = new QueryMeasure(carbonMeasure.getColName());
+      queryMeasure.setMeasure(carbonMeasure);
+      msrs.add(queryMeasure);
     }
     model.setQueryMeasures(msrs);
     model.setQueryId(System.nanoTime() + "");

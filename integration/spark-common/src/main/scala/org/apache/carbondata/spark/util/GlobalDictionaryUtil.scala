@@ -22,6 +22,7 @@ import java.nio.charset.Charset
 import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 import scala.language.implicitConversions
 import scala.util.control.Breaks.{break, breakable}
@@ -59,6 +60,7 @@ import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.rdd._
+import org.apache.carbondata.spark.tasks.{DictionaryWriterTask, SortIndexWriterTask}
 
 /**
  * A object which provide a method to generate global dictionary from CSV files.
@@ -814,22 +816,20 @@ object GlobalDictionaryUtil {
       val columnIdentifier = new ColumnIdentifier(columnSchema.getColumnUniqueId,
         null,
         columnSchema.getDataType)
-      val writer = CarbonCommonFactory.getDictionaryService
-        .getDictionaryWriter(tableIdentifier, columnIdentifier, storePath)
-
-      val distinctValues: java.util.List[String] = new java.util.ArrayList()
-      writer.write(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
-      distinctValues.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
-
       val parsedValue = DataTypeUtil.normalizeColumnValueForItsDataType(defaultValue, columnSchema)
+      val valuesBuffer = new mutable.HashSet[String]
       if (null != parsedValue) {
-        writer.write(parsedValue)
-        distinctValues.add(parsedValue)
+        valuesBuffer += parsedValue
       }
-      if (null != writer) {
-        writer.close()
-      }
-
+      val dictWriteTask = new DictionaryWriterTask(valuesBuffer,
+        dictionary,
+        tableIdentifier,
+        columnIdentifier,
+        storePath,
+        columnSchema,
+        false
+      )
+      val distinctValues = dictWriteTask.execute
       LOGGER.info(s"Dictionary file writing is successful for new column ${
         columnSchema.getColumnName
       }")
@@ -840,17 +840,13 @@ object GlobalDictionaryUtil {
           storePath,
           columnSchema.getDataType
         )
-        val preparator: CarbonDictionarySortInfoPreparator = new CarbonDictionarySortInfoPreparator
-        val dictService = CarbonCommonFactory.getDictionaryService
-        val dictionarySortInfo: CarbonDictionarySortInfo =
-          preparator.getDictionarySortInfo(distinctValues, dictionary,
-            columnSchema.getDataType)
-        carbonDictionarySortIndexWriter =
-          dictService.getDictionarySortIndexWriter(tableIdentifier, columnIdentifier,
-            storePath)
-        carbonDictionarySortIndexWriter.writeSortIndex(dictionarySortInfo.getSortIndex)
-        carbonDictionarySortIndexWriter
-          .writeInvertedSortIndex(dictionarySortInfo.getSortIndexInverted)
+        val sortIndexWriteTask = new SortIndexWriterTask(tableIdentifier,
+          columnIdentifier,
+          columnSchema.getDataType,
+          storePath,
+          dictionary,
+          distinctValues)
+        sortIndexWriteTask.execute()
       }
 
       if (null != carbonDictionarySortIndexWriter) {
@@ -861,9 +857,8 @@ object GlobalDictionaryUtil {
         columnSchema.getColumnName
       }")
 
-      if (null != writer) {
-        writer.commit()
-      }
+      // After sortIndex writing, update dictionaryMeta
+      dictWriteTask.updateMetaData()
 
       LOGGER.info(s"Dictionary meta file writing is successful for new column ${
         columnSchema.getColumnName

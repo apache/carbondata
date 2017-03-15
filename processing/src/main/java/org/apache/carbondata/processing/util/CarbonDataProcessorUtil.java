@@ -402,15 +402,11 @@ public final class CarbonDataProcessorUtil {
       List<CarbonDimension> dimensions =
           schema.getCarbonTable().getDimensionByTableName(factTableName);
       for (CarbonDimension dimension : dimensions) {
-        if (!dimension.isInvisible()) {
-          columnNames.add(dimension.getColName());
-        }
+        columnNames.add(dimension.getColName());
       }
       List<CarbonMeasure> measures = schema.getCarbonTable().getMeasureByTableName(factTableName);
       for (CarbonMeasure msr : measures) {
-        if (!msr.getColumnSchema().isInvisible()) {
-          columnNames.add(msr.getColName());
-        }
+        columnNames.add(msr.getColName());
       }
     } else {
       List<CarbonDimension> dimensions = schema.getCarbonTable().getDimensionByTableName(tableName);
