@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.scan.filter.resolver.resolverinfo.visitor;
 
 import java.util.ArrayList;
@@ -21,42 +22,51 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
+import org.apache.carbondata.core.scan.expression.logical.RangeExpression;
 import org.apache.carbondata.core.scan.filter.DimColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
-import org.apache.carbondata.core.util.CarbonProperties;
 
-public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorIntf {
+public class RangeDirectDictionaryVisitor extends CustomTypeDictionaryVisitor
+    implements ResolvedFilterInfoVisitorIntf {
 
   /**
-   * This Visitor method is been used to resolve or populate the filter details
-   * by using custom type dictionary value, the filter membrers will be resolved using
-   * custom type function which will generate dictionary for the direct column type filter members
+   * This Visitor method is used to populate the visitableObj with direct dictionary filter details
+   * where the filters values will be resolve using dictionary cache.
    *
    * @param visitableObj
    * @param metadata
    * @throws FilterUnsupportedException,if exception occurs while evaluating
-   *                                       filter models.
+   * filter models.
+   * @throws IOException
+   * @throws FilterUnsupportedException
    */
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
     DimColumnFilterInfo resolvedFilterObject = null;
-
-    List<String> evaluateResultListFinal;
+    List<ExpressionResult> listOfExpressionResults = new ArrayList<ExpressionResult>(20);
+    List<String> evaluateResultListFinal = new ArrayList<String>();
     try {
-      evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
+      listOfExpressionResults = ((RangeExpression) metadata.getExpression()).getLiterals();
+
+      for (ExpressionResult result : listOfExpressionResults) {
+        if (result.getString() == null) {
+          evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
+          continue;
+        }
+        evaluateResultListFinal.add(result.getString());
+      }
     } catch (FilterIllegalMemberException e) {
       throw new FilterUnsupportedException(e);
     }
+
     resolvedFilterObject = getDirectDictionaryValKeyMemberForFilter(metadata.getColumnExpression(),
         evaluateResultListFinal, metadata.isIncludeFilter(),
         metadata.getColumnExpression().getDimension().getDataType());
+
     if (!metadata.isIncludeFilter() && null != resolvedFilterObject && !resolvedFilterObject
         .getFilterList().contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
       // Adding default surrogate key of null member inorder to not display the same while
@@ -66,44 +76,5 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
       Collections.sort(resolvedFilterObject.getFilterList());
     }
     visitableObj.setFilterValues(resolvedFilterObject);
-  }
-
-  protected DimColumnFilterInfo getDirectDictionaryValKeyMemberForFilter(
-      ColumnExpression columnExpression, List<String> evaluateResultListFinal,
-      boolean isIncludeFilter, DataType dataType) {
-    List<Integer> surrogates = new ArrayList<Integer>(20);
-    DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
-        .getDirectDictionaryGenerator(columnExpression.getDimension().getDataType());
-    // Reading the dictionary value direct
-    getSurrogateValuesForDictionary(evaluateResultListFinal, surrogates, directDictionaryGenerator,
-        dataType);
-
-    Collections.sort(surrogates);
-    DimColumnFilterInfo columnFilterInfo = null;
-    if (surrogates.size() > 0) {
-      columnFilterInfo = new DimColumnFilterInfo();
-      columnFilterInfo.setIncludeFilter(isIncludeFilter);
-      columnFilterInfo.setFilterList(surrogates);
-    }
-    return columnFilterInfo;
-  }
-
-  private void getSurrogateValuesForDictionary(List<String> evaluateResultListFinal,
-      List<Integer> surrogates, DirectDictionaryGenerator directDictionaryGenerator,
-      DataType dataType) {
-    String timeFormat = null;
-    if (dataType == DataType.DATE) {
-      timeFormat = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-              CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
-    } else {
-      timeFormat = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-    }
-    for (String filterMember : evaluateResultListFinal) {
-      surrogates
-          .add(directDictionaryGenerator.generateDirectSurrogateKey(filterMember, timeFormat));
-    }
   }
 }

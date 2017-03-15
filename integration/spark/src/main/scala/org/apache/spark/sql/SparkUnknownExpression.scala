@@ -22,7 +22,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericMutableRow}
 
-import org.apache.carbondata.core.scan.expression.{ColumnExpression, ExpressionResult, UnknownExpression}
+import org.apache.carbondata.core.scan.expression.{ColumnExpression, Expression, ExpressionResult, UnknownExpression}
 import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpression
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException
 import org.apache.carbondata.core.scan.filter.intf.{ExpressionType, RowIntf}
@@ -70,6 +70,8 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
     this.evaluateExpression = evaluateExpression
     isExecutor = true
   }
+
+  override def findAndSetChild(oldExpr: Expression, newExpr: Expression): Unit = {}
 
   def getColumnList: java.util.List[ColumnExpression] = {
 

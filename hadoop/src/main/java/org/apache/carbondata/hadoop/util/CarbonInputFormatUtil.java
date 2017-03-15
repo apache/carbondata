@@ -26,6 +26,9 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
+import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
+import org.apache.carbondata.core.scan.filter.intf.FilterOptimizerBasic;
+import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.core.scan.model.QueryDimension;
@@ -102,6 +105,13 @@ public class CarbonInputFormatUtil {
     List<CarbonMeasure> measures =
         carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
     QueryModel.processFilterExpression(filterExpression, dimensions, measures);
+
+    if (null != filterExpression) {
+      // Optimize Filter Expression and fit RANGE filters is conditions apply.
+      FilterOptimizer rangeFilterOptimizer =
+          new RangeFilterOptmizer(new FilterOptimizerBasic(), filterExpression);
+      rangeFilterOptimizer.optimizeFilter();
+    }
   }
 
   /**

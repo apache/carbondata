@@ -38,6 +38,7 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
 
   override def beforeAll {
     try {
+      sql("drop table if exists directDictionaryTable")
       CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "true")
       sql(
         """
@@ -49,6 +50,7 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
       val csvFilePath = s"$resourcesPath/datasample.csv"
+      println(csvFilePath)
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable OPTIONS"
         + "('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
     } catch {
@@ -60,6 +62,7 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
   }
 
   test("select doj from directDictionaryTable") {
+    sql("select doj from directDictionaryTable").show()
     checkAnswer(
       sql("select doj from directDictionaryTable"),
       Seq(Row(Date.valueOf("2016-03-14")),
@@ -71,6 +74,7 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
 
 
   test("select doj from directDictionaryTable with equals filter") {
+    sql("select doj from directDictionaryTable where doj='2016-03-14 15:00:09'").show()
     checkAnswer(
       sql("select doj from directDictionaryTable where doj='2016-03-14'"),
       Seq(Row(Date.valueOf("2016-03-14")))
@@ -79,6 +83,7 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
   }
 
   test("select doj from directDictionaryTable with greater than filter") {
+    sql("select doj from directDictionaryTable where doj>'2016-03-14 15:00:09'").show()
     checkAnswer(
       sql("select doj from directDictionaryTable where doj>'2016-03-14 15:00:09'"),
       Seq(Row(Date.valueOf("2016-04-14")))

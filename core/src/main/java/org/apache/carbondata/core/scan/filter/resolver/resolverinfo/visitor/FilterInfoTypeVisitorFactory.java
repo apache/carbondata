@@ -18,6 +18,8 @@ package org.apache.carbondata.core.scan.filter.resolver.resolverinfo.visitor;
 
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.logical.RangeExpression;
 
 public class FilterInfoTypeVisitorFactory {
 
@@ -29,15 +31,25 @@ public class FilterInfoTypeVisitorFactory {
    * @return
    */
   public static ResolvedFilterInfoVisitorIntf getResolvedFilterInfoVisitor(
-      ColumnExpression columnExpression) {
-    if (columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-      return new CustomTypeDictionaryVisitor();
-    } else if (!columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {
-      return new NoDictionaryTypeVisitor();
-    } else if (columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {
-      return new DictionaryColumnVisitor();
+      ColumnExpression columnExpression, Expression exp) {
+    if (exp instanceof RangeExpression) {
+      if (columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        return new RangeDirectDictionaryVisitor();
+      } else if (!columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+        return new RangeNoDictionaryTypeVisitor();
+      } else if (columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+        return new RangeDictionaryColumnVisitor();
+      }
     }
-
+    else {
+      if (columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        return new CustomTypeDictionaryVisitor();
+      } else if (!columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+        return new NoDictionaryTypeVisitor();
+      } else if (columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+        return new DictionaryColumnVisitor();
+      }
+    }
     return null;
   }
 }

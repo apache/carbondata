@@ -42,6 +42,13 @@ public abstract class Expression implements Serializable {
     return children;
   }
 
+  /**
+   * This method finds the Expression pointed by oldExpr and replace it with newExpr.
+   * @param oldExpr
+   * @param newExpr
+   */
+  public abstract void findAndSetChild(Expression oldExpr, Expression newExpr);
+
   public abstract String getString();
 
 }
