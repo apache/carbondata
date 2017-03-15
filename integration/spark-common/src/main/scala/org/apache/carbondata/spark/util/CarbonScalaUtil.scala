@@ -20,11 +20,8 @@ package org.apache.carbondata.spark.util
 import java.io.File
 import java.text.SimpleDateFormat
 
-import org.apache.spark.SparkConf
 import org.apache.spark.sql._
 import org.apache.spark.sql.execution.command.DataTypeInfo
-import org.apache.spark.sql.hive.HiveExternalCatalog._
-import org.apache.spark.sql.internal.StaticSQLConf._
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -269,46 +266,5 @@ object CarbonScalaUtil {
               .getDataType.getName
           } cannot be modified. Only Int and Decimal data types are allowed for modification")
     }
-  }
-
-  /**
-   * This method will create a copy of the same object
-   *
-   * @param thriftColumnSchema object to be cloned
-   * @return
-   */
-  def createColumnSchemaCopyObject(thriftColumnSchema: org.apache.carbondata.format.ColumnSchema)
-  : org.apache.carbondata.format.ColumnSchema = {
-    val columnSchema = new org.apache.carbondata.format.ColumnSchema
-    columnSchema.column_group_id = thriftColumnSchema.column_group_id
-    columnSchema.column_name = thriftColumnSchema.column_name
-    columnSchema.columnProperties = thriftColumnSchema.columnProperties
-    columnSchema.columnReferenceId = thriftColumnSchema.columnReferenceId
-    columnSchema.column_id = thriftColumnSchema.column_id
-    columnSchema.data_type = thriftColumnSchema.data_type
-    columnSchema.default_value = thriftColumnSchema.default_value
-    columnSchema.encoders = thriftColumnSchema.encoders
-    columnSchema.invisible = thriftColumnSchema.invisible
-    columnSchema.columnar = thriftColumnSchema.columnar
-    columnSchema.dimension = thriftColumnSchema.dimension
-    columnSchema.num_child = thriftColumnSchema.num_child
-    columnSchema.precision = thriftColumnSchema.precision
-    columnSchema.scale = thriftColumnSchema.scale
-    columnSchema.schemaOrdinal = thriftColumnSchema.schemaOrdinal
-    columnSchema
-  }
-
-  def prepareSchemaJsonForAlterTable(sparkConf: SparkConf, schemaJsonString: String): String = {
-    val threshold = sparkConf
-      .getInt(CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD,
-        CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT)
-    // Split the JSON string.
-    val parts = schemaJsonString.grouped(threshold).toSeq
-    var schemaParts: Seq[String] = Seq.empty
-    schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_NUMPARTS'='${ parts.size }'"
-    parts.zipWithIndex.foreach { case (part, index) =>
-      schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_PART_PREFIX$index'='$part'"
-    }
-    schemaParts.mkString(",")
   }
 }
