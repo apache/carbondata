@@ -29,6 +29,7 @@ import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.util.InputMetricsStats
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.block.Distributable
@@ -52,7 +53,8 @@ class CarbonScanRDD(
     columnProjection: CarbonProjection,
     filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
-    @transient carbonTable: CarbonTable)
+    @transient carbonTable: CarbonTable,
+    inputMetricsStats: InputMetricsStats)
   extends RDD[InternalRow](sc, Nil) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
@@ -183,6 +185,7 @@ class CarbonScanRDD(
     val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
     val format = prepareInputFormatForExecutor(attemptContext.getConfiguration)
     val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
+    inputMetricsStats.initBytesReadCallback(context, inputSplit)
     val iterator = if (inputSplit.getAllSplits.size() > 0) {
       val model = format.getQueryModel(inputSplit, attemptContext)
       val reader = {
@@ -210,6 +213,7 @@ class CarbonScanRDD(
       context.addTaskCompletionListener { context =>
         logStatistics(queryStartTime, count, model.getStatisticsRecorder)
         reader.close()
+        close()
       }
 
         override def hasNext: Boolean = {
@@ -230,10 +234,17 @@ class CarbonScanRDD(
           if (!hasNext) {
             throw new java.util.NoSuchElementException("End of stream")
           }
+          if (!finished) {
+            inputMetricsStats.incrementRecordRead(1)
+          }
           havePair = false
           val value = reader.getCurrentValue
           count += 1
           value
+        }
+        private def close() {
+          val carbonSplit = split.asInstanceOf[CarbonSparkPartition]
+          inputMetricsStats.updateBytesRead(carbonSplit.split)
         }
       }
     } else {
