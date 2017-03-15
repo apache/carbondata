@@ -23,6 +23,7 @@ import scala.collection.JavaConversions._
 
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
+import org.apache.spark.sql.hive.HiveExternalCatalog
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.{DataFrame, Row}
 
@@ -38,6 +39,8 @@ class QueryTest extends PlanTest {
   Locale.setDefault(Locale.US)
 
   val sqlContext = TestQueryExecutor.INSTANCE.sqlContext
+
+  val hiveClient = sqlContext.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client
 
   val resourcesPath = TestQueryExecutor.resourcesPath
 

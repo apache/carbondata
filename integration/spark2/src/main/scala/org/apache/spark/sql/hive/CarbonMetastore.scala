@@ -301,7 +301,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
   }
 
   /**
-   * This method will overwrite the existing schema and update it with the gievn details
+   * This method will overwrite the existing schema and update it with the given details
    *
    * @param carbonTableIdentifier
    * @param thriftTableInfo
@@ -326,6 +326,34 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
       carbonTableIdentifier.getDatabaseName,
       carbonTableIdentifier.getTableName)(sparkSession)
   }
+
+  /**
+   * This method will is used to remove the evolution entry in case of failure.
+   *
+   * @param carbonTableIdentifier
+   * @param thriftTableInfo
+   * @param carbonStorePath
+   * @param sparkSession
+   */
+  def revertTableSchema(carbonTableIdentifier: CarbonTableIdentifier,
+      thriftTableInfo: org.apache.carbondata.format.TableInfo,
+      carbonStorePath: String)
+    (sparkSession: SparkSession): String = {
+    val schemaConverter = new ThriftWrapperSchemaConverterImpl
+    val wrapperTableInfo = schemaConverter
+      .fromExternalToWrapperTableInfo(thriftTableInfo,
+        carbonTableIdentifier.getDatabaseName,
+        carbonTableIdentifier.getTableName,
+        carbonStorePath)
+    val evolutionEntries = thriftTableInfo.fact_table.schema_evolution.schema_evolution_history
+    evolutionEntries.remove(evolutionEntries.size() - 1)
+    createSchemaThriftFile(wrapperTableInfo,
+      thriftTableInfo,
+      carbonTableIdentifier.getDatabaseName,
+      carbonTableIdentifier.getTableName)(sparkSession)
+  }
+
+
 
   /**
    *

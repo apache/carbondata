@@ -573,10 +573,10 @@ public final class DataTypeUtil {
    * Below method will be used to convert the data into byte[]
    *
    * @param data
-   * @param actualDataType actual data type
+   * @param ColumnSchema
    * @return actual data in byte[]
    */
-  public static byte[] convertDataToBytesBasedOnDataType(String data, DataType actualDataType) {
+  public static byte[] convertDataToBytesBasedOnDataType(String data, ColumnSchema columnSchema) {
     if (null == data) {
       return null;
     } else if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
@@ -585,7 +585,7 @@ public final class DataTypeUtil {
     }
     try {
       long parsedIntVal = 0;
-      switch (actualDataType) {
+      switch (columnSchema.getDataType()) {
         case INT:
           parsedIntVal = (long) Integer.parseInt(data);
           return String.valueOf(parsedIntVal)
@@ -602,13 +602,17 @@ public final class DataTypeUtil {
               .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         case DATE:
         case TIMESTAMP:
-          DirectDictionaryGenerator directDictionaryGenerator =
-              DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(actualDataType);
+          DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+              .getDirectDictionaryGenerator(columnSchema.getDataType());
           int value = directDictionaryGenerator.generateDirectSurrogateKey(data);
           return String.valueOf(value)
               .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         case DECIMAL:
-          java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data);
+          String parsedValue = parseStringToBigDecimal(data, columnSchema);
+          if (null == parsedValue) {
+            return null;
+          }
+          java.math.BigDecimal javaDecVal = new java.math.BigDecimal(parsedValue);
           return bigDecimalToByte(javaDecVal);
         default:
           return UTF8String.fromString(data).getBytes();
