@@ -813,7 +813,7 @@ case class CarbonRelation(
     val sett = new LinkedHashSet(
       tableMeta.carbonTable.getDimensionByTableName(tableMeta.carbonTableIdentifier.getTableName)
         .asScala.asJava)
-    sett.asScala.toSeq.filter(!_.getColumnSchema.isInvisible).map(dim => {
+    sett.asScala.toSeq.map(dim => {
       val dimval = metaData.carbonTable
         .getDimensionByName(metaData.carbonTable.getFactTableName, dim.getColName)
       val output: DataType = dimval.getDataType
@@ -839,7 +839,7 @@ case class CarbonRelation(
     new LinkedHashSet(
       tableMeta.carbonTable.
         getMeasureByTableName(tableMeta.carbonTable.getFactTableName).
-        asScala.asJava).asScala.toSeq.filter(!_.getColumnSchema.isInvisible)
+        asScala.asJava).asScala.toSeq
       .map(x => AttributeReference(x.getColName, CarbonMetastoreTypes.toDataType(
         metaData.carbonTable.getMeasureByName(factTable, x.getColName).getDataType.toString
           .toLowerCase match {

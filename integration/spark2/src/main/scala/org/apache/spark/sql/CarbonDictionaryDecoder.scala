@@ -279,7 +279,7 @@ class CarbonDecoderRDD(
   }
 
   val getDictionaryColumnIds = {
-    val dictIds: Array[(String, ColumnIdentifier, DataType)] = output.map { a =>
+    val dictIds: Array[(String, ColumnIdentifier, CarbonDimension)] = output.map { a =>
       val attr = aliasMap.getOrElse(a, a)
       val relation = relations.find(p => p.contains(attr))
       if (relation.isDefined && canBeDecoded(attr)) {
@@ -291,7 +291,7 @@ class CarbonDecoderRDD(
             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
             !carbonDimension.isComplex()) {
           (carbonTable.getFactTableName, carbonDimension.getColumnIdentifier,
-            carbonDimension.getDataType)
+            carbonDimension)
         } else {
           (null, null, null)
         }
@@ -355,7 +355,7 @@ class CarbonDecoderRDD(
         try {
           cache.get(new DictionaryColumnUniqueIdentifier(
             atiMap(f._1).getCarbonTableIdentifier,
-            f._2, f._3))
+            f._2, f._3.getDataType))
         } catch {
           case _: Throwable => null
         }

@@ -17,21 +17,27 @@
 package org.apache.carbondata.spark.tasks
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary
+import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
+import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.service.CarbonCommonFactory
 import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
-import org.apache.carbondata.spark.rdd.DictionaryLoadModel
 
 /**
  * This task writes sort index file
  *
- * @param model
- * @param index
+ * @param carbonTableIdentifier
+ * @param columnIdentifier
+ * @param dataType
+ * @param carbonStoreLocation
  * @param dictionary
  * @param distinctValues
  * @param carbonDictionarySortIndexWriter
  */
-class SortIndexWriterTask(model: DictionaryLoadModel,
-    index: Int,
+class SortIndexWriterTask(
+    carbonTableIdentifier: CarbonTableIdentifier,
+    columnIdentifier: ColumnIdentifier,
+    dataType: DataType,
+    carbonStoreLocation: String,
     dictionary: Dictionary,
     distinctValues: java.util.List[String],
     var carbonDictionarySortIndexWriter: CarbonDictionarySortIndexWriter = null) {
@@ -42,10 +48,10 @@ class SortIndexWriterTask(model: DictionaryLoadModel,
         val dictService = CarbonCommonFactory.getDictionaryService
         val dictionarySortInfo: CarbonDictionarySortInfo =
           preparator.getDictionarySortInfo(distinctValues, dictionary,
-            model.primDimensions(index).getDataType)
+            dataType)
         carbonDictionarySortIndexWriter =
-          dictService.getDictionarySortIndexWriter(model.table, model.columnIdentifier(index),
-            model.hdfsLocation)
+          dictService.getDictionarySortIndexWriter(carbonTableIdentifier, columnIdentifier,
+            carbonStoreLocation)
         carbonDictionarySortIndexWriter.writeSortIndex(dictionarySortInfo.getSortIndex)
         carbonDictionarySortIndexWriter
           .writeInvertedSortIndex(dictionarySortInfo.getSortIndexInverted)

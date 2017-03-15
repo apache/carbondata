@@ -311,23 +311,19 @@ public class CarbonCompactionUtil {
         carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
     List<Integer> updatedCardinalityList = new ArrayList<>(columnCardinalityMap.size());
     for (CarbonDimension dimension : masterDimensions) {
-      if (!dimension.isInvisible()) {
-        Integer value = columnCardinalityMap.get(dimension.getColumnId());
-        if (null == value) {
-          updatedCardinalityList.add(getDimensionDefaultCardinality(dimension));
-        } else {
-          updatedCardinalityList.add(value);
-        }
-        updatedColumnSchemaList.add(dimension.getColumnSchema());
+      Integer value = columnCardinalityMap.get(dimension.getColumnId());
+      if (null == value) {
+        updatedCardinalityList.add(getDimensionDefaultCardinality(dimension));
+      } else {
+        updatedCardinalityList.add(value);
       }
+      updatedColumnSchemaList.add(dimension.getColumnSchema());
     }
     // add measures to the column schema list
     List<CarbonMeasure> masterSchemaMeasures =
         carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
     for (CarbonMeasure measure : masterSchemaMeasures) {
-      if (!measure.isInvisible()) {
-        updatedColumnSchemaList.add(measure.getColumnSchema());
-      }
+      updatedColumnSchemaList.add(measure.getColumnSchema());
     }
     int[] updatedCardinality = ArrayUtils
         .toPrimitive(updatedCardinalityList.toArray(new Integer[updatedCardinalityList.size()]));

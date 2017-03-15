@@ -248,36 +248,6 @@ public final class DataTypeUtil {
   }
 
   /**
-   * This method will convert the data according to its data type and perform a
-   * special handling for decimal data types
-   *
-   * @param dataInBytes
-   * @param dimension
-   * @return
-   */
-  public static Object getDataBasedOnDataType(byte[] dataInBytes, CarbonDimension dimension) {
-    if (null == dataInBytes || Arrays
-        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, dataInBytes)) {
-      return null;
-    }
-    switch (dimension.getDataType()) {
-      case DECIMAL:
-        String data = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-        if (data.isEmpty()) {
-          return null;
-        }
-        java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data);
-        if (dimension.getColumnSchema().getScale() > javaDecVal.scale()) {
-          javaDecVal =
-              javaDecVal.setScale(dimension.getColumnSchema().getScale(), RoundingMode.HALF_UP);
-        }
-        return org.apache.spark.sql.types.Decimal.apply(javaDecVal);
-      default:
-        return getDataBasedOnDataType(dataInBytes, dimension.getDataType());
-    }
-  }
-
-  /**
    * Below method will be used to convert the data passed to its actual data
    * type
    *
@@ -355,16 +325,16 @@ public final class DataTypeUtil {
    * type
    *
    * @param dataInBytes    data
-   * @param actualDataType actual data type
+   * @param dimension
    * @return actual data after conversion
    */
-  public static Object getDataBasedOnDataType(byte[] dataInBytes, DataType actualDataType) {
+  public static Object getDataBasedOnDataType(byte[] dataInBytes, CarbonDimension dimension) {
     if (null == dataInBytes || Arrays
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, dataInBytes)) {
       return null;
     }
     try {
-      switch (actualDataType) {
+      switch (dimension.getDataType()) {
         case INT:
           String data1 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
           if (data1.isEmpty()) {
@@ -420,6 +390,10 @@ public final class DataTypeUtil {
             return null;
           }
           java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data7);
+          if (dimension.getColumnSchema().getScale() > javaDecVal.scale()) {
+            javaDecVal =
+                javaDecVal.setScale(dimension.getColumnSchema().getScale());
+          }
           return org.apache.spark.sql.types.Decimal.apply(javaDecVal);
         default:
           return UTF8String.fromBytes(dataInBytes);
