@@ -56,9 +56,14 @@ object DataTypeConverterUtil {
       case "decimaltype" => DataType.DECIMAL
       case "timestamptype" => DataType.TIMESTAMP
       case "datetype" => DataType.DATE
-      case "arraytype" => DataType.ARRAY
-      case "structtype" => DataType.STRUCT
-      case _ => sys.error(s"Unsupported data type: $dataType")
+      case others =>
+        if (others != null && others.startsWith("arraytype")) {
+          DataType.ARRAY
+        } else if (others != null && others.startsWith("structtype")) {
+          DataType.STRUCT
+        } else {
+          sys.error(s"Unsupported data type: $dataType")
+        }
     }
   }
 
