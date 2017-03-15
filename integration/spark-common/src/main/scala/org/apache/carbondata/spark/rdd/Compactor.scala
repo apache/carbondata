@@ -50,7 +50,7 @@ object Compactor {
     val startTime = System.nanoTime()
     val mergedLoadName = CarbonDataMergerUtil.getMergedLoadName(loadsToMerge)
     var finalMergeStatus = false
-    val schemaName: String = carbonLoadModel.getDatabaseName
+    val databaseName: String = carbonLoadModel.getDatabaseName
     val factTableName = carbonLoadModel.getTableName
     val validSegments: Array[String] = CarbonDataMergerUtil
       .getValidSegments(loadsToMerge).split(',')
@@ -61,7 +61,7 @@ object Compactor {
       mergedLoadName,
       kettleHomePath,
       cubeCreationTime,
-      schemaName,
+      databaseName,
       factTableName,
       validSegments,
       carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
