@@ -123,27 +123,28 @@ case class CarbonDictionaryDecoder(
 
   val getDictionaryColumnIds = {
     val attributes = child.output
-    val dictIds: Array[(String, ColumnIdentifier, DataType)] = attributes.map { a =>
-      val attr = aliasMap.getOrElse(a, a)
-      val relation = relations.find(p => p.contains(attr))
-      if (relation.isDefined && canBeDecoded(attr)) {
-        val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
-        val carbonDimension =
-          carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
-        if (carbonDimension != null &&
-            carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
-            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
-            !carbonDimension.isComplex()) {
-          (carbonTable.getFactTableName, carbonDimension.getColumnIdentifier,
-            carbonDimension.getDataType)
+    val dictIds: Array[(String, ColumnIdentifier, DataType, CarbonDimension)] =
+      attributes.map { a =>
+        val attr = aliasMap.getOrElse(a, a)
+        val relation = relations.find(p => p.contains(attr))
+        if (relation.isDefined && canBeDecoded(attr)) {
+          val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
+          val carbonDimension =
+            carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
+          if (carbonDimension != null &&
+              carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
+              !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
+              !carbonDimension.isComplex()) {
+            (carbonTable.getFactTableName, carbonDimension.getColumnIdentifier,
+              carbonDimension.getDataType, carbonDimension)
+          } else {
+            (null, null, null, null)
+          }
         } else {
-          (null, null, null)
+          (null, null, null, null)
         }
-      } else {
-        (null, null, null)
-      }
 
-    }.toArray
+      }.toArray
     dictIds
   }
 
@@ -184,6 +185,7 @@ case class CarbonDictionaryDecoder(
           )
           new Iterator[InternalRow] {
             val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
+
             override final def hasNext: Boolean = {
               iter.hasNext
             }
@@ -195,7 +197,7 @@ case class CarbonDictionaryDecoder(
                 if (data(index) != null) {
                   data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
                     .getDictionaryValueForKeyInBytes(data(index).asInstanceOf[Int]),
-                    getDictionaryColumnIds(index)._3)
+                    getDictionaryColumnIds(index)._4)
                 }
               }
               val result = unsafeProjection(new GenericMutableRow(data))
@@ -217,7 +219,7 @@ case class CarbonDictionaryDecoder(
   }
 
   private def getDictionary(atiMap: Map[String, AbsoluteTableIdentifier],
-                            cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
+      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
     val dictionaryColumnIds = getDictionaryColumnIds.map { dictionaryId =>
       if (dictionaryId._2 != null) {
         new DictionaryColumnUniqueIdentifier(

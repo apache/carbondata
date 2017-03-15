@@ -789,6 +789,16 @@ object GlobalDictionaryUtil {
     }
   }
 
+  /**
+   * This method will write dictionary file, sortindex file and dictionary meta for new dictionary
+   * column with default value
+   *
+   * @param carbonTablePath
+   * @param columnSchema
+   * @param tableIdentifier
+   * @param storePath
+   * @param defaultValue
+   */
   def loadDefaultDictionaryValueForNewColumn(carbonTablePath: CarbonTablePath,
       columnSchema: ColumnSchema,
       tableIdentifier: CarbonTableIdentifier,
