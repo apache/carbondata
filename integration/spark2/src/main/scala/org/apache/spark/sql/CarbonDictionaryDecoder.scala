@@ -121,10 +121,9 @@ case class CarbonDictionaryDecoder(
     }
   }
 
-  val getDictionaryColumnIds = {
-    val attributes = child.output
-    val dictIds: Array[(String, ColumnIdentifier, CarbonDimension)] = attributes.map { a =>
-      val attr = aliasMap.getOrElse(a, a)
+  val getDictionaryColumnIds: Array[(String, ColumnIdentifier, CarbonDimension)] = {
+    child.output.map { attribute =>
+      val attr = aliasMap.getOrElse(attribute, attribute)
       val relation = relations.find(p => p.contains(attr))
       if (relation.isDefined && canBeDecoded(attr)) {
         val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
@@ -133,7 +132,7 @@ case class CarbonDictionaryDecoder(
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
-            !carbonDimension.isComplex()) {
+            !carbonDimension.isComplex) {
           (carbonTable.getFactTableName, carbonDimension.getColumnIdentifier,
             carbonDimension)
         } else {
@@ -142,9 +141,7 @@ case class CarbonDictionaryDecoder(
       } else {
         (null, null, null)
       }
-
     }.toArray
-    dictIds
   }
 
   override def doExecute(): RDD[InternalRow] = {
@@ -241,7 +238,7 @@ case class CarbonDictionaryDecoder(
              |}
              """.stripMargin
 
-            val caseCode = getDictionaryColumnIds(index)._3 match {
+            val caseCode = getDictionaryColumnIds(index)._3.getDataType match {
               case DataType.INT =>
                 s"""
                    |int $value = Integer.parseInt(new String($valueIntern,
@@ -346,19 +343,28 @@ case class CarbonDictionaryDecoder(
 
   private def getDictionaryWrapper(atiMap: Map[String, AbsoluteTableIdentifier],
       cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary], storePath: String) = {
-    val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryColumnIds.map { dictInfo =>
-      if (dictInfo._2 != null) {
-        try {
-          new ForwardDictionaryWrapper(storePath, atiMap(dictInfo._1), dictInfo._2, dictInfo._3,
-            cache.get(new DictionaryColumnUniqueIdentifier(
-            atiMap(dictInfo._1).getCarbonTableIdentifier,
-            dictInfo._2, dictInfo._3)))
-        } catch {
-          case _: Throwable => null
+    val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryColumnIds.map {
+      case (tableName, columnIdentifier, carbonDimension) =>
+        if (columnIdentifier != null) {
+          try {
+            new ForwardDictionaryWrapper(
+              storePath,
+              atiMap(tableName),
+              columnIdentifier,
+              carbonDimension.getDataType,
+              cache.get(
+                new DictionaryColumnUniqueIdentifier(
+                  atiMap(tableName).getCarbonTableIdentifier,
+                  columnIdentifier
+                )
+              )
+            )
+          } catch {
+            case _: Throwable => null
+          }
+        } else {
+          null
         }
-      } else {
-        null
-      }
     }
     dicts
   }
