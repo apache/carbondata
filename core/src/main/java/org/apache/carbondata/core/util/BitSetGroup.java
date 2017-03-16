@@ -81,4 +81,14 @@ public class BitSetGroup {
     return bitSets.length;
   }
 
+  /**
+   * @return return the valid pages
+   */
+  public int getValidPages() {
+    int numberOfPages = 0;
+    for (int i = 0; i < bitSets.length; i++) {
+      numberOfPages += (bitSets[i] == null || bitSets[i].isEmpty()) ? 0 : 1;
+    }
+    return numberOfPages;
+  }
 }

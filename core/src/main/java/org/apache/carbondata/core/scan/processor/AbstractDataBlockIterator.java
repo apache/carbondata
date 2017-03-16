@@ -19,6 +19,7 @@ package org.apache.carbondata.core.scan.processor;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -84,9 +85,8 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
 
   private AtomicBoolean nextRead;
 
-  public AbstractDataBlockIterator(BlockExecutionInfo blockExecutionInfo,
-      FileHolder fileReader, int batchSize, QueryStatisticsModel queryStatisticsModel,
-      ExecutorService executorService) {
+  public AbstractDataBlockIterator(BlockExecutionInfo blockExecutionInfo, FileHolder fileReader,
+      int batchSize, QueryStatisticsModel queryStatisticsModel, ExecutorService executorService) {
     this.blockExecutionInfo = blockExecutionInfo;
     this.fileReader = fileReader;
     dataBlockIterator = new BlockletIterator(blockExecutionInfo.getFirstDataBlock(),
@@ -113,6 +113,10 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
   }
 
   protected boolean updateScanner() {
+    // clear the current result if all the records are processed
+    if (scannedResult != null && !scannedResult.hasNext()) {
+      scannedResult.freeMemory();
+    }
     try {
       if (scannedResult != null && scannedResult.hasNext()) {
         return true;
@@ -205,4 +209,23 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
   }
 
   public abstract void processNextBatch(CarbonColumnarBatch columnarBatch);
+
+  /**
+   * Close the resources
+   */
+  public void close() {
+    // free the current scanned result
+    if (null != scannedResult && !scannedResult.hasNext()) {
+      scannedResult.freeMemory();
+    }
+    // free any pre-fetched memory if present
+    if (null != future) {
+      try {
+        AbstractScannedResult abstractScannedResult = future.get();
+        abstractScannedResult.freeMemory();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
 }
