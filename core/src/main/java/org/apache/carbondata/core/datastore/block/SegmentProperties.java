@@ -326,7 +326,7 @@ public class SegmentProperties {
     // to store the ordinal of the column group ordinal
     int columnGroupOrdinal = 0;
     int counter = 0;
-    int complexTypeOrdinal = 0;
+    int complexTypeOrdinal = -1;
     while (counter < columnsInTable.size()) {
       columnSchema = columnsInTable.get(counter);
       if (columnSchema.isDimensionColumn()) {
@@ -366,7 +366,7 @@ public class SegmentProperties {
             new DataType[] { DataType.ARRAY, DataType.STRUCT })) {
           cardinalityIndexForComplexDimensionColumn.add(tableOrdinal);
           carbonDimension =
-              new CarbonDimension(columnSchema, dimensonOrdinal++, -1, -1, complexTypeOrdinal++);
+              new CarbonDimension(columnSchema, dimensonOrdinal++, -1, -1, ++complexTypeOrdinal);
           carbonDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           complexDimensions.add(carbonDimension);
           isComplexDimensionStarted = true;
@@ -379,9 +379,7 @@ public class SegmentProperties {
             cardinalityIndexForComplexDimensionColumn.add(++tableOrdinal);
           }
           counter = dimensonOrdinal;
-          complexTypeOrdinal = carbonDimension.getListOfChildDimensions()
-              .get(carbonDimension.getListOfChildDimensions().size() - 1).getComplexTypeOrdinal();
-          complexTypeOrdinal++;
+          complexTypeOrdinal = assignComplexOrdinal(carbonDimension, complexTypeOrdinal);
           continue;
         } else {
           // for no dictionary dimension
@@ -443,6 +441,24 @@ public class SegmentProperties {
       }
     }
     return dimensionOrdinal;
+  }
+
+  /**
+   * Read all primitive/complex children and set it as list of child carbon dimension to parent
+   * dimension
+   */
+  private int assignComplexOrdinal(CarbonDimension parentDimension, int complexDimensionOrdianl) {
+    for (int i = 0; i < parentDimension.getNumberOfChild(); i++) {
+      CarbonDimension dimension = parentDimension.getListOfChildDimensions().get(i);
+      if (dimension.getNumberOfChild() > 0) {
+        dimension.setComplexTypeOridnal(++complexDimensionOrdianl);
+        complexDimensionOrdianl = assignComplexOrdinal(dimension, complexDimensionOrdianl);
+      } else {
+        parentDimension.getListOfChildDimensions().get(i)
+            .setComplexTypeOridnal(++complexDimensionOrdianl);
+      }
+    }
+    return complexDimensionOrdianl;
   }
 
   /**
