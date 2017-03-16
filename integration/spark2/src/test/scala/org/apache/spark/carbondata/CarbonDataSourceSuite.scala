@@ -17,10 +17,12 @@
 
 package org.apache.spark.carbondata
 
-import org.apache.spark.sql.{Row, SaveMode}
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.{Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.util.CarbonProperties
 
 class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
@@ -79,8 +81,13 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Data mismatch because of min/max calculation while loading the data") {
+    CarbonProperties.getInstance()
+      .addProperty("carbon.blockletgroup.size.in.mb", "16")
+      .addProperty("carbon.enable.vector.reader", "true")
+      .addProperty("enable.unsafe.sort", "true")
+
     val rdd = sqlContext.sparkContext
-      .parallelize(1 to 1 * 1000 * 1000, 4)
+      .parallelize(1 to 1200000, 4)
       .map { x =>
         ("city" + x % 8, "country" + x % 1103, "planet" + x % 10007, x.toString,
           (x % 16).toShort, x / 2, (x << 1).toLong, x.toDouble / 13, x.toDouble / 11)
@@ -112,8 +119,22 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
       .option("dictionary_exclude", "id") // id is high cardinality column
       .mode(SaveMode.Overwrite)
       .save()
-    sql(s"select city, sum(m1) from testBigData where country='country12' group by city").show()
+    sql(s"select city, sum(m1) from testBigData " +
+        s"where country='country12' group by city order by city").show()
+    checkAnswer(
+      sql(s"select city, sum(m1) from testBigData " +
+          s"where country='country12' group by city order by city"),
+      Seq(Row("city0", 544),
+        Row("city1", 680),
+        Row("city2", 816),
+        Row("city3", 952),
+        Row("city4", 1088),
+        Row("city5", 1224),
+        Row("city6", 1360),
+        Row("city7", 1496)))
     sql(s"drop table if exists testBigData")
+    CarbonProperties.getInstance()
+      .addProperty("carbon.blockletgroup.size.in.mb", "64")
   }
 
 }

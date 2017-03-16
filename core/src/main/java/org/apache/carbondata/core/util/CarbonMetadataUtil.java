@@ -245,34 +245,29 @@ public class CarbonMetadataUtil {
   public static BlockletIndex getBlockletIndex(List<NodeHolder> nodeHolderList,
       List<CarbonMeasure> carbonMeasureList) {
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
-    for (byte[] max : nodeHolderList.get(nodeHolderList.size() - 1).getColumnMaxData()) {
+    // Calculating min/max for every each column.
+    byte[][] minCol = nodeHolderList.get(0).getColumnMinData().clone();
+    byte[][] maxCol = nodeHolderList.get(0).getColumnMaxData().clone();
+    for (NodeHolder nodeHolder : nodeHolderList) {
+      byte[][] columnMaxData = nodeHolder.getColumnMaxData();
+      byte[][] columnMinData = nodeHolder.getColumnMinData();
+      for (int i = 0; i < maxCol.length; i++) {
+        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(columnMaxData[i], maxCol[i]) > 0) {
+          maxCol[i] = columnMaxData[i];
+        }
+        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(columnMinData[i], minCol[i]) < 0) {
+          minCol[i] = columnMinData[i];
+        }
+      }
+    }
+    // Writing min/max to thrift file
+    for (byte[] max : maxCol) {
       blockletMinMaxIndex.addToMax_values(ByteBuffer.wrap(max));
     }
-    for (byte[] min : nodeHolderList.get(0).getColumnMinData()) {
+    for (byte[] min : minCol) {
       blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(min));
     }
-//    // Calculating min/max for every each column.
-//    byte[][] minCol = nodeHolderList.get(0).getColumnMinData().clone();
-//    byte[][] maxCol = nodeHolderList.get(0).getColumnMaxData().clone();
-//    for (NodeHolder nodeHolder : nodeHolderList) {
-//      byte[][] columnMaxData = nodeHolder.getColumnMaxData();
-//      byte[][] columnMinData = nodeHolder.getColumnMinData();
-//      for (int i = 0; i < maxCol.length; i++) {
-//        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(columnMaxData[i], maxCol[i]) > 0) {
-//          maxCol[i] = columnMaxData[i];
-//        }
-//        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(columnMinData[i], minCol[i]) < 0) {
-//          minCol[i] = columnMinData[i];
-//        }
-//      }
-//    }
-//    // Writing min/max to thrift file
-//    for (byte[] max : maxCol) {
-//      blockletMinMaxIndex.addToMax_values(ByteBuffer.wrap(max));
-//    }
-//    for (byte[] min : minCol) {
-//      blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(min));
-//    }
+
     byte[][] measureMaxValue = nodeHolderList.get(0).getMeasureColumnMaxData().clone();
     byte[][] measureMinValue = nodeHolderList.get(0).getMeasureColumnMinData().clone();
     byte[] minVal = null;
