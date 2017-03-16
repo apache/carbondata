@@ -17,7 +17,9 @@
 
 package org.apache.spark.carbondata
 
+import org.apache.spark.sql.{Row, SaveMode}
 import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.types._
 import org.scalatest.BeforeAndAfterAll
 
 class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
@@ -74,6 +76,44 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
          | decimalField, from_unixtime(unix_timestamp(timestampField,'yyyy/M/dd')) timestampField
          | FROM csv_table
        """.stripMargin)
+  }
+
+  test("Data mismatch because of min/max calculation while loading the data") {
+    val rdd = sqlContext.sparkContext
+      .parallelize(1 to 1 * 1000 * 1000, 4)
+      .map { x =>
+        ("city" + x % 8, "country" + x % 1103, "planet" + x % 10007, x.toString,
+          (x % 16).toShort, x / 2, (x << 1).toLong, x.toDouble / 13, x.toDouble / 11)
+      }.map { x =>
+      Row(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9)
+    }
+
+    val schema = StructType(
+      Seq(
+        StructField("city", StringType, nullable = false),
+        StructField("country", StringType, nullable = false),
+        StructField("planet", StringType, nullable = false),
+        StructField("id", StringType, nullable = false),
+        StructField("m1", ShortType, nullable = false),
+        StructField("m2", IntegerType, nullable = false),
+        StructField("m3", LongType, nullable = false),
+        StructField("m4", DoubleType, nullable = false),
+        StructField("m5", DoubleType, nullable = false)
+      )
+    )
+
+    val input = sqlContext.createDataFrame(rdd, schema)
+    sql(s"drop table if exists testBigData")
+    input.write
+      .format("carbondata")
+      .option("tableName", "testBigData")
+      .option("tempCSV", "false")
+      .option("single_pass", "true")
+      .option("dictionary_exclude", "id") // id is high cardinality column
+      .mode(SaveMode.Overwrite)
+      .save()
+    sql(s"select city, sum(m1) from testBigData where country='country12' group by city").show()
+    sql(s"drop table if exists testBigData")
   }
 
 }
