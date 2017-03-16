@@ -1164,6 +1164,13 @@ public final class CarbonCommonConstants {
 
   public static final int SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT = 4000;
 
+  public static final int DICTIONARY_DEFAULT_CARDINALITY = 1;
+
+  public static final String SPARK_SCHEMA_STRING_LENGTH_THRESHOLD =
+      "spark.sql.sources.schemaStringLengthThreshold";
+
+  public static final int SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT = 4000;
+
   private CarbonCommonConstants() {
   }
 }
