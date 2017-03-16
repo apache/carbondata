@@ -777,7 +777,12 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
   }
 
   private void updateMeasureAggregator(String msrAggregatorString) {
-    String[] split = msrAggregatorString.split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
+    String[] split = null;
+    if (msrAggregatorString == null) {
+      split =  new String[0];
+    } else {
+      split = msrAggregatorString.split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
+    }
     msrAggregators = new String[split.length];
     System.arraycopy(split, 0, msrAggregators, 0, split.length);
   }
@@ -1070,7 +1075,12 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     // get high cardinality dimension Array
     noDictionaryCols = RemoveDictionaryUtil.extractNoDictionaryDimsArr(noDictionaryDims);
 
-    String[] sm = msr.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
+    String[] sm = null;
+    if (null != msr) {
+      sm = msr.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
+    } else {
+      sm = new String[0];
+    }
     int[] m = new int[sm.length];
     Set<String> mlist = new LinkedHashSet<String>();
     for (int i = 0; i < m.length; i++) {
