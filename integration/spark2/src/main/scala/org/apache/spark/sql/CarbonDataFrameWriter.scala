@@ -33,8 +33,8 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
 
   def saveAsCarbonFile(parameters: Map[String, String] = Map()): Unit = {
     // create a new table using dataframe's schema and write its content into the table
-    sqlContext.sparkSession.sql(makeCreateTableString(dataFrame.schema,
-    new CarbonOption(parameters)))
+    sqlContext.sparkSession.sql(
+      makeCreateTableString(dataFrame.schema, new CarbonOption(parameters)))
     writeToCarbonFile(parameters)
   }
 
@@ -135,7 +135,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       options.tableName,
       null,
       Seq(),
-      Map("fileheader" -> header),
+      Map("fileheader" -> header) ++ options.toMap,
       isOverwriteExist = false,
       null,
       Some(dataFrame)).run(sqlContext.sparkSession)
@@ -160,28 +160,37 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
     val carbonSchema = schema.map { field =>
       s"${ field.name } ${ convertToCarbonType(field.dataType) }"
     }
+    val property = new StringBuilder
+    property.append(
+      if (options.dictionaryInclude.isDefined) {
+        s"'DICTIONARY_INCLUDE' = '${options.dictionaryInclude.get}' ,"
+      } else {
+        ""
+      }
+    ).append(
+      if (options.dictionaryExclude.isDefined) {
+        s"'DICTIONARY_EXCLUDE' = '${options.dictionaryExclude.get}'"
+      } else {
+        ""
+      }
+    )
+
     s"""
-          CREATE TABLE IF NOT EXISTS ${options.dbName}.${options.tableName}
-          (${ carbonSchema.mkString(", ") })
-          using org.apache.spark.sql.CarbonSource
-          OPTIONS('dbName'='${options.dbName}', 'tableName'='${options.tableName}')
-      """
+       | CREATE TABLE IF NOT EXISTS ${options.dbName}.${options.tableName}
+       | (${ carbonSchema.mkString(", ") })
+       | STORED BY 'carbondata'
+       | ${ if (property.nonEmpty) "TBLPROPERTIES (" + property + ")" else "" }
+     """.stripMargin
   }
 
   private def makeLoadString(csvFolder: String, options: CarbonOption): String = {
-    if (options.useKettle) {
-      s"""
-          LOAD DATA INPATH '$csvFolder'
-          INTO TABLE ${options.dbName}.${options.tableName}
-          OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}', 'USE_KETTLE' = 'true')
-      """
-    } else {
-      s"""
-          LOAD DATA INPATH '$csvFolder'
-          INTO TABLE ${options.dbName}.${options.tableName}
-          OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}', 'USE_KETTLE' = 'false')
-      """
-    }
+    s"""
+       | LOAD DATA INPATH '$csvFolder'
+       | INTO TABLE ${options.dbName}.${options.tableName}
+       | OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}',
+       | 'USE_KETTLE' = '${options.useKettle}',
+       | 'SINGLE_PASS' = '${options.singlePass}')
+     """.stripMargin
   }
 
 }
