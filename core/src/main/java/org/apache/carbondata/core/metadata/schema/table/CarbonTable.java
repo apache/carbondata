@@ -55,46 +55,36 @@ public class CarbonTable implements Serializable {
   private AbsoluteTableIdentifier absoluteTableIdentifier;
 
   /**
-   * TableName, Dimensions list. This map will contain dimensions which are visible
+   * TableName, Dimensions list. This map will contain allDimensions which are visible
    */
-  private transient Map<String, List<CarbonDimension>> tableDimensionsMap;
+  private Map<String, List<CarbonDimension>> tableDimensionsMap;
 
   /**
-   * TableName, Dimensions list. This map will contain both visible and not visible dimensions
+   * list of all the allDimensions
    */
-  private transient Map<String, List<CarbonDimension>> tableDimensionsMapWithDeletedColumns;
-
-  /**
-   * list of all the dimensions
-   */
-  private List<CarbonDimension> dimensions;
+  private List<CarbonDimension> allDimensions;
 
   private Map<String, List<CarbonColumn>> createOrderColumn;
 
   /**
-   * TableName, Dimensions and children dimensions list
+   * TableName, Dimensions and children allDimensions list
    */
   private Map<String, List<CarbonDimension>> tablePrimitiveDimensionsMap;
 
   /**
-   * table measures list.
+   * table allMeasures list.
    */
   private Map<String, List<CarbonDimension>> tableImplicitDimensionsMap;
 
   /**
-   * table measures list. This map will contain dimensions which are visible
+   * table allMeasures list. This map will contain allDimensions which are visible
    */
-  private transient Map<String, List<CarbonMeasure>> tableMeasuresMap;
+  private Map<String, List<CarbonMeasure>> tableMeasuresMap;
 
   /**
-   * table measures list. This map will contain both visible and not visible measures
+   * list of allMeasures
    */
-  private transient Map<String, List<CarbonMeasure>> tableMeasuresMapWithDeletedMeasures;
-
-  /**
-   * list of measures
-   */
-  private List<CarbonMeasure> measures;
+  private List<CarbonMeasure> allMeasures;
 
   /**
    * table bucket map.
@@ -127,7 +117,9 @@ public class CarbonTable implements Serializable {
   private int blockSize;
 
   public CarbonTable() {
+    this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableImplicitDimensionsMap = new HashMap<String, List<CarbonDimension>>();
+    this.tableMeasuresMap = new HashMap<String, List<CarbonMeasure>>();
     this.tableBucketMap = new HashMap<>();
     this.aggregateTablesName = new ArrayList<String>();
     this.createOrderColumn = new HashMap<String, List<CarbonColumn>>();
@@ -167,8 +159,6 @@ public class CarbonTable implements Serializable {
    */
   private void fillCreateOrderColumn(String tableName) {
     List<CarbonColumn> columns = new ArrayList<CarbonColumn>();
-    fillVisibleDimensions(tableName);
-    fillVisibleMeasures(tableName);
     List<CarbonDimension> dimensions = this.tableDimensionsMap.get(tableName);
     List<CarbonMeasure> measures = this.tableMeasuresMap.get(tableName);
     Iterator<CarbonDimension> dimItr = dimensions.iterator();
@@ -215,15 +205,15 @@ public class CarbonTable implements Serializable {
   }
 
   /**
-   * Fill dimensions and measures for carbon table
+   * Fill allDimensions and allMeasures for carbon table
    *
    * @param tableSchema
    */
   private void fillDimensionsAndMeasuresForTables(TableSchema tableSchema) {
     List<CarbonDimension> primitiveDimensions = new ArrayList<CarbonDimension>();
     List<CarbonDimension> implicitDimensions = new ArrayList<CarbonDimension>();
-    dimensions = new ArrayList<>();
-    measures = new ArrayList<>();
+    allDimensions = new ArrayList<CarbonDimension>();
+    allMeasures = new ArrayList<CarbonMeasure>();
     this.tablePrimitiveDimensionsMap.put(this.tableUniqueName, primitiveDimensions);
     this.tableImplicitDimensionsMap.put(tableSchema.getTableName(), implicitDimensions);
     int dimensionOrdinal = 0;
@@ -241,7 +231,7 @@ public class CarbonTable implements Serializable {
               new CarbonDimension(columnSchema, dimensionOrdinal++,
                     columnSchema.getSchemaOrdinal(), -1, -1, ++complexTypeOrdinal);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
-          dimensions.add(complexDimension);
+          allDimensions.add(complexDimension);
           dimensionOrdinal =
               readAllComplexTypeChildrens(dimensionOrdinal, columnSchema.getNumberOfChild(),
                   listOfColumns, complexDimension, primitiveDimensions);
@@ -252,14 +242,14 @@ public class CarbonTable implements Serializable {
             CarbonDimension dimension =
                     new CarbonDimension(columnSchema, dimensionOrdinal++,
                             columnSchema.getSchemaOrdinal(), -1, -1, -1);
-            dimensions.add(dimension);
+            allDimensions.add(dimension);
             primitiveDimensions.add(dimension);
           } else if (columnSchema.getEncodingList().contains(Encoding.DICTIONARY)
               && columnSchema.getColumnGroupId() == -1) {
             CarbonDimension dimension =
                     new CarbonDimension(columnSchema, dimensionOrdinal++,
                             columnSchema.getSchemaOrdinal(), keyOrdinal++, -1, -1);
-            dimensions.add(dimension);
+            allDimensions.add(dimension);
             primitiveDimensions.add(dimension);
           } else {
             columnGroupOrdinal =
@@ -268,15 +258,17 @@ public class CarbonTable implements Serializable {
             CarbonDimension dimension = new CarbonDimension(columnSchema, dimensionOrdinal++,
                     columnSchema.getSchemaOrdinal(), keyOrdinal++,
                     columnGroupOrdinal, -1);
-            dimensions.add(dimension);
+            allDimensions.add(dimension);
             primitiveDimensions.add(dimension);
           }
         }
       } else {
-        measures.add(new CarbonMeasure(columnSchema, measureOrdinal++,
+        allMeasures.add(new CarbonMeasure(columnSchema, measureOrdinal++,
                  columnSchema.getSchemaOrdinal()));
       }
     }
+    fillVisibleDimensions(tableSchema.getTableName());
+    fillVisibleMeasures(tableSchema.getTableName());
     addImplicitDimension(dimensionOrdinal, implicitDimensions);
   }
 
@@ -404,18 +396,16 @@ public class CarbonTable implements Serializable {
    * @return number of dimension present the table
    */
   public int getNumberOfDimensions(String tableName) {
-    fillVisibleDimensions(tableName);
     return tableDimensionsMap.get(tableName).size();
   }
 
   /**
-   * to get the number of measures present in the table
+   * to get the number of allMeasures present in the table
    *
    * @param tableName
-   * @return number of measures present the table
+   * @return number of allMeasures present the table
    */
   public int getNumberOfMeasures(String tableName) {
-    fillVisibleMeasures(tableName);
     return tableMeasuresMap.get(tableName).size();
   }
 
@@ -426,7 +416,6 @@ public class CarbonTable implements Serializable {
    * @return all dimension of a table
    */
   public List<CarbonDimension> getDimensionByTableName(String tableName) {
-    fillVisibleDimensions(tableName);
     return tableDimensionsMap.get(tableName);
   }
 
@@ -437,7 +426,6 @@ public class CarbonTable implements Serializable {
    * @return all measure of a table
    */
   public List<CarbonMeasure> getMeasureByTableName(String tableName) {
-    fillVisibleMeasures(tableName);
     return tableMeasuresMap.get(tableName);
   }
 
@@ -468,10 +456,9 @@ public class CarbonTable implements Serializable {
    * @return
    */
   public CarbonMeasure getMeasureByName(String tableName, String columnName) {
-    fillVisibleMeasures(tableName);
     List<CarbonMeasure> measureList = tableMeasuresMap.get(tableName);
     for (CarbonMeasure measure : measureList) {
-      if (!measure.isInvisible() && measure.getColName().equalsIgnoreCase(columnName)) {
+      if (measure.getColName().equalsIgnoreCase(columnName)) {
         return measure;
       }
     }
@@ -487,10 +474,9 @@ public class CarbonTable implements Serializable {
    */
   public CarbonDimension getDimensionByName(String tableName, String columnName) {
     CarbonDimension carbonDimension = null;
-    fillVisibleDimensions(tableName);
     List<CarbonDimension> dimList = tableDimensionsMap.get(tableName);
     for (CarbonDimension dim : dimList) {
-      if (!dim.isInvisible() && dim.getColName().equalsIgnoreCase(columnName)) {
+      if (dim.getColName().equalsIgnoreCase(columnName)) {
         carbonDimension = dim;
         break;
       }
@@ -515,7 +501,7 @@ public class CarbonTable implements Serializable {
     Iterator<CarbonColumn> colItr = columns.iterator();
     while (colItr.hasNext()) {
       CarbonColumn col = colItr.next();
-      if (!col.isInvisible() && col.getColName().equalsIgnoreCase(columnName)) {
+      if (col.getColName().equalsIgnoreCase(columnName)) {
         return col;
       }
     }
@@ -525,10 +511,9 @@ public class CarbonTable implements Serializable {
    * gets all children dimension for complex type
    *
    * @param dimName
-   * @return list of child dimensions
+   * @return list of child allDimensions
    */
   public List<CarbonDimension> getChildren(String dimName) {
-    fillVisibleDimensions(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
     for (List<CarbonDimension> list : tableDimensionsMap.values()) {
       List<CarbonDimension> childDims = getChildren(dimName, list);
       if (childDims != null) {
@@ -539,15 +524,15 @@ public class CarbonTable implements Serializable {
   }
 
   /**
-   * returns level 2 or more child dimensions
+   * returns level 2 or more child allDimensions
    *
    * @param dimName
    * @param dimensions
-   * @return list of child dimensions
+   * @return list of child allDimensions
    */
   public List<CarbonDimension> getChildren(String dimName, List<CarbonDimension> dimensions) {
     for (CarbonDimension carbonDimension : dimensions) {
-      if (!carbonDimension.isInvisible() && carbonDimension.getColName().equals(dimName)) {
+      if (carbonDimension.getColName().equals(dimName)) {
         return carbonDimension.getListOfChildDimensions();
       } else if (null != carbonDimension.getListOfChildDimensions()
           && carbonDimension.getListOfChildDimensions().size() > 0) {
@@ -608,95 +593,50 @@ public class CarbonTable implements Serializable {
   }
 
   /**
-   * fill all dimensions if empty and return the map
+   * return all allDimensions in the table
    *
-   * @param tableName
    * @return
    */
-  public Map<String, List<CarbonDimension>> getTableDimensionsMapWithDeletedColumns(
-      String tableName) {
-    if (null == tableDimensionsMapWithDeletedColumns || null == tableDimensionsMapWithDeletedColumns
-        .get(tableName)) {
-      synchronized (this) {
-        if (null == tableDimensionsMapWithDeletedColumns
-            || null == tableDimensionsMapWithDeletedColumns.get(tableName)) {
-          if (null == tableDimensionsMapWithDeletedColumns) {
-            tableDimensionsMapWithDeletedColumns = new HashMap<>();
-          }
-          tableDimensionsMapWithDeletedColumns.put(tableName, dimensions);
-        }
-      }
-    }
-    return tableDimensionsMapWithDeletedColumns;
+  public List<CarbonDimension> getAllDimensions() {
+    return allDimensions;
   }
 
   /**
-   * This method will all the visible dimensions
+   * This method will all the visible allDimensions
    *
    * @param tableName
    */
   private void fillVisibleDimensions(String tableName) {
-    if (null == tableDimensionsMap || null == tableDimensionsMap.get(tableName)) {
-      synchronized (this) {
-        if (null == tableDimensionsMap || null == tableDimensionsMap.get(tableName)) {
-          if (null == tableDimensionsMap) {
-            tableDimensionsMap = new HashMap<>();
-          }
-          List<CarbonDimension> visibleDimensions = new ArrayList<>(dimensions.size());
-          for (CarbonDimension dimension : dimensions) {
-            if (!dimension.isInvisible()) {
-              visibleDimensions.add(dimension);
-            }
-          }
-          tableDimensionsMap.put(tableName, visibleDimensions);
-        }
+    List<CarbonDimension> visibleDimensions = new ArrayList<CarbonDimension>(allDimensions.size());
+    for (CarbonDimension dimension : allDimensions) {
+      if (!dimension.isInvisible()) {
+        visibleDimensions.add(dimension);
       }
     }
+    tableDimensionsMap.put(tableName, visibleDimensions);
   }
 
   /**
-   * fill all measures if empty and return the map
+   * return all allMeasures in the table
    *
-   * @param tableName
    * @return
    */
-  public Map<String, List<CarbonMeasure>> getTableMeasuresMapWithDeletedMeasures(String tableName) {
-    if (null == tableMeasuresMapWithDeletedMeasures || null == tableMeasuresMapWithDeletedMeasures
-        .get(tableName)) {
-      synchronized (this) {
-        if (null == tableMeasuresMapWithDeletedMeasures
-            || null == tableMeasuresMapWithDeletedMeasures.get(tableName)) {
-          if (null == tableMeasuresMapWithDeletedMeasures) {
-            tableMeasuresMapWithDeletedMeasures = new HashMap<>();
-          }
-          tableMeasuresMapWithDeletedMeasures.put(tableName, measures);
-        }
-      }
-    }
-    return tableMeasuresMapWithDeletedMeasures;
+  public List<CarbonMeasure> getAllMeasures() {
+    return allMeasures;
   }
 
   /**
-   * This method will all the visible measures
+   * This method will all the visible allMeasures
    *
    * @param tableName
    */
   private void fillVisibleMeasures(String tableName) {
-    if (null == tableMeasuresMap || null == tableMeasuresMap.get(tableName)) {
-      synchronized (this) {
-        if (null == tableMeasuresMap || null == tableMeasuresMap.get(tableName)) {
-          if (null == tableMeasuresMap) {
-            tableMeasuresMap = new HashMap<>();
-          }
-          List<CarbonMeasure> visibleMeasures = new ArrayList<>(measures.size());
-          for (CarbonMeasure measure : measures) {
-            if (!measure.isInvisible()) {
-              visibleMeasures.add(measure);
-            }
-          }
-          tableMeasuresMap.put(tableName, visibleMeasures);
-        }
+    List<CarbonMeasure> visibleMeasures = new ArrayList<CarbonMeasure>(allMeasures.size());
+    for (CarbonMeasure measure : allMeasures) {
+      if (!measure.isInvisible()) {
+        visibleMeasures.add(measure);
       }
     }
+    tableMeasuresMap.put(tableName, visibleMeasures);
   }
 }
