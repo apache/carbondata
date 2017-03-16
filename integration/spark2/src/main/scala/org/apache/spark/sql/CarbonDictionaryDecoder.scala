@@ -363,6 +363,25 @@ case class CarbonDictionaryDecoder(
     dicts
   }
 
+  private def getDictionaryWrapper(atiMap: Map[String, AbsoluteTableIdentifier],
+      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary], storePath: String) = {
+    val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryColumnIds.map { dictInfo =>
+      if (dictInfo._2 != null) {
+        try {
+          new ForwardDictionaryWrapper(storePath, atiMap(dictInfo._1), dictInfo._2, dictInfo._3,
+            cache.get(new DictionaryColumnUniqueIdentifier(
+            atiMap(dictInfo._1).getCarbonTableIdentifier,
+            dictInfo._2, dictInfo._3)))
+        } catch {
+          case _: Throwable => null
+        }
+      } else {
+        null
+      }
+    }
+    dicts
+  }
+
 }
 
 
