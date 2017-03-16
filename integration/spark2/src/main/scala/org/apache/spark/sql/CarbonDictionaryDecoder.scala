@@ -49,83 +49,19 @@ case class CarbonDictionaryDecoder(
     child: SparkPlan)
   extends UnaryExecNode with CodegenSupport {
 
-  override val output: Seq[Attribute] = {
-    child.output.map { a =>
-      val attr = aliasMap.getOrElse(a, a)
-      val relation = relations.find(p => p.contains(attr))
-      if (relation.isDefined && canBeDecoded(attr)) {
-        val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
-        val carbonDimension = carbonTable
-          .getDimensionByName(carbonTable.getFactTableName, attr.name)
-        if (carbonDimension != null &&
-            carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
-            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
-            !carbonDimension.isComplex()) {
-          val newAttr = AttributeReference(a.name,
-            convertCarbonToSparkDataType(carbonDimension,
-              relation.get.carbonRelation.carbonRelation),
-            a.nullable,
-            a.metadata)(a.exprId).asInstanceOf[Attribute]
-          newAttr
-        } else {
-          a
-        }
-      } else {
-        a
-      }
-    }
-  }
+  override val output: Seq[Attribute] =
+    CarbonDictionaryDecoder.convertOutput(child.output, relations, profile, aliasMap)
 
 
   override def outputPartitioning: Partitioning = {
     child.outputPartitioning
   }
 
-  def canBeDecoded(attr: Attribute): Boolean = {
-    profile match {
-      case ip: IncludeProfile if ip.attributes.nonEmpty =>
-        ip.attributes
-          .exists(a => a.name.equalsIgnoreCase(attr.name) && a.exprId == attr.exprId)
-      case ep: ExcludeProfile =>
-        !ep.attributes
-          .exists(a => a.name.equalsIgnoreCase(attr.name) && a.exprId == attr.exprId)
-      case _ => true
-    }
-  }
-
-  def convertCarbonToSparkDataType(carbonDimension: CarbonDimension,
-      relation: CarbonRelation): types.DataType = {
-    carbonDimension.getDataType match {
-      case DataType.STRING => StringType
-      case DataType.SHORT => ShortType
-      case DataType.INT => IntegerType
-      case DataType.LONG => LongType
-      case DataType.DOUBLE => DoubleType
-      case DataType.BOOLEAN => BooleanType
-      case DataType.DECIMAL =>
-        val scale: Int = carbonDimension.getColumnSchema.getScale
-        val precision: Int = carbonDimension.getColumnSchema.getPrecision
-        if (scale == 0 && precision == 0) {
-          DecimalType(18, 2)
-        } else {
-          DecimalType(precision, scale)
-        }
-      case DataType.TIMESTAMP => TimestampType
-      case DataType.DATE => DateType
-      case DataType.STRUCT =>
-        CarbonMetastoreTypes
-          .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
-      case DataType.ARRAY =>
-        CarbonMetastoreTypes
-          .toDataType(s"array<${ relation.getArrayChildren(carbonDimension.getColName) }>")
-    }
-  }
-
   val getDictionaryColumnIds: Array[(String, ColumnIdentifier, CarbonDimension)] = {
     child.output.map { attribute =>
       val attr = aliasMap.getOrElse(attribute, attribute)
       val relation = relations.find(p => p.contains(attr))
-      if (relation.isDefined && canBeDecoded(attr)) {
+      if (relation.isDefined && CarbonDictionaryDecoder.canBeDecoded(attr, profile)) {
         val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
         val carbonDimension =
           carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
@@ -369,6 +305,79 @@ case class CarbonDictionaryDecoder(
     dicts
   }
 
+}
+
+object CarbonDictionaryDecoder {
+
+  def convertOutput(output: Seq[Attribute],
+      relations: Seq[CarbonDecoderRelation],
+      profile: CarbonProfile,
+      aliasMap: CarbonAliasDecoderRelation): Seq[Attribute] = {
+    output.map { a =>
+      val attr = aliasMap.getOrElse(a, a)
+      val relation = relations.find(p => p.contains(attr))
+      if (relation.isDefined && canBeDecoded(attr, profile)) {
+        val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
+        val carbonDimension = carbonTable
+          .getDimensionByName(carbonTable.getFactTableName, attr.name)
+        if (carbonDimension != null &&
+            carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
+            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
+            !carbonDimension.isComplex()) {
+          val newAttr = AttributeReference(a.name,
+            convertCarbonToSparkDataType(carbonDimension,
+              relation.get.carbonRelation.carbonRelation),
+            a.nullable,
+            a.metadata)(a.exprId).asInstanceOf[Attribute]
+          newAttr
+        } else {
+          a
+        }
+      } else {
+        a
+      }
+    }
+  }
+
+  def canBeDecoded(attr: Attribute, profile: CarbonProfile): Boolean = {
+    profile match {
+      case ip: IncludeProfile if ip.attributes.nonEmpty =>
+        ip.attributes
+          .exists(a => a.name.equalsIgnoreCase(attr.name) && a.exprId == attr.exprId)
+      case ep: ExcludeProfile =>
+        !ep.attributes
+          .exists(a => a.name.equalsIgnoreCase(attr.name) && a.exprId == attr.exprId)
+      case _ => true
+    }
+  }
+
+  def convertCarbonToSparkDataType(carbonDimension: CarbonDimension,
+      relation: CarbonRelation): types.DataType = {
+    carbonDimension.getDataType match {
+      case DataType.STRING => StringType
+      case DataType.SHORT => ShortType
+      case DataType.INT => IntegerType
+      case DataType.LONG => LongType
+      case DataType.DOUBLE => DoubleType
+      case DataType.BOOLEAN => BooleanType
+      case DataType.DECIMAL =>
+        val scale: Int = carbonDimension.getColumnSchema.getScale
+        val precision: Int = carbonDimension.getColumnSchema.getPrecision
+        if (scale == 0 && precision == 0) {
+          DecimalType(18, 2)
+        } else {
+          DecimalType(precision, scale)
+        }
+      case DataType.TIMESTAMP => TimestampType
+      case DataType.DATE => DateType
+      case DataType.STRUCT =>
+        CarbonMetastoreTypes
+          .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
+      case DataType.ARRAY =>
+        CarbonMetastoreTypes
+          .toDataType(s"array<${ relation.getArrayChildren(carbonDimension.getColName) }>")
+    }
+  }
 }
 
 
