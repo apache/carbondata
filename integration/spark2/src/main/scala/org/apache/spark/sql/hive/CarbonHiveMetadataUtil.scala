@@ -20,7 +20,6 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 
-
 /**
  * This class contains all carbon hive metadata related utilities
  */
