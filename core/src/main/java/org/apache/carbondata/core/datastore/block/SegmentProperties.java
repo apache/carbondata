@@ -75,6 +75,11 @@ public class SegmentProperties {
   private int[] dimColumnsCardinality;
 
   /**
+   * partition index of each dictionary column
+   */
+  private int[] dimensionPartitions;
+
+  /**
    * cardinality of complex dimension
    */
   private int[] complexDimColumnCardinality;
@@ -321,7 +326,7 @@ public class SegmentProperties {
     // to store the ordinal of the column group ordinal
     int columnGroupOrdinal = 0;
     int counter = 0;
-    int complexTypeOrdinal = 0;
+    int complexTypeOrdinal = -1;
     while (counter < columnsInTable.size()) {
       columnSchema = columnsInTable.get(counter);
       if (columnSchema.isDimensionColumn()) {
@@ -361,7 +366,7 @@ public class SegmentProperties {
             new DataType[] { DataType.ARRAY, DataType.STRUCT })) {
           cardinalityIndexForComplexDimensionColumn.add(tableOrdinal);
           carbonDimension =
-              new CarbonDimension(columnSchema, dimensonOrdinal++, -1, -1, complexTypeOrdinal++);
+              new CarbonDimension(columnSchema, dimensonOrdinal++, -1, -1, ++complexTypeOrdinal);
           carbonDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           complexDimensions.add(carbonDimension);
           isComplexDimensionStarted = true;
@@ -374,9 +379,7 @@ public class SegmentProperties {
             cardinalityIndexForComplexDimensionColumn.add(++tableOrdinal);
           }
           counter = dimensonOrdinal;
-          complexTypeOrdinal = carbonDimension.getListOfChildDimensions()
-              .get(carbonDimension.getListOfChildDimensions().size() - 1).getComplexTypeOrdinal();
-          complexTypeOrdinal++;
+          complexTypeOrdinal = assignComplexOrdinal(carbonDimension, complexTypeOrdinal);
           continue;
         } else {
           // for no dictionary dimension
@@ -441,6 +444,24 @@ public class SegmentProperties {
   }
 
   /**
+   * Read all primitive/complex children and set it as list of child carbon dimension to parent
+   * dimension
+   */
+  private int assignComplexOrdinal(CarbonDimension parentDimension, int complexDimensionOrdianl) {
+    for (int i = 0; i < parentDimension.getNumberOfChild(); i++) {
+      CarbonDimension dimension = parentDimension.getListOfChildDimensions().get(i);
+      if (dimension.getNumberOfChild() > 0) {
+        dimension.setComplexTypeOridnal(++complexDimensionOrdianl);
+        complexDimensionOrdianl = assignComplexOrdinal(dimension, complexDimensionOrdianl);
+      } else {
+        parentDimension.getListOfChildDimensions().get(i)
+            .setComplexTypeOridnal(++complexDimensionOrdianl);
+      }
+    }
+    return complexDimensionOrdianl;
+  }
+
+  /**
    * Below method will fill the key generator detail of both the type of key
    * generator. This will be required for during both query execution and data
    * loading.
@@ -484,7 +505,7 @@ public class SegmentProperties {
       counter++;
     }
     // get the partitioner
-    int[] dimensionPartitions = ArrayUtils
+    dimensionPartitions = ArrayUtils
         .toPrimitive(dimensionPartitionList.toArray(new Integer[dimensionPartitionList.size()]));
     // get the bit length of each column
     int[] bitLength = CarbonUtil.getDimensionBitLength(dimColumnsCardinality, dimensionPartitions);
@@ -644,6 +665,13 @@ public class SegmentProperties {
   }
 
   /**
+   * @return
+   */
+  public int[] getDimensionPartitions() {
+    return dimensionPartitions;
+  }
+
+  /**
    * @return the complexDimColumnCardinality
    */
   public int[] getComplexDimColumnCardinality() {
@@ -747,6 +775,26 @@ public class SegmentProperties {
    */
   public Map<Integer, Set<Integer>> getBlockTodimensionOrdinalMapping() {
     return blockTodimensionOrdinalMapping;
+  }
+
+  /**
+   * This method will search a given dimension and return the dimension from current block
+   *
+   * @param queryDimension
+   * @return
+   */
+  public CarbonDimension getDimensionFromCurrentBlock(CarbonDimension queryDimension) {
+    return CarbonUtil.getDimensionFromCurrentBlock(this.dimensions, queryDimension);
+  }
+
+  /**
+   * This method will search for a given measure in the current block measures list
+   *
+   * @param columnId
+   * @return
+   */
+  public CarbonMeasure getMeasureFromCurrentBlock(String columnId) {
+    return CarbonUtil.getMeasureFromCurrentBlock(this.measures, columnId);
   }
 
 }

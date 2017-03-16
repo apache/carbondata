@@ -16,9 +16,11 @@
  */
 package org.apache.carbondata.core.scan.filter.resolver.resolverinfo.visitor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.DimColumnFilterInfo;
@@ -43,9 +45,18 @@ public class NoDictionaryTypeVisitor implements ResolvedFilterInfoVisitorIntf {
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
     DimColumnFilterInfo resolvedFilterObject = null;
-    List<String> evaluateResultListFinal;
+    List<String> evaluateResultListFinal = null;
     try {
-      evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
+      // handling for is null case scenarios
+      if (metadata.getExpression() instanceof EqualToExpression) {
+        EqualToExpression expression = (EqualToExpression) metadata.getExpression();
+        if (expression.isNull) {
+          evaluateResultListFinal = new ArrayList<>(1);
+          evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
+        }
+      } else {
+        evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
+      }
       // Adding default  null member inorder to not display the same while
       // displaying the report as per hive compatibility.
       if (!metadata.isIncludeFilter() && !evaluateResultListFinal

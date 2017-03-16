@@ -26,19 +26,12 @@ import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
 
 /**
  * Holds all the properties required for query execution
  */
 public class QueryExecutorProperties {
-
-  /**
-   * holds the information required for updating the order block
-   * dictionary key
-   */
-  public KeyStructureInfo keyStructureInfo;
 
   /**
    * this will hold the information about the dictionary dimension

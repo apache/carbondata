@@ -26,8 +26,10 @@ import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
+import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -38,6 +40,11 @@ import org.apache.carbondata.core.util.CarbonUtil;
 public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecuterImpl {
   private byte[][] filterRangeValues;
 
+  /**
+   * flag to check whether default values is present in the filter value list
+   */
+  private boolean isDefaultValuePresentInFilter;
+
   public RowLevelRangeGrtThanFiterExecuterImpl(
       List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
@@ -46,44 +53,74 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
     super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier, segmentProperties,
         null);
     this.filterRangeValues = filterRangeValues;
+    ifDefaultValueMatchesFilter();
+  }
+
+  /**
+   * This method will check whether default value is present in the given filter values
+   */
+  private void ifDefaultValueMatchesFilter() {
+    if (!this.isDimensionPresentInCurrentBlock[0]) {
+      CarbonDimension dimension = this.dimColEvaluatorInfoList.get(0).getDimension();
+      byte[] defaultValue = dimension.getDefaultValue();
+      if (null != defaultValue) {
+        for (int k = 0; k < filterRangeValues.length; k++) {
+          int maxCompare =
+              ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterRangeValues[k], defaultValue);
+          if (maxCompare < 0) {
+            isDefaultValuePresentInFilter = true;
+            break;
+          }
+        }
+      }
+    }
   }
 
   @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
     BitSet bitSet = new BitSet(1);
-    byte[][] filterValues = this.filterRangeValues;
-    int columnIndex = this.dimColEvaluatorInfoList.get(0).getColumnIndex();
-    boolean isScanRequired = isScanRequired(blockMaxValue[columnIndex], filterValues);
+    boolean isScanRequired =
+        isScanRequired(blockMaxValue[dimensionBlocksIndex[0]], filterRangeValues);
     if (isScanRequired) {
       bitSet.set(0);
     }
     return bitSet;
-
   }
 
   private boolean isScanRequired(byte[] blockMaxValue, byte[][] filterValues) {
     boolean isScanRequired = false;
-    for (int k = 0; k < filterValues.length; k++) {
-      // filter value should be in range of max and min value i.e
-      // max>filtervalue>min
-      // so filter-max should be negative
-      int maxCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMaxValue);
-      // if any filter value is in range than this block needs to be
-      // scanned means always less than block max range.
-      if (maxCompare < 0) {
-        isScanRequired = true;
-        break;
+    if (isDimensionPresentInCurrentBlock[0]) {
+      for (int k = 0; k < filterValues.length; k++) {
+        // filter value should be in range of max and min value i.e
+        // max>filtervalue>min
+        // so filter-max should be negative
+        int maxCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMaxValue);
+        // if any filter value is in range than this block needs to be
+        // scanned means always less than block max range.
+        if (maxCompare < 0) {
+          isScanRequired = true;
+          break;
+        }
       }
+    } else {
+      isScanRequired = isDefaultValuePresentInFilter;
     }
     return isScanRequired;
   }
 
   @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
       throws FilterUnsupportedException, IOException {
+    // select all rows if dimension does not exists in the current block
+    if (!isDimensionPresentInCurrentBlock[0]) {
+      int numberOfRows = blockChunkHolder.getDataBlock().nodeSize();
+      return FilterUtil
+          .createBitSetGroupWithDefaultValue(blockChunkHolder.getDataBlock().numberOfPages(),
+              numberOfRows, true);
+    }
     if (!dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
       return super.applyFilter(blockChunkHolder);
     }
     int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
-        .get(dimColEvaluatorInfoList.get(0).getColumnIndex());
+        .get(dimensionBlocksIndex[0]);
     if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
       blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
           .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
@@ -238,14 +275,15 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
   }
 
   @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
-    if (!dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
-      super.readBlocks(blockChunkHolder);
-    }
-    int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
-        .get(dimColEvaluatorInfoList.get(0).getColumnIndex());
-    if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
-      blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
-          .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
+    if (isDimensionPresentInCurrentBlock[0]) {
+      if (!dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
+        super.readBlocks(blockChunkHolder);
+      }
+      int blockIndex = dimensionBlocksIndex[0];
+      if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
+        blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
+            .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
+      }
     }
   }
 }

@@ -16,16 +16,30 @@
  */
 package org.apache.carbondata.core.scan.executor.util;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.scan.executor.infos.AggregatorInfo;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
+import org.apache.carbondata.core.scan.executor.infos.DimensionInfo;
+import org.apache.carbondata.core.scan.executor.infos.MeasureInfo;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
+import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
+
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.spark.unsafe.types.UTF8String;
 
 /**
  * Utility class for restructuring
@@ -38,34 +52,183 @@ public class RestructureUtil {
    * table blocks in that case we need to select only those dimension out of
    * query dimension which is present in the current table block
    *
+   * @param blockExecutionInfo
    * @param queryDimensions
    * @param tableBlockDimensions
+   * @param tableComplexDimension
    * @return list of query dimension which is present in the table block
    */
-  public static List<QueryDimension> getUpdatedQueryDimension(List<QueryDimension> queryDimensions,
+  public static List<QueryDimension> createDimensionInfoAndGetCurrentBlockQueryDimension(
+      BlockExecutionInfo blockExecutionInfo, List<QueryDimension> queryDimensions,
       List<CarbonDimension> tableBlockDimensions, List<CarbonDimension> tableComplexDimension) {
     List<QueryDimension> presentDimension =
         new ArrayList<QueryDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    boolean[] isDimensionExists = new boolean[queryDimensions.size()];
+    Object[] defaultValues = new Object[queryDimensions.size()];
+    // create dimension information instance
+    DimensionInfo dimensionInfo = new DimensionInfo(isDimensionExists, defaultValues);
+    int newDictionaryColumnCount = 0;
+    int newNoDictionaryColumnCount = 0;
     // selecting only those dimension which is present in the query
+    int dimIndex = 0;
     for (QueryDimension queryDimension : queryDimensions) {
       if (queryDimension.getDimension().hasEncoding(Encoding.IMPLICIT)) {
         presentDimension.add(queryDimension);
+        isDimensionExists[dimIndex] = true;
       } else {
         for (CarbonDimension tableDimension : tableBlockDimensions) {
-          if (tableDimension.equals(queryDimension.getDimension())) {
-            presentDimension.add(queryDimension);
+          if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
+            QueryDimension currentBlockDimension = new QueryDimension(tableDimension.getColName());
+            tableDimension.getColumnSchema()
+                .setDataType(queryDimension.getDimension().getDataType());
+            tableDimension.getColumnSchema()
+                .setPrecision(queryDimension.getDimension().getColumnSchema().getPrecision());
+            tableDimension.getColumnSchema()
+                .setScale(queryDimension.getDimension().getColumnSchema().getScale());
+            tableDimension.getColumnSchema()
+                .setDefaultValue(queryDimension.getDimension().getDefaultValue());
+            currentBlockDimension.setDimension(tableDimension);
+            currentBlockDimension.setQueryOrder(queryDimension.getQueryOrder());
+            presentDimension.add(currentBlockDimension);
+            isDimensionExists[dimIndex] = true;
+            break;
+          }
+        }
+        // if dimension is found then no need to search in the complex dimensions list
+        if (isDimensionExists[dimIndex]) {
+          dimIndex++;
+          continue;
+        }
+        for (CarbonDimension tableDimension : tableComplexDimension) {
+          if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
+            QueryDimension currentBlockDimension = new QueryDimension(tableDimension.getColName());
+            // TODO: for complex dimension set scale and precision by traversing
+            // the child dimensions
+            currentBlockDimension.setDimension(tableDimension);
+            currentBlockDimension.setQueryOrder(queryDimension.getQueryOrder());
+            presentDimension.add(currentBlockDimension);
+            isDimensionExists[dimIndex] = true;
+            break;
+          }
+        }
+        // add default value only in case query dimension is not found in the current block
+        if (!isDimensionExists[dimIndex]) {
+          defaultValues[dimIndex] = validateAndGetDefaultValue(queryDimension.getDimension());
+          blockExecutionInfo.setRestructuredBlock(true);
+          // set the flag to say whether a new dictionary column or no dictionary column
+          // has been added. This will be useful after restructure for compaction scenarios where
+          // newly added columns data need to be filled
+          if (queryDimension.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+            dimensionInfo.setDictionaryColumnAdded(true);
+            newDictionaryColumnCount++;
+          } else {
+            dimensionInfo.setNoDictionaryColumnAdded(true);
+            newNoDictionaryColumnCount++;
           }
         }
       }
+      dimIndex++;
     }
-    for (QueryDimension queryDimimension : queryDimensions) {
-      for (CarbonDimension tableDimension : tableComplexDimension) {
-        if (tableDimension.equals(queryDimimension.getDimension())) {
-          presentDimension.add(queryDimimension);
-        }
+    dimensionInfo.setNewDictionaryColumnCount(newDictionaryColumnCount);
+    dimensionInfo.setNewNoDictionaryColumnCount(newNoDictionaryColumnCount);
+    blockExecutionInfo.setDimensionInfo(dimensionInfo);
+    return presentDimension;
+  }
+
+  /**
+   * This method will validate and return the default value to be
+   * filled at the time of result preparation
+   *
+   * @param queryDimension
+   * @return
+   */
+  public static Object validateAndGetDefaultValue(CarbonDimension queryDimension) {
+    byte[] defaultValue = queryDimension.getDefaultValue();
+    Object defaultValueToBeConsidered = null;
+    if (CarbonUtil.hasEncoding(queryDimension.getEncoder(), Encoding.DICTIONARY)) {
+      // direct dictionary case
+      if (CarbonUtil.hasEncoding(queryDimension.getEncoder(), Encoding.DIRECT_DICTIONARY)) {
+        defaultValueToBeConsidered = getDirectDictionaryDefaultValue(queryDimension.getDataType(),
+            queryDimension.getDefaultValue());
+      } else {
+        // dictionary case
+        defaultValueToBeConsidered = getDictionaryDefaultValue(defaultValue);
+      }
+    } else {
+      // no dictionary
+      defaultValueToBeConsidered = getNoDictionaryDefaultValue(defaultValue);
+    }
+    return defaultValueToBeConsidered;
+  }
+
+  /**
+   * Method for computing default value for dictionary column
+   *
+   * @param defaultValue
+   * @return
+   */
+  private static Object getDictionaryDefaultValue(byte[] defaultValue) {
+    Object dictionaryDefaultValue = null;
+    // dictionary has 2 cases:
+    // 1. If default value is specified then its surrogate key will be 2
+    // 2.  If default value is not specified then its surrogate key will be
+    // 1 which is for member default value null
+    if (isDefaultValueNull(defaultValue)) {
+      dictionaryDefaultValue = new Integer(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
+    } else {
+      dictionaryDefaultValue =
+          new Integer(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY + 1);
+    }
+    return dictionaryDefaultValue;
+  }
+
+  /**
+   * Method for computing default value for direct dictionary
+   *
+   * @param dataType
+   * @param defaultValue
+   * @return
+   */
+  private static Object getDirectDictionaryDefaultValue(DataType dataType, byte[] defaultValue) {
+    Object directDictionaryDefaultValue = null;
+    if (!isDefaultValueNull(defaultValue)) {
+      DirectDictionaryGenerator directDictionaryGenerator =
+          DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(dataType);
+      if (directDictionaryGenerator != null) {
+        String value =
+            new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        directDictionaryDefaultValue =
+            directDictionaryGenerator.getValueFromSurrogate(Integer.parseInt(value));
       }
     }
-    return presentDimension;
+    return directDictionaryDefaultValue;
+  }
+
+  /**
+   * Method for computing default value for no dictionary
+   *
+   * @param defaultValue
+   * @return
+   */
+  private static Object getNoDictionaryDefaultValue(byte[] defaultValue) {
+    Object noDictionaryDefaultValue = null;
+    if (!isDefaultValueNull(defaultValue)) {
+      noDictionaryDefaultValue = UTF8String.fromBytes(defaultValue);
+    }
+    return noDictionaryDefaultValue;
+  }
+
+  /**
+   * This method will validate whether a given value is empty or null
+   *
+   * @param defaultValue
+   * @return
+   */
+  private static boolean isDefaultValueNull(byte[] defaultValue) {
+    if (null == defaultValue) {
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -102,37 +265,96 @@ public class RestructureUtil {
   }
 
   /**
-   * Below method will be used to get the aggregator info object
+   * Method for computing measure default value based on the data type
+   *
+   * @param columnSchema
+   * @param defaultValue
+   * @return
+   */
+  public static Object getMeasureDefaultValue(ColumnSchema columnSchema, byte[] defaultValue) {
+    Object measureDefaultValue = null;
+    if (!isDefaultValueNull(defaultValue)) {
+      String value = null;
+      switch (columnSchema.getDataType()) {
+        case SHORT:
+        case INT:
+        case LONG:
+          value =
+              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          measureDefaultValue = Long.parseLong(value);
+          break;
+        case DECIMAL:
+          BigDecimal decimal = DataTypeUtil.byteToBigDecimal(defaultValue);
+          if (columnSchema.getScale() > decimal.scale()) {
+            decimal = decimal.setScale(columnSchema.getScale(), RoundingMode.HALF_UP);
+          }
+          measureDefaultValue = decimal;
+          break;
+        default:
+          value =
+              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          Double parsedValue = Double.valueOf(value);
+          if (!Double.isInfinite(parsedValue) && !Double.isNaN(parsedValue)) {
+            measureDefaultValue = value;
+          }
+      }
+    }
+    return measureDefaultValue;
+  }
+
+  /**
+   * Below method will be used to prepare the measure info object
    * in this method some of the properties which will be extracted
    * from query measure and current block measures will be set
    *
+   * @param blockExecutionInfo
    * @param queryMeasures        measures present in query
    * @param currentBlockMeasures current block measures
-   * @return aggregator info
+   * @return measures present in the block
    */
-  public static AggregatorInfo getAggregatorInfos(List<QueryMeasure> queryMeasures,
+  public static List<QueryMeasure> createMeasureInfoAndGetCurrentBlockQueryMeasures(
+      BlockExecutionInfo blockExecutionInfo, List<QueryMeasure> queryMeasures,
       List<CarbonMeasure> currentBlockMeasures) {
-    AggregatorInfo aggregatorInfos = new AggregatorInfo();
+    MeasureInfo measureInfo = new MeasureInfo();
+    List<QueryMeasure> presentMeasure = new ArrayList<>(queryMeasures.size());
     int numberOfMeasureInQuery = queryMeasures.size();
-    int[] measureOrdinals = new int[numberOfMeasureInQuery];
+    List<Integer> measureOrdinalList = new ArrayList<>(numberOfMeasureInQuery);
     Object[] defaultValues = new Object[numberOfMeasureInQuery];
     boolean[] measureExistsInCurrentBlock = new boolean[numberOfMeasureInQuery];
     int index = 0;
     for (QueryMeasure queryMeasure : queryMeasures) {
-      measureOrdinals[index] = queryMeasure.getMeasure().getOrdinal();
       // if query measure exists in current dimension measures
       // then setting measure exists is true
       // otherwise adding a default value of a measure
-      if (currentBlockMeasures.contains(queryMeasure.getMeasure())) {
-        measureExistsInCurrentBlock[index] = true;
-      } else {
-        defaultValues[index] = queryMeasure.getMeasure().getDefaultValue();
+      for (CarbonMeasure carbonMeasure : currentBlockMeasures) {
+        if (carbonMeasure.getColumnId().equals(queryMeasure.getMeasure().getColumnId())) {
+          QueryMeasure currentBlockMeasure = new QueryMeasure(carbonMeasure.getColName());
+          carbonMeasure.getColumnSchema().setDataType(queryMeasure.getMeasure().getDataType());
+          carbonMeasure.getColumnSchema().setPrecision(queryMeasure.getMeasure().getPrecision());
+          carbonMeasure.getColumnSchema().setScale(queryMeasure.getMeasure().getScale());
+          carbonMeasure.getColumnSchema()
+              .setDefaultValue(queryMeasure.getMeasure().getDefaultValue());
+          currentBlockMeasure.setMeasure(carbonMeasure);
+          currentBlockMeasure.setQueryOrder(queryMeasure.getQueryOrder());
+          presentMeasure.add(currentBlockMeasure);
+          measureOrdinalList.add(carbonMeasure.getOrdinal());
+          measureExistsInCurrentBlock[index] = true;
+          break;
+        }
+      }
+      if (!measureExistsInCurrentBlock[index]) {
+        defaultValues[index] = getMeasureDefaultValue(queryMeasure.getMeasure().getColumnSchema(),
+            queryMeasure.getMeasure().getDefaultValue());
+        blockExecutionInfo.setRestructuredBlock(true);
       }
       index++;
     }
-    aggregatorInfos.setDefaultValues(defaultValues);
-    aggregatorInfos.setMeasureOrdinals(measureOrdinals);
-    aggregatorInfos.setMeasureExists(measureExistsInCurrentBlock);
-    return aggregatorInfos;
+    int[] measureOrdinals =
+        ArrayUtils.toPrimitive(measureOrdinalList.toArray(new Integer[measureOrdinalList.size()]));
+    measureInfo.setDefaultValues(defaultValues);
+    measureInfo.setMeasureOrdinals(measureOrdinals);
+    measureInfo.setMeasureExists(measureExistsInCurrentBlock);
+    blockExecutionInfo.setMeasureInfo(measureInfo);
+    return presentMeasure;
   }
 }

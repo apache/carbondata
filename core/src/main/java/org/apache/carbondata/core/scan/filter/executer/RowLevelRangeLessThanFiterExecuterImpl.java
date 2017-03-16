@@ -28,6 +28,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
@@ -41,6 +42,11 @@ import org.apache.carbondata.core.util.CarbonUtil;
 public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecuterImpl {
   private byte[][] filterRangeValues;
 
+  /**
+   * flag to check whether default values is present in the filter value list
+   */
+  private boolean isDefaultValuePresentInFilter;
+
   public RowLevelRangeLessThanFiterExecuterImpl(
       List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
@@ -49,13 +55,33 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
     super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier, segmentProperties,
         null);
     this.filterRangeValues = filterRangeValues;
+    ifDefaultValueMatchesFilter();
+  }
+
+  /**
+   * This method will check whether default value is present in the given filter values
+   */
+  private void ifDefaultValueMatchesFilter() {
+    if (!this.isDimensionPresentInCurrentBlock[0]) {
+      CarbonDimension dimension = this.dimColEvaluatorInfoList.get(0).getDimension();
+      byte[] defaultValue = dimension.getDefaultValue();
+      if (null != defaultValue) {
+        for (int k = 0; k < filterRangeValues.length; k++) {
+          int maxCompare =
+              ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterRangeValues[k], defaultValue);
+          if (maxCompare > 0) {
+            isDefaultValuePresentInFilter = true;
+            break;
+          }
+        }
+      }
+    }
   }
 
   @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
     BitSet bitSet = new BitSet(1);
-    byte[][] filterValues = this.filterRangeValues;
-    int columnIndex = this.dimColEvaluatorInfoList.get(0).getColumnIndex();
-    boolean isScanRequired = isScanRequired(blockMinValue[columnIndex], filterValues);
+    boolean isScanRequired =
+        isScanRequired(blockMinValue[dimensionBlocksIndex[0]], filterRangeValues);
     if (isScanRequired) {
       bitSet.set(0);
     }
@@ -64,28 +90,39 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
 
   private boolean isScanRequired(byte[] blockMinValue, byte[][] filterValues) {
     boolean isScanRequired = false;
-    for (int k = 0; k < filterValues.length; k++) {
-      // and filter-min should be positive
-      int minCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMinValue);
+    if (isDimensionPresentInCurrentBlock[0]) {
+      for (int k = 0; k < filterValues.length; k++) {
+        // and filter-min should be positive
+        int minCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blockMinValue);
 
-      // if any filter applied is not in range of min and max of block
-      // then since its a less than fiter validate whether the block
-      // min range is less  than applied filter member
-      if (minCompare > 0) {
-        isScanRequired = true;
-        break;
+        // if any filter applied is not in range of min and max of block
+        // then since its a less than fiter validate whether the block
+        // min range is less  than applied filter member
+        if (minCompare > 0) {
+          isScanRequired = true;
+          break;
+        }
       }
+    } else {
+      isScanRequired = isDefaultValuePresentInFilter;
     }
     return isScanRequired;
   }
 
   @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
       throws FilterUnsupportedException, IOException {
+    // select all rows if dimension does not exists in the current block
+    if (!isDimensionPresentInCurrentBlock[0]) {
+      int numberOfRows = blockChunkHolder.getDataBlock().nodeSize();
+      return FilterUtil
+          .createBitSetGroupWithDefaultValue(blockChunkHolder.getDataBlock().numberOfPages(),
+              numberOfRows, true);
+    }
     if (!dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
       return super.applyFilter(blockChunkHolder);
     }
     int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
-        .get(dimColEvaluatorInfoList.get(0).getColumnIndex());
+        .get(dimensionBlocksIndex[0]);
     if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
       blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
           .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
@@ -117,7 +154,9 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
           .getDirectDictionaryGenerator(
               dimColEvaluatorInfoList.get(0).getDimension().getDataType());
       int key = directDictionaryGenerator.generateDirectSurrogateKey(null) + 1;
-      defaultValue = FilterUtil.getMaskKey(key, dimColEvaluatorInfoList.get(0).getDimension(),
+      CarbonDimension currentBlockDimension =
+          segmentProperties.getDimensions().get(dimensionBlocksIndex[0]);
+      defaultValue = FilterUtil.getMaskKey(key, currentBlockDimension,
           this.segmentProperties.getDimensionKeyGenerator());
     }
     if (dimensionColumnDataChunk.isExplicitSorted()
@@ -272,14 +311,15 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
   }
 
   @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
-    if (!dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
-      super.readBlocks(blockChunkHolder);
-    }
-    int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
-        .get(dimColEvaluatorInfoList.get(0).getColumnIndex());
-    if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
-      blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
-          .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
+    if (isDimensionPresentInCurrentBlock[0]) {
+      if (!dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
+        super.readBlocks(blockChunkHolder);
+      }
+      int blockIndex = dimensionBlocksIndex[0];
+      if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
+        blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
+            .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
+      }
     }
   }
 }

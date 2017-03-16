@@ -30,9 +30,15 @@ import org.apache.carbondata.core.datastore.block.TaskBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * Utility Class for the Compaction Flow.
@@ -266,5 +272,83 @@ public class CarbonCompactionUtil {
       }
     }
     return null;
+  }
+
+  /**
+   * This method will add the prepare the max column cardinality map
+   *
+   * @param columnCardinalityMap
+   * @param currentBlockSchema
+   * @param currentBlockCardinality
+   */
+  public static void addColumnCardinalityToMap(Map<String, Integer> columnCardinalityMap,
+      List<ColumnSchema> currentBlockSchema, int[] currentBlockCardinality) {
+    for (int i = 0; i < currentBlockCardinality.length; i++) {
+      // add value to map only if does not exist or new cardinality is > existing value
+      String columnUniqueId = currentBlockSchema.get(i).getColumnUniqueId();
+      Integer value = columnCardinalityMap.get(columnUniqueId);
+      if (null == value) {
+        columnCardinalityMap.put(columnUniqueId, currentBlockCardinality[i]);
+      } else {
+        if (currentBlockCardinality[i] > value) {
+          columnCardinalityMap.put(columnUniqueId, currentBlockCardinality[i]);
+        }
+      }
+    }
+  }
+
+  /**
+   * This method will return the updated cardinality according to the master schema
+   *
+   * @param columnCardinalityMap
+   * @param carbonTable
+   * @param updatedColumnSchemaList
+   * @return
+   */
+  public static int[] updateColumnSchemaAndGetCardinality(Map<String, Integer> columnCardinalityMap,
+      CarbonTable carbonTable, List<ColumnSchema> updatedColumnSchemaList) {
+    List<CarbonDimension> masterDimensions =
+        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+    List<Integer> updatedCardinalityList = new ArrayList<>(columnCardinalityMap.size());
+    for (CarbonDimension dimension : masterDimensions) {
+      Integer value = columnCardinalityMap.get(dimension.getColumnId());
+      if (null == value) {
+        updatedCardinalityList.add(getDimensionDefaultCardinality(dimension));
+      } else {
+        updatedCardinalityList.add(value);
+      }
+      updatedColumnSchemaList.add(dimension.getColumnSchema());
+    }
+    // add measures to the column schema list
+    List<CarbonMeasure> masterSchemaMeasures =
+        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
+    for (CarbonMeasure measure : masterSchemaMeasures) {
+      updatedColumnSchemaList.add(measure.getColumnSchema());
+    }
+    int[] updatedCardinality = ArrayUtils
+        .toPrimitive(updatedCardinalityList.toArray(new Integer[updatedCardinalityList.size()]));
+    return updatedCardinality;
+  }
+
+  /**
+   * This method will return the default cardinality based on dimension type
+   *
+   * @param dimension
+   * @return
+   */
+  private static int getDimensionDefaultCardinality(CarbonDimension dimension) {
+    int cardinality = 0;
+    if (dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      cardinality = Integer.MAX_VALUE;
+    } else if (dimension.hasEncoding(Encoding.DICTIONARY)) {
+      if (null != dimension.getDefaultValue()) {
+        cardinality = CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY + 1;
+      } else {
+        cardinality = CarbonCommonConstants.DICTIONARY_DEFAULT_CARDINALITY;
+      }
+    } else {
+      cardinality = -1;
+    }
+    return cardinality;
   }
 }

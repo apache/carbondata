@@ -66,6 +66,8 @@ public class CarbonDataWriterVo {
 
   private int bucketNumber;
 
+  private long schemaUpdatedTimeStamp;
+
   /**
    * @return the storeLocation
    */
@@ -303,5 +305,19 @@ public class CarbonDataWriterVo {
 
   public void setBucketNumber(int bucketNumber) {
     this.bucketNumber = bucketNumber;
+  }
+
+  /**
+   * @return
+   */
+  public long getSchemaUpdatedTimeStamp() {
+    return schemaUpdatedTimeStamp;
+  }
+
+  /**
+   * @param schemaUpdatedTimeStamp
+   */
+  public void setSchemaUpdatedTimeStamp(long schemaUpdatedTimeStamp) {
+    this.schemaUpdatedTimeStamp = schemaUpdatedTimeStamp;
   }
 }

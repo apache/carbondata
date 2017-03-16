@@ -17,11 +17,12 @@
 
 package org.apache.carbondata.spark.util
 
-import java.io.FileNotFoundException
+import java.io.{FileNotFoundException, IOException}
 import java.nio.charset.Charset
 import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 import scala.language.implicitConversions
 import scala.util.control.Breaks.{break, breakable}
@@ -41,15 +42,17 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.Dictionary
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier
+import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
 import org.apache.carbondata.core.reader.CarbonDictionaryReader
 import org.apache.carbondata.core.service.CarbonCommonFactory
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter
+import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
 import org.apache.carbondata.processing.csvload.CSVInputFormat
 import org.apache.carbondata.processing.csvload.StringArrayWritable
 import org.apache.carbondata.processing.etl.DataLoadingException
@@ -57,6 +60,7 @@ import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.rdd._
+import org.apache.carbondata.spark.tasks.{DictionaryWriterTask, SortIndexWriterTask}
 
 /**
  * A object which provide a method to generate global dictionary from CSV files.
@@ -782,6 +786,110 @@ object GlobalDictionaryUtil {
       case ex: Exception =>
         LOGGER.error(ex, "generate global dictionary failed")
         throw ex
+    }
+  }
+
+  /**
+   * This method will write dictionary file, sortindex file and dictionary meta for new dictionary
+   * column with default value
+   *
+   * @param carbonTablePath
+   * @param columnSchema
+   * @param tableIdentifier
+   * @param storePath
+   * @param defaultValue
+   */
+  def loadDefaultDictionaryValueForNewColumn(carbonTablePath: CarbonTablePath,
+      columnSchema: ColumnSchema,
+      tableIdentifier: CarbonTableIdentifier,
+      storePath: String,
+      defaultValue: String): Unit = {
+
+    var carbonDictionarySortIndexWriter: CarbonDictionarySortIndexWriter = null
+    var dictionary: Dictionary = null
+
+    val dictLock = CarbonLockFactory
+      .getCarbonLockObj(carbonTablePath.getRelativeDictionaryDirectory,
+        columnSchema.getColumnUniqueId + LockUsage.LOCK)
+
+    val isDictionaryLocked = dictLock.lockWithRetries()
+    try {
+      if (isDictionaryLocked) {
+        LOGGER.info(s"Successfully able to get the dictionary lock for ${
+          columnSchema.getColumnName
+        }")
+      } else {
+        sys.error(s"Dictionary file ${
+          columnSchema.getColumnName
+        } is locked for updation. Please try after some time")
+      }
+      val columnIdentifier = new ColumnIdentifier(columnSchema.getColumnUniqueId,
+        null,
+        columnSchema.getDataType)
+      val parsedValue = DataTypeUtil.normalizeColumnValueForItsDataType(defaultValue, columnSchema)
+      val valuesBuffer = new mutable.HashSet[String]
+      if (null != parsedValue) {
+        valuesBuffer += parsedValue
+      }
+      val dictWriteTask = new DictionaryWriterTask(valuesBuffer,
+        dictionary,
+        tableIdentifier,
+        columnIdentifier,
+        storePath,
+        columnSchema,
+        false
+      )
+      val distinctValues = dictWriteTask.execute
+      LOGGER.info(s"Dictionary file writing is successful for new column ${
+        columnSchema.getColumnName
+      }")
+
+      if (distinctValues.size() > 0) {
+        dictionary = CarbonLoaderUtil.getDictionary(tableIdentifier,
+          new ColumnIdentifier(columnSchema.getColumnUniqueId, null, columnSchema.getDataType),
+          storePath,
+          columnSchema.getDataType
+        )
+        val sortIndexWriteTask = new SortIndexWriterTask(tableIdentifier,
+          columnIdentifier,
+          columnSchema.getDataType,
+          storePath,
+          dictionary,
+          distinctValues)
+        sortIndexWriteTask.execute()
+      }
+
+      if (null != carbonDictionarySortIndexWriter) {
+        carbonDictionarySortIndexWriter.close()
+      }
+
+      LOGGER.info(s"SortIndex file writing is successful for new column ${
+        columnSchema.getColumnName
+      }")
+
+      // After sortIndex writing, update dictionaryMeta
+      dictWriteTask.updateMetaData()
+
+      LOGGER.info(s"Dictionary meta file writing is successful for new column ${
+        columnSchema.getColumnName
+      }")
+    } catch {
+      case ex: Exception =>
+        LOGGER.error(ex)
+        throw ex
+    } finally {
+      CarbonUtil.clearDictionaryCache(dictionary)
+      if (dictLock != null && isDictionaryLocked) {
+        if (dictLock.unlock()) {
+          LOGGER.info(s"Dictionary ${
+            columnSchema.getColumnName
+          } Unlocked Successfully.")
+        } else {
+          LOGGER.error(s"Unable to unlock Dictionary ${
+            columnSchema.getColumnName
+          }")
+        }
+      }
     }
   }
 }

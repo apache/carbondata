@@ -370,7 +370,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   /**
    * close dictionary thrift writer
    */
-  private void closeThriftWriter() {
+  private void closeThriftWriter() throws IOException {
     if (null != dictionaryThriftWriter) {
       dictionaryThriftWriter.close();
     }

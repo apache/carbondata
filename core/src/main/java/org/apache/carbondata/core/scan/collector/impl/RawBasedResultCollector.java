@@ -33,6 +33,16 @@ import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
  */
 public class RawBasedResultCollector extends AbstractScannedResultCollector {
 
+  protected ByteArrayWrapper wrapper;
+
+  protected byte[] dictionaryKeyArray;
+
+  protected byte[][] noDictionaryKeyArray;
+
+  protected byte[][] complexTypeKeyArray;
+
+  protected byte[] implicitColumnByteArray;
+
   public RawBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
   }
@@ -44,29 +54,40 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
   @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
-    ByteArrayWrapper wrapper = null;
     BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
         scannedResult.getDeleteDeltaDataCache();
     // scan the record and add to list
     int rowCounter = 0;
     while (scannedResult.hasNext() && rowCounter < batchSize) {
-      Object[] row = new Object[1 + queryMeasures.length];
-      wrapper = new ByteArrayWrapper();
-      wrapper.setDictionaryKey(scannedResult.getDictionaryKeyArray());
-      wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
-      wrapper.setComplexTypesKeys(scannedResult.getComplexTypeKeyArray());
-      wrapper.setImplicitColumnByteArray(scannedResult.getBlockletId()
-          .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+      scanResultAndGetData(scannedResult);
       if (null != deleteDeltaDataCache && deleteDeltaDataCache
           .contains(scannedResult.getCurrenrRowId())) {
         continue;
       }
-      row[0] = wrapper;
-      fillMeasureData(row, 1, scannedResult);
-      listBasedResult.add(row);
+      prepareRow(scannedResult, listBasedResult, queryMeasures);
       rowCounter++;
     }
-    updateData(listBasedResult);
     return listBasedResult;
+  }
+
+  protected void prepareRow(AbstractScannedResult scannedResult, List<Object[]> listBasedResult,
+      QueryMeasure[] queryMeasures) {
+    Object[] row = new Object[1 + queryMeasures.length];
+    wrapper = new ByteArrayWrapper();
+    wrapper.setDictionaryKey(dictionaryKeyArray);
+    wrapper.setNoDictionaryKeys(noDictionaryKeyArray);
+    wrapper.setComplexTypesKeys(complexTypeKeyArray);
+    wrapper.setImplicitColumnByteArray(implicitColumnByteArray);
+    row[0] = wrapper;
+    fillMeasureData(row, 1, scannedResult);
+    listBasedResult.add(row);
+  }
+
+  protected void scanResultAndGetData(AbstractScannedResult scannedResult) {
+    dictionaryKeyArray = scannedResult.getDictionaryKeyArray();
+    noDictionaryKeyArray = scannedResult.getNoDictionaryKeyArray();
+    complexTypeKeyArray = scannedResult.getComplexTypeKeyArray();
+    implicitColumnByteArray = scannedResult.getBlockletId()
+        .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
   }
 }

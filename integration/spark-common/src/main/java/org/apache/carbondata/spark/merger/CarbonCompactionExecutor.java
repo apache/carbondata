@@ -19,6 +19,7 @@ package org.apache.carbondata.spark.merger;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +36,7 @@ import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
@@ -92,10 +94,19 @@ public class CarbonCompactionExecutor {
       String segmentId = taskMap.getKey();
       List<DataFileFooter> listMetadata = dataFileMetadataSegMapping.get(segmentId);
 
-      int[] colCardinality = listMetadata.get(0).getSegmentInfo().getColumnCardinality();
-
+      // update cardinality of source segment according to new schema
+      Map<String, Integer> columnToCardinalityMap =
+          new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+      CarbonCompactionUtil
+          .addColumnCardinalityToMap(columnToCardinalityMap, listMetadata.get(0).getColumnInTable(),
+              listMetadata.get(0).getSegmentInfo().getColumnCardinality());
+      List<ColumnSchema> updatedColumnSchemaList =
+          new ArrayList<>(listMetadata.get(0).getColumnInTable().size());
+      int[] updatedColumnCardinalities = CarbonCompactionUtil
+          .updateColumnSchemaAndGetCardinality(columnToCardinalityMap, carbonTable,
+              updatedColumnSchemaList);
       SegmentProperties sourceSegProperties =
-          new SegmentProperties(listMetadata.get(0).getColumnInTable(), colCardinality);
+          new SegmentProperties(updatedColumnSchemaList, updatedColumnCardinalities);
 
       // for each segment get taskblock info
       TaskBlockInfo taskBlockInfo = taskMap.getValue();
@@ -171,15 +182,23 @@ public class CarbonCompactionExecutor {
 
     List<QueryDimension> dims = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    for (CarbonDimension dim : destinationSegProperties.getDimensions()) {
+    List<CarbonDimension> dimensions =
+        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+    for (CarbonDimension dim : dimensions) {
+      // check if dimension is deleted
       QueryDimension queryDimension = new QueryDimension(dim.getColName());
+      queryDimension.setDimension(dim);
       dims.add(queryDimension);
     }
     model.setQueryDimension(dims);
 
     List<QueryMeasure> msrs = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    for (CarbonMeasure carbonMeasure : destinationSegProperties.getMeasures()) {
+    List<CarbonMeasure> measures =
+        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
+    for (CarbonMeasure carbonMeasure : measures) {
+      // check if measure is deleted
       QueryMeasure queryMeasure = new QueryMeasure(carbonMeasure.getColName());
+      queryMeasure.setMeasure(carbonMeasure);
       msrs.add(queryMeasure);
     }
     model.setQueryMeasures(msrs);

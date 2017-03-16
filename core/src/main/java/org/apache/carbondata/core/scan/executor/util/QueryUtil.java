@@ -219,16 +219,15 @@ public class QueryUtil {
         continue;
       }
 
-      allProjectionListDimensionIndexes.add(
-          dimensionOrdinalToBlockMapping.get(queryDimensions.get(i).getDimension().getOrdinal()));
+      Integer dimensionOrdinal = queryDimensions.get(i).getDimension().getOrdinal();
+      allProjectionListDimensionIndexes.add(dimensionOrdinalToBlockMapping.get(dimensionOrdinal));
       if (queryDimensions.get(i).getDimension().numberOfChild() > 0) {
         addChildrenBlockIndex(allProjectionListDimensionIndexes,
             queryDimensions.get(i).getDimension());
       }
 
-      if (!filterDimensionOrdinal.contains(queryDimensions.get(i).getDimension().getOrdinal())) {
-        blockIndex =
-            dimensionOrdinalToBlockMapping.get(queryDimensions.get(i).getDimension().getOrdinal());
+      if (!filterDimensionOrdinal.contains(dimensionOrdinal)) {
+        blockIndex = dimensionOrdinalToBlockMapping.get(dimensionOrdinal);
         dimensionBlockIndex.add(blockIndex);
         if (queryDimensions.get(i).getDimension().numberOfChild() > 0) {
           addChildrenBlockIndex(dimensionBlockIndex, queryDimensions.get(i).getDimension());
@@ -404,10 +403,10 @@ public class QueryUtil {
     Set<Integer> measureBlockIndex = new HashSet<Integer>();
     Set<Integer> filterMeasureOrdinal = getFilterMeasureOrdinal(filterMeasures);
     for (int i = 0; i < queryMeasures.size(); i++) {
-      allProjectionListMeasureIdexes.add(queryMeasures.get(i).getMeasure().getOrdinal());
-      if (!filterMeasureOrdinal.contains(queryMeasures.get(i).getMeasure().getOrdinal())) {
-        measureBlockIndex
-            .add(ordinalToBlockIndexMapping.get(queryMeasures.get(i).getMeasure().getOrdinal()));
+      Integer measureOrdinal = queryMeasures.get(i).getMeasure().getOrdinal();
+      allProjectionListMeasureIdexes.add(measureOrdinal);
+      if (!filterMeasureOrdinal.contains(measureOrdinal)) {
+        measureBlockIndex.add(ordinalToBlockIndexMapping.get(measureOrdinal));
       }
     }
     for (int i = 0; i < expressionMeasure.size(); i++) {
@@ -756,7 +755,8 @@ public class QueryUtil {
     if (null != filterDimensions) {
       for (CarbonDimension filterDimension : filterDimensions) {
         // do not fill nay details for implicit dimension type
-        if (filterDimension.hasEncoding(Encoding.IMPLICIT)) {
+        if (filterDimension.hasEncoding(Encoding.IMPLICIT)
+            || filterDimension.getNumberOfChild() == 0) {
           continue;
         }
         fillParentDetails(dimensionToBlockIndexMap, filterDimension, complexTypeMap,

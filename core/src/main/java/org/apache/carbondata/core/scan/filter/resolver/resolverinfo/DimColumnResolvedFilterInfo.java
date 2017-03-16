@@ -48,8 +48,6 @@ public class DimColumnResolvedFilterInfo implements Serializable {
 
   private boolean isDimensionExistsInCurrentSilce = true;
 
-  private String defaultValue;
-
   private CarbonDimension dimension;
 
   /**
@@ -119,14 +117,6 @@ public class DimColumnResolvedFilterInfo implements Serializable {
     this.isDimensionExistsInCurrentSilce = isDimensionExistsInCurrentSilce;
   }
 
-  public String getDefaultValue() {
-    return defaultValue;
-  }
-
-  public void setDefaultValue(String defaultValue) {
-    this.defaultValue = defaultValue;
-  }
-
   public void populateFilterInfoBasedOnColumnType(ResolvedFilterInfoVisitorIntf visitor,
       FilterResolverMetadata metadata) throws FilterUnsupportedException, IOException {
     if (null != visitor) {
@@ -137,5 +127,19 @@ public class DimColumnResolvedFilterInfo implements Serializable {
       this.setColumnIndex(metadata.getColumnExpression().getDimension().getOrdinal());
     }
 
+  }
+
+  /**
+   * This method will clone the current object
+   *
+   * @return
+   */
+  public DimColumnResolvedFilterInfo getCopyObject() {
+    DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo = new DimColumnResolvedFilterInfo();
+    dimColumnResolvedFilterInfo.resolvedFilterValueObj = this.resolvedFilterValueObj;
+    dimColumnResolvedFilterInfo.rowIndex = this.rowIndex;
+    dimColumnResolvedFilterInfo.dimensionResolvedFilter = this.dimensionResolvedFilter;
+    dimColumnResolvedFilterInfo.isDimensionExistsInCurrentSilce = isDimensionExistsInCurrentSilce;
+    return dimColumnResolvedFilterInfo;
   }
 }

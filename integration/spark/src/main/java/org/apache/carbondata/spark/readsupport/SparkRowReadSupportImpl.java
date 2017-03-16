@@ -24,6 +24,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
 
@@ -47,7 +48,7 @@ public class SparkRowReadSupportImpl extends DictionaryDecodeReadSupport<Row> {
       if (dictionaries[i] != null) {
         data[i] = DataTypeUtil
             .getDataBasedOnDataType(dictionaries[i].getDictionaryValueForKeyInBytes((int) data[i]),
-                dataTypes[i]);
+                (CarbonDimension) carbonColumns[i]);
         if (data[i] == null) {
           continue;
         }

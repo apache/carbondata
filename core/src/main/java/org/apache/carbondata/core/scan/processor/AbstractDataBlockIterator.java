@@ -28,10 +28,8 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.FileHolder;
+import org.apache.carbondata.core.scan.collector.ResultCollectorFactory;
 import org.apache.carbondata.core.scan.collector.ScannedResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.DictionaryBasedResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.DictionaryBasedVectorResultCollector;
-import org.apache.carbondata.core.scan.collector.impl.RawBasedResultCollector;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
@@ -98,19 +96,8 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     } else {
       blockletScanner = new NonFilterScanner(blockExecutionInfo, queryStatisticsModel);
     }
-    if (blockExecutionInfo.isRawRecordDetailQuery()) {
-      LOGGER.info("Row based raw collector is used to scan and collect the data");
-      this.scannerResultAggregator =
-          new RawBasedResultCollector(blockExecutionInfo);
-    } else if (blockExecutionInfo.isVectorBatchCollector()) {
-      LOGGER.info("Vector based dictionary collector is used to scan and collect the data");
-      this.scannerResultAggregator =
-          new DictionaryBasedVectorResultCollector(blockExecutionInfo);
-    } else {
-      LOGGER.info("Row based dictionary collector is used to scan and collect the data");
-      this.scannerResultAggregator =
-          new DictionaryBasedResultCollector(blockExecutionInfo);
-    }
+    this.scannerResultAggregator =
+        ResultCollectorFactory.getScannedResultCollector(blockExecutionInfo);
     this.batchSize = batchSize;
     this.executorService = executorService;
     this.nextBlock = new AtomicBoolean(false);

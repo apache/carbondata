@@ -79,7 +79,7 @@ public class RowResultMerger {
 
   public RowResultMerger(List<RawResultIterator> iteratorList, String databaseName,
       String tableName, SegmentProperties segProp, String tempStoreLocation,
-      CarbonLoadModel loadModel, int[] colCardinality, CompactionType compactionType) {
+      CarbonLoadModel loadModel, CompactionType compactionType) {
 
     CarbonDataFileAttributes carbonDataFileAttributes;
 
@@ -131,7 +131,6 @@ public class RowResultMerger {
     } else {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount);
     }
-    carbonFactDataHandlerModel.setColCardinality(colCardinality);
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
 
@@ -202,6 +201,7 @@ public class RowResultMerger {
       }
       mergeStatus = true;
     } catch (Exception e) {
+      LOGGER.error(e, e.getMessage());
       LOGGER.error("Exception in compaction merger " + e.getMessage());
       mergeStatus = false;
     } finally {
@@ -260,6 +260,10 @@ public class RowResultMerger {
         .getColumnSchemaList(carbonTable.getDimensionByTableName(tableName),
             carbonTable.getMeasureByTableName(tableName));
     carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
+    // get the cardinality for all all the columns including no dictionary columns
+    int[] formattedCardinality =
+        CarbonUtil.getFormattedCardinality(segprop.getDimColumnsCardinality(), wrapperColumnSchema);
+    carbonFactDataHandlerModel.setColCardinality(formattedCardinality);
     //TO-DO Need to handle complex types here .
     Map<Integer, GenericDataType> complexIndexMap =
         new HashMap<Integer, GenericDataType>(segprop.getComplexDimensions().size());

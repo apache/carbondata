@@ -24,9 +24,11 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
 
 import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.{BucketingInfo, SchemaEvolution, SchemaEvolutionEntry}
@@ -34,11 +36,13 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo,
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.service.CarbonCommonFactory
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
+import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.load.FailureCauses
 import org.apache.carbondata.spark.merger.CompactionType
-import org.apache.carbondata.spark.util.DataTypeConverterUtil
+import org.apache.carbondata.spark.util.{DataTypeConverterUtil, GlobalDictionaryUtil}
 
 case class TableModel(
     ifNotExistsSet: Boolean,
@@ -123,6 +127,169 @@ case class CompactionCallableModel(storePath: String,
     sqlContext: SQLContext,
     compactionType: CompactionType)
 
+case class DataTypeInfo(dataType: String, precision: Int = 0, scale: Int = 0)
+
+case class AlterTableDataTypeChangeModel(dataTypeInfo: DataTypeInfo,
+    databaseName: Option[String],
+    tableName: String,
+    columnName: String,
+    newColumnName: String)
+
+case class AlterTableRenameModel(
+    oldTableIdentifier: TableIdentifier,
+    newTableIdentifier: TableIdentifier
+)
+
+case class AlterTableAddColumnsModel(
+    databaseName: Option[String],
+    tableName: String,
+    tableProperties: Map[String, String],
+    dimCols: Seq[Field],
+    msrCols: Seq[Field],
+    highCardinalityDims: Seq[String])
+
+case class AlterTableDropColumnModel(databaseName: Option[String],
+    tableName: String,
+    columns: List[String])
+
+class AlterTableProcessor(
+    alterTableModel: AlterTableAddColumnsModel,
+    dbName: String,
+    tableInfo: TableInfo,
+    carbonTablePath: CarbonTablePath,
+    tableIdentifier: CarbonTableIdentifier,
+    storePath: String) {
+
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+
+  def process: Seq[ColumnSchema] = {
+    val tableSchema = tableInfo.getFactTable
+    val tableCols = tableSchema.getListOfColumns.asScala
+    val existingColsSize = tableCols.size
+    var allColumns = tableCols.filter(x => x.isDimensionColumn)
+    var newCols = Seq[ColumnSchema]()
+
+    alterTableModel.dimCols.foreach(field => {
+      val encoders = new java.util.ArrayList[Encoding]()
+      encoders.add(Encoding.DICTIONARY)
+      val columnSchema: ColumnSchema = getColumnSchema(
+        DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
+        field.name.getOrElse(field.column),
+        isCol = true,
+        encoders,
+        isDimensionCol = true,
+        -1,
+        field.precision,
+        field.scale,
+        field.schemaOrdinal + existingColsSize)
+      allColumns ++= Seq(columnSchema)
+      newCols ++= Seq(columnSchema)
+    })
+
+    allColumns ++= tableCols.filter(x => !x.isDimensionColumn)
+    alterTableModel.msrCols.foreach(field => {
+      val encoders = new java.util.ArrayList[Encoding]()
+      val columnSchema: ColumnSchema = getColumnSchema(
+        DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
+        field.name.getOrElse(field.column),
+        isCol = true,
+        encoders,
+        isDimensionCol = false,
+        -1,
+        field.precision,
+        field.scale,
+        field.schemaOrdinal + existingColsSize)
+      allColumns ++= Seq(columnSchema)
+      newCols ++= Seq(columnSchema)
+    })
+
+    // Check if there is any duplicate measures or dimensions.
+    // Its based on the dimension name and measure name
+    allColumns.filter(x => !x.isInvisible).groupBy(_.getColumnName)
+      .foreach(f => if (f._2.size > 1) {
+      val name = f._1
+      LOGGER.error(s"Duplicate column found with name: $name")
+      LOGGER.audit(
+        s"Validation failed for Create/Alter Table Operation " +
+        s"for ${ dbName }.${ alterTableModel.tableName }. " +
+        s"Duplicate column found with name: $name")
+      sys.error(s"Duplicate column found with name: $name")
+    })
+
+    val columnValidator = CarbonSparkFactory.getCarbonColumnValidator()
+    columnValidator.validateColumns(allColumns)
+
+    // populate table properties map
+    val tablePropertiesMap = tableSchema.getTableProperties
+    alterTableModel.tableProperties.foreach {
+      x => val value = tablePropertiesMap.get(x._1)
+        if (null != value) {
+          tablePropertiesMap.put(x._1, value + "," + x._2)
+        } else {
+          tablePropertiesMap.put(x._1, x._2)
+        }
+    }
+    for (elem <- alterTableModel.tableProperties) {
+      if (elem._1.toLowerCase.startsWith("default.value.")) {
+        val col = newCols.filter(p => p.getColumnName.equalsIgnoreCase(elem._1.substring(14)))
+        if (col.size == 1) {
+          val data = DataTypeUtil.convertDataToBytesBasedOnDataType(elem._2, col(0).getDataType)
+          if (null != data) {
+            col(0).setDefaultValue(data)
+          } else {
+            LOGGER
+              .error(
+                "Invalid default value for new column " + dbName + "." + alterTableModel.tableName +
+                "." + col(0).getColumnName + " : " + elem._2)
+          }
+          if (col(0).getEncodingList.contains(Encoding.DICTIONARY) &&
+              !col(0).getEncodingList.contains(Encoding.DIRECT_DICTIONARY)) {
+            GlobalDictionaryUtil
+              .loadDefaultDictionaryValueForNewColumn(carbonTablePath,
+                col(0),
+                tableIdentifier,
+                storePath,
+                elem._2)
+          }
+        }
+      }
+    }
+    tableSchema.setListOfColumns(allColumns.asJava)
+    tableInfo.setLastUpdatedTime(System.currentTimeMillis())
+    tableInfo.setFactTable(tableSchema)
+    newCols
+  }
+
+  private def getColumnSchema(dataType: DataType, colName: String, isCol: Boolean,
+      encoders: java.util.List[Encoding], isDimensionCol: Boolean,
+      colGroup: Integer, precision: Integer, scale: Integer, schemaOrdinal: Int): ColumnSchema = {
+    val columnSchema = new ColumnSchema()
+    columnSchema.setDataType(dataType)
+    columnSchema.setColumnName(colName)
+    if (alterTableModel.highCardinalityDims.contains(colName)) {
+      encoders.remove(encoders.remove(Encoding.DICTIONARY))
+    }
+    if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
+      encoders.add(Encoding.DIRECT_DICTIONARY)
+    }
+    val colPropMap = new java.util.HashMap[String, String]()
+    columnSchema.setEncodingList(encoders)
+    val colUniqueIdGenerator = CarbonCommonFactory.getColumnUniqueIdGenerator
+    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(
+      alterTableModel.databaseName.getOrElse(dbName),
+      columnSchema)
+    columnSchema.setColumnUniqueId(columnUniqueId)
+    columnSchema.setColumnReferenceId(columnUniqueId)
+    columnSchema.setColumnar(isCol)
+    columnSchema.setDimensionColumn(isDimensionCol)
+    columnSchema.setColumnGroup(colGroup)
+    columnSchema.setPrecision(precision)
+    columnSchema.setScale(scale)
+    columnSchema.setSchemaOrdinal(schemaOrdinal)
+    columnSchema.setUseInvertedIndex(isDimensionCol)
+    columnSchema
+  }
+}
 object TableNewProcessor {
   def apply(cm: TableModel): TableInfo = {
     new TableNewProcessor(cm).process
@@ -169,11 +336,6 @@ class TableNewProcessor(cm: TableModel) {
     }
     if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
-    }
-    val colPropMap = new java.util.HashMap[String, String]()
-    if (cm.colProps.isDefined && null != cm.colProps.get.get(colName)) {
-      val colProps = cm.colProps.get.get(colName)
-      colProps.asScala.foreach { x => colPropMap.put(x.key, x.value) }
     }
     columnSchema.setEncodingList(encoders)
     val colUniqueIdGenerator = CarbonCommonFactory.getColumnUniqueIdGenerator

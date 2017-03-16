@@ -16,20 +16,22 @@
  */
 package org.apache.carbondata.core.scan.collector.impl;
 
-import java.util.List;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.collector.ScannedResultCollector;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
+import org.apache.carbondata.core.scan.executor.infos.DimensionInfo;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
-import org.apache.carbondata.core.scan.executor.util.QueryUtil;
+import org.apache.carbondata.core.scan.executor.infos.MeasureInfo;
+import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
-import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 
 /**
  * It is not a collector it is just a scanned result holder.
@@ -50,104 +52,66 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
   protected BlockExecutionInfo tableBlockExecutionInfos;
 
   /**
-   * Measure ordinals
+   * maintains the measure information like datatype, ordinal, measure existence
    */
-  protected int[] measuresOrdinal;
+  protected MeasureInfo measureInfo;
 
   /**
-   * to check whether measure exists in current table block or not this to
-   * handle restructuring scenario
+   * maintains the dimension information like datatype, ordinal, measure existence
    */
-  protected boolean[] isMeasureExistsInCurrentBlock;
-
-  /**
-   * default value of the measures in case of restructuring some measure wont
-   * be present in the table so in that default value will be used to
-   * aggregate the data for that measure columns
-   */
-  private Object[] measureDefaultValue;
-
-  /**
-   * measure datatypes.
-   */
-  protected DataType[] measureDatatypes;
+  protected DimensionInfo dimensionInfo;
 
   public AbstractScannedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     this.tableBlockExecutionInfos = blockExecutionInfos;
-    restructureInfos = blockExecutionInfos.getKeyStructureInfo();
-    measuresOrdinal = tableBlockExecutionInfos.getAggregatorInfo().getMeasureOrdinals();
-    isMeasureExistsInCurrentBlock = tableBlockExecutionInfos.getAggregatorInfo().getMeasureExists();
-    measureDefaultValue = tableBlockExecutionInfos.getAggregatorInfo().getDefaultValues();
-    this.measureDatatypes = tableBlockExecutionInfos.getAggregatorInfo().getMeasureDataTypes();
+    measureInfo = blockExecutionInfos.getMeasureInfo();
+    dimensionInfo = blockExecutionInfos.getDimensionInfo();
   }
 
   protected void fillMeasureData(Object[] msrValues, int offset,
       AbstractScannedResult scannedResult) {
-    for (short i = 0; i < measuresOrdinal.length; i++) {
+    int measureExistIndex = 0;
+    for (short i = 0; i < measureInfo.getMeasureDataTypes().length; i++) {
       // if measure exists is block then pass measure column
       // data chunk to the collector
-      if (isMeasureExistsInCurrentBlock[i]) {
-        msrValues[i + offset] = getMeasureData(scannedResult.getMeasureChunk(measuresOrdinal[i]),
-            scannedResult.getCurrenrRowId(), measureDatatypes[i]);
+      if (measureInfo.getMeasureExists()[i]) {
+        QueryMeasure queryMeasure = tableBlockExecutionInfos.getQueryMeasures()[measureExistIndex];
+        msrValues[i + offset] = getMeasureData(
+            scannedResult.getMeasureChunk(measureInfo.getMeasureOrdinals()[measureExistIndex]),
+            scannedResult.getCurrenrRowId(), queryMeasure.getMeasure());
+        measureExistIndex++;
       } else {
         // if not then get the default value and use that value in aggregation
-        msrValues[i + offset] = measureDefaultValue[i];
+        Object defaultValue = measureInfo.getDefaultValues()[i];
+        if (null != defaultValue && measureInfo.getMeasureDataTypes()[i] == DataType.DECIMAL) {
+          // convert java big decimal to spark decimal type
+          defaultValue = org.apache.spark.sql.types.Decimal.apply((BigDecimal) defaultValue);
+        }
+        msrValues[i + offset] = defaultValue;
       }
     }
   }
 
-  private Object getMeasureData(MeasureColumnDataChunk dataChunk, int index, DataType dataType) {
+  private Object getMeasureData(MeasureColumnDataChunk dataChunk, int index,
+      CarbonMeasure carbonMeasure) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
-      switch (dataType) {
+      switch (carbonMeasure.getDataType()) {
         case SHORT:
         case INT:
         case LONG:
           return dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
         case DECIMAL:
-          return org.apache.spark.sql.types.Decimal
-              .apply(dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
+          BigDecimal bigDecimalMsrValue =
+              dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
+          if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
+            bigDecimalMsrValue =
+                bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
+          }
+          return org.apache.spark.sql.types.Decimal.apply(bigDecimalMsrValue);
         default:
           return dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
       }
     }
     return null;
-  }
-
-  /**
-   * Below method will used to get the result
-   */
-  protected void updateData(List<Object[]> listBasedResult) {
-    if (tableBlockExecutionInfos.isFixedKeyUpdateRequired()) {
-      updateKeyWithLatestBlockKeygenerator(listBasedResult);
-    }
-  }
-
-  /**
-   * Below method will be used to update the fixed length key with the
-   * latest block key generator
-   *
-   * @return updated block
-   */
-  private void updateKeyWithLatestBlockKeygenerator(List<Object[]> listBasedResult) {
-    try {
-      long[] data = null;
-      ByteArrayWrapper key = null;
-      for (int i = 0; i < listBasedResult.size(); i++) {
-        // get the key
-        key = (ByteArrayWrapper) listBasedResult.get(i)[0];
-        // unpack the key with table block key generator
-        data = tableBlockExecutionInfos.getBlockKeyGenerator()
-            .getKeyArray(key.getDictionaryKey(), tableBlockExecutionInfos.getMaskedByteForBlock());
-        // packed the key with latest block key generator
-        // and generate the masked key for that key
-        key.setDictionaryKey(QueryUtil
-            .getMaskedKey(restructureInfos.getKeyGenerator().generateKey(data),
-                restructureInfos.getMaxKey(), restructureInfos.getMaskByteRanges(),
-                restructureInfos.getMaskByteRanges().length));
-      }
-    } catch (KeyGenException e) {
-      LOGGER.error(e);
-    }
   }
 
   @Override public void collectVectorBatch(AbstractScannedResult scannedResult,

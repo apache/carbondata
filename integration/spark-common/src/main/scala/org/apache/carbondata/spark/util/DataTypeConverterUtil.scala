@@ -18,6 +18,7 @@
 package org.apache.carbondata.spark.util
 
 import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.format.{DataType => ThriftDataType}
 
 object DataTypeConverterUtil {
   def convertToCarbonType(dataType: String): DataType = {
@@ -80,6 +81,31 @@ object DataTypeConverterUtil {
       case DataType.DATE => "date"
       case DataType.ARRAY => "array"
       case DataType.STRUCT => "struct"
+    }
+  }
+
+  /**
+   * convert from wrapper to external data type
+   *
+   * @param dataType
+   * @return
+   */
+  def convertToThriftDataType(dataType: String): ThriftDataType = {
+    if (null == dataType) {
+      return null
+    }
+    dataType match {
+      case "string" => ThriftDataType.STRING
+      case "int" => ThriftDataType.INT
+      case "short" => ThriftDataType.SHORT
+      case "long" | "bigint" => ThriftDataType.LONG
+      case "double" => ThriftDataType.DOUBLE
+      case "decimal" => ThriftDataType.DECIMAL
+      case "date" => ThriftDataType.DATE
+      case "timestamp" => ThriftDataType.TIMESTAMP
+      case "array" => ThriftDataType.ARRAY
+      case "struct" => ThriftDataType.STRUCT
+      case _ => ThriftDataType.STRING
     }
   }
 }

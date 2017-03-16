@@ -1156,6 +1156,44 @@ public final class CarbonUtil {
   }
 
   /**
+   * This method will search for a given dimension in the current block dimensions list
+   *
+   * @param blockDimensions
+   * @param dimensionToBeSearched
+   * @return
+   */
+  public static CarbonDimension getDimensionFromCurrentBlock(
+      List<CarbonDimension> blockDimensions, CarbonDimension dimensionToBeSearched) {
+    CarbonDimension currentBlockDimension = null;
+    for (CarbonDimension blockDimension : blockDimensions) {
+      if (dimensionToBeSearched.getColumnId().equals(blockDimension.getColumnId())) {
+        currentBlockDimension = blockDimension;
+        break;
+      }
+    }
+    return currentBlockDimension;
+  }
+
+  /**
+   * This method will search for a given measure in the current block measures list
+   *
+   * @param blockMeasures
+   * @param columnId
+   * @return
+   */
+  public static CarbonMeasure getMeasureFromCurrentBlock(List<CarbonMeasure> blockMeasures,
+      String columnId) {
+    CarbonMeasure currentBlockMeasure = null;
+    for (CarbonMeasure blockMeasure : blockMeasures) {
+      if (columnId.equals(blockMeasure.getColumnId())) {
+        currentBlockMeasure = blockMeasure;
+        break;
+      }
+    }
+    return currentBlockMeasure;
+  }
+
+  /**
    * This method will be used to clear the dictionary cache after its usage is complete
    * so that if memory threshold is reached it can evicted from LRU cache
    *

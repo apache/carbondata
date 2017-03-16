@@ -24,6 +24,10 @@ import org.apache.spark.sql.catalyst.CarbonDDLSqlParser
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.util.CommonUtil
+
 /**
  * TODO remove the duplicate code and add the common methods to common class.
  * Parser for All Carbon DDL, DML cases in Unified context
@@ -51,11 +55,13 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
   protected lazy val startCommand: Parser[LogicalPlan] =
-    loadManagement| showLoads | alterTable
+    loadManagement| showLoads | alterTable | restructure
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
 
+  protected lazy val restructure: Parser[LogicalPlan] =
+    alterTableModifyDataType | alterTableDropColumn | alterTableAddColumns
 
   protected lazy val alterTable: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (COMPACT ~ stringLit) <~ opt(";")  ^^ {
@@ -128,5 +134,90 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     opt(";") ^^ {
       case databaseName ~ tableName ~ limit =>
         ShowLoadsCommand(convertDbNameToLowerCase(databaseName), tableName.toLowerCase(), limit)
+    }
+
+  protected lazy val alterTableModifyDataType: Parser[LogicalPlan] =
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ CHANGE ~ ident ~ ident ~
+    ident ~ opt("(" ~> rep1sep(valueOptions, ",") <~ ")") <~ opt(";") ^^ {
+      case dbName ~ table ~ change ~ columnName ~ columnNameCopy ~ dataType ~ values =>
+        // both the column names should be same
+        if (!columnName.equalsIgnoreCase(columnNameCopy)) {
+          throw new MalformedCarbonCommandException(
+            "Column names provided are different. Both the column names should be same")
+        }
+        val alterTableChangeDataTypeModel =
+          AlterTableDataTypeChangeModel(parseDataType(dataType.toLowerCase, values),
+            convertDbNameToLowerCase(dbName),
+            table.toLowerCase,
+            columnName.toLowerCase,
+            columnNameCopy.toLowerCase)
+        AlterTableDataTypeChange(alterTableChangeDataTypeModel)
+    }
+
+  protected lazy val alterTableAddColumns: Parser[LogicalPlan] =
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~
+    (ADD ~> COLUMNS ~> "(" ~> repsep(anyFieldDef, ",") <~ ")") ~
+    (TBLPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
+      case dbName ~ table ~ fields ~ tblProp =>
+        fields.foreach{ f =>
+          if (isComplexDimDictionaryExclude(f.dataType.get)) {
+            throw new MalformedCarbonCommandException(
+              s"Add column is unsupported for complex datatype column: ${f.column}")
+          }
+        }
+        val tableProps = if (tblProp.isDefined) {
+          // default value should not be converted to lower case
+          val tblProps = tblProp.get
+            .map(f => if (CarbonCommonConstants.TABLE_BLOCKSIZE.equalsIgnoreCase(f._1) ||
+                          CarbonCommonConstants.NO_INVERTED_INDEX.equalsIgnoreCase(f._1) ||
+                          CarbonCommonConstants.COLUMN_GROUPS.equalsIgnoreCase(f._1)) {
+              throw new MalformedCarbonCommandException(
+                s"Unsupported Table property in add column: ${ f._1 }")
+            } else if (f._1.toLowerCase.startsWith("default.value.")) {
+              f._1 -> f._2
+            } else {
+              f._1 -> f._2.toLowerCase
+            })
+          scala.collection.mutable.Map(tblProps: _*)
+        } else {
+          scala.collection.mutable.Map.empty[String, String]
+        }
+
+        val tableModel = prepareTableModel (false,
+          convertDbNameToLowerCase(dbName),
+          table.toLowerCase,
+          fields.map(convertFieldNamesToLowercase),
+          Seq.empty,
+          tableProps,
+          None,
+          true)
+
+        val alterTableAddColumnsModel = AlterTableAddColumnsModel(convertDbNameToLowerCase(dbName),
+          table,
+          tableProps,
+          tableModel.dimCols,
+          tableModel.msrCols,
+          tableModel.highcardinalitydims.getOrElse(Seq.empty))
+        AlterTableAddColumns(alterTableAddColumnsModel)
+    }
+
+  private def convertFieldNamesToLowercase(field: Field): Field = {
+    val name = field.column.toLowerCase
+    field.copy(column = name, name = Some(name))
+  }
+  protected lazy val alterTableDropColumn: Parser[LogicalPlan] =
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ DROP ~ COLUMNS ~
+    ("(" ~> rep1sep(ident, ",") <~ ")") <~ opt(";") ^^ {
+      case dbName ~ table ~ drop ~ columns ~ values =>
+        // validate that same column name is not repeated
+        values.groupBy(identity).collect {
+          case (x, ys) if ys.lengthCompare(1) > 0 =>
+            throw new MalformedCarbonCommandException(s"$x is duplicate. Duplicate columns not " +
+                                                      s"allowed")
+        }
+        val alterTableDropColumnModel = AlterTableDropColumnModel(convertDbNameToLowerCase(dbName),
+          table.toLowerCase,
+          values)
+        AlterTableDropColumns(alterTableDropColumnModel)
     }
 }

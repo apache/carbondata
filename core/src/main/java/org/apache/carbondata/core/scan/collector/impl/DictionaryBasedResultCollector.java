@@ -40,6 +40,31 @@ import org.apache.commons.lang3.ArrayUtils;
  */
 public class DictionaryBasedResultCollector extends AbstractScannedResultCollector {
 
+  protected QueryDimension[] queryDimensions;
+
+  protected QueryMeasure[] queryMeasures;
+
+  protected DirectDictionaryGenerator[] directDictionaryGenerators;
+
+  /**
+   * query order
+   */
+  protected int[] order;
+
+  protected int[] actualIndexInSurrogateKey;
+
+  protected boolean[] dictionaryEncodingArray;
+
+  protected boolean[] directDictionaryEncodingArray;
+
+  protected boolean[] implictColumnArray;
+
+  protected boolean[] complexDataTypeArray;
+
+  protected int dictionaryColumnIndex;
+  protected int noDictionaryColumnIndex;
+  protected int complexTypeColumnIndex;
+
   public DictionaryBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
   }
@@ -49,11 +74,92 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
    * it will keep track of how many record is processed, to handle limit scenario
    */
   @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
-
+    queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
+    queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
+    initDimensionAndMeasureIndexesForFillingData();
+    // scan the record and add to list
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
-    boolean isMsrsPresent = measureDatatypes.length > 0;
+    int rowCounter = 0;
+    int[] surrogateResult;
+    String[] noDictionaryKeys;
+    byte[][] complexTypeKeyArray;
+    boolean isDimensionsExist = queryDimensions.length > 0;
+    BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
+        scannedResult.getDeleteDeltaDataCache();
+    Map<Integer, GenericQueryType> comlexDimensionInfoMap =
+        tableBlockExecutionInfos.getComlexDimensionInfoMap();
+    while (scannedResult.hasNext() && rowCounter < batchSize) {
+      Object[] row = new Object[queryDimensions.length + queryMeasures.length];
+      if (isDimensionsExist) {
+        surrogateResult = scannedResult.getDictionaryKeyIntegerArray();
+        noDictionaryKeys = scannedResult.getNoDictionaryKeyStringArray();
+        complexTypeKeyArray = scannedResult.getComplexTypeKeyArray();
+        dictionaryColumnIndex = 0;
+        noDictionaryColumnIndex = 0;
+        complexTypeColumnIndex = 0;
+        for (int i = 0; i < queryDimensions.length; i++) {
+          fillDimensionData(scannedResult, surrogateResult, noDictionaryKeys, complexTypeKeyArray,
+              comlexDimensionInfoMap, row, i);
+        }
+      } else {
+        scannedResult.incrementCounter();
+      }
+      if (null != deleteDeltaDataCache && deleteDeltaDataCache
+          .contains(scannedResult.getCurrenrRowId())) {
+        continue;
+      }
+      fillMeasureData(scannedResult, row);
+      listBasedResult.add(row);
+      rowCounter++;
+    }
+    return listBasedResult;
+  }
 
-    QueryDimension[] queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
+  protected void fillDimensionData(AbstractScannedResult scannedResult, int[] surrogateResult,
+      String[] noDictionaryKeys, byte[][] complexTypeKeyArray,
+      Map<Integer, GenericQueryType> comlexDimensionInfoMap, Object[] row, int i) {
+    if (!dictionaryEncodingArray[i]) {
+      if (implictColumnArray[i]) {
+        if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
+            .equals(queryDimensions[i].getDimension().getColName())) {
+          row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
+              scannedResult.getBlockletId() + CarbonCommonConstants.FILE_SEPARATOR
+                  + scannedResult.getCurrenrRowId(), DataType.STRING);
+        } else {
+          row[order[i]] = DataTypeUtil
+              .getDataBasedOnDataType(scannedResult.getBlockletId(), DataType.STRING);
+        }
+      } else {
+        row[order[i]] = DataTypeUtil
+            .getDataBasedOnDataType(noDictionaryKeys[noDictionaryColumnIndex++],
+                queryDimensions[i].getDimension().getDataType());
+      }
+    } else if (directDictionaryEncodingArray[i]) {
+      if (directDictionaryGenerators[i] != null) {
+        row[order[i]] = directDictionaryGenerators[i].getValueFromSurrogate(
+            surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]]);
+      }
+    } else if (complexDataTypeArray[i]) {
+      row[order[i]] =
+          comlexDimensionInfoMap.get(queryDimensions[i].getDimension().getOrdinal())
+              .getDataBasedOnDataTypeFromSurrogates(
+                  ByteBuffer.wrap(complexTypeKeyArray[complexTypeColumnIndex++]));
+    } else {
+      row[order[i]] = surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]];
+    }
+  }
+
+  protected void fillMeasureData(AbstractScannedResult scannedResult, Object[] row) {
+    if (measureInfo.getMeasureDataTypes().length > 0) {
+      Object[] msrValues = new Object[measureInfo.getMeasureDataTypes().length];
+      fillMeasureData(msrValues, 0, scannedResult);
+      for (int i = 0; i < msrValues.length; i++) {
+        row[order[i + queryDimensions.length]] = msrValues[i];
+      }
+    }
+  }
+
+  protected void initDimensionAndMeasureIndexesForFillingData() {
     List<Integer> dictionaryIndexes = new ArrayList<Integer>();
     for (int i = 0; i < queryDimensions.length; i++) {
       if (queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY) || queryDimensions[i]
@@ -61,10 +167,10 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         dictionaryIndexes.add(queryDimensions[i].getDimension().getOrdinal());
       }
     }
-    int[] primitive = ArrayUtils.toPrimitive(dictionaryIndexes.toArray(
-        new Integer[dictionaryIndexes.size()]));
+    int[] primitive =
+        ArrayUtils.toPrimitive(dictionaryIndexes.toArray(new Integer[dictionaryIndexes.size()]));
     Arrays.sort(primitive);
-    int[] actualIndexInSurrogateKey = new int[dictionaryIndexes.size()];
+    actualIndexInSurrogateKey = new int[dictionaryIndexes.size()];
     int index = 0;
     for (int i = 0; i < queryDimensions.length; i++) {
       if (queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY) || queryDimensions[i]
@@ -74,98 +180,23 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       }
     }
 
-    QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
-    BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
-        scannedResult.getDeleteDeltaDataCache();
-    Map<Integer, GenericQueryType> comlexDimensionInfoMap =
-        tableBlockExecutionInfos.getComlexDimensionInfoMap();
-    boolean[] dictionaryEncodingArray = CarbonUtil.getDictionaryEncodingArray(queryDimensions);
-    boolean[] directDictionaryEncodingArray =
-        CarbonUtil.getDirectDictionaryEncodingArray(queryDimensions);
-    boolean[] implictColumnArray = CarbonUtil.getImplicitColumnArray(queryDimensions);
-    boolean[] complexDataTypeArray = CarbonUtil.getComplexDataTypeArray(queryDimensions);
-    int dimSize = queryDimensions.length;
-    boolean isDimensionsExist = dimSize > 0;
-    int[] order = new int[dimSize + queryMeasures.length];
-    for (int i = 0; i < dimSize; i++) {
+    dictionaryEncodingArray = CarbonUtil.getDictionaryEncodingArray(queryDimensions);
+    directDictionaryEncodingArray = CarbonUtil.getDirectDictionaryEncodingArray(queryDimensions);
+    implictColumnArray = CarbonUtil.getImplicitColumnArray(queryDimensions);
+    complexDataTypeArray = CarbonUtil.getComplexDataTypeArray(queryDimensions);
+    order = new int[queryDimensions.length + queryMeasures.length];
+    for (int i = 0; i < queryDimensions.length; i++) {
       order[i] = queryDimensions[i].getQueryOrder();
     }
     for (int i = 0; i < queryMeasures.length; i++) {
-      order[i + dimSize] = queryMeasures[i].getQueryOrder();
+      order[i + queryDimensions.length] = queryMeasures[i].getQueryOrder();
     }
-    // scan the record and add to list
-    int rowCounter = 0;
-    int dictionaryColumnIndex = 0;
-    int noDictionaryColumnIndex = 0;
-    int complexTypeColumnIndex = 0;
-    int[] surrogateResult;
-    String[] noDictionaryKeys;
-    byte[][] complexTypeKeyArray;
-
-    DirectDictionaryGenerator[] directDictionaryGenerators = new DirectDictionaryGenerator[dimSize];
-    for (int i = 0; i < dimSize; i++) {
+    directDictionaryGenerators =
+        new DirectDictionaryGenerator[queryDimensions.length];
+    for (int i = 0; i < queryDimensions.length; i++) {
       directDictionaryGenerators[i] = DirectDictionaryKeyGeneratorFactory
-              .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
+          .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
     }
-    while (scannedResult.hasNext() && rowCounter < batchSize) {
-      Object[] row = new Object[dimSize + queryMeasures.length];
-      if (isDimensionsExist) {
-        surrogateResult = scannedResult.getDictionaryKeyIntegerArray();
-        noDictionaryKeys = scannedResult.getNoDictionaryKeyStringArray();
-        complexTypeKeyArray = scannedResult.getComplexTypeKeyArray();
-        dictionaryColumnIndex = 0;
-        noDictionaryColumnIndex = 0;
-        complexTypeColumnIndex = 0;
-        for (int i = 0; i < dimSize; i++) {
-          if (!dictionaryEncodingArray[i]) {
-            if (implictColumnArray[i]) {
-              if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
-                  .equals(queryDimensions[i].getDimension().getColName())) {
-                row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
-                    scannedResult.getBlockletId() + CarbonCommonConstants.FILE_SEPARATOR
-                        + scannedResult.getCurrenrRowId(), DataType.STRING);
-              } else {
-                row[order[i]] = DataTypeUtil
-                    .getDataBasedOnDataType(scannedResult.getBlockletId(), DataType.STRING);
-              }
-            } else {
-              row[order[i]] = DataTypeUtil
-                  .getDataBasedOnDataType(noDictionaryKeys[noDictionaryColumnIndex++],
-                      queryDimensions[i].getDimension().getDataType());
-            }
-          } else if (directDictionaryEncodingArray[i]) {
-            if (directDictionaryGenerators[i] != null) {
-              row[order[i]] = directDictionaryGenerators[i].getValueFromSurrogate(
-                  surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]]);
-            }
-          } else if (complexDataTypeArray[i]) {
-            row[order[i]] = comlexDimensionInfoMap
-                .get(queryDimensions[i].getDimension().getOrdinal())
-                .getDataBasedOnDataTypeFromSurrogates(
-                    ByteBuffer.wrap(complexTypeKeyArray[complexTypeColumnIndex++]));
-          } else {
-            row[order[i]] = surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]];
-          }
-        }
-
-      } else {
-        scannedResult.incrementCounter();
-      }
-      if (null != deleteDeltaDataCache && deleteDeltaDataCache
-          .contains(scannedResult.getCurrenrRowId())) {
-        continue;
-      }
-      if (isMsrsPresent) {
-        Object[] msrValues = new Object[measureDatatypes.length];
-        fillMeasureData(msrValues, 0, scannedResult);
-        for (int i = 0; i < msrValues.length; i++) {
-          row[order[i + dimSize]] = msrValues[i];
-        }
-      }
-      listBasedResult.add(row);
-      rowCounter++;
-    }
-    return listBasedResult;
   }
 
 }

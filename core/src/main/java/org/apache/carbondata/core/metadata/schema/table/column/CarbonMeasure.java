@@ -27,38 +27,26 @@ public class CarbonMeasure extends CarbonColumn {
    */
   private static final long serialVersionUID = 354341488059013977L;
 
-  /**
-   * Used when this column contains decimal data.
-   */
-  private int scale;
-
-  /**
-   * precision in decimal data
-   */
-  private int precision;
-
   public CarbonMeasure(ColumnSchema columnSchema, int ordinal) {
     this(columnSchema, ordinal, 0);
   }
 
   public CarbonMeasure(ColumnSchema columnSchema, int ordinal, int schemaOrdinal) {
     super(columnSchema, ordinal, schemaOrdinal);
-    this.scale = columnSchema.getScale();
-    this.precision = columnSchema.getPrecision();
   }
 
   /**
    * @return the scale
    */
   public int getScale() {
-    return scale;
+    return columnSchema.getScale();
   }
 
   /**
    * @return the precision
    */
   public int getPrecision() {
-    return precision;
+    return columnSchema.getPrecision();
   }
 
   /**

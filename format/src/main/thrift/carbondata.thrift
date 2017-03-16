@@ -199,7 +199,8 @@ struct FileFooter3{
 struct FileHeader{
 	1: required i32 version; // version used for data compatibility
 	2: required list<schema.ColumnSchema> column_schema;  // Description of columns in this file
-	3: optional bool is_footer_present; //  to check whether footer is present or not      
+	3: optional bool is_footer_present; //  to check whether footer is present or not
+	4: optional i64 time_stamp; // timestamp to compare column schema against master schema
 }
 
 /**
