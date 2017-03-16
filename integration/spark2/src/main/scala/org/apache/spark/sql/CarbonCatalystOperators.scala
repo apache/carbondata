@@ -32,7 +32,9 @@ case class CarbonDictionaryCatalystDecoder(
     aliasMap: CarbonAliasDecoderRelation,
     isOuter: Boolean,
     child: LogicalPlan) extends UnaryNode {
-  override def output: Seq[Attribute] = child.output
+  // the output should be updated with converted datatype, it is need for limit+sort plan.
+  override val output: Seq[Attribute] =
+    CarbonDictionaryDecoder.convertOutput(child.output, relations, profile, aliasMap)
 }
 
 abstract class CarbonProfile(attributes: Seq[Attribute]) extends Serializable {
