@@ -68,7 +68,7 @@ object CompareTest {
   private def generateDataFrame(spark: SparkSession): DataFrame = {
     val r = new Random()
     val rdd = spark.sparkContext
-        .parallelize(1 to 1 * 1000 * 1000, 4)
+        .parallelize(1 to 10 * 1000 * 1000, 4)
         .map { x =>
           ("city" + x % 8, "country" + x % 1103, "planet" + x % 10007, x.toString,
           (x % 16).toShort, x / 2, (x << 1).toLong, x.toDouble / 13, x.toDouble / 11)
@@ -124,11 +124,6 @@ object CompareTest {
       "full scan query, 5 aggregate"
     ),
     Query(
-      "select * from $table",
-      "full scan",
-      "full scan query, big result set"
-    ),
-    Query(
       "select count(distinct id) from $table",
       "full scan",
       "full scan and count distinct of high card column"
@@ -146,11 +141,6 @@ object CompareTest {
     // ===========================================================================
     // ==                      FULL SCAN GROUP BY AGGREGATE                     ==
     // ===========================================================================
-    Query(
-      "select id, sum(m1) from $table group by id",
-      "aggregate",
-      "group by on big data, on high card column, big result set"
-    ),
     Query(
       "select country, sum(m1) from $table group by country",
       "aggregate",
@@ -283,7 +273,7 @@ object CompareTest {
 
   // load data into parquet, carbonV2, carbonV3
   private def prepareTable(spark: SparkSession): Unit = {
-    val df = generateDataFrame(spark)
+    val df = generateDataFrame(spark).cache
     println(s"loading ${df.count} records, schema: ${df.schema}")
     val loadParquetTime = loadParquetTable(spark, df)
     val loadCarbonV3Time = loadCarbonTable(spark, df, version = "3")
