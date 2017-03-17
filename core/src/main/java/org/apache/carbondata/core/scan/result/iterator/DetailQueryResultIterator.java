@@ -38,9 +38,7 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
   }
 
   @Override public BatchResult next() {
-    long startTime = System.currentTimeMillis();
     BatchResult batchResult = getBatchResult();
-    totalScanTime += System.currentTimeMillis() - startTime;
     return batchResult;
   }
 

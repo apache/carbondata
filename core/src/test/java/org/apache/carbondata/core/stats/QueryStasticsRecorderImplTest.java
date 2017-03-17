@@ -48,10 +48,10 @@ public class QueryStasticsRecorderImplTest {
     queryStasticsRecorderImpl.logStatistics();
     queryStasticsRecorderImpl.recordStatistics(queryStatisticWithLOAD_BLOCKS_EXECUTOR);
     queryStatisticWithSCAN_BLOCKS_TIME = new QueryStatistic();
-    queryStatisticWithSCAN_BLOCKS_TIME.addStatistics(QueryStatisticsConstants.SCAN_BLOCKS_TIME, 5L);
+    queryStatisticWithSCAN_BLOCKS_TIME.addStatistics(QueryStatisticsConstants.SCAN_BLOCKlET_TIME, 5L);
     queryStatisticWithSCAN_BLOCKS_TIME
-        .addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKS_TIME, 5L);
-    queryStatisticWithSCAN_BLOCKS_TIME.addStatistics(QueryStatisticsConstants.SCAN_BLOCKS_TIME, 5L);
+        .addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKlET_TIME, 5L);
+    queryStatisticWithSCAN_BLOCKS_TIME.addStatistics(QueryStatisticsConstants.SCAN_BLOCKlET_TIME, 5L);
     queryStasticsRecorderImpl.logStatistics();
     queryStasticsRecorderImpl.recordStatistics(queryStatisticWithSCAN_BLOCKS_TIME);
     queryStatisticWithSCAN_BLOCKS_NUM = new QueryStatistic();
