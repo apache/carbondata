@@ -108,11 +108,10 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
               "Cannot convert" + this.getDataType().name() + " to integer type value");
       }
 
-    }catch (NumberFormatException e) {
+    } catch (NumberFormatException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Integer type value");
-    }
-    catch (ClassCastException e) {
+    } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Integer type value");
     }
@@ -165,11 +164,10 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
               "Cannot convert" + this.getDataType().name() + " to integer type value");
       }
 
-    }catch (NumberFormatException e) {
+    } catch (NumberFormatException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Integer type value");
-    }
-    catch (ClassCastException e) {
+    } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Integer type value");
     }
@@ -195,17 +193,16 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             }
             return parser.format(new Timestamp((long) value));
           } else if (value instanceof Integer) {
-            return parser.format(new java.sql.Date((int)value));
+            return parser.format(new java.sql.Date((int) value));
           }
           return value.toString();
         default:
           return value.toString();
       }
-    }catch (NumberFormatException e) {
+    } catch (NumberFormatException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Integer type value");
-    }
-    catch (Exception e) {
+    } catch (Exception e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to String type value");
     }
@@ -251,11 +248,10 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to double type value");
       }
-    }catch (NumberFormatException e) {
+    } catch (NumberFormatException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Integer type value");
-    }
-    catch (ClassCastException e) {
+    } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Double type value");
     }
@@ -300,9 +296,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     } catch (NumberFormatException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Long type value");
-    }
-
-    catch (ClassCastException e) {
+    } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Long type value");
     }
@@ -354,8 +348,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     } catch (NumberFormatException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Long type value");
-    }
-    catch (ClassCastException e) {
+    } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Long type value");
     }
@@ -408,11 +401,10 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to Time/Long type value");
       }
-    }catch (NumberFormatException e) {
+    } catch (NumberFormatException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Integer type value");
-    }
-    catch (ClassCastException e) {
+    } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Time/Long type value");
     }
@@ -439,11 +431,10 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to boolean type value");
       }
-    }catch (NumberFormatException e) {
+    } catch (NumberFormatException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Integer type value");
-    }
-    catch (ClassCastException e) {
+    } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Boolean type value");
     }
