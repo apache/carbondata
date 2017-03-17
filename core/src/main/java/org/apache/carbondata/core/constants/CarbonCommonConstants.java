@@ -185,8 +185,7 @@ public final class CarbonCommonConstants {
   /**
    * CARBON_BADRECORDS_LOCATION_DEFAULT
    */
-  public static final String CARBON_BADRECORDS_LOC_DEFAULT_VAL =
-      "../unibi-solutions/system/carbon/badRecords";
+  public static final String CARBON_BADRECORDS_LOC_DEFAULT_VAL = "/tmp/carbon/badRecords";
   /**
    * HIERARCHY_FILE_EXTENSION
    */
@@ -1163,6 +1162,10 @@ public final class CarbonCommonConstants {
       "spark.sql.sources.schemaStringLengthThreshold";
 
   public static final int SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT = 4000;
+
+  public static final String CARBON_BAD_RECORDS_ACTION = "carbon.bad.records.action";
+
+  public static final String CARBON_BAD_RECORDS_ACTION_DEFAULT = "FORCE";
 
   private CarbonCommonConstants() {
   }

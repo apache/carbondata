@@ -40,6 +40,8 @@ public final class DataLoadProcessorConstants {
 
   public static final String BAD_RECORDS_LOGGER_ACTION = "BAD_RECORDS_LOGGER_ACTION";
 
+  public static final String IS_EMPTY_DATA_BAD_RECORD = "IS_EMPTY_DATA_BAD_RECORD";
+
   public static final String FACT_FILE_PATH = "FACT_FILE_PATH";
 
 }

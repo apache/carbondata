@@ -75,6 +75,7 @@ import org.apache.carbondata.processing.store.colgroup.DataHolder;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
 
 import org.apache.spark.sql.types.Decimal;
@@ -261,6 +262,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   private long schemaUpdatedTimeStamp;
 
+  private String segmentId;
   /**
    * current data format version
    */
@@ -357,6 +359,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.dimLens = this.segmentProperties.getDimColumnsCardinality();
     this.carbonDataFileAttributes = carbonFactDataHandlerModel.getCarbonDataFileAttributes();
     this.schemaUpdatedTimeStamp = carbonFactDataHandlerModel.getSchemaUpdatedTimeStamp();
+    this.segmentId = carbonFactDataHandlerModel.getSegmentId();
     //TODO need to pass carbon table identifier to metadata
     CarbonTable carbonTable = CarbonMetadata.getInstance()
         .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
@@ -1143,6 +1146,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       LOGGER.info("All blocklets have been finished writing");
       // close all the open stream for both the files
       this.dataWriter.closeWriter();
+      // rename the bad record in progress to normal
+      CarbonDataProcessorUtil.renameBadRecordsFromInProgressToNormal(
+          this.databaseName + File.separator + this.tableName + File.separator + this.segmentId
+              + File.separator + this.carbonDataFileAttributes.getTaskId());
     }
     this.dataWriter = null;
     this.keyBlockHolder = null;

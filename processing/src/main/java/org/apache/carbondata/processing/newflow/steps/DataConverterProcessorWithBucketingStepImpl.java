@@ -52,6 +52,8 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
 
   private Partitioner<Object[]> partitioner;
 
+  private BadRecordsLogger badRecordLogger;
+
   public DataConverterProcessorWithBucketingStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     super(configuration, child);
@@ -66,7 +68,7 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
   public void initialize() throws IOException {
     child.initialize();
     converters = new ArrayList<>();
-    BadRecordsLogger badRecordLogger = createBadRecordLogger();
+    badRecordLogger = createBadRecordLogger();
     RowConverter converter =
         new RowConverterImpl(child.getOutput(), configuration, badRecordLogger);
     converters.add(converter);
@@ -194,7 +196,9 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
   public void close() {
     if (!closed) {
       super.close();
-      createBadRecordLogger().closeStreams();
+      if (null != badRecordLogger) {
+        badRecordLogger.closeStreams();
+      }
       if (converters != null) {
         for (RowConverter converter : converters) {
           converter.finish();

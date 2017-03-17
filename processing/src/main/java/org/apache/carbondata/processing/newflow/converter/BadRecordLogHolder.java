@@ -25,6 +25,8 @@ public class BadRecordLogHolder {
 
   private boolean badRecordAdded;
 
+  private boolean isLogged;
+
   public String getReason() {
     return reason;
   }
@@ -40,5 +42,13 @@ public class BadRecordLogHolder {
 
   public void clear() {
     this.badRecordAdded = false;
+  }
+
+  public boolean isLogged() {
+    return isLogged;
+  }
+
+  public void setLogged(boolean logged) {
+    isLogged = logged;
   }
 }

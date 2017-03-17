@@ -37,11 +37,15 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
 
   private CarbonColumn column;
 
-  public NonDictionaryFieldConverterImpl(DataField dataField, String nullformat, int index) {
+  private boolean isEmptyBadRecord;
+
+  public NonDictionaryFieldConverterImpl(DataField dataField, String nullformat, int index,
+      boolean isEmptyBadRecord) {
     this.dataType = dataField.getColumn().getDataType();
     this.column = dataField.getColumn();
     this.index = index;
     this.nullformat = nullformat;
+    this.isEmptyBadRecord = isEmptyBadRecord;
   }
 
   @Override
@@ -52,10 +56,12 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
     }
     if (dataType != DataType.STRING) {
       if (null == DataTypeUtil.normalizeIntAndLongValues(dimensionValue, dataType)) {
-        logHolder.setReason(
-            "The value " + " \"" + dimensionValue + "\"" + " with column name " + column
-                .getColName() + " and column data type " + dataType + " is not a valid " + dataType
-                + " type.");
+        if ((dimensionValue.length() > 0) || (dimensionValue.length() == 0 && isEmptyBadRecord)) {
+          logHolder.setReason(
+              "The value " + " \"" + dimensionValue + "\"" + " with column name " + column
+                  .getColName() + " and column data type " + dataType + " is not a valid "
+                  + dataType + " type.");
+        }
       }
     }
     row.update(dimensionValue.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),

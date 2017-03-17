@@ -100,6 +100,7 @@ public class UnivocityCsvParser {
     parserSettings.setMaxColumns(
         getMaxColumnsForParsing(csvParserVo.getNumberOfColumns(), csvParserVo.getMaxColumns()));
     parserSettings.setNullValue("");
+    parserSettings.setEmptyValue("");
     parserSettings.setIgnoreLeadingWhitespaces(false);
     parserSettings.setIgnoreTrailingWhitespaces(false);
     parserSettings.setSkipEmptyLines(false);
