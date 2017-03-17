@@ -22,17 +22,19 @@
 #### CarbonData supports the following data types:
 
   * Numeric Types
-  * SMALLINT
-  * INT/INTEGER
-  * BIGINT
-  * DOUBLE
-  * DECIMAL
+    * SMALLINT
+    * INT/INTEGER
+    * BIGINT
+    * DOUBLE
+    * DECIMAL
 
   * Date/Time Types
-  * TIMESTAMP
+    * TIMESTAMP
+    * DATE
 
   * String Types
-  * STRING
+    * STRING
+    * CHAR
 
   * Complex Types
     * arrays: ARRAY``<data_type>``
