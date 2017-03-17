@@ -207,6 +207,16 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
 
     def addTempDecoder(currentPlan: LogicalPlan): LogicalPlan = {
       currentPlan match {
+        case limit@Limit(_, child: Sort) =>
+          if (!decoder) {
+            decoder = true
+            CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
+              new util.HashSet[AttributeReferenceWrapper](),
+              limit,
+              isOuter = true)
+          } else {
+            limit
+          }
         case sort: Sort if !sort.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
           val attrsOnSort = new util.HashSet[AttributeReferenceWrapper]()
           sort.order.map { s =>

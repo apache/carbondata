@@ -222,7 +222,9 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     if (null != future) {
       try {
         AbstractScannedResult abstractScannedResult = future.get();
-        abstractScannedResult.freeMemory();
+        if (abstractScannedResult != null) {
+          abstractScannedResult.freeMemory();
+        }
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }
