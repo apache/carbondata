@@ -37,7 +37,9 @@ public interface QueryStatisticsConstants {
 
   String SCAN_BLOCKS_NUM = "The num of blocks scanned";
 
-  String SCAN_BLOCKS_TIME = "Time taken to scan blocks";
+  String SCAN_BLOCKlET_TIME = "Time taken to scan blocks";
+
+  String READ_BLOCKlET_TIME = "Time taken to read blocks";
 
   String LOAD_DICTIONARY = "Time taken to load the Dictionary In Executor";
 

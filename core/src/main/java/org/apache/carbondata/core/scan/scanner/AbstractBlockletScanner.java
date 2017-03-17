@@ -54,6 +54,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
 
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
       throws IOException, FilterUnsupportedException {
+    long startTime = System.currentTimeMillis();
     AbstractScannedResult scannedResult = new NonFilterQueryScannedResult(blockExecutionInfo);
     QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);
@@ -126,10 +127,17 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     scannedResult
         .setBlockletDeleteDeltaCache(blocksChunkHolder.getDataBlock().getDeleteDeltaDataCache());
     scannedResult.setRawColumnChunks(dimensionRawColumnChunks);
+    // adding statistics for carbon scan time
+    QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
+    scanTime.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKlET_TIME,
+        scanTime.getCount() + (System.currentTimeMillis() - startTime));
+    queryStatisticsModel.getRecorder().recordStatistics(scanTime);
     return scannedResult;
   }
 
   @Override public void readBlocklet(BlocksChunkHolder blocksChunkHolder) throws IOException {
+    long startTime = System.currentTimeMillis();
     DimensionRawColumnChunk[] dimensionRawColumnChunks = blocksChunkHolder.getDataBlock()
         .getDimensionChunks(blocksChunkHolder.getFileReader(),
             blockExecutionInfo.getAllSelectedDimensionBlocksIndexes());
@@ -138,6 +146,12 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
         .getMeasureChunks(blocksChunkHolder.getFileReader(),
             blockExecutionInfo.getAllSelectedMeasureBlocksIndexes());
     blocksChunkHolder.setMeasureRawDataChunk(measureRawColumnChunks);
+    // adding statistics for carbon read time
+    QueryStatistic readTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.READ_BLOCKlET_TIME);
+    readTime.addCountStatistic(QueryStatisticsConstants.READ_BLOCKlET_TIME,
+        readTime.getCount() + (System.currentTimeMillis() - startTime));
+    queryStatisticsModel.getRecorder().recordStatistics(readTime);
   }
 
   @Override public AbstractScannedResult createEmptyResult() {
