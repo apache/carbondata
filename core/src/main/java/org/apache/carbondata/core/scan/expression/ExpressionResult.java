@@ -86,7 +86,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           if (value instanceof Long) {
             return ((Long) value).intValue();
           }
-          return (Integer) value;
+           return Integer.parseInt(value.toString());
         case DATE:
           if (value instanceof java.sql.Date) {
             return (int) (((java.sql.Date) value).getTime());
@@ -108,7 +108,11 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
               "Cannot convert" + this.getDataType().name() + " to integer type value");
       }
 
-    } catch (ClassCastException e) {
+    }catch (NumberFormatException e) {
+      throw new FilterIllegalMemberException(
+          "Cannot convert" + this.getDataType().name() + " to Integer type value");
+    }
+    catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Integer type value");
     }
@@ -281,7 +285,12 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to Long type value");
       }
-    } catch (ClassCastException e) {
+    } catch (NumberFormatException e) {
+      throw new FilterIllegalMemberException(
+          "Cannot convert" + this.getDataType().name() + " to Long type value");
+    }
+
+    catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Long type value");
     }
@@ -330,11 +339,14 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to Long type value");
       }
-    } catch (ClassCastException e) {
+    } catch (NumberFormatException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Long type value");
     }
-
+    catch (ClassCastException e) {
+      throw new FilterIllegalMemberException(
+          "Cannot convert" + this.getDataType().name() + " to Long type value");
+    }
   }
 
   public Long getTime() throws FilterIllegalMemberException {
