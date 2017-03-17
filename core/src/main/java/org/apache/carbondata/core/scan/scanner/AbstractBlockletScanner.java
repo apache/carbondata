@@ -66,6 +66,19 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
         .addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM,
             validScannedBlockletStatistic.getCount() + 1);
     queryStatisticsModel.getRecorder().recordStatistics(validScannedBlockletStatistic);
+    // adding statistics for valid number of pages
+    QueryStatistic validPages = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.VALID_PAGE_SCANNED);
+    validPages.addCountStatistic(QueryStatisticsConstants.VALID_PAGE_SCANNED,
+        validPages.getCount() + blocksChunkHolder.getDataBlock().numberOfPages());
+    queryStatisticsModel.getRecorder().recordStatistics(validPages);
+    // adding statistics for number of pages
+    QueryStatistic totalPagesScanned = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.TOTAL_PAGE_SCANNED);
+    totalPagesScanned.addCountStatistic(QueryStatisticsConstants.TOTAL_PAGE_SCANNED,
+        totalPagesScanned.getCount() + blocksChunkHolder.getDataBlock().numberOfPages());
+    queryStatisticsModel.getRecorder().recordStatistics(totalPagesScanned);
+
     scannedResult.setBlockletId(
         blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR + blocksChunkHolder
             .getDataBlock().nodeNumber());

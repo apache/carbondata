@@ -315,6 +315,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     // check the number of pages present in data holder, if pages is exceeding threshold
     // it will write the pages to file
     if (dataWriterHolder.getSize() + holder.getHolderSize() >= blockletSize) {
+      LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getSize());
       writeDataToFile(fileChannel);
     }
     dataWriterHolder.addNodeHolder(holder);

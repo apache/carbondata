@@ -28,7 +28,7 @@ import static org.apache.carbondata.core.util.CarbonUtil.printLine;
 /**
  * Class will be used to record and log the query statistics
  */
-public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder,Serializable {
+public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Serializable {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(QueryStatisticsRecorderImpl.class.getName());
@@ -96,6 +96,8 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder,Seri
     String splitChar = " ";
     String total_blocklet = "";
     String valid_scan_blocklet = "";
+    String valid_pages_blocklet = "";
+    String total_pages = "";
     try {
       for (QueryStatistic statistic : queryStatistics) {
         switch (statistic.getMessage()) {
@@ -123,13 +125,19 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder,Seri
           case QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM:
             valid_scan_blocklet = statistic.getCount() + splitChar;
             break;
+          case QueryStatisticsConstants.VALID_PAGE_SCANNED:
+            valid_pages_blocklet = statistic.getCount() + splitChar;
+            break;
+          case QueryStatisticsConstants.TOTAL_PAGE_SCANNED:
+            total_pages = statistic.getCount() + splitChar;
+            break;
           default:
             break;
         }
       }
-      String headers = "task_id,load_blocks_time,load_dictionary_time,scan_blocks_time," +
-          "total_executor_time,scan_blocks_num,total_blocklet," +
-          "valid_scan_blocklet,result_size";
+      String headers = "task_id,load_blocks_time,load_dictionary_time,scan_blocks_time,"
+          + "total_executor_time,scan_blocks_num,total_blocklet,"
+          + "valid_scan_blocklet,total_pages,valid_pages,result_size";
       List<String> values = new ArrayList<String>();
       values.add(queryIWthTask);
       values.add(load_blocks_time);
@@ -139,6 +147,8 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder,Seri
       values.add(scan_blocks_num);
       values.add(total_blocklet);
       values.add(valid_scan_blocklet);
+      values.add(total_pages);
+      values.add(valid_pages_blocklet);
       values.add(result_size);
       StringBuilder tableInfo = new StringBuilder();
       String[] columns = headers.split(",");

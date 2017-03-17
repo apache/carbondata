@@ -93,6 +93,12 @@ public class FilterScanner extends AbstractBlockletScanner {
   }
 
   @Override public boolean isScanRequired(BlocksChunkHolder blocksChunkHolder) throws IOException {
+    // adding statistics for number of pages
+    QueryStatistic totalPagesScanned = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.TOTAL_PAGE_SCANNED);
+    totalPagesScanned.addCountStatistic(QueryStatisticsConstants.TOTAL_PAGE_SCANNED,
+        totalPagesScanned.getCount() + blocksChunkHolder.getDataBlock().numberOfPages());
+    queryStatisticsModel.getRecorder().recordStatistics(totalPagesScanned);
     // apply min max
     if (isMinMaxEnabled) {
       BitSet bitSet = this.filterExecuter
@@ -149,6 +155,13 @@ public class FilterScanner extends AbstractBlockletScanner {
         .addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM,
             validScannedBlockletStatistic.getCount() + 1);
     queryStatisticsModel.getRecorder().recordStatistics(validScannedBlockletStatistic);
+    // adding statistics for valid number of pages
+    QueryStatistic validPages = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.VALID_PAGE_SCANNED);
+    validPages.addCountStatistic(QueryStatisticsConstants.VALID_PAGE_SCANNED,
+        validPages.getCount() + bitSetGroup.getValidPages());
+    queryStatisticsModel.getRecorder().recordStatistics(validPages);
+
     int[] rowCount = new int[bitSetGroup.getNumberOfPages()];
     // get the row indexes from bot set
     int[][] indexesGroup = new int[bitSetGroup.getNumberOfPages()][];
@@ -241,16 +254,14 @@ public class FilterScanner extends AbstractBlockletScanner {
     for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
       for (int j = 0; j < indexesGroup.length; j++) {
         if (dimensionRawColumnChunks[i] != null) {
-          dimensionColumnDataChunks[i][j] =
-              dimensionRawColumnChunks[i].convertToDimColDataChunk(j);
+          dimensionColumnDataChunks[i][j] = dimensionRawColumnChunks[i].convertToDimColDataChunk(j);
         }
       }
     }
     for (int i = 0; i < measureRawColumnChunks.length; i++) {
       for (int j = 0; j < indexesGroup.length; j++) {
         if (measureRawColumnChunks[i] != null) {
-          measureColumnDataChunks[i][j] =
-              measureRawColumnChunks[i].convertToMeasureColDataChunk(j);
+          measureColumnDataChunks[i][j] = measureRawColumnChunks[i].convertToMeasureColDataChunk(j);
         }
       }
     }
