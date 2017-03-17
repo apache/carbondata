@@ -114,7 +114,14 @@ public class FilterScanner extends AbstractBlockletScanner {
   }
 
   @Override public void readBlocklet(BlocksChunkHolder blocksChunkHolder) throws IOException {
+    long startTime = System.currentTimeMillis();
     this.filterExecuter.readBlocks(blocksChunkHolder);
+    // adding statistics for carbon read time
+    QueryStatistic readTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.READ_BLOCKlET_TIME);
+    readTime.addCountStatistic(QueryStatisticsConstants.READ_BLOCKlET_TIME,
+        readTime.getCount() + (System.currentTimeMillis() - startTime));
+    queryStatisticsModel.getRecorder().recordStatistics(readTime);
   }
 
   /**
@@ -135,6 +142,7 @@ public class FilterScanner extends AbstractBlockletScanner {
    */
   private AbstractScannedResult fillScannedResult(BlocksChunkHolder blocksChunkHolder)
       throws FilterUnsupportedException, IOException {
+    long startTime = System.currentTimeMillis();
     // apply filter on actual data
     BitSetGroup bitSetGroup = this.filterExecuter.applyFilter(blocksChunkHolder);
     // if indexes is empty then return with empty result
@@ -161,7 +169,11 @@ public class FilterScanner extends AbstractBlockletScanner {
     validPages.addCountStatistic(QueryStatisticsConstants.VALID_PAGE_SCANNED,
         validPages.getCount() + bitSetGroup.getValidPages());
     queryStatisticsModel.getRecorder().recordStatistics(validPages);
-
+    QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);
+    totalBlockletStatistic.addCountStatistic(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM,
+        totalBlockletStatistic.getCount() + 1);
+    queryStatisticsModel.getRecorder().recordStatistics(totalBlockletStatistic);
     int[] rowCount = new int[bitSetGroup.getNumberOfPages()];
     // get the row indexes from bot set
     int[][] indexesGroup = new int[bitSetGroup.getNumberOfPages()][];
@@ -270,6 +282,13 @@ public class FilterScanner extends AbstractBlockletScanner {
     scannedResult.setMeasureChunks(measureColumnDataChunks);
     scannedResult.setRawColumnChunks(dimensionRawColumnChunks);
     scannedResult.setNumberOfRows(rowCount);
+    // adding statistics for carbon scan time
+    QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
+    scanTime.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKlET_TIME,
+        scanTime.getCount() + (System.currentTimeMillis() - startTime));
+    queryStatisticsModel.getRecorder().recordStatistics(scanTime);
+
     return scannedResult;
   }
 }

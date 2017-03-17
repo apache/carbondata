@@ -98,14 +98,15 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
     String valid_scan_blocklet = "";
     String valid_pages_blocklet = "";
     String total_pages = "";
+    String readTime = "";
     try {
       for (QueryStatistic statistic : queryStatistics) {
         switch (statistic.getMessage()) {
           case QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR:
             load_blocks_time += statistic.getTimeTaken() + splitChar;
             break;
-          case QueryStatisticsConstants.SCAN_BLOCKS_TIME:
-            scan_blocks_time += statistic.getTimeTaken() + splitChar;
+          case QueryStatisticsConstants.SCAN_BLOCKlET_TIME:
+            scan_blocks_time += statistic.getCount() + splitChar;
             break;
           case QueryStatisticsConstants.SCAN_BLOCKS_NUM:
             scan_blocks_num += statistic.getCount() + splitChar;
@@ -131,18 +132,23 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
           case QueryStatisticsConstants.TOTAL_PAGE_SCANNED:
             total_pages = statistic.getCount() + splitChar;
             break;
+          case QueryStatisticsConstants.READ_BLOCKlET_TIME:
+            readTime = statistic.getCount() + splitChar;
+            break;
           default:
             break;
         }
       }
-      String headers = "task_id,load_blocks_time,load_dictionary_time,scan_blocks_time,"
-          + "total_executor_time,scan_blocks_num,total_blocklet,"
-          + "valid_scan_blocklet,total_pages,valid_pages,result_size";
+      String headers =
+          "task_id,load_blocks_time,load_dictionary_time,carbon_scan_time,carbon_IO_time, "
+              + "total_executor_time,scan_blocks_num,total_blocklets,"
+              + "valid_blocklets,total_pages,valid_pages,result_size";
       List<String> values = new ArrayList<String>();
       values.add(queryIWthTask);
       values.add(load_blocks_time);
       values.add(load_dictionary_time);
       values.add(scan_blocks_time);
+      values.add(readTime);
       values.add(total_executor_time);
       values.add(scan_blocks_num);
       values.add(total_blocklet);
