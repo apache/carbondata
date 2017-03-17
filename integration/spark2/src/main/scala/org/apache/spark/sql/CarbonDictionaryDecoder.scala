@@ -171,6 +171,8 @@ case class CarbonDictionaryDecoder(
              |if (java.util.Arrays.equals(org.apache.carbondata.core.constants
              |.CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, $valueIntern)) {
              |  $isNull = true;
+             |  $valueIntern = org.apache.carbondata.core.constants
+             |  .CarbonCommonConstants.ZERO_BYTE_ARRAY;
              |}
              """.stripMargin
 
@@ -309,6 +311,10 @@ case class CarbonDictionaryDecoder(
 
 object CarbonDictionaryDecoder {
 
+  /**
+   * Converts the datatypes of attributes as per the decoder plan. If a column needs to be decoded
+   * here then that datatype is updated to its original datatype from Int type.
+   */
   def convertOutput(output: Seq[Attribute],
       relations: Seq[CarbonDecoderRelation],
       profile: CarbonProfile,
@@ -339,6 +345,9 @@ object CarbonDictionaryDecoder {
     }
   }
 
+  /**
+   * Whether the attributed requires to decode or not based on the profile.
+   */
   def canBeDecoded(attr: Attribute, profile: CarbonProfile): Boolean = {
     profile match {
       case ip: IncludeProfile if ip.attributes.nonEmpty =>
@@ -351,6 +360,9 @@ object CarbonDictionaryDecoder {
     }
   }
 
+  /**
+   * Converts from carbon datatype to corresponding spark datatype.
+   */
   def convertCarbonToSparkDataType(carbonDimension: CarbonDimension,
       relation: CarbonRelation): types.DataType = {
     carbonDimension.getDataType match {

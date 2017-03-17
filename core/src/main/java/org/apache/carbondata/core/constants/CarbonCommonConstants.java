@@ -174,6 +174,11 @@ public final class CarbonCommonConstants {
    * MEMBER_DEFAULT_VAL_ARRAY
    */
   public static final byte[] MEMBER_DEFAULT_VAL_ARRAY = MEMBER_DEFAULT_VAL.getBytes();
+
+  /**
+   * Bytes for string 0, it is used in codegen in case of null values.
+   */
+  public static final byte[] ZERO_BYTE_ARRAY = "0".getBytes();
   /**
    * FILE STATUS IN-PROGRESS
    */
