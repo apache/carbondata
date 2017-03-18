@@ -65,14 +65,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   protected FileHolder fileReader;
 
   protected AbstractDataBlockIterator dataBlockIterator;
-  /**
-   * total time scan the blocks
-   */
-  protected long totalScanTime;
-  /**
-   * is the statistic recorded
-   */
-  protected boolean isStatisticsRecorded;
+
   /**
    * QueryStatisticsRecorder
    */
@@ -110,7 +103,6 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   }
 
   private void intialiseInfos() {
-    totalScanTime = System.currentTimeMillis();
     for (BlockExecutionInfo blockInfo : blockExecutionInfos) {
       DataRefNodeFinder finder = new BTreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
       DataRefNode startDataBlock = finder
@@ -137,13 +129,6 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
     } else if (blockExecutionInfos.size() > 0) {
       return true;
     } else {
-      if (!isStatisticsRecorded) {
-        QueryStatistic statistic = new QueryStatistic();
-        statistic.addFixedTimeStatistic(QueryStatisticsConstants.SCAN_BLOCKS_TIME,
-            System.currentTimeMillis() - totalScanTime);
-        recorder.recordStatistics(statistic);
-        isStatisticsRecorded = true;
-      }
       return false;
     }
   }
@@ -182,6 +167,12 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
     QueryStatistic validPages = new QueryStatistic();
     queryStatisticsModel.getStatisticsTypeAndObjMap()
         .put(QueryStatisticsConstants.VALID_PAGE_SCANNED, validPages);
+    QueryStatistic scanTime = new QueryStatistic();
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.SCAN_BLOCKlET_TIME, scanTime);
+    QueryStatistic readTime = new QueryStatistic();
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.READ_BLOCKlET_TIME, readTime);
   }
 
   public void processNextBatch(CarbonColumnarBatch columnarBatch) {
