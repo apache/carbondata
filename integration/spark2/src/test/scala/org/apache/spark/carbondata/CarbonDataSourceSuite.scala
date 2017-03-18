@@ -137,4 +137,25 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
       .addProperty("carbon.blockletgroup.size.in.mb", "64")
   }
 
+  test("exists function verification test")({
+    sql("drop table if exists carbonunion")
+    sql("drop table if exists sparkunion")
+    import sqlContext.implicits._
+    val df = sqlContext.sparkContext.parallelize(1 to 1000).map(x => (x+"", (x+100)+"")).toDF("c1", "c2")
+    df.registerTempTable("sparkunion")
+    df.write
+      .format("carbondata")
+      .mode(SaveMode.Overwrite)
+      .option("tableName", "carbonunion")
+      .save()
+    checkAnswer(
+      sql("select * from carbonunion where c1='200' and exists(select * from carbonunion)"),
+      sql("select * from sparkunion where c1='200' and exists(select * from sparkunion)"))
+    checkAnswer(
+      sql("select * from carbonunion where c1='200' and exists(select * from carbonunion) and exists(select * from carbonunion)"),
+      sql("select * from sparkunion where c1='200' and exists(select * from sparkunion) and exists(select * from sparkunion)"))
+    sql("drop table if exists sparkunion")
+    sql("drop table if exists carbonunion")
+  })
+
 }
