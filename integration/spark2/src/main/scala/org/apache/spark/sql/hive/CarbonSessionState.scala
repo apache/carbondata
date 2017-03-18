@@ -18,7 +18,7 @@ package org.apache.spark.sql.hive
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, ExperimentalMethods, SparkSession}
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
-import org.apache.spark.sql.catalyst.expressions.ScalarSubquery
+import org.apache.spark.sql.catalyst.expressions.{PredicateSubquery, ScalarSubquery}
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan}
@@ -60,10 +60,18 @@ class CarbonOptimizer(
             val tPlan = s.plan.transform {
               case lr: LogicalRelation
                 if lr.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-                lr.relation.asInstanceOf[CarbonDatasourceHadoopRelation].isSubquery = true
+                lr.relation.asInstanceOf[CarbonDatasourceHadoopRelation].isSubquery += true
                 lr
             }
             ScalarSubquery(tPlan, s.children, s.exprId)
+          case p: PredicateSubquery =>
+            val tPlan = p.plan.transform {
+              case lr: LogicalRelation
+                if lr.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
+                lr.relation.asInstanceOf[CarbonDatasourceHadoopRelation].isSubquery += true
+                lr
+            }
+            PredicateSubquery(tPlan, p.children, p.nullAware, p.exprId)
         }
     }
     super.execute(transFormedPlan)

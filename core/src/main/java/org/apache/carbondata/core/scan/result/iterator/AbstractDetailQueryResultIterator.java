@@ -180,13 +180,13 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   }
 
   @Override public void close() {
+    if (null != dataBlockIterator) {
+      dataBlockIterator.close();
+    }
     try {
       fileReader.finish();
     } catch (IOException e) {
       LOGGER.error(e);
-    }
-    if (null != dataBlockIterator) {
-      dataBlockIterator.close();
     }
   }
 

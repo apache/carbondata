@@ -168,7 +168,8 @@ case class CarbonDictionaryDecoder(
             s"""
              |boolean $isNull = false;
              |byte[] $valueIntern = $dictsRef.getDictionaryValueForKeyInBytes(${ ev.value });
-             |if (java.util.Arrays.equals(org.apache.carbondata.core.constants
+             |if ($valueIntern == null ||
+             |  java.util.Arrays.equals(org.apache.carbondata.core.constants
              |.CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, $valueIntern)) {
              |  $isNull = true;
              |  $valueIntern = org.apache.carbondata.core.constants
