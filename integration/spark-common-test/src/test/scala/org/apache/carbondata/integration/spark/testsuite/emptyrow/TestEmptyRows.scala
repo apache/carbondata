@@ -67,6 +67,20 @@ class TestEmptyRows extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("select count(Desc) from emptyRowTable") {
+    checkAnswer(
+      sql("select count(Desc) from emptyRowCarbonTable"),
+      sql("select count(Desc) from emptyRowHiveTable")
+    )
+  }
+
+  test("select count(distinct Desc) from emptyRowTable") {
+    checkAnswer(
+      sql("select count(distinct Desc) from emptyRowCarbonTable"),
+      sql("select count(distinct Desc) from emptyRowHiveTable")
+    )
+  }
+
   override def afterAll {
     sql("drop table emptyRowCarbonTable")
     sql("drop table emptyRowHiveTable")
