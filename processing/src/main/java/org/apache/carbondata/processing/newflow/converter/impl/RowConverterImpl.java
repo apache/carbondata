@@ -155,7 +155,7 @@ public class RowConverterImpl implements RowConverter {
       fieldConverters[i].convert(row, logHolder);
       if (!logHolder.isLogged() && logHolder.isBadRecordNotAdded()) {
         if (badRecordLogger.isDataLoadFail()) {
-          String error = "Data load failed due to bad bad record: " + logHolder.getReason();
+          String error = "Data load failed due to bad record: " + logHolder.getReason();
           throw new CarbonDataLoadingException(error);
         }
         badRecordLogger.addBadRecordsToBuilder(copy.getData(), logHolder.getReason());
