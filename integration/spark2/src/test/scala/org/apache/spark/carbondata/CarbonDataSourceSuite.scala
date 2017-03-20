@@ -158,4 +158,22 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonunion")
   })
 
+  test("test drop database with and without cascade") {
+    sql("drop database if exists testdb cascade")
+    sql("create database testdb")
+    sql("create table testdb.test1(name string, id int)stored by 'carbondata'")
+    sql("insert into testdb.test1 select 'xx',1")
+    sql("insert into testdb.test1 select 'xx',11")
+    try {
+      sql("drop database testdb")
+      sys.error("drop db should fail as one table exist in db")
+    } catch {
+      case e =>
+        println(e.getMessage)
+    }
+    checkAnswer(sql("select * from testdb.test1"), Seq(Row("xx", 1), Row("xx", 11)))
+    sql("drop table testdb.test1")
+    sql("drop database testdb")
+  }
+
 }
