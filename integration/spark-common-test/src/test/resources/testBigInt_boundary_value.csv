@@ -1,0 +1,16 @@
+Invalid values,92233720368547758071234
+Invalid values,def
+All_null_values,null
+All_zeros_values,0
+Max_range_values,9223372036854775807
+Max_range_values,9223372036854775807
+Max_range_values,9223372036854775807
+Max_range_values,9223372036854775807
+Min_range_values,-9223372036854775808
+Min_range_values,-9223372036854775807
+Min_range_values,-9223372036854775806
+Min_range_values,-9223372036854775805
+Normal_values,2345
+Normal_values,1234
+Normal_values,3456
+Normal_values,4567

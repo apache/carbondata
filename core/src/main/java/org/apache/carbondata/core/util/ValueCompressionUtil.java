@@ -181,8 +181,16 @@ public final class ValueCompressionUtil {
       int mantissa, byte dataTypeSelected, char measureStoreType) {
     DataType adaptiveDataType = getDataType((long) maxValue, mantissa, dataTypeSelected);
     int adaptiveSize = getSize(adaptiveDataType);
-    DataType deltaDataType = getDataType((long) maxValue - (long) minValue, mantissa,
-        dataTypeSelected);
+    DataType deltaDataType = null;
+    // we cannot apply compression in case actual data type of the column is long
+    // consider the scenario when max and min value are equal to is long max and min value OR
+    // when the max and min value are resulting in a value greater than long max value, then
+    // it is not possible to determine the compression type.
+    if (adaptiveDataType == DataType.DATA_LONG) {
+      deltaDataType = DataType.DATA_BIGINT;
+    } else {
+      deltaDataType = getDataType((long) maxValue - (long) minValue, mantissa, dataTypeSelected);
+    }
     int deltaSize = getSize(deltaDataType);
     if (adaptiveSize > deltaSize) {
       return new CompressionFinder(COMPRESSION_TYPE.DELTA_DOUBLE, DataType.DATA_BIGINT,
