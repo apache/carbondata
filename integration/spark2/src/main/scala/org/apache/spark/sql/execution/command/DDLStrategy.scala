@@ -21,6 +21,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
+import org.apache.spark.sql.hive.execution.command.CarbonDropDatabaseCommand
 
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
@@ -57,15 +58,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         CarbonEnv.get.carbonMetastore.createDatabaseDirectory(dbName)
         ExecutedCommandExec(createDb) :: Nil
       case drop@DropDatabaseCommand(dbName, ifExists, isCascade) =>
-        if (isCascade) {
-          val tablesInDB = CarbonEnv.get.carbonMetastore.getAllTables()
-            .filterNot(_.database.exists(_.equalsIgnoreCase(dbName)))
-          tablesInDB.foreach{tableName =>
-            CarbonDropTableCommand(true, Some(dbName), tableName.table).run(sparkSession)
-          }
-        }
-        CarbonEnv.get.carbonMetastore.dropDatabaseDirectory(dbName)
-        ExecutedCommandExec(drop) :: Nil
+        ExecutedCommandExec(CarbonDropDatabaseCommand(drop)) :: Nil
       case alterTable@AlterTableCompaction(altertablemodel) =>
         val isCarbonTable = CarbonEnv.get.carbonMetastore
           .tableExists(TableIdentifier(altertablemodel.tableName,
