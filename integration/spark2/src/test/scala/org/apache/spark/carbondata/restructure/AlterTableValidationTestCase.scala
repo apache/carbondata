@@ -4,7 +4,6 @@ import java.math.{BigDecimal, RoundingMode}
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
-import org.apache.spark.sql.types.Decimal
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.util.CarbonProperties
@@ -23,7 +22,15 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
       "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE restructure OPTIONS
-          |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin);
+          |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
+    sql(
+      "CREATE TABLE restructure_test (empno int, empname String, designation String, doj " +
+      "Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname " +
+      "String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance " +
+      "int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+    sql(
+      s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE restructure_test OPTIONS
+          |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
   }
 
   test("test add dictionary column") {
@@ -289,7 +296,56 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("test to rename table") {
+    sql("alter table restructure_test rename to restructure_new")
+    val result = sql("select * from restructure_new")
+    assert(result.count().equals(10L))
+  }
+
+  test("test to rename table with invalid table name") {
+    try {
+      sql("alter table restructure_invalid rename to restructure_new")
+      sys.error("Invalid table name error should be thrown")
+    } catch {
+      case e: Exception =>
+        println(e.getMessage)
+    }
+  }
+
+  test("test to rename table with table already exists") {
+    try {
+      sql("alter table restructure rename to restructure")
+      sys.error("same table name exception should be thrown")
+    } catch {
+      case e: Exception =>
+        println(e.getMessage)
+        assert(true)
+    }
+  }
+
+  test("test to load data after rename") {
+    sql(
+      s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE restructure_new OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
+    val result = sql("select * from restructure_new")
+    assert(result.count().equals(20L))
+  }
+
+  test("test table rename without use db, let current db be default") {
+    sql("drop database if exists testdb cascade")
+    sql("create database testdb")
+    sql("create table testdb.test1(name string, id int) stored by 'carbondata'")
+    sql("insert into testdb.test1 select 'xx',1")
+    sql("insert into testdb.test1 select 'xx',11")
+    sql("alter table testdb.test1 rename to testdb.test2")
+    checkAnswer(sql("select * from testdb.test2"), Seq(Row("xx", 1), Row("xx", 11)))
+    sql("drop table testdb.test2")
+    sql("drop database testdb")
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS restructure")
+    sql("DROP TABLE IF EXISTS restructure_new")
+    sql("DROP TABLE IF EXISTS restructure_test")
   }
 }
