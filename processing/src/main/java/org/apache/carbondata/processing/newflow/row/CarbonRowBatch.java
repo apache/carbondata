@@ -17,12 +17,12 @@
 
 package org.apache.carbondata.processing.newflow.row;
 
-import java.util.Iterator;
+import org.apache.carbondata.common.CarbonIterator;
 
 /**
  * Batch of rows.
  */
-public class CarbonRowBatch implements Iterator<CarbonRow> {
+public class CarbonRowBatch extends CarbonIterator<CarbonRow> {
 
   private CarbonRow[] rowBatch;
 

@@ -18,7 +18,7 @@ package org.apache.carbondata.processing.sortandgroupby.sortdata;
 
 import java.util.Comparator;
 
-import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
+import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 /**
  * This class is used as comparator for comparing dims which are non high cardinality dims.
@@ -49,8 +49,8 @@ public class RowComparatorForNormalDims implements Comparator<Object[]> {
 
     for (int i = 0; i < dimensionCount; i++) {
 
-      int dimFieldA = RemoveDictionaryUtil.getDimension(i, rowA);
-      int dimFieldB = RemoveDictionaryUtil.getDimension(i, rowB);
+      int dimFieldA = NonDictionaryUtil.getDimension(i, rowA);
+      int dimFieldB = NonDictionaryUtil.getDimension(i, rowB);
 
       diff = dimFieldA - dimFieldB;
       if (diff != 0) {

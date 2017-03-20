@@ -22,7 +22,7 @@ import java.util.Comparator;
 
 import org.apache.carbondata.core.constants.IgnoreDictionary;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
-import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
+import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 public class RowComparator implements Comparator<Object[]> {
   /**
@@ -61,7 +61,7 @@ public class RowComparator implements Comparator<Object[]> {
         ByteBuffer buff1 = ByteBuffer.wrap(byteArr1);
 
         // extract a high card dims from complete byte[].
-        RemoveDictionaryUtil
+        NonDictionaryUtil
             .extractSingleHighCardDims(byteArr1, noDictionaryindex, noDictionaryCount, buff1);
 
         byte[] byteArr2 = (byte[]) rowB[IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex()];
@@ -69,7 +69,7 @@ public class RowComparator implements Comparator<Object[]> {
         ByteBuffer buff2 = ByteBuffer.wrap(byteArr2);
 
         // extract a high card dims from complete byte[].
-        RemoveDictionaryUtil
+        NonDictionaryUtil
             .extractSingleHighCardDims(byteArr2, noDictionaryindex, noDictionaryCount, buff2);
 
         int difference = UnsafeComparer.INSTANCE.compareTo(buff1, buff2);
@@ -78,8 +78,8 @@ public class RowComparator implements Comparator<Object[]> {
         }
         noDictionaryindex++;
       } else {
-        int dimFieldA = RemoveDictionaryUtil.getDimension(normalIndex, rowA);
-        int dimFieldB = RemoveDictionaryUtil.getDimension(normalIndex, rowB);
+        int dimFieldA = NonDictionaryUtil.getDimension(normalIndex, rowA);
+        int dimFieldB = NonDictionaryUtil.getDimension(normalIndex, rowB);
         diff = dimFieldA - dimFieldB;
         if (diff != 0) {
           return diff;

@@ -46,6 +46,7 @@ public class CarbonTablePath extends Path {
   protected static final String CARBON_DELTE_DELTA_EXT = ".deletedelta";
   protected static final String CARBON_UPDATE_DELTA_EXT = ".updatedelta";
   protected static final String DATA_PART_PREFIX = "part-";
+  protected static final String BATCH_PREFIX = "_batchno";
   protected static final String INDEX_FILE_EXT = ".carbonindex";
   protected static final String DELETE_DELTA_FILE_EXT = ".deletedelta";
 
@@ -236,9 +237,9 @@ public class CarbonTablePath extends Path {
    * @return absolute path of data file stored in carbon data format
    */
   public String getCarbonDataFilePath(String partitionId, String segmentId, Integer filePartNo,
-      Integer taskNo, int bucketNumber, String factUpdateTimeStamp) {
+      Integer taskNo, int batchNo, int bucketNumber, String factUpdateTimeStamp) {
     return getSegmentDir(partitionId, segmentId) + File.separator + getCarbonDataFileName(
-        filePartNo, taskNo, bucketNumber, factUpdateTimeStamp);
+        filePartNo, taskNo, bucketNumber, batchNo, factUpdateTimeStamp);
   }
 
   /**
@@ -352,9 +353,9 @@ public class CarbonTablePath extends Path {
    * @return gets data file name only with out path
    */
   public String getCarbonDataFileName(Integer filePartNo, Integer taskNo, int bucketNumber,
-      String factUpdateTimeStamp) {
-    return DATA_PART_PREFIX + filePartNo + "-" + taskNo + "-" + bucketNumber + "-"
-        + factUpdateTimeStamp + CARBON_DATA_EXT;
+      int batchNo, String factUpdateTimeStamp) {
+    return DATA_PART_PREFIX + filePartNo + "-" + taskNo + BATCH_PREFIX + batchNo + "-"
+        + bucketNumber + "-" + factUpdateTimeStamp + CARBON_DATA_EXT;
   }
 
   /**
@@ -364,8 +365,10 @@ public class CarbonTablePath extends Path {
    * @param factUpdatedTimeStamp time stamp
    * @return filename
    */
-  public String getCarbonIndexFileName(int taskNo, int bucketNumber, String factUpdatedTimeStamp) {
-    return taskNo + "-" + bucketNumber + "-" + factUpdatedTimeStamp + INDEX_FILE_EXT;
+  public String getCarbonIndexFileName(int taskNo, int bucketNumber, int batchNo,
+      String factUpdatedTimeStamp) {
+    return taskNo + BATCH_PREFIX + batchNo + "-" + bucketNumber + "-" + factUpdatedTimeStamp
+        + INDEX_FILE_EXT;
   }
 
   /**

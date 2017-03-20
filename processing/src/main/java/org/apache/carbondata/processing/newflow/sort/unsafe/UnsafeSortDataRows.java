@@ -73,6 +73,10 @@ public class UnsafeSortDataRows {
 
   private boolean enableInMemoryIntermediateMerge;
 
+  private int bytesAdded;
+
+  private long maxSizeAllowed;
+
   public UnsafeSortDataRows(SortParameters parameters,
       UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger) {
     this.parameters = parameters;
@@ -88,6 +92,14 @@ public class UnsafeSortDataRows {
     enableInMemoryIntermediateMerge = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT,
             CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT_DEFAULT));
+
+    this.maxSizeAllowed = Integer.parseInt(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB, "0"));
+    if (maxSizeAllowed <= 0) {
+      this.maxSizeAllowed = UnsafeMemoryManager.INSTANCE.getUsableMemory() / 2;
+    } else {
+      this.maxSizeAllowed = this.maxSizeAllowed * 1024 * 1024;
+    }
   }
 
   /**
@@ -96,8 +108,9 @@ public class UnsafeSortDataRows {
   public void initialize() throws CarbonSortKeyAndGroupByException {
     MemoryBlock baseBlock = getMemoryBlock(inMemoryChunkSizeInMB * 1024 * 1024);
     this.rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
-        parameters.getDimColCount(), parameters.getMeasureColCount(), parameters.getAggType(),
-        baseBlock, !UnsafeMemoryManager.INSTANCE.isMemoryAvailable());
+        parameters.getDimColCount() + parameters.getComplexDimColCount(),
+        parameters.getMeasureColCount(), parameters.getAggType(), baseBlock,
+        !UnsafeMemoryManager.INSTANCE.isMemoryAvailable());
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
 
@@ -131,6 +144,10 @@ public class UnsafeSortDataRows {
     return baseBlock;
   }
 
+  public boolean canAdd() {
+    return bytesAdded < maxSizeAllowed;
+  }
+
   /**
    * This method will be used to add new row
    *
@@ -143,7 +160,7 @@ public class UnsafeSortDataRows {
     synchronized (addRowsLock) {
       for (int i = 0; i < size; i++) {
         if (rowPage.canAdd()) {
-          rowPage.addRow(rowBatch[i]);
+          bytesAdded += rowPage.addRow(rowBatch[i]);
         } else {
           try {
             if (enableInMemoryIntermediateMerge) {
@@ -154,10 +171,9 @@ public class UnsafeSortDataRows {
             MemoryBlock memoryBlock = getMemoryBlock(inMemoryChunkSizeInMB * 1024 * 1024);
             boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
             rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
-                parameters.getDimColCount(), parameters.getMeasureColCount(),
-                parameters.getAggType(), memoryBlock,
-                saveToDisk);
-            rowPage.addRow(rowBatch[i]);
+                parameters.getDimColCount() + parameters.getComplexDimColCount(),
+                parameters.getMeasureColCount(), parameters.getAggType(), memoryBlock, saveToDisk);
+            bytesAdded += rowPage.addRow(rowBatch[i]);
           } catch (Exception e) {
             LOGGER.error(
                 "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());

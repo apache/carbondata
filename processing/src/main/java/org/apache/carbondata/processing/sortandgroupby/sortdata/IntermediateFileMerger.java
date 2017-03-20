@@ -32,7 +32,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
-import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
+import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 public class IntermediateFileMerger implements Callable<Void> {
   /**
@@ -334,30 +334,30 @@ public class IntermediateFileMerger implements Callable<Void> {
       char[] aggType = mergerParameters.getAggType();
 
       for (int counter = 0; counter < mergerParameters.getDimColCount(); counter++) {
-        stream.writeInt((Integer) RemoveDictionaryUtil.getDimension(fieldIndex++, row));
+        stream.writeInt((Integer) NonDictionaryUtil.getDimension(fieldIndex++, row));
       }
 
       // added for high card also
       if ((mergerParameters.getNoDictionaryCount() + mergerParameters
           .getComplexDimColCount()) > 0) {
-        stream.write(RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row));
+        stream.write(NonDictionaryUtil.getByteArrayForNoDictionaryCols(row));
       }
 
       fieldIndex = 0;
       for (int counter = 0; counter < mergerParameters.getMeasureColCount(); counter++) {
-        if (null != RemoveDictionaryUtil.getMeasure(fieldIndex, row)) {
+        if (null != NonDictionaryUtil.getMeasure(fieldIndex, row)) {
           stream.write((byte) 1);
           if (aggType[counter] == CarbonCommonConstants.BYTE_VALUE_MEASURE) {
-            Double val = (Double) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
+            Double val = (Double) NonDictionaryUtil.getMeasure(fieldIndex, row);
             stream.writeDouble(val);
           } else if (aggType[counter] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-            Double val = (Double) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
+            Double val = (Double) NonDictionaryUtil.getMeasure(fieldIndex, row);
             stream.writeDouble(val);
           } else if (aggType[counter] == CarbonCommonConstants.BIG_INT_MEASURE) {
-            Long val = (Long) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
+            Long val = (Long) NonDictionaryUtil.getMeasure(fieldIndex, row);
             stream.writeLong(val);
           } else if (aggType[counter] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-            byte[] bigDecimalInBytes = (byte[]) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
+            byte[] bigDecimalInBytes = (byte[]) NonDictionaryUtil.getMeasure(fieldIndex, row);
             stream.writeInt(bigDecimalInBytes.length);
             stream.write(bigDecimalInBytes);
           }
@@ -413,19 +413,19 @@ public class IntermediateFileMerger implements Callable<Void> {
 
       int fieldIndex = 0;
       for (int counter = 0; counter < mergerParameters.getMeasureColCount(); counter++) {
-        if (null != RemoveDictionaryUtil.getMeasure(fieldIndex, row)) {
+        if (null != NonDictionaryUtil.getMeasure(fieldIndex, row)) {
           stream.write((byte) 1);
           if (aggType[counter] == CarbonCommonConstants.BYTE_VALUE_MEASURE) {
-            Double val = (Double) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
+            Double val = (Double) NonDictionaryUtil.getMeasure(fieldIndex, row);
             stream.writeDouble(val);
           } else if (aggType[counter] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-            Double val = (Double) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
+            Double val = (Double) NonDictionaryUtil.getMeasure(fieldIndex, row);
             stream.writeDouble(val);
           } else if (aggType[counter] == CarbonCommonConstants.BIG_INT_MEASURE) {
-            Long val = (Long) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
+            Long val = (Long) NonDictionaryUtil.getMeasure(fieldIndex, row);
             stream.writeLong(val);
           } else if (aggType[counter] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-            byte[] bigDecimalInBytes = (byte[]) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
+            byte[] bigDecimalInBytes = (byte[]) NonDictionaryUtil.getMeasure(fieldIndex, row);
             stream.writeInt(bigDecimalInBytes.length);
             stream.write(bigDecimalInBytes);
           }

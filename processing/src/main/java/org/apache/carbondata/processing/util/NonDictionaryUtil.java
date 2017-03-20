@@ -32,7 +32,7 @@ import org.apache.carbondata.core.constants.IgnoreDictionary;
 /**
  * This is the utility class for No Dictionary changes.
  */
-public class RemoveDictionaryUtil {
+public class NonDictionaryUtil {
   /**
    * Here we are dividing one single object [] into 3 arrays. one for
    * dimensions , one for high card, one for measures.
@@ -44,7 +44,7 @@ public class RemoveDictionaryUtil {
       int dimCount) {
 
     byte[] nonDictionaryCols =
-        RemoveDictionaryUtil.packByteBufferIntoSingleByteArray(byteBufferArr);
+        NonDictionaryUtil.packByteBufferIntoSingleByteArray(byteBufferArr);
     Integer[] dimArray = new Integer[dimCount];
     for (int i = 0; i < dimCount; i++) {
       dimArray[i] = (Integer) out[i];
@@ -388,7 +388,7 @@ public class RemoveDictionaryUtil {
       buffArr[index++].rewind();
     }
 
-    return RemoveDictionaryUtil.packByteBufferIntoSingleByteArray(buffArr);
+    return NonDictionaryUtil.packByteBufferIntoSingleByteArray(buffArr);
 
   }
 

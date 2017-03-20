@@ -131,7 +131,7 @@ public class TableBlockInfoTest {
 
     TableBlockInfo tableBlockInfo = new TableBlockInfo("difffilepaths", 6, "5", null, 3, ColumnarFormatVersion.V1);
     int res = tableBlockInfos.compareTo(tableBlockInfo);
-    int expectedResult = -5;
+    int expectedResult = 7;
     assertEquals(res, expectedResult);
 
     TableBlockInfo tableBlockInfo1 = new TableBlockInfo("filepath", 6, "5", null, 3, ColumnarFormatVersion.V1);

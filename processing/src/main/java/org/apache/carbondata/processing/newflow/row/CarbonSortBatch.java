@@ -14,26 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.carbondata.processing.newflow.row;
 
-package org.apache.carbondata.processing.newflow.constants;
+import org.apache.carbondata.processing.newflow.sort.unsafe.merger.UnsafeSingleThreadFinalSortFilesMerger;
 
 /**
- * Constants used in data loading.
+ * Batch of sorted rows which are ready to be processed by
  */
-public final class DataLoadProcessorConstants {
+public class CarbonSortBatch extends CarbonRowBatch {
 
-  public static final String FACT_TIME_STAMP = "FACT_TIME_STAMP";
+  private UnsafeSingleThreadFinalSortFilesMerger iterator;
 
-  public static final String COMPLEX_DELIMITERS = "COMPLEX_DELIMITERS";
+  public CarbonSortBatch(UnsafeSingleThreadFinalSortFilesMerger iterator) {
+    super(0);
+    this.iterator = iterator;
+  }
 
-  public static final String SERIALIZATION_NULL_FORMAT = "SERIALIZATION_NULL_FORMAT";
+  @Override public boolean hasNext() {
+    return iterator.hasNext();
+  }
 
-  public static final String BAD_RECORDS_LOGGER_ENABLE = "BAD_RECORDS_LOGGER_ENABLE";
+  @Override public CarbonRow next() {
+    return new CarbonRow(iterator.next());
+  }
 
-  public static final String BAD_RECORDS_LOGGER_ACTION = "BAD_RECORDS_LOGGER_ACTION";
-
-  public static final String IS_EMPTY_DATA_BAD_RECORD = "IS_EMPTY_DATA_BAD_RECORD";
-
-  public static final String FACT_FILE_PATH = "FACT_FILE_PATH";
-
+  @Override public void close() {
+    iterator.close();
+  }
 }

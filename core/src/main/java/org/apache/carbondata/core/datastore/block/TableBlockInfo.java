@@ -23,6 +23,7 @@ import java.util.Map;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath.DataFileUtil;
 
@@ -212,10 +213,10 @@ public class TableBlockInfo implements Distributable, Serializable {
     // offset of
     // the file
     if (CarbonTablePath.isCarbonDataFile(filePath)) {
-      int firstTaskId = Integer.parseInt(DataFileUtil.getTaskNo(filePath));
-      int otherTaskId = Integer.parseInt(DataFileUtil.getTaskNo(((TableBlockInfo) other).filePath));
-      if (firstTaskId != otherTaskId) {
-        return firstTaskId - otherTaskId;
+      int compare = ByteUtil.compare(DataFileUtil.getTaskNo(filePath).getBytes(),
+          DataFileUtil.getTaskNo(((TableBlockInfo) other).filePath).getBytes());
+      if (compare != 0) {
+        return compare;
       }
       // compare the part no of both block info
       int firstPartNo = Integer.parseInt(DataFileUtil.getPartNo(filePath));

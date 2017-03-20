@@ -72,7 +72,7 @@ import org.apache.carbondata.processing.schema.metadata.ColumnSchemaDetailsWrapp
 import org.apache.carbondata.processing.schema.metadata.ColumnsInfo;
 import org.apache.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
-import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
+import org.apache.carbondata.processing.util.NonDictionaryUtil;
 import static org.apache.carbondata.processing.constants.TableOptionConstant.BAD_RECORDS_ACTION;
 import static org.apache.carbondata.processing.constants.TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE;
 import static org.apache.carbondata.processing.constants.TableOptionConstant.SERIALIZATION_NULL_FORMAT;
@@ -934,8 +934,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       Object[] out = populateOutputRow(r);
       if (out != null) {
         for (int i = 0; i < meta.normLength - meta.complexTypes.size(); i++) {
-          if (null == RemoveDictionaryUtil.getDimension(i, out)) {
-            RemoveDictionaryUtil.setDimension(i, 1, out);
+          if (null == NonDictionaryUtil.getDimension(i, out)) {
+            NonDictionaryUtil.setDimension(i, 1, out);
           }
         }
       }
@@ -1279,7 +1279,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     }
 
     insertHierIfRequired(out);
-    RemoveDictionaryUtil
+    NonDictionaryUtil
         .prepareOut(newArray, byteBufferArr, out, dimLen - meta.complexTypes.size());
 
     return newArray;
