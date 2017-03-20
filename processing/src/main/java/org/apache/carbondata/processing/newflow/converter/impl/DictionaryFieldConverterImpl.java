@@ -55,14 +55,17 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
 
   private DictionaryMessage dictionaryMessage;
 
+  private boolean isEmptyBadRecord;
+
   public DictionaryFieldConverterImpl(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, String nullFormat, int index,
       DictionaryClient client, boolean useOnePass, String storePath, boolean tableInitialize,
-      Map<Object, Integer> localCache) throws IOException {
+      Map<Object, Integer> localCache, boolean isEmptyBadRecord) throws IOException {
     this.index = index;
     this.carbonDimension = (CarbonDimension) dataField.getColumn();
     this.nullFormat = nullFormat;
+    this.isEmptyBadRecord = isEmptyBadRecord;
     DictionaryColumnUniqueIdentifier identifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
             dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType());
@@ -94,8 +97,19 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
   @Override public void convert(CarbonRow row, BadRecordLogHolder logHolder)
       throws CarbonDataLoadingException {
     try {
-      String parsedValue = DataTypeUtil.parseValue(row.getString(index), carbonDimension);
-      if (null == parsedValue || parsedValue.equals(nullFormat)) {
+      String dimensionValue = row.getString(index);
+      if (dimensionValue == null || dimensionValue.equals(nullFormat)) {
+        dimensionValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
+      }
+      String parsedValue = DataTypeUtil.parseValue(dimensionValue, carbonDimension);
+      if (null == parsedValue) {
+        if ((dimensionValue.length() > 0) || (dimensionValue.length() == 0 && isEmptyBadRecord)) {
+          String dataType = carbonDimension.getDataType().getName();
+          logHolder.setReason(
+              "The value " + " \"" + dimensionValue + "\"" + " with column name " + carbonDimension
+                  .getColName() + " and column data type " + dataType + " is not a valid "
+                  + dataType + " type.");
+        }
         row.update(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY, index);
       } else {
         row.update(dictionaryGenerator.getOrGenerateKey(parsedValue), index);

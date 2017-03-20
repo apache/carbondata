@@ -75,7 +75,7 @@ public class FieldEncoderFactory {
       } else if (dataField.getColumn().hasEncoding(Encoding.DICTIONARY) &&
           !dataField.getColumn().isComplex()) {
         return new DictionaryFieldConverterImpl(dataField, cache, carbonTableIdentifier, nullFormat,
-            index, client, useOnePass, storePath, tableInitialize, localCache);
+            index, client, useOnePass, storePath, tableInitialize, localCache, isEmptyBadRecord);
       } else if (dataField.getColumn().isComplex()) {
         return new ComplexFieldConverterImpl(
             createComplexType(dataField, cache, carbonTableIdentifier,
