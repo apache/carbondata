@@ -845,11 +845,6 @@ object GlobalDictionaryUtil {
       }")
 
       if (distinctValues.size() > 0) {
-        dictionary = CarbonLoaderUtil.getDictionary(tableIdentifier,
-          new ColumnIdentifier(columnSchema.getColumnUniqueId, null, columnSchema.getDataType),
-          storePath,
-          columnSchema.getDataType
-        )
         val sortIndexWriteTask = new SortIndexWriterTask(tableIdentifier,
           columnIdentifier,
           columnSchema.getDataType,
