@@ -79,6 +79,19 @@ class TestBigInt extends QueryTest with BeforeAndAfterAll {
       sql("select count(distinct salary) from hiveTable"))
   }
 
+  test("test big int data type storage for boundary values") {
+    sql("DROP TABLE IF EXISTS Test_Boundary_carbon")
+    sql("DROP TABLE IF EXISTS Test_Boundary_hive")
+    sql("create table Test_Boundary_carbon (c1_String string, c2_Bigint Bigint) STORED BY 'org.apache.carbondata.format'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/testBigInt_boundary_value.csv' into table Test_Boundary_carbon OPTIONS('FILEHEADER'='c1_String,c2_Bigint')")
+    sql("create table Test_Boundary_hive (c1_String string, c2_Bigint Bigint) row format delimited fields terminated by ','")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/testBigInt_boundary_value.csv' into table Test_Boundary_hive")
+    checkAnswer(sql("select c2_bigInt*23 from Test_Boundary_carbon where c2_BigInt<9223372036854775807"),
+      sql("select c2_bigInt*23 from Test_Boundary_hive where c2_BigInt<9223372036854775807"))
+    sql("DROP TABLE IF EXISTS Test_Boundary_carbon")
+    sql("DROP TABLE IF EXISTS Test_Boundary_hive")
+  }
+
   override def afterAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
