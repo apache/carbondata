@@ -136,6 +136,7 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
     if (relation == null) {
       LOGGER.audit(s"Rename table request has failed. " +
                    s"Table $oldDatabaseName.$oldTableName does not exist")
+      sys.error(s"Table $oldDatabaseName.$oldTableName does not exist")
     }
     val carbonTable = relation.tableMeta.carbonTable
     val carbonLock = CarbonLockFactory
@@ -161,7 +162,7 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
           .renameForce(carbonTablePath.getParent.toString + CarbonCommonConstants.FILE_SEPARATOR +
                        newTableName)
         if (!rename) {
-          sys.error(s"Rename failed for table $oldTableName")
+          sys.error(s"Folder rename failed for table $oldDatabaseName.$oldTableName")
         }
       }
       val newTableIdentifier = new CarbonTableIdentifier(oldDatabaseName,
@@ -174,7 +175,7 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
       CarbonEnv.get.carbonMetastore.removeTableFromMetadata(oldDatabaseName, oldTableName)
       sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client
         .runSqlHive(
-          s"ALTER TABLE $oldDatabaseName.$oldTableName RENAME TO $newTableName")
+          s"ALTER TABLE $oldDatabaseName.$oldTableName RENAME TO $oldDatabaseName.$newTableName")
       sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client
         .runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$newTableName SET SERDEPROPERTIES" +
