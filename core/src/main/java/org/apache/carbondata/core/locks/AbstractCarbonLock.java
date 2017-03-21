@@ -25,6 +25,11 @@ import org.apache.carbondata.core.util.CarbonProperties;
  * retrying part of the locking.
  */
 public abstract class AbstractCarbonLock implements ICarbonLock {
+
+  public static final boolean ENABLE_LOCK_LOG = Boolean.parseBoolean(CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.ENABLE_LOCK_LOG,
+          CarbonCommonConstants.ENABLE_LOCK_LOG_DEFAULT));
+
   private int retryCount;
 
   private int retryTimeout;

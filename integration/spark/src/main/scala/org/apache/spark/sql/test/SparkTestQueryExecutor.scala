@@ -43,6 +43,7 @@ object SparkTestQueryExecutor {
     .addProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
       System.getProperty("java.io.tmpdir"))
     .addProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL)
+    .addProperty(CarbonCommonConstants.ENABLE_LOCK_LOG, "true")
 
   val sc = new SparkContext(new SparkConf()
     .setAppName("CarbonSpark")

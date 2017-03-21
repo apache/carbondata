@@ -86,7 +86,10 @@ public class HdfsFileLock extends AbstractCarbonLock {
   @Override public boolean lock() {
     try {
       if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
-        FileFactory.createNewLockFile(location, FileFactory.getFileType(location));
+        if (!FileFactory.createNewLockFile(location, FileFactory.getFileType(location))
+            && ENABLE_LOCK_LOG) {
+          LOGGER.error("Lock file cannot be created : " + location);
+        }
       }
       dataOutputStream =
           FileFactory.getDataOutputStreamUsingAppend(location, FileFactory.getFileType(location));
@@ -94,6 +97,9 @@ public class HdfsFileLock extends AbstractCarbonLock {
       return true;
 
     } catch (IOException e) {
+      if (ENABLE_LOCK_LOG) {
+        LOGGER.error(e);
+      }
       return false;
     }
   }
@@ -107,6 +113,9 @@ public class HdfsFileLock extends AbstractCarbonLock {
       try {
         dataOutputStream.close();
       } catch (IOException e) {
+        if (ENABLE_LOCK_LOG) {
+          LOGGER.error(e);
+        }
         return false;
       } finally {
         CarbonFile carbonFile =

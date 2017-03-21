@@ -1191,6 +1191,10 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_BAD_RECORDS_ACTION_DEFAULT = "FORCE";
 
+  public static final String ENABLE_LOCK_LOG = "carbon,enable.lock.log";
+
+  public static final String ENABLE_LOCK_LOG_DEFAULT = "false";
+
   private CarbonCommonConstants() {
   }
 }

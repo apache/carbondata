@@ -106,7 +106,10 @@ public class LocalFileLock extends AbstractCarbonLock {
       lockFilePath = location + CarbonCommonConstants.FILE_SEPARATOR +
           lockFile;
       if (!FileFactory.isFileExist(lockFilePath, FileFactory.getFileType(location))) {
-        FileFactory.createNewLockFile(lockFilePath, FileFactory.getFileType(location));
+        if (!FileFactory.createNewLockFile(lockFilePath, FileFactory.getFileType(location))
+            && ENABLE_LOCK_LOG) {
+          LOGGER.error("Lock file cannot be created : " + lockFilePath);
+        }
       }
 
       fileOutputStream = new FileOutputStream(lockFilePath);
@@ -114,6 +117,9 @@ public class LocalFileLock extends AbstractCarbonLock {
       try {
         fileLock = channel.tryLock();
       } catch (OverlappingFileLockException e) {
+        if (ENABLE_LOCK_LOG) {
+          LOGGER.error(e);
+        }
         return false;
       }
       if (null != fileLock) {
@@ -122,6 +128,9 @@ public class LocalFileLock extends AbstractCarbonLock {
         return false;
       }
     } catch (IOException e) {
+      if (ENABLE_LOCK_LOG) {
+        LOGGER.error(e);
+      }
       return false;
     }
 
@@ -153,7 +162,7 @@ public class LocalFileLock extends AbstractCarbonLock {
             LOGGER.error("Not able to delete the lock file " + lockFilePath);
           }
         } catch (IOException e) {
-          LOGGER.error(e.getMessage());
+          LOGGER.error(e);
         }
       }
     }
