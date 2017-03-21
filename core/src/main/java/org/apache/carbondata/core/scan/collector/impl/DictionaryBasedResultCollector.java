@@ -105,7 +105,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         scannedResult.incrementCounter();
       }
       if (null != deleteDeltaDataCache && deleteDeltaDataCache
-          .contains(scannedResult.getCurrenrRowId())) {
+          .contains(scannedResult.getCurrentRowId())) {
         continue;
       }
       fillMeasureData(scannedResult, row);
@@ -124,7 +124,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
             .equals(queryDimensions[i].getDimension().getColName())) {
           row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
               scannedResult.getBlockletId() + CarbonCommonConstants.FILE_SEPARATOR
-                  + scannedResult.getCurrenrRowId(), DataType.STRING);
+                  + scannedResult.getCurrentRowId(), DataType.STRING);
         } else {
           row[order[i]] = DataTypeUtil
               .getDataBasedOnDataType(scannedResult.getBlockletId(), DataType.STRING);
