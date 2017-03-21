@@ -141,23 +141,25 @@ object CarbonFilters {
           }
 
         case And(left, right) =>
-          (translate(left) ++ translate(right)).reduceOption(sources.And)
+          val leftFilter = translate(left, or)
+          val rightFilter = translate(right, or)
+          if (or) {
+            if (leftFilter.isDefined && rightFilter.isDefined) {
+              (leftFilter ++ rightFilter).reduceOption(sources.And)
+            } else {
+              None
+            }
+          } else {
+            (leftFilter ++ rightFilter).reduceOption(sources.And)
+          }
 
         case EqualTo(a: Attribute, Literal(v, t)) =>
           Some(sources.EqualTo(a.name, v))
         case EqualTo(l@Literal(v, t), a: Attribute) =>
           Some(sources.EqualTo(a.name, v))
-        case EqualTo(Cast(a: Attribute, _), Literal(v, t)) =>
-          Some(sources.EqualTo(a.name, v))
-        case EqualTo(Literal(v, t), Cast(a: Attribute, _)) =>
-          Some(sources.EqualTo(a.name, v))
         case Not(EqualTo(a: Attribute, Literal(v, t))) =>
           Some(sources.Not(sources.EqualTo(a.name, v)))
         case Not(EqualTo(Literal(v, t), a: Attribute)) =>
-          Some(sources.Not(sources.EqualTo(a.name, v)))
-        case Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) =>
-          Some(sources.Not(sources.EqualTo(a.name, v)))
-        case Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) =>
           Some(sources.Not(sources.EqualTo(a.name, v)))
         case IsNotNull(a: Attribute) =>
           Some(sources.IsNotNull(a.name))
@@ -169,43 +171,21 @@ object CarbonFilters {
         case In(a: Attribute, list) if !list.exists(!_.isInstanceOf[Literal]) =>
           val hSet = list.map(e => e.eval(EmptyRow))
           Some(sources.In(a.name, hSet.toArray))
-        case Not(In(Cast(a: Attribute, _), list)) if !list.exists(!_.isInstanceOf[Literal]) =>
-          val hSet = list.map(e => e.eval(EmptyRow))
-          Some(sources.Not(sources.In(a.name, hSet.toArray)))
-        case In(Cast(a: Attribute, _), list) if !list.exists(!_.isInstanceOf[Literal]) =>
-          val hSet = list.map(e => e.eval(EmptyRow))
-          Some(sources.In(a.name, hSet.toArray))
         case GreaterThan(a: Attribute, Literal(v, t)) =>
           Some(sources.GreaterThan(a.name, v))
         case GreaterThan(Literal(v, t), a: Attribute) =>
-          Some(sources.LessThan(a.name, v))
-        case GreaterThan(Cast(a: Attribute, _), Literal(v, t)) =>
-          Some(sources.GreaterThan(a.name, v))
-        case GreaterThan(Literal(v, t), Cast(a: Attribute, _)) =>
           Some(sources.LessThan(a.name, v))
         case LessThan(a: Attribute, Literal(v, t)) =>
           Some(sources.LessThan(a.name, v))
         case LessThan(Literal(v, t), a: Attribute) =>
           Some(sources.GreaterThan(a.name, v))
-        case LessThan(Cast(a: Attribute, _), Literal(v, t)) =>
-          Some(sources.LessThan(a.name, v))
-        case LessThan(Literal(v, t), Cast(a: Attribute, _)) =>
-          Some(sources.GreaterThan(a.name, v))
         case GreaterThanOrEqual(a: Attribute, Literal(v, t)) =>
           Some(sources.GreaterThanOrEqual(a.name, v))
         case GreaterThanOrEqual(Literal(v, t), a: Attribute) =>
           Some(sources.LessThanOrEqual(a.name, v))
-        case GreaterThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
-          Some(sources.GreaterThanOrEqual(a.name, v))
-        case GreaterThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
-          Some(sources.LessThanOrEqual(a.name, v))
         case LessThanOrEqual(a: Attribute, Literal(v, t)) =>
           Some(sources.LessThanOrEqual(a.name, v))
         case LessThanOrEqual(Literal(v, t), a: Attribute) =>
-          Some(sources.GreaterThanOrEqual(a.name, v))
-        case LessThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
-          Some(sources.LessThanOrEqual(a.name, v))
-        case LessThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
           Some(sources.GreaterThanOrEqual(a.name, v))
 
         case others =>
