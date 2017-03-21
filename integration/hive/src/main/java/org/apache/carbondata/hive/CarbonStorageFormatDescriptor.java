@@ -17,10 +17,10 @@
 
 package org.apache.carbondata.hive;
 
+import java.util.Set;
+
 import com.google.common.collect.ImmutableSet;
 import org.apache.hadoop.hive.ql.io.AbstractStorageFormatDescriptor;
-
-import java.util.Set;
 
 public class CarbonStorageFormatDescriptor extends AbstractStorageFormatDescriptor {
 

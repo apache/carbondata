@@ -24,7 +24,6 @@ import java.util.List;
 
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.SettableStructObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.StandardStructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
@@ -53,8 +52,7 @@ public class CarbonObjectInspector extends SettableStructObjectInspector {
       final String name = fieldNames.get(i);
       final TypeInfo fieldInfo = fieldInfos.get(i);
 
-      final StructFieldImpl field = new StructFieldImpl(name,
-        getObjectInspector(fieldInfo), i);
+      final StructFieldImpl field = new StructFieldImpl(name, getObjectInspector(fieldInfo), i);
       fields.add(field);
       fieldsByName.put(name, field);
     }

@@ -16,19 +16,6 @@
  */
 package org.apache.carbondata.hive;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.block.BlockletInfos;
-import org.apache.carbondata.core.datastore.block.Distributable;
-import org.apache.carbondata.core.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
-import org.apache.carbondata.core.mutate.UpdateVO;
-import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.hadoop.internal.index.Block;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.FileSplit;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -38,9 +25,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.mapred.FileSplit;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.block.BlockletInfos;
+import org.apache.carbondata.core.datastore.block.Distributable;
+import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.mutate.UpdateVO;
+import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.hadoop.internal.index.Block;
+
+
 
 public class CarbonHiveInputSplit extends FileSplit
-  implements Distributable, Serializable, Writable, Block {
+    implements Distributable, Serializable, Writable, Block {
 
   private static final long serialVersionUID = 3520344046772190208L;
   public String taskId;
@@ -64,7 +66,7 @@ public class CarbonHiveInputSplit extends FileSplit
    * map of blocklocation and storage id
    */
   private Map<String, String> blockStorageIdMap =
-    new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+      new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   private List<UpdateVO> invalidTimestampsList;
 
@@ -77,8 +79,8 @@ public class CarbonHiveInputSplit extends FileSplit
     version = CarbonProperties.getInstance().getFormatVersion();
   }
 
-  public CarbonHiveInputSplit(String segmentId, Path path, long start, long length, String[] locations,
-                              ColumnarFormatVersion version) {
+  public CarbonHiveInputSplit(String segmentId, Path path, long start, long length,
+      String[] locations, ColumnarFormatVersion version) {
     super(path, start, length, locations);
     this.segmentId = segmentId;
     this.taskId = CarbonTablePath.DataFileUtil.getTaskNo(path.getName());
@@ -87,8 +89,8 @@ public class CarbonHiveInputSplit extends FileSplit
     this.version = version;
   }
 
-  public CarbonHiveInputSplit(String segmentId, Path path, long start, long length, String[] locations,
-                              int numberOfBlocklets, ColumnarFormatVersion version) {
+  public CarbonHiveInputSplit(String segmentId, Path path, long start, long length,
+      String[] locations, int numberOfBlocklets, ColumnarFormatVersion version) {
     this(segmentId, path, start, length, locations, version);
     this.numberOfBlocklets = numberOfBlocklets;
   }
@@ -123,10 +125,10 @@ public class CarbonHiveInputSplit extends FileSplit
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
     for (CarbonHiveInputSplit split : splitList) {
       BlockletInfos blockletInfos =
-        new BlockletInfos(split.getNumberOfBlocklets(), 0, split.getNumberOfBlocklets());
+          new BlockletInfos(split.getNumberOfBlocklets(), 0, split.getNumberOfBlocklets());
       try {
         tableBlockInfoList.add(
-          new TableBlockInfo(split.getPath().toString(), split.getStart(), split.getSegmentId(),
+            new TableBlockInfo(split.getPath().toString(), split.getStart(), split.getSegmentId(),
             split.getLocations(), split.getLength(), blockletInfos, split.getVersion()));
       } catch (IOException e) {
         throw new RuntimeException("fail to get location of split: " + split, e);
@@ -137,7 +139,7 @@ public class CarbonHiveInputSplit extends FileSplit
 
   public static TableBlockInfo getTableBlockInfo(CarbonHiveInputSplit inputSplit) {
     BlockletInfos blockletInfos =
-      new BlockletInfos(inputSplit.getNumberOfBlocklets(), 0, inputSplit.getNumberOfBlocklets());
+        new BlockletInfos(inputSplit.getNumberOfBlocklets(), 0, inputSplit.getNumberOfBlocklets());
     try {
       return new TableBlockInfo(inputSplit.getPath().toString(), inputSplit.getStart(),
         inputSplit.getSegmentId(), inputSplit.getLocations(), inputSplit.getLength(),

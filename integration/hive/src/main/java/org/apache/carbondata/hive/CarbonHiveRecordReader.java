@@ -16,12 +16,15 @@
  */
 package org.apache.carbondata.hive;
 
-import org.apache.carbondata.core.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
-import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.scan.result.iterator.ChunkRowIterator;
-import org.apache.carbondata.hadoop.CarbonRecordReader;
-import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
+
+import java.io.IOException;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hadoop.hive.serde.serdeConstants;
@@ -36,7 +39,6 @@ import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
-
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -45,16 +47,15 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 
-import java.io.IOException;
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
+import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.scan.result.iterator.ChunkRowIterator;
+import org.apache.carbondata.hadoop.CarbonRecordReader;
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
-  implements org.apache.hadoop.mapred.RecordReader<Void, ArrayWritable> {
+    implements org.apache.hadoop.mapred.RecordReader<Void, ArrayWritable> {
 
   ArrayWritable valueObj = null;
   private CarbonObjectInspector objInspector;
@@ -78,7 +79,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     List<TableBlockInfo> tableBlockInfoList = CarbonHiveInputSplit.createBlocks(splitList);
     queryModel.setTableBlockInfos(tableBlockInfoList);
     readSupport.initialize(queryModel.getProjectionColumns(),
-      queryModel.getAbsoluteTableIdentifier());
+        queryModel.getAbsoluteTableIdentifier());
     try {
       carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
     } catch (QueryExecutionException e) {
@@ -86,7 +87,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     }
     if (valueObj == null) {
       valueObj = new ArrayWritable(Writable.class,
-        new Writable[queryModel.getProjectionColumns().length]);
+          new Writable[queryModel.getProjectionColumns().length]);
     }
 
     final TypeInfo rowTypeInfo;
@@ -198,7 +199,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     }
     if (array.size() > 0) {
       ArrayWritable subArray = new ArrayWritable(((Writable) array.get(0)).getClass(),
-        (Writable[]) array.toArray(new Writable[array.size()]));
+          (Writable[]) array.toArray(new Writable[array.size()]));
 
       return new ArrayWritable(Writable.class, new Writable[]{subArray});
     }

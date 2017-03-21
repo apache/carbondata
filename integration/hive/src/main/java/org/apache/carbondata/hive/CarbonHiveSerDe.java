@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.hive;
 
+import java.util.*;
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.serde.serdeConstants;
@@ -39,8 +41,6 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.TimestampObjectIn
 import org.apache.hadoop.hive.serde2.typeinfo.*;
 import org.apache.hadoop.io.*;
 
-import javax.annotation.Nullable;
-import java.util.*;
 
 
 /**
@@ -144,7 +144,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     }
     if (array.size() > 0) {
       ArrayWritable subArray = new ArrayWritable(((Writable) array.get(0)).getClass(),
-        (Writable[]) array.toArray(new Writable[array.size()]));
+          (Writable[]) array.toArray(new Writable[array.size()]));
 
       return new ArrayWritable(Writable.class, new Writable[]{subArray});
     }
