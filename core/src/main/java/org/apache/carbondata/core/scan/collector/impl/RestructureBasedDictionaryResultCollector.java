@@ -80,7 +80,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
         scannedResult.incrementCounter();
       }
       if (null != deleteDeltaDataCache && deleteDeltaDataCache
-          .contains(scannedResult.getCurrenrRowId())) {
+          .contains(scannedResult.getCurrentRowId())) {
         continue;
       }
       fillMeasureData(scannedResult, row);

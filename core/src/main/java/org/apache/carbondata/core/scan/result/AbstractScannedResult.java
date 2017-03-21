@@ -563,7 +563,7 @@ public abstract class AbstractScannedResult {
    *
    * @return valid row id
    */
-  public abstract int getCurrenrRowId();
+  public abstract int getCurrentRowId();
 
   /**
    * @return dictionary key array for all the dictionary dimension

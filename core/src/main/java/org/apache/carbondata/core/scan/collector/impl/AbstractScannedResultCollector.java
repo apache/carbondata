@@ -77,7 +77,7 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
         QueryMeasure queryMeasure = tableBlockExecutionInfos.getQueryMeasures()[measureExistIndex];
         msrValues[i + offset] = getMeasureData(
             scannedResult.getMeasureChunk(measureInfo.getMeasureOrdinals()[measureExistIndex]),
-            scannedResult.getCurrenrRowId(), queryMeasure.getMeasure());
+            scannedResult.getCurrentRowId(), queryMeasure.getMeasure());
         measureExistIndex++;
       } else {
         // if not then get the default value and use that value in aggregation
