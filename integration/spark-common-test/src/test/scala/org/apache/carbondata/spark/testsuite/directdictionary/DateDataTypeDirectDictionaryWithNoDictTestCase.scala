@@ -72,7 +72,7 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
 
   test("select doj from directDictionaryTable with equals filter") {
     checkAnswer(
-      sql("select doj from directDictionaryTable where doj='2016-03-14 15:00:09'"),
+      sql("select doj from directDictionaryTable where doj='2016-03-14'"),
       Seq(Row(Date.valueOf("2016-03-14")))
     )
 
