@@ -1,18 +1,28 @@
 package org.apache.spark.carbondata.restructure
 
+import java.io.File
 import java.math.{BigDecimal, RoundingMode}
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
 
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+        new File("./target/test/badRecords").getCanonicalPath)
+
     sql("drop table if exists restructure")
+    sql("drop table if exists restructure_test")
+    sql("drop table if exists restructure_new")
+    sql("drop table if exists restructure_bad")
+    sql("drop table if exists restructure_badnew")
     // clean data folder
     CarbonProperties.getInstance()
     sql(
@@ -31,6 +41,18 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE restructure_test OPTIONS
           |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
+
+    sql(
+      """CREATE TABLE IF NOT EXISTS restructure_bad(ID BigInt, date Timestamp, country String,
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
+
+    sql(
+    s"""LOAD DATA LOCAL INPATH '$resourcesPath/badrecords/datasample.csv' INTO TABLE
+         |restructure_bad OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'bad_records_logger_enable'='true',
+         |'bad_records_action'='redirect')"""
+      .stripMargin)
+
   }
 
   test("test add dictionary column") {
@@ -302,6 +324,14 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     assert(result.count().equals(10L))
   }
 
+  test("test to check if bad record folder name is changed") {
+    sql("alter table restructure_bad rename to restructure_badnew")
+    val oldLocation = new File("./target/test/badRecords/default/restructure_bad")
+    val newLocation = new File("./target/test/badRecords/default/restructure_badnew")
+    assert(!oldLocation.exists())
+    assert(newLocation.exists())
+  }
+
   test("test to rename table with invalid table name") {
     try {
       sql("alter table restructure_invalid rename to restructure_new")
@@ -347,5 +377,7 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS restructure")
     sql("DROP TABLE IF EXISTS restructure_new")
     sql("DROP TABLE IF EXISTS restructure_test")
+    sql("DROP TABLE IF EXISTS restructure_bad")
+    sql("DROP TABLE IF EXISTS restructure_badnew")
   }
 }
