@@ -166,6 +166,21 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           }
         }
         val tableProps = if (tblProp.isDefined) {
+          tblProp.get.groupBy(_._1.toLowerCase).foreach(f =>
+            if (f._2.size > 1) {
+              val name = f._1.toLowerCase
+              val colName = name.substring(14)
+              if (name.startsWith("default.value.") &&
+                  fields.filter(p => p.column.equalsIgnoreCase(colName)).size == 1) {
+                LOGGER.error(s"Duplicate default value exist for new column: ${ colName }")
+                LOGGER.audit(
+                  s"Validation failed for Create/Alter Table Operation " +
+                  s"for ${ table }. " +
+                  s"Duplicate default value exist for new column: ${ colName }")
+                sys.error(s"Duplicate default value exist for new column: ${ colName }")
+              }
+            }
+          )
           // default value should not be converted to lower case
           val tblProps = tblProp.get
             .map(f => if (CarbonCommonConstants.TABLE_BLOCKSIZE.equalsIgnoreCase(f._1) ||
@@ -210,14 +225,14 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     ("(" ~> rep1sep(ident, ",") <~ ")") <~ opt(";") ^^ {
       case dbName ~ table ~ drop ~ columns ~ values =>
         // validate that same column name is not repeated
-        values.groupBy(identity).collect {
+        values.map(_.toLowerCase).groupBy(identity).collect {
           case (x, ys) if ys.lengthCompare(1) > 0 =>
             throw new MalformedCarbonCommandException(s"$x is duplicate. Duplicate columns not " +
                                                       s"allowed")
         }
         val alterTableDropColumnModel = AlterTableDropColumnModel(convertDbNameToLowerCase(dbName),
           table.toLowerCase,
-          values)
+          values.map(_.toLowerCase))
         AlterTableDropColumns(alterTableDropColumnModel)
     }
 }
