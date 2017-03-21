@@ -22,7 +22,6 @@ import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.hive.{CarbonRelation, HiveExternalCatalog}
 import org.apache.spark.util.AlterTableUtil
 
@@ -35,6 +34,7 @@ import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifie
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.{ColumnSchema, SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -156,6 +156,7 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
         .readSchemaFile(tableMetadataFile)
       val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
       schemaEvolutionEntry.setTableName(newTableName)
+      renameBadRecords(oldTableName, newTableName, oldDatabaseName)
       val fileType = FileFactory.getFileType(tableMetadataFile)
       if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
         val rename = FileFactory.getCarbonFile(carbonTablePath.getPath, fileType)
@@ -163,6 +164,7 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
                        newTableName)
         if (!rename) {
           sys.error(s"Folder rename failed for table $oldDatabaseName.$oldTableName")
+          renameBadRecords(newTableName, oldTableName, oldDatabaseName)
         }
       }
       val newTableIdentifier = new CarbonTableIdentifier(oldDatabaseName,
@@ -198,6 +200,24 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
     }
     Seq.empty
   }
+
+  private def renameBadRecords(oldTableName: String,
+      newTableName: String,
+      dataBaseName: String) = {
+    val oldPath = CarbonUtil
+      .getBadLogPath(dataBaseName + CarbonCommonConstants.FILE_SEPARATOR + oldTableName)
+    val newPath = CarbonUtil
+      .getBadLogPath(dataBaseName + CarbonCommonConstants.FILE_SEPARATOR + newTableName)
+    val fileType = FileFactory.getFileType(oldPath)
+    if (FileFactory.isFileExist(oldPath, fileType)) {
+      val renameSuccess = FileFactory.getCarbonFile(oldPath, fileType)
+        .renameForce(newPath)
+      if (!renameSuccess) {
+        sys.error(s"BadRecords Folder Rename Failed for table $dataBaseName.$oldTableName")
+      }
+    }
+  }
+
 }
 
 private[sql] case class AlterTableDropColumns(
