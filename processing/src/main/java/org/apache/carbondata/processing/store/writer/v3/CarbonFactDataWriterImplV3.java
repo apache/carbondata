@@ -61,11 +61,11 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
    */
   private DataWriterHolder dataWriterHolder;
 
-  private int blockletSize;
+  private long blockletSize;
 
   public CarbonFactDataWriterImplV3(CarbonDataWriterVo dataWriterVo) {
     super(dataWriterVo);
-    blockletSize = Integer.parseInt(CarbonProperties.getInstance()
+    blockletSize = Long.parseLong(CarbonProperties.getInstance()
         .getProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB,
             CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE))
         * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
