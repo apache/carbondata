@@ -48,7 +48,7 @@ public class TestCarbonSerde extends TestCase {
             arr[2] = new LongWritable(1000l);
             arr[3] = new DoubleWritable((double) 5.3);
             arr[4] = new HiveDecimalWritable(HiveDecimal.create(1));
-            arr[5] = new BytesWritable("carbonSerde binary".getBytes("UTF-8"));
+            arr[5] = new Text("carbonSerde binary".getBytes("UTF-8"));
 
             final Writable[] arrayContainer = new Writable[1];
             final Writable[] array = new Writable[5];
