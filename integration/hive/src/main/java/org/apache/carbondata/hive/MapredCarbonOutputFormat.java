@@ -26,9 +26,9 @@ import java.io.IOException;
 
 
 public class MapredCarbonOutputFormat<T> extends FileOutputFormat<Void, T> {
-    @Override
-    public RecordWriter<Void, T> getRecordWriter(FileSystem fileSystem, JobConf jobConf, String s,
-                                                 Progressable progressable) throws IOException {
-        return null;
-    }
+  @Override
+  public RecordWriter<Void, T> getRecordWriter(FileSystem fileSystem, JobConf jobConf, String s,
+                                               Progressable progressable) throws IOException {
+    return null;
+  }
 }

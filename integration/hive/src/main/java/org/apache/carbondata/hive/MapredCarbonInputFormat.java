@@ -2,9 +2,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -39,57 +39,57 @@ import java.util.List;
 
 
 public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
-    implements InputFormat<Void, ArrayWritable>, CombineHiveInputFormat.AvoidSplitCombination {
+  implements InputFormat<Void, ArrayWritable>, CombineHiveInputFormat.AvoidSplitCombination {
 
-    @Override
-    public InputSplit[] getSplits(JobConf jobConf, int numSplits) throws IOException {
-        org.apache.hadoop.mapreduce.JobContext jobContext = Job.getInstance(jobConf);
-        List<org.apache.hadoop.mapreduce.InputSplit> splitList = super.getSplits(jobContext);
-        InputSplit[] splits = new InputSplit[splitList.size()];
-        CarbonInputSplit split = null;
-        for (int i = 0; i < splitList.size(); i++) {
-            split = (CarbonInputSplit)splitList.get(i);
-            splits[i] = new CarbonHiveInputSplit(split.getSegmentId(), split.getPath(),
-                split.getStart(), split.getLength(), split.getLocations(),
-                split.getNumberOfBlocklets(), split.getVersion(), split.getBlockStorageIdMap());
-        }
-        return splits;
+  @Override
+  public InputSplit[] getSplits(JobConf jobConf, int numSplits) throws IOException {
+    org.apache.hadoop.mapreduce.JobContext jobContext = Job.getInstance(jobConf);
+    List<org.apache.hadoop.mapreduce.InputSplit> splitList = super.getSplits(jobContext);
+    InputSplit[] splits = new InputSplit[splitList.size()];
+    CarbonInputSplit split = null;
+    for (int i = 0; i < splitList.size(); i++) {
+      split = (CarbonInputSplit) splitList.get(i);
+      splits[i] = new CarbonHiveInputSplit(split.getSegmentId(), split.getPath(),
+        split.getStart(), split.getLength(), split.getLocations(),
+        split.getNumberOfBlocklets(), split.getVersion(), split.getBlockStorageIdMap());
     }
+    return splits;
+  }
 
-    @Override
-    public RecordReader<Void, ArrayWritable> getRecordReader(InputSplit inputSplit, JobConf jobConf,
-                                                             Reporter reporter) throws IOException {
-        QueryModel queryModel = getQueryModel(jobConf);
-        CarbonReadSupport<ArrayWritable> readSupport = getReadSupportClass(jobConf);
-        return new CarbonHiveRecordReader(queryModel, readSupport, inputSplit, jobConf);
+  @Override
+  public RecordReader<Void, ArrayWritable> getRecordReader(InputSplit inputSplit, JobConf jobConf,
+                                                           Reporter reporter) throws IOException {
+    QueryModel queryModel = getQueryModel(jobConf);
+    CarbonReadSupport<ArrayWritable> readSupport = getReadSupportClass(jobConf);
+    return new CarbonHiveRecordReader(queryModel, readSupport, inputSplit, jobConf);
+  }
+
+  public QueryModel getQueryModel(Configuration configuration) throws IOException {
+    CarbonTable carbonTable = getCarbonTable(configuration);
+    // getting the table absoluteTableIdentifier from the carbonTable
+    // to avoid unnecessary deserialization
+    AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
+
+    // query plan includes projection column
+
+    String projection = getColumnProjection(configuration);
+    if (projection == null) {
+      projection = configuration.get("hive.io.file.readcolumn.names");
     }
+    CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(carbonTable, projection);
+    QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable);
 
-    public QueryModel getQueryModel(Configuration configuration) throws IOException {
-        CarbonTable carbonTable = getCarbonTable(configuration);
-        // getting the table absoluteTableIdentifier from the carbonTable
-        // to avoid unnecessary deserialization
-        AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
+    // set the filter to the query model in order to filter blocklet before scan
+    Expression filter = getFilterPredicates(configuration);
+    CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
+    FilterResolverIntf filterIntf = CarbonInputFormatUtil.resolveFilter(filter, identifier);
+    queryModel.setFilterExpressionResolverTree(filterIntf);
 
-        // query plan includes projection column
+    return queryModel;
+  }
 
-        String projection = getColumnProjection(configuration);
-        if (projection == null) {
-            projection = configuration.get("hive.io.file.readcolumn.names");
-        }
-        CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(carbonTable, projection);
-        QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable);
-
-        // set the filter to the query model in order to filter blocklet before scan
-        Expression filter = getFilterPredicates(configuration);
-        CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
-        FilterResolverIntf filterIntf = CarbonInputFormatUtil.resolveFilter(filter, identifier);
-        queryModel.setFilterExpressionResolverTree(filterIntf);
-
-        return queryModel;
-    }
-
-    @Override
-    public boolean shouldSkipCombine(Path path, Configuration conf) throws IOException {
-        return true;
-    }
+  @Override
+  public boolean shouldSkipCombine(Path path, Configuration conf) throws IOException {
+    return true;
+  }
 }
