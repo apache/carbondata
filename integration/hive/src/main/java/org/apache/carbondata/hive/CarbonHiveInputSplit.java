@@ -39,8 +39,6 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.internal.index.Block;
 
-
-
 public class CarbonHiveInputSplit extends FileSplit
     implements Distributable, Serializable, Writable, Block {
 
