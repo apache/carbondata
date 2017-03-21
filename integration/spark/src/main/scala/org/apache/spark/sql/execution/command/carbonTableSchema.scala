@@ -165,9 +165,21 @@ case class CreateTable(cm: TableModel) extends RunnableCommand {
       // Need to fill partitioner class when we support partition
       val tablePath = catalog.createTableFromThrift(tableInfo, dbName, tbName, null)(sqlContext)
       try {
+        val fields = new Array[Field](cm.dimCols.size + cm.msrCols.size)
+        cm.dimCols.foreach(f => fields(f.schemaOrdinal) = f)
+        cm.msrCols.foreach(f => fields(f.schemaOrdinal) = f)
         sqlContext.sql(
-          s"""CREATE TABLE $dbName.$tbName USING carbondata""" +
-          s""" OPTIONS (tableName "$dbName.$tbName", tablePath "$tablePath") """)
+          s"""CREATE TABLE $dbName.$tbName(${fields.map(f => f.rawSchema).mkString(",")})
+             | ROW FORMAT SERDE
+             |    'org.apache.carbondata.hive.CarbonHiveSerDe'
+             | STORED AS INPUTFORMAT
+             |    'org.apache.carbondata.hive.MapredCarbonInputFormat'
+             | OUTPUTFORMAT
+             |    'org.apache.carbondata.hive.MapredCarbonOutputFormat'
+             | LOCATION
+             |    '$tablePath'
+             | TBLPROPERTIES ('spark.sql.sources.provider'='org.apache.spark.sql.CarbonSource')
+           """.stripMargin)
           .collect
       } catch {
         case e: Exception =>

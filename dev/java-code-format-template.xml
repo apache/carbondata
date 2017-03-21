@@ -34,8 +34,8 @@
   <option name="IMPORT_LAYOUT_TABLE">
     <value>
       <emptyLine />
-      <package name="javax" withSubpackages="true" static="false" />
       <package name="java" withSubpackages="true" static="false" />
+      <package name="javax" withSubpackages="true" static="false" />
       <emptyLine />
       <package name="org.apache.carbondata" withSubpackages="true" static="false" />
       <emptyLine />
