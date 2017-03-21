@@ -19,17 +19,6 @@ package org.apache.carbondata.hive;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;
-import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.mapred.InputFormat;
-import org.apache.hadoop.mapred.InputSplit;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.RecordReader;
-import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapreduce.Job;
-
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -40,6 +29,17 @@ import org.apache.carbondata.hadoop.CarbonInputFormat;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;
+import org.apache.hadoop.io.ArrayWritable;
+import org.apache.hadoop.mapred.InputFormat;
+import org.apache.hadoop.mapred.InputSplit;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.RecordReader;
+import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapreduce.Job;
 
 
 public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
@@ -54,8 +54,8 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     for (int i = 0; i < splitList.size(); i++) {
       split = (CarbonInputSplit) splitList.get(i);
       splits[i] = new CarbonHiveInputSplit(split.getSegmentId(), split.getPath(),
-        split.getStart(), split.getLength(), split.getLocations(),
-        split.getNumberOfBlocklets(), split.getVersion(), split.getBlockStorageIdMap());
+          split.getStart(), split.getLength(), split.getLocations(),
+          split.getNumberOfBlocklets(), split.getVersion(), split.getBlockStorageIdMap());
     }
     return splits;
   }
