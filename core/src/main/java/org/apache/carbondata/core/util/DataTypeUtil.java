@@ -324,7 +324,7 @@ public final class DataTypeUtil {
    * Below method will be used to convert the data passed to its actual data
    * type
    *
-   * @param dataInBytes    data
+   * @param dataInBytes data
    * @param dimension
    * @return actual data after conversion
    */
@@ -391,8 +391,7 @@ public final class DataTypeUtil {
           }
           java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data7);
           if (dimension.getColumnSchema().getScale() > javaDecVal.scale()) {
-            javaDecVal =
-                javaDecVal.setScale(dimension.getColumnSchema().getScale());
+            javaDecVal = javaDecVal.setScale(dimension.getColumnSchema().getScale());
           }
           return org.apache.spark.sql.types.Decimal.apply(javaDecVal);
         default:
@@ -510,6 +509,9 @@ public final class DataTypeUtil {
    * @return
    */
   public static String parseValue(String value, CarbonDimension dimension) {
+    if (null == value) {
+      return null;
+    }
     try {
       switch (dimension.getDataType()) {
         case DECIMAL:
@@ -617,9 +619,9 @@ public final class DataTypeUtil {
   /**
    * This method will parse a given string value corresponding to its data type
    *
-   * @param value     value to parse
+   * @param value        value to parse
    * @param columnSchema dimension to get data type and precision and scale in case of decimal
-   *                  data type
+   *                     data type
    * @return
    */
   public static String normalizeColumnValueForItsDataType(String value, ColumnSchema columnSchema) {
@@ -649,10 +651,9 @@ public final class DataTypeUtil {
   }
 
   private static String parseStringToBigDecimal(String value, ColumnSchema columnSchema) {
-    BigDecimal bigDecimal = new BigDecimal(value)
-        .setScale(columnSchema.getScale(), RoundingMode.HALF_UP);
-    BigDecimal normalizedValue =
-        normalizeDecimalValue(bigDecimal, columnSchema.getPrecision());
+    BigDecimal bigDecimal =
+        new BigDecimal(value).setScale(columnSchema.getScale(), RoundingMode.HALF_UP);
+    BigDecimal normalizedValue = normalizeDecimalValue(bigDecimal, columnSchema.getPrecision());
     if (null != normalizedValue) {
       return normalizedValue.toString();
     }
