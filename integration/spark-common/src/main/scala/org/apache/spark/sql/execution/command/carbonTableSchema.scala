@@ -229,31 +229,41 @@ class AlterTableProcessor(
           tablePropertiesMap.put(x._1, x._2)
         }
     }
-    for (elem <- alterTableModel.tableProperties) {
-      if (elem._1.toLowerCase.startsWith("default.value.")) {
-        val col = newCols.filter(p => p.getColumnName.equalsIgnoreCase(elem._1.substring(14)))
-        if (col.size == 1) {
-          val data = DataTypeUtil.convertDataToBytesBasedOnDataType(elem._2, col(0).getDataType)
-          if (null != data) {
-            col(0).setDefaultValue(data)
-          } else {
-            LOGGER
-              .error(
-                "Invalid default value for new column " + dbName + "." + alterTableModel.tableName +
-                "." + col(0).getColumnName + " : " + elem._2)
-          }
-          if (col(0).getEncodingList.contains(Encoding.DICTIONARY) &&
-              !col(0).getEncodingList.contains(Encoding.DIRECT_DICTIONARY)) {
-            GlobalDictionaryUtil
-              .loadDefaultDictionaryValueForNewColumn(carbonTablePath,
-                col(0),
-                tableIdentifier,
-                storePath,
-                elem._2)
+
+    // This part will create dictionary file for all newly added dictionary columns
+    // if valid default value is provided,
+    // then that value will be included while creating dictionary file
+    val defaultValueString = "default.value."
+    newCols.foreach { col =>
+      var rawData: String = null
+      for (elem <- alterTableModel.tableProperties) {
+        if (elem._1.toLowerCase.startsWith(defaultValueString)) {
+          if (col.getColumnName.equalsIgnoreCase(elem._1.substring(defaultValueString.length))) {
+            rawData = elem._2
+            val data = DataTypeUtil.convertDataToBytesBasedOnDataType(elem._2, col.getDataType)
+            if (null != data) {
+              col.setDefaultValue(data)
+            } else {
+              LOGGER
+                .error(
+                  "Invalid default value for new column " + dbName + "." +
+                  alterTableModel.tableName +
+                  "." + col.getColumnName + " : " + elem._2)
+            }
           }
         }
       }
+      if (col.getEncodingList.contains(Encoding.DICTIONARY) &&
+          !col.getEncodingList.contains(Encoding.DIRECT_DICTIONARY)) {
+        GlobalDictionaryUtil
+          .loadDefaultDictionaryValueForNewColumn(carbonTablePath,
+            col,
+            tableIdentifier,
+            storePath,
+            rawData)
+      }
     }
+
     tableSchema.setListOfColumns(allColumns.asJava)
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
