@@ -113,7 +113,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   /**
    * data file size;
    */
-  protected int fileSizeInBytes;
+  protected long fileSizeInBytes;
   /**
    * file count will be used to give sequence number to the data file
    */
@@ -163,7 +163,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     CarbonProperties propInstance = CarbonProperties.getInstance();
     // if blocksize=2048, then 2048*1024*1024 will beyond the range of Int
     this.fileSizeInBytes =
-        dataWriterVo.getTableBlocksize() * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
+        (long) dataWriterVo.getTableBlocksize() * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
             * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
     this.spaceReservedForBlockMetaSize = Integer.parseInt(propInstance
         .getProperty(CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE,

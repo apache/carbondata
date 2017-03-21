@@ -39,6 +39,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
     sql("DROP TABLE IF EXISTS table_blocksize1")
     sql("DROP TABLE IF EXISTS table_blocksize2")
     sql("DROP TABLE IF EXISTS table_blocksize3")
+    sql("DROP TABLE IF EXISTS table_max_block_size")
   }
 
   test("Value test: set table level blocksize value beyong [1,2048]") {
@@ -109,10 +110,36 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
 
   }
 
+  test("test block size for its max value") {
+    sql(
+      """
+        CREATE TABLE IF NOT EXISTS table_max_block_size
+        (ID Int, date Timestamp, country String,
+        name String, phonetype String, serialname String, salary Int)
+        STORED BY 'org.apache.carbondata.format'
+        TBLPROPERTIES('table_blocksize'='2048 MB')
+      """)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    sql(s"""
+           LOAD DATA LOCAL INPATH '$testData2' into table table_max_block_size
+           """)
+    checkAnswer(
+      sql("""
+           SELECT country, count(salary) AS amount
+           FROM table_max_block_size
+           WHERE country IN ('china','france')
+           GROUP BY country
+          """),
+      Seq(Row("china", 96), Row("france", 1))
+    )
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS table_blocksize1")
     sql("DROP TABLE IF EXISTS table_blocksize2")
     sql("DROP TABLE IF EXISTS table_blocksize3")
+    sql("DROP TABLE IF EXISTS table_max_block_size")
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
