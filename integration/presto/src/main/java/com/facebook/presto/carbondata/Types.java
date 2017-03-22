@@ -18,9 +18,6 @@ import java.util.Locale;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class Types {
     private Types() {}
 

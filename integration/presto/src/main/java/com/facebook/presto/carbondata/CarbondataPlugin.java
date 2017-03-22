@@ -18,9 +18,6 @@ import com.facebook.presto.spi.connector.ConnectorFactory;
 import com.google.common.collect.ImmutableList;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbondataPlugin implements Plugin {
 
     @Override

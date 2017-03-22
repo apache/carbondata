@@ -27,9 +27,6 @@ import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbondataConnectorFactory
         implements ConnectorFactory {
 
@@ -90,10 +87,6 @@ public class CarbondataConnectorFactory
                     //new ClassLoaderSafeConnectorPageSinkProvider(pageSinkProvider, classLoader),
                     //new ClassLoaderSafeNodePartitioningProvider(connectorDistributionProvider, classLoader),
             );
-
-            //return  new CarbondataConnector(lifeCycleManager, metadata, splitManager, connectorRecordSet, classLoader);
-
-            //return injector.getInstance(CarbondataConnector.class);
         }
         catch (Exception e) {
             throw Throwables.propagate(e);

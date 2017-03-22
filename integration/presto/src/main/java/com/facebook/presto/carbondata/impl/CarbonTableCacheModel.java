@@ -18,9 +18,6 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbonTableCacheModel {
 
     public CarbonTableIdentifier carbonTableIdentifier;

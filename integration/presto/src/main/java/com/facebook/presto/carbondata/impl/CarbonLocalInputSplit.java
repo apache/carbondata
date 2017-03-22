@@ -18,9 +18,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbonLocalInputSplit {
 
     private static final long serialVersionUID = 3520344046772190207L;

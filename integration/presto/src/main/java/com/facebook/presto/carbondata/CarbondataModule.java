@@ -32,9 +32,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static io.airlift.configuration.ConfigBinder.configBinder;
 import static java.util.Objects.requireNonNull;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbondataModule implements Module {
 
     private final String connectorId;
@@ -48,9 +45,6 @@ public class CarbondataModule implements Module {
 
     @Override
     public void configure(Binder binder) {
-        //参照 Elasticsearch or Accumulo
-        //todo 补全这个Module
-
         binder.bind(TypeManager.class).toInstance(typeManager);
 
         binder.bind(CarbondataConnectorId.class).toInstance(new CarbondataConnectorId(connectorId));

@@ -27,9 +27,6 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbondataSplit implements ConnectorSplit {
 
     private final String connectorId;
@@ -38,13 +35,6 @@ public class CarbondataSplit implements ConnectorSplit {
     private final CarbonLocalInputSplit localInputSplit;
     private final List<CarbondataColumnConstraint> rebuildConstraints;
     private final ImmutableList<HostAddress> addresses;
-
-    //下推like，or 这样的谓词
-    //private final int shardId;
-    //private final TupleDomain<ColumnHandle> tupleDomain;
-    //private final Map<String,Object> predicateMap;
-    //private final TupleDomain<ColumnHandle> filterTuple;
-
 
     @JsonCreator
     public CarbondataSplit( @JsonProperty("connectorId") String connectorId,

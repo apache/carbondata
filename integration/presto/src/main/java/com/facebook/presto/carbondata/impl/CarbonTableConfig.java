@@ -17,9 +17,6 @@ import io.airlift.configuration.Config;
 
 import javax.validation.constraints.NotNull;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbonTableConfig {
     //read from config
     private String dbPtah;

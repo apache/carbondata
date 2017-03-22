@@ -16,9 +16,6 @@ package com.facebook.presto.carbondata;
 import com.facebook.presto.spi.*;
 import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbondataHandleResolver implements ConnectorHandleResolver {
     @Override
     public Class<? extends ConnectorTableHandle> getTableHandleClass() {

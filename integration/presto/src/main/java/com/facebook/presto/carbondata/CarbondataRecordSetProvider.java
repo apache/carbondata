@@ -50,13 +50,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
 
     private final String connectorId;
-    private final CarbonTableReader carbonTableReader;//这个是要删除的， 通过其他途径传递参数
+    private final CarbonTableReader carbonTableReader;
 
     @Inject
     public CarbondataRecordSetProvider(
@@ -71,8 +68,6 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
 
     @Override
     public RecordSet getRecordSet(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorSplit split, List<? extends ColumnHandle> columns) {
-        //根据下发的split，里面的constraint和指定Column 返回recordset对象
-        //可以取数的对象，是否也要带下来
         requireNonNull(split, "split is null");
         requireNonNull(columns, "columns is null");
 
@@ -152,8 +147,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
                     singleValues.add(range.getLow().getValue());
                 }
                 else
-                {//这里都是range操作
-                    //估计要组合 list<Expression>, Greater, less than
+                {
                     List<String> rangeConjuncts = new ArrayList<>();
                     if (!range.getLow().isLowerUnbounded()) {
                         Object value = ConvertDataByType(range.getLow().getValue(), type);
@@ -208,7 +202,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
                     ex = new EqualToExpression(colExpression, new LiteralExpression(singleValues.get(0), coltype));
                 filters.add(ex);
             }
-            else if(singleValues.size() > 1) {//如果是离散的list值， 该如何
+            else if(singleValues.size() > 1) {
                 ListExpression candidates = null;
                 List<Expression> exs = singleValues.stream().map((a) ->
                 {
@@ -220,7 +214,6 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
                     filters.add(new InExpression(colExpression, candidates));
             }
             else if(rangeFilter.size() > 0){
-                //这里将非Siglevalue的Filter 做一个or
                 if(rangeFilter.size() > 1) {
                     Expression finalFilters = new OrExpression(rangeFilter.get(0), rangeFilter.get(1));
                     if(rangeFilter.size() > 2)
@@ -231,31 +224,11 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
                         }
                     }
                 }
-                else if(rangeFilter.size() == 1)//如果只有一个value的情况下
+                else if(rangeFilter.size() == 1)
                     filters.add(rangeFilter.get(0));
             }
         }
 
-        /*Object filterPredicates = getFilterPredicates(configuration);
-        if (filterPredicates != null) {
-            if (filterPredicates instanceof Expression) {
-                CarbonInputFormatUtil.processFilterExpression((Expression) filterPredicates, carbonTable);
-                queryModel.setFilterExpressionResolverTree(CarbonInputFormatUtil
-                        .resolveFilter((Expression) filterPredicates,
-                                getAbsoluteTableIdentifier(configuration)));
-            } else {
-                queryModel.setFilterExpressionResolverTree((FilterResolverIntf) filterPredicates);
-            }
-        }*/
-
-        /*if(constraint.getDomain())
-            Expression expression =
-                new EqualToExpression(new ColumnExpression("country", DataType.STRING), new LiteralExpression("france", DataType.STRING));
-
-            filters.add(expression);*/
-
-
-        //判断 ListExpression 是否为空, 这个应该是 column 之间的Filter，应该是  and 关系
         Expression finalFilters;
         List<Expression> tmp = filters.build();
         if(tmp.size() > 1) {
@@ -268,17 +241,16 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
                 }
             }
         }
-        else if(tmp.size() == 1)//如果只有一个value的情况下
+        else if(tmp.size() == 1)
             finalFilters = tmp.get(0);
-        else//没有filter
+        else
             return;
 
-        // todo 设置到QueryModel中(这里是否重复？)
+        // todo set into QueryModel
         CarbonInputFormatUtil.processFilterExpression(finalFilters, carbonTable);
         queryModel.setFilterExpressionResolverTree(CarbonInputFormatUtil.resolveFilter(finalFilters, queryModel.getAbsoluteTableIdentifier()));
     }
 
-    //todo 这个不应在再转换， 需要在split处 把两处的类型都保存下来
     public static DataType Spi2CarbondataTypeMapper(Type colType)
     {
         if(colType == BooleanType.BOOLEAN)
@@ -301,39 +273,6 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
             return DataType.TIMESTAMP;
         else
             return DataType.STRING;
-
-
-        /*switch (colType)
-        {
-            case BooleanType.BOOLEAN:
-                return DataType.BOOLEAN;
-            case SmallintType.SMALLINT:
-                return DataType.SHORT;
-            case IntegerType.INTEGER:
-                return DataType.INT;
-            case BigintType:
-                return DataType.LONG;
-            //case FLOAT:
-            case DoubleType:
-                return DataType.DOUBLE;
-
-            case DecimalType:
-                return DataType.DECIMAL;
-            case VarcharType:
-                return DataType.STRING;
-            case DateType:
-                return DataType.DATE;
-            case TimestampType:
-                return DataType.TIMESTAMP;
-
-            *//*case DataType.MAP:
-            case DataType.ARRAY:
-            case DataType.STRUCT:
-            case DataType.NULL:*//*
-
-            default:
-                return DataType.STRING;
-        }*/
     }
 
 

@@ -22,9 +22,6 @@ import static com.facebook.presto.spi.transaction.IsolationLevel.READ_COMMITTED;
 import static com.facebook.presto.spi.transaction.IsolationLevel.checkConnectorSupports;
 import static java.util.Objects.requireNonNull;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbondataConnector
         implements Connector
 {
@@ -36,8 +33,6 @@ public class CarbondataConnector
     private final ConnectorSplitManager splitManager;
     private final ConnectorRecordSetProvider recordSetProvider;
     private final ClassLoader classLoader;
-    //CarbondataMetadata like (Elasticsearch)
-    //CarbondataMetadata like (Acculumo), keep independent through session
 
 
     public CarbondataConnector(LifeCycleManager lifeCycleManager,

@@ -80,9 +80,6 @@ import java.util.stream.Stream;
  */
 import static java.util.Objects.requireNonNull;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbonTableReader {
     //CarbonTableReader will be a facade of these utils
     //[
@@ -92,13 +89,12 @@ public class CarbonTableReader {
     // 4:DictionaryFactory, (parse dictionary util)
     //]
 
-    //all of table, should we connector to hive via ThriftHiveMetastoreClient?  like hive|orc connector??
     private CarbonTableConfig config;
-    private List<SchemaTableName> tableList;//每次都是覆盖
+    private List<SchemaTableName> tableList;
     private CarbonFile dbStore;
     private FileFactory.FileType fileType;
 
-    private ConcurrentHashMap<SchemaTableName, CarbonTableCacheModel> cc;//作为一个总的缓存入口
+    private ConcurrentHashMap<SchemaTableName, CarbonTableCacheModel> cc;//as a cache for Carbon reader
 
     @Inject
     public CarbonTableReader(CarbonTableConfig config){
@@ -327,7 +323,6 @@ public class CarbonTableReader {
                             tableBlockInfo.getBlockOffset(), tableBlockInfo.getBlockLength(),
                             Arrays.asList(tableBlockInfo.getLocations()), tableBlockInfo.getBlockletInfos().getNoOfBlockLets(),
                             tableBlockInfo.getVersion().number()));
-                    //todo  这里是否需要更具blocklet实现多个并行？？？？
                 }
             }catch (Exception ex){
                 throw new RuntimeException(ex);
@@ -417,18 +412,13 @@ public class CarbonTableReader {
         // if segment tree is not loaded, load the segment tree
         if (segmentIndexMap == null || isSegmentUpdated) {
 
-            //这里的TableBlockinfo 应该可能从两个地方获取，一个从远端，一个从本地文件
-            /*List<TableBlockInfo> tableBlockInfoList =
-                    getTableBlockInfo(job, absoluteTableIdentifier, segmentId);*/
             List<FileStatus> fileStatusList = new LinkedList<FileStatus>();
             List<String> segs = new ArrayList<>();
             segs.add(segmentId);
 
             FileSystem fs = getFileStatusOfSegments(new String[]{segmentId}, tablePath, fileStatusList);
-            //构造Split， Mapreduce.InputSplit   output
             List<InputSplit> splits = getSplit(fileStatusList, fs);
 
-            //过滤无效segmentId, 转换split的名空间, 从
             List<FileSplit> carbonSplits = new ArrayList<>();
             for (InputSplit inputSplit : splits) {
                 FileSplit fileSplit = (FileSplit) inputSplit;
@@ -439,8 +429,6 @@ public class CarbonTableReader {
                 carbonSplits.add(fileSplit);
             }
 
-            //如何 分析 carbonsplit
-            //通过split构造Tableblock
             List<TableBlockInfo> tableBlockInfoList  = new ArrayList<>();
             for (FileSplit inputSplit : carbonSplits) {
                 if (isValidBlockBasedOnUpdateDetails(taskKeys, inputSplit, updateDetails, updateStatusManager, segmentId)) {
@@ -457,8 +445,6 @@ public class CarbonTableReader {
                                     null/*new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE)*/));//这里的null是否会异常？
                 }
             }
-            /*String blockletSize = CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL;
-            FileFactory.getConfiguration();*/
 
             Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos = new HashMap<>();
             segmentToTableBlocksInfos.put(segmentId, tableBlockInfoList);
@@ -524,11 +510,9 @@ public class CarbonTableReader {
                         if (file instanceof LocatedFileStatus) {
                             blkLocations = ((LocatedFileStatus) file).getBlockLocations();
                         } else {
-                            //FileSystem blockSize = path.getFileSystem(job.getConfiguration());
                             blkLocations = targetSystem.getFileBlockLocations(file, 0L, length);
                         }
 
-                        //如果是LocalFileystem, 则不会Split
                         if (this.isSplitable()) {
                             long blockSize1 = file.getBlockSize();
                             long splitSize = this.computeSplitSize(blockSize1, 1, Long.MAX_VALUE);
@@ -565,9 +549,6 @@ public class CarbonTableReader {
         return new String[] { "0" };
     }
 
-
-    //是否参照 getValidSegmentList？
-    //参照  CarbonInputFormat.getFileStatusOfSegments
     private FileSystem getFileStatusOfSegments(String[] segmentsToConsider,
                                                CarbonTablePath tablePath,
                                                List<FileStatus> result) throws IOException {

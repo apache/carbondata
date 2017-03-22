@@ -19,9 +19,6 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbondataConnectorId
 {
     private final String id;

@@ -36,9 +36,6 @@ import java.util.stream.Collectors;
 
 import static com.facebook.presto.carbondata.Types.checkType;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbondataRecordSet implements RecordSet {
 
     private CarbonTable carbonTable;
@@ -52,8 +49,6 @@ public class CarbondataRecordSet implements RecordSet {
 
     private CarbonReadSupport<Object[]> readSupport;
 
-    //这里会集中数据源（从Recordetrovider继承）
-    //这里会集中数据过滤条件(从Split继承)
     public CarbondataRecordSet(
             CarbonTable carbonTable,
             ConnectorSession session,
@@ -69,7 +64,7 @@ public class CarbondataRecordSet implements RecordSet {
         this.readSupport = new DictionaryDecodedReadSupportImpl();
     }
 
-    //暂时不支持转化
+    //todo support later
     private Expression parseConstraint2Expression(TupleDomain<ColumnHandle> constraints) {
         return null;
     }
@@ -81,8 +76,6 @@ public class CarbondataRecordSet implements RecordSet {
 
     @Override
     public RecordCursor cursor() {
-        //参考 CarbonRecordReader 里面的initilize
-        //CarbonInputSplit carbonInputSplit = (CarbonInputSplit) split;
         List<TableBlockInfo> tableBlockInfoList = new ArrayList<TableBlockInfo>();
 
         //tableBlockInfoList.add(split.getLocalInputSplit().getTableBlockInfo());
@@ -100,7 +93,6 @@ public class CarbondataRecordSet implements RecordSet {
 
         queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
 
-        //只是设置一个split的QueryId
         //queryModel.setQueryId(queryModel.getQueryId() + "_" + split.getLocalInputSplit().getSegmentId());
         try {
             readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());

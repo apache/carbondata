@@ -24,9 +24,6 @@ import java.util.Objects;
 import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbondataTableHandle
         implements ConnectorTableHandle {
 

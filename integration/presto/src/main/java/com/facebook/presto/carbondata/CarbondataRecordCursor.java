@@ -32,9 +32,6 @@ import static com.facebook.presto.spi.type.VarcharType.VARCHAR;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbondataRecordCursor implements RecordCursor {
 
     private static final Logger log = Logger.get(CarbondataRecordCursor.class);
@@ -106,22 +103,6 @@ public class CarbondataRecordCursor implements RecordCursor {
     public long getLong(int field) {
         String timeStr = getFieldValue(field);
         Long milliSec = 0L;
-        /*if ( getType( field ) == TIMESTAMP ) {
-            if ( timeStr.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d{3}") ) {
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-                try {
-                    milliSec = sdf.parse(timeStr).getTime();
-                }catch(Exception except){
-                    log.error(except.getMessage());
-                }
-                return milliSec;
-            }
-
-            DateTimeFormatter formatter = ISODateTimeFormat.dateOptionalTimeParser();
-
-            milliSec =  formatter.parseDateTime(timeStr).getMillis();
-            return milliSec;
-        }*/
 
         //suppose the
         return Math.round(Double.parseDouble(getFieldValue(field)));
@@ -166,7 +147,6 @@ public class CarbondataRecordCursor implements RecordCursor {
     public void close() {
         nanoEnd = System.nanoTime();
 
-        //todo  这里需要删除readsupport 里面的cache， 等等
-        //参见 CarbonRecordReader  里面的close
+        //todo  delete cache from readSupport
     }
 }

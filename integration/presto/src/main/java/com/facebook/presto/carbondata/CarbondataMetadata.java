@@ -33,9 +33,6 @@ import static com.facebook.presto.carbondata.Types.checkType;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbondataMetadata
         implements ConnectorMetadata
 {
@@ -160,9 +157,6 @@ public class CarbondataMetadata
 
     @Override
     public Map<String, ColumnHandle> getColumnHandles(ConnectorSession session, ConnectorTableHandle tableHandle) {
-        //同getTableMetadata()
-        /*if(columnHandleMap != null)
-            return columnHandleMap;*/
 
         CarbondataTableHandle handle = checkType(tableHandle, CarbondataTableHandle.class, "tableHandle");
         checkArgument(handle.getConnectorId().equals(connectorId), "tableHandle is not for this connector");
@@ -179,12 +173,11 @@ public class CarbondataMetadata
         }
 
         ImmutableMap.Builder<String, ColumnHandle> columnHandles = ImmutableMap.builder();
-        int index = 0;//是否使用 KeyOrdinal 或者 ColumnGroupOrdinal 替换？
+        int index = 0;
         String tableName = handle.getSchemaTableName().getTableName();
         for (CarbonDimension column : cb.getDimensionByTableName(tableName)) {
             ColumnSchema cs = column.getColumnSchema();
 
-            //todo child column的识别, 是否使用下面几个参数？
             int complex = column.getComplexTypeOrdinal();
             column.getNumberOfChild();
             column.getListOfChildDimensions();
@@ -249,10 +242,6 @@ public class CarbondataMetadata
         return new CarbondataTableHandle(connectorId, tableName);
     }
 
-    //抽象给presto内部使用
-    //spi使用的ConnectorTableHandle 向下转换成CarbondataTableHandle，
-    //生成CarbondataTableLayoutHandle
-    //在装入spi使用的ConnectorTableLayoutResult结构中
     @Override
     public List<ConnectorTableLayoutResult> getTableLayouts(ConnectorSession session, ConnectorTableHandle table, Constraint<ColumnHandle> constraint, Optional<Set<ColumnHandle>> desiredColumns) {
         CarbondataTableHandle handle = checkType(table, CarbondataTableHandle.class, "table");
@@ -260,14 +249,11 @@ public class CarbondataMetadata
         return ImmutableList.of(new ConnectorTableLayoutResult(layout, constraint.getSummary()));
     }
 
-    //抽象给presto内部使用
-    //同上
     @Override
     public ConnectorTableLayout getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle handle) {
         return new ConnectorTableLayout(handle);
     }
 
-    //抽象给presto内部使用
     @Override
     public ConnectorTableMetadata getTableMetadata(ConnectorSession session, ConnectorTableHandle table) {
         return getTableMetadataInternal(table);

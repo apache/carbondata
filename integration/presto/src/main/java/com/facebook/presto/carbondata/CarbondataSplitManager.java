@@ -46,9 +46,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public class CarbondataSplitManager
         implements ConnectorSplitManager
 {
@@ -65,11 +62,6 @@ public class CarbondataSplitManager
 
     public ConnectorSplitSource getSplits(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorTableLayoutHandle layout)
     {
-        //还不是很清楚，如何取数据
-        //1. 像Accumulo，Elasticsearch这样的使用Client作为代理
-        //2. 像Hive这样的呢， 直连Hdfs集群
-        //3. 像Carbondata一样的数据库呢？使用spark？
-
         CarbondataTableLayoutHandle layoutHandle = (CarbondataTableLayoutHandle)layout;
         CarbondataTableHandle tableHandle = layoutHandle.getTable();
         SchemaTableName key = tableHandle.getSchemaTableName();
@@ -89,8 +81,7 @@ public class CarbondataSplitManager
                     cSplits.add(new CarbondataSplit(
                             connectorId,
                             tableHandle.getSchemaTableName(),
-                            layoutHandle.getConstraint(),//将layout方式统一成 CarbondataColumnConstraint
-                            //也可以将下推的or结构也统一进来CarbondataColumnConstraint
+                            layoutHandle.getConstraint(),
                             split,
                             rebuildConstraints
                     ));
@@ -104,23 +95,14 @@ public class CarbondataSplitManager
     }
 
 
-    //是否需要其他数据？？
     public List<CarbondataColumnConstraint> getColumnConstraints(TupleDomain<ColumnHandle> constraint)
     {
-        //parse layout 里面的constraint 变成 Carbondata 特有的 Column Straint
-        //参照acculumo
-
         ImmutableList.Builder<CarbondataColumnConstraint> constraintBuilder = ImmutableList.builder();
         for (TupleDomain.ColumnDomain<ColumnHandle> columnDomain : constraint.getColumnDomains().get()) {
             CarbondataColumnHandle columnHandle = checkType(columnDomain.getColumn(), CarbondataColumnHandle.class, "column handle");
 
-            //if (!columnHandle.getColumnName().equals(rowIdName)) {
-            // Family and qualifier will exist for non-row ID columns
             constraintBuilder.add(new CarbondataColumnConstraint(
                     columnHandle.getColumnName(),
-                    //columnHandle.getColumnType(),
-                        /*columnHandle.getFamily().get(),
-                        columnHandle.getQualifier().get(),*/
                     Optional.of(columnDomain.getDomain()),
                     columnHandle.isInvertedIndex()));
         }
@@ -140,14 +122,13 @@ public class CarbondataSplitManager
             CarbondataColumnHandle cdch = (CarbondataColumnHandle) c;
             Type type = cdch.getColumnType();
 
-            //使用CarbonTable 中的ColumnSchema， 这样就不用转换了
             List<CarbonColumn> ccols = carbonTable.getCreateOrderColumn(carbonTable.getFactTableName());
             Optional<CarbonColumn>  target = ccols.stream().filter(a -> a.getColName().equals(cdch.getColumnName())).findFirst();
 
             if(target.get() == null)
                 return null;
 
-            DataType coltype = target.get().getDataType();//Spi2CarbondataTypeMapper(type);
+            DataType coltype = target.get().getDataType();
             ColumnExpression colExpression = new ColumnExpression(cdch.getColumnName(), target.get().getDataType());
             //colExpression.setColIndex(cs.getSchemaOrdinal());
             colExpression.setDimension(target.get().isDimesion());
@@ -176,8 +157,7 @@ public class CarbondataSplitManager
                     singleValues.add(range.getLow().getValue());
                 }
                 else
-                {//这里都是range操作
-                    //估计要组合 list<Expression>, Greater, less than
+                {
                     List<String> rangeConjuncts = new ArrayList<>();
                     if (!range.getLow().isLowerUnbounded()) {
                         Object value = ConvertDataByType(range.getLow().getValue(), type);
@@ -232,7 +212,7 @@ public class CarbondataSplitManager
                     ex = new EqualToExpression(colExpression, new LiteralExpression(singleValues.get(0), coltype));
                 filters.add(ex);
             }
-            else if(singleValues.size() > 1) {//如果是离散的list值， 该如何
+            else if(singleValues.size() > 1) {
                 ListExpression candidates = null;
                 List<Expression> exs = singleValues.stream().map((a) ->
                 {
@@ -244,7 +224,6 @@ public class CarbondataSplitManager
                     filters.add(new InExpression(colExpression, candidates));
             }
             else if(rangeFilter.size() > 0){
-                //这里将非Siglevalue的Filter 做一个or
                 if(rangeFilter.size() > 1) {
                     Expression finalFilters = new OrExpression(rangeFilter.get(0), rangeFilter.get(1));
                     if(rangeFilter.size() > 2)
@@ -255,12 +234,11 @@ public class CarbondataSplitManager
                         }
                     }
                 }
-                else if(rangeFilter.size() == 1)//如果只有一个value的情况下
+                else if(rangeFilter.size() == 1)//only have one value
                     filters.add(rangeFilter.get(0));
             }
         }
 
-        //判断 ListExpression 是否为空, 这个应该是 column 之间的Filter，应该是  and 关系
         Expression finalFilters;
         List<Expression> tmp = filters.build();
         if(tmp.size() > 1) {
@@ -273,9 +251,9 @@ public class CarbondataSplitManager
                 }
             }
         }
-        else if(tmp.size() == 1)//如果只有一个value的情况下
+        else if(tmp.size() == 1)
             finalFilters = tmp.get(0);
-        else//没有filter
+        else//no filter
             return null;
 
         return finalFilters;

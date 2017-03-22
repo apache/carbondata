@@ -15,9 +15,6 @@ package com.facebook.presto.carbondata;
 
 import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 
-/**
- * Created by ffpeng on 3/7/17.
- */
 public enum CarbondataTransactionHandle
         implements ConnectorTransactionHandle
 {
