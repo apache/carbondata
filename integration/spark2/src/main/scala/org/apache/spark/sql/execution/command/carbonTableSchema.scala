@@ -176,14 +176,18 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
             s"""CREATE TABLE $dbName.$tbName(${fields.map(f => f.rawSchema).mkString(",")})
                 | ROW FORMAT SERDE
                 |    'org.apache.carbondata.hive.CarbonHiveSerDe'
+                | WITH SERDEPROPERTIES (
+                |  'dbName'='$dbName',
+                |  'tableName'='$tbName',
+                |  'tablePath'='$tablePath')
                 | STORED AS INPUTFORMAT
                 |    'org.apache.carbondata.hive.MapredCarbonInputFormat'
                 | OUTPUTFORMAT
                 |    'org.apache.carbondata.hive.MapredCarbonOutputFormat'
                 | LOCATION
                 |    '$tablePath'
-                | TBLPROPERTIES ('spark.sql.sources.provider'='org.apache.spark.sql.CarbonSource')
-             """.stripMargin)
+                | TBLPROPERTIES('spark.sql.sources.provider'='org.apache.spark.sql.CarbonSource')
+           """.stripMargin)
         } catch {
           case e: Exception =>
             val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
