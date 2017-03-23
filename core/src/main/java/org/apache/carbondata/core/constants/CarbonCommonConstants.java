@@ -1116,7 +1116,7 @@ public final class CarbonCommonConstants {
 
   public static final String ENABLE_VECTOR_READER = "carbon.enable.vector.reader";
 
-  public static final String ENABLE_VECTOR_READER_DEFAULT = "false";
+  public static final String ENABLE_VECTOR_READER_DEFAULT = "true";
 
   /*
    * carbon dictionary server port
