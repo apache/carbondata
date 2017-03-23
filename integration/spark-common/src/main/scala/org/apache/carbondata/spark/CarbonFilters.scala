@@ -207,22 +207,34 @@ object CarbonFilters {
       carbonTable: CarbonTable): Option[CarbonExpression] = {
     def transformExpression(expr: Expression, or: Boolean = false): Option[CarbonExpression] = {
       expr match {
-        case or@ Or(left, right) =>
-          val leftFilter = transformExpression(left, true)
-          val rightFilter = transformExpression(right, true)
+        case orFilter@ Or(left, right) =>
+          val leftFilter = transformExpression(left, or = true)
+          val rightFilter = transformExpression(right, or = true)
           if (leftFilter.isDefined && rightFilter.isDefined) {
             Some(new OrExpression(leftFilter.get, rightFilter.get))
           } else {
-            or.collect {
-              case attr: AttributeReference => attributesNeedToDecode.add(attr)
+            if (!or) {
+              orFilter.collect {
+                case attr: AttributeReference => attributesNeedToDecode.add(attr)
+              }
+              unprocessedExprs += orFilter
             }
-            unprocessedExprs += or
             None
           }
 
         case And(left, right) =>
-          (transformExpression(left) ++ transformExpression(right)).reduceOption(new
-              AndExpression(_, _))
+          val leftFilter = transformExpression(left, or)
+          val rightFilter = transformExpression(right, or)
+          if (or) {
+            if (leftFilter.isDefined && rightFilter.isDefined) {
+              (leftFilter ++ rightFilter).reduceOption(new AndExpression(_, _))
+            } else {
+              None
+            }
+          } else {
+            (leftFilter ++ rightFilter).reduceOption(new AndExpression(_, _))
+          }
+
 
         case EqualTo(a: Attribute, l@Literal(v, t)) =>
           Some(
@@ -238,20 +250,6 @@ object CarbonFilters {
               transformExpression(l).get
             )
           )
-        case EqualTo(Cast(a: Attribute, _), l@Literal(v, t)) =>
-          Some(
-            new EqualToExpression(
-              transformExpression(a).get,
-              transformExpression(l).get
-            )
-          )
-        case EqualTo(l@Literal(v, t), Cast(a: Attribute, _)) =>
-          Some(
-            new EqualToExpression(
-              transformExpression(a).get,
-              transformExpression(l).get
-            )
-          )
 
         case Not(EqualTo(a: Attribute, l@Literal(v, t))) =>
           Some(
@@ -261,20 +259,6 @@ object CarbonFilters {
             )
           )
         case Not(EqualTo(l@Literal(v, t), a: Attribute)) =>
-          Some(
-            new NotEqualsExpression(
-              transformExpression(a).get,
-              transformExpression(l).get
-            )
-          )
-        case Not(EqualTo(Cast(a: Attribute, _), l@Literal(v, t))) =>
-          Some(
-            new NotEqualsExpression(
-              transformExpression(a).get,
-              transformExpression(l).get
-            )
-          )
-        case Not(EqualTo(l@Literal(v, t), Cast(a: Attribute, _))) =>
           Some(
             new NotEqualsExpression(
               transformExpression(a).get,
@@ -298,62 +282,28 @@ object CarbonFilters {
         case In(a: Attribute, list) if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new InExpression(transformExpression(a).get,
             new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
-        case Not(In(Cast(a: Attribute, _), list))
-          if !list.exists(!_.isInstanceOf[Literal]) =>
-          /* if any illogical expression comes in NOT IN Filter like
-           NOT IN('scala',NULL) this will be treated as false expression and will
-           always return no result. */
-          if (list.exists(x => isNullLiteral(x.asInstanceOf[Literal]))) {
-            Some(new FalseExpression(transformExpression(a).get))
-          } else {
-            Some(new NotInExpression(transformExpression(a).get, new ListExpression(
-              convertToJavaList(list.map(transformExpression(_).get)))))
-          }
-        case In(Cast(a: Attribute, _), list) if !list.exists(!_.isInstanceOf[Literal]) =>
-          Some(new InExpression(transformExpression(a).get,
-            new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
 
         case GreaterThan(a: Attribute, l@Literal(v, t)) =>
           Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
-        case GreaterThan(Cast(a: Attribute, _), l@Literal(v, t)) =>
-          Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
         case GreaterThan(l@Literal(v, t), a: Attribute) =>
-          Some(new LessThanExpression(transformExpression(a).get, transformExpression(l).get))
-        case GreaterThan(l@Literal(v, t), Cast(a: Attribute, _)) =>
           Some(new LessThanExpression(transformExpression(a).get, transformExpression(l).get))
 
         case LessThan(a: Attribute, l@Literal(v, t)) =>
           Some(new LessThanExpression(transformExpression(a).get, transformExpression(l).get))
-        case LessThan(Cast(a: Attribute, _), l@Literal(v, t)) =>
-          Some(new LessThanExpression(transformExpression(a).get, transformExpression(l).get))
         case LessThan(l@Literal(v, t), a: Attribute) =>
-          Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
-        case LessThan(l@Literal(v, t), Cast(a: Attribute, _)) =>
           Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
 
         case GreaterThanOrEqual(a: Attribute, l@Literal(v, t)) =>
           Some(new GreaterThanEqualToExpression(transformExpression(a).get,
             transformExpression(l).get))
-        case GreaterThanOrEqual(Cast(a: Attribute, _), l@Literal(v, t)) =>
-          Some(new GreaterThanEqualToExpression(transformExpression(a).get,
-            transformExpression(l).get))
         case GreaterThanOrEqual(l@Literal(v, t), a: Attribute) =>
-          Some(new LessThanEqualToExpression(transformExpression(a).get,
-            transformExpression(l).get))
-        case GreaterThanOrEqual(l@Literal(v, t), Cast(a: Attribute, _)) =>
           Some(new LessThanEqualToExpression(transformExpression(a).get,
             transformExpression(l).get))
 
         case LessThanOrEqual(a: Attribute, l@Literal(v, t)) =>
           Some(new LessThanEqualToExpression(transformExpression(a).get,
             transformExpression(l).get))
-        case LessThanOrEqual(Cast(a: Attribute, _), l@Literal(v, t)) =>
-          Some(new LessThanEqualToExpression(transformExpression(a).get,
-            transformExpression(l).get))
         case LessThanOrEqual(l@Literal(v, t), a: Attribute) =>
-          Some(new GreaterThanEqualToExpression(transformExpression(a).get,
-            transformExpression(l).get))
-        case LessThanOrEqual(l@Literal(v, t), Cast(a: Attribute, _)) =>
           Some(new GreaterThanEqualToExpression(transformExpression(a).get,
             transformExpression(l).get))
 
@@ -363,7 +313,6 @@ object CarbonFilters {
               getActualCarbonDataType(name, carbonTable))))
         case Literal(name, dataType) => Some(new
             CarbonLiteralExpression(name, CarbonScalaUtil.convertSparkToCarbonDataType(dataType)))
-        case Cast(left, right) if !left.isInstanceOf[Literal] => transformExpression(left)
         case others =>
           if (!or) {
             others.collect {
