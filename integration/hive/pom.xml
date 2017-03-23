@@ -39,6 +39,28 @@
             <groupId>org.spark-project.hive</groupId>
             <artifactId>hive-exec</artifactId>
             <version>${hive.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>hive-metastore</artifactId>
+                    <groupId>org.spark-project.hive</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>hive-shims</artifactId>
+                    <groupId>org.spark-project.hive</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>hive-ant</artifactId>
+                    <groupId>org.spark-project.hive</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>spark-client</artifactId>
+                    <groupId>org.spark-project.hive</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>kryo</artifactId>
+                    <groupId>com.esotericsoftware.kryo</groupId>
+                </exclusion>
+            </exclusions>
             <scope>compile</scope>
         </dependency>
         <dependency>

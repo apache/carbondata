@@ -60,6 +60,22 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
+          <artifactId>hive-metastore</artifactId>
+          <groupId>org.spark-project.hive</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>hive-shims</artifactId>
+          <groupId>org.spark-project.hive</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>hive-ant</artifactId>
+          <groupId>org.spark-project.hive</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>spark-client</artifactId>
+          <groupId>org.spark-project.hive</groupId>
+        </exclusion>
+        <exclusion>
           <artifactId>kryo</artifactId>
           <groupId>com.esotericsoftware.kryo</groupId>
         </exclusion>
