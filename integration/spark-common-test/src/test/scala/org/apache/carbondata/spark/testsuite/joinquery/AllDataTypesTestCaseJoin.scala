@@ -56,6 +56,40 @@ class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
     )
    
   }
+
+  test("Union with alias fails") {
+    sql("DROP TABLE IF EXISTS carbon_table1")
+    sql("DROP TABLE IF EXISTS carbon_table2")
+
+    sql("CREATE TABLE carbon_table1(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')")
+
+    sql("CREATE TABLE carbon_table2(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')")
+
+    val path1 = s"$resourcesPath/join/data1.csv"
+    val path2 = s"$resourcesPath/join/data2.csv"
+
+    sql(
+      s"""
+         LOAD DATA LOCAL INPATH '$path1'
+         INTO TABLE carbon_table1
+         options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData','COMPLEX_DELIMITER_LEVEL_1'='#')
+       """.stripMargin)
+    sql(
+      s"""
+         LOAD DATA LOCAL INPATH '$path2'
+         INTO TABLE carbon_table2
+         options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData','COMPLEX_DELIMITER_LEVEL_1'='#')
+       """.stripMargin)
+
+    checkAnswer(sql("""SELECT t.a a FROM (select charField a from  carbon_table1 t1 union all  select charField a from  carbon_table2 t2) t order by a """),
+      Seq(Row("aaa"),Row("bbb"),Row("ccc"),Row("ddd"))
+     )
+
+    // Drop table
+    sql("DROP TABLE IF EXISTS carbon_table1")
+    sql("DROP TABLE IF EXISTS carbon_table2")
+  }
+
   override def afterAll {
     sql("drop table alldatatypestableJoin")
     sql("drop table alldatatypestableJoin_hive")
