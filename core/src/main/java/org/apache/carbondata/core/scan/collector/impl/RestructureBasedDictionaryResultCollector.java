@@ -32,6 +32,11 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
 
   public RestructureBasedDictionaryResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
+    queryDimensions = tableBlockExecutionInfos.getActualQueryDimensions();
+    queryMeasures = tableBlockExecutionInfos.getActualQueryMeasures();
+    initDimensionAndMeasureIndexesForFillingData();
+    initDimensionAndMeasureIndexesForFillingData();
+    isDimensionExists = queryDimensions.length > 0;
   }
 
   /**
@@ -39,23 +44,19 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
    * it will keep track of how many record is processed, to handle limit scenario
    */
   @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
-    queryDimensions = tableBlockExecutionInfos.getActualQueryDimensions();
-    queryMeasures = tableBlockExecutionInfos.getActualQueryMeasures();
-    initDimensionAndMeasureIndexesForFillingData();
     // scan the record and add to list
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     int rowCounter = 0;
     int[] surrogateResult;
     String[] noDictionaryKeys;
     byte[][] complexTypeKeyArray;
-    boolean isDimensionsExist = queryDimensions.length > 0;
     BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
         scannedResult.getDeleteDeltaDataCache();
     Map<Integer, GenericQueryType> comlexDimensionInfoMap =
         tableBlockExecutionInfos.getComlexDimensionInfoMap();
     while (scannedResult.hasNext() && rowCounter < batchSize) {
       Object[] row = new Object[queryDimensions.length + queryMeasures.length];
-      if (isDimensionsExist) {
+      if (isDimensionExists) {
         surrogateResult = scannedResult.getDictionaryKeyIntegerArray();
         noDictionaryKeys = scannedResult.getNoDictionaryKeyStringArray();
         complexTypeKeyArray = scannedResult.getComplexTypeKeyArray();
