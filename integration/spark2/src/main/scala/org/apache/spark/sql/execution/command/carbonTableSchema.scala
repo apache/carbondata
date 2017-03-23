@@ -173,21 +173,10 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
           cm.dimCols.foreach(f => fields(f.schemaOrdinal) = f)
           cm.msrCols.foreach(f => fields(f.schemaOrdinal) = f)
           sparkSession.sql(
-            s"""CREATE TABLE $dbName.$tbName(${fields.map(f => f.rawSchema).mkString(",")})
-                | ROW FORMAT SERDE
-                |    'org.apache.carbondata.hive.CarbonHiveSerDe'
-                | WITH SERDEPROPERTIES (
-                |  'dbName'='$dbName',
-                |  'tableName'='$tbName',
-                |  'tablePath'='$tablePath')
-                | STORED AS INPUTFORMAT
-                |    'org.apache.carbondata.hive.MapredCarbonInputFormat'
-                | OUTPUTFORMAT
-                |    'org.apache.carbondata.hive.MapredCarbonOutputFormat'
-                | LOCATION
-                |    '$tablePath'
-                | TBLPROPERTIES('spark.sql.sources.provider'='org.apache.spark.sql.CarbonSource')
-           """.stripMargin)
+            s"""CREATE TABLE $dbName.$tbName
+               |(${fields.map(f => f.rawSchema).mkString(",")})
+               |USING org.apache.spark.sql.CarbonSource""".stripMargin +
+            s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath "$tablePath") """)
         } catch {
           case e: Exception =>
             val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
