@@ -65,8 +65,17 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
   protected int noDictionaryColumnIndex;
   protected int complexTypeColumnIndex;
 
+  protected boolean isDimensionExists;
+
+  protected Map<Integer, GenericQueryType> comlexDimensionInfoMap;
+
   public DictionaryBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
+    queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
+    queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
+    initDimensionAndMeasureIndexesForFillingData();
+    isDimensionExists = queryDimensions.length > 0;
+    this.comlexDimensionInfoMap = tableBlockExecutionInfos.getComlexDimensionInfoMap();
   }
 
   /**
@@ -74,23 +83,18 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
    * it will keep track of how many record is processed, to handle limit scenario
    */
   @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
-    queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
-    queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
-    initDimensionAndMeasureIndexesForFillingData();
+
     // scan the record and add to list
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     int rowCounter = 0;
     int[] surrogateResult;
     String[] noDictionaryKeys;
     byte[][] complexTypeKeyArray;
-    boolean isDimensionsExist = queryDimensions.length > 0;
     BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
         scannedResult.getDeleteDeltaDataCache();
-    Map<Integer, GenericQueryType> comlexDimensionInfoMap =
-        tableBlockExecutionInfos.getComlexDimensionInfoMap();
     while (scannedResult.hasNext() && rowCounter < batchSize) {
       Object[] row = new Object[queryDimensions.length + queryMeasures.length];
-      if (isDimensionsExist) {
+      if (isDimensionExists) {
         surrogateResult = scannedResult.getDictionaryKeyIntegerArray();
         noDictionaryKeys = scannedResult.getNoDictionaryKeyStringArray();
         complexTypeKeyArray = scannedResult.getComplexTypeKeyArray();
@@ -123,11 +127,11 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
             .equals(queryDimensions[i].getDimension().getColName())) {
           row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
-              scannedResult.getBlockletId() + CarbonCommonConstants.FILE_SEPARATOR
-                  + scannedResult.getCurrentRowId(), DataType.STRING);
+              scannedResult.getBlockletId() + CarbonCommonConstants.FILE_SEPARATOR + scannedResult
+                  .getCurrentRowId(), DataType.STRING);
         } else {
-          row[order[i]] = DataTypeUtil
-              .getDataBasedOnDataType(scannedResult.getBlockletId(), DataType.STRING);
+          row[order[i]] =
+              DataTypeUtil.getDataBasedOnDataType(scannedResult.getBlockletId(), DataType.STRING);
         }
       } else {
         row[order[i]] = DataTypeUtil
@@ -140,10 +144,9 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
             surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]]);
       }
     } else if (complexDataTypeArray[i]) {
-      row[order[i]] =
-          comlexDimensionInfoMap.get(queryDimensions[i].getDimension().getOrdinal())
-              .getDataBasedOnDataTypeFromSurrogates(
-                  ByteBuffer.wrap(complexTypeKeyArray[complexTypeColumnIndex++]));
+      row[order[i]] = comlexDimensionInfoMap.get(queryDimensions[i].getDimension().getOrdinal())
+          .getDataBasedOnDataTypeFromSurrogates(
+              ByteBuffer.wrap(complexTypeKeyArray[complexTypeColumnIndex++]));
     } else {
       row[order[i]] = surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]];
     }
@@ -191,8 +194,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     for (int i = 0; i < queryMeasures.length; i++) {
       order[i + queryDimensions.length] = queryMeasures[i].getQueryOrder();
     }
-    directDictionaryGenerators =
-        new DirectDictionaryGenerator[queryDimensions.length];
+    directDictionaryGenerators = new DirectDictionaryGenerator[queryDimensions.length];
     for (int i = 0; i < queryDimensions.length; i++) {
       directDictionaryGenerators[i] = DirectDictionaryKeyGeneratorFactory
           .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
