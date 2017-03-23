@@ -81,7 +81,7 @@ class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
          options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData','COMPLEX_DELIMITER_LEVEL_1'='#')
        """.stripMargin)
 
-    checkAnswer(sql("""SELECT t.charField a FROM (select charField from  carbon_table1 union all  select charField from  carbon_table2) t order by a """),
+    checkAnswer(sql("""SELECT t.a a FROM (select charField a from  carbon_table1 t1 union all  select charField a from  carbon_table2 t2) t order by a """),
       Seq(Row("aaa"),Row("bbb"),Row("ccc"),Row("ddd"))
      )
 
