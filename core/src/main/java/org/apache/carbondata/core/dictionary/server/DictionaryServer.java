@@ -29,7 +29,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 
 /**
  * Dictionary Server to generate dictionary keys.
@@ -64,6 +64,8 @@ public class DictionaryServer {
       bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
         @Override public void initChannel(SocketChannel ch) throws Exception {
           ChannelPipeline pipeline = ch.pipeline();
+          // Based on length provided at header, it collects all packets
+          pipeline.addLast("LengthDecoder", new LengthFieldBasedFrameDecoder(1048576, 0, 2, 0, 2));
           pipeline.addLast("DictionaryServerHandler", dictionaryServerHandler);
         }
       });

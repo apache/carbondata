@@ -28,7 +28,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 
 /**
  * Dictionary client to connect to Dictionary server and generate dictionary values
@@ -56,6 +56,9 @@ public class DictionaryClient {
         .handler(new ChannelInitializer<SocketChannel>() {
           @Override public void initChannel(SocketChannel ch) throws Exception {
             ChannelPipeline pipeline = ch.pipeline();
+            // Based on length provided at header, it collects all packets
+            pipeline
+                .addLast("LengthDecoder", new LengthFieldBasedFrameDecoder(1048576, 0, 2, 0, 2));
             pipeline.addLast("DictionaryClientHandler", dictionaryClientHandler);
           }
         });
