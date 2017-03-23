@@ -58,6 +58,12 @@
       <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-hive</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>kryo</artifactId>
+          <groupId>com.esotericsoftware.kryo</groupId>
+        </exclusion>
+      </exclusions>
       <scope>test</scope>
     </dependency>
     <dependency>
