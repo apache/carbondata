@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.presto;
 
-import com.facebook.presto.carbondata.impl.CarbonTableReader;
+import org.apache.carbondata.presto.impl.CarbonTableReader;
 import com.facebook.presto.spi.*;
 import com.facebook.presto.spi.classloader.ThreadContextClassLoader;
 import com.facebook.presto.spi.connector.ConnectorMetadata;
@@ -33,7 +33,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import javax.inject.Inject;
 import java.util.*;
 
-import static com.facebook.presto.carbondata.Types.checkType;
+import static org.apache.carbondata.presto.Types.checkType;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
