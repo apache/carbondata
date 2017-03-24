@@ -111,8 +111,16 @@ object CarbonFilters {
     }
 
     def getCarbonLiteralExpression(name: String, value: Any): CarbonExpression = {
-      new CarbonLiteralExpression(value,
-        CarbonScalaUtil.convertSparkToCarbonDataType(dataTypeOf(name)))
+      val dataTypeOfAttribute = CarbonScalaUtil.convertSparkToCarbonDataType(dataTypeOf(name))
+      val dataType = if (Option(value).isDefined
+                         && dataTypeOfAttribute == DataType.STRING
+                         && value.isInstanceOf[Double]) {
+        DataType.DOUBLE
+      }
+      else {
+        dataTypeOfAttribute
+      }
+      new CarbonLiteralExpression(value, dataType)
     }
 
     createFilter(predicate)
@@ -120,7 +128,7 @@ object CarbonFilters {
 
 
   // Check out which filters can be pushed down to carbon, remaining can be handled in spark layer.
-  // Mostly dimension filters are only pushed down since it is faster in carbon.
+  // Mostly dimension filters are only pushed down since it is faster in carbo  n.
   def selectFilters(filters: Seq[Expression],
       attrList: java.util.HashSet[AttributeReferenceWrapper],
       aliasMap: CarbonAliasDecoderRelation): Unit = {
