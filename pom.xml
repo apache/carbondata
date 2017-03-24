@@ -389,7 +389,7 @@
       </modules>
     </profile>
     <profile>
-      <id>hive-1.2.1</id>
+      <id>hive-1.2</id>
       <properties>
         <hive.version>1.2.1</hive.version>
       </properties>
