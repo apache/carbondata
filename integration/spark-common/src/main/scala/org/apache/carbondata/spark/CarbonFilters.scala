@@ -111,8 +111,15 @@ object CarbonFilters {
     }
 
     def getCarbonLiteralExpression(name: String, value: Any): CarbonExpression = {
-      new CarbonLiteralExpression(value,
-        CarbonScalaUtil.convertSparkToCarbonDataType(dataTypeOf(name)))
+      val dataTypeOfAttribute = CarbonScalaUtil.convertSparkToCarbonDataType(dataTypeOf(name))
+      val dataType = if (Option(value).isDefined
+                         && dataTypeOfAttribute == DataType.STRING
+                         && value.isInstanceOf[Double]) {
+        DataType.DOUBLE
+      } else {
+        dataTypeOfAttribute
+      }
+      new CarbonLiteralExpression(value, dataType)
     }
 
     createFilter(predicate)
