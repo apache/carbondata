@@ -76,7 +76,6 @@ import org.apache.carbondata.processing.store.file.IFileManagerComposite;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 import org.apache.spark.sql.types.Decimal;
@@ -952,10 +951,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       LOGGER.info("All blocklets have been finished writing");
       // close all the open stream for both the files
       this.dataWriter.closeWriter();
-      // rename the bad record in progress to normal
-      CarbonDataProcessorUtil.renameBadRecordsFromInProgressToNormal(
-          this.databaseName + File.separator + this.tableName + File.separator + this.segmentId
-              + File.separator + this.carbonDataFileAttributes.getTaskId());
     }
     this.dataWriter = null;
     this.keyBlockHolder = null;

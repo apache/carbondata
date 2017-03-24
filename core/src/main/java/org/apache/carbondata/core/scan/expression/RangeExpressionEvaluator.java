@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.expression.conditional.GreaterThanEqualToExpression;
@@ -41,6 +43,8 @@ import static org.apache.carbondata.core.scan.filter.intf.ExpressionType.LESSTHA
 import static org.apache.carbondata.core.scan.filter.intf.ExpressionType.LESSTHAN_EQUALTO;
 
 public class RangeExpressionEvaluator {
+  private static final LogService LOG =
+      LogServiceFactory.getLogService(RangeExpressionEvaluator.class.getName());
   private Expression expr;
   private Expression srcNode;
   private Expression srcParentNode;
@@ -160,6 +164,9 @@ public class RangeExpressionEvaluator {
         }
 
         if ((null != startMin) && (null != endMax)) {
+          LOG.info(
+              "GreaterThan and LessThan Filter Expression changed to Range Expression for column "
+                  + colName);
           // the node can be converted to RANGE.
           Expression n1 = startMin.getCurrentExp();
           Expression n2 = endMax.getCurrentExp();
