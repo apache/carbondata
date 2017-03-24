@@ -90,12 +90,6 @@ public class CompressionNoneDefault extends ValueCompressionHolder<double[]> {
         "Big decimal is not defined for CompressionNoneDefault");
   }
 
-  private void setUncompressedValues(double[] data) {
-    this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
-        .getMeasureDataChunkStore(DataType.DATA_DOUBLE, data.length);
-    this.measureChunkStore.putData(data);
-  }
-
   @Override public void freeMemory() {
     this.measureChunkStore.freeMemory();
   }
