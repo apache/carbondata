@@ -32,13 +32,14 @@ import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.BatchResult;
 import org.apache.carbondata.core.scan.result.iterator.ChunkRowIterator;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
-import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodedReadSupportImpl;
+import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
+//import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodedReadSupportImpl;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.facebook.presto.carbondata.Types.checkType;
+import static org.apache.carbondata.presto.Types.checkType;
 
 public class CarbondataRecordSet implements RecordSet {
 
@@ -65,7 +66,7 @@ public class CarbondataRecordSet implements RecordSet {
         this.rebuildConstraints = this.split.getRebuildConstraints();
         this.queryModel = queryModel;
         this.columns = columns;
-        this.readSupport = new DictionaryDecodedReadSupportImpl();
+        this.readSupport = new DictionaryDecodeReadSupport();
     }
 
     //todo support later

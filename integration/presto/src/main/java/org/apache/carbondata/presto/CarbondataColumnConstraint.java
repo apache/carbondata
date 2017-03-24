@@ -25,7 +25,8 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+//import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Objects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 public class CarbondataColumnConstraint {
