@@ -98,6 +98,12 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * file name
    */
   protected String fileName;
+
+  /**
+   * The path of carbonData file
+   */
+  protected String carbonDataFilePath;
+
   /**
    * Local cardinality for the segment
    */
@@ -295,6 +301,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     dataWriterVo.getFileManager().add(fileData);
     this.fileName = dataWriterVo.getStoreLocation() + File.separator + carbonDataFileName
         + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
+    this.carbonDataFilePath =
+        dataWriterVo.getCarbonDataDirectoryPath() + File.separator + carbonDataFileName;
     this.fileCount++;
     try {
       // open channel for new data file
@@ -376,8 +384,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     minmax.setMaxValues(currentMaxValue);
     BlockletIndex blockletIndex = new BlockletIndex(btree, minmax);
     BlockIndexInfo blockIndexInfo =
-        new BlockIndexInfo(numberOfRows, filePath.substring(0, filePath.lastIndexOf('.')),
-            currentPosition, blockletIndex);
+        new BlockIndexInfo(numberOfRows, filePath, currentPosition, blockletIndex);
     blockIndexInfoList.add(blockIndexInfo);
   }
 
