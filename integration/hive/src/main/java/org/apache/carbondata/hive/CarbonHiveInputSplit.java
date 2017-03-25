@@ -43,7 +43,7 @@ public class CarbonHiveInputSplit extends FileSplit
     implements Distributable, Serializable, Writable, Block {
 
   private static final long serialVersionUID = 3520344046772190208L;
-  public String taskId;
+  private String taskId;
 
   private String segmentId;
 

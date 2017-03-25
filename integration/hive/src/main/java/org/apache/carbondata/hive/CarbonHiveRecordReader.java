@@ -124,7 +124,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
         throw new IOException(se.getMessage(), se.getCause());
       }
 
-      if (valueObj != tmpValue) {
+      if (value != tmpValue) {
         final Writable[] arrValue = value.get();
         final Writable[] arrCurrent = tmpValue.get();
         if (valueObj != null && arrValue.length == arrCurrent.length) {
@@ -221,7 +221,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
       case LONG:
         return new LongWritable((long) obj);
       case SHORT:
-        return new ShortWritable((short) obj);
+        return new ShortWritable(((Long) obj).shortValue());
       case DATE:
         return new DateWritable(new Date(((long) obj)));
       case TIMESTAMP:

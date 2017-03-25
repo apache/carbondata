@@ -121,8 +121,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     }
     serializedSize += ((StructObjectInspector) objInspector).getAllStructFieldRefs().size();
     status = LAST_OPERATION.SERIALIZE;
-    ArrayWritable serializeData = createStruct(obj, (StructObjectInspector) objInspector);
-    return serializeData;
+    return createStruct(obj, (StructObjectInspector) objInspector);
   }
 
   public ArrayWritable createStruct(Object obj, StructObjectInspector inspector)

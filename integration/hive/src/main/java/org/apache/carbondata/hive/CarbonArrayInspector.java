@@ -17,6 +17,7 @@
 package org.apache.carbondata.hive;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
@@ -30,7 +31,7 @@ import org.apache.hadoop.io.Writable;
  */
 public class CarbonArrayInspector implements SettableListObjectInspector {
 
-  ObjectInspector arrayElementInspector;
+  private ObjectInspector arrayElementInspector;
 
   public CarbonArrayInspector(final ObjectInspector arrayElementInspector) {
     this.arrayElementInspector = arrayElementInspector;
@@ -127,7 +128,7 @@ public class CarbonArrayInspector implements SettableListObjectInspector {
       }
 
       final Writable[] array = ((ArrayWritable) subObj).get();
-      final List<Writable> list = new ArrayList<Writable>();
+      final List<Writable> list = Arrays.asList(array);
 
       for (final Writable obj : array) {
         list.add(obj);
@@ -142,7 +143,7 @@ public class CarbonArrayInspector implements SettableListObjectInspector {
 
   @Override
   public Object create(final int size) {
-    final ArrayList<Object> result = new ArrayList<Object>(size);
+    final List<Object> result = Arrays.asList(new Object[size]);
     for (int i = 0; i < size; ++i) {
       result.add(null);
     }
@@ -151,14 +152,14 @@ public class CarbonArrayInspector implements SettableListObjectInspector {
 
   @Override
   public Object set(final Object list, final int index, final Object element) {
-    final ArrayList l = (ArrayList) list;
+    final ArrayList<Object> l = (ArrayList<Object>) list;
     l.set(index, element);
     return list;
   }
 
   @Override
   public Object resize(final Object list, final int newSize) {
-    final ArrayList l = (ArrayList) list;
+    final ArrayList<Object> l = (ArrayList<Object>) list;
     l.ensureCapacity(newSize);
     while (l.size() < newSize) {
       l.add(null);
