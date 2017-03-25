@@ -100,9 +100,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   protected String fileName;
 
   /**
-   * The path of carbonData file
+   * The name of carbonData file
    */
-  protected String carbonDataFilePath;
+  protected String carbonDataFileName;
 
   /**
    * Local cardinality for the segment
@@ -292,7 +292,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     // update the filename with new new sequence
     // increment the file sequence counter
     initFileCount();
-    String carbonDataFileName = carbonTablePath
+    this.carbonDataFileName = carbonTablePath
         .getCarbonDataFileName(fileCount, dataWriterVo.getCarbonDataFileAttributes().getTaskId(),
             dataWriterVo.getBucketNumber(), dataWriterVo.getTaskExtension(),
             dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
@@ -301,8 +301,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     dataWriterVo.getFileManager().add(fileData);
     this.fileName = dataWriterVo.getStoreLocation() + File.separator + carbonDataFileName
         + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-    this.carbonDataFilePath =
-        dataWriterVo.getCarbonDataDirectoryPath() + File.separator + carbonDataFileName;
     this.fileCount++;
     try {
       // open channel for new data file

@@ -17,7 +17,7 @@ class TestDataLoadWithFileName extends QueryTest with BeforeAndAfterAll {
       CarbonProperties.getInstance.getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION)
   }
 
-  test("Test the file_name in carbonindex with v1 format") {
+  test("Check the file_name in carbonindex with v1 format") {
     CarbonProperties.getInstance.addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, "1")
     sql("DROP TABLE IF EXISTS test_table_v1")
     sql(
@@ -39,12 +39,13 @@ class TestDataLoadWithFileName extends QueryTest with BeforeAndAfterAll {
       assert(indexReader.readIndexHeader().getVersion === 1)
       while (indexReader.hasNext) {
         val readBlockIndexInfo = indexReader.readBlockIndexInfo()
-        assert(readBlockIndexInfo.getFile_name.startsWith(storeLocation))
+        assert(readBlockIndexInfo.getFile_name.startsWith(CarbonTablePath.getCarbonDataPrefix))
+        assert(readBlockIndexInfo.getFile_name.endsWith(CarbonTablePath.getCarbonDataExtension))
       }
     }
   }
 
-  test("Test the file_name in carbonindex with v2 format") {
+  test("Check the file_name in carbonindex with v2 format") {
     CarbonProperties.getInstance.addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, "2")
     sql("DROP TABLE IF EXISTS test_table_v2")
     sql(
@@ -66,12 +67,13 @@ class TestDataLoadWithFileName extends QueryTest with BeforeAndAfterAll {
       assert(indexReader.readIndexHeader().getVersion === 2)
       while (indexReader.hasNext) {
         val readBlockIndexInfo = indexReader.readBlockIndexInfo()
-        assert(readBlockIndexInfo.getFile_name.startsWith(storeLocation))
+        assert(readBlockIndexInfo.getFile_name.startsWith(CarbonTablePath.getCarbonDataPrefix))
+        assert(readBlockIndexInfo.getFile_name.endsWith(CarbonTablePath.getCarbonDataExtension))
       }
     }
   }
 
-  test("Test the file_name in carbonindex with v3 format") {
+  test("Check the file_name in carbonindex with v3 format") {
     CarbonProperties.getInstance.addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, "3")
     sql("DROP TABLE IF EXISTS test_table_v3")
     sql(
@@ -93,7 +95,8 @@ class TestDataLoadWithFileName extends QueryTest with BeforeAndAfterAll {
       assert(indexReader.readIndexHeader().getVersion === 3)
       while (indexReader.hasNext) {
         val readBlockIndexInfo = indexReader.readBlockIndexInfo()
-        assert(readBlockIndexInfo.getFile_name.startsWith(storeLocation))
+        assert(readBlockIndexInfo.getFile_name.startsWith(CarbonTablePath.getCarbonDataPrefix))
+        assert(readBlockIndexInfo.getFile_name.endsWith(CarbonTablePath.getCarbonDataExtension))
       }
     }
   }

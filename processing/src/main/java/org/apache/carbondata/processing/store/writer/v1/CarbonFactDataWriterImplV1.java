@@ -373,7 +373,7 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
       FileFooter convertFileMeta = CarbonMetadataUtil
           .convertFileFooter(blockletInfoList, localCardinality.length, localCardinality,
               thriftColumnSchemaList, dataWriterVo.getSegmentProperties());
-      fillBlockIndexInfoDetails(convertFileMeta.getNum_rows(), carbonDataFilePath, currentPosition);
+      fillBlockIndexInfoDetails(convertFileMeta.getNum_rows(), carbonDataFileName, currentPosition);
       writer.writeFooter(convertFileMeta, currentPosition);
     } catch (IOException e) {
       throw new CarbonDataWriterException("Problem while writing the carbon file: ", e);

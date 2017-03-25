@@ -294,7 +294,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
           .convertFileFooterVersion3(blockletMetadata, blockletIndex, localCardinality,
               thriftColumnSchemaList.size(), dataWriterVo.getSegmentProperties());
       // fill the carbon index details
-      fillBlockIndexInfoDetails(convertFileMeta.getNum_rows(), carbonDataFilePath, currentPosition);
+      fillBlockIndexInfoDetails(convertFileMeta.getNum_rows(), carbonDataFileName, currentPosition);
       // write the footer
       byte[] byteArray = CarbonUtil.getByteArray(convertFileMeta);
       ByteBuffer buffer =
