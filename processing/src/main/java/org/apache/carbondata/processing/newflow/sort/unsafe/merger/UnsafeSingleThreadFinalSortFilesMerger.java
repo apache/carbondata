@@ -82,7 +82,8 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
 
   private boolean isStopProcess;
 
-  public UnsafeSingleThreadFinalSortFilesMerger(SortParameters parameters) {
+  public UnsafeSingleThreadFinalSortFilesMerger(SortParameters parameters,
+      String tempFileLocation) {
     this.parameters = parameters;
     // set measure and dimension count
     this.measureCount = parameters.getMeasureColCount();
@@ -91,7 +92,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
 
     this.noDictionaryCount = parameters.getNoDictionaryCount();
     this.isNoDictionaryDimensionColumn = parameters.getNoDictionaryDimnesionColumn();
-    this.tempFileLocation = parameters.getTempFileLocation();
+    this.tempFileLocation = tempFileLocation;
     this.tableName = parameters.getTableName();
   }
 

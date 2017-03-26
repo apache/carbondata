@@ -19,8 +19,6 @@ package org.apache.carbondata.processing.newflow.steps;
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
@@ -28,10 +26,7 @@ import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingExcep
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.newflow.sort.Sorter;
-import org.apache.carbondata.processing.newflow.sort.impl.ParallelReadMergeSorterImpl;
-import org.apache.carbondata.processing.newflow.sort.impl.ParallelReadMergeSorterWithBucketingImpl;
-import org.apache.carbondata.processing.newflow.sort.impl.UnsafeBatchParallelReadMergeSorterImpl;
-import org.apache.carbondata.processing.newflow.sort.impl.UnsafeParallelReadMergeSorterImpl;
+import org.apache.carbondata.processing.newflow.sort.SorterFactory;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 
 /**
@@ -56,23 +51,7 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
   public void initialize() throws IOException {
     child.initialize();
     SortParameters sortParameters = SortParameters.createSortParameters(configuration);
-    boolean offheapsort = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-            CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT));
-    boolean batchSort = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT,
-            CarbonCommonConstants.LOAD_USE_BATCH_SORT_DEFAULT));
-    if (batchSort) {
-      sorter = new UnsafeBatchParallelReadMergeSorterImpl(rowCounter);
-    } else if (offheapsort) {
-      sorter = new UnsafeParallelReadMergeSorterImpl(rowCounter);
-    } else {
-      sorter = new ParallelReadMergeSorterImpl(rowCounter);
-    }
-    if (configuration.getBucketingInfo() != null) {
-      sorter = new ParallelReadMergeSorterWithBucketingImpl(rowCounter,
-          configuration.getBucketingInfo());
-    }
+    sorter = SorterFactory.createSorter(configuration, rowCounter);
     sorter.initialize(sortParameters);
   }
 
