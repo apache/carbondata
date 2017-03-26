@@ -38,8 +38,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
-
 /**
  * Test class to test dictionary client functionality.
  */
@@ -111,18 +109,51 @@ public class DictionaryClientTest {
     // Test dictionary initialization call
     empKey.setType(DictionaryMessageType.TABLE_INTIALIZATION);
     client.getDictionary(empKey);
-
+    int count = 2;
     // Test dictionary generation
-    for (int count = 2; count <= 10000; count++) {
+    for (; count <= 10000; count++) {
       empKey.setType(DictionaryMessageType.DICT_GENERATION);
       empKey.setData("FirstKey" + count);
+      DictionaryMessage val = client.getDictionary(empKey);
+      Assert.assertEquals(count, val.getDictionaryValue());
+    }
+
+    // Test dictionary generation with big messages
+    for (; count <= 10010; count++) {
+      empKey.setType(DictionaryMessageType.DICT_GENERATION);
+      empKey.setData(
+          "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + "FirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKeyFirstKey"
+              + count);
       DictionaryMessage val = client.getDictionary(empKey);
       Assert.assertEquals(count, val.getDictionaryValue());
     }
     // Test size function
     empKey.setType(DictionaryMessageType.SIZE);
     DictionaryMessage val = client.getDictionary(empKey);
-    Assert.assertEquals(10000, val.getDictionaryValue());
+    Assert.assertEquals(10010, val.getDictionaryValue());
 
 
     client.shutDown();
