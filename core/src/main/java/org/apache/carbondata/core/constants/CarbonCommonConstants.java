@@ -69,10 +69,6 @@ public final class CarbonCommonConstants {
    */
   public static final String STORE_LOCATION_DEFAULT_VAL = "../carbon.store";
   /**
-   * the folder name of kettle home path
-   */
-  public static final String KETTLE_HOME_NAME = "carbonplugins";
-  /**
    * CARDINALITY_INCREMENT_DEFAULT_VALUE
    */
   public static final int CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL = 10;
@@ -1174,9 +1170,6 @@ public final class CarbonCommonConstants {
 
   public static final String LOCAL_FILE_PREFIX = "file://";
 
-  public static final String USE_KETTLE = "use_kettle";
-
-  public static final String USE_KETTLE_DEFAULT = "false";
   public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION = "carbon.custom.block.distribution";
   public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT = "false";
 

@@ -40,7 +40,6 @@ object Compactor {
     val storePath = compactionCallableModel.storePath
     val storeLocation = compactionCallableModel.storeLocation
     val carbonTable = compactionCallableModel.carbonTable
-    val kettleHomePath = compactionCallableModel.kettleHomePath
     val cubeCreationTime = compactionCallableModel.cubeCreationTime
     val loadsToMerge = compactionCallableModel.loadsToMerge
     val sc = compactionCallableModel.sqlContext
@@ -59,7 +58,6 @@ object Compactor {
       storePath,
       carbonTable.getMetaDataFilepath,
       mergedLoadName,
-      kettleHomePath,
       cubeCreationTime,
       databaseName,
       factTableName,

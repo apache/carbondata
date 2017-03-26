@@ -54,7 +54,6 @@ object SparkSessionExample {
         .getOrCreate()
 
     CarbonProperties.getInstance()
-      .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")
       .addProperty("carbon.storelocation", storeLocation)
 
     spark.sparkContext.setLogLevel("WARN")

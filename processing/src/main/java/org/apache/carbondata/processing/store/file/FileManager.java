@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.mdkeygen.file;
+package org.apache.carbondata.processing.store.file;
 
 import java.util.ArrayList;
 import java.util.List;

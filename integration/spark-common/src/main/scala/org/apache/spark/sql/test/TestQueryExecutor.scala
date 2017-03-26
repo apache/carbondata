@@ -48,7 +48,6 @@ object TestQueryExecutor {
   val storeLocation = s"$integrationPath/spark-common/target/store"
   val warehouse = s"$integrationPath/spark-common/target/warehouse"
   val metastoredb = s"$integrationPath/spark-common/target"
-  val kettleHome = s"$projectPath/processing/carbonplugins"
   val timestampFormat = "dd-MM-yyyy"
 
   val INSTANCE = lookupQueryExecutor.newInstance().asInstanceOf[TestQueryExecutorRegister]

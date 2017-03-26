@@ -16,12 +16,26 @@
  */
 package org.apache.carbondata.core.util;
 
-import mockit.Mock;
-import mockit.MockUp;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
+import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
+import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
+import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -29,29 +43,20 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
-import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 
+import mockit.Mock;
+import mockit.MockUp;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.pentaho.di.core.exception.KettleException;
 
-import java.io.*;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static junit.framework.TestCase.*;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CarbonUtilTest {
 
@@ -300,23 +305,6 @@ public class CarbonUtilTest {
     assertEquals(result, 5);
   }
 
-  @Test public void testToWriteLevelCardinalityFile() throws KettleException {
-    int[] dimCardinality = { 10, 20, 30, 40 };
-    CarbonUtil.writeLevelCardinalityFile("../core/src/test/resources/testDatabase", "testTable",
-        dimCardinality);
-    assertTrue(new File("../core/src/test/resources/testDatabase/levelmetadata_testTable.metadata")
-        .exists());
-  }
-
-  @Test public void testToGetCardinalityFromLevelMetadataFile()
-      throws IOException, InterruptedException {
-    int[] cardinality = CarbonUtil.getCardinalityFromLevelMetadataFile(
-        "../core/src/test/resources/testDatabase/levelmetadata_testTable.metadata");
-    int[] expectedCardinality = { 10, 20, 30, 40 };
-    for (int i = 0; i < cardinality.length; i++) {
-      assertEquals(cardinality[i], expectedCardinality[i]);
-    }
-  }
 
   @Test public void testToGetCardinalityFromLevelMetadataFileForInvalidPath()
       throws IOException, InterruptedException {

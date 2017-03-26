@@ -28,11 +28,11 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.CarbonInputFormat;
 import org.apache.carbondata.hadoop.CarbonProjection;
-import org.apache.carbondata.hadoop.test.util.StoreCreator;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.hadoop.test.util.StoreCreator;
 
 import junit.framework.TestCase;
 import org.apache.hadoop.conf.Configuration;
@@ -87,6 +87,7 @@ public class CarbonInputMapperTest extends TestCase {
       Assert.assertEquals("Count lines are not matching", 1000, countTheLines(outPath));
       Assert.assertEquals("Column count are not matching", 3, countTheColumns(outPath));
     } catch (Exception e) {
+      e.printStackTrace();
       Assert.assertTrue("failed", false);
     }
   }

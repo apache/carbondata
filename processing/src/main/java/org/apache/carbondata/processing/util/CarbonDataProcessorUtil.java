@@ -55,12 +55,6 @@ import org.apache.carbondata.processing.model.CarbonDataLoadSchema;
 import org.apache.carbondata.processing.newflow.DataField;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.pentaho.di.core.CheckResult;
-import org.pentaho.di.core.CheckResultInterface;
-import org.pentaho.di.core.Const;
-import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.i18n.BaseMessages;
-import org.pentaho.di.trans.step.StepMeta;
 
 public final class CarbonDataProcessorUtil {
   private static final LogService LOGGER =
@@ -149,9 +143,7 @@ public final class CarbonDataProcessorUtil {
 
     String badRecordsInProgressFileName = null;
     String changedFileName = null;
-    // CHECKSTYLE:OFF
     for (CarbonFile badFiles : listFiles) {
-      // CHECKSTYLE:ON
       badRecordsInProgressFileName = badFiles.getName();
 
       changedFileName = badLogStoreLocation + File.separator + badRecordsInProgressFileName
@@ -164,51 +156,6 @@ public final class CarbonDataProcessorUtil {
           LOGGER.error("Unable to delete File : " + badFiles.getName());
         }
       }
-    } // CHECKSTYLE:ON
-  }
-
-  public static void checkResult(List<CheckResultInterface> remarks, StepMeta stepMeta,
-      String[] input) {
-    CheckResult cr;
-
-    // See if we have input streams leading to this step!
-    if (input.length > 0) {
-      cr = new CheckResult(CheckResult.TYPE_RESULT_OK, "Step is receiving info from other steps.",
-          stepMeta);
-      remarks.add(cr);
-    } else {
-      cr = new CheckResult(CheckResult.TYPE_RESULT_ERROR, "No input received from other steps!",
-          stepMeta);
-      remarks.add(cr);
-    }
-  }
-
-  public static void check(Class<?> pkg, List<CheckResultInterface> remarks, StepMeta stepMeta,
-      RowMetaInterface prev, String[] input) {
-    CheckResult cr;
-
-    // See if we have input streams leading to this step!
-    if (input.length > 0) {
-      cr = new CheckResult(CheckResult.TYPE_RESULT_OK,
-          BaseMessages.getString(pkg, "CarbonStep.Check.StepIsReceivingInfoFromOtherSteps"),
-          stepMeta);
-      remarks.add(cr);
-    } else {
-      cr = new CheckResult(CheckResult.TYPE_RESULT_ERROR,
-          BaseMessages.getString(pkg, "CarbonStep.Check.NoInputReceivedFromOtherSteps"), stepMeta);
-      remarks.add(cr);
-    }
-
-    // also check that each expected key fields are acually coming
-    if (prev != null && prev.size() > 0) {
-      cr = new CheckResult(CheckResultInterface.TYPE_RESULT_OK,
-          BaseMessages.getString(pkg, "CarbonStep.Check.AllFieldsFoundInInput"), stepMeta);
-      remarks.add(cr);
-    } else {
-      String errorMessage =
-          BaseMessages.getString(pkg, "CarbonStep.Check.CouldNotReadFromPreviousSteps") + Const.CR;
-      cr = new CheckResult(CheckResultInterface.TYPE_RESULT_ERROR, errorMessage, stepMeta);
-      remarks.add(cr);
     }
   }
 
