@@ -78,13 +78,17 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
     // Set the data file location
     String dataFolderLocation =
         storeLocation + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
-    finalMerger = new UnsafeSingleThreadFinalSortFilesMerger(sortParameters);
+    finalMerger = new UnsafeSingleThreadFinalSortFilesMerger(sortParameters,
+        sortParameters.getTempFileLocation());
   }
 
   @Override public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
       throws CarbonDataLoadingException {
+    int inMemoryChunkSizeInMB = Integer.parseInt(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB,
+            CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT));
     UnsafeSortDataRows sortDataRow =
-        new UnsafeSortDataRows(sortParameters, unsafeIntermediateFileMerger);
+        new UnsafeSortDataRows(sortParameters, unsafeIntermediateFileMerger, inMemoryChunkSizeInMB);
     final int batchSize = CarbonProperties.getInstance().getBatchSize();
     try {
       sortDataRow.initialize();

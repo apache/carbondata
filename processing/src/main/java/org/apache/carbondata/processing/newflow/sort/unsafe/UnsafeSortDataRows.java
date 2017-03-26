@@ -84,7 +84,7 @@ public class UnsafeSortDataRows {
   private Semaphore semaphore;
 
   public UnsafeSortDataRows(SortParameters parameters,
-      UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger) {
+      UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger, int inMemoryChunkSizeInMB) {
     this.parameters = parameters;
 
     this.unsafeInMemoryIntermediateFileMerger = unsafeInMemoryIntermediateFileMerger;
@@ -189,6 +189,37 @@ public class UnsafeSortDataRows {
 
         }
       }
+    }
+  }
+
+  /**
+   * This method will be used to add new row
+   */
+  public void addRow(Object[] row) throws CarbonSortKeyAndGroupByException {
+    // if record holder list size is equal to sort buffer size then it will
+    // sort the list and then write current list data to file
+    if (rowPage.canAdd()) {
+      rowPage.addRow(row);
+    } else {
+      try {
+        if (enableInMemoryIntermediateMerge) {
+          unsafeInMemoryIntermediateFileMerger.startInmemoryMergingIfPossible();
+        }
+        unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
+        dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
+        MemoryBlock memoryBlock = getMemoryBlock(inMemoryChunkSizeInMB * 1024 * 1024);
+        boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
+        rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
+            parameters.getDimColCount(), parameters.getMeasureColCount(),
+            parameters.getAggType(), memoryBlock,
+            saveToDisk);
+        rowPage.addRow(row);
+      } catch (Exception e) {
+        LOGGER.error(
+            "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
+        throw new CarbonSortKeyAndGroupByException(e);
+      }
+
     }
   }
 

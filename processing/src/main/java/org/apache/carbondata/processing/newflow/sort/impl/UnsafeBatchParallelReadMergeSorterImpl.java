@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
@@ -196,9 +197,14 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
     }
 
     private void createSortDataRows() {
-      this.finalMerger = new UnsafeSingleThreadFinalSortFilesMerger(sortParameters);
+      int inMemoryChunkSizeInMB = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB,
+              CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT));
+      this.finalMerger = new UnsafeSingleThreadFinalSortFilesMerger(sortParameters,
+          sortParameters.getTempFileLocation());
       unsafeIntermediateFileMerger = new UnsafeIntermediateMerger(sortParameters);
-      sortDataRow = new UnsafeSortDataRows(sortParameters, unsafeIntermediateFileMerger);
+      sortDataRow = new UnsafeSortDataRows(sortParameters, unsafeIntermediateFileMerger,
+          inMemoryChunkSizeInMB);
 
       try {
         sortDataRow.initialize();
