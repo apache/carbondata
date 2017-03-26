@@ -190,7 +190,6 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
        | LOAD DATA INPATH '$csvFolder'
        | INTO TABLE ${options.dbName}.${options.tableName}
        | OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}',
-       | 'USE_KETTLE' = '${options.useKettle}',
        | 'SINGLE_PASS' = '${options.singlePass}')
      """.stripMargin
   }

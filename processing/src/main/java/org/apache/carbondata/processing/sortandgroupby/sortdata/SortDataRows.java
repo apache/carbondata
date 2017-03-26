@@ -38,7 +38,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
-import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 public class SortDataRows {
   /**
@@ -193,19 +192,10 @@ public class SortDataRows {
       toSort = new Object[entryCount][];
       System.arraycopy(recordHolderList, 0, toSort, 0, entryCount);
 
-      if (parameters.isUseKettle()) {
-        if (parameters.getNoDictionaryCount() > 0) {
-          Arrays.sort(toSort, new RowComparator(parameters.getNoDictionaryDimnesionColumn(),
-              parameters.getNoDictionaryCount()));
-        } else {
-          Arrays.sort(toSort, new RowComparatorForNormalDims(parameters.getDimColCount()));
-        }
+      if (parameters.getNoDictionaryCount() > 0) {
+        Arrays.sort(toSort, new NewRowComparator(parameters.getNoDictionaryDimnesionColumn()));
       } else {
-        if (parameters.getNoDictionaryCount() > 0) {
-          Arrays.sort(toSort, new NewRowComparator(parameters.getNoDictionaryDimnesionColumn()));
-        } else {
-          Arrays.sort(toSort, new NewRowComparatorForNormalDims(parameters.getDimColCount()));
-        }
+        Arrays.sort(toSort, new NewRowComparatorForNormalDims(parameters.getDimColCount()));
       }
       recordHolderList = toSort;
 
@@ -233,11 +223,7 @@ public class SortDataRows {
       writeSortTempFile(recordHolderList, entryCountLocal, file);
       return;
     }
-    if (parameters.isUseKettle()) {
-      writeData(recordHolderList, entryCountLocal, file);
-    } else {
-      writeDataWithOutKettle(recordHolderList, entryCountLocal, file);
-    }
+    writeData(recordHolderList, entryCountLocal, file);
   }
 
   private void writeSortTempFile(Object[][] recordHolderList, int entryCountLocal, File file)
@@ -258,68 +244,7 @@ public class SortDataRows {
     }
   }
 
-  // TODO Remove it after kettle got removed
   private void writeData(Object[][] recordHolderList, int entryCountLocal, File file)
-      throws CarbonSortKeyAndGroupByException {
-    DataOutputStream stream = null;
-    try {
-      // open stream
-      stream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file),
-          parameters.getFileWriteBufferSize()));
-
-      // write number of entries to the file
-      stream.writeInt(entryCountLocal);
-      int dimColCount = parameters.getDimColCount();
-      int combinedDimCount = parameters.getNoDictionaryCount() + parameters.getComplexDimColCount();
-      char[] aggType = parameters.getAggType();
-      Object[] row = null;
-      for (int i = 0; i < entryCountLocal; i++) {
-        // get row from record holder list
-        row = recordHolderList[i];
-        int fieldIndex = 0;
-
-        for (int dimCount = 0; dimCount < dimColCount; dimCount++) {
-          stream.writeInt(NonDictionaryUtil.getDimension(fieldIndex++, row));
-        }
-
-        // if any high cardinality dims are present then write it to the file.
-
-        if (combinedDimCount > 0) {
-          stream.write(NonDictionaryUtil.getByteArrayForNoDictionaryCols(row));
-        }
-
-        // as measures are stored in separate array.
-        fieldIndex = 0;
-        for (int mesCount = 0; mesCount < parameters.getMeasureColCount(); mesCount++) {
-          if (null != NonDictionaryUtil.getMeasure(fieldIndex, row)) {
-            stream.write((byte) 1);
-            if (aggType[mesCount] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-              Double val = (Double) NonDictionaryUtil.getMeasure(fieldIndex, row);
-              stream.writeDouble(val);
-            } else if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {
-              Long val = (Long) NonDictionaryUtil.getMeasure(fieldIndex, row);
-              stream.writeLong(val);
-            } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-              BigDecimal val = (BigDecimal) NonDictionaryUtil.getMeasure(fieldIndex, row);
-              byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
-              stream.writeInt(bigDecimalInBytes.length);
-              stream.write(bigDecimalInBytes);
-            }
-          } else {
-            stream.write((byte) 0);
-          }
-          fieldIndex++;
-        }
-      }
-    } catch (IOException e) {
-      throw new CarbonSortKeyAndGroupByException("Problem while writing the file", e);
-    } finally {
-      // close streams
-      CarbonUtil.closeStreams(stream);
-    }
-  }
-
-  private void writeDataWithOutKettle(Object[][] recordHolderList, int entryCountLocal, File file)
       throws CarbonSortKeyAndGroupByException {
     DataOutputStream stream = null;
     try {
@@ -460,23 +385,12 @@ public class SortDataRows {
     @Override public Void call() throws Exception {
       try {
         long startTime = System.currentTimeMillis();
-        if (parameters.isUseKettle()) {
-          if (parameters.getNoDictionaryCount() > 0) {
-            Arrays.sort(recordHolderArray,
-                new RowComparator(parameters.getNoDictionaryDimnesionColumn(),
-                    parameters.getNoDictionaryCount()));
-          } else {
-            Arrays.sort(recordHolderArray,
-                new RowComparatorForNormalDims(parameters.getDimColCount()));
-          }
+        if (parameters.getNoDictionaryCount() > 0) {
+          Arrays.sort(recordHolderArray,
+              new NewRowComparator(parameters.getNoDictionaryDimnesionColumn()));
         } else {
-          if (parameters.getNoDictionaryCount() > 0) {
-            Arrays.sort(recordHolderArray,
-                new NewRowComparator(parameters.getNoDictionaryDimnesionColumn()));
-          } else {
-            Arrays.sort(recordHolderArray,
-                new NewRowComparatorForNormalDims(parameters.getDimColCount()));
-          }
+          Arrays.sort(recordHolderArray,
+              new NewRowComparatorForNormalDims(parameters.getDimColCount()));
         }
 
         // create a new file every time

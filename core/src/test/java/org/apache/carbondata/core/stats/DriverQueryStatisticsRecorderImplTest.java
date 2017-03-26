@@ -23,7 +23,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertNotNull;
-import static org.pentaho.di.core.util.Assert.assertNull;
+import static org.junit.Assert.assertNull;
 
 public class DriverQueryStatisticsRecorderImplTest {
   private static DriverQueryStatisticsRecorderImpl driverQueryStatisticsRecorderImpl = null;

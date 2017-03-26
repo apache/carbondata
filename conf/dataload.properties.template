@@ -20,13 +20,6 @@
 # you should change to the code path of your local machine
 carbon.storelocation=/home/david/Documents/incubator-carbondata/examples/spark2/target/store
 
-#true: use kettle to load data
-#false: use new flow to load data
-use_kettle=true
-
-# you should change to the code path of your local machine
-carbon.kettle.home=/home/david/Documents/incubator-carbondata/processing/carbonplugins
-
 #csv delimiter character
 delimiter=,
 

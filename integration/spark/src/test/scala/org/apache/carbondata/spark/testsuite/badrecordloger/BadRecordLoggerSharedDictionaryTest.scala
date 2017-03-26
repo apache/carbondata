@@ -69,18 +69,6 @@ class BadRecordLoggerSharedDictionaryTest extends QueryTest with BeforeAndAfterA
       sql(
         s"""LOAD DATA INPATH '$csvFilePath' INTO TABLE testdrive OPTIONS('DELIMITER'=',',
             |'QUOTECHAR'= '"', 'BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FAIL',
-            |'FILEHEADER'= 'ID,CUST_ID,cust_name', 'USE_KETTLE' = 'TRUE')""".stripMargin)
-    } catch {
-      case e: Throwable =>
-        assert(e.getMessage.contains("Data load failed due to bad record"))
-    }
-  }
-
-  test("dataload with no kettle") {
-    try {
-      sql(
-        s"""LOAD DATA INPATH '$csvFilePath' INTO TABLE testdrive OPTIONS('DELIMITER'=',',
-            |'QUOTECHAR'= '"', 'BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FAIL',
             |'FILEHEADER'= 'ID,CUST_ID,cust_name')""".stripMargin)
     } catch {
       case e: Throwable =>

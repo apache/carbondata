@@ -134,7 +134,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
           "Error while initializing data handler : " + e.getMessage());
     } catch (Exception e) {
       LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterProcessorStepImpl");
-      throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage());
+      throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage(), e);
     }
     return null;
   }

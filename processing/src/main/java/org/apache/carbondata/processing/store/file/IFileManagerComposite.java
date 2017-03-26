@@ -15,28 +15,43 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.csvreaderstep;
+package org.apache.carbondata.processing.store.file;
 
-import java.util.HashMap;
-import java.util.Map;
+public interface IFileManagerComposite {
+  /**
+   * Add the data which can be either row Folder(Composite) or File
+   *
+   * @param customData
+   */
+  void add(IFileManagerComposite customData);
 
-import org.apache.carbondata.common.CarbonIterator;
+  /**
+   * Remove the CustomData type object from the IFileManagerComposite object hierarchy.
+   *
+   * @param customData
+   */
+  void remove(IFileManagerComposite customData);
 
-public class RddInputUtils {
-  private static Map<String, CarbonIterator<CarbonIterator<String[]>>> iteratorMap = new
-      HashMap<String, CarbonIterator<CarbonIterator<String[]>>>();
+  /**
+   * get the CustomData type object name
+   *
+   * @return CustomDataIntf type
+   */
+  IFileManagerComposite get(int i);
 
-  public static void put(String key, CarbonIterator<CarbonIterator<String[]>> value) {
-    iteratorMap.put(key, value);
-  }
+  /**
+   * set the CustomData type object name
+   *
+   * @param name
+   */
+  void setName(String name);
 
-  public static CarbonIterator<CarbonIterator<String[]>> getAndRemove(String key) {
-    CarbonIterator<CarbonIterator<String[]>> iter = iteratorMap.get(key);
-    remove(key);
-    return iter;
-  }
+  /**
+   * Get the size
+   *
+   * @return
+   */
+  int size();
 
-  public static void remove(String key) {
-    iteratorMap.remove(key);
-  }
 }
+

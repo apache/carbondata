@@ -16,19 +16,37 @@
  */
 package org.apache.carbondata.hadoop.test.util;
 
-import com.google.gson.Gson;
-import org.apache.hadoop.fs.Path;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
+import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
+import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
+import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.processing.model.CarbonDataLoadSchema;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -42,14 +60,11 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.processing.csvreaderstep.BlockDetails;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriterImpl;
 import org.apache.carbondata.core.writer.ThriftWriter;
@@ -57,25 +72,29 @@ import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWrit
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriterImpl;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfo;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfoPreparator;
-import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
-import org.apache.carbondata.core.fileoperations.FileWriteOperation;
-import org.apache.carbondata.processing.api.dataloader.DataLoadModel;
 import org.apache.carbondata.processing.api.dataloader.SchemaInfo;
 import org.apache.carbondata.processing.constants.TableOptionConstant;
-import org.apache.carbondata.processing.csvload.DataGraphExecuter;
-import org.apache.carbondata.processing.dataprocessor.DataProcessTaskStatus;
-import org.apache.carbondata.processing.dataprocessor.IDataProcessStatus;
-import org.apache.carbondata.processing.graphgenerator.GraphGenerator;
-import org.apache.carbondata.processing.graphgenerator.GraphGeneratorException;
+import org.apache.carbondata.processing.csvload.BlockDetails;
+import org.apache.carbondata.processing.csvload.CSVInputFormat;
+import org.apache.carbondata.processing.csvload.CSVRecordReaderIterator;
+import org.apache.carbondata.processing.csvload.StringArrayWritable;
+import org.apache.carbondata.processing.model.CarbonDataLoadSchema;
+import org.apache.carbondata.processing.model.CarbonLoadModel;
+import org.apache.carbondata.processing.newflow.DataLoadExecutor;
+import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
 
-import java.io.*;
-import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import com.google.gson.Gson;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.mapred.TaskAttemptID;
+import org.apache.hadoop.mapreduce.RecordReader;
+import org.apache.hadoop.mapreduce.TaskType;
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 
 /**
  * This class will create store file based on provided schema
+ *
  */
 public class StoreCreator {
 
@@ -104,26 +123,52 @@ public class StoreCreator {
 
     try {
 
-      String factFilePath = new File("src/test/resources/data.csv").getCanonicalPath();
+      String factFilePath = new File("../hadoop/src/test/resources/data.csv").getCanonicalPath();
       File storeDir = new File(absoluteTableIdentifier.getStorePath());
       CarbonUtil.deleteFoldersAndFiles(storeDir);
       CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS,
           absoluteTableIdentifier.getStorePath());
 
-      String kettleHomePath = "../processing/carbonplugins";
       CarbonTable table = createTable();
       writeDictionary(factFilePath, table);
       CarbonDataLoadSchema schema = new CarbonDataLoadSchema(table);
-      LoadModel loadModel = new LoadModel();
+      CarbonLoadModel loadModel = new CarbonLoadModel();
       String partitionId = "0";
-      loadModel.setSchema(schema);
+      loadModel.setCarbonDataLoadSchema(schema);
       loadModel.setDatabaseName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());
       loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
       loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
       loadModel.setFactFilePath(factFilePath);
       loadModel.setLoadMetadataDetails(new ArrayList<LoadMetadataDetails>());
+      loadModel.setStorePath(absoluteTableIdentifier.getStorePath());
+      loadModel.setDateFormat(null);
+      loadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+      loadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_DATE_FORMAT,
+          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
+      loadModel
+          .setSerializationNullFormat(
+              TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName() + "," + "\\N");
+      loadModel
+          .setBadRecordsLoggerEnable(
+              TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName() + "," + "false");
+      loadModel
+          .setBadRecordsAction(
+              TableOptionConstant.BAD_RECORDS_ACTION.getName() + "," + "FORCE");
+      loadModel
+          .setIsEmptyDataBadRecord(
+              DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + "," + "false");
+      loadModel.setCsvHeader("ID,date,country,name,phonetype,serialname,salary");
+      loadModel.setCsvHeaderColumns(loadModel.getCsvHeader().split(","));
+      loadModel.setTaskNo("0");
+      loadModel.setSegmentId("0");
+      loadModel.setPartitionId("0");
+      loadModel.setFactTimeStamp(System.currentTimeMillis());
 
-      executeGraph(loadModel, absoluteTableIdentifier.getStorePath(), kettleHomePath);
+      executeGraph(loadModel, absoluteTableIdentifier.getStorePath());
+
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -311,12 +356,10 @@ public class StoreCreator {
    *
    * @param loadModel
    * @param storeLocation
-   * @param kettleHomePath
    * @throws Exception
    */
-  public static void executeGraph(LoadModel loadModel, String storeLocation, String kettleHomePath)
+  public static void executeGraph(CarbonLoadModel loadModel, String storeLocation)
       throws Exception {
-    System.setProperty("KETTLE_HOME", kettleHomePath);
     new File(storeLocation).mkdirs();
     String outPutLoc = storeLocation + "/etl";
     String databaseName = loadModel.getDatabaseName();
@@ -344,35 +387,39 @@ public class StoreCreator {
       path.delete();
     }
 
-    DataProcessTaskStatus dataProcessTaskStatus = new DataProcessTaskStatus(databaseName, tableName);
-    dataProcessTaskStatus.setCsvFilePath(loadModel.getFactFilePath());
     SchemaInfo info = new SchemaInfo();
     BlockDetails blockDetails = new BlockDetails(new Path(loadModel.getFactFilePath()),
         0, new File(loadModel.getFactFilePath()).length(), new String[] {"localhost"});
-    GraphGenerator.blockInfo.put("qwqwq", new BlockDetails[] { blockDetails });
-    dataProcessTaskStatus.setBlocksID("qwqwq");
-    dataProcessTaskStatus.setEscapeCharacter("\\");
-    dataProcessTaskStatus.setQuoteCharacter("\"");
-    dataProcessTaskStatus.setCommentCharacter("#");
-    dataProcessTaskStatus.setDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+    Configuration configuration = new Configuration();
+    CSVInputFormat.setCommentCharacter(configuration, loadModel.getCommentChar());
+    CSVInputFormat.setCSVDelimiter(configuration, loadModel.getCsvDelimiter());
+    CSVInputFormat.setEscapeCharacter(configuration, loadModel.getEscapeChar());
+    CSVInputFormat.setHeaderExtractionEnabled(configuration, true);
+    CSVInputFormat.setQuoteCharacter(configuration, loadModel.getQuoteChar());
+    CSVInputFormat.setReadBufferSize(configuration, CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
+            CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT));
+
+    TaskAttemptContextImpl hadoopAttemptContext = new TaskAttemptContextImpl(configuration, new TaskAttemptID("", 1, TaskType.MAP, 0, 0));
+    CSVInputFormat format = new CSVInputFormat();
+
+    RecordReader<NullWritable, StringArrayWritable> recordReader =
+        format.createRecordReader(blockDetails, hadoopAttemptContext);
+
+    CSVRecordReaderIterator readerIterator = new CSVRecordReaderIterator(recordReader, blockDetails, hadoopAttemptContext);
+    new DataLoadExecutor().execute(loadModel,
+        storeLocation,
+        new CarbonIterator[]{readerIterator});
+
     info.setDatabaseName(databaseName);
     info.setTableName(tableName);
-    info.setSerializationNullFormat(
-        TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName() + "," + "\\N");
-    info.setBadRecordsLoggerEnable(
-        TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName() + "," + "false");
-    info.setBadRecordsLoggerAction(
-        TableOptionConstant.BAD_RECORDS_ACTION.getName() + "," + "force");
 
-    generateGraph(dataProcessTaskStatus, info, loadModel.getTableName(), "0", loadModel.getSchema(), null,
-        loadModel.getLoadMetadataDetails());
-
-    DataGraphExecuter graphExecuter = new DataGraphExecuter(dataProcessTaskStatus);
-    graphExecuter
-        .executeGraph(graphPath, info, loadModel.getSchema());
+//    DataGraphExecuter graphExecuter = new DataGraphExecuter(dataProcessTaskStatus);
+//    graphExecuter
+//        .executeGraph(graphPath, info, loadModel.getSchema());
     //    LoadMetadataDetails[] loadDetails =
     //        CarbonUtil.readLoadMetadata(loadModel.schema.getCarbonTable().getMetaDataFilepath());
-    writeLoadMetadata(loadModel.schema, loadModel.getTableName(), loadModel.getTableName(),
+    writeLoadMetadata(loadModel.getCarbonDataLoadSchema(), loadModel.getTableName(), loadModel.getTableName(),
         new ArrayList<LoadMetadataDetails>());
 
     String segLocation =
@@ -403,6 +450,7 @@ public class StoreCreator {
   public static void writeLoadMetadata(CarbonDataLoadSchema schema, String databaseName,
       String tableName, List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
     LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
+    loadMetadataDetails.setLoadEndTime(System.currentTimeMillis());
     loadMetadataDetails.setLoadStatus("SUCCESS");
     loadMetadataDetails.setLoadName(String.valueOf(0));
     loadMetadataDetails.setLoadStartTime(loadMetadataDetails.getTimeStamp(readCurrentTime()));
@@ -442,40 +490,6 @@ public class StoreCreator {
 
   }
 
-  /**
-   * generate graph
-   *
-   * @param dataProcessTaskStatus
-   * @param info
-   * @param tableName
-   * @param partitionID
-   * @param schema
-   * @param factStoreLocation
-   * @param loadMetadataDetails
-   * @throws GraphGeneratorException
-   */
-  private static void generateGraph(IDataProcessStatus dataProcessTaskStatus, SchemaInfo info,
-      String tableName, String partitionID, CarbonDataLoadSchema schema, String factStoreLocation,
-      List<LoadMetadataDetails> loadMetadataDetails)
-      throws GraphGeneratorException {
-    DataLoadModel model = new DataLoadModel();
-    model.setCsvLoad(null != dataProcessTaskStatus.getCsvFilePath() || null != dataProcessTaskStatus.getFilesToProcess());
-    model.setSchemaInfo(info);
-    model.setTableName(dataProcessTaskStatus.getTableName());
-    model.setTaskNo("1");
-    model.setBlocksID(dataProcessTaskStatus.getBlocksID());
-    model.setFactTimeStamp(System.currentTimeMillis() + "");
-    model.setEscapeCharacter(dataProcessTaskStatus.getEscapeCharacter());
-    model.setQuoteCharacter(dataProcessTaskStatus.getQuoteCharacter());
-    model.setCommentCharacter(dataProcessTaskStatus.getCommentCharacter());
-    model.setDateFormat(dataProcessTaskStatus.getDateFormat());
-    String outputLocation = CarbonProperties.getInstance()
-        .getProperty("store_output_location", "../carbon-store/system/carbon/etl");
-    GraphGenerator generator =
-        new GraphGenerator(model, partitionID, factStoreLocation, schema, "0", outputLocation);
-    generator.generateGraph();
-  }
-
   public static String readCurrentTime() {
     SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
     String date = null;
@@ -483,60 +497,6 @@ public class StoreCreator {
     date = sdf.format(new Date());
 
     return date;
-  }
-
-  /**
-   * This is local model object used inside this class to store information related to data loading
-   */
-  private static class LoadModel {
-
-    private CarbonDataLoadSchema schema;
-    private String tableName;
-    private String databaseName;
-    private List<LoadMetadataDetails> loadMetaDetail;
-    private String factFilePath;
-
-    public void setSchema(CarbonDataLoadSchema schema) {
-      this.schema = schema;
-    }
-
-    public List<LoadMetadataDetails> getLoadMetadataDetails() {
-      return loadMetaDetail;
-    }
-
-    public CarbonDataLoadSchema getSchema() {
-      return schema;
-    }
-
-    public String getFactFilePath() {
-      return factFilePath;
-    }
-
-    public String getTableName() {
-      return tableName;
-    }
-
-    public String getDatabaseName() {
-      return databaseName;
-    }
-
-    public void setLoadMetadataDetails(List<LoadMetadataDetails> loadMetaDetail) {
-      this.loadMetaDetail = loadMetaDetail;
-    }
-
-    public void setFactFilePath(String factFilePath) {
-      this.factFilePath = factFilePath;
-    }
-
-    public void setTableName(String tableName) {
-      this.tableName = tableName;
-    }
-
-    public void setDatabaseName(String databaseName) {
-      this.databaseName = databaseName;
-    }
-
-
   }
 
   public static void main(String[] args) {

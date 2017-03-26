@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.merger.exeception;
+package org.apache.carbondata.spark.merger.exeception;
 
 import java.util.Locale;
 

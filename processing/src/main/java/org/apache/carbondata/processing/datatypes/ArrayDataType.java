@@ -23,14 +23,11 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.processing.newflow.complexobjects.ArrayObject;
-import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
 
-import org.pentaho.di.core.exception.KettleException;
 
 /**
  * Array DataType stateless object used in data loading
@@ -141,32 +138,6 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   @Override
   public void setSurrogateIndex(int surrIndex) {
 
-  }
-
-  /*
-   * parse string and generate surrogate
-   */
-  @Override
-  public void parseStringAndWriteByteArray(String tableName, String inputString,
-      String[] delimiter, int delimiterIndex, DataOutputStream dataOutputStream,
-      CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
-
-    if (inputString == null || "null".equals(inputString) || "".equals(inputString) ||
-        CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(inputString)) {
-      dataOutputStream.writeInt(1);
-      children.parseStringAndWriteByteArray(tableName,
-          CarbonCommonConstants.MEMBER_DEFAULT_VAL, delimiter, delimiterIndex, dataOutputStream,
-          surrogateKeyGen);
-    } else {
-      String[] splitInput = inputString.split(delimiter[delimiterIndex], -1);
-      dataOutputStream.writeInt(splitInput.length);
-      delimiterIndex =
-          (delimiter.length - 1) == delimiterIndex ? delimiterIndex : delimiterIndex + 1;
-      for (String eachInput : splitInput) {
-        children.parseStringAndWriteByteArray(tableName, eachInput, delimiter, delimiterIndex,
-            dataOutputStream, surrogateKeyGen);
-      }
-    }
   }
 
   @Override

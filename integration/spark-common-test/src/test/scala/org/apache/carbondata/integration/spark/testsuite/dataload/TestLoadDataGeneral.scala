@@ -136,7 +136,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
         STORED BY 'org.apache.carbondata.format' """)
     val testData = s"$resourcesPath/sample.csv"
     try {
-      sql(s"LOAD DATA LOCAL INPATH '$testData' into table load_test_singlepass options ('USE_KETTLE'='FALSE','SINGLE_PASS'='TRUE')")
+      sql(s"LOAD DATA LOCAL INPATH '$testData' into table load_test_singlepass options ('SINGLE_PASS'='TRUE')")
     } catch {
       case ex: Exception =>
         assert(false)

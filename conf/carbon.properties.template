@@ -23,8 +23,6 @@ carbon.storelocation=hdfs://hacluster/Opt/CarbonStore
 carbon.ddl.base.hdfs.url=hdfs://hacluster/opt/data
 #Path where the bad records are stored
 carbon.badRecords.location=/opt/Carbon/Spark/badrecords
-#Mandatory. path to kettle home
-carbon.kettle.home=$<SPARK_HOME>/carbonlib/carbonplugins
 
 #################### Performance Configuration ##################
 ######## DataLoading Configuration ########
