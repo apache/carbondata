@@ -261,8 +261,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   protected void updateBlockletFileChannel(long blockletDataSize) throws CarbonDataWriterException {
     if ((currentFileSize + blockletDataSize) >= dataBlockSize && currentFileSize != 0) {
       // set the current file size to zero
-      LOGGER.info("Writing data to file as max file size reached for file: " + carbonDataFileTempPath
-          + " .Data block size: " + currentFileSize);
+      LOGGER.info("Writing data to file as max file size reached for file: "
+          + carbonDataFileTempPath + " .Data block size: " + currentFileSize);
       // write meta data to end of the existing file
       writeBlockletInfoToFile(fileChannel, carbonDataFileTempPath);
       this.currentFileSize = 0;
