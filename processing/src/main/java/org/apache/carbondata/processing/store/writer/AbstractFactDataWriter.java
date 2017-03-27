@@ -347,11 +347,11 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * Below method will be used to fill the vlock info details
    *
    * @param numberOfRows    number of rows in file
-   * @param filePath        file path
+   * @param carbonDataFileName The name of carbonData file
    * @param currentPosition current offset
    */
-  protected void fillBlockIndexInfoDetails(long numberOfRows,
-      String filePath, long currentPosition) {
+  protected void fillBlockIndexInfoDetails(long numberOfRows, String carbonDataFileName,
+      long currentPosition) {
 
     // as min-max will change for each blocklet and second blocklet min-max can be lesser than
     // the first blocklet so we need to calculate the complete block level min-max by taking
@@ -382,7 +382,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     minmax.setMaxValues(currentMaxValue);
     BlockletIndex blockletIndex = new BlockletIndex(btree, minmax);
     BlockIndexInfo blockIndexInfo =
-        new BlockIndexInfo(numberOfRows, filePath, currentPosition, blockletIndex);
+        new BlockIndexInfo(numberOfRows, carbonDataFileName, currentPosition, blockletIndex);
     blockIndexInfoList.add(blockIndexInfo);
   }
 

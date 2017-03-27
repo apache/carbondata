@@ -476,10 +476,10 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
    * Below method will be used to fill the block info details
    *
    * @param numberOfRows    number of rows in file
-   * @param filePath        file path
+   * @param carbonDataFileName The name of carbonData file
    * @param currentPosition current offset
    */
-  protected void fillBlockIndexInfoDetails(long numberOfRows, String filePath,
+  protected void fillBlockIndexInfoDetails(long numberOfRows, String carbonDataFileName,
       long currentPosition) {
     byte[][] currentMinValue = new byte[blockletIndex.get(0).min_max_index.max_values.size()][];
     byte[][] currentMaxValue = new byte[blockletIndex.get(0).min_max_index.max_values.size()][];
@@ -528,7 +528,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex blockletIndex =
         new org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex(btree, minmax);
     BlockIndexInfo blockIndexInfo =
-        new BlockIndexInfo(numberOfRows, filePath, currentPosition, blockletIndex);
+        new BlockIndexInfo(numberOfRows, carbonDataFileName, currentPosition, blockletIndex);
     blockIndexInfoList.add(blockIndexInfo);
   }
 
