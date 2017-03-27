@@ -1387,9 +1387,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @return bit set to store null value index
    */
   private BitSet[] getMeasureNullValueIndexBitSet(int measureCount) {
-    BitSet[] nullvalueIndexBitset = new BitSet[measureCount];
     // creating a bit set for all the measure column
-    nullvalueIndexBitset = new BitSet[this.measureCount];
+    BitSet[] nullvalueIndexBitset = new BitSet[measureCount];
     for (int i = 0; i < nullvalueIndexBitset.length; i++) {
       // bitset size will be blocklet size
       nullvalueIndexBitset[i] = new BitSet(this.blockletSize);
