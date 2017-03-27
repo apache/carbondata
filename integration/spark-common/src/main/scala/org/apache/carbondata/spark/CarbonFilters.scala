@@ -116,8 +116,7 @@ object CarbonFilters {
                          && dataTypeOfAttribute == DataType.STRING
                          && value.isInstanceOf[Double]) {
         DataType.DOUBLE
-      }
-      else {
+      } else {
         dataTypeOfAttribute
       }
       new CarbonLiteralExpression(value, dataType)
@@ -128,7 +127,7 @@ object CarbonFilters {
 
 
   // Check out which filters can be pushed down to carbon, remaining can be handled in spark layer.
-  // Mostly dimension filters are only pushed down since it is faster in carbo  n.
+  // Mostly dimension filters are only pushed down since it is faster in carbon.
   def selectFilters(filters: Seq[Expression],
       attrList: java.util.HashSet[AttributeReferenceWrapper],
       aliasMap: CarbonAliasDecoderRelation): Unit = {
