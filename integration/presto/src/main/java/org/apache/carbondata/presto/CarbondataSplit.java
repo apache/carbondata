@@ -33,64 +33,56 @@ import static java.util.Objects.requireNonNull;
 
 public class CarbondataSplit implements ConnectorSplit {
 
-    private final String connectorId;
-    private final SchemaTableName schemaTableName;
-    private final TupleDomain<ColumnHandle> constraints;
-    private final CarbonLocalInputSplit localInputSplit;
-    private final List<CarbondataColumnConstraint> rebuildConstraints;
-    private final ImmutableList<HostAddress> addresses;
+  private final String connectorId;
+  private final SchemaTableName schemaTableName;
+  private final TupleDomain<ColumnHandle> constraints;
+  private final CarbonLocalInputSplit localInputSplit;
+  private final List<CarbondataColumnConstraint> rebuildConstraints;
+  private final ImmutableList<HostAddress> addresses;
 
-    @JsonCreator
-    public CarbondataSplit( @JsonProperty("connectorId") String connectorId,
-                            @JsonProperty("schemaTableName") SchemaTableName schemaTableName,
-                            @JsonProperty("constraints") TupleDomain<ColumnHandle> constraints,
-                            @JsonProperty("localInputSplit") CarbonLocalInputSplit localInputSplit,
-                            @JsonProperty("rebuildConstraints") List<CarbondataColumnConstraint> rebuildConstraints) {
-        this.connectorId = requireNonNull(connectorId, "connectorId is null");
-        this.schemaTableName = requireNonNull(schemaTableName, "schemaTable is null");
-        this.constraints = requireNonNull(constraints, "constraints is null");
-        this.localInputSplit = requireNonNull(localInputSplit, "localInputSplit is null");
-        this.rebuildConstraints = requireNonNull(rebuildConstraints, "rebuildConstraints is null");
-        this.addresses = ImmutableList.of();
-    }
+  @JsonCreator public CarbondataSplit(@JsonProperty("connectorId") String connectorId,
+      @JsonProperty("schemaTableName") SchemaTableName schemaTableName,
+      @JsonProperty("constraints") TupleDomain<ColumnHandle> constraints,
+      @JsonProperty("localInputSplit") CarbonLocalInputSplit localInputSplit,
+      @JsonProperty("rebuildConstraints") List<CarbondataColumnConstraint> rebuildConstraints) {
+    this.connectorId = requireNonNull(connectorId, "connectorId is null");
+    this.schemaTableName = requireNonNull(schemaTableName, "schemaTable is null");
+    this.constraints = requireNonNull(constraints, "constraints is null");
+    this.localInputSplit = requireNonNull(localInputSplit, "localInputSplit is null");
+    this.rebuildConstraints = requireNonNull(rebuildConstraints, "rebuildConstraints is null");
+    this.addresses = ImmutableList.of();
+  }
 
+  @JsonProperty public String getConnectorId() {
+    return connectorId;
+  }
 
-    @JsonProperty
-    public String getConnectorId() {
-        return connectorId;
-    }
+  @JsonProperty public SchemaTableName getSchemaTableName() {
+    return schemaTableName;
+  }
 
-    @JsonProperty
-    public SchemaTableName getSchemaTableName(){
-        return  schemaTableName;
-    }
+  @JsonProperty public TupleDomain<ColumnHandle> getConstraints() {
+    return constraints;
+  }
 
-    @JsonProperty
-    public TupleDomain<ColumnHandle> getConstraints() {
-        return constraints;
-    }
+  @JsonProperty public CarbonLocalInputSplit getLocalInputSplit() {
+    return localInputSplit;
+  }
 
-    @JsonProperty
-    public CarbonLocalInputSplit getLocalInputSplit(){return localInputSplit;}
+  @JsonProperty public List<CarbondataColumnConstraint> getRebuildConstraints() {
+    return rebuildConstraints;
+  }
 
-    @JsonProperty
-    public List<CarbondataColumnConstraint> getRebuildConstraints() {
-        return rebuildConstraints;
-    }
+  @Override public boolean isRemotelyAccessible() {
+    return true;
+  }
 
-    @Override
-    public boolean isRemotelyAccessible() {
-        return true;
-    }
+  @Override public List<HostAddress> getAddresses() {
+    return addresses;
+  }
 
-    @Override
-    public List<HostAddress> getAddresses() {
-        return addresses;
-    }
-
-    @Override
-    public Object getInfo() {
-        return this;
-    }
+  @Override public Object getInfo() {
+    return this;
+  }
 }
 

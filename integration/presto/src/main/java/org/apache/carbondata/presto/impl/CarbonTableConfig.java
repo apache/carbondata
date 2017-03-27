@@ -22,41 +22,35 @@ import io.airlift.configuration.Config;
 import javax.validation.constraints.NotNull;
 
 public class CarbonTableConfig {
-    //read from config
-    private String dbPtah;
-    private String tablePath;
-    private String storePath;
+  //read from config
+  private String dbPtah;
+  private String tablePath;
+  private String storePath;
 
-    @NotNull
-    public String getDbPtah() {
-        return dbPtah;
-    }
+  @NotNull public String getDbPtah() {
+    return dbPtah;
+  }
 
-    @Config("carbondata-store")
-    public CarbonTableConfig setDbPtah(String dbPtah) {
-        this.dbPtah = dbPtah;
-        return this;
-    }
+  @Config("carbondata-store") public CarbonTableConfig setDbPtah(String dbPtah) {
+    this.dbPtah = dbPtah;
+    return this;
+  }
 
-    @NotNull
-    public String getTablePath() {
-        return tablePath;
-    }
+  @NotNull public String getTablePath() {
+    return tablePath;
+  }
 
-    @Config("carbondata-store")
-    public CarbonTableConfig setTablePath(String tablePath) {
-        this.tablePath = tablePath;
-        return this;
-    }
+  @Config("carbondata-store") public CarbonTableConfig setTablePath(String tablePath) {
+    this.tablePath = tablePath;
+    return this;
+  }
 
-    @NotNull
-    public String getStorePath() {
-        return storePath;
-    }
+  @NotNull public String getStorePath() {
+    return storePath;
+  }
 
-    @Config("carbondata-store")
-    public CarbonTableConfig setStorePath(String storePath) {
-        this.storePath = storePath;
-        return this;
-    }
+  @Config("carbondata-store") public CarbonTableConfig setStorePath(String storePath) {
+    this.storePath = storePath;
+    return this;
+  }
 }

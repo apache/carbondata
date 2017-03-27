@@ -19,8 +19,6 @@ package org.apache.carbondata.presto;
 
 import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 
-public enum CarbondataTransactionHandle
-        implements ConnectorTransactionHandle
-{
-    INSTANCE
+public enum CarbondataTransactionHandle implements ConnectorTransactionHandle {
+  INSTANCE
 }

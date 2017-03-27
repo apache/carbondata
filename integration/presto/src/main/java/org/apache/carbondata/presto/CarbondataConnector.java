@@ -26,63 +26,50 @@ import static com.facebook.presto.spi.transaction.IsolationLevel.READ_COMMITTED;
 import static com.facebook.presto.spi.transaction.IsolationLevel.checkConnectorSupports;
 import static java.util.Objects.requireNonNull;
 
-public class CarbondataConnector
-        implements Connector
-{
+public class CarbondataConnector implements Connector {
 
-    private static final Logger log = Logger.get(CarbondataConnector.class);
+  private static final Logger log = Logger.get(CarbondataConnector.class);
 
-    private final LifeCycleManager lifeCycleManager;
-    private final CarbondataMetadata metadata;
-    private final ConnectorSplitManager splitManager;
-    private final ConnectorRecordSetProvider recordSetProvider;
-    private final ClassLoader classLoader;
+  private final LifeCycleManager lifeCycleManager;
+  private final CarbondataMetadata metadata;
+  private final ConnectorSplitManager splitManager;
+  private final ConnectorRecordSetProvider recordSetProvider;
+  private final ClassLoader classLoader;
 
+  public CarbondataConnector(LifeCycleManager lifeCycleManager, CarbondataMetadata metadata,
+      ConnectorSplitManager splitManager, ConnectorRecordSetProvider recordSetProvider,
+      ClassLoader classLoader) {
+    this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
+    this.metadata = requireNonNull(metadata, "metadata is null");
+    this.splitManager = requireNonNull(splitManager, "splitManager is null");
+    this.recordSetProvider = requireNonNull(recordSetProvider, "recordSetProvider is null");
+    this.classLoader = requireNonNull(classLoader, "classLoader is null");
+  }
 
-    public CarbondataConnector(LifeCycleManager lifeCycleManager,
-                               CarbondataMetadata metadata,
-                               ConnectorSplitManager splitManager,
-                               ConnectorRecordSetProvider recordSetProvider,
-                               ClassLoader classLoader)
-    {
-        this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
-        this.metadata = requireNonNull(metadata, "metadata is null");
-        this.splitManager = requireNonNull(splitManager, "splitManager is null");
-        this.recordSetProvider = requireNonNull(recordSetProvider, "recordSetProvider is null");
-        this.classLoader = requireNonNull(classLoader, "classLoader is null");
+  @Override public ConnectorTransactionHandle beginTransaction(IsolationLevel isolationLevel,
+      boolean readOnly) {
+    checkConnectorSupports(READ_COMMITTED, isolationLevel);
+    return CarbondataTransactionHandle.INSTANCE;
+  }
+
+  @Override public ConnectorMetadata getMetadata(ConnectorTransactionHandle transactionHandle) {
+    metadata.putClassLoader(classLoader);
+    return metadata;
+  }
+
+  @Override public ConnectorSplitManager getSplitManager() {
+    return splitManager;
+  }
+
+  @Override public ConnectorRecordSetProvider getRecordSetProvider() {
+    return recordSetProvider;
+  }
+
+  @Override public final void shutdown() {
+    try {
+      lifeCycleManager.stop();
+    } catch (Exception e) {
+      log.error(e, "Error shutting down connector");
     }
-
-    @Override
-    public ConnectorTransactionHandle beginTransaction(IsolationLevel isolationLevel, boolean readOnly) {
-        checkConnectorSupports(READ_COMMITTED, isolationLevel);
-        return CarbondataTransactionHandle.INSTANCE;
-    }
-
-    @Override
-    public ConnectorMetadata getMetadata(ConnectorTransactionHandle transactionHandle) {
-        metadata.putClassLoader(classLoader);
-        return metadata;
-    }
-
-    @Override
-    public ConnectorSplitManager getSplitManager() {
-        return splitManager;
-    }
-
-    @Override
-    public ConnectorRecordSetProvider getRecordSetProvider()
-    {
-        return recordSetProvider;
-    }
-
-    @Override
-    public final void shutdown()
-    {
-        try {
-            lifeCycleManager.stop();
-        }
-        catch (Exception e) {
-            log.error(e, "Error shutting down connector");
-        }
-    }
+  }
 }

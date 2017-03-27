@@ -32,7 +32,7 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop table if exists a12")
-    sql("drop table if exists a12_allnull")
+    sql("drop table if exists a12_all_null")
     sql("drop table if exists a12_no_null")
     sql("drop table if exists Test_Boundary1")
 
@@ -41,7 +41,7 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
         "dob timestamp,comm decimal(4,2),desc string) stored by 'org.apache.carbondata.format'"
     )
     sql(
-      "create table a12_allnull(empid String,ename String,sal double,deptno int,mgr string,gender" +
+      "create table a12_all_null(empid String,ename String,sal double,deptno int,mgr string,gender" +
         " string," +
         "dob timestamp,comm decimal(4,2),desc string) stored by 'org.apache.carbondata.format'"
     )
@@ -62,7 +62,7 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     testData = s"$resourcesPath/filter/emp2allnull.csv"
 
     sql(
-      s"""LOAD DATA LOCAL INPATH '$testData' into table a12_allnull OPTIONS('DELIMITER'=',',
+      s"""LOAD DATA LOCAL INPATH '$testData' into table a12_all_null OPTIONS('DELIMITER'=',',
          'QUOTECHAR'='"','FILEHEADER'='empid,ename,sal,deptno,mgr,gender,dob,comm,desc')"""
         .stripMargin
     )
@@ -115,34 +115,34 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("Less Than Filter all null") {
     checkAnswer(
-      sql("select count(empid) from a12_allnull where dob < '2014-07-01 12:07:28'"),
+      sql("select count(empid) from a12_all_null where dob < '2014-07-01 12:07:28'"),
       Seq(Row(0))
     )
   }
 
   test("Les Than equal Filter all null") {
     checkAnswer(
-      sql("select count (empid) from a12_allnull where dob <= '2014-07-01 12:07:28'"),
+      sql("select count (empid) from a12_all_null where dob <= '2014-07-01 12:07:28'"),
       Seq(Row(0))
     )
   }
 
   test("Greater Than Filter all null") {
     checkAnswer(
-      sql("select count (empid) from a12_allnull where dob > '2014-07-01 12:07:28'"),
+      sql("select count (empid) from a12_all_null where dob > '2014-07-01 12:07:28'"),
       Seq(Row(0))
     )
   }
 
   test("Greater Than equal to Filter all null") {
     checkAnswer(
-      sql("select count (empid) from a12_allnull where dob >= '2014-07-01 12:07:28'"),
+      sql("select count (empid) from a12_all_null where dob >= '2014-07-01 12:07:28'"),
       Seq(Row(0))
     )
   }
 //  test("In condition With improper format query regarding Null filter") {
 //    checkAnswer(
-//      sql("select empid from a12_allnull " + "where empid not in ('china',NULL)"),
+//      sql("select empid from a12_all_null " + "where empid not in ('china',NULL)"),
 //      Seq()
 //    )
 //  }
@@ -179,7 +179,7 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     sql("drop table a12")
-    sql("drop table if exists a12_allnull")
+    sql("drop table if exists a12_all_null")
     sql("drop table if exists a12_no_null")
     sql("drop table if exists Test_Boundary1")
     CarbonProperties.getInstance()

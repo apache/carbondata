@@ -28,6 +28,7 @@
 
   <artifactId>carbondata-presto</artifactId>
   <name>Apache CarbonData :: presto</name>
+  <packaging>presto-plugin</packaging>
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
@@ -68,7 +69,7 @@
       <groupId>io.airlift</groupId>
       <artifactId>bootstrap</artifactId>
       <version>0.144</version>
-      <scope>provided</scope>
+      <!--<scope>provided</scope>-->
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -81,14 +82,14 @@
       <groupId>io.airlift</groupId>
       <artifactId>json</artifactId>
       <version>0.144</version>
-      <scope>provided</scope>
+      <!--<scope>provided</scope>-->
     </dependency>
 
     <dependency>
       <groupId>io.airlift</groupId>
       <artifactId>log</artifactId>
       <version>0.144</version>
-      <scope>provided</scope>
+      <!--<scope>provided</scope>-->
     </dependency>
 
     <dependency>
@@ -115,7 +116,7 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>14.0.1</version>
+      <version>18.0</version>
     </dependency>
 
     <dependency>
@@ -129,7 +130,7 @@
       <groupId>com.facebook.presto</groupId>
       <artifactId>presto-spi</artifactId>
       <version>0.166</version>
-      <!--<scope>provided</scope>-->
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
@@ -168,7 +169,7 @@
             <failIfNoTests>false</failIfNoTests>
           </configuration>
         </plugin>
-        <!--
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
@@ -213,12 +214,19 @@
         </plugin>
 
         <plugin>
+          <groupId>io.takari.maven.plugins</groupId>
+          <artifactId>presto-maven-plugin</artifactId>
+          <version>0.1.12</version>
+          <extensions>true</extensions>
+        </plugin>
+
+        <plugin>
           <groupId>pl.project13.maven</groupId>
           <artifactId>git-commit-id-plugin</artifactId>
           <configuration>
             <skip>true</skip>
           </configuration>
-        </plugin>-->
+        </plugin>
       </plugins>
     </build>
 </project>

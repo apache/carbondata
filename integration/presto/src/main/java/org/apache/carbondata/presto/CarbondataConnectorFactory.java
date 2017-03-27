@@ -31,69 +31,60 @@ import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
 
-public class CarbondataConnectorFactory
-        implements ConnectorFactory {
+public class CarbondataConnectorFactory implements ConnectorFactory {
 
-    private final String name;
-    private final ClassLoader classLoader;
+  private final String name;
+  private final ClassLoader classLoader;
 
-    public CarbondataConnectorFactory(String connectorName, ClassLoader classLoader){
-        this.name = connectorName;
-        this.classLoader = requireNonNull(classLoader, "classLoader is null");
+  public CarbondataConnectorFactory(String connectorName, ClassLoader classLoader) {
+    this.name = connectorName;
+    this.classLoader = requireNonNull(classLoader, "classLoader is null");
+  }
+
+  @Override public String getName() {
+    return name;
+  }
+
+  @Override public ConnectorHandleResolver getHandleResolver() {
+    return new CarbondataHandleResolver();
+  }
+
+  @Override public Connector create(String connectorId, Map<String, String> config,
+      ConnectorContext context) {
+    requireNonNull(config, "config is null");
+
+    try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
+      Bootstrap app = new Bootstrap(new JsonModule(),
+          new CarbondataModule(connectorId, context.getTypeManager()));
+
+      Injector injector =
+          app.strictConfig().doNotInitializeLogging().setRequiredConfigurationProperties(config)
+              .initialize();
+
+      LifeCycleManager lifeCycleManager = injector.getInstance(LifeCycleManager.class);
+      CarbondataMetadata metadata = injector.getInstance(CarbondataMetadata.class);
+      //HiveTransactionManager transactionManager = injector.getInstance(HiveTransactionManager.class);
+      ConnectorSplitManager splitManager = injector.getInstance(ConnectorSplitManager.class);
+      ConnectorRecordSetProvider connectorRecordSet =
+          injector.getInstance(ConnectorRecordSetProvider.class);
+      //ConnectorAccessControl accessControl = injector.getInstance(ConnectorAccessControl.class);
+
+      //ConnectorPageSourceProvider connectorPageSource = injector.getInstance(ConnectorPageSourceProvider.class);
+      //ConnectorPageSinkProvider pageSinkProvider = injector.getInstance(ConnectorPageSinkProvider.class);
+      //ConnectorNodePartitioningProvider connectorDistributionProvider = injector.getInstance(ConnectorNodePartitioningProvider.class);
+      //HiveSessionProperties hiveSessionProperties = injector.getInstance(HiveSessionProperties.class);
+      //HiveTableProperties hiveTableProperties = injector.getInstance(HiveTableProperties.class);
+
+      return new CarbondataConnector(lifeCycleManager, metadata,
+          new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader), connectorRecordSet,
+          //new ClassLoaderSafeConnectorRecordSetProvider(, classLoader),
+          classLoader
+          //new ClassLoaderSafeConnectorPageSourceProvider(connectorPageSource, classLoader),
+          //new ClassLoaderSafeConnectorPageSinkProvider(pageSinkProvider, classLoader),
+          //new ClassLoaderSafeNodePartitioningProvider(connectorDistributionProvider, classLoader),
+      );
+    } catch (Exception e) {
+      throw Throwables.propagate(e);
     }
-
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public ConnectorHandleResolver getHandleResolver() {
-        return new CarbondataHandleResolver();
-    }
-
-    @Override
-    public Connector create(String connectorId, Map<String, String> config, ConnectorContext context) {
-        requireNonNull(config, "config is null");
-
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-            Bootstrap app = new Bootstrap(new JsonModule(), new CarbondataModule(connectorId, context.getTypeManager()));
-
-            Injector injector = app
-                    .strictConfig()
-                    .doNotInitializeLogging()
-                    .setRequiredConfigurationProperties(config)
-                    .initialize();
-
-            LifeCycleManager lifeCycleManager = injector.getInstance(LifeCycleManager.class);
-            CarbondataMetadata metadata = injector.getInstance(CarbondataMetadata.class);
-            //HiveTransactionManager transactionManager = injector.getInstance(HiveTransactionManager.class);
-            ConnectorSplitManager splitManager = injector.getInstance(ConnectorSplitManager.class);
-            ConnectorRecordSetProvider connectorRecordSet = injector.getInstance(ConnectorRecordSetProvider.class);
-            //ConnectorAccessControl accessControl = injector.getInstance(ConnectorAccessControl.class);
-
-
-            //ConnectorPageSourceProvider connectorPageSource = injector.getInstance(ConnectorPageSourceProvider.class);
-            //ConnectorPageSinkProvider pageSinkProvider = injector.getInstance(ConnectorPageSinkProvider.class);
-            //ConnectorNodePartitioningProvider connectorDistributionProvider = injector.getInstance(ConnectorNodePartitioningProvider.class);
-            //HiveSessionProperties hiveSessionProperties = injector.getInstance(HiveSessionProperties.class);
-            //HiveTableProperties hiveTableProperties = injector.getInstance(HiveTableProperties.class);
-
-
-            return new CarbondataConnector(
-                    lifeCycleManager,
-                    metadata,
-                    new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader),
-                    connectorRecordSet,//new ClassLoaderSafeConnectorRecordSetProvider(, classLoader),
-                    classLoader
-                    //new ClassLoaderSafeConnectorPageSourceProvider(connectorPageSource, classLoader),
-                    //new ClassLoaderSafeConnectorPageSinkProvider(pageSinkProvider, classLoader),
-                    //new ClassLoaderSafeNodePartitioningProvider(connectorDistributionProvider, classLoader),
-            );
-        }
-        catch (Exception e) {
-            throw Throwables.propagate(e);
-        }
-    }
+  }
 }
