@@ -37,7 +37,7 @@ public class FileData extends FileManager {
   }
 
   /**
-   * @return Returns the fileName.
+   * @return Returns the carbonDataFileTempPath.
    */
   public String getFileName() {
     return fileName;

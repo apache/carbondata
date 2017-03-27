@@ -540,11 +540,11 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
   public void closeWriter() throws CarbonDataWriterException {
     if (dataWriterHolder.getNodeHolder().size() > 0) {
       writeDataToFile(fileChannel);
-      writeBlockletInfoToFile(fileChannel, fileName);
+      writeBlockletInfoToFile(fileChannel, carbonDataFileTempPath);
       CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
       renameCarbonDataFile();
       copyCarbonDataFileToCarbonStorePath(
-          this.fileName.substring(0, this.fileName.lastIndexOf('.')));
+          this.carbonDataFileTempPath.substring(0, this.carbonDataFileTempPath.lastIndexOf('.')));
       try {
         writeIndexFile();
       } catch (IOException e) {

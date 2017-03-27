@@ -95,9 +95,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   protected List<BlockletInfoColumnar> blockletInfoList;
   protected boolean[] isNoDictionary;
   /**
-   * file name
+   * The temp path of carbonData file used on executor
    */
-  protected String fileName;
+  protected String carbonDataFileTempPath;
 
   /**
    * The name of carbonData file
@@ -261,10 +261,10 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   protected void updateBlockletFileChannel(long blockletDataSize) throws CarbonDataWriterException {
     if ((currentFileSize + blockletDataSize) >= dataBlockSize && currentFileSize != 0) {
       // set the current file size to zero
-      LOGGER.info("Writing data to file as max file size reached for file: " + fileName
+      LOGGER.info("Writing data to file as max file size reached for file: " + carbonDataFileTempPath
           + " .Data block size: " + currentFileSize);
       // write meta data to end of the existing file
-      writeBlockletInfoToFile(fileChannel, fileName);
+      writeBlockletInfoToFile(fileChannel, carbonDataFileTempPath);
       this.currentFileSize = 0;
       blockletInfoList =
           new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
@@ -276,7 +276,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       // rename carbon data file from in progress status to actual
       renameCarbonDataFile();
       executorServiceSubmitList.add(executorService
-          .submit(new CopyThread(this.fileName.substring(0, this.fileName.lastIndexOf('.')))));
+          .submit(new CopyThread(this.carbonDataFileTempPath
+              .substring(0, this.carbonDataFileTempPath.lastIndexOf('.')))));
       // initialize the new channel
       initializeWriter();
     }
@@ -299,12 +300,12 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     String actualFileNameVal = carbonDataFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     FileData fileData = new FileData(actualFileNameVal, dataWriterVo.getStoreLocation());
     dataWriterVo.getFileManager().add(fileData);
-    this.fileName = dataWriterVo.getStoreLocation() + File.separator + carbonDataFileName
-        + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
+    this.carbonDataFileTempPath = dataWriterVo.getStoreLocation() + File.separator
+        + carbonDataFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     this.fileCount++;
     try {
       // open channel for new data file
-      fileOutputStream = new FileOutputStream(this.fileName, true);
+      fileOutputStream = new FileOutputStream(this.carbonDataFileTempPath, true);
       this.fileChannel = fileOutputStream.getChannel();
     } catch (FileNotFoundException fileNotFoundException) {
       throw new CarbonDataWriterException("Problem while getting the FileChannel for Leaf File",
@@ -420,7 +421,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     if (this.blockletInfoList.size() > 0) {
       renameCarbonDataFile();
       copyCarbonDataFileToCarbonStorePath(
-          this.fileName.substring(0, this.fileName.lastIndexOf('.')));
+          this.carbonDataFileTempPath
+              .substring(0, this.carbonDataFileTempPath.lastIndexOf('.')));
       try {
         writeIndexFile();
       } catch (IOException e) {
@@ -490,8 +492,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * @throws CarbonDataWriterException
    */
   protected void renameCarbonDataFile() throws CarbonDataWriterException {
-    File origFile = new File(this.fileName.substring(0, this.fileName.lastIndexOf('.')));
-    File curFile = new File(this.fileName);
+    File origFile = new File(this.carbonDataFileTempPath
+        .substring(0, this.carbonDataFileTempPath.lastIndexOf('.')));
+    File curFile = new File(this.carbonDataFileTempPath);
     if (!curFile.renameTo(origFile)) {
       throw new CarbonDataWriterException("Problem while renaming the file");
     }
@@ -559,7 +562,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   @Override public void writeBlockletInfoToFile() throws CarbonDataWriterException {
     if (this.blockletInfoList.size() > 0) {
-      writeBlockletInfoToFile(fileChannel, fileName);
+      writeBlockletInfoToFile(fileChannel, carbonDataFileTempPath);
     }
   }
 
