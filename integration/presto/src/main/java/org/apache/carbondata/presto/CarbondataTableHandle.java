@@ -28,57 +28,44 @@ import java.util.Objects;
 import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 
-public class CarbondataTableHandle
-        implements ConnectorTableHandle {
+public class CarbondataTableHandle implements ConnectorTableHandle {
 
-    private final String connectorId;
-    private final SchemaTableName schemaTableName;
+  private final String connectorId;
+  private final SchemaTableName schemaTableName;
 
-    @JsonCreator
-    public CarbondataTableHandle(
-            @JsonProperty("connectorId") String connectorId,
-            @JsonProperty("schemaTableName") SchemaTableName schemaTableName)
-    {
-        this.connectorId = requireNonNull(connectorId.toLowerCase(ENGLISH), "connectorId is null");
-        this.schemaTableName = schemaTableName;
+  @JsonCreator public CarbondataTableHandle(@JsonProperty("connectorId") String connectorId,
+      @JsonProperty("schemaTableName") SchemaTableName schemaTableName) {
+    this.connectorId = requireNonNull(connectorId.toLowerCase(ENGLISH), "connectorId is null");
+    this.schemaTableName = schemaTableName;
+  }
+
+  @JsonProperty public String getConnectorId() {
+    return connectorId;
+  }
+
+  @JsonProperty public SchemaTableName getSchemaTableName() {
+    return schemaTableName;
+  }
+
+  @Override public int hashCode() {
+    return Objects.hash(connectorId, schemaTableName);
+  }
+
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if ((obj == null) || (getClass() != obj.getClass())) {
+      return false;
     }
 
-    @JsonProperty
-    public String getConnectorId()
-    {
-        return connectorId;
-    }
+    CarbondataTableHandle other = (CarbondataTableHandle) obj;
+    return Objects.equals(this.connectorId, other.connectorId) && this.schemaTableName
+        .equals(other.getSchemaTableName());
+  }
 
-    @JsonProperty
-    public SchemaTableName getSchemaTableName()
-    {
-        return schemaTableName;
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Objects.hash(connectorId, schemaTableName);
-    }
-
-    @Override
-    public boolean equals(Object obj)
-    {
-        if (this == obj) {
-            return true;
-        }
-        if ((obj == null) || (getClass() != obj.getClass())) {
-            return false;
-        }
-
-        CarbondataTableHandle other = (CarbondataTableHandle) obj;
-        return Objects.equals(this.connectorId, other.connectorId) && this.schemaTableName.equals(other.getSchemaTableName());
-    }
-
-    @Override
-    public String toString()
-    {
-        return Joiner.on(":").join(connectorId, schemaTableName.toString());
-    }
+  @Override public String toString() {
+    return Joiner.on(":").join(connectorId, schemaTableName.toString());
+  }
 
 }

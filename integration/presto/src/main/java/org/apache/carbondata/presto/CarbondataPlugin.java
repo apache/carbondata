@@ -24,13 +24,11 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 
 public class CarbondataPlugin implements Plugin {
 
-    @Override
-    public Iterable<ConnectorFactory> getConnectorFactories()
-    {
-        return ImmutableList.of(new CarbondataConnectorFactory("carbondata", getClassLoader()));
-    }
+  @Override public Iterable<ConnectorFactory> getConnectorFactories() {
+    return ImmutableList.of(new CarbondataConnectorFactory("carbondata", getClassLoader()));
+  }
 
-    private static ClassLoader getClassLoader() {
-        return FileFactory.class.getClassLoader();
-    }
+  private static ClassLoader getClassLoader() {
+    return FileFactory.class.getClassLoader();
+  }
 }

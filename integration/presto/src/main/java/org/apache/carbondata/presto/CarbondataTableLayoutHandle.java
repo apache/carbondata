@@ -29,60 +29,43 @@ import java.util.Objects;
 import static com.google.common.base.Objects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
-public class CarbondataTableLayoutHandle
-        implements ConnectorTableLayoutHandle
-{
-    private final CarbondataTableHandle table;
-    private final TupleDomain<ColumnHandle> constraint;
+public class CarbondataTableLayoutHandle implements ConnectorTableLayoutHandle {
+  private final CarbondataTableHandle table;
+  private final TupleDomain<ColumnHandle> constraint;
 
-    @JsonCreator
-    public CarbondataTableLayoutHandle(@JsonProperty("table") CarbondataTableHandle table,
-                                       @JsonProperty("constraint") TupleDomain<ColumnHandle> constraint)
-    {
-        this.table = requireNonNull(table, "table is null");
-        this.constraint = requireNonNull(constraint, "constraint is null");
+  @JsonCreator
+  public CarbondataTableLayoutHandle(@JsonProperty("table") CarbondataTableHandle table,
+      @JsonProperty("constraint") TupleDomain<ColumnHandle> constraint) {
+    this.table = requireNonNull(table, "table is null");
+    this.constraint = requireNonNull(constraint, "constraint is null");
+  }
+
+  @JsonProperty public CarbondataTableHandle getTable() {
+    return table;
+  }
+
+  @JsonProperty public TupleDomain<ColumnHandle> getConstraint() {
+    return constraint;
+  }
+
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
 
-    @JsonProperty
-    public CarbondataTableHandle getTable()
-    {
-        return table;
+    if (obj == null || getClass() != obj.getClass()) {
+      return false;
     }
 
-    @JsonProperty
-    public TupleDomain<ColumnHandle> getConstraint()
-    {
-        return constraint;
-    }
+    CarbondataTableLayoutHandle other = (CarbondataTableLayoutHandle) obj;
+    return Objects.equals(table, other.table) && Objects.equals(constraint, other.constraint);
+  }
 
-    @Override
-    public boolean equals(Object obj)
-    {
-        if (this == obj) {
-            return true;
-        }
+  @Override public int hashCode() {
+    return Objects.hash(table, constraint);
+  }
 
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-
-        CarbondataTableLayoutHandle other = (CarbondataTableLayoutHandle) obj;
-        return Objects.equals(table, other.table)
-                && Objects.equals(constraint, other.constraint);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Objects.hash(table, constraint);
-    }
-
-    @Override
-    public String toString()
-    {
-        return toStringHelper(this)
-                .add("table", table)
-                .add("constraint", constraint)
-                .toString();
-    }
+  @Override public String toString() {
+    return toStringHelper(this).add("table", table).add("constraint", constraint).toString();
+  }
 }

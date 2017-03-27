@@ -38,46 +38,39 @@ import static java.util.Objects.requireNonNull;
 
 public class CarbondataModule implements Module {
 
-    private final String connectorId;
+  private final String connectorId;
+  private final TypeManager typeManager;
+
+  public CarbondataModule(String connectorId, TypeManager typeManager) {
+    this.connectorId = requireNonNull(connectorId, "connector id is null");
+    this.typeManager = requireNonNull(typeManager, "typeManager is null");
+  }
+
+  @Override public void configure(Binder binder) {
+    binder.bind(TypeManager.class).toInstance(typeManager);
+
+    binder.bind(CarbondataConnectorId.class).toInstance(new CarbondataConnectorId(connectorId));
+    binder.bind(CarbondataMetadata.class).in(Scopes.SINGLETON);
+    binder.bind(CarbonTableReader.class).in(Scopes.SINGLETON);
+    binder.bind(ConnectorSplitManager.class).to(CarbondataSplitManager.class).in(Scopes.SINGLETON);
+    binder.bind(ConnectorRecordSetProvider.class).to(CarbondataRecordSetProvider.class)
+        .in(Scopes.SINGLETON);
+    binder.bind(CarbondataHandleResolver.class).in(Scopes.SINGLETON);
+    configBinder(binder).bindConfig(CarbonTableConfig.class);
+  }
+
+  public static final class TypeDeserializer extends FromStringDeserializer<Type> {
     private final TypeManager typeManager;
 
-    public CarbondataModule(String connectorId, TypeManager typeManager)
-    {
-        this.connectorId = requireNonNull(connectorId, "connector id is null");
-        this.typeManager = requireNonNull(typeManager, "typeManager is null");
+    @Inject public TypeDeserializer(TypeManager typeManager) {
+      super(Type.class);
+      this.typeManager = requireNonNull(typeManager, "typeManager is null");
     }
 
-    @Override
-    public void configure(Binder binder) {
-        binder.bind(TypeManager.class).toInstance(typeManager);
-
-        binder.bind(CarbondataConnectorId.class).toInstance(new CarbondataConnectorId(connectorId));
-        binder.bind(CarbondataMetadata.class).in(Scopes.SINGLETON);
-        binder.bind(CarbonTableReader.class).in(Scopes.SINGLETON);
-        binder.bind(ConnectorSplitManager.class).to(CarbondataSplitManager.class).in(Scopes.SINGLETON);
-        binder.bind(ConnectorRecordSetProvider.class).to(CarbondataRecordSetProvider.class).in(Scopes.SINGLETON);
-        binder.bind(CarbondataHandleResolver.class).in(Scopes.SINGLETON);
-        configBinder(binder).bindConfig(CarbonTableConfig.class);
+    @Override protected Type _deserialize(String value, DeserializationContext context) {
+      Type type = typeManager.getType(parseTypeSignature(value));
+      checkArgument(type != null, "Unknown type %s", value);
+      return type;
     }
-
-    public static final class TypeDeserializer
-            extends FromStringDeserializer<Type>
-    {
-        private final TypeManager typeManager;
-
-        @Inject
-        public TypeDeserializer(TypeManager typeManager)
-        {
-            super(Type.class);
-            this.typeManager = requireNonNull(typeManager, "typeManager is null");
-        }
-
-        @Override
-        protected Type _deserialize(String value, DeserializationContext context)
-        {
-            Type type = typeManager.getType(parseTypeSignature(value));
-            checkArgument(type != null, "Unknown type %s", value);
-            return type;
-        }
-    }
+  }
 }

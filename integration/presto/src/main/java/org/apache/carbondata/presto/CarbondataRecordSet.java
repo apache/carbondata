@@ -43,74 +43,68 @@ import static org.apache.carbondata.presto.Types.checkType;
 
 public class CarbondataRecordSet implements RecordSet {
 
-    private CarbonTable carbonTable;
-    private TupleDomain<ColumnHandle> originalConstraint;
-    private Expression carbonConstraint;
-    private List<CarbondataColumnConstraint> rebuildConstraints;
-    private QueryModel queryModel;
-    private CarbondataSplit split;
-    private List<CarbondataColumnHandle> columns;
-    private QueryExecutor queryExecutor;
+  private CarbonTable carbonTable;
+  private TupleDomain<ColumnHandle> originalConstraint;
+  private Expression carbonConstraint;
+  private List<CarbondataColumnConstraint> rebuildConstraints;
+  private QueryModel queryModel;
+  private CarbondataSplit split;
+  private List<CarbondataColumnHandle> columns;
+  private QueryExecutor queryExecutor;
 
-    private CarbonReadSupport<Object[]> readSupport;
+  private CarbonReadSupport<Object[]> readSupport;
 
-    public CarbondataRecordSet(
-            CarbonTable carbonTable,
-            ConnectorSession session,
-            ConnectorSplit split,
-            List<CarbondataColumnHandle> columns,
-            QueryModel queryModel){
-        this.carbonTable = carbonTable;
-        this.split = checkType(split, CarbondataSplit.class, "connectorSplit");
-        this.originalConstraint = this.split.getConstraints();
-        this.rebuildConstraints = this.split.getRebuildConstraints();
-        this.queryModel = queryModel;
-        this.columns = columns;
-        this.readSupport = new DictionaryDecodeReadSupport();
-    }
+  public CarbondataRecordSet(CarbonTable carbonTable, ConnectorSession session,
+      ConnectorSplit split, List<CarbondataColumnHandle> columns, QueryModel queryModel) {
+    this.carbonTable = carbonTable;
+    this.split = checkType(split, CarbondataSplit.class, "connectorSplit");
+    this.originalConstraint = this.split.getConstraints();
+    this.rebuildConstraints = this.split.getRebuildConstraints();
+    this.queryModel = queryModel;
+    this.columns = columns;
+    this.readSupport = new DictionaryDecodeReadSupport();
+  }
 
-    //todo support later
-    private Expression parseConstraint2Expression(TupleDomain<ColumnHandle> constraints) {
-        return null;
-    }
+  //todo support later
+  private Expression parseConstraint2Expression(TupleDomain<ColumnHandle> constraints) {
+    return null;
+  }
 
-    @Override
-    public List<Type> getColumnTypes() {
-        return columns.stream().map(a -> a.getColumnType()).collect(Collectors.toList());
-    }
+  @Override public List<Type> getColumnTypes() {
+    return columns.stream().map(a -> a.getColumnType()).collect(Collectors.toList());
+  }
 
-    @Override
-    public RecordCursor cursor() {
-        List<TableBlockInfo> tableBlockInfoList = new ArrayList<TableBlockInfo>();
+  @Override public RecordCursor cursor() {
+    List<TableBlockInfo> tableBlockInfoList = new ArrayList<TableBlockInfo>();
 
-        //tableBlockInfoList.add(split.getLocalInputSplit().getTableBlockInfo());
+    //tableBlockInfoList.add(split.getLocalInputSplit().getTableBlockInfo());
         /*BlockletInfos blockletInfos = new BlockletInfos(split.getLocalInputSplit().getNumberOfBlocklets(), 0,
                 split.getLocalInputSplit().getNumberOfBlocklets());*/
-        tableBlockInfoList.add(
-                new TableBlockInfo(split.getLocalInputSplit().getPath().toString(),
-                        split.getLocalInputSplit().getStart(),
-                        split.getLocalInputSplit().getSegmentId(),
-                        split.getLocalInputSplit().getLocations().toArray(new String[0]),
-                        split.getLocalInputSplit().getLength(),
-                        //blockletInfos,
-                        ColumnarFormatVersion.valueOf(split.getLocalInputSplit().getVersion())));
-        queryModel.setTableBlockInfos(tableBlockInfoList);
+    tableBlockInfoList.add(new TableBlockInfo(split.getLocalInputSplit().getPath().toString(),
+        split.getLocalInputSplit().getStart(), split.getLocalInputSplit().getSegmentId(),
+        split.getLocalInputSplit().getLocations().toArray(new String[0]),
+        split.getLocalInputSplit().getLength(),
+        //blockletInfos,
+        ColumnarFormatVersion.valueOf(split.getLocalInputSplit().getVersion())));
+    queryModel.setTableBlockInfos(tableBlockInfoList);
 
-        queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
+    queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
 
-        //queryModel.setQueryId(queryModel.getQueryId() + "_" + split.getLocalInputSplit().getSegmentId());
-        try {
-            readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());
-            CarbonIterator<Object[]> carbonIterator = new ChunkRowIterator((CarbonIterator<BatchResult>) queryExecutor.execute(queryModel));
-            RecordCursor rc = new CarbondataRecordCursor(readSupport, carbonIterator, columns, split);
-            return rc;
-        } catch (QueryExecutionException e) {
-            //throw new InterruptedException(e.getMessage());
-            System.out.println(e.getMessage());
-        } catch(Exception ex) {
-            System.out.println(ex.toString());
-        }
-        return null;
+    //queryModel.setQueryId(queryModel.getQueryId() + "_" + split.getLocalInputSplit().getSegmentId());
+    try {
+      readSupport
+          .initialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());
+      CarbonIterator<Object[]> carbonIterator =
+          new ChunkRowIterator((CarbonIterator<BatchResult>) queryExecutor.execute(queryModel));
+      RecordCursor rc = new CarbondataRecordCursor(readSupport, carbonIterator, columns, split);
+      return rc;
+    } catch (QueryExecutionException e) {
+      //throw new InterruptedException(e.getMessage());
+      System.out.println(e.getMessage());
+    } catch (Exception ex) {
+      System.out.println(ex.toString());
     }
+    return null;
+  }
 }
 

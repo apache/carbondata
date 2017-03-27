@@ -24,70 +24,59 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class CarbonLocalInputSplit {
 
-    private static final long serialVersionUID = 3520344046772190207L;
-    private String segmentId;
-    private String path;
-    private long start;
-    private long length;
-    private List<String> locations;
-    private short version;
-    /**
-     * Number of BlockLets in a block
-     */
-    private int numberOfBlocklets = 0;
+  private static final long serialVersionUID = 3520344046772190207L;
+  private String segmentId;
+  private String path;
+  private long start;
+  private long length;
+  private List<String> locations;
+  private short version;
+  /**
+   * Number of BlockLets in a block
+   */
+  private int numberOfBlocklets = 0;
 
+  @JsonProperty public short getVersion() {
+    return version;
+  }
 
-    @JsonProperty
-    public short getVersion(){
-        return version;
-    }
+  @JsonProperty public List<String> getLocations() {
+    return locations;
+  }
 
-    @JsonProperty
-    public List<String> getLocations() {
-        return locations;
-    }
+  @JsonProperty public long getLength() {
+    return length;
+  }
 
-    @JsonProperty
-    public long getLength() {
-        return length;
-    }
+  @JsonProperty public long getStart() {
+    return start;
+  }
 
-    @JsonProperty
-    public long getStart() {
-        return start;
-    }
+  @JsonProperty public String getPath() {
+    return path;
+  }
 
-    @JsonProperty
-    public String getPath() {
-        return path;
-    }
+  @JsonProperty public String getSegmentId() {
+    return segmentId;
+  }
 
-    @JsonProperty
-    public String getSegmentId() {
-        return segmentId;
-    }
+  @JsonProperty public int getNumberOfBlocklets() {
+    return numberOfBlocklets;
+  }
 
-    @JsonProperty
-    public int getNumberOfBlocklets() {
-        return numberOfBlocklets;
-    }
-
-    @JsonCreator
-    public CarbonLocalInputSplit(@JsonProperty("segmentId") String segmentId,
-                                 @JsonProperty("path") String path,
-                                 @JsonProperty("start") long start,
-                                 @JsonProperty("length") long length,
-                                 @JsonProperty("locations") List<String> locations,
-                                 @JsonProperty("numberOfBlocklets") int numberOfBlocklets/*,
+  @JsonCreator public CarbonLocalInputSplit(@JsonProperty("segmentId") String segmentId,
+      @JsonProperty("path") String path, @JsonProperty("start") long start,
+      @JsonProperty("length") long length, @JsonProperty("locations") List<String> locations,
+      @JsonProperty("numberOfBlocklets") int numberOfBlocklets/*,
                                  @JsonProperty("tableBlockInfo") TableBlockInfo tableBlockInfo*/,
-                                 @JsonProperty("version") short version) {
-        this.path = path;
-        this.start = start;
-        this.length = length;
-        this.segmentId = segmentId;
-        this.locations = locations;
-        this.numberOfBlocklets = numberOfBlocklets;
-        //this.tableBlockInfo = tableBlockInfo;
-        this.version = version;
-    }
+      @JsonProperty("version") short version) {
+    this.path = path;
+    this.start = start;
+    this.length = length;
+    this.segmentId = segmentId;
+    this.locations = locations;
+    this.numberOfBlocklets = numberOfBlocklets;
+    //this.tableBlockInfo = tableBlockInfo;
+    this.version = version;
+  }
 }
