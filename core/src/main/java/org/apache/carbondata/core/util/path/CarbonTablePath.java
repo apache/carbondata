@@ -579,6 +579,13 @@ public class CarbonTablePath extends Path {
   }
 
   /**
+   * @return prefix of carbon data
+   */
+  public static String getCarbonDataPrefix() {
+    return DATA_PART_PREFIX;
+  }
+
+  /**
    *
    * @return carbon data extension
    */

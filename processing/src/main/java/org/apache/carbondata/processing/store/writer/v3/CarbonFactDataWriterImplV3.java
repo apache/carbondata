@@ -294,7 +294,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
           .convertFileFooterVersion3(blockletMetadata, blockletIndex, localCardinality,
               thriftColumnSchemaList.size(), dataWriterVo.getSegmentProperties());
       // fill the carbon index details
-      fillBlockIndexInfoDetails(convertFileMeta.getNum_rows(), filePath, currentPosition);
+      fillBlockIndexInfoDetails(convertFileMeta.getNum_rows(), carbonDataFileName, currentPosition);
       // write the footer
       byte[] byteArray = CarbonUtil.getByteArray(convertFileMeta);
       ByteBuffer buffer =
@@ -476,10 +476,10 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
    * Below method will be used to fill the block info details
    *
    * @param numberOfRows    number of rows in file
-   * @param filePath        file path
+   * @param carbonDataFileName The name of carbonData file
    * @param currentPosition current offset
    */
-  protected void fillBlockIndexInfoDetails(long numberOfRows, String filePath,
+  protected void fillBlockIndexInfoDetails(long numberOfRows, String carbonDataFileName,
       long currentPosition) {
     byte[][] currentMinValue = new byte[blockletIndex.get(0).min_max_index.max_values.size()][];
     byte[][] currentMaxValue = new byte[blockletIndex.get(0).min_max_index.max_values.size()][];
@@ -528,8 +528,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex blockletIndex =
         new org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex(btree, minmax);
     BlockIndexInfo blockIndexInfo =
-        new BlockIndexInfo(numberOfRows, filePath.substring(0, filePath.lastIndexOf('.')),
-            currentPosition, blockletIndex);
+        new BlockIndexInfo(numberOfRows, carbonDataFileName, currentPosition, blockletIndex);
     blockIndexInfoList.add(blockIndexInfo);
   }
 
@@ -541,11 +540,11 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
   public void closeWriter() throws CarbonDataWriterException {
     if (dataWriterHolder.getNodeHolder().size() > 0) {
       writeDataToFile(fileChannel);
-      writeBlockletInfoToFile(fileChannel, fileName);
+      writeBlockletInfoToFile(fileChannel, carbonDataFileTempPath);
       CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
       renameCarbonDataFile();
       copyCarbonDataFileToCarbonStorePath(
-          this.fileName.substring(0, this.fileName.lastIndexOf('.')));
+          this.carbonDataFileTempPath.substring(0, this.carbonDataFileTempPath.lastIndexOf('.')));
       try {
         writeIndexFile();
       } catch (IOException e) {
