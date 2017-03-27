@@ -72,7 +72,6 @@ public class CompressionNonDecimalMaxMinInt extends ValueCompressionHolder<int[]
       int decimalPlaces, Object maxValueObject, int numberOfRows) {
     super.unCompress(compressor, dataType, compressedData, offset, length, numberOfRows,
         maxValueObject, decimalPlaces);
-    setUncompressedValues(value, decimalPlaces, maxValueObject);
   }
 
   @Override public long getLongValue(int index) {
@@ -89,14 +88,6 @@ public class CompressionNonDecimalMaxMinInt extends ValueCompressionHolder<int[]
   @Override public BigDecimal getBigDecimalValue(int index) {
     throw new UnsupportedOperationException(
         "Big decimal value is not defined for CompressionNonDecimalMaxMinInt");
-  }
-
-  private void setUncompressedValues(int[] data, int decimalPlaces, Object maxValueObject) {
-    this.measureChunkStore =
-        MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_INT, data.length);
-    this.measureChunkStore.putData(data);
-    this.maxValue = BigDecimal.valueOf((double) maxValueObject);
-    this.divisionFactor = Math.pow(10, decimalPlaces);
   }
 
   @Override public void freeMemory() {
