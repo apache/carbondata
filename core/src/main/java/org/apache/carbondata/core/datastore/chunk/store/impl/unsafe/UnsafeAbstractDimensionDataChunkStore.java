@@ -22,6 +22,7 @@ import org.apache.carbondata.core.datastore.chunk.store.DimensionDataChunkStore;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryAllocatorFactory;
 import org.apache.carbondata.core.memory.MemoryBlock;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 
 /**
  * Responsibility is to store dimension data in memory. storage can be on heap
@@ -169,4 +170,7 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
     throw new UnsupportedOperationException("Operation not supported");
   }
 
+  @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+    throw new UnsupportedOperationException("Operation not supported");
+  }
 }

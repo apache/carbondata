@@ -339,6 +339,35 @@ public final class ByteUtil {
       return true;
     }
 
+    public boolean equals(byte[] buffer1, int offset1, int length1, byte[] buffer2, int offset2,
+        int length2) {
+      if (length1 != length2) {
+        return false;
+      }
+      int len = length1 / 8;
+      long currentOffset = CarbonUnsafe.BYTE_ARRAY_OFFSET;
+      for (int i = 0; i < len; i++) {
+        long lw = CarbonUnsafe.unsafe.getLong(buffer1, currentOffset + offset1);
+        long rw = CarbonUnsafe.unsafe.getLong(buffer2, currentOffset + offset2);
+        if (lw != rw) {
+          return false;
+        }
+        currentOffset += 8;
+      }
+      len = buffer1.length % 8;
+      if (len > 0) {
+        for (int i = 0; i < len; i += 1) {
+          long lw = CarbonUnsafe.unsafe.getByte(buffer1, currentOffset + offset1);
+          long rw = CarbonUnsafe.unsafe.getByte(buffer2, currentOffset + offset2);
+          if (lw != rw) {
+            return false;
+          }
+          currentOffset += 1;
+        }
+      }
+      return true;
+    }
+
     /**
      * Comparing the 2 byte buffers. This is used in case of data load sorting step.
      *
