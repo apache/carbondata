@@ -82,10 +82,8 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
   @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int blockIndex)
       throws IOException {
     DataChunk dataChunk = measureColumnChunks.get(blockIndex);
-    ByteBuffer buffer =null;
-    buffer = fileReader
-        .readByteBuffer(filePath, dataChunk.getDataPageOffset(),
-            dataChunk.getDataPageLength());
+    ByteBuffer buffer = fileReader
+        .readByteBuffer(filePath, dataChunk.getDataPageOffset(), dataChunk.getDataPageLength());
     MeasureRawColumnChunk rawColumnChunk = new MeasureRawColumnChunk(blockIndex, buffer, 0,
         dataChunk.getDataPageLength(), this);
     rawColumnChunk.setFileReader(fileReader);

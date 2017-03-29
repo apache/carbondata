@@ -307,6 +307,8 @@ object CompareTest {
     // do GC and sleep for some time before running next table
     System.gc()
     Thread.sleep(1000)
+    System.gc()
+    Thread.sleep(1000)
     val carbonResult: Array[(Double, Int)] = runQueries(spark, carbonTableName("3"))
     // check result by comparing output from parquet and carbon
     parquetResult.zipWithIndex.foreach { case (result, index) =>

@@ -50,6 +50,13 @@ case class CarbonDictionaryCatalystDecoder(
     }
   }
 
+  // Whether it is required to add to plan.
+  def requiredToAdd: Boolean = {
+    CarbonDictionaryDecoder.isRequiredToDecode(
+      CarbonDictionaryDecoder.getDictionaryColumnMapping(
+        child.output, relations, profile, aliasMap))
+  }
+
 }
 
 abstract class CarbonProfile(attributes: Seq[Attribute]) extends Serializable {
