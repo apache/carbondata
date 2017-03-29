@@ -30,75 +30,54 @@ import static com.google.common.base.Objects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 public class CarbondataColumnConstraint {
-    private final String name;
-    private final boolean invertedindexed;
-    private Optional<Domain> domain;
+  private final String name;
+  private final boolean invertedindexed;
+  private Optional<Domain> domain;
 
-    @JsonCreator
-    public CarbondataColumnConstraint(
-            @JsonProperty("name") String name,
-            @JsonProperty("domain") Optional<Domain> domain,
-            @JsonProperty("invertedindexed") boolean invertedindexed)
-    {
-        this.name = requireNonNull(name, "name is null");
-        this.invertedindexed = requireNonNull(invertedindexed, "invertedIndexed is null");
-        this.domain = requireNonNull(domain, "domain is null");
+  @JsonCreator public CarbondataColumnConstraint(@JsonProperty("name") String name,
+      @JsonProperty("domain") Optional<Domain> domain,
+      @JsonProperty("invertedindexed") boolean invertedindexed) {
+    this.name = requireNonNull(name, "name is null");
+    this.invertedindexed = requireNonNull(invertedindexed, "invertedIndexed is null");
+    this.domain = requireNonNull(domain, "domain is null");
+  }
+
+  @JsonProperty public boolean isInvertedindexed() {
+    return invertedindexed;
+  }
+
+  @JsonProperty public String getName() {
+    return name;
+  }
+
+  @JsonProperty public Optional<Domain> getDomain() {
+    return domain;
+  }
+
+  @JsonSetter public void setDomain(Optional<Domain> domain) {
+    this.domain = domain;
+  }
+
+  @Override public int hashCode() {
+    return Objects.hash(name, domain, invertedindexed);
+  }
+
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
     }
 
-    @JsonProperty
-    public boolean isInvertedindexed()
-    {
-        return invertedindexed;
+    if ((obj == null) || (getClass() != obj.getClass())) {
+      return false;
     }
 
-    @JsonProperty
-    public String getName()
-    {
-        return name;
-    }
+    CarbondataColumnConstraint other = (CarbondataColumnConstraint) obj;
+    return Objects.equals(this.name, other.name) && Objects.equals(this.domain, other.domain)
+        && Objects.equals(this.invertedindexed, other.invertedindexed);
+  }
 
-    @JsonProperty
-    public Optional<Domain> getDomain()
-    {
-        return domain;
-    }
-
-    @JsonSetter
-    public void setDomain(Optional<Domain> domain)
-    {
-        this.domain = domain;
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Objects.hash(name, domain, invertedindexed);
-    }
-
-    @Override
-    public boolean equals(Object obj)
-    {
-        if (this == obj) {
-            return true;
-        }
-
-        if ((obj == null) || (getClass() != obj.getClass())) {
-            return false;
-        }
-
-        CarbondataColumnConstraint other = (CarbondataColumnConstraint) obj;
-        return Objects.equals(this.name, other.name)
-                && Objects.equals(this.domain, other.domain)
-                && Objects.equals(this.invertedindexed, other.invertedindexed);
-    }
-
-    @Override
-    public String toString()
-    {
-        return toStringHelper(this)
-                .add("name", this.name)
-                .add("invertedindexed", this.invertedindexed)
-                .add("domain", this.domain)
-                .toString();
-    }
+  @Override public String toString() {
+    return toStringHelper(this).add("name", this.name).add("invertedindexed", this.invertedindexed)
+        .add("domain", this.domain).toString();
+  }
 }

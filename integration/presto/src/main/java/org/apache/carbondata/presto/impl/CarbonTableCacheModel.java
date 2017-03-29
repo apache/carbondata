@@ -24,21 +24,17 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 public class CarbonTableCacheModel {
 
-    public CarbonTableIdentifier carbonTableIdentifier;
-    public CarbonTablePath carbonTablePath;
+  public CarbonTableIdentifier carbonTableIdentifier;
+  public CarbonTablePath carbonTablePath;
 
-    public TableInfo tableInfo;
-    public CarbonTable carbonTable;
-    public String[] segments;
+  public TableInfo tableInfo;
+  public CarbonTable carbonTable;
+  public String[] segments;
 
-    public boolean isValid()
-    {
-        if(carbonTable != null
-                && carbonTablePath != null
-                && carbonTableIdentifier != null)
-            return true;
-        else
-            return false;
-    }
+  public boolean isValid() {
+    if (carbonTable != null && carbonTablePath != null && carbonTableIdentifier != null)
+      return true;
+    else return false;
+  }
 
 }
