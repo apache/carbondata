@@ -95,6 +95,9 @@ alter table hive_carbon add columns(name string, scale decimal(10, 2), country s
 
 ### Query data from hive table
 ```
+set hive.mapred.supports.subdirectories=true;
+set mapreduce.input.fileinputformat.input.dir.recursive=true;
+
 select * from hive_carbon;
 
 select * from hive_carbon order by id;
