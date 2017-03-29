@@ -276,7 +276,7 @@ class NewCarbonDataLoadRDD[K, V](
     } else {
       val theSplit = split.asInstanceOf[CarbonNodePartition]
       val firstOptionLocation: Seq[String] = List(theSplit.serializableHadoopSplit)
-      logInfo("Preferred Location for split : " + firstOptionLocation.head)
+      logInfo("Preferred Location for split : " + firstOptionLocation.mkString)
       val blockMap = new util.LinkedHashMap[String, Integer]()
       val tableBlocks = theSplit.blocksDetails
       tableBlocks.foreach { tableBlock =>
@@ -292,12 +292,7 @@ class NewCarbonDataLoadRDD[K, V](
         }
       }
 
-      val sortedList = blockMap.entrySet().asScala.toSeq.sortWith { (nodeCount1, nodeCount2) =>
-        nodeCount1.getValue > nodeCount2.getValue
-      }
-
-      val sortedNodesList = sortedList.map(nodeCount => nodeCount.getKey).take(2)
-      firstOptionLocation ++ sortedNodesList
+      firstOptionLocation
     }
   }
 }
