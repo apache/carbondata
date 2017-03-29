@@ -421,4 +421,106 @@ public class SortParameters {
     return parameters;
   }
 
+  public static SortParameters createSortParameters(String databaseName, String tableName,
+      int dimColCount, int complexDimColCount, int measureColCount, int noDictionaryCount,
+      String partitionID, String segmentId, String taskNo,
+      boolean[] noDictionaryColMaping) {
+    SortParameters parameters = new SortParameters();
+    CarbonProperties carbonProperties = CarbonProperties.getInstance();
+    parameters.setDatabaseName(databaseName);
+    parameters.setTableName(tableName);
+    parameters.setPartitionID(partitionID);
+    parameters.setSegmentId(segmentId);
+    parameters.setTaskNo(taskNo);
+    parameters.setMeasureColCount(measureColCount);
+    parameters.setDimColCount(dimColCount - complexDimColCount);
+    parameters.setNoDictionaryCount(noDictionaryCount);
+    parameters.setComplexDimColCount(complexDimColCount);
+    parameters.setNoDictionaryDimnesionColumn(noDictionaryColMaping);
+    parameters.setObserver(new SortObserver());
+    // get sort buffer size
+    parameters.setSortBufferSize(Integer.parseInt(carbonProperties
+        .getProperty(CarbonCommonConstants.SORT_SIZE,
+            CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL)));
+    LOGGER.info("Sort size for table: " + parameters.getSortBufferSize());
+    // set number of intermedaite file to merge
+    parameters.setNumberOfIntermediateFileToBeMerged(Integer.parseInt(carbonProperties
+        .getProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,
+            CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE)));
+
+    LOGGER.info("Number of intermediate file to be merged: " + parameters
+        .getNumberOfIntermediateFileToBeMerged());
+
+    // get file buffer size
+    parameters.setFileBufferSize(CarbonDataProcessorUtil
+        .getFileBufferSize(parameters.getNumberOfIntermediateFileToBeMerged(), carbonProperties,
+            CarbonCommonConstants.CONSTANT_SIZE_TEN));
+
+    LOGGER.info("File Buffer Size: " + parameters.getFileBufferSize());
+
+    String carbonDataDirectoryPath = CarbonDataProcessorUtil
+        .getLocalDataFolderLocation(databaseName, tableName, taskNo, partitionID, segmentId, false);
+    parameters.setTempFileLocation(
+        carbonDataDirectoryPath + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
+    LOGGER.info("temp file location" + parameters.getTempFileLocation());
+
+    int numberOfCores;
+    try {
+      numberOfCores = Integer.parseInt(carbonProperties
+          .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
+              CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
+      numberOfCores = numberOfCores / 2;
+    } catch (NumberFormatException exc) {
+      numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+    }
+    parameters.setNumberOfCores(numberOfCores > 0 ? numberOfCores : 1);
+
+    parameters.setFileWriteBufferSize(Integer.parseInt(carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE,
+            CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE)));
+
+    parameters.setSortFileCompressionEnabled(Boolean.parseBoolean(carbonProperties
+        .getProperty(CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED,
+            CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE)));
+
+    int sortTempFileNoOFRecordsInCompression;
+    try {
+      sortTempFileNoOFRecordsInCompression = Integer.parseInt(carbonProperties
+          .getProperty(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION,
+              CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE));
+      if (sortTempFileNoOFRecordsInCompression < 1) {
+        LOGGER.error("Invalid value for: "
+            + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
+            + ":Only Positive Integer value(greater than zero) is allowed.Default value will "
+            + "be used");
+
+        sortTempFileNoOFRecordsInCompression = Integer.parseInt(
+            CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.error(
+          "Invalid value for: " + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
+              + ", only Positive Integer value is allowed. Default value will be used");
+
+      sortTempFileNoOFRecordsInCompression = Integer
+          .parseInt(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
+    }
+    parameters.setSortTempFileNoOFRecordsInCompression(sortTempFileNoOFRecordsInCompression);
+
+    if (parameters.isSortFileCompressionEnabled()) {
+      LOGGER.info("Compression will be used for writing the sort temp File");
+    }
+
+    parameters.setPrefetch(CarbonCommonConstants. CARBON_PREFETCH_IN_MERGE_VALUE);
+    parameters.setBufferSize(Integer.parseInt(carbonProperties.getProperty(
+        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
+        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
+
+    char[] aggType = CarbonDataProcessorUtil
+        .getAggType(parameters.getMeasureColCount(), parameters.getDatabaseName(),
+            parameters.getTableName());
+    parameters.setAggType(aggType);
+    return parameters;
+  }
+
 }
