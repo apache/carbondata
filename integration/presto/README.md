@@ -71,7 +71,7 @@ Please follow the below steps to query carbondata in presto
   
 ### Generate CarbonData file
 
-Please refer to quick start
+Please refer to quick start : https://github.com/apache/incubator-carbondata/blob/master/docs/quick-start-guide.md
 
 ### Query carbondata in CLI of presto
 * Download presto-cli-0.166-executable.jar
