@@ -20,7 +20,6 @@ package org.apache.carbondata.spark.rdd
 import java.io.{IOException, ObjectInputStream, ObjectOutputStream}
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
-import java.util
 import java.util.{Date, UUID}
 
 import scala.collection.JavaConverters._
@@ -352,28 +351,15 @@ class NewCarbonDataLoadRDD[K, V](
     } else {
       val theSplit = split.asInstanceOf[CarbonNodePartition]
       val firstOptionLocation: Seq[String] = List(theSplit.serializableHadoopSplit)
-      logInfo("Preferred Location for split : " + firstOptionLocation.head)
-      val blockMap = new util.LinkedHashMap[String, Integer]()
-      val tableBlocks = theSplit.blocksDetails
-      tableBlocks.foreach { tableBlock =>
-        tableBlock.getLocations.foreach { location =>
-          if (!firstOptionLocation.exists(location.equalsIgnoreCase(_))) {
-            val currentCount = blockMap.get(location)
-            if (currentCount == null) {
-              blockMap.put(location, 1)
-            } else {
-              blockMap.put(location, currentCount + 1)
-            }
-          }
-        }
-      }
-
-      val sortedList = blockMap.entrySet().asScala.toSeq.sortWith { (nodeCount1, nodeCount2) =>
-        nodeCount1.getValue > nodeCount2.getValue
-      }
-
-      val sortedNodesList = sortedList.map(nodeCount => nodeCount.getKey).take(2)
-      firstOptionLocation ++ sortedNodesList
+      logInfo("Preferred Location for split : " + firstOptionLocation.mkString(","))
+      /**
+       * At original logic, we were adding the next preferred location so that in case of the
+       * failure the Spark should know where to schedule the failed task.
+       * Remove the next preferred location is because some time Spark will pick the same node
+       * for 2 tasks, so one node is getting over loaded with the task and one have no task to
+       * do. And impacting the performance despite of any failure.
+       */
+      firstOptionLocation
     }
   }
 }
