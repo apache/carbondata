@@ -266,6 +266,7 @@ object CompareTest {
           .option("tempCSV", "false")
           .option("single_pass", "true")
           .option("dictionary_exclude", "id") // id is high cardinality column
+          .option("table_blocksize", "32")
           .mode(SaveMode.Overwrite)
           .save()
     }
@@ -334,6 +335,7 @@ object CompareTest {
     CarbonProperties.getInstance()
         .addProperty("carbon.enable.vector.reader", "true")
         .addProperty("enable.unsafe.sort", "true")
+        .addProperty("carbon.blockletgroup.size.in.mb", "32")
     import org.apache.spark.sql.CarbonSession._
     val rootPath = new File(this.getClass.getResource("/").getPath
         + "../../../..").getCanonicalPath
