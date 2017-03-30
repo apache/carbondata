@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.presto;
 
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
 import com.facebook.presto.spi.*;
 import com.facebook.presto.spi.classloader.ThreadContextClassLoader;
@@ -126,18 +127,11 @@ public class CarbondataMetadata implements ConnectorMetadata {
     }
 
     List<ColumnMetadata> spiCols = new LinkedList<>();
-    List<CarbonDimension> cols = cb.getDimensionByTableName(tableName.getTableName());
-    for (CarbonDimension col : cols) {
+    List<CarbonColumn> carbonColumns = cb.getCreateOrderColumn(tableName.getTableName());
+    for (CarbonColumn col : carbonColumns) {
       //show columns command will return these data
       Type spiType = CarbondataType2SpiMapper(col.getColumnSchema().getDataType());
       ColumnMetadata spiCol = new ColumnMetadata(col.getColumnSchema().getColumnName(), spiType);
-      spiCols.add(spiCol);
-    }
-
-    List<CarbonMeasure> mcols = cb.getMeasureByTableName(tableName.getTableName());
-    for (CarbonMeasure mcol : mcols) {
-      Type spiType = CarbondataType2SpiMapper(mcol.getColumnSchema().getDataType());
-      ColumnMetadata spiCol = new ColumnMetadata(mcol.getColumnSchema().getColumnName(), spiType);
       spiCols.add(spiCol);
     }
 
@@ -165,7 +159,6 @@ public class CarbondataMetadata implements ConnectorMetadata {
     }
 
     ImmutableMap.Builder<String, ColumnHandle> columnHandles = ImmutableMap.builder();
-    int index = 0;
     String tableName = handle.getSchemaTableName().getTableName();
     for (CarbonDimension column : cb.getDimensionByTableName(tableName)) {
       ColumnSchema cs = column.getColumnSchema();
@@ -176,10 +169,9 @@ public class CarbondataMetadata implements ConnectorMetadata {
 
       Type spiType = CarbondataType2SpiMapper(cs.getDataType());
       columnHandles.put(cs.getColumnName(),
-          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType, index,
+          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType, column.getSchemaOrdinal(),
               column.getKeyOrdinal(), column.getColumnGroupOrdinal(), false, cs.getColumnGroupId(),
               cs.getColumnUniqueId(), cs.isUseInvertedIndex()));
-      index++;
     }
 
     for (CarbonMeasure measure : cb.getMeasureByTableName(tableName)) {
@@ -187,10 +179,9 @@ public class CarbondataMetadata implements ConnectorMetadata {
 
       Type spiType = CarbondataType2SpiMapper(cs.getDataType());
       columnHandles.put(cs.getColumnName(),
-          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType, index,
+          new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType, cs.getSchemaOrdinal(),
               measure.getOrdinal(), cs.getColumnGroupId(), true, cs.getColumnGroupId(),
               cs.getColumnUniqueId(), cs.isUseInvertedIndex()));
-      index++;
     }
 
     //should i cache it?
