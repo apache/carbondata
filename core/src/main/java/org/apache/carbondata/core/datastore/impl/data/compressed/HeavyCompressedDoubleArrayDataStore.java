@@ -17,54 +17,22 @@
 
 package org.apache.carbondata.core.datastore.impl.data.compressed;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.NodeMeasureDataStore;
 import org.apache.carbondata.core.datastore.compression.ValueCompressionHolder;
 import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastore.dataholder.CarbonWriteDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 
-public abstract class AbstractHeavyCompressedDoubleArrayDataStore
-    implements NodeMeasureDataStore //NodeMeasureDataStore<double[]>
-{
-
-  private LogService LOGGER =
-      LogServiceFactory.getLogService(AbstractHeavyCompressedDoubleArrayDataStore.class.getName());
-
-  /**
-   * values.
-   */
-  protected ValueCompressionHolder[] values;
-
-  /**
-   * compressionModel.
-   */
-  protected WriterCompressModel compressionModel;
-
-  /**
-   * type
-   */
-  private char[] type;
-
-  /**
-   * AbstractHeavyCompressedDoubleArrayDataStore constructor.
-   *
-   * @param compressionModel
-   */
-  public AbstractHeavyCompressedDoubleArrayDataStore(WriterCompressModel compressionModel) {
-    this.compressionModel = compressionModel;
-    if (null != compressionModel) {
-      this.type = compressionModel.getType();
-      values =
-          new ValueCompressionHolder[compressionModel.getValueCompressionHolder().length];
-    }
-  }
+public class HeavyCompressedDoubleArrayDataStore {
 
   // this method first invokes encoding routine to encode the data chunk,
   // followed by invoking compression routine for preparing the data chunk for writing.
-  @Override public byte[][] getWritableMeasureDataArray(CarbonWriteDataHolder[] dataHolder) {
+  public static byte[][] encodeMeasureDataArray(
+      WriterCompressModel compressionModel,
+      CarbonWriteDataHolder[] dataHolder) {
+    char[] type = compressionModel.getType();
+    ValueCompressionHolder[] values =
+        new ValueCompressionHolder[compressionModel.getValueCompressionHolder().length];
     byte[][] returnValue = new byte[values.length][];
     for (int i = 0; i < compressionModel.getValueCompressionHolder().length; i++) {
       values[i] = compressionModel.getValueCompressionHolder()[i];

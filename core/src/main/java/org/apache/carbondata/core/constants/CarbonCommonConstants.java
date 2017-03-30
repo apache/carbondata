@@ -631,7 +631,7 @@ public final class CarbonCommonConstants {
   /**
    * DOUBLE_VALUE_MEASURE
    */
-  public static final char SUM_COUNT_VALUE_MEASURE = 'n';
+  public static final char DOUBLE_MEASURE = 'n';
   /**
    * BYTE_VALUE_MEASURE
    */
