@@ -47,9 +47,10 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
   }
 
   @Override
-  public NodeHolder buildDataNodeHolder(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
-      int entryCount, byte[] startKey, byte[] endKey, WriterCompressModel compressionModel,
-      byte[] noDictionaryStartKey, byte[] noDictionaryEndKey, BitSet[] nullValueIndexBitSet)
+  public NodeHolder buildDataNodeHolder(IndexStorage<int[]>[] keyStorageArray,
+      byte[][] measureArray, int entryCount, byte[] startKey, byte[] endKey,
+      WriterCompressModel compressionModel, byte[] noDictionaryStartKey,
+      byte[] noDictionaryEndKey, BitSet[] nullValueIndexBitSet)
       throws CarbonDataWriterException {
     // if there are no NO-Dictionary column present in the table then
     // set the empty byte array
@@ -143,13 +144,13 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
     int[] msrLength = new int[dataWriterVo.getMeasureCount()];
     // calculate the total size required for all the measure and get the
     // each measure size
-    for (int i = 0; i < dataArray.length; i++) {
-      currentMsrLenght = dataArray[i].length;
+    for (int i = 0; i < measureArray.length; i++) {
+      currentMsrLenght = measureArray[i].length;
       totalMsrArrySize += currentMsrLenght;
       msrLength[i] = currentMsrLenght;
     }
     NodeHolder holder = new NodeHolder();
-    holder.setDataArray(dataArray);
+    holder.setDataArray(measureArray);
     holder.setKeyArray(keyBlockData);
     holder.setMeasureNullValueIndex(nullValueIndexBitSet);
     // end key format will be <length of dictionary key><length of no

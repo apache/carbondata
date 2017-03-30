@@ -83,7 +83,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
    * be written in carbon data file
    */
   @Override public NodeHolder buildDataNodeHolder(IndexStorage<short[]>[] keyStorageArray,
-      byte[][] dataArray, int entryCount, byte[] startKey, byte[] endKey,
+      byte[][] measureArray, int entryCount, byte[] startKey, byte[] endKey,
       WriterCompressModel compressionModel, byte[] noDictionaryStartKey, byte[] noDictionaryEndKey,
       BitSet[] nullValueIndexBitSet) throws CarbonDataWriterException {
     // if there are no NO-Dictionary column present in the table then
@@ -113,8 +113,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     byte[][] dimensionMinValue = new byte[keyStorageArray.length][];
     byte[][] dimensionMaxValue = new byte[keyStorageArray.length][];
 
-    byte[][] measureMinValue = new byte[dataArray.length][];
-    byte[][] measureMaxValue = new byte[dataArray.length][];
+    byte[][] measureMinValue = new byte[measureArray.length][];
+    byte[][] measureMaxValue = new byte[measureArray.length][];
 
     byte[][] keyBlockData = fillAndCompressedKeyBlockData(keyStorageArray, entryCount);
     boolean[] colGrpBlock = new boolean[keyStorageArray.length];
@@ -137,7 +137,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
         colGrpBlock[i] = true;
       }
     }
-    for (int i = 0; i < dataArray.length; i++) {
+    for (int i = 0; i < measureArray.length; i++) {
       measureMaxValue[i] = CarbonMetadataUtil
           .getByteValueForMeasure(compressionModel.getMaxValue()[i],
               dataWriterVo.getSegmentProperties().getMeasures().get(i).getDataType());
@@ -176,13 +176,13 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     int[] msrLength = new int[dataWriterVo.getMeasureCount()];
     // calculate the total size required for all the measure and get the
     // each measure size
-    for (int i = 0; i < dataArray.length; i++) {
-      currentMsrLenght = dataArray[i].length;
+    for (int i = 0; i < measureArray.length; i++) {
+      currentMsrLenght = measureArray[i].length;
       totalMsrArrySize += currentMsrLenght;
       msrLength[i] = currentMsrLenght;
     }
     NodeHolder holder = new NodeHolder();
-    holder.setDataArray(dataArray);
+    holder.setDataArray(measureArray);
     holder.setKeyArray(keyBlockData);
     holder.setMeasureNullValueIndex(nullValueIndexBitSet);
     // end key format will be <length of dictionary key><length of no

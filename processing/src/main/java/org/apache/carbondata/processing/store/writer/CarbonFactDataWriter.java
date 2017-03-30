@@ -31,7 +31,7 @@ public interface CarbonFactDataWriter<T> {
    * file format
    * <key><measure1><measure2>....
    *
-   * @param dataArray            measure array
+   * @param measureArray            measure array
    * @param entryCount           number of entries
    * @param startKey             start key of leaf
    * @param endKey               end key of leaf
@@ -40,7 +40,7 @@ public interface CarbonFactDataWriter<T> {
    * @throws CarbonDataWriterException throws new CarbonDataWriterException if any problem
    */
 
-  NodeHolder buildDataNodeHolder(IndexStorage<T>[] keyStorageArray, byte[][] dataArray,
+  NodeHolder buildDataNodeHolder(IndexStorage<T>[] keyStorageArray, byte[][] measureArray,
       int entryCount, byte[] startKey, byte[] endKey, WriterCompressModel compressionModel,
       byte[] noDictionaryStartKey, byte[] noDictionaryEndKey, BitSet[] nullValueIndexBitSet)
       throws CarbonDataWriterException;

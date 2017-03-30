@@ -341,7 +341,7 @@ public class IntermediateFileMerger implements Callable<Void> {
           if (aggType[counter] == CarbonCommonConstants.BYTE_VALUE_MEASURE) {
             Double val = (Double) NonDictionaryUtil.getMeasure(fieldIndex, row);
             stream.writeDouble(val);
-          } else if (aggType[counter] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+          } else if (aggType[counter] == CarbonCommonConstants.DOUBLE_MEASURE) {
             Double val = (Double) NonDictionaryUtil.getMeasure(fieldIndex, row);
             stream.writeDouble(val);
           } else if (aggType[counter] == CarbonCommonConstants.BIG_INT_MEASURE) {
