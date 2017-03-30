@@ -20,7 +20,6 @@ package org.apache.carbondata.spark.rdd
 import java.io.{IOException, ObjectInputStream, ObjectOutputStream}
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
-import java.util
 import java.util.{Date, UUID}
 
 import scala.collection.JavaConverters._
