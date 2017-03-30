@@ -292,6 +292,13 @@ class NewCarbonDataLoadRDD[K, V](
         }
       }
 
+      /**
+       * At original logic, we were adding the next preferred location so that in case of the
+       * failure the Spark should know where to schedule the failed task.
+       * Remove the next preferred location is because some time Spark will pick the same node
+       * for 2 tasks, so one node is getting over loaded with the task and one have no task to
+       * do. And impacting the performance despite of any failure.
+       */
       firstOptionLocation
     }
   }
