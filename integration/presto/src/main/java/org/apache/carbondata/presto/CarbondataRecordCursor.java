@@ -26,6 +26,7 @@ import io.airlift.slice.Slices;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -84,10 +85,20 @@ public class CarbondataRecordCursor implements RecordCursor {
     }
 
     if (rowCursor.hasNext()) {
-      fields = Stream.of(readSupport.readRow(rowCursor.next())).map(a -> a.toString())
-          .collect(Collectors.toList());
-
-      totalBytes += fields.size();
+      Object[] columns = readSupport.readRow(rowCursor.next());
+      fields = new ArrayList<String>();
+      if(columns != null && columns.length > 0)
+      {
+        for(Object value : columns){
+          if(value != null )
+          {
+            fields.add(value.toString());
+          } else {
+            fields.add(null);
+          }
+        }
+      }
+      totalBytes += columns.length;
       return true;
     }
     return false;
