@@ -31,7 +31,6 @@ object ExampleUtils {
   def currentPath: String = new File(this.getClass.getResource("/").getPath + "../../")
       .getCanonicalPath
   val storeLocation = currentPath + "/target/store"
-  val kettleHome = new File(currentPath + "/../../processing/carbonplugins").getCanonicalPath
 
   def createCarbonContext(appName: String): CarbonContext = {
     val sc = new SparkContext(new SparkConf()
@@ -44,12 +43,7 @@ object ExampleUtils {
     val cc = new CarbonContext(sc, storeLocation, currentPath + "/target/carbonmetastore")
 
     CarbonProperties.getInstance()
-      .addProperty("carbon.kettle.home", kettleHome)
       .addProperty("carbon.storelocation", storeLocation)
-    // whether use table split partition
-    // true -> use table split partition, support multiple partition loading
-    // false -> use node split partition, support data load by host partition
-    CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
     cc
   }
 
@@ -90,7 +84,6 @@ object ExampleUtils {
       .format("carbondata")
       .option("tableName", tableName)
       .option("compress", "true")
-      .option("use_kettle", "false")
       .option("tempCSV", "false")
       .mode(mode)
       .save()

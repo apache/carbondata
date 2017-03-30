@@ -40,7 +40,7 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.test.util.StoreCreator;
+import org.apache.carbondata.processing.StoreCreator;
 
 import junit.framework.TestCase;
 import org.junit.AfterClass;

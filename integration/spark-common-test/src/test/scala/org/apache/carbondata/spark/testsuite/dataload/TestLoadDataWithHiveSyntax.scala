@@ -93,8 +93,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
         "row format delimited fields terminated by ','"
     )
 
-    sql(s"LOAD DATA local inpath '$resourcesPath/data.csv' INTO table smallinttable " +
-      "OPTIONS('USE_KETTLE'='false')")
+    sql(s"LOAD DATA local inpath '$resourcesPath/data.csv' INTO table smallinttable ")
     sql(s"LOAD DATA local inpath '$resourcesPath/datawithoutheader.csv' overwrite " +
       "INTO table smallinthivetable")
 

@@ -82,6 +82,15 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper> {
   /**
    * to get the no dictionary column data
    *
+   * @return no dictionary keys
+   */
+  public byte[][] getNoDictionaryKeys() {
+    return this.noDictionaryKeys;
+  }
+
+  /**
+   * to get the no dictionary column data
+   *
    * @param index of the no dictionary key
    * @return no dictionary key for the index
    */

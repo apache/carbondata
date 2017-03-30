@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.mdkeygen.file;
+package org.apache.carbondata.processing.store.file;
 
-import org.apache.carbondata.core.writer.HierarchyValueWriterForCSV;
 
 public class FileData extends FileManager {
 
@@ -29,7 +28,6 @@ public class FileData extends FileManager {
   /**
    * hierarchyValueWriter
    */
-  private HierarchyValueWriterForCSV hierarchyValueWriter;
 
   public FileData(String fileName, String storePath) {
     this.fileName = fileName;
@@ -48,24 +46,6 @@ public class FileData extends FileManager {
    */
   public String getStorePath() {
     return storePath;
-  }
-
-  /**
-   * get Hierarchy Value writer
-   *
-   * @return
-   */
-  public HierarchyValueWriterForCSV getHierarchyValueWriter() {
-    return hierarchyValueWriter;
-  }
-
-  /**
-   * Set Hierarchy Value Writer.
-   *
-   * @param hierarchyValueWriter
-   */
-  public void setHierarchyValueWriter(HierarchyValueWriterForCSV hierarchyValueWriter) {
-    this.hierarchyValueWriter = hierarchyValueWriter;
   }
 
 }

@@ -93,58 +93,6 @@ object CarbonScalaUtil {
     }
   }
 
-  def getKettleHome(sqlContext: SQLContext): String = {
-    var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
-    if (null == kettleHomePath) {
-      kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
-    }
-    if (null == kettleHomePath) {
-      val carbonHome = System.getenv("CARBON_HOME")
-      if (null != carbonHome) {
-        kettleHomePath = carbonHome + "/processing/carbonplugins"
-      }
-    }
-    if (kettleHomePath != null) {
-      val sparkMaster = sqlContext.sparkContext.getConf.get("spark.master").toLowerCase()
-      // get spark master, if local, need to correct the kettle home
-      // e.g: --master local, the executor running in local machine
-      if (sparkMaster.startsWith("local")) {
-        val kettleHomeFileType = FileFactory.getFileType(kettleHomePath)
-        val kettleHomeFile = FileFactory.getCarbonFile(kettleHomePath, kettleHomeFileType)
-        // check if carbon.kettle.home path is exists
-        if (!kettleHomeFile.exists()) {
-          // get the path of this class
-          // e.g: file:/srv/bigdata/install/spark/sparkJdbc/carbonlib/carbon-
-          // xxx.jar!/org/carbondata/spark/rdd/
-          var jarFilePath = this.getClass.getResource("").getPath
-          val endIndex = jarFilePath.indexOf(".jar!") + 4
-          // get the jar file path
-          // e.g: file:/srv/bigdata/install/spark/sparkJdbc/carbonlib/carbon-*.jar
-          jarFilePath = jarFilePath.substring(0, endIndex)
-          val jarFileType = FileFactory.getFileType(jarFilePath)
-          val jarFile = FileFactory.getCarbonFile(jarFilePath, jarFileType)
-          // get the parent folder of the jar file
-          // e.g:file:/srv/bigdata/install/spark/sparkJdbc/carbonlib
-          val carbonLibPath = jarFile.getParentFile.getPath
-          // find the kettle home under the previous folder
-          // e.g:file:/srv/bigdata/install/spark/sparkJdbc/carbonlib/cabonplugins
-          kettleHomePath = carbonLibPath + File.separator + CarbonCommonConstants.KETTLE_HOME_NAME
-          val logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-          logger.error(s"carbon.kettle.home path is not exists, reset it as $kettleHomePath")
-          val newKettleHomeFileType = FileFactory.getFileType(kettleHomePath)
-          val newKettleHomeFile = FileFactory.getCarbonFile(kettleHomePath, newKettleHomeFileType)
-          // check if the found kettle home exists
-          if (!newKettleHomeFile.exists()) {
-            sys.error("Kettle home not found. Failed to reset carbon.kettle.home")
-          }
-        }
-      }
-    } else {
-      sys.error("carbon.kettle.home is not set")
-    }
-    kettleHomePath
-  }
-
   def getString(value: Any,
       serializationNullFormat: String,
       delimiterLevel1: String,

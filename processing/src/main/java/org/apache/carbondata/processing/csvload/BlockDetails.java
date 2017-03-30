@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.csvreaderstep;
+package org.apache.carbondata.processing.csvload;
 
 import java.io.Serializable;
 
@@ -26,7 +26,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 /**
  * blocks info
- * TODO Remove this class after removing of kettle.
  */
 public class BlockDetails extends FileSplit implements Serializable {
 

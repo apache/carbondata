@@ -34,7 +34,6 @@ object CarbonSessionExample {
     val metastoredb = s"$rootPath/examples/spark2/target"
 
     CarbonProperties.getInstance()
-      .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
     import org.apache.spark.sql.CarbonSession._

@@ -171,11 +171,6 @@ public class CarbonFactDataHandlerModel {
    */
   private boolean isCompactionFlow;
 
-  /**
-   * To use kettle flow to load or not.
-   */
-  private boolean useKettle = true;
-
   private int bucketId = 0;
 
   private String segmentId;
@@ -287,7 +282,6 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndex);
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
-    carbonFactDataHandlerModel.setUseKettle(false);
     if (noDictionaryCount > 0 || complexDimensionCount > 0) {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount + 1);
     } else {
@@ -498,14 +492,6 @@ public class CarbonFactDataHandlerModel {
    */
   public void setWrapperColumnSchema(List<ColumnSchema> wrapperColumnSchema) {
     this.wrapperColumnSchema = wrapperColumnSchema;
-  }
-
-  public boolean isUseKettle() {
-    return useKettle;
-  }
-
-  public void setUseKettle(boolean useKettle) {
-    this.useKettle = useKettle;
   }
 
   public int getBucketId() {
