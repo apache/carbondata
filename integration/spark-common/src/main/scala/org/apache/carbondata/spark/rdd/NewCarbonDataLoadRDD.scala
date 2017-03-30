@@ -275,7 +275,7 @@ class NewCarbonDataLoadRDD[K, V](
     } else {
       val theSplit = split.asInstanceOf[CarbonNodePartition]
       val firstOptionLocation: Seq[String] = List(theSplit.serializableHadoopSplit)
-      logInfo("Preferred Location for split : " + firstOptionLocation.mkString)
+      logInfo("Preferred Location for split : " + firstOptionLocation.mkString(","))
       /**
        * At original logic, we were adding the next preferred location so that in case of the
        * failure the Spark should know where to schedule the failed task.
