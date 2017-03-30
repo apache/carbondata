@@ -168,9 +168,9 @@ object CarbonScalaUtil {
         case bs: Array[Byte] => new String(bs)
         case s: scala.collection.Seq[Any] =>
           val delimiter = if (level == 1) {
-            delimiterLevel1
+            delimiterLevel1.last
           } else {
-            delimiterLevel2
+            delimiterLevel2.last
           }
           val builder = new StringBuilder()
           s.foreach { x =>
@@ -182,9 +182,9 @@ object CarbonScalaUtil {
           throw new Exception("Unsupported data type: Map")
         case r: org.apache.spark.sql.Row =>
           val delimiter = if (level == 1) {
-            delimiterLevel1
+            delimiterLevel1.last
           } else {
-            delimiterLevel2
+            delimiterLevel2.last
           }
           val builder = new StringBuilder()
           for (i <- 0 until r.length) {
