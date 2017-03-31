@@ -87,11 +87,6 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("")
       val queryStatistic = new QueryStatistic()
       val result = transformCarbonPlan(udfTransformedPlan, relations)
-      //val finalResult = if (!hasLimitOrFilter(logicalPlan))
-      //  result
-      //else{
-      //  pushDownLimitToScan(result)
-      //}
       queryStatistic.addStatistics("Time taken for Carbon Optimizer to optimize: ",
         System.currentTimeMillis)
       recorder.recordStatistics(queryStatistic)
@@ -806,20 +801,20 @@ case class CarbonDecoderRelation(
   }
 
   def contains(attr: Attribute): Boolean = {
-  val exists =
-  attributeMap.exists(entry => entry._1.name.equalsIgnoreCase(attr.name) &&
-  entry._1.exprId.equals(attr.exprId)) ||
-  extraAttrs.exists(entry => entry.name.equalsIgnoreCase(attr.name) &&
-  entry.exprId.equals(attr.exprId))
-  exists
-}
+    val exists =
+      attributeMap.exists(entry => entry._1.name.equalsIgnoreCase(attr.name) &&
+          entry._1.exprId.equals(attr.exprId)) ||
+          extraAttrs.exists(entry => entry.name.equalsIgnoreCase(attr.name) &&
+              entry.exprId.equals(attr.exprId))
+    exists
+  }
 
   def fillAttributeMap(attrMap: java.util.HashMap[AttributeReferenceWrapper,
-  CarbonDecoderRelation]): Unit = {
-  attributeMap.foreach { attr =>
-  attrMap.put(AttributeReferenceWrapper(attr._1), this)
-}
-}
+      CarbonDecoderRelation]): Unit = {
+    attributeMap.foreach { attr =>
+      attrMap.put(AttributeReferenceWrapper(attr._1), this)
+    }
+  }
 
   lazy val dictionaryMap = carbonRelation.carbonRelation.metaData.dictionaryMap
 }
