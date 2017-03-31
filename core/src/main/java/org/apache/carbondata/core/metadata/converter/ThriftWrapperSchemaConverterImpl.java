@@ -17,8 +17,11 @@
 package org.apache.carbondata.core.metadata.converter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
@@ -172,6 +175,13 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     thriftColumnSchema.setInvisible(wrapperColumnSchema.isInvisible());
     thriftColumnSchema.setColumnReferenceId(wrapperColumnSchema.getColumnReferenceId());
     thriftColumnSchema.setSchemaOrdinal(wrapperColumnSchema.getSchemaOrdinal());
+
+    if (wrapperColumnSchema.isSortColumn()) {
+      Map<String, String> properties = new HashMap<String, String>();
+      properties.put(CarbonCommonConstants.SORT_COLUMNS, "true");
+      thriftColumnSchema.setColumnProperties(properties);
+    }
+
     return thriftColumnSchema;
   }
 
@@ -360,6 +370,14 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperColumnSchema.setInvisible(externalColumnSchema.isInvisible());
     wrapperColumnSchema.setColumnReferenceId(externalColumnSchema.getColumnReferenceId());
     wrapperColumnSchema.setSchemaOrdinal(externalColumnSchema.getSchemaOrdinal());
+    wrapperColumnSchema.setSortColumn(false);
+    Map<String, String> properties = externalColumnSchema.getColumnProperties();
+    if (properties != null) {
+      String sortColumns = properties.get(CarbonCommonConstants.SORT_COLUMNS);
+      if (sortColumns != null) {
+        wrapperColumnSchema.setSortColumn(true);
+      }
+    }
     return wrapperColumnSchema;
   }
 

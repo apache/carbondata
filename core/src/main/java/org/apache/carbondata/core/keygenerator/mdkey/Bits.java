@@ -119,7 +119,8 @@ public class Bits implements Serializable {
   protected long[] get(long[] keys) {
     long[] words = new long[wsize];
     int ll = 0;
-    for (int i = lens.length - 1; i >= 0; i--) {
+    int minLength = Math.min(lens.length, keys.length);
+    for (int i = minLength - 1; i >= 0; i--) {
 
       long val = keys[i];
 
@@ -155,7 +156,8 @@ public class Bits implements Serializable {
   protected long[] get(int[] keys) {
     long[] words = new long[wsize];
     int ll = 0;
-    for (int i = lens.length - 1; i >= 0; i--) {
+    int minLength = Math.min(lens.length, keys.length);
+    for (int i = minLength - 1; i >= 0; i--) {
 
       long val = keys[i];
 

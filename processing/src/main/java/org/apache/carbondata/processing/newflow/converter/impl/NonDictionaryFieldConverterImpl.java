@@ -16,8 +16,6 @@
  */
 package org.apache.carbondata.processing.newflow.converter.impl;
 
-import java.nio.charset.Charset;
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -48,23 +46,24 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
     this.isEmptyBadRecord = isEmptyBadRecord;
   }
 
-  @Override
-  public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
+  @Override public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
     String dimensionValue = row.getString(index);
     if (dimensionValue == null || dimensionValue.equals(nullformat)) {
-      dimensionValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
-    }
-    if (dataType != DataType.STRING) {
-      if (null == DataTypeUtil.normalizeIntAndLongValues(dimensionValue, dataType)) {
-        if ((dimensionValue.length() > 0) || (dimensionValue.length() == 0 && isEmptyBadRecord)) {
+      row.update(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, index);
+    } else {
+      try {
+        row.update(DataTypeUtil
+            .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType), index);
+      } catch (Throwable ex) {
+        if (dimensionValue.length() != 0 || isEmptyBadRecord) {
           logHolder.setReason(
               "The value " + " \"" + dimensionValue + "\"" + " with column name " + column
                   .getColName() + " and column data type " + dataType + " is not a valid "
                   + dataType + " type.");
+        } else {
+          row.update(new byte[0], index);
         }
       }
     }
-    row.update(dimensionValue.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
-        index);
   }
 }

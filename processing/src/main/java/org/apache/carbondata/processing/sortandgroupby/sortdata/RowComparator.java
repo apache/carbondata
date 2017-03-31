@@ -33,15 +33,15 @@ public class RowComparator implements Comparator<Object[]> {
   /**
    * noDictionaryColMaping mapping of dictionary dimensions and no dictionary dimensions.
    */
-  private boolean[] noDictionaryColMaping;
+  private boolean[] noDictionarySortColumnMaping;
 
   /**
-   * @param noDictionaryColMaping
+   * @param noDictionarySortColumnMaping
    * @param noDictionaryCount
    */
-  public RowComparator(boolean[] noDictionaryColMaping, int noDictionaryCount) {
+  public RowComparator(boolean[] noDictionarySortColumnMaping, int noDictionaryCount) {
     this.noDictionaryCount = noDictionaryCount;
-    this.noDictionaryColMaping = noDictionaryColMaping;
+    this.noDictionarySortColumnMaping = noDictionarySortColumnMaping;
   }
 
   /**
@@ -53,7 +53,7 @@ public class RowComparator implements Comparator<Object[]> {
     int normalIndex = 0;
     int noDictionaryindex = 0;
 
-    for (boolean isNoDictionary : noDictionaryColMaping) {
+    for (boolean isNoDictionary : noDictionarySortColumnMaping) {
 
       if (isNoDictionary) {
         byte[] byteArr1 = (byte[]) rowA[IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex()];
