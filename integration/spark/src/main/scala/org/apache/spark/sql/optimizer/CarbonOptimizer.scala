@@ -75,6 +75,10 @@ object CarbonOptimizer {
 class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
     extends Rule[LogicalPlan] with PredicateHelper {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+  var limit_num = 0
+  var groupingExpressions : Seq[Expression] = null
+  var aggregateExpressions : Seq[NamedExpression] = null
+
   def apply(logicalPlan: LogicalPlan): LogicalPlan = {
     if (relations.nonEmpty && !isOptimized(logicalPlan)) {
       val plan = processPlan(logicalPlan)
@@ -83,6 +87,11 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("")
       val queryStatistic = new QueryStatistic()
       val result = transformCarbonPlan(udfTransformedPlan, relations)
+      //val finalResult = if (!hasLimitOrFilter(logicalPlan))
+      //  result
+      //else{
+      //  pushDownLimitToScan(result)
+      //}
       queryStatistic.addStatistics("Time taken for Carbon Optimizer to optimize: ",
         System.currentTimeMillis)
       recorder.recordStatistics(queryStatistic)
@@ -139,6 +148,12 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
       case other => other
     }
     output
+  }
+  def hasLimit(plan: LogicalPlan): Boolean = {
+    plan find {
+      case l: Limit => true
+      case other => false
+    } isDefined
   }
   def isOptimized(plan: LogicalPlan): Boolean = {
     plan find {
@@ -525,18 +540,31 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
       }
 
     }
+    def addDecoder(currentPlan: LogicalPlan): LogicalPlan = {
+      if (hasCarbonRelation(currentPlan)) {
+        addTempDecoder(currentPlan)
+      } else {
+        currentPlan
+      }
+    }
 
     val transFormedPlan =
       plan transformDown {
+        case limit: Limit =>
+          limit_num = limit.limitExpr.eval().asInstanceOf[Int]
+          limit
         case cd: CarbonDictionaryTempDecoder if cd.isOuter =>
           decoder = true
           cd
+        case agg: Aggregate =>
+          groupingExpressions = agg.groupingExpressions
+          addDecoder(agg)
+        case filter: Filter =>
+          if (hasLimit(plan)) {
+          LimitQueryOptimizer(limit_num, groupingExpressions, filter, relations).getNewFilters()
+          } else filter
         case currentPlan =>
-          if (hasCarbonRelation(currentPlan)) {
-            addTempDecoder(currentPlan)
-          } else {
-            currentPlan
-          }
+          addDecoder(currentPlan)
       }
 
     val processor = new CarbonDecoderProcessor
@@ -778,20 +806,20 @@ case class CarbonDecoderRelation(
   }
 
   def contains(attr: Attribute): Boolean = {
-    val exists =
-      attributeMap.exists(entry => entry._1.name.equalsIgnoreCase(attr.name) &&
-          entry._1.exprId.equals(attr.exprId)) ||
-          extraAttrs.exists(entry => entry.name.equalsIgnoreCase(attr.name) &&
-              entry.exprId.equals(attr.exprId))
-    exists
-  }
+  val exists =
+  attributeMap.exists(entry => entry._1.name.equalsIgnoreCase(attr.name) &&
+  entry._1.exprId.equals(attr.exprId)) ||
+  extraAttrs.exists(entry => entry.name.equalsIgnoreCase(attr.name) &&
+  entry.exprId.equals(attr.exprId))
+  exists
+}
 
   def fillAttributeMap(attrMap: java.util.HashMap[AttributeReferenceWrapper,
-      CarbonDecoderRelation]): Unit = {
-    attributeMap.foreach { attr =>
-      attrMap.put(AttributeReferenceWrapper(attr._1), this)
-    }
-  }
+  CarbonDecoderRelation]): Unit = {
+  attributeMap.foreach { attr =>
+  attrMap.put(AttributeReferenceWrapper(attr._1), this)
+}
+}
 
   lazy val dictionaryMap = carbonRelation.carbonRelation.metaData.dictionaryMap
 }
