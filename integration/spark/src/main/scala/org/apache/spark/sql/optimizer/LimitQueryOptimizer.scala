@@ -1,3 +1,20 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.spark.sql.optimizer
 
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
@@ -8,9 +25,6 @@ import org.apache.spark.sql.catalyst.plans.logical.Filter
 
 import scala.collection.mutable.ArrayBuffer
 
-/**
-  * Created by lucao on 3/23/17.
-  */
 class LimitQueryOptimizer(limit_num: Int,
                           groupingExpressions: Seq[Expression],
                           originFilters: Filter,
@@ -42,7 +56,8 @@ class LimitQueryOptimizer(limit_num: Int,
                     count_arr(i) += 1
                     total_count = count_arr.product
                 }
-                val left = Literal.create(col.name, col.dataType)
+                //val left = Literal.create(col.name, col.dataType)
+                val left = col
                 if(value_arr.size > 1){
                     val inExpression = In(left , value_arr)
                     expr_arr += inExpression
