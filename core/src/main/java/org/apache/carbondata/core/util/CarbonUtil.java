@@ -23,12 +23,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
@@ -45,8 +43,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
-import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
@@ -83,7 +81,6 @@ import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TIOStreamTransport;
-import org.pentaho.di.core.exception.KettleException;
 
 public final class CarbonUtil {
 
@@ -390,7 +387,7 @@ public final class CarbonUtil {
     }
   }
 
-  public static int getFirstIndexUsingBinarySearch(FixedLengthDimensionDataChunk dimColumnDataChunk,
+  public static int getFirstIndexUsingBinarySearch(DimensionColumnDataChunk dimColumnDataChunk,
       int low, int high, byte[] compareValue, boolean matchUpLimit) {
     int cmpResult = 0;
     while (high >= low) {
@@ -429,7 +426,7 @@ public final class CarbonUtil {
    * @return the compareValue's range index in the dimColumnDataChunk
    */
   public static int[] getRangeIndexUsingBinarySearch(
-      FixedLengthDimensionDataChunk dimColumnDataChunk, int low, int high, byte[] compareValue) {
+      DimensionColumnDataChunk dimColumnDataChunk, int low, int high, byte[] compareValue) {
 
     int[] rangeIndex = new int[2];
     int cmpResult = 0;
@@ -523,7 +520,7 @@ public final class CarbonUtil {
    * @return index value
    */
   public static int nextLesserValueToTarget(int currentIndex,
-      FixedLengthDimensionDataChunk dimColumnDataChunk, byte[] compareValue) {
+      DimensionColumnDataChunk dimColumnDataChunk, byte[] compareValue) {
     while (currentIndex - 1 >= 0
         && dimColumnDataChunk.compareTo(currentIndex - 1, compareValue) >= 0) {
       --currentIndex;
@@ -543,7 +540,7 @@ public final class CarbonUtil {
    * @return index value
    */
   public static int nextGreaterValueToTarget(int currentIndex,
-      FixedLengthDimensionDataChunk dimColumnDataChunk, byte[] compareValue, int numerOfRows) {
+      DimensionColumnDataChunk dimColumnDataChunk, byte[] compareValue, int numerOfRows) {
     while (currentIndex + 1 < numerOfRows
         && dimColumnDataChunk.compareTo(currentIndex + 1, compareValue) <= 0) {
       ++currentIndex;
@@ -629,42 +626,6 @@ public final class CarbonUtil {
     }
 
     return cardinality;
-  }
-
-  public static void writeLevelCardinalityFile(String loadFolderLoc, String tableName,
-      int[] dimCardinality) throws KettleException {
-    String levelCardinalityFilePath =
-        loadFolderLoc + File.separator + CarbonCommonConstants.LEVEL_METADATA_FILE + tableName
-            + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
-    FileOutputStream fileOutputStream = null;
-    FileChannel channel = null;
-    try {
-      int dimCardinalityArrLength = dimCardinality.length;
-
-      // first four bytes for writing the length of array, remaining for array data
-      ByteBuffer buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE
-          + dimCardinalityArrLength * CarbonCommonConstants.INT_SIZE_IN_BYTE);
-
-      fileOutputStream = new FileOutputStream(levelCardinalityFilePath);
-      channel = fileOutputStream.getChannel();
-      buffer.putInt(dimCardinalityArrLength);
-
-      for (int i = 0; i < dimCardinalityArrLength; i++) {
-        buffer.putInt(dimCardinality[i]);
-      }
-
-      buffer.flip();
-      channel.write(buffer);
-      buffer.clear();
-
-      LOGGER.info("Level cardinality file written to : " + levelCardinalityFilePath);
-    } catch (IOException e) {
-      LOGGER.error("Error while writing level cardinality file : " + levelCardinalityFilePath + e
-          .getMessage());
-      throw new KettleException("Not able to write level cardinality file", e);
-    } finally {
-      closeStreams(channel, fileOutputStream);
-    }
   }
 
   /**

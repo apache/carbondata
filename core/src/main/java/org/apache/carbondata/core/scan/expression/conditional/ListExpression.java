@@ -57,4 +57,6 @@ public class ListExpression extends Expression {
     return null;
   }
 
+  @Override public void findAndSetChild(Expression oldExpr, Expression newExpr) {
+  }
 }

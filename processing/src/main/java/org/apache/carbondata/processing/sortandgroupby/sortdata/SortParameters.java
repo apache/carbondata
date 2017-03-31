@@ -114,11 +114,6 @@ public class SortParameters {
 
   private int numberOfCores;
 
-  /**
-   * TODO Temporary conf , it will be removed after kettle removal.
-   */
-  private boolean useKettle = true;
-
   public SortParameters getCopy() {
     SortParameters parameters = new SortParameters();
     parameters.tempFileLocation = tempFileLocation;
@@ -143,7 +138,6 @@ public class SortParameters {
     parameters.taskNo = taskNo;
     parameters.noDictionaryDimnesionColumn = noDictionaryDimnesionColumn;
     parameters.numberOfCores = numberOfCores;
-    parameters.useKettle = useKettle;
     return parameters;
   }
 
@@ -323,14 +317,6 @@ public class SortParameters {
     this.numberOfCores = numberOfCores;
   }
 
-  public boolean isUseKettle() {
-    return useKettle;
-  }
-
-  public void setUseKettle(boolean useKettle) {
-    this.useKettle = useKettle;
-  }
-
   public static SortParameters createSortParameters(CarbonDataLoadConfiguration configuration) {
     SortParameters parameters = new SortParameters();
     CarbonTableIdentifier tableIdentifier =
@@ -432,7 +418,6 @@ public class SortParameters {
     char[] aggType = CarbonDataProcessorUtil
         .getAggType(configuration.getMeasureCount(), configuration.getMeasureFields());
     parameters.setAggType(aggType);
-    parameters.setUseKettle(false);
     return parameters;
   }
 

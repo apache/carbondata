@@ -220,9 +220,6 @@ class CarbonScanRDD(
           }
           if (!finished && !havePair) {
             finished = !reader.nextKeyValue
-            if (finished) {
-              reader.close()
-            }
             havePair = !finished
           }
           !finished

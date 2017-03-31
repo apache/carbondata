@@ -57,8 +57,8 @@ The following DDL operations are supported in CarbonData :
 
        Dictionary encoding is enabled by default for all String columns, and disabled for non-String columns. You can include and exclude columns for dictionary encoding.
 ```
-       TBLPROPERTIES ("DICTIONARY_EXCLUDE"="column1, column2")
-       TBLPROPERTIES ("DICTIONARY_INCLUDE"="column1, column2")
+       TBLPROPERTIES ('DICTIONARY_EXCLUDE'='column1, column2')
+       TBLPROPERTIES ('DICTIONARY_INCLUDE'='column1, column2')
 ```
 
    Here, DICTIONARY_EXCLUDE will exclude dictionary creation. This is applicable for high-cardinality columns and is an optional parameter. DICTIONARY_INCLUDE will generate dictionary for the columns specified in the list.
@@ -67,8 +67,8 @@ The following DDL operations are supported in CarbonData :
 
        Column groups with more than one column are stored in row format, instead of columnar format. By default, each column is a separate column group.
 ```
-TBLPROPERTIES ("COLUMN_GROUPS"="(column1, column3),
-(Column4,Column5,Column6)")
+TBLPROPERTIES ('COLUMN_GROUPS'='(column1, column3),
+(Column4,Column5,Column6)')
 ```
 
    - **Table Block Size Configuration**
@@ -76,7 +76,7 @@ TBLPROPERTIES ("COLUMN_GROUPS"="(column1, column3),
      The block size of table files can be defined using the property TABLE_BLOCKSIZE. It accepts only integer values. The default value is 1024 MB and supports a range of 1 MB to 2048 MB.
      If you do not specify this value in the DDL command, default value is used.
 ```
-       TBLPROPERTIES ("TABLE_BLOCKSIZE"="512 MB")
+       TBLPROPERTIES ('TABLE_BLOCKSIZE'='512')
 ```
 
   Here 512 MB means the block size of this table is 512 MB, you can also set it as 512M or 512.
@@ -86,7 +86,7 @@ TBLPROPERTIES ("COLUMN_GROUPS"="(column1, column3),
       Inverted index is very useful to improve compression ratio and query speed, especially for those low-cardinality columns who are in reward position.
       By default inverted index is enabled. The user can disable the inverted index creation for some columns.
 ```
-       TBLPROPERTIES ("NO_INVERTED_INDEX"="column1, column3")
+       TBLPROPERTIES ('NO_INVERTED_INDEX'='column1, column3')
 ```
 
   No inverted index shall be generated for the columns specified in NO_INVERTED_INDEX. This property is applicable on columns with high-cardinality and is an optional parameter.

@@ -167,7 +167,8 @@ public class ColumnGroupDimensionDataChunk extends AbstractDimensionDataChunk {
     int len = offset + columnVectorInfo.size;
     int[] ordinal = restructuringInfo.getMdkeyQueryDimensionOrdinal();
     for (int k = offset; k < len; k++) {
-      long[] keyArray = restructuringInfo.getKeyGenerator().getKeyArray(dataChunkStore.getRow(k));
+      long[] keyArray =
+          restructuringInfo.getKeyGenerator().getKeyArray(dataChunkStore.getRow(rowMapping[k]));
       int index = 0;
       for (int i = column; i < column + ordinal.length; i++) {
         if (vectorInfo[i].directDictionaryGenerator == null) {

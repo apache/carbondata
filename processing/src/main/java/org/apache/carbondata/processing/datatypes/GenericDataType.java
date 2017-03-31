@@ -26,9 +26,6 @@ import java.util.List;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
-import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
-
-import org.pentaho.di.core.exception.KettleException;
 
 /**
  * Generic DataType interface which will be used while data loading for complex types like Array &
@@ -55,21 +52,6 @@ public interface GenericDataType<T> {
    * @param primitiveChild - Returns all primitive type columns in complex type
    */
   void getAllPrimitiveChildren(List<GenericDataType> primitiveChild);
-
-  /**
-   * Split raw csv data into seperate column using delimiter and generate surrogate key
-   * @param tableName
-   * @param inputString
-   * @param delimiter
-   * @param delimiterIndex
-   * @param dataOutputStream
-   * @param surrogateKeyGen
-   * @throws KettleException
-   * @throws IOException
-   */
-  void parseStringAndWriteByteArray(String tableName, String inputString, String[] delimiter,
-      int delimiterIndex, DataOutputStream dataOutputStream,
-      CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException;
 
   /**
    * writes to byte stream

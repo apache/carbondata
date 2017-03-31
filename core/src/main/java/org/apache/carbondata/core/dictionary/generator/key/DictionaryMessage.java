@@ -73,6 +73,10 @@ public class DictionaryMessage {
   }
 
   public void writeData(ByteBuf byteBuf) {
+    int startIndex = byteBuf.writerIndex();
+    // Just reserve the bytes to add length of header at last.
+    byteBuf.writeShort(Short.MAX_VALUE);
+
     byte[] tableBytes = tableUniqueName.getBytes();
     byteBuf.writeInt(tableBytes.length);
     byteBuf.writeBytes(tableBytes);
@@ -92,17 +96,22 @@ public class DictionaryMessage {
       byteBuf.writeInt(dataBytes.length);
       byteBuf.writeBytes(dataBytes);
     }
+    int endIndex = byteBuf.writerIndex();
+    // Add the length of message at the starting.it is required while decoding as in TCP protocol
+    // it not guarantee that we receive all data in one packet, so we need to wait to receive all
+    // packets before proceeding to process the message.Based on the length it waits.
+    byteBuf.setShort(startIndex, endIndex - startIndex - 2);
   }
 
   private DictionaryMessageType getKeyType(byte type) {
     switch (type) {
-      case 1 :
+      case 1:
         return DictionaryMessageType.DICT_GENERATION;
-      case 2 :
+      case 2:
         return DictionaryMessageType.TABLE_INTIALIZATION;
-      case 3 :
+      case 3:
         return DictionaryMessageType.SIZE;
-      case 4 :
+      case 4:
         return DictionaryMessageType.WRITE_DICTIONARY;
       default:
         return DictionaryMessageType.DICT_GENERATION;
@@ -150,8 +159,7 @@ public class DictionaryMessage {
   }
 
   @Override public String toString() {
-    return "DictionaryKey{ columnName='"
-        + columnName + '\'' + ", data='" + data + '\'' + ", dictionaryValue=" + dictionaryValue
-        + ", type=" + type + '}';
+    return "DictionaryKey{ columnName='" + columnName + '\'' + ", data='" + data + '\''
+        + ", dictionaryValue=" + dictionaryValue + ", type=" + type + '}';
   }
 }

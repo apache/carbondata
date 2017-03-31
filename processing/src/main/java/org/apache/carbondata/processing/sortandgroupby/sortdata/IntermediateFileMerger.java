@@ -87,8 +87,6 @@ public class IntermediateFileMerger implements Callable<Void> {
 
   private File outPutFile;
 
-  private boolean useKettle;
-
   private boolean[] noDictionarycolumnMapping;
 
   /**
@@ -100,7 +98,6 @@ public class IntermediateFileMerger implements Callable<Void> {
     this.fileCounter = intermediateFiles.length;
     this.intermediateFiles = intermediateFiles;
     this.outPutFile = outPutFile;
-    this.useKettle = mergerParameters.isUseKettle();
     noDictionarycolumnMapping = mergerParameters.getNoDictionaryDimnesionColumn();
   }
 
@@ -111,14 +108,8 @@ public class IntermediateFileMerger implements Callable<Void> {
     try {
       startSorting();
       initialize();
-      if (useKettle) {
-        while (hasNext()) {
-          writeDataTofile(next());
-        }
-      } else {
-        while (hasNext()) {
-          writeDataTofileWithOutKettle(next());
-        }
+      while (hasNext()) {
+        writeDataTofile(next());
       }
       if (mergerParameters.isSortFileCompressionEnabled() || mergerParameters.isPrefetch()) {
         if (entryCount > 0) {
@@ -260,8 +251,7 @@ public class IntermediateFileMerger implements Callable<Void> {
           new SortTempFileChunkHolder(tempFile, mergerParameters.getDimColCount(),
               mergerParameters.getComplexDimColCount(), mergerParameters.getMeasureColCount(),
               mergerParameters.getFileBufferSize(), mergerParameters.getNoDictionaryCount(),
-              mergerParameters.getAggType(), mergerParameters.getNoDictionaryDimnesionColumn(),
-              mergerParameters.isUseKettle());
+              mergerParameters.getAggType(), mergerParameters.getNoDictionaryDimnesionColumn());
 
       // initialize
       sortTempFileChunkHolder.initialize();
@@ -283,7 +273,7 @@ public class IntermediateFileMerger implements Callable<Void> {
    */
   private void createRecordHolderQueue(File[] listFiles) {
     // creating record holder heap
-    this.recordHolderHeap = new PriorityQueue<SortTempFileChunkHolder>(listFiles.length);
+    this.recordHolderHeap = new PriorityQueue<>(listFiles.length);
   }
 
   /**
@@ -309,76 +299,9 @@ public class IntermediateFileMerger implements Callable<Void> {
   /**
    * Below method will be used to write data to file
    *
-   * TODO Remove it after kettle is removed
-   *
    * @throws CarbonSortKeyAndGroupByException problem while writing
    */
   private void writeDataTofile(Object[] row) throws CarbonSortKeyAndGroupByException {
-    if (mergerParameters.isSortFileCompressionEnabled() || mergerParameters.isPrefetch()) {
-      if (entryCount == 0) {
-        records = new Object[totalSize][];
-        records[entryCount++] = row;
-        return;
-      }
-
-      records[entryCount++] = row;
-      if (entryCount == totalSize) {
-        this.writer.writeSortTempFile(records);
-        entryCount = 0;
-        records = new Object[totalSize][];
-      }
-      return;
-    }
-    try {
-      int fieldIndex = 0;
-      char[] aggType = mergerParameters.getAggType();
-
-      for (int counter = 0; counter < mergerParameters.getDimColCount(); counter++) {
-        stream.writeInt((Integer) NonDictionaryUtil.getDimension(fieldIndex++, row));
-      }
-
-      // added for high card also
-      if ((mergerParameters.getNoDictionaryCount() + mergerParameters
-          .getComplexDimColCount()) > 0) {
-        stream.write(NonDictionaryUtil.getByteArrayForNoDictionaryCols(row));
-      }
-
-      fieldIndex = 0;
-      for (int counter = 0; counter < mergerParameters.getMeasureColCount(); counter++) {
-        if (null != NonDictionaryUtil.getMeasure(fieldIndex, row)) {
-          stream.write((byte) 1);
-          if (aggType[counter] == CarbonCommonConstants.BYTE_VALUE_MEASURE) {
-            Double val = (Double) NonDictionaryUtil.getMeasure(fieldIndex, row);
-            stream.writeDouble(val);
-          } else if (aggType[counter] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-            Double val = (Double) NonDictionaryUtil.getMeasure(fieldIndex, row);
-            stream.writeDouble(val);
-          } else if (aggType[counter] == CarbonCommonConstants.BIG_INT_MEASURE) {
-            Long val = (Long) NonDictionaryUtil.getMeasure(fieldIndex, row);
-            stream.writeLong(val);
-          } else if (aggType[counter] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-            byte[] bigDecimalInBytes = (byte[]) NonDictionaryUtil.getMeasure(fieldIndex, row);
-            stream.writeInt(bigDecimalInBytes.length);
-            stream.write(bigDecimalInBytes);
-          }
-        } else {
-          stream.write((byte) 0);
-        }
-
-        fieldIndex++;
-      }
-
-    } catch (IOException e) {
-      throw new CarbonSortKeyAndGroupByException("Problem while writing the file", e);
-    }
-  }
-
-  /**
-   * Below method will be used to write data to file
-   *
-   * @throws CarbonSortKeyAndGroupByException problem while writing
-   */
-  private void writeDataTofileWithOutKettle(Object[] row) throws CarbonSortKeyAndGroupByException {
     if (mergerParameters.isSortFileCompressionEnabled() || mergerParameters.isPrefetch()) {
       if (entryCount == 0) {
         records = new Object[totalSize][];

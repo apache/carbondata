@@ -78,12 +78,6 @@ object TableLoader {
     System.out.println(s"table name: $dbName.$tableName")
     val inputPaths = TableAPIUtil.escape(args(2))
 
-    val kettleHome = CarbonProperties.getInstance().getProperty("carbon.kettle.home")
-    if (kettleHome == null) {
-      CarbonProperties.getInstance().addProperty("carbon.kettle.home",
-        map.getOrElse("carbon.kettle.home", ""))
-    }
-
     val spark = TableAPIUtil.spark(storePath, s"TableLoader: $dbName.$tableName")
 
     CarbonEnv.init(spark)

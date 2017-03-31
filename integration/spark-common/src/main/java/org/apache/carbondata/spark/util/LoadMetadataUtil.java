@@ -16,12 +16,7 @@
  */
 
 /**
- * Project Name  : Carbon
- * Module Name   : CARBON Data Processor
- * Created Date  : 15-Sep-2015
- * FileName   : LoadMetadataUtil.java
- * Description   : Kettle step to generate MD Key
- * Class Version  : 1.0
+ * Utility for load data
  */
 package org.apache.carbondata.spark.util;
 

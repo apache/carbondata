@@ -20,17 +20,17 @@ package org.apache.carbondata.spark.rdd
 import java.io.{IOException, ObjectInputStream, ObjectOutputStream}
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
-import java.util
 import java.util.{Date, UUID}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.util.Random
 import scala.util.control.NonFatal
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.spark.{Partition, SparkContext, SparkEnv, TaskContext}
+import org.apache.spark.{Partition, SerializableWritable, SparkContext, SparkEnv, TaskContext}
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionWrap, RDD}
 import org.apache.spark.sql.Row
 import org.apache.spark.util.SparkUtil
@@ -41,13 +41,14 @@ import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
+import org.apache.carbondata.processing.csvload.BlockDetails
 import org.apache.carbondata.processing.csvload.CSVInputFormat
 import org.apache.carbondata.processing.csvload.CSVRecordReaderIterator
-import org.apache.carbondata.processing.csvreaderstep.BlockDetails
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.DataLoadExecutor
 import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException
 import org.apache.carbondata.spark.DataLoadResult
+import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil, CommonUtil}
 
@@ -82,6 +83,81 @@ class SerializableConfiguration(@transient var value: Configuration) extends Ser
         LOGGER.error(e, "Exception encountered")
         throw new IOException(e)
     }
+}
+
+/**
+ * This partition class use to split by Host
+ *
+ */
+class CarbonNodePartition(rddId: Int, val idx: Int, host: String,
+    val blocksDetails: Array[BlockDetails])
+  extends Partition {
+
+  override val index: Int = idx
+  val serializableHadoopSplit = host
+  val nodeBlocksDetail = blocksDetails
+
+  override def hashCode(): Int = 41 * (41 + rddId) + idx
+}
+
+/**
+ * This partition class use to split by TableSplit
+ *
+ */
+class CarbonTableSplitPartition(rddId: Int, val idx: Int, @transient val tableSplit: TableSplit,
+    val blocksDetails: Array[BlockDetails])
+  extends Partition {
+
+  override val index: Int = idx
+  val serializableHadoopSplit = new SerializableWritable[TableSplit](tableSplit)
+  val partitionBlocksDetail = blocksDetails
+
+  override def hashCode(): Int = 41 * (41 + rddId) + idx
+}
+
+class SparkPartitionLoader(model: CarbonLoadModel,
+    splitIndex: Int,
+    storePath: String,
+    loadCount: String,
+    loadMetadataDetails: LoadMetadataDetails) {
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  var storeLocation: String = ""
+
+  def initialize(): Unit = {
+    val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
+    if (null == carbonPropertiesFilePath) {
+      System.setProperty("carbon.properties.filepath",
+        System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties")
+    }
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance.initPartitonInfo(model.getPartitionId)
+    CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true")
+    CarbonProperties.getInstance().addProperty("carbon.dimension.split.value.in.columnar", "1")
+    CarbonProperties.getInstance().addProperty("carbon.is.fullyfilled.bits", "true")
+    CarbonProperties.getInstance().addProperty("is.int.based.indexer", "true")
+    CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true")
+    CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000")
+    CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false")
+    CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000")
+
+    // this property is used to determine whether temp location for carbon is inside
+    // container temp dir or is yarn application directory.
+    val carbonUseLocalDir = CarbonProperties.getInstance()
+      .getProperty("carbon.use.local.dir", "false")
+    if (carbonUseLocalDir.equalsIgnoreCase("true")) {
+      val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+      if (null != storeLocations && storeLocations.nonEmpty) {
+        storeLocation = storeLocations(Random.nextInt(storeLocations.length))
+      }
+      if (storeLocation == null) {
+        storeLocation = System.getProperty("java.io.tmpdir")
+      }
+    } else {
+      storeLocation = System.getProperty("java.io.tmpdir")
+    }
+    storeLocation = storeLocation + '/' + System.nanoTime() + '/' + splitIndex
+  }
+
 }
 
 /**
@@ -156,7 +232,6 @@ class NewCarbonDataLoadRDD[K, V](
         val recordReaders = getInputIterators
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
-          null,
           null,
           String.valueOf(loadCount),
           loadMetadataDetails)
@@ -276,36 +351,22 @@ class NewCarbonDataLoadRDD[K, V](
     } else {
       val theSplit = split.asInstanceOf[CarbonNodePartition]
       val firstOptionLocation: Seq[String] = List(theSplit.serializableHadoopSplit)
-      logInfo("Preferred Location for split : " + firstOptionLocation.head)
-      val blockMap = new util.LinkedHashMap[String, Integer]()
-      val tableBlocks = theSplit.blocksDetails
-      tableBlocks.foreach { tableBlock =>
-        tableBlock.getLocations.foreach { location =>
-          if (!firstOptionLocation.exists(location.equalsIgnoreCase(_))) {
-            val currentCount = blockMap.get(location)
-            if (currentCount == null) {
-              blockMap.put(location, 1)
-            } else {
-              blockMap.put(location, currentCount + 1)
-            }
-          }
-        }
-      }
-
-      val sortedList = blockMap.entrySet().asScala.toSeq.sortWith { (nodeCount1, nodeCount2) =>
-        nodeCount1.getValue > nodeCount2.getValue
-      }
-
-      val sortedNodesList = sortedList.map(nodeCount => nodeCount.getKey).take(2)
-      firstOptionLocation ++ sortedNodesList
+      logInfo("Preferred Location for split : " + firstOptionLocation.mkString(","))
+      /**
+       * At original logic, we were adding the next preferred location so that in case of the
+       * failure the Spark should know where to schedule the failed task.
+       * Remove the next preferred location is because some time Spark will pick the same node
+       * for 2 tasks, so one node is getting over loaded with the task and one have no task to
+       * do. And impacting the performance despite of any failure.
+       */
+      firstOptionLocation
     }
   }
 }
 
 /**
  *  It loads the data to carbon from spark DataFrame using
- *  @see org.apache.carbondata.processing.newflow.DataLoadExecutor without
- *  kettle requirement
+ *  @see org.apache.carbondata.processing.newflow.DataLoadExecutor
  */
 class NewDataFrameLoaderRDD[K, V](
                                    sc: SparkContext,
@@ -354,7 +415,6 @@ class NewDataFrameLoaderRDD[K, V](
 
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
-          null,
           null,
           String.valueOf(loadCount),
           loadMetadataDetails)

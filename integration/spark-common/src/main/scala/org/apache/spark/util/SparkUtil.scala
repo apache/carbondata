@@ -23,7 +23,7 @@ import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.rdd.{NewHadoopPartition, NewHadoopRDD}
 
-import org.apache.carbondata.processing.csvreaderstep.BlockDetails
+import org.apache.carbondata.processing.csvload.BlockDetails
 
 /*
  * this object use to handle file splits

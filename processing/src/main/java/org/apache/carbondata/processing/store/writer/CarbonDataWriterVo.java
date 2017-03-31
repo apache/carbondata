@@ -20,8 +20,8 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.processing.mdkeygen.file.IFileManagerComposite;
 import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
+import org.apache.carbondata.processing.store.file.IFileManagerComposite;
 
 /**
  * Value object for writing the data

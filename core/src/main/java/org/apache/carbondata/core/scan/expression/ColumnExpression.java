@@ -109,4 +109,7 @@ public class ColumnExpression extends LeafExpression {
     this.carbonColumn = carbonColumn;
   }
 
+  @Override public void findAndSetChild(Expression oldExpr, Expression newExpr) {
+  }
+
 }
