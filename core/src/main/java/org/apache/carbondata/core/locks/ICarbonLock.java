@@ -36,4 +36,12 @@ public interface ICarbonLock {
    */
   boolean lockWithRetries();
 
+  /**
+   * This method will delete the lock file at the specified location.
+   *
+   * @param lockFile The path of the lock file.
+   * @return True if the lock file is deleted, false otherwise.
+   */
+  boolean releaseLockManually(String lockFile);
+
 }

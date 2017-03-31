@@ -28,6 +28,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * This class handles the file locking in the local file system.
@@ -70,7 +71,8 @@ public class LocalFileLock extends AbstractCarbonLock {
       LogServiceFactory.getLogService(LocalFileLock.class.getName());
 
   static {
-    tmpPath = System.getProperty("java.io.tmpdir");
+    tmpPath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION,
+        System.getProperty("java.io.tmpdir"));
   }
 
   /**
@@ -151,6 +153,7 @@ public class LocalFileLock extends AbstractCarbonLock {
             LOGGER.info("Successfully deleted the lock file " + lockFilePath);
           } else {
             LOGGER.error("Not able to delete the lock file " + lockFilePath);
+            status = false;
           }
         } catch (IOException e) {
           LOGGER.error(e.getMessage());
