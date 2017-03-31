@@ -56,13 +56,11 @@ class LimitQueryOptimizer(limit_num: Int,
                     count_arr(i) += 1
                     total_count = count_arr.product
                 }
-                //val left = Literal.create(col.name, col.dataType)
-                val left = col
                 if(value_arr.size > 1){
-                    val inExpression = In(left , value_arr)
+                    val inExpression = In(col , value_arr)
                     expr_arr += inExpression
                 }else if(value_arr.size == 1){
-                    val equalExpression = EqualTo(left, value_arr.head)
+                    val equalExpression = EqualTo(col, value_arr.head)
                     expr_arr += equalExpression
                 }
             }
