@@ -30,6 +30,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 
 object AlterTableUtil {
+
   def validateTableAndAcquireLock(dbName: String, tableName: String, LOGGER: LogService)
     (sparkSession: SparkSession): ICarbonLock = {
     val relation =
