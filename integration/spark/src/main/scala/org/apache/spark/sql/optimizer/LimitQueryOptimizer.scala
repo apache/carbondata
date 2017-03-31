@@ -25,10 +25,15 @@ import org.apache.spark.sql.catalyst.plans.logical.Filter
 
 import scala.collection.mutable.ArrayBuffer
 
-class LimitQueryOptimizer(limit_num: Int,
-                          groupingExpressions: Seq[Expression],
-                          originFilters: Filter,
-                          relations: Seq[CarbonDecoderRelation]){
+/**
+  * Optimize query with Limit condition
+  * @param limit_num
+  * @param groupingExpressions
+  * @param originFilters
+  * @param relations
+  */
+class LimitQueryOptimizer(limit_num: Int, groupingExpressions: Seq[Expression],
+                          originFilters: Filter, relations: Seq[CarbonDecoderRelation]) {
     def getNewFilters(): Filter = {
         val cols = groupingExpressions.reverse.map(_.asInstanceOf[AttributeReference])
         val count_arr = ArrayBuffer[Int]()
@@ -41,7 +46,7 @@ class LimitQueryOptimizer(limit_num: Int,
             count_arr += 0
             val relation = getTableRelation(col)
             val dictExist = relation.metaData.dictionaryMap.get(col.name).get
-            if (total_count < limit_num && dictExist){
+            if (total_count < limit_num && dictExist) {
                 val dict = LimitQueryOptimizer.getDictionaryValue(col, relation).get
                 /** Get distinct value list of current grouping column **/
                 var index: Int = 2
@@ -56,10 +61,10 @@ class LimitQueryOptimizer(limit_num: Int,
                     count_arr(i) += 1
                     total_count = count_arr.product
                 }
-                if(value_arr.size > 1){
-                    val inExpression = In(col , value_arr)
+                if (value_arr.size > 1) {
+                    val inExpression = In(col, value_arr)
                     expr_arr += inExpression
-                }else if(value_arr.size == 1){
+                } else if (value_arr.size == 1) {
                     val equalExpression = EqualTo(col, value_arr.head)
                     expr_arr += equalExpression
                 }
@@ -69,16 +74,16 @@ class LimitQueryOptimizer(limit_num: Int,
         var new_expr : And = null
         var index = 0
         for(expression <- expr_arr) {
-            if(index == 0){
+            if (index == 0) {
                 new_expr = new And(origin_expr, expression)
-            }else{
+            } else {
                 new_expr = new And(new_expr, expression)
             }
             index += 1
         }
        new Filter(new_expr, originFilters.child)
     }
-    def getTableRelation(col: AttributeReference) : CarbonRelation = {
+    def getTableRelation(col: AttributeReference): CarbonRelation = {
         val tableName = col.qualifiers.head
         val relation = relations.filter(_.carbonRelation.getTable() == tableName).head
         val carbonRelation = relation.carbonRelation.carbonRelation
@@ -87,16 +92,13 @@ class LimitQueryOptimizer(limit_num: Int,
 }
 
 object LimitQueryOptimizer {
-    def apply(limit_num: Int,
-              groupingExpressions: Seq[Expression],
-              originFilters: Filter,
-              relations: Seq[CarbonDecoderRelation])
-      = new LimitQueryOptimizer(limit_num: Int,
-        groupingExpressions: Seq[Expression],
-        originFilters: Filter,
-        relations: Seq[CarbonDecoderRelation])
+    def apply(limit_num: Int, groupingExpressions: Seq[Expression], originFilters: Filter,
+              relations: Seq[CarbonDecoderRelation]): LimitQueryOptimizer
+      = new LimitQueryOptimizer(limit_num: Int, groupingExpressions: Seq[Expression],
+        originFilters: Filter, relations: Seq[CarbonDecoderRelation])
 
-    def getDictionaryValue(col: AttributeReference, relation: CarbonRelation) : Option[Dictionary] = {
+    def getDictionaryValue(col: AttributeReference,
+                           relation: CarbonRelation): Option[Dictionary] = {
         val tableName = col.qualifiers.head
         val carbonTable = relation.tableMeta.carbonTable
         val dimension = carbonTable.getDimensionByName(tableName.toLowerCase(), col.name)
