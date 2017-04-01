@@ -419,17 +419,11 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
     }
 
   protected lazy val deleteRecords: Parser[LogicalPlan] =
-    (DELETE ~> FROM ~> table) ~ (WHERE ~> restInput).? <~ opt(";") ^^ {
-      case table ~ condition =>
+    (DELETE ~> FROM ~> table) ~ restInput.? <~ opt(";") ^^ {
+      case table ~ rest =>
         val tableName = getTableName(table.tableIdentifier)
         val alias = table.alias.getOrElse("")
-        val stmt = condition match {
-          case Some(cond) =>
-            "select tupleId from " + tableName + " " + alias + " where " + cond
-          case _ =>
-            "select tupleId from " + tableName + " " + alias
-        }
-        DeleteRecords(stmt, table)
+        DeleteRecords("select tupleId from " + tableName + " " + alias + rest.getOrElse(""), table)
     }
 
   protected lazy val updateTable: Parser[LogicalPlan] =

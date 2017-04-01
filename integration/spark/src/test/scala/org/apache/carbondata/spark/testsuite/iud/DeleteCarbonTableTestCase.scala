@@ -81,6 +81,18 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       Seq()
     )
   }
+
+  test("delete data from  carbon table[ JOIN with another table ]") {
+    sql("""drop table if exists iud_db.dest""")
+    sql("""create table iud_db.dest (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""").show()
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
+    sql(""" DELETE FROM dest t1 INNER JOIN source2 t2 ON t1.c1 = t2.c11""").show(truncate = false)
+    checkAnswer(
+      sql("""select c1 from iud_db.dest"""),
+      Seq(Row("c"), Row("d"), Row("e"))
+    )
+  }
+
 //  test("delete data from  carbon table[where IN (sub query) ]") {
 //    sql("""drop table if exists iud_db.dest""")
 //    sql("""create table iud_db.dest (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""").show()
