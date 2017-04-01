@@ -112,7 +112,7 @@ class InMemoryBTreeIndex implements Index {
         List<TableBlockInfo> tableBlockInfoList = getTableBlockInfo(job);
         Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos = new HashMap<>();
         segmentToTableBlocksInfos.put(segment.getId(), tableBlockInfoList);
-        segmentUniqueIdentifier.setSegmentToTableBlocksInfos(segmentToTableBlocksInfos);
+        segmentUniqueIdentifier.setSegmentToTableBlocksInfos(null);
         // TODO: loadAndGetTaskIdToSegmentsMap can be optimized, use tableBlockInfoList as input
         // get Btree blocks for given segment
         segmentTaskIndexWrapper = cacheClient.getSegmentAccessClient().get(segmentUniqueIdentifier);

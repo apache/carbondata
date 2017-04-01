@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.index.IndexInfo;
 
 /**
  * Class holds the absoluteTableIdentifier and segmentId to uniquely identify a segment
@@ -37,7 +37,7 @@ public class TableSegmentUniqueIdentifier {
   /**
    * segment to tableBlockInfo map
    */
-  Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos;
+  Map<String, List<IndexInfo>> segmentToTableBlocksInfos;
 
   private String segmentId;
   private  boolean isSegmentUpdated;
@@ -54,7 +54,7 @@ public class TableSegmentUniqueIdentifier {
   }
 
   public TableSegmentUniqueIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier,
-      Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos, String segmentId) {
+      Map<String, List<IndexInfo>> segmentToTableBlocksInfos, String segmentId) {
     this.absoluteTableIdentifier = absoluteTableIdentifier;
     this.segmentToTableBlocksInfos = segmentToTableBlocksInfos;
     this.segmentId = segmentId;
@@ -76,7 +76,7 @@ public class TableSegmentUniqueIdentifier {
    *  returns the segment to tableBlockInfo map
    * @return
    */
-  public Map<String, List<TableBlockInfo>> getSegmentToTableBlocksInfos() {
+  public Map<String, List<IndexInfo>> getSegmentToTableBlocksInfos() {
     return segmentToTableBlocksInfos;
   }
 
@@ -85,7 +85,7 @@ public class TableSegmentUniqueIdentifier {
    * @param segmentToTableBlocksInfos
    */
   public void setSegmentToTableBlocksInfos(
-      Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos) {
+      Map<String, List<IndexInfo>> segmentToTableBlocksInfos) {
     this.segmentToTableBlocksInfos = segmentToTableBlocksInfos;
   }
 

@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -36,8 +37,10 @@ import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.index.IndexInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockIndex;
 
 /**
@@ -63,18 +66,18 @@ public abstract class AbstractDataFileFooterConverter {
   /**
    * Below method will be used to get the index info from index file
    *
-   * @param filePath           file path of the index file
-   * @param tableBlockInfoList table block index
+   * @param carbonIndexFilePath           file path of the index file
+   * @param indexInfo table block index
    * @return list of index info
    * @throws IOException problem while reading the index file
    */
-  public List<DataFileFooter> getIndexInfo(String filePath, List<TableBlockInfo> tableBlockInfoList)
+  public List<DataFileFooter> getIndexInfo(String carbonIndexFilePath, IndexInfo indexInfo)
       throws IOException {
     CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
     List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
     try {
       // open the reader
-      indexReader.openThriftReader(filePath);
+      indexReader.openThriftReader(carbonIndexFilePath);
       // get the index header
       org.apache.carbondata.format.IndexHeader readIndexHeader = indexReader.readIndexHeader();
       List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
@@ -85,20 +88,24 @@ public abstract class AbstractDataFileFooterConverter {
       }
       // get the segment info
       SegmentInfo segmentInfo = getSegmentInfo(readIndexHeader.getSegment_info());
+      String segmentDir =
+          CarbonTablePath.getFolderContainingFile(carbonIndexFilePath) + File.separator;
       BlockletIndex blockletIndex = null;
-      int counter = 0;
       DataFileFooter dataFileFooter = null;
       // read the block info from file
       while (indexReader.hasNext()) {
         BlockIndex readBlockIndexInfo = indexReader.readBlockIndexInfo();
         blockletIndex = getBlockletIndex(readBlockIndexInfo.getBlock_index());
         dataFileFooter = new DataFileFooter();
-        TableBlockInfo tableBlockInfo = tableBlockInfoList.get(counter++);
+        TableBlockInfo tableBlockInfo =
+            new TableBlockInfo(segmentDir + readBlockIndexInfo.getFile_name(),
+                indexInfo.getSegmentId());
         tableBlockInfo.setBlockOffset(readBlockIndexInfo.getOffset());
         tableBlockInfo.setVersion(
             ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion()));
         int blockletSize = getBlockletSize(readBlockIndexInfo);
         tableBlockInfo.getBlockletInfos().setNoOfBlockLets(blockletSize);
+        tableBlockInfo.getBlockletInfos().setNumberOfBlockletToScan(blockletSize);
         dataFileFooter.setBlockletIndex(blockletIndex);
         dataFileFooter.setColumnInTable(columnSchemaList);
         dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());

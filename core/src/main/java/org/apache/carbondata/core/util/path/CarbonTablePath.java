@@ -491,6 +491,20 @@ public class CarbonTablePath extends Path {
       return fileName.substring(startIndex, endIndex);
     }
 
+    public static String getTaskNoFromIndex(String carbonIndexFileName) {
+      // Get the file name from path
+      String fileName = getFileName(carbonIndexFileName);
+      return fileName.substring(0, fileName.indexOf("-"));
+    }
+
+    public static String getBucketNoFromIndex(String carbonIndexFileName) {
+      // Get the file name from path
+      String fileName = getFileName(carbonIndexFileName);
+      int startIndex = fileName.indexOf("-") + 1;
+      int endIndex = fileName.indexOf("-", startIndex + 1);
+      return fileName.substring(startIndex, endIndex);
+    }
+
     /**
      * Gets the file name from file path
      */
