@@ -63,4 +63,23 @@ public class QueryColumn implements Serializable {
     this.queryOrder = queryOrder;
   }
 
+  /**
+   * sort order in which column output will be sorted default it will be none
+   */
+  private SortOrderType sortOrder = SortOrderType.NONE;
+
+  /**
+   * @return the sortOrder
+   */
+  public SortOrderType getSortOrder() {
+    return sortOrder;
+  }
+
+  /**
+   * @param sortOrder the sortOrder to set
+   */
+  public void setSortOrder(SortOrderType sortOrder) {
+    this.sortOrder = sortOrder;
+  }
+
 }

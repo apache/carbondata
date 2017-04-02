@@ -31,17 +31,17 @@ public class BlockletIterator extends CarbonIterator<DataRefNode> {
   /**
    * block counter to keep a track how many block has been processed
    */
-  private int blockCounter;
+  protected int blockCounter;
 
   /**
    * flag to be used to check any more data block is present or not
    */
-  private boolean hasNext = true;
+  protected boolean hasNext = true;
 
   /**
    * total number blocks assgned to this iterator
    */
-  private long totalNumberOfBlocksToScan;
+  protected long totalNumberOfBlocksToScan;
 
   /**
    * Constructor

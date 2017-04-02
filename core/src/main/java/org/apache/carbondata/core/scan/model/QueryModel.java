@@ -111,6 +111,9 @@ public class QueryModel implements Serializable {
     queryDimension = new ArrayList<QueryDimension>();
     queryMeasures = new ArrayList<QueryMeasure>();
     invalidSegmentIds = new ArrayList<>();
+    sortDimensions = new ArrayList<QueryDimension>();
+    groupingExpressions = new ArrayList();
+    aggregateExpressions = new ArrayList();
   }
 
   public static QueryModel createModel(AbsoluteTableIdentifier absoluteTableIdentifier,
@@ -360,4 +363,67 @@ public class QueryModel implements Serializable {
   public Map<String,UpdateVO>  getInvalidBlockVOForSegmentId() {
     return  invalidSegmentBlockIdMap;
   }
+
+  /**
+   * list of dimension in which sorting is applied
+   */
+  private List<QueryDimension> sortDimensions;
+  private List groupingExpressions;
+  private List aggregateExpressions;
+  /**
+   * in case of lime query we need to know how many records will passed from
+   * executor
+   */
+  private int limit;
+
+  public List getGroupingExpressions() {
+    return groupingExpressions;
+  }
+
+  public void setGroupingExpressions(List groupingExpressions) {
+    this.groupingExpressions = groupingExpressions;
+  }
+
+  public List getAggregateExpressions() {
+    return aggregateExpressions;
+  }
+
+  public void setAggregateExpressions(List aggregateExpressions) {
+    this.aggregateExpressions = aggregateExpressions;
+  }
+
+  /**
+   * @return the sortDimension
+   */
+  public List<QueryDimension> getSortDimensions() {
+    return sortDimensions;
+  }
+
+  /**
+   * @return the limit
+   */
+  public int getLimit() {
+    return limit;
+  }
+
+  /**
+   * @param limit
+   *          the limit to set
+   */
+  public void setLimit(int limit) {
+    this.limit = limit;
+  }
+
+  /**
+   * @param sortDimension the sortDimension to set
+   */
+  public void setSortDimensions(List<QueryDimension> sortDimensions, CarbonTable carbonTable) {
+    for (QueryDimension qd : sortDimensions) {
+      CarbonDimension dimensionByName = carbonTable
+          .getDimensionByName(carbonTable.getFactTableName(), qd.getColumnName());
+      qd.setDimension(dimensionByName);
+    }
+    this.sortDimensions = sortDimensions;
+  }
+
 }

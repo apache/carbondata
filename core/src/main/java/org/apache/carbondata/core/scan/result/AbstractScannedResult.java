@@ -61,7 +61,7 @@ public abstract class AbstractScannedResult {
   /**
    * total number of rows per page
    */
-  private int[] numberOfRows;
+  protected int[] numberOfRows;
 
   /**
    * Total number of rows.

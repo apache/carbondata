@@ -27,6 +27,7 @@ import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.catalyst.expressions.NamedExpression
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.hive.DistributionUtil
 
@@ -36,6 +37,7 @@ import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.Expression
+import org.apache.carbondata.core.scan.model.QueryDimension
 import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
@@ -52,6 +54,10 @@ class CarbonScanRDD(
     @transient sc: SparkContext,
     columnProjection: CarbonProjection,
     filterExpression: Expression,
+    limit: Int,
+    sorts: Seq[QueryDimension] = Nil,
+    groupingExpressions: Seq[org.apache.spark.sql.catalyst.expressions.Expression],
+    aggregateExpressions: Seq[NamedExpression],
     identifier: AbsoluteTableIdentifier,
     @transient carbonTable: CarbonTable)
   extends RDD[InternalRow](sc, Nil) {
@@ -262,6 +268,10 @@ class CarbonScanRDD(
     CarbonInputFormat.setTablePath(conf, identifier.appendWithLocalPrefix(identifier.getTablePath))
     CarbonInputFormat.setFilterPredicates(conf, filterExpression)
     CarbonInputFormat.setColumnProjection(conf, columnProjection)
+    CarbonInputFormat.setLimitExpression(conf, limit)
+    CarbonInputFormat.setAggegatesExpression(conf, groupingExpressions.asJava,
+        aggregateExpressions.asJava)
+    CarbonInputFormat.setSortsExpression(conf, sorts.asJava)
     format
   }
 
