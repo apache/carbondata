@@ -75,6 +75,14 @@ import static java.util.Objects.requireNonNull;
  */
 public class CarbonTableReader {
 
+  /** CarbonTableReader will be a facade of these utils
+   *
+   * 1:CarbonMetadata,(logic table)
+   * 2:FileFactory, (physic table file)
+   * 3:CarbonCommonFactory, (offer some )
+   * 4:DictionaryFactory, (parse dictionary util)
+   */
+
   private CarbonTableConfig config;
   private List<SchemaTableName> tableList;
   private CarbonFile carbonFileList;
