@@ -133,6 +133,10 @@ public class CarbonDataLoadConfiguration {
     return this.numberOfSortColumns;
   }
 
+  public boolean isSortTable() {
+    return this.numberOfSortColumns > 0;
+  }
+
   public void setNumberOfNoDictSortColumns(int numberOfNoDictSortColumns) {
     this.numberOfNoDictSortColumns = numberOfNoDictSortColumns;
   }

@@ -656,10 +656,6 @@ public class CarbonTable implements Serializable {
     tableMeasuresMap.put(tableName, visibleMeasures);
   }
 
-  public boolean isSortByColumns() {
-    return numberOfSortColumns > 0;
-  }
-
   public int getNumberOfSortColumns() {
     return numberOfSortColumns;
   }
