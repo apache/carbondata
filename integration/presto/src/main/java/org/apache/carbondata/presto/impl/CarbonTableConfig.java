@@ -22,17 +22,18 @@ import io.airlift.configuration.Config;
 import javax.validation.constraints.NotNull;
 
 public class CarbonTableConfig {
+
   //read from config
-  private String dbPtah;
+  private String dbPath;
   private String tablePath;
   private String storePath;
 
-  @NotNull public String getDbPtah() {
-    return dbPtah;
+  @NotNull public String getDbPath() {
+    return dbPath;
   }
 
-  @Config("carbondata-store") public CarbonTableConfig setDbPtah(String dbPtah) {
-    this.dbPtah = dbPtah;
+  @Config("carbondata-store") public CarbonTableConfig setDbPath(String dbPath) {
+    this.dbPath = dbPath;
     return this;
   }
 

@@ -31,6 +31,7 @@ public class CarbonLocalInputSplit {
   private long length;
   private List<String> locations;
   private short version;
+
   /**
    * Number of BlockLets in a block
    */

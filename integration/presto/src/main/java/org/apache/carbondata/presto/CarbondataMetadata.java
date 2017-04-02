@@ -135,7 +135,7 @@ public class CarbondataMetadata implements ConnectorMetadata {
       spiCols.add(spiCol);
     }
 
-    //封装carbonTable
+    //carbondata connector's table metadata
     return new ConnectorTableMetadata(tableName, spiCols);
   }
 
