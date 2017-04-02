@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.presto.impl;
 
 import com.facebook.presto.spi.SchemaTableName;
@@ -67,46 +68,35 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
 import static java.util.Objects.requireNonNull;
 
 public class CarbonTableReader {
-  //CarbonTableReader will be a facade of these utils
-  //[
-  // 1:CarbonMetadata,(logic table)
-  // 2:FileFactory, (physic table file)
-  // 3:CarbonCommonFactory, (offer some )
-  // 4:DictionaryFactory, (parse dictionary util)
-  //]
+
+  /** CarbonTableReader will be a facade of these utils
+   *
+   * 1:CarbonMetadata,(logic table)
+   * 2:FileFactory, (physic table file)
+   * 3:CarbonCommonFactory, (offer some )
+   * 4:DictionaryFactory, (parse dictionary util)
+   */
 
   private CarbonTableConfig config;
   private List<SchemaTableName> tableList;
   private CarbonFile dbStore;
   private FileFactory.FileType fileType;
 
+  //as a cache for Carbon reader
   private ConcurrentHashMap<SchemaTableName, CarbonTableCacheModel> cc;
-      //as a cache for Carbon reader
 
   @Inject public CarbonTableReader(CarbonTableConfig config) {
     this.config = requireNonNull(config, "CarbonTableConfig is null");
     this.cc = new ConcurrentHashMap<>();
   }
 
+  //for worker node to initialize carbon metastore
   public CarbonTableCacheModel getCarbonCache(SchemaTableName table) {
-    if (!cc.containsKey(table))//for worker node to initalize carbon metastore
-    {
+    if (!cc.containsKey(table)) {
       try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(
           FileFactory.class.getClassLoader())) {
         if (dbStore == null) {
@@ -123,7 +113,7 @@ public class CarbonTableReader {
     }
 
     if (cc.containsKey(table)) return cc.get(table);
-    else return null;//need to reload?*/
+    else return null;
   }
 
   public List<String> getSchemaNames() {
@@ -213,11 +203,10 @@ public class CarbonTableReader {
 
   /**
    * parse carbon metadata into cc(CarbonTableReader cache)
-   **/
+   */
   public CarbonTable parseCarbonMetadata(SchemaTableName table) {
     CarbonTable result = null;
     try {
-      //这个应该放在StoreFactory
       CarbonTableCacheModel cache = cc.getOrDefault(table, new CarbonTableCacheModel());
       if (cache.isValid()) return cache.carbonTable;
 
@@ -243,14 +232,14 @@ public class CarbonTableReader {
           (org.apache.carbondata.format.TableInfo) thriftReader.read();
       thriftReader.close();
 
-      //Format Level的TableInfo， 需要转换成Code Level的TableInfo
+      //Format Level TableInfo， need transfer to Code Level TableInfo
       SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
       TableInfo wrapperTableInfo = schemaConverter
           .fromExternalToWrapperTableInfo(tableInfo, table.getSchemaName(), table.getTableName(),
               storePath);
       wrapperTableInfo.setMetaDataFilepath(
           CarbonTablePath.getFolderContainingFile(cache.carbonTablePath.getSchemaFilePath()));
-      //加载到CarbonMetadata仓库
+      //load metadata info into CarbonMetadata
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
 
       cache.tableInfo = wrapperTableInfo;
