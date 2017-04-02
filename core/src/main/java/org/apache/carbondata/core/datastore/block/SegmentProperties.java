@@ -54,6 +54,8 @@ public class SegmentProperties {
    */
   private KeyGenerator dimensionKeyGenerator;
 
+  private KeyGenerator sortColumnsGenerator;
+
   /**
    * list of dimension present in the block
    */
@@ -522,6 +524,14 @@ public class SegmentProperties {
     int[] bitLength = CarbonUtil.getDimensionBitLength(dimColumnsCardinality, dimensionPartitions);
     // create a key generator
     this.dimensionKeyGenerator = new MultiDimKeyVarLengthGenerator(bitLength);
+    if (this.getNumberOfDictSortColumns() == bitLength.length) {
+      this.sortColumnsGenerator = this.dimensionKeyGenerator;
+    } else {
+      int numberOfDictSortColumns = this.getNumberOfDictSortColumns();
+      int [] sortColumnBitLength = new int[numberOfDictSortColumns];
+      System.arraycopy(bitLength, 0, sortColumnBitLength, 0, numberOfDictSortColumns);
+      this.sortColumnsGenerator = new MultiDimKeyVarLengthGenerator(sortColumnBitLength);
+    }
     this.fixedLengthKeySplitter =
         new MultiDimKeyVarLengthVariableSplitGenerator(bitLength, dimensionPartitions);
     // get the size of each value in file block
@@ -645,6 +655,10 @@ public class SegmentProperties {
    */
   public KeyGenerator getDimensionKeyGenerator() {
     return dimensionKeyGenerator;
+  }
+
+  public KeyGenerator getSortColumnsGenerator() {
+    return sortColumnsGenerator;
   }
 
   /**
@@ -817,6 +831,6 @@ public class SegmentProperties {
   }
 
   public int getNumberOfDictSortColumns() {
-    return this.numberOfSortColumns - this.numberOfNoDictionaryDimension;
+    return this.numberOfSortColumns - this.numberOfNoDictSortColumns;
   }
 }

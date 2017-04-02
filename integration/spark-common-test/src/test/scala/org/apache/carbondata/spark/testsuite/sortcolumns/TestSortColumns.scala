@@ -154,6 +154,79 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from sorttable6 where empname = 'madhan'"), sql("select * from origintable1 where empname = 'madhan'"))
   }
 
+  test("no sort_columns with and data loading with heap and safe sort config") {
+    try {
+      setLoadingProperties("false", "false", "false")
+      sql("CREATE TABLE sorttable7_heap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='')")
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable7_heap_safe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
+      checkAnswer(sql("select * from sorttable7_heap_safe where empno = 11"), sql("select * from origintable1 where empno = 11"))
+      checkAnswer(sql("select * from sorttable7_heap_safe order by empno"), sql("select * from origintable1 order by empno"))
+    } finally {
+      defaultLoadingProperties
+    }
+  }
+
+  test("no sort_columns with and data loading with heap and unsafe sort config") {
+    try {
+      setLoadingProperties("false", "true", "false")
+      sql("CREATE TABLE sorttable7_heap_unsafe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='')")
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable7_heap_unsafe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
+      checkAnswer(sql("select * from sorttable7_heap_unsafe where empno = 11"), sql("select * from origintable1 where empno = 11"))
+      checkAnswer(sql("select * from sorttable7_heap_unsafe order by empno"), sql("select * from origintable1 order by empno"))
+    } finally {
+      defaultLoadingProperties
+    }
+  }
+
+  test("no sort_columns with and data loading with heap and inmemory sort config") {
+    try {
+      setLoadingProperties("false", "false", "true")
+      sql("CREATE TABLE sorttable7_heap_inmemory (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='')")
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable7_heap_inmemory OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
+      checkAnswer(sql("select * from sorttable7_heap_inmemory where empno = 11"), sql("select * from origintable1 where empno = 11"))
+      checkAnswer(sql("select * from sorttable7_heap_inmemory order by empno"), sql("select * from origintable1 order by empno"))
+    } finally {
+      defaultLoadingProperties
+    }
+  }
+
+  test("no sort_columns with and data loading with offheap and safe sort config") {
+    try {
+      setLoadingProperties("true", "false", "false")
+      sql("CREATE TABLE sorttable7_offheap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='')")
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable7_offheap_safe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
+      checkAnswer(sql("select * from sorttable7_offheap_safe where empno = 11"), sql("select * from origintable1 where empno = 11"))
+      checkAnswer(sql("select * from sorttable7_offheap_safe order by empno"), sql("select * from origintable1 order by empno"))
+    } finally {
+      defaultLoadingProperties
+    }
+  }
+
+  test("no sort_columns with and data loading with offheap and unsafe sort config") {
+    try {
+      setLoadingProperties("true", "true", "false")
+      sql("CREATE TABLE sorttable7_offheap_unsafe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='')")
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable7_offheap_unsafe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
+      checkAnswer(sql("select * from sorttable7_offheap_unsafe where empno = 11"), sql("select * from origintable1 where empno = 11"))
+      checkAnswer(sql("select * from sorttable7_offheap_unsafe order by empno"), sql("select * from origintable1 order by empno"))
+    } finally {
+      defaultLoadingProperties
+    }
+  }
+
+  test("no sort_columns with and data loading with offheap and inmemory sort config") {
+    try {
+      setLoadingProperties("true", "false", "true")
+      sql("CREATE TABLE sorttable7_offheap_inmemory (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='')")
+      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable7_offheap_inmemory OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
+      checkAnswer(sql("select * from sorttable7_offheap_inmemory where empno = 11"), sql("select * from origintable1 where empno = 11"))
+      checkAnswer(sql("select * from sorttable7_offheap_inmemory order by empno"), sql("select * from origintable1 order by empno"))
+    } finally {
+      defaultLoadingProperties
+    }
+  }
+
+
   override def afterAll = {
     dropTable
   }
@@ -172,6 +245,12 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists sorttable4_heap_inmemory")
     sql("drop table if exists sorttable5")
     sql("drop table if exists sorttable6")
+    sql("drop table if exists sorttable7_offheap_safe")
+    sql("drop table if exists sorttable7_offheap_unsafe")
+    sql("drop table if exists sorttable7_offheap_inmemory")
+    sql("drop table if exists sorttable7_heap_safe")
+    sql("drop table if exists sorttable7_heap_unsafe")
+    sql("drop table if exists sorttable7_heap_inmemory")
   }
 
   def setLoadingProperties(offheap: String, unsafe: String, useBatch: String): Unit = {

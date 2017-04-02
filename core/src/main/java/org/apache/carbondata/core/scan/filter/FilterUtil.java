@@ -1065,7 +1065,7 @@ public final class FilterUtil {
     }
     IndexKey endIndexKey;
     byte[] dictionaryendMdkey =
-        segmentProperties.getDimensionKeyGenerator().generateKey(dictionarySurrogateKey);
+        segmentProperties.getSortColumnsGenerator().generateKey(dictionarySurrogateKey);
     byte[] noDictionaryEndKeyBuffer = getNoDictionaryDefaultEndKey(segmentProperties);
     endIndexKey = new IndexKey(dictionaryendMdkey, noDictionaryEndKeyBuffer);
     return endIndexKey;
@@ -1112,7 +1112,7 @@ public final class FilterUtil {
     IndexKey startIndexKey;
     long[] dictionarySurrogateKey = new long[segmentProperties.getNumberOfDictSortColumns()];
     byte[] dictionaryStartMdkey =
-        segmentProperties.getDimensionKeyGenerator().generateKey(dictionarySurrogateKey);
+        segmentProperties.getSortColumnsGenerator().generateKey(dictionarySurrogateKey);
     byte[] noDictionaryStartKeyArray = getNoDictionaryDefaultStartKey(segmentProperties);
 
     startIndexKey = new IndexKey(dictionaryStartMdkey, noDictionaryStartKeyArray);
@@ -1261,11 +1261,11 @@ public final class FilterUtil {
     }
 
     searchStartKey = FilterUtil
-        .createIndexKeyFromResolvedFilterVal(startKey, segmentProperties.getDimensionKeyGenerator(),
+        .createIndexKeyFromResolvedFilterVal(startKey, segmentProperties.getSortColumnsGenerator(),
             FilterUtil.getKeyWithIndexesAndValues(listOfStartKeyByteArray));
 
     searchEndKey = FilterUtil
-        .createIndexKeyFromResolvedFilterVal(endKey, segmentProperties.getDimensionKeyGenerator(),
+        .createIndexKeyFromResolvedFilterVal(endKey, segmentProperties.getSortColumnsGenerator(),
             FilterUtil.getKeyWithIndexesAndValues(listOfEndKeyByteArray));
     listOfStartEndKeys.add(searchStartKey);
     listOfStartEndKeys.add(searchEndKey);

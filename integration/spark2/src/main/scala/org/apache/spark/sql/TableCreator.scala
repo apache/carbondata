@@ -62,8 +62,20 @@ object TableCreator {
     // All columns in sortkey should be there in create table cols
     val sortKeyOption = tableProperties.get(CarbonCommonConstants.SORT_COLUMNS)
     var sortKeyDimsTmp: Seq[String] = Seq[String]()
-    if (sortKeyOption.isDefined) {
-      var sortKey = sortKeyOption.get.split(',').map(_.trim)
+    val sortKeyString: String = if (sortKeyOption.isDefined) {
+      val sortKey = sortKeyOption.get
+      if (sortKey.startsWith("'") && sortKey.endsWith("'")) {
+        sortKey.substring(1, sortKey.length - 1)
+      } else if (sortKey.startsWith("\"") && sortKey.endsWith("\"")) {
+        sortKey.substring(1, sortKey.length - 1)
+      } else {
+        sortKey
+      } trim
+    } else {
+      ""
+    }
+    if (!sortKeyString.isEmpty) {
+      val sortKey = sortKeyString.split(',').map(_.trim)
       sortKey.foreach { column =>
         if (!fields.exists(x => x.column.equalsIgnoreCase(column))) {
           val errormsg = "sort_columns: " + column +
