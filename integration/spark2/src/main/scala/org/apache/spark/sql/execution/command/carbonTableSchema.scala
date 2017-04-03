@@ -280,7 +280,8 @@ object LoadTable {
 
 }
 
-case class LoadTableByInsert(relation: CarbonDatasourceHadoopRelation, child: LogicalPlan) {
+case class LoadTableByInsert(relation: CarbonDatasourceHadoopRelation, child: LogicalPlan)
+  extends RunnableCommand {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   def run(sparkSession: SparkSession): Seq[Row] = {
     val df = Dataset.ofRows(sparkSession, child)
