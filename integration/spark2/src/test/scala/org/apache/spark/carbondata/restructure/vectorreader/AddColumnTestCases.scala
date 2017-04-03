@@ -1,6 +1,7 @@
 package org.apache.spark.carbondata.restructure.vectorreader
 
 import java.math.{BigDecimal, RoundingMode}
+import java.sql.Timestamp
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
@@ -104,6 +105,66 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data3.csv' INTO TABLE carbon_table " +
         s"options('FILEHEADER'='intField,stringField,timestampField,decimalField,charField')")
     sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+  test("test to check if select * works for new added column") {
+    sql("DROP TABLE IF EXISTS carbon_new")
+    sql(
+      "CREATE TABLE carbon_new(intField int,stringField string,charField string,timestampField " +
+      "timestamp,decimalField decimal(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_new " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(
+      "Alter table carbon_new add columns(newField string) TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='newField','DEFAULT.VALUE.newField'='def')")
+    checkAnswer(sql("select * from carbon_new limit 1"),
+      Row(new Integer(100),
+        "spark",
+        "abc",
+        Timestamp.valueOf("2015-04-23 00:00:00.0"),
+        new BigDecimal(21.23).setScale(2, RoundingMode.HALF_UP),
+        "def"))
+    sql("drop table carbon_new")
+  }
+
+  test("test to check data if all columns are provided in select") {
+    sql("DROP TABLE IF EXISTS carbon_new")
+    sql(
+      "CREATE TABLE carbon_new(intField int,stringField string,charField string,timestampField " +
+      "timestamp,decimalField decimal(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_new " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(
+      "Alter table carbon_new add columns(newField string) TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='newField')")
+    assert(sql(
+      "select intField,stringField,charField,timestampField,decimalField, newField from " +
+      "carbon_new limit 1").count().equals(1L))
+    sql("drop table carbon_new")
+  }
+
+  test("test to check data if new column query order is different from schema order") {
+    sql("DROP TABLE IF EXISTS carbon_new")
+    sql(
+      "CREATE TABLE carbon_new(intField int,stringField string,charField string,timestampField " +
+      "timestamp,decimalField decimal(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_new " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(
+      "Alter table carbon_new add columns(newField string) TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='newField','DEFAULT.VALUE.newField'='def')")
+    checkAnswer(sql(
+      "select intField,stringField,charField,newField,timestampField,decimalField from " +
+      "carbon_new limit 1"), Row(new Integer(100),
+      "spark",
+      "abc",
+      "def",
+      Timestamp.valueOf("2015-04-23 00:00:00.0"),
+      new BigDecimal(21.23).setScale(2, RoundingMode.HALF_UP)))
+    sql("drop table carbon_new")
   }
 
   override def afterAll {
