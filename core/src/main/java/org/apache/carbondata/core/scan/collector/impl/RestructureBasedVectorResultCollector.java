@@ -107,19 +107,20 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
   private void fillDataForNonExistingDimensions() {
     for (int i = 0; i < tableBlockExecutionInfos.getActualQueryDimensions().length; i++) {
       if (!dimensionInfo.getDimensionExists()[i]) {
+        int queryOrder = tableBlockExecutionInfos.getActualQueryDimensions()[i].getQueryOrder();
         CarbonDimension dimension =
             tableBlockExecutionInfos.getActualQueryDimensions()[i].getDimension();
         if (dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           // fill direct dictionary column data
-          fillDirectDictionaryData(allColumnInfo[i].vector, allColumnInfo[i],
+          fillDirectDictionaryData(allColumnInfo[queryOrder].vector, allColumnInfo[queryOrder],
               dimensionInfo.getDefaultValues()[i]);
         } else if (dimension.hasEncoding(Encoding.DICTIONARY)) {
           // fill dictionary column data
-          fillDictionaryData(allColumnInfo[i].vector, allColumnInfo[i],
+          fillDictionaryData(allColumnInfo[queryOrder].vector, allColumnInfo[queryOrder],
               dimensionInfo.getDefaultValues()[i]);
         } else {
           // fill no dictionary data
-          fillNoDictionaryData(allColumnInfo[i].vector, allColumnInfo[i],
+          fillNoDictionaryData(allColumnInfo[queryOrder].vector, allColumnInfo[queryOrder],
               dimension.getDefaultValue());
         }
       }
