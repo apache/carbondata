@@ -16,7 +16,7 @@
  */
 
 /**
- * File format description for CarbonData index file, one node one carbonindex file for building driver side's index tree.
+ * File format description for CarbonData index file for btree.
  */
 namespace java org.apache.carbondata.format
 

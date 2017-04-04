@@ -72,8 +72,9 @@ enum CompressionCodec{
 }
 
 /**
- * Represents the data of one column page or one column page group in one blocklet.
- * Currently CarbonData using snappy for compression directly, user can specify the different compression by ChunkCompressionMeta.
+ * Represents the data of one column page or one column page group inside blocklet.
+ * Currently CarbonData using snappy for compression directly , user can specify the different compression by ChunkCompressionMeta.
+ * Currently not using it , keep it as for future extend ability.
  */
 struct ChunkCompressionMeta{
     1: required CompressionCodec compression_codec; // The compressor used
@@ -97,7 +98,7 @@ struct PresenceMeta{
  */
 struct DataChunk{
     1: required ChunkCompressionMeta chunk_meta; // The metadata of a chunk
-    2: required bool rowMajor; // Whether this chunk is a row chunk or column chunk, Decide whether this can be replace with counting of columnIDs.
+    2: required bool rowMajor; // Whether this chunk is a row chunk or column chunk
 	/** The column IDs in this chunk, in the order in which the data is physically stored, will have atleast one column ID for columnar format, many column ID for row major format**/
     3: required list<i32> column_ids;
     4: required i64 data_page_offset; // Offset of data page
@@ -118,7 +119,7 @@ struct DataChunk{
  */
 struct DataChunk2{
     1: required ChunkCompressionMeta chunk_meta; // The metadata of a chunk
-    2: required bool rowMajor; // Whether this chunk is a row chunk or column chunk, Decide whether this can be replace with counting of columnIDs.
+    2: required bool rowMajor; // Whether this chunk is a row chunk or column chunk
 	/** The column IDs in this chunk, in the order in which the data is physically stored, will have atleast one column ID for columnar format, many column ID for row major format**/
     3: required i32 data_page_length; // Length of data page
     4: optional i32 rowid_page_length; // Length of row id page, only if encoded using inverted index
