@@ -77,18 +77,22 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
         checkType(split, CarbondataSplit.class, "split is not class CarbondataSplit");
     checkArgument(cdSplit.getConnectorId().equals(connectorId), "split is not for this connector");
 
+    String targetCols = "";
     // Convert all columns handles
     ImmutableList.Builder<CarbondataColumnHandle> handles = ImmutableList.builder();
     for (ColumnHandle handle : columns) {
       handles.add(checkType(handle, CarbondataColumnHandle.class, "handle"));
+      targetCols += ((CarbondataColumnHandle) handle).getColumnName() + ",";
     }
 
     // Build column projection(check the column order)
-    String targetCols = "";
-    for (ColumnHandle col : columns) {
-      targetCols += ((CarbondataColumnHandle) col).getColumnName() + ",";
+    if (targetCols.length() > 0) {
+      targetCols = targetCols.substring(0, targetCols.length() - 1);
     }
-    targetCols = targetCols.substring(0, targetCols.length() - 1);
+    else
+    {
+      targetCols = null;
+    }
     //String cols = String.join(",", columns.stream().map(a -> ((CarbondataColumnHandle)a).getColumnName()).collect(Collectors.toList()));
 
     CarbonTableCacheModel tableCacheModel =
