@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.cache.dictionary;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -30,8 +29,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -51,62 +49,59 @@ public class ManageDictionary {
    * This method will delete the dictionary files for the given column IDs and
    * clear the dictionary cache
    *
-   * @param dictionaryColumns
-   * @param carbonTable
+   * @param columnSchema
+   * @param carbonTableIdentifier
+   * @param storePath
    */
-  public static void deleteDictionaryFileAndCache(List<CarbonColumn> dictionaryColumns,
-      CarbonTable carbonTable) {
-    if (!dictionaryColumns.isEmpty()) {
-      CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
-      CarbonTablePath carbonTablePath =
-          CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath(), carbonTableIdentifier);
-      String metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath();
-      CarbonFile metadataDir = FileFactory
-          .getCarbonFile(metadataDirectoryPath, FileFactory.getFileType(metadataDirectoryPath));
-      for (final CarbonColumn column : dictionaryColumns) {
-        // sort index file is created with dictionary size appended to it. So all the files
-        // with a given column ID need to be listed
-        CarbonFile[] listFiles = metadataDir.listFiles(new CarbonFileFilter() {
-          @Override public boolean accept(CarbonFile path) {
-            if (path.getName().startsWith(column.getColumnId())) {
-              return true;
-            }
-            return false;
-          }
-        });
-        for (CarbonFile file : listFiles) {
-          // try catch is inside for loop because even if one deletion fails, other files
-          // still need to be deleted
-          try {
-            FileFactory.deleteFile(file.getCanonicalPath(),
-                FileFactory.getFileType(file.getCanonicalPath()));
-          } catch (IOException e) {
-            LOGGER.error(
-                "Failed to delete dictionary or sortIndex file for column " + column.getColName()
-                    + "with column ID " + column.getColumnId());
-          }
+  public static void deleteDictionaryFileAndCache(final ColumnSchema columnSchema,
+      CarbonTableIdentifier carbonTableIdentifier, String storePath) {
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier);
+    String metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath();
+    CarbonFile metadataDir = FileFactory
+        .getCarbonFile(metadataDirectoryPath, FileFactory.getFileType(metadataDirectoryPath));
+    // sort index file is created with dictionary size appended to it. So all the files
+    // with a given column ID need to be listed
+    CarbonFile[] listFiles = metadataDir.listFiles(new CarbonFileFilter() {
+      @Override public boolean accept(CarbonFile path) {
+        if (path.getName().startsWith(columnSchema.getColumnUniqueId())) {
+          return true;
         }
-        // remove dictionary cache
-        removeDictionaryColumnFromCache(carbonTable, column.getColumnId());
+        return false;
+      }
+    });
+    for (CarbonFile file : listFiles) {
+      // try catch is inside for loop because even if one deletion fails, other files
+      // still need to be deleted
+      try {
+        FileFactory
+            .deleteFile(file.getCanonicalPath(), FileFactory.getFileType(file.getCanonicalPath()));
+      } catch (IOException e) {
+        LOGGER.error("Failed to delete dictionary or sortIndex file for column " + columnSchema
+            .getColumnName() + "with column ID " + columnSchema.getColumnUniqueId());
       }
     }
+    // remove dictionary cache
+    removeDictionaryColumnFromCache(carbonTableIdentifier, storePath,
+        columnSchema.getColumnUniqueId());
   }
 
   /**
    * This method will remove dictionary cache from driver for both reverse and forward dictionary
    *
-   * @param carbonTable
+   * @param carbonTableIdentifier
+   * @param storePath
    * @param columnId
    */
-  public static void removeDictionaryColumnFromCache(CarbonTable carbonTable, String columnId) {
-    Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache = CacheProvider.getInstance()
-        .createCache(CacheType.REVERSE_DICTIONARY, carbonTable.getStorePath());
+  public static void removeDictionaryColumnFromCache(CarbonTableIdentifier carbonTableIdentifier,
+      String storePath, String columnId) {
+    Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache =
+        CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY, storePath);
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(carbonTable.getCarbonTableIdentifier(),
+        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
             new ColumnIdentifier(columnId, null, null));
     dictCache.invalidate(dictionaryColumnUniqueIdentifier);
-    dictCache = CacheProvider.getInstance()
-        .createCache(CacheType.FORWARD_DICTIONARY, carbonTable.getStorePath());
+    dictCache = CacheProvider.getInstance().createCache(CacheType.FORWARD_DICTIONARY, storePath);
     dictCache.invalidate(dictionaryColumnUniqueIdentifier);
   }
 
