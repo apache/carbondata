@@ -24,7 +24,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
-import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -354,8 +353,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
 
   private BitSet getFilteredIndexes(DimensionColumnDataChunk dimensionColumnDataChunk,
       int numerOfRows) {
-    if (dimensionColumnDataChunk.isExplicitSorted()
-        && dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
+    if (dimensionColumnDataChunk.isExplicitSorted()) {
       return setFilterdIndexToBitSetWithColumnIndex(dimensionColumnDataChunk, numerOfRows);
     }
     return setFilterdIndexToBitSet(dimensionColumnDataChunk, numerOfRows);
