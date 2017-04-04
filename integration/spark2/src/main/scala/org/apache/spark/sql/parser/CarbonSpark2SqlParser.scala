@@ -43,6 +43,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           case x: LoadTable =>
             x.inputSqlString = input
             x
+          case x: AlterTableCompaction =>
+            x.alterTableModel.alterSql = input
+            x
           case logicalPlan => logicalPlan
         }
         case failureOrError =>
