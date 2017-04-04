@@ -104,6 +104,14 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     checkExistence(sql("desc restructure"), true, "dcmldecimal(5,4)")
   }
 
+  test(
+    "test add decimal without scale and precision, default precision and scale (10,0) should be " +
+    "used")
+  {
+    sql("alter table restructure add columns(dcmldefault decimal)")
+    checkExistence(sql("desc restructure"), true, "dcmldefaultdecimal(10,0)")
+  }
+
   test("test adding existing measure as dimension") {
     sql("alter table restructure add columns(dcmlfld decimal(5,4))")
     try {
