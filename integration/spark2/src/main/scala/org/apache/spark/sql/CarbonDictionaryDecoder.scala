@@ -347,11 +347,42 @@ object CarbonDictionaryDecoder {
   }
 
   /**
+   * Updates all dictionary attributes with integer datatype.
+   */
+  def updateAttributes(output: Seq[Attribute],
+      relations: Seq[CarbonDecoderRelation],
+      aliasMap: CarbonAliasDecoderRelation): Seq[Attribute] = {
+    output.map { a =>
+      val attr = aliasMap.getOrElse(a, a)
+      val relation = relations.find(p => p.contains(attr))
+      if (relation.isDefined) {
+        val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
+        val carbonDimension = carbonTable
+          .getDimensionByName(carbonTable.getFactTableName, attr.name)
+        if (carbonDimension != null &&
+            carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
+            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
+            !carbonDimension.isComplex()) {
+          val newAttr = AttributeReference(a.name,
+            IntegerType,
+            a.nullable,
+            a.metadata)(a.exprId).asInstanceOf[Attribute]
+          newAttr
+        } else {
+          a
+        }
+      } else {
+        a
+      }
+    }
+  }
+
+  /**
    * Whether the attributed requires to decode or not based on the profile.
    */
   def canBeDecoded(attr: Attribute, profile: CarbonProfile): Boolean = {
     profile match {
-      case ip: IncludeProfile if ip.attributes.nonEmpty =>
+      case ip: IncludeProfile =>
         ip.attributes
           .exists(a => a.name.equalsIgnoreCase(attr.name) && a.exprId == attr.exprId)
       case ep: ExcludeProfile =>
