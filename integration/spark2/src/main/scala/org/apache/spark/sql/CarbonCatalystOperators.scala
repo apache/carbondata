@@ -20,6 +20,7 @@ package org.apache.spark.sql
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.{HiveContext, HiveSessionCatalog}
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types.{StringType, TimestampType}
@@ -33,8 +34,22 @@ case class CarbonDictionaryCatalystDecoder(
     isOuter: Boolean,
     child: LogicalPlan) extends UnaryNode {
   // the output should be updated with converted datatype, it is need for limit+sort plan.
-  override val output: Seq[Attribute] =
-    CarbonDictionaryDecoder.convertOutput(child.output, relations, profile, aliasMap)
+  override def output: Seq[Attribute] = {
+    child match {
+      case l: LogicalRelation =>
+        // If the child is logical plan then firts update all dictionary attr with IntegerType
+        val logicalOut =
+          CarbonDictionaryDecoder.updateAttributes(child.output, relations, aliasMap)
+        CarbonDictionaryDecoder.convertOutput(logicalOut, relations, profile, aliasMap)
+      case Filter(cond, l: LogicalRelation) =>
+        // If the child is logical plan then firts update all dictionary attr with IntegerType
+        val logicalOut =
+          CarbonDictionaryDecoder.updateAttributes(child.output, relations, aliasMap)
+        CarbonDictionaryDecoder.convertOutput(logicalOut, relations, profile, aliasMap)
+      case _ => CarbonDictionaryDecoder.convertOutput(child.output, relations, profile, aliasMap)
+    }
+  }
+
 }
 
 abstract class CarbonProfile(attributes: Seq[Attribute]) extends Serializable {
