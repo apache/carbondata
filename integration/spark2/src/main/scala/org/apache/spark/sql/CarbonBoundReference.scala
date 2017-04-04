@@ -25,7 +25,9 @@ import org.apache.spark.sql.types.DataType
 
 import org.apache.carbondata.core.scan.expression.ColumnExpression
 
-case class CastExpr(expr: Expression) extends Filter
+case class CastExpr(expr: Expression) extends Filter {
+  override def references: Array[String] = null
+}
 
 case class CarbonBoundReference(colExp: ColumnExpression, dataType: DataType, nullable: Boolean)
   extends LeafExpression with NamedExpression with CodegenFallback {
@@ -42,5 +44,8 @@ case class CarbonBoundReference(colExp: ColumnExpression, dataType: DataType, nu
 
   override def exprId: ExprId = throw new UnsupportedOperationException
 
-  override def qualifiers: Seq[String] = throw new UnsupportedOperationException
+  override def qualifier: Option[String] = null
+
+  override def newInstance(): NamedExpression = throw new UnsupportedOperationException
 }
+

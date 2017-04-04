@@ -46,17 +46,9 @@ case class CarbonScan(
 
   def processFilterExpressions(plan: CarbonQueryPlan) {
     if (dimensionPredicatesRaw.nonEmpty) {
-      val expressionVal = CarbonFilters.processExpression(
-        dimensionPredicatesRaw,
-        attributesNeedToDecode,
-        unprocessedExprs,
-        carbonTable)
-      expressionVal match {
-        case Some(ce) =>
-          // adding dimension used in expression in querystats
-          plan.setFilterExpression(ce)
-        case _ =>
-      }
+      val exps = CarbonFilters.preProcessExpressions(dimensionPredicatesRaw)
+      val expressionVal = CarbonFilters.transformExpression(exps.head)
+      plan.setFilterExpression(expressionVal)
     }
     processExtraAttributes(plan)
   }
