@@ -1427,7 +1427,7 @@ public final class CarbonUtil {
     ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
     valueEncoderMeta.setType(measureType);
     switch (measureType) {
-      case CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE:
+      case CarbonCommonConstants.DOUBLE_MEASURE:
         valueEncoderMeta.setMaxValue(buffer.getDouble());
         valueEncoderMeta.setMinValue(buffer.getDouble());
         valueEncoderMeta.setUniqueValue(buffer.getDouble());

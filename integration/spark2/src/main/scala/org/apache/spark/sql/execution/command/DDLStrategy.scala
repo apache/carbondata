@@ -72,7 +72,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
               "Unsupported alter operation on carbon table")
           }
         } else {
-          throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
+          throw new MalformedCarbonCommandException(
+            "Operation not allowed : " + altertablemodel.alterSql)
         }
       case dataTypeChange@AlterTableDataTypeChange(alterTableChangeDataTypeModel) =>
         val isCarbonTable = CarbonEnv.get.carbonMetastore

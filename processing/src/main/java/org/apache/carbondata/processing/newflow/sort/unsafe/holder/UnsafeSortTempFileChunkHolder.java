@@ -324,7 +324,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
 
       for (int mesCount = 0; mesCount < measureCount; mesCount++) {
         if (UnsafeCarbonRowPage.isSet(words, mesCount)) {
-          if (aggType[mesCount] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+          if (aggType[mesCount] == CarbonCommonConstants.DOUBLE_MEASURE) {
             row[dimensionCount + mesCount] = stream.readDouble();
           } else if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {
             row[dimensionCount + mesCount] = stream.readLong();

@@ -881,9 +881,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * Matching the decimal(10,0) data type and returning the same.
    */
   private lazy val decimalType =
-  DECIMAL ~ ("(" ~> numericLit <~ ",") ~ (numericLit <~ ")") ^^ {
-    case decimal ~ precision ~ scale =>
-      s"$decimal($precision, $scale)"
+  DECIMAL ~ (("(" ~> numericLit <~ ",") ~ (numericLit <~ ")")).? ^^ {
+    case decimal ~ precisionAndScale => if (precisionAndScale.isDefined) {
+      s"$decimal(${ precisionAndScale.get._1 }, ${ precisionAndScale.get._2 })"
+    } else {
+      s"$decimal(10,0)"
+    }
   }
 
   protected lazy val nestedType: Parser[Field] = structFieldType | arrayFieldType |

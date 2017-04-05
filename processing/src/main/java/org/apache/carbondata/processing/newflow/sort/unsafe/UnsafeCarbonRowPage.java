@@ -116,7 +116,7 @@ public class UnsafeCarbonRowPage {
     for (int mesCount = 0; mesCount < measureSize; mesCount++) {
       Object value = row[mesCount + dimensionSize];
       if (null != value) {
-        if (aggType[mesCount] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+        if (aggType[mesCount] == CarbonCommonConstants.DOUBLE_MEASURE) {
           Double val = (Double) value;
           CarbonUnsafe.unsafe.putDouble(baseObject, address + size, val);
           size += 8;
@@ -187,7 +187,7 @@ public class UnsafeCarbonRowPage {
 
     for (int mesCount = 0; mesCount < measureSize; mesCount++) {
       if (isSet(nullSetWords, mesCount)) {
-        if (aggType[mesCount] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+        if (aggType[mesCount] == CarbonCommonConstants.DOUBLE_MEASURE) {
           Double val = CarbonUnsafe.unsafe.getDouble(baseObject, address + size);
           size += 8;
           rowToFill[dimensionSize + mesCount] = val;
@@ -258,7 +258,7 @@ public class UnsafeCarbonRowPage {
 
     for (int mesCount = 0; mesCount < measureSize; mesCount++) {
       if (isSet(nullSetWords, mesCount)) {
-        if (aggType[mesCount] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+        if (aggType[mesCount] == CarbonCommonConstants.DOUBLE_MEASURE) {
           double val = CarbonUnsafe.unsafe.getDouble(baseObject, address + size);
           size += 8;
           stream.writeDouble(val);
