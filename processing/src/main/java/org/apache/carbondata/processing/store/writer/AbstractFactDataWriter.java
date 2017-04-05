@@ -296,7 +296,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     this.carbonDataFileName = carbonTablePath
         .getCarbonDataFileName(fileCount, dataWriterVo.getCarbonDataFileAttributes().getTaskId(),
             dataWriterVo.getBucketNumber(), dataWriterVo.getTaskExtension(),
-            dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
+            "" + dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
     String actualFileNameVal = carbonDataFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     FileData fileData = new FileData(actualFileNameVal, dataWriterVo.getStoreLocation());
     dataWriterVo.getFileManager().add(fileData);
@@ -447,7 +447,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     String fileName = dataWriterVo.getStoreLocation() + File.separator + carbonTablePath
         .getCarbonIndexFileName(dataWriterVo.getCarbonDataFileAttributes().getTaskId(),
             dataWriterVo.getBucketNumber(), dataWriterVo.getTaskExtension(),
-            dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
+            "" + dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
     CarbonIndexFileWriter writer = new CarbonIndexFileWriter();
     // open file
     writer.openThriftWriter(fileName);

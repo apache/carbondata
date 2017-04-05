@@ -170,7 +170,7 @@ public final class CarbonDataMergerUtil {
     boolean updateLockStatus = false;
     boolean tableLockStatus = false;
 
-    String timestamp = carbonLoadModel.getFactTimeStamp();
+    String timestamp = "" + carbonLoadModel.getFactTimeStamp();
 
     List<String> updatedDeltaFilesList =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
