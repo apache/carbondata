@@ -256,7 +256,7 @@ public class CarbonTableReader {
   public List<CarbonLocalInputSplit> getInputSplits2(CarbonTableCacheModel tableCacheModel,
       Expression filters) throws Exception {
 
-    //处理filter, 下推filter，将应用在Segment的索引上
+    // apply filters to segment
     FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
 
     AbsoluteTableIdentifier absoluteTableIdentifier =
