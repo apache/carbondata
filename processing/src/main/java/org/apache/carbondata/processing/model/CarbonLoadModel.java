@@ -85,7 +85,7 @@ public class CarbonLoadModel implements Serializable {
   /**
    * new load start time
    */
-  private String factTimeStamp;
+  private long factTimeStamp;
   /**
    * load Id
    */
@@ -590,7 +590,7 @@ public class CarbonLoadModel implements Serializable {
   /**
    * @return
    */
-  public String getFactTimeStamp() {
+  public long getFactTimeStamp() {
     return factTimeStamp;
   }
 
@@ -598,7 +598,7 @@ public class CarbonLoadModel implements Serializable {
    * @param factTimeStamp
    */
   public void setFactTimeStamp(long factTimeStamp) {
-    this.factTimeStamp = factTimeStamp + "";
+    this.factTimeStamp = factTimeStamp;
   }
 
   public String[] getDelimiters() {
