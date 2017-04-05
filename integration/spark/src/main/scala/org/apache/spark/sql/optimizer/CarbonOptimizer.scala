@@ -229,7 +229,11 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
         sortMdkDimensions = sort.order.map {
           x =>
             if (!sortMdkPushdownFlg) {
-              null
+              return Sort(sort.order, sort.global, child)
+            }
+            if (!x.child.isInstanceOf[AttributeReference]) {
+              sortMdkPushdownFlg = false
+              return Sort(sort.order, sort.global, child)
             }
             var sortColRef = x.child.references
             var col = sortColRef.iterator.next()
@@ -238,11 +242,11 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
               carbonTable.getDimensionByName(carbonTable.getFactTableName, colName)
             if (carbonDimension == null) {
               sortMdkPushdownFlg = false
-              null
+              return Sort(sort.order, sort.global, child)
             } else {
               if (carbonDimension.getSchemaOrdinal != orderByPrefixMdkCnt) {
                 sortMdkPushdownFlg = false
-                null
+                return Sort(sort.order, sort.global, child)
               } else {
                 orderByPrefixMdkCnt = orderByPrefixMdkCnt + 1
               }
@@ -251,7 +255,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
                 sortDirection = x.direction
               } else if (!sortDirection.equals(x.direction)) {
                 sortMdkPushdownFlg = false
-                null
+                return Sort(sort.order, sort.global, child)
               }
               qd.setSortOrder(getCarbonSortDirection(x.direction))
               qd.setDimension(carbonDimension)

@@ -794,7 +794,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   public static void setSortMdkExpression(Configuration configuration,
       List<QueryDimension> sortMdkDimensions) {
     if (sortMdkDimensions == null) {
-      return;
+      sortMdkDimensions = new ArrayList<QueryDimension>(0);
     }
     try {
       String sortsString = ObjectSerializationUtil.convertObjectToString(sortMdkDimensions);
@@ -809,7 +809,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     try {
       String sortsExprString = configuration.get(SORT_MDK_PREDICATE);
       if (sortsExprString == null) {
-        return null;
+        return new ArrayList<QueryDimension>(0);
       }
       Object sortMdkDimensions = ObjectSerializationUtil.convertStringToObject(sortsExprString);
       return (List<QueryDimension>) sortMdkDimensions;

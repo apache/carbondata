@@ -29,10 +29,7 @@ object OrderByMdkFilterQuery {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
-    cc.sql("""
-           SELECT date,country,name,salary FROM sortbymdk limit 100
-           """).show(100000)
-
+    cc.sql("""select * from sortbymdk order by 2""").show()
     var start = System.currentTimeMillis()
     cc.sql("""
            SELECT date,country,name,salary FROM sortbymdk ORDER BY date limit 1000

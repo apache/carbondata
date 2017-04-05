@@ -403,7 +403,7 @@ public class QueryModel implements Serializable {
    */
   public void setSortMdkDimensions(List<QueryDimension> sortMdkDimensions,
       CarbonTable carbonTable) {
-    if (sortMdkDimensions == null) {
+    if (sortMdkDimensions == null || sortMdkDimensions.size() == 0) {
       return;
     }
     for (QueryDimension qd : sortMdkDimensions) {
