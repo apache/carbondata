@@ -137,6 +137,10 @@ public final class CarbonCommonConstants {
    */
   public static final String VIEWFSURL_PREFIX = "viewfs://";
   /**
+   * CFSURL_PREFIX
+   */
+  public static final String CFSURL_PREFIX = "cfs://";
+  /**
    * FS_DEFAULT_FS
    */
   public static final String FS_DEFAULT_FS = "fs.defaultFS";

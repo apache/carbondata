@@ -42,7 +42,8 @@ public class SchemaReader {
     String schemaFilePath = carbonTablePath.getSchemaFilePath();
     if (FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.LOCAL) ||
         FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.HDFS) ||
-        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.VIEWFS)) {
+        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.VIEWFS) ||
+        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.CFS)) {
       String tableName = identifier.getCarbonTableIdentifier().getTableName();
 
       ThriftReader.TBaseCreator createTBase = new ThriftReader.TBaseCreator() {

@@ -65,6 +65,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CFS:
         return new DFSFileHolderImpl();
       default:
         return new FileHolderImpl();
@@ -81,6 +82,9 @@ public final class FileFactory {
     else if (path.startsWith(CarbonUtil.VIEWFS_PREFIX)) {
       return FileType.VIEWFS;
     }
+    else if (path.startsWith(CarbonUtil.CFS_PREFIX)) {
+      return FileType.CFS;
+    }
     return FileType.LOCAL;
   }
 
@@ -94,6 +98,8 @@ public final class FileFactory {
         return new AlluxioCarbonFile(path);
       case VIEWFS:
         return new ViewFSCarbonFile(path);
+      case CFS:
+        return new CFSCarbonFile(path);
       default:
         return new LocalCarbonFile(getUpdatedFilePath(path, fileType));
     }
@@ -124,6 +130,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CFS:
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
         if (bufferSize == -1) {
@@ -162,6 +169,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CFS:
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
         FSDataInputStream stream = fs.open(pt, bufferSize);
@@ -189,6 +197,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CFS:
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
         FSDataOutputStream stream = fs.create(pt, true);
@@ -209,6 +218,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CFS:
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
         FSDataOutputStream stream = null;
@@ -242,6 +252,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CFS:
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
         FSDataOutputStream stream =
@@ -269,6 +280,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CFS:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(configuration);
         if (performFileCheck) {
@@ -303,6 +315,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CFS:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(configuration);
         return fs.exists(path);
@@ -321,6 +334,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CFS:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(configuration);
         return fs.createNewFile(path);
@@ -339,6 +353,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CFS:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(configuration);
         return fs.delete(path, true);
@@ -371,6 +386,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CFS:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(configuration);
         return fs.mkdirs(path);
@@ -400,6 +416,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CFS:
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
         FSDataOutputStream stream = fs.append(pt);
@@ -424,6 +441,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CFS:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(configuration);
         if (fs.createNewFile(path)) {
@@ -440,7 +458,7 @@ public final class FileFactory {
   }
 
   public enum FileType {
-    LOCAL, HDFS, ALLUXIO, VIEWFS
+    LOCAL, HDFS, ALLUXIO, VIEWFS, CFS
   }
 
   /**
@@ -457,6 +475,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CFS:
         return filePath;
       case LOCAL:
       default:
@@ -496,6 +515,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case CFS:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(configuration);
         return fs.getContentSummary(path).getLength();
