@@ -196,7 +196,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   /**
    * number of row need to return
    */
-  protected int limit = 0;
+  protected int limit = -1;
 
   protected boolean limitFlg = false;
 

@@ -209,7 +209,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
     relations.foreach(_.fillAttributeMap(attrMap))
 
     // for sort optimization
-    var limitValue: Int = 0
+    var limitValue: Int = -1
     var sortMdkDimensions: Seq[QueryDimension] = Nil
     var sortMdkPushdownFlg = false
     var carbonTable : CarbonTable = null

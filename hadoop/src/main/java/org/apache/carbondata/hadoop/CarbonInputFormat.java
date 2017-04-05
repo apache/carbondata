@@ -821,7 +821,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private int getLimitExpression(Configuration configuration) {
     String limit = configuration.get(LIMIT_PREDICATE);
     if (limit == null) {
-      return 0;
+      return -1;
     }
     return Integer.parseInt(limit);
   }

@@ -110,7 +110,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
     private def carbonRawScan(projectList: Seq[NamedExpression],
       predicates: Seq[Expression],
       logicalRelation: LogicalRelation, sortMdkDimensions: Seq[QueryDimension] = Nil,
-            limitValue: Int = 0)(sc: SQLContext): SparkPlan = {
+            limitValue: Int = -1)(sc: SQLContext): SparkPlan = {
 
       val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceRelation]
       val tableName: String =
@@ -180,7 +180,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       predicates: Seq[Expression],
       logicalRelation: LogicalRelation,
       sortMdkDimensions: Seq[QueryDimension] = Nil,
-      limitValue: Int = 0)(sc: SQLContext): SparkPlan = {
+      limitValue: Int = -1)(sc: SQLContext): SparkPlan = {
       val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceRelation]
       val tableName: String =
         relation.carbonRelation.metaData.carbonTable.getFactTableName.toLowerCase

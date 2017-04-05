@@ -54,10 +54,10 @@ class CarbonScanRDD(
     @transient sc: SparkContext,
     columnProjection: CarbonProjection,
     filterExpression: Expression,
-    limit: Int,
-    sortMdkDimensions: Seq[QueryDimension],
     identifier: AbsoluteTableIdentifier,
-    @transient carbonTable: CarbonTable)
+    @transient carbonTable: CarbonTable,
+    limit: Int = -1,
+    sortMdkDimensions: Seq[QueryDimension] = null)
   extends RDD[InternalRow](sc, Nil) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")

@@ -112,7 +112,7 @@ public class QueryModel implements Serializable {
     queryMeasures = new ArrayList<QueryMeasure>();
     invalidSegmentIds = new ArrayList<>();
     sortMdkDimensions = new ArrayList<QueryDimension>();
-    limit = 0;
+    limit = -1;
   }
 
   public static QueryModel createModel(AbsoluteTableIdentifier absoluteTableIdentifier,
@@ -403,6 +403,9 @@ public class QueryModel implements Serializable {
    */
   public void setSortMdkDimensions(List<QueryDimension> sortMdkDimensions,
       CarbonTable carbonTable) {
+    if (sortMdkDimensions == null) {
+      return;
+    }
     for (QueryDimension qd : sortMdkDimensions) {
       CarbonDimension dimensionByName = carbonTable
           .getDimensionByName(carbonTable.getFactTableName(), qd.getColumnName());

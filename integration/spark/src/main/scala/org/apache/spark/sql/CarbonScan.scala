@@ -128,10 +128,10 @@ case class CarbonScan(
       ocRaw.sparkContext,
       projection,
       buildCarbonPlan.getFilterExpression,
-      limitValue,
-      sortMdkDimensions,
       carbonTable.getAbsoluteTableIdentifier,
-      carbonTable
+      carbonTable,
+      limitValue,
+      sortMdkDimensions
     )
   }
 
