@@ -69,13 +69,6 @@ public class CarbondataMetadata implements ConnectorMetadata {
   @Override
   public List<SchemaTableName> listTables(ConnectorSession session, String schemaNameOrNull) {
 
-        /*List<SchemaTableName> all = carbonTableReader.getTableList();
-        if(schemaNameOrNull != null)
-        {
-            return all.stream().filter(a -> schemaNameOrNull.equals(a.getSchemaName())).collect(Collectors.toList());
-        }
-        return all;*/
-
     List<String> schemaNames;
     if (schemaNameOrNull != null) {
       schemaNames = ImmutableList.of(schemaNameOrNull);

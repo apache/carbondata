@@ -338,7 +338,7 @@ public class CarbonTableReader {
     //DriverQueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance();
     //QueryStatistic statistic = new QueryStatistic();
 
-    //读取Segment 内部的Index
+    // read segmeng index
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap =
         getSegmentAbstractIndexs(absoluteTableIdentifier, tablePath, segmentId, cacheClient,
             updateStatusManager);
