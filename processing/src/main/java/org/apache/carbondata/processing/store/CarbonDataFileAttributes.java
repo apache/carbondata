@@ -39,13 +39,13 @@ public class CarbonDataFileAttributes {
   /**
    * load start time
    */
-  private String factTimeStamp;
+  private long factTimeStamp;
 
   /**
    * @param taskId
    * @param factTimeStamp
    */
-  public CarbonDataFileAttributes(int taskId, String factTimeStamp) {
+  public CarbonDataFileAttributes(int taskId, long factTimeStamp) {
     this.taskId = taskId;
     this.factTimeStamp = factTimeStamp;
   }
@@ -57,10 +57,14 @@ public class CarbonDataFileAttributes {
     return taskId;
   }
 
+  public void setFactTimeStamp(long factTimeStamp) {
+    this.factTimeStamp = factTimeStamp;
+  }
+
   /**
    * @return fact time stamp which is load start time
    */
-  public String getFactTimeStamp() {
+  public long getFactTimeStamp() {
     return factTimeStamp;
   }
 
