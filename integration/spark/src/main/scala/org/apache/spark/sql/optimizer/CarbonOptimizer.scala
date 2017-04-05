@@ -176,7 +176,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
     } isDefined
   }
   def readyForLimitOptimization(plan: LogicalPlan): Boolean = {
-    if(hasLimit(plan) && hasAggregate(plan) && !hasSort(plan) && !hasFilter(plan)) true
+    if (hasLimit(plan) && hasAggregate(plan) && !hasSort(plan) && !hasFilter(plan)) true
     else false
   }
   def isOptimized(plan: LogicalPlan): Boolean = {
@@ -583,7 +583,8 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             val newFilters = LimitQueryOptimizer.
               getFilters(limit_num, groupingExpressions, relations, agg.child).getOrElse(null)
             if (newFilters != null) {
-              val new_agg = new Aggregate(agg.groupingExpressions, agg.aggregateExpressions, newFilters)
+              val new_agg = new Aggregate(agg.groupingExpressions, agg.aggregateExpressions,
+                newFilters)
               addDecoder(new_agg)
             } else {
               addDecoder(agg)
