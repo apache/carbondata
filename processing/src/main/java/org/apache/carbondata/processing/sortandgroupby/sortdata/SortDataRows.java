@@ -285,7 +285,7 @@ public class SortDataRows {
           Object value = row[mesCount + dimColCount];
           if (null != value) {
             stream.write((byte) 1);
-            if (aggType[mesCount] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+            if (aggType[mesCount] == CarbonCommonConstants.DOUBLE_MEASURE) {
               Double val = (Double) value;
               stream.writeDouble(val);
             } else if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {

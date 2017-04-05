@@ -310,7 +310,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     for (int mesCount = 0; mesCount < measureSize; mesCount++) {
       Object value = row[mesCount + dimensionSize];
       if (null != value) {
-        if (aggType[mesCount] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+        if (aggType[mesCount] == CarbonCommonConstants.DOUBLE_MEASURE) {
           Double val = (Double) value;
           rowData.putDouble(size, val);
           size += 8;

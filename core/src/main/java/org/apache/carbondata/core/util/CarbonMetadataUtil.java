@@ -824,7 +824,7 @@ public class CarbonMetadataUtil {
 
   public static byte[] serializeEncodeMetaUsingByteBuffer(ValueEncoderMeta valueEncoderMeta) {
     ByteBuffer buffer = null;
-    if (valueEncoderMeta.getType() == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+    if (valueEncoderMeta.getType() == CarbonCommonConstants.DOUBLE_MEASURE) {
       buffer = ByteBuffer.allocate(
           (CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
               + 3);

@@ -152,9 +152,12 @@ public final class DataTypeUtil {
       case LONG:
         return CarbonCommonConstants.BIG_INT_MEASURE;
       default:
-        return CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE;
+        return CarbonCommonConstants.DOUBLE_MEASURE;
     }
   }
+
+  // bytes of 0 in BigDecimal
+  public static final byte[] zeroBigDecimalBytes = bigDecimalToByte(BigDecimal.valueOf(0));
 
   /**
    * This method will convert a big decimal value to bytes
