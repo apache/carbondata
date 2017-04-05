@@ -26,15 +26,15 @@ public class NewRowComparatorForNormalDims implements Comparator<Object[]> {
   /**
    * dimension count
    */
-  private int dimensionCount;
+  private int numberOfSortColumns;
 
   /**
    * RowComparatorForNormalDims Constructor
    *
-   * @param dimensionCount
+   * @param numberOfSortColumns
    */
-  public NewRowComparatorForNormalDims(int dimensionCount) {
-    this.dimensionCount = dimensionCount;
+  public NewRowComparatorForNormalDims(int numberOfSortColumns) {
+    this.numberOfSortColumns = numberOfSortColumns;
   }
 
   /**
@@ -45,7 +45,7 @@ public class NewRowComparatorForNormalDims implements Comparator<Object[]> {
   public int compare(Object[] rowA, Object[] rowB) {
     int diff = 0;
 
-    for (int i = 0; i < dimensionCount; i++) {
+    for (int i = 0; i < numberOfSortColumns; i++) {
 
       int dimFieldA = (int)rowA[i];
       int dimFieldB = (int)rowB[i];

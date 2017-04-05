@@ -151,6 +151,10 @@ public class SegmentProperties {
    */
   private ColumnGroupModel colGroupModel;
 
+  private int numberOfSortColumns = 0;
+
+  private int numberOfNoDictSortColumns = 0;
+
   public SegmentProperties(List<ColumnSchema> columnsInTable, int[] columnCardinality) {
     dimensions = new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     complexDimensions =
@@ -336,6 +340,9 @@ public class SegmentProperties {
         if (CarbonUtil.hasEncoding(columnSchema.getEncodingList(), Encoding.DICTIONARY)
             && !isComplexDimensionStarted && columnSchema.getNumberOfChild() == 0) {
           cardinalityIndexForNormalDimensionColumn.add(tableOrdinal);
+          if (columnSchema.isSortColumn()) {
+            this.numberOfSortColumns++;
+          }
           if (columnSchema.isColumnar()) {
             // if it is a columnar dimension participated in mdkey then added
             // key ordinal and dimension ordinal
@@ -385,6 +392,10 @@ public class SegmentProperties {
           // for no dictionary dimension
           carbonDimension = new CarbonDimension(columnSchema, dimensonOrdinal++, -1, -1, -1);
           numberOfNoDictionaryDimension++;
+          if (columnSchema.isSortColumn()) {
+            this.numberOfSortColumns++;
+            this.numberOfNoDictSortColumns++;
+          }
         }
         dimensions.add(carbonDimension);
       } else {
@@ -797,4 +808,15 @@ public class SegmentProperties {
     return CarbonUtil.getMeasureFromCurrentBlock(this.measures, columnId);
   }
 
+  public int getNumberOfSortColumns() {
+    return numberOfSortColumns;
+  }
+
+  public int getNumberOfNoDictSortColumns() {
+    return numberOfNoDictSortColumns;
+  }
+
+  public int getNumberOfDictSortColumns() {
+    return this.numberOfSortColumns - this.numberOfNoDictionaryDimension;
+  }
 }
