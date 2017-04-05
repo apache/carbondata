@@ -25,7 +25,7 @@ import org.apache.spark.sql.execution.command._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataType
-import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -62,8 +62,13 @@ object TableCreator {
     // All columns in sortkey should be there in create table cols
     val sortKeyOption = tableProperties.get(CarbonCommonConstants.SORT_COLUMNS)
     var sortKeyDimsTmp: Seq[String] = Seq[String]()
-    if (sortKeyOption.isDefined) {
-      var sortKey = sortKeyOption.get.split(',').map(_.trim)
+    val sortKeyString: String = if (sortKeyOption.isDefined) {
+      CarbonUtil.unquoteChar(sortKeyOption.get) trim
+    } else {
+      ""
+    }
+    if (!sortKeyString.isEmpty) {
+      val sortKey = sortKeyString.split(',').map(_.trim)
       sortKey.foreach { column =>
         if (!fields.exists(x => x.column.equalsIgnoreCase(column))) {
           val errormsg = "sort_columns: " + column +

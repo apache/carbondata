@@ -116,7 +116,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
             + searchEndKey.getNoDictionaryKeys());
     long startTimeInMillis = System.currentTimeMillis();
     DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
-        tableSegment.getSegmentProperties().getEachDimColumnValueSize());
+        tableSegment.getSegmentProperties().getEachDimColumnValueSize(),
+        tableSegment.getSegmentProperties().getNumberOfSortColumns(),
+        tableSegment.getSegmentProperties().getNumberOfNoDictSortColumns());
     DataRefNode startBlock = blockFinder.findFirstDataBlock(btreeNode, searchStartKey);
     DataRefNode endBlock = blockFinder.findLastDataBlock(btreeNode, searchEndKey);
     FilterExecuter filterExecuter =
