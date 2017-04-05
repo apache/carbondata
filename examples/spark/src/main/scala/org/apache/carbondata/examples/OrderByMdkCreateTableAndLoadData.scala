@@ -21,41 +21,42 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.util.ExampleUtils
 
-object CarbonExample {
+object CarbonExampleCreateTables {
 
   def main(args: Array[String]) {
     val cc = ExampleUtils.createCarbonContext("CarbonExample")
-    val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
+    val testData = ExampleUtils.currentPath + "/src/main/resources/data_sort_by_mdk.csv"
 
     // Specify date format based on raw data
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
 
-    cc.sql("DROP TABLE IF EXISTS t3")
+    cc.sql("DROP TABLE IF EXISTS sortbymdk")
 
-    // Create table, 6 dimensions, 1 measure
     cc.sql("""
-           CREATE TABLE IF NOT EXISTS t3
-           (ID Int, date Date, country String,
-           name String, phonetype String, serialname char(10), salary Int)
+           CREATE TABLE IF NOT EXISTS sortbymdk
+           (ID Int, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int,
+           name1 String, name2 String, name3 String, name4 String, name5 String,
+           name6 String,name7 String,name8 String
+           )
            STORED BY 'carbondata'
            """)
 
-    // Load data
+    var start = System.currentTimeMillis()
+
     cc.sql(s"""
-           LOAD DATA LOCAL INPATH '$testData' into table t3
+           LOAD DATA LOCAL INPATH '$testData' into table sortbymdk
            """)
 
-    // Perform a query
-    cc.sql("""
-           SELECT country, count(salary) AS amount
-           FROM t3
-           WHERE country IN ('china','france')
-           GROUP BY country
-           """).show()
+    var end = System.currentTimeMillis()
 
-    // Drop table
-    // cc.sql("DROP TABLE IF EXISTS t3")
+    print("load time: " + (end - start))
+
+    cc.sql("""
+           SELECT count(country) AS country_cnt
+           FROM sortbymdk
+           """).show()
   }
 
 }

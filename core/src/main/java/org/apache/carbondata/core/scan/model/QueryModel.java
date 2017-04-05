@@ -111,9 +111,8 @@ public class QueryModel implements Serializable {
     queryDimension = new ArrayList<QueryDimension>();
     queryMeasures = new ArrayList<QueryMeasure>();
     invalidSegmentIds = new ArrayList<>();
-    sortDimensions = new ArrayList<QueryDimension>();
-    groupingExpressions = new ArrayList();
-    aggregateExpressions = new ArrayList();
+    sortMdkDimensions = new ArrayList<QueryDimension>();
+    limit = 0;
   }
 
   public static QueryModel createModel(AbsoluteTableIdentifier absoluteTableIdentifier,
@@ -367,36 +366,21 @@ public class QueryModel implements Serializable {
   /**
    * list of dimension in which sorting is applied
    */
-  private List<QueryDimension> sortDimensions;
-  private List groupingExpressions;
-  private List aggregateExpressions;
+  private List<QueryDimension> sortMdkDimensions;
+
   /**
    * in case of lime query we need to know how many records will passed from
    * executor
    */
   private int limit;
 
-  public List getGroupingExpressions() {
-    return groupingExpressions;
-  }
 
-  public void setGroupingExpressions(List groupingExpressions) {
-    this.groupingExpressions = groupingExpressions;
-  }
-
-  public List getAggregateExpressions() {
-    return aggregateExpressions;
-  }
-
-  public void setAggregateExpressions(List aggregateExpressions) {
-    this.aggregateExpressions = aggregateExpressions;
-  }
 
   /**
    * @return the sortDimension
    */
-  public List<QueryDimension> getSortDimensions() {
-    return sortDimensions;
+  public List<QueryDimension> getSortMdkDimensions() {
+    return sortMdkDimensions;
   }
 
   /**
@@ -417,13 +401,14 @@ public class QueryModel implements Serializable {
   /**
    * @param sortDimension the sortDimension to set
    */
-  public void setSortDimensions(List<QueryDimension> sortDimensions, CarbonTable carbonTable) {
-    for (QueryDimension qd : sortDimensions) {
+  public void setSortMdkDimensions(List<QueryDimension> sortMdkDimensions,
+      CarbonTable carbonTable) {
+    for (QueryDimension qd : sortMdkDimensions) {
       CarbonDimension dimensionByName = carbonTable
           .getDimensionByName(carbonTable.getFactTableName(), qd.getColumnName());
       qd.setDimension(dimensionByName);
     }
-    this.sortDimensions = sortDimensions;
+    this.sortMdkDimensions = sortMdkDimensions;
   }
 
 }

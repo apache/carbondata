@@ -36,10 +36,8 @@ case class CarbonScan(
     relationRaw: CarbonRelation,
     dimensionPredicatesRaw: Seq[Expression],
     useUnsafeCoversion: Boolean = true,
-    sorts: Seq[QueryDimension] = Nil,
-    limitValue: Int = 0,
-    groupingExpressions: Seq[Expression],
-    aggregateExpressions: Seq[NamedExpression])(@transient val ocRaw: SQLContext) extends LeafNode {
+    sortMdkDimensions: Seq[QueryDimension],
+    limitValue: Int = 0)(@transient val ocRaw: SQLContext) extends LeafNode {
   val carbonTable = relationRaw.metaData.carbonTable
   val selectedDims = scala.collection.mutable.MutableList[QueryDimension]()
   val selectedMsrs = scala.collection.mutable.MutableList[QueryMeasure]()
@@ -131,9 +129,7 @@ case class CarbonScan(
       projection,
       buildCarbonPlan.getFilterExpression,
       limitValue,
-      sorts,
-      groupingExpressions,
-      aggregateExpressions,
+      sortMdkDimensions,
       carbonTable.getAbsoluteTableIdentifier,
       carbonTable
     )

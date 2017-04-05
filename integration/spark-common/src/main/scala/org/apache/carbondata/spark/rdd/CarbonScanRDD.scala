@@ -55,9 +55,7 @@ class CarbonScanRDD(
     columnProjection: CarbonProjection,
     filterExpression: Expression,
     limit: Int,
-    sorts: Seq[QueryDimension] = Nil,
-    groupingExpressions: Seq[org.apache.spark.sql.catalyst.expressions.Expression],
-    aggregateExpressions: Seq[NamedExpression],
+    sortMdkDimensions: Seq[QueryDimension],
     identifier: AbsoluteTableIdentifier,
     @transient carbonTable: CarbonTable)
   extends RDD[InternalRow](sc, Nil) {
@@ -269,9 +267,7 @@ class CarbonScanRDD(
     CarbonInputFormat.setFilterPredicates(conf, filterExpression)
     CarbonInputFormat.setColumnProjection(conf, columnProjection)
     CarbonInputFormat.setLimitExpression(conf, limit)
-    CarbonInputFormat.setAggegatesExpression(conf, groupingExpressions.asJava,
-        aggregateExpressions.asJava)
-    CarbonInputFormat.setSortsExpression(conf, sorts.asJava)
+    CarbonInputFormat.setSortMdkExpression(conf, sortMdkDimensions.asJava)
     format
   }
 

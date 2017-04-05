@@ -46,7 +46,7 @@ public class DetailQuerySortMdkResultIterator
 
     // sort by MDK key only consider these sort dimensions have the same order
     // type
-    QueryDimension singleSortDimesion = queryModel.getSortDimensions().get(0);
+    QueryDimension singleSortDimesion = queryModel.getSortMdkDimensions().get(0);
     sortType = singleSortDimesion.getSortOrder();
   }
 

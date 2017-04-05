@@ -101,12 +101,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       "mapreduce.input.carboninputformat.filter.predicate";
   private static final String LIMIT_PREDICATE =
       "mapreduce.input.carboninputformat.limit";
-  private static final String SORTS_PREDICATE =
-      "mapreduce.input.carboninputformat.sorts";
-  private static final String Grouping_PREDICATE =
-      "mapreduce.input.carboninputformat.grouping";
-  private static final String AGGREGATE_PREDICATE =
-      "mapreduce.input.carboninputformat.aggregate";
+  private static final String SORT_MDK_PREDICATE =
+      "mapreduce.input.carboninputformat.sortmdk";
   private static final String COLUMN_PROJECTION = "mapreduce.input.carboninputformat.projection";
   private static final String CARBON_TABLE = "mapreduce.input.carboninputformat.table";
   private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
@@ -631,9 +627,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     FilterResolverIntf filterIntf =  CarbonInputFormatUtil.resolveFilter(filter, identifier);
     queryModel.setFilterExpressionResolverTree(filterIntf);
     queryModel.setLimit(getLimitExpression(configuration));
-    queryModel.setSortDimensions(getSortsExpression(configuration), carbonTable);
-    queryModel.setAggregateExpressions(getAggregateExpression(configuration));
-    queryModel.setGroupingExpressions(getGroupingExpression(configuration));
+    queryModel.setSortMdkDimensions(getSortMdkExpression(configuration), carbonTable);
 
     // update the file level index store if there are invalid segment
     if (inputSplit instanceof CarbonMultiBlockSplit) {
@@ -797,48 +791,28 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @param configuration
    * @param filterExpression
    */
-  public static void setSortsExpression(Configuration configuration, List<QueryDimension> sorts) {
-    if (sorts == null) {
+  public static void setSortMdkExpression(Configuration configuration,
+      List<QueryDimension> sortMdkDimensions) {
+    if (sortMdkDimensions == null) {
       return;
     }
     try {
-      String sortsString = ObjectSerializationUtil.convertObjectToString(sorts);
-      configuration.set(SORTS_PREDICATE, sortsString);
+      String sortsString = ObjectSerializationUtil.convertObjectToString(sortMdkDimensions);
+      configuration.set(SORT_MDK_PREDICATE, sortsString);
     } catch (Exception e) {
       throw new RuntimeException("Error while setting sorts expression to Job", e);
     }
   }
 
-  /**
-   * It sets unresolved limit expression.
-   *
-   * @param configuration
-   * @param filterExpression
-   */
-  public static void setAggegatesExpression(Configuration configuration, List groupingExpressions,
-      List aggregateExpressions) {
 
-    if (groupingExpressions == null || aggregateExpressions == null) {
-      return;
-    }
+  private List<QueryDimension> getSortMdkExpression(Configuration configuration) {
     try {
-      String grouping = ObjectSerializationUtil.convertObjectToString(groupingExpressions);
-      String aggregate = ObjectSerializationUtil.convertObjectToString(aggregateExpressions);
-      configuration.set(Grouping_PREDICATE, grouping);
-      configuration.set(AGGREGATE_PREDICATE, aggregate);
-    } catch (Exception e) {
-      throw new RuntimeException("Error while setting sorts expression to Job", e);
-    }
-  }
-
-  private List<QueryDimension> getSortsExpression(Configuration configuration) {
-    try {
-      String sortsExprString = configuration.get(SORTS_PREDICATE);
+      String sortsExprString = configuration.get(SORT_MDK_PREDICATE);
       if (sortsExprString == null) {
         return null;
       }
-      Object sorts = ObjectSerializationUtil.convertStringToObject(sortsExprString);
-      return (List<QueryDimension>) sorts;
+      Object sortMdkDimensions = ObjectSerializationUtil.convertStringToObject(sortsExprString);
+      return (List<QueryDimension>) sortMdkDimensions;
     } catch (IOException e) {
       throw new RuntimeException("Error while reading sorts expression", e);
     }
@@ -850,30 +824,6 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       return 0;
     }
     return Integer.parseInt(limit);
-  }
-  private List getGroupingExpression(Configuration configuration) {
-    try {
-      String groupingExprString = configuration.get(Grouping_PREDICATE);
-      if (groupingExprString == null) {
-        return null;
-      }
-      Object grouping = ObjectSerializationUtil.convertStringToObject(groupingExprString);
-      return (List) grouping;
-    } catch (IOException e) {
-      throw new RuntimeException("Error while reading grouping expression", e);
-    }
-  }
-  private List getAggregateExpression(Configuration configuration) {
-    try {
-      String aggregateExprString = configuration.get(AGGREGATE_PREDICATE);
-      if (aggregateExprString == null) {
-        return null;
-      }
-      Object aggregate = ObjectSerializationUtil.convertStringToObject(aggregateExprString);
-      return (List) aggregate;
-    } catch (IOException e) {
-      throw new RuntimeException("Error while reading aggregate expression", e);
-    }
   }
 
 }

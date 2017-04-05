@@ -38,7 +38,7 @@ public class DetailQueryExecutor extends AbstractQueryExecutor<BatchResult> {
   public CarbonIterator<BatchResult> execute(QueryModel queryModel)
       throws QueryExecutionException, IOException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    if (blockExecutionInfoList.get(0).isOrderByPrefixMdkFlg()) {
+    if (blockExecutionInfoList.get(0).isOrderByMdkFlg()) {
       return new DetailQuerySortMdkResultIterator(blockExecutionInfoList, queryModel,
           queryProperties.executorService);
     }

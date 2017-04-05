@@ -159,10 +159,8 @@ case class InsertIntoCarbonTable(
   val tableOutput = table.carbonRelation.output
 }
 case class CarbonPushDownToScan(
-    order: Seq[QueryDimension],
+    sortMdkDimensions: Seq[QueryDimension],
     limit: Int,
-    groupingExpressions: Seq[Expression],
-    aggregateExpressions: Seq[NamedExpression],
     child: LogicalPlan) extends UnaryNode {
   override def output: Seq[Attribute] = child.output
 }

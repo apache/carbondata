@@ -32,42 +32,42 @@ import org.apache.carbondata.core.scan.model.QueryDimension
  */
 object PhysicalOperationForPushdown extends PredicateHelper {
   type ReturnType = (Seq[NamedExpression], Seq[Expression], LogicalPlan,
-      Seq[QueryDimension], Int, Seq[Expression], Seq[NamedExpression])
+     Seq[QueryDimension], Int)
 
   def unapply(plan: LogicalPlan): Option[ReturnType] = {
-    val (fields, filters, child, _, sorts, limitValue, grpExp, aggExp)
+    val (fields, filters, child, _, sortMdkDimensions, limitValue)
     = collectSortsAndProjectsAndFilters(plan)
-    Some((fields.getOrElse(child.output), filters, child, sorts, limitValue, grpExp, aggExp))
+    Some((fields.getOrElse(child.output), filters, child, sortMdkDimensions, limitValue))
   }
 
   def collectSortsAndProjectsAndFilters(plan: LogicalPlan): (Option[Seq[NamedExpression]],
       Seq[Expression], LogicalPlan, Map[Attribute, Expression],
-      Seq[QueryDimension], Int, Seq[Expression], Seq[NamedExpression]) =
+      Seq[QueryDimension], Int) =
     plan match {
 
-      case CarbonPushDownToScan(order, limit, groupingExpressions, aggregateExpressions, child) =>
+      case CarbonPushDownToScan(sortMdkDimensions, limit, child) =>
         val (fields, filters, other, aliases,
-          _, _, _, _) = collectSortsAndProjectsAndFilters(child)
+          _, _) = collectSortsAndProjectsAndFilters(child)
 
-        (fields, filters, other, aliases, order,
-          limit, groupingExpressions, aggregateExpressions)
+        (fields, filters, other, aliases, sortMdkDimensions,
+          limit)
 
       case Project(fields, child) =>
-        val (_, filters, other, aliases, sorts, limitValue, groupingExpressions,
-          aggregateExpressions) = collectSortsAndProjectsAndFilters(child)
+        val (_, filters, other, aliases, sortMdkDimensions, limitValue)
+          = collectSortsAndProjectsAndFilters(child)
         val substitutedFields = fields.map(substitute(aliases)).asInstanceOf[Seq[NamedExpression]]
         (Some(substitutedFields), filters, other, collectAliases(substitutedFields),
-          sorts, limitValue, groupingExpressions, aggregateExpressions)
+          sortMdkDimensions, limitValue)
 
       case Filter(condition, child) =>
-        val (fields, filters, other, aliases, sorts, limitValue,
-          groupingExpressions, aggregateExpressions) = collectSortsAndProjectsAndFilters(child)
+        val (fields, filters, other, aliases, sortMdkDimensions, limitValue)
+          = collectSortsAndProjectsAndFilters(child)
         val substitutedCondition = substitute(aliases)(condition)
         (fields, filters ++ splitConjunctivePredicates(substitutedCondition),
-          other, aliases, sorts, limitValue, groupingExpressions, aggregateExpressions)
+          other, aliases, sortMdkDimensions, limitValue)
 
       case other =>
-        (None, Nil, other, Map.empty, Nil, 0, Nil, Nil)
+        (None, Nil, other, Map.empty, Nil, 0)
     }
 
   def collectAliases(fields: Seq[Expression]): Map[Attribute, Expression] = fields.collect {

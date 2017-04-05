@@ -29,29 +29,39 @@ object OrderByMdkFilterQuery {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
-    var start = System.currentTimeMillis()
-
     cc.sql("""
-           SELECT date,country,name,salary FROM sortbymdk ORDER BY date,country,name
-           """).show(100)
+           SELECT date,country,name,salary FROM sortbymdk limit 100
+           """).show(100000)
 
-    print("query time: " + (System.currentTimeMillis() - start))
+    var start = System.currentTimeMillis()
+    cc.sql("""
+           SELECT date,country,name,salary FROM sortbymdk ORDER BY date limit 1000
+           """).show(100000)
+    print("levarage optimization query time: " + (System.currentTimeMillis() - start))
+    start = System.currentTimeMillis()
+    cc.sql("""
+           SELECT date,country,name,salary FROM sortbymdk WHERE
+           country = 'china' or country = 'usa' ORDER BY date, country limit 1000
+           """).show(100000)
+    print("levarage optimization query time: " + (System.currentTimeMillis() - start))
+    start = System.currentTimeMillis()
+    cc.sql("""
+           SELECT date,country,name,salary FROM sortbymdk WHERE country = 'china'
+           or country = 'usa' ORDER BY date desc, country desc, name desc limit 1000
+           """).show(100000)
+    print("levarage optimization query time: " + (System.currentTimeMillis() - start))
 
     start = System.currentTimeMillis()
     cc.sql("""
            SELECT date,country,name,salary FROM sortbymdk WHERE
-           country = 'china' or country = 'usa' ORDER BY date,country, name limit 500000
-           """).show(2000000)
-
-    print("query time: " + (System.currentTimeMillis() - start))
-
+           country = 'china' or country = 'usa' ORDER BY date, country desc limit 1000
+           """).show(100000)
+    print("not levarage optimization query time: " + (System.currentTimeMillis() - start))
     start = System.currentTimeMillis()
-
     cc.sql("""
            SELECT date,country,name,salary FROM sortbymdk WHERE country = 'china'
-           or country = 'usa' ORDER BY date desc,country desc, name desc limit 500000
-           """).show(2000000)
-
-    print("query time: " + (System.currentTimeMillis() - start))
+           or country = 'usa' ORDER BY date, country desc, name desc limit 1000
+           """).show(100000)
+    print("not levarage optimization query time: " + (System.currentTimeMillis() - start))
   }
 }

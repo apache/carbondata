@@ -648,7 +648,7 @@ public class BlockExecutionInfo {
    * that many records
    */
   private int limit;
-  private boolean orderByPrefixMdkFlg;
+  private boolean orderByMdkFlg;
 
   /**
    * @return the limit
@@ -665,11 +665,11 @@ public class BlockExecutionInfo {
     this.limit = limit;
   }
 
-  public boolean isOrderByPrefixMdkFlg() {
-    return orderByPrefixMdkFlg;
+  public boolean isOrderByMdkFlg() {
+    return orderByMdkFlg;
   }
 
-  public void setOrderByPrefixMdkFlg(boolean orderByPrefixMdkFlg) {
-    this.orderByPrefixMdkFlg = orderByPrefixMdkFlg;
+  public void setOrderByMdkFlg(boolean orderByMdkFlg) {
+    this.orderByMdkFlg = orderByMdkFlg;
   }
 }

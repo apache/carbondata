@@ -1184,8 +1184,7 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_BAD_RECORDS_ACTION_DEFAULT = "FORCE";
 
-  public static final int CAN_OPTIMIZE_ORDER_BY_DIMENSIONS_MAX_NUMBER = 5;
-  public static final int CAN_OPTIMIZE_ORDER_BY_DIMENSIONS_MIN_NUMBER = 1;
+  public static final boolean ORDER_BY_MDK_OPTIMIZATION_FLG = true;
 
   private CarbonCommonConstants() {
   }

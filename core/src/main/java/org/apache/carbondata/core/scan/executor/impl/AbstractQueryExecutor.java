@@ -57,7 +57,6 @@ import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.scan.model.SortOrderType;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -248,6 +247,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setRawRecordDetailQuery(queryModel.isForcedDetailRawQuery());
     // setting the limit
     blockExecutionInfo.setLimit(queryModel.getLimit());
+    // order by mdk flg
+    blockExecutionInfo.setOrderByMdkFlg(
+        queryModel.getSortMdkDimensions() != null && queryModel.getSortMdkDimensions().size() > 0);
     // total number dimension
     blockExecutionInfo
         .setTotalNumberDimensionBlock(segmentProperties.getDimensionOrdinalToBlockMapping().size());
@@ -296,22 +298,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // create a list of filter dimensions present in the current block
     Set<CarbonDimension> currentBlockFilterDimensions =
         getCurrentBlockFilterDimensions(queryProperties.complexFilterDimension, segmentProperties);
-
-    // TODO setting all sorted dimension
-    List<QueryDimension> sortDimensions = queryModel.getSortDimensions();
-    if (sortDimensions != null && sortDimensions.size() > 0) {
-
-      blockExecutionInfo.setOrderByPrefixMdkFlg(true);
-      SortOrderType orderType = sortDimensions.get(0).getSortOrder();
-      for (int i = 0; i < sortDimensions.size(); i++) {
-        if (i != sortDimensions.get(i).getDimension().getOrdinal()
-            || !orderType.equals(sortDimensions.get(i).getSortOrder())) {
-          blockExecutionInfo.setOrderByPrefixMdkFlg(false);
-          break;
-        }
-      }
-    }
-
     int[] dimensionsBlockIndexes = QueryUtil.getDimensionsBlockIndexes(currentBlockQueryDimensions,
         segmentProperties.getDimensionOrdinalToBlockMapping(), expressionDimensions,
         currentBlockFilterDimensions, allProjectionListDimensionIdexes);
