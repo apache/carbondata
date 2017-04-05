@@ -67,6 +67,36 @@ public class NoSortProcessorStepImpl extends AbstractDataLoadProcessorStep {
     child.initialize();
   }
 
+  /**
+   * convert input CarbonRow to output CarbonRow
+   * e.g. There is a table as following,
+   * the number of dictionary dimensions is a,
+   * the number of no-dictionary dimensions is b,
+   * the number of complex dimensions is c,
+   * the number of measures is d.
+   * input CarbonRow format:  the length of Object[] data is a+b+c+d, the number of all columns.
+   * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   * | Part                     | Object item                    | describe                 |
+   * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   * | Object[0 ~ a+b-1]        | Integer, byte[], Integer, ...  | dict + no dict dimensions|
+   * ----------------------------------------------------------------------------------------
+   * | Object[a+b ~ a+b+c-1]    | byte[], byte[], ...            | complex dimensions       |
+   * ----------------------------------------------------------------------------------------
+   * | Object[a+b+c ~ a+b+c+d-1]| int, byte[], ...               | measures                 |
+   * ----------------------------------------------------------------------------------------
+   * output CarbonRow format: the length of object[] data is 3.
+   * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   * | Part                     | Object item                    | describe                 |
+   * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   * | Object[0]                | int[a]                         | dict dimension array     |
+   * ----------------------------------------------------------------------------------------
+   * | Object[1]                | byte[b+c][]                    | no dict + complex dim    |
+   * ----------------------------------------------------------------------------------------
+   * | Object[2]                | Object[d]                      | measures                 |
+   * ----------------------------------------------------------------------------------------
+   * @param row
+   * @return
+   */
   @Override protected CarbonRow processRow(CarbonRow row) {
     int dictIndex = 0;
     int nonDicIndex = 0;

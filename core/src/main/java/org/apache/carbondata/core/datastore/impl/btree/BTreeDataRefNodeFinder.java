@@ -49,10 +49,13 @@ public class BTreeDataRefNodeFinder implements DataRefNodeFinder {
   private int[] eachColumnValueSize;
 
   /**
-   * this will be used during search for no dictionary column
+   * the number of no dictionary columns in SORT_COLUMNS
    */
   private int numberOfNoDictSortColumns;
 
+  /**
+   * the number of columns in SORT_COLUMNS
+   */
   private int numberOfSortColumns;
 
   public BTreeDataRefNodeFinder(int[] eachColumnValueSize, int numberOfSortColumns,

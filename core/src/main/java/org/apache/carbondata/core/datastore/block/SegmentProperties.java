@@ -54,6 +54,12 @@ public class SegmentProperties {
    */
   private KeyGenerator dimensionKeyGenerator;
 
+  /**
+   * key generator which was used to generate the mdkey for dimensions in SORT_COLUMNS
+   * if SORT_COLUMNS contains all dimensions, it is same with dimensionKeyGenerator
+   * otherwise, it is different with dimensionKeyGenerator, the number of its dimensions is less
+   * than dimensionKeyGenerator.
+   */
   private KeyGenerator sortColumnsGenerator;
 
   /**

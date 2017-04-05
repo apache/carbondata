@@ -33,7 +33,7 @@ import org.apache.spark.sql.execution.command._
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataType
-import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.constants.LoggerAction
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
@@ -491,14 +491,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     val sortKeyOption = tableProperties.get(CarbonCommonConstants.SORT_COLUMNS)
     var sortKeyDimsTmp: Seq[String] = Seq[String]()
     val sortKeyString: String = if (sortKeyOption.isDefined) {
-      val sortKey = sortKeyOption.get
-      if (sortKey.startsWith("'") && sortKey.endsWith("'")) {
-        sortKey.substring(1, sortKey.length - 1)
-      } else if (sortKey.startsWith("\"") && sortKey.endsWith("\"")) {
-        sortKey.substring(1, sortKey.length - 1)
-      } else {
-        sortKey
-      } trim
+      CarbonUtil.unquoteChar(sortKeyOption.get) trim
     } else {
       ""
     }
