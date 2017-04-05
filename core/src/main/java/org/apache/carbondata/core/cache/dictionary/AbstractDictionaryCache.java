@@ -126,15 +126,19 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
    * @return
    */
   private CarbonFile getDictionaryMetaCarbonFile(
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) throws IOException {
     PathService pathService = CarbonCommonFactory.getPathService();
     CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
-            dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
-    String dictionaryFilePath =
-        carbonTablePath.getDictionaryMetaFilePath(dictionaryColumnUniqueIdentifier
-            .getColumnIdentifier().getColumnId());
+        dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
+    String dictionaryFilePath = carbonTablePath.getDictionaryMetaFilePath(
+        dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
     FileFactory.FileType fileType = FileFactory.getFileType(dictionaryFilePath);
-    return FileFactory.getCarbonFile(dictionaryFilePath, fileType);
+    CarbonFile dictFile = FileFactory.getCarbonFile(dictionaryFilePath, fileType);
+    // When rename table triggered parallely with select query, dictionary files may not exist
+    if (!dictFile.exists()) {
+      throw new IOException("Dictionary file does not exist: " + dictionaryFilePath);
+    }
+    return dictFile;
   }
 
   /**
