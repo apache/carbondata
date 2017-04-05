@@ -150,6 +150,35 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
       case other => false
     } isDefined
   }
+  def hasSort(plan: LogicalPlan): Boolean = {
+    plan find {
+      case s: Sort => true
+      case other => false
+    } isDefined
+  }
+  def hasHaving(plan: LogicalPlan): Boolean = {
+    plan find {
+      case h: Filter if (h.condition.asInstanceOf[AttributeReference].name == "havingCondition")
+           => true
+      case other => false
+    } isDefined
+  }
+  def hasFilter(plan: LogicalPlan): Boolean = {
+    plan find {
+      case f: Filter => true
+      case other => false
+    } isDefined
+  }
+  def hasAggregate(plan: LogicalPlan): Boolean = {
+    plan find {
+      case agg: Aggregate => true
+      case other => false
+    } isDefined
+  }
+  def readyForLimitOptimization(plan: LogicalPlan): Boolean = {
+    if(hasLimit(plan) && hasAggregate(plan) && !hasSort(plan) && !hasFilter(plan)) true
+    else false
+  }
   def isOptimized(plan: LogicalPlan): Boolean = {
     plan find {
       case cd: CarbonDictionaryCatalystDecoder => true
@@ -530,10 +559,8 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           } else {
             l
           }
-
         case others => others
       }
-
     }
     def addDecoder(currentPlan: LogicalPlan): LogicalPlan = {
       if (hasCarbonRelation(currentPlan)) {
@@ -542,7 +569,6 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
         currentPlan
       }
     }
-
     val transFormedPlan =
       plan transformDown {
         case limit: Limit =>
@@ -553,11 +579,18 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           cd
         case agg: Aggregate =>
           groupingExpressions = agg.groupingExpressions
-          addDecoder(agg)
-        case filter: Filter =>
-          if (hasLimit(plan)) {
-          LimitQueryOptimizer(limit_num, groupingExpressions, filter, relations).getNewFilters()
-          } else filter
+          if (readyForLimitOptimization(plan) && !agg.child.isInstanceOf[Filter]) {
+            val newFilters = LimitQueryOptimizer.
+              getFilters(limit_num, groupingExpressions, relations, agg.child).getOrElse(null)
+            if (newFilters != null) {
+              val new_agg = new Aggregate(agg.groupingExpressions, agg.aggregateExpressions, newFilters)
+              addDecoder(new_agg)
+            } else {
+              addDecoder(agg)
+            }
+          } else (
+            addDecoder(agg)
+          )
         case currentPlan =>
           addDecoder(currentPlan)
       }

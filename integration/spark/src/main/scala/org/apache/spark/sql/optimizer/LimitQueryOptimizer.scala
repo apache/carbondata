@@ -17,86 +17,78 @@
 
 package org.apache.spark.sql.optimizer
 
-import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
-import org.apache.carbondata.spark.load.CarbonLoaderUtil
-import org.apache.spark.sql.CarbonRelation
-import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.plans.logical.Filter
-
 import scala.collection.mutable.ArrayBuffer
 
-/**
+import org.apache.spark.sql.CarbonRelation
+import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan}
+
+import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
+import org.apache.carbondata.spark.load.CarbonLoaderUtil
+
+ /**
   * Optimize query with Limit condition
-  * @param limit_num
-  * @param groupingExpressions
-  * @param originFilters
-  * @param relations
   */
-class LimitQueryOptimizer(limit_num: Int, groupingExpressions: Seq[Expression],
-                          originFilters: Filter, relations: Seq[CarbonDecoderRelation]) {
-    def getNewFilters(): Filter = {
+object LimitQueryOptimizer {
+    def getFilters(limit_num: Int, groupingExpressions: Seq[Expression],
+                      relations: Seq[CarbonDecoderRelation], child: LogicalPlan): Option[Filter] = {
         val cols = groupingExpressions.reverse.map(_.asInstanceOf[AttributeReference])
         val count_arr = ArrayBuffer[Int]()
         val expr_arr = ArrayBuffer[Expression]()
-        var total_count : Int = 0
-
         for( i <- 0 until cols.size ) {
             val col = cols(i)
             val value_arr = ArrayBuffer[Literal]()
             count_arr += 0
             val relation = getTableRelation(col)
             val dictExist = relation.metaData.dictionaryMap.get(col.name).get
-            if (total_count < limit_num && dictExist) {
+            val count_max = count_arr.max
+            if (count_max < limit_num && dictExist) {
                 val dict = LimitQueryOptimizer.getDictionaryValue(col, relation).get
-                /** Get distinct value list of current grouping column **/
+                // Get distinct value list of current grouping column
                 var index: Int = 2
                 var distinctValue = dict.getDictionaryValueForKey(index)
                 value_arr += (Literal(distinctValue))
                 count_arr(i) += 1
-                total_count = count_arr.product
-                while (total_count < limit_num && distinctValue != null) {
+                while (count_arr(i) < limit_num && distinctValue != null) {
                     index += 1
                     distinctValue = dict.getDictionaryValueForKey(index)
-                    value_arr += (Literal(distinctValue))
-                    count_arr(i) += 1
-                    total_count = count_arr.product
+                    if (distinctValue != null) {
+                        value_arr += (Literal(distinctValue))
+                        count_arr(i) += 1
+                    }
                 }
-                if (value_arr.size > 1) {
-                    val inExpression = In(col, value_arr)
-                    expr_arr += inExpression
-                } else if (value_arr.size == 1) {
-                    val equalExpression = EqualTo(col, value_arr.head)
-                    expr_arr += equalExpression
+                if (count_arr(i)  == limit_num) {
+                    if (value_arr.size > 1) {
+                        val inExpression = In(col, value_arr)
+                        expr_arr += inExpression
+                    } else if (value_arr.size == 1) {
+                        val equalExpression = EqualTo(col, value_arr.head)
+                        expr_arr += equalExpression
+                    }
                 }
             }
         }
-        val origin_expr = originFilters.condition
-        var new_expr : And = null
-        var index = 0
-        for(expression <- expr_arr) {
-            if (index == 0) {
-                new_expr = new And(origin_expr, expression)
-            } else {
-                new_expr = new And(new_expr, expression)
-            }
-            index += 1
+        def getTableRelation(col: AttributeReference): CarbonRelation = {
+            val tableName = col.qualifiers.head
+            val relation = relations.filter(_.carbonRelation.getTable() == tableName).head
+            val carbonRelation = relation.carbonRelation.carbonRelation
+            carbonRelation
         }
-       new Filter(new_expr, originFilters.child)
-    }
-    def getTableRelation(col: AttributeReference): CarbonRelation = {
-        val tableName = col.qualifiers.head
-        val relation = relations.filter(_.carbonRelation.getTable() == tableName).head
-        val carbonRelation = relation.carbonRelation.carbonRelation
-        carbonRelation
-    }
-}
+        var new_expr : Expression = null
+        if (!expr_arr.isEmpty) {
+            for (i <- 0 until expr_arr.size) {
+                if (i == 0) {
+                    new_expr = expr_arr(i)
+                } else {
+                    new_expr = new And(new_expr, expr_arr(i))
+                }
+            }
+            Some(new Filter(new_expr, child))
+        } else {
+            None
+        }
 
-object LimitQueryOptimizer {
-    def apply(limit_num: Int, groupingExpressions: Seq[Expression], originFilters: Filter,
-              relations: Seq[CarbonDecoderRelation]): LimitQueryOptimizer
-      = new LimitQueryOptimizer(limit_num: Int, groupingExpressions: Seq[Expression],
-        originFilters: Filter, relations: Seq[CarbonDecoderRelation])
-
+    }
     def getDictionaryValue(col: AttributeReference,
                            relation: CarbonRelation): Option[Dictionary] = {
         val tableName = col.qualifiers.head
