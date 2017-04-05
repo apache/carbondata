@@ -31,6 +31,10 @@ import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Build Carbondata Connector
+ * It will be called by CarbondataPlugin
+ */
 public class CarbondataConnectorFactory implements ConnectorFactory {
 
   private final String name;

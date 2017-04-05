@@ -22,6 +22,10 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+/**
+ * Caching Carbon meta(e.g. TableIdentifier, TablePath, TableInfo, CarbonTable) in Class CarbonTableReader
+ * to speed up query
+ */
 public class CarbonTableCacheModel {
 
   public CarbonTableIdentifier carbonTableIdentifier;

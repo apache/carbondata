@@ -72,7 +72,6 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
     requireNonNull(split, "split is null");
     requireNonNull(columns, "columns is null");
 
-    // Convert split
     CarbondataSplit cdSplit =
         checkType(split, CarbondataSplit.class, "split is not class CarbondataSplit");
     checkArgument(cdSplit.getConnectorId().equals(connectorId), "split is not for this connector");
@@ -111,11 +110,11 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
     fillFilter2QueryModel(queryModel, cdSplit.getConstraints(), targetTable);
 
     // Return new record set
-    return new CarbondataRecordSet(targetTable,/*connector,*/ session, /*config, */cdSplit,
+    return new CarbondataRecordSet(targetTable, session, cdSplit,
         handles.build(), queryModel);
   }
 
-  // Build filter for QueryModel (copy from CarbonInputFormat=> createRecordReader)
+  // Build filter for QueryModel
   private void fillFilter2QueryModel(QueryModel queryModel,
       TupleDomain<ColumnHandle> originalConstraint, CarbonTable carbonTable) {
 
@@ -139,14 +138,9 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
       checkArgument(domain.getType().isOrderable(), "Domain type must be orderable");
 
       if (domain.getValues().isNone()) {
-        //return QueryBuilders.filteredQuery(null, FilterBuilders.missingFilter(columnName));
-        //return domain.isNullAllowed() ? columnName + " IS NULL" : "FALSE";
-        //new Expression()
       }
 
       if (domain.getValues().isAll()) {
-        //return QueryBuilders.filteredQuery(null, FilterBuilders.existsFilter(columnName));
-        //return domain.isNullAllowed() ? "TRUE" : columnName + " IS NOT NULL";
       }
 
       List<Object> singleValues = new ArrayList<>();
@@ -166,7 +160,6 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
                 } else {
                   GreaterThanExpression greater = new GreaterThanExpression(colExpression,
                       new LiteralExpression(value, coltype));
-                  //greater.setRangeExpression(true);
                   rangeFilter.add(greater);
                 }
                 break;
@@ -174,7 +167,6 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
                 GreaterThanEqualToExpression greater =
                     new GreaterThanEqualToExpression(colExpression,
                         new LiteralExpression(value, coltype));
-                //greater.setRangeExpression(true);
                 rangeFilter.add(greater);
                 break;
               case BELOW:
@@ -191,13 +183,11 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
               case EXACTLY:
                 LessThanEqualToExpression less = new LessThanEqualToExpression(colExpression,
                     new LiteralExpression(value, coltype));
-                //less.setRangeExpression(true);
                 rangeFilter.add(less);
                 break;
               case BELOW:
                 LessThanExpression less2 =
                     new LessThanExpression(colExpression, new LiteralExpression(value, coltype));
-                //less2.setRangeExpression(true);
                 rangeFilter.add(less2);
                 break;
               default:
