@@ -36,6 +36,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -171,13 +174,30 @@ public final class CarbonLoaderUtil {
       tempLocationKey = CarbonCommonConstants.COMPACTION_KEY_WORD + '_' + tempLocationKey;
     }
     // form local store location
-    String localStoreLocation = CarbonProperties.getInstance()
+    final String localStoreLocation = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
+    // submit local folder clean up in another thread so that main thread execution is not blocked
+    ExecutorService localFolderDeletionService = Executors.newFixedThreadPool(1);
     try {
-      CarbonUtil.deleteFoldersAndFiles(new File(localStoreLocation).getParentFile());
-      LOGGER.info("Deleted the local store location" + localStoreLocation);
-    } catch (IOException | InterruptedException e) {
-      LOGGER.error(e, "Failed to delete local data load folder location");
+      localFolderDeletionService.submit(new Callable<Void>() {
+        @Override public Void call() throws Exception {
+          try {
+            long startTime = System.currentTimeMillis();
+            File file = new File(localStoreLocation);
+            CarbonUtil.deleteFoldersAndFiles(file.getParentFile());
+            LOGGER.info(
+                "Deleted the local store location" + localStoreLocation + " : TIme taken: " + (
+                    System.currentTimeMillis() - startTime));
+          } catch (IOException | InterruptedException e) {
+            LOGGER.error(e, "Failed to delete local data load folder location");
+          }
+          return null;
+        }
+      });
+    } finally {
+      if (null != localFolderDeletionService) {
+        localFolderDeletionService.shutdown();
+      }
     }
 
   }
