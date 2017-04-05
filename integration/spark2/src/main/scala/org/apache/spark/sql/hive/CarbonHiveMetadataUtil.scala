@@ -41,7 +41,8 @@ object CarbonHiveMetadataUtil {
       tableName: String,
       sparkSession: SparkSession): Unit = {
     try {
-      sparkSession.sql(s"DROP TABLE IF EXISTS $databaseName.$tableName")
+      sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client.
+        runSqlHive(s"DROP TABLE IF EXISTS $databaseName.$tableName")
     } catch {
       case e: Exception =>
         LOGGER.audit(
