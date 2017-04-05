@@ -104,7 +104,7 @@ case class AlterTableModel(dbName: Option[String],
                            segmentUpdateStatusManager: Option[SegmentUpdateStatusManager],
                            compactionType: String,
                            factTimeStamp: Option[Long],
-                           alterSql: String)
+                           var alterSql: String)
 
 case class UpdateTableModel(isUpdate: Boolean,
                             updatedTimeStamp: Long,
