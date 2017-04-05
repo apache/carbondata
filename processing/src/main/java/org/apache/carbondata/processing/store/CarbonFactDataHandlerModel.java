@@ -265,7 +265,7 @@ public class CarbonFactDataHandlerModel {
 
     CarbonDataFileAttributes carbonDataFileAttributes =
         new CarbonDataFileAttributes(Integer.parseInt(configuration.getTaskNo()),
-            (String) configuration.getDataLoadProperty(DataLoadProcessorConstants.FACT_TIME_STAMP));
+            (Long) configuration.getDataLoadProperty(DataLoadProcessorConstants.FACT_TIME_STAMP));
     String carbonDataDirectoryPath = getCarbonDataFolderLocation(configuration);
 
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
