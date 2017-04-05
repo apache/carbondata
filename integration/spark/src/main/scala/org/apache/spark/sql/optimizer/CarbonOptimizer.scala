@@ -214,9 +214,6 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
     var sortMdkPushdownFlg = false
     var carbonTable : CarbonTable = null
     def pushDownLimitAndSortMdk(sort: Sort, child: LogicalPlan): LogicalPlan = {
-      if (!child.isInstanceOf[CarbonDictionaryTempDecoder]) {
-        sortMdkPushdownFlg = false
-      }
       if (sortMdkPushdownFlg) {
         def getCarbonSortDirection(sortDirection: SortDirection) = {
           sortDirection match {
@@ -263,11 +260,16 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
         }
       }
       if (sortMdkPushdownFlg) {
-        var tempChild = child.asInstanceOf[CarbonDictionaryTempDecoder]
-        CarbonMergeSort(limitValue, sort.order, sort.global,
-          CarbonDictionaryTempDecoder(tempChild.attrList,
+        var sortNextChild: LogicalPlan = null
+        if (child.isInstanceOf[CarbonDictionaryTempDecoder]) {
+          var tempChild = child.asInstanceOf[CarbonDictionaryTempDecoder]
+          sortNextChild = CarbonDictionaryTempDecoder(tempChild.attrList,
             tempChild.attrsNotDecode, CarbonPushDownToScan(sortMdkDimensions, limitValue,
-              tempChild.child)))
+              tempChild.child))
+        } else {
+          sortNextChild = CarbonPushDownToScan(sortMdkDimensions, limitValue, child)
+        }
+        CarbonMergeSort(limitValue, sort.order, sort.global, sortNextChild)
       } else {
         Sort(sort.order, sort.global, child)
       }
@@ -279,7 +281,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           // handle limit+sort flg
           if (CarbonCommonConstants.ORDER_BY_MDK_OPTIMIZATION_FLG) {
             var tmpChild = child.child;
-            if (tmpChild != null || tmpChild.isInstanceOf[Project]) {
+            if (tmpChild != null && tmpChild.isInstanceOf[Project]) {
               tmpChild = tmpChild.asInstanceOf[Project].child
               if (tmpChild != null && tmpChild.isInstanceOf[LogicalRelation]) {
                 sortMdkPushdownFlg = true
@@ -292,6 +294,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
                   sortMdkPushdownFlg = true
                   carbonTable = tmpChild.asInstanceOf[LogicalRelation].relation
                     .asInstanceOf[CarbonDatasourceRelation].carbonRelation.metaData.carbonTable
+                limitValue = limitExpr.asInstanceOf[Literal].value.asInstanceOf[Int]
                 }
               }
             }
