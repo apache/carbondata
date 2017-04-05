@@ -21,6 +21,9 @@ import io.airlift.configuration.Config;
 
 import javax.validation.constraints.NotNull;
 
+/**
+ * Configuration read from etc/catalog/carbondata.properties
+ */
 public class CarbonTableConfig {
 
   //read from config

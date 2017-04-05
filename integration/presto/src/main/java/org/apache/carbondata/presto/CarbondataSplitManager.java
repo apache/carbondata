@@ -17,13 +17,11 @@
 
 package org.apache.carbondata.presto;
 
+import org.apache.carbondata.presto.impl.CarbonLocalInputSplit;
 import org.apache.carbondata.presto.impl.CarbonTableCacheModel;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
-import com.facebook.presto.spi.ColumnHandle;
-import com.facebook.presto.spi.ConnectorSession;
-import com.facebook.presto.spi.ConnectorSplit;
-import com.facebook.presto.spi.RecordSet;
-import com.facebook.presto.spi.connector.ConnectorRecordSetProvider;
+import com.facebook.presto.spi.*;
+import com.facebook.presto.spi.connector.ConnectorSplitManager;
 import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 import com.facebook.presto.spi.predicate.Domain;
 import com.facebook.presto.spi.predicate.Range;
@@ -33,106 +31,116 @@ import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slice;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.*;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
-import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
-import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.apache.carbondata.presto.Types.checkType;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
-public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
+/**
+ * Build Carbontable splits
+ * filtering irrelevant blocks
+ */
+public class CarbondataSplitManager implements ConnectorSplitManager {
 
   private final String connectorId;
   private final CarbonTableReader carbonTableReader;
 
   @Inject
-  public CarbondataRecordSetProvider(CarbondataConnectorId connectorId, CarbonTableReader reader) {
-    //this.config = requireNonNull(config, "config is null");
-    //this.connector = requireNonNull(connector, "connector is null");
+  public CarbondataSplitManager(CarbondataConnectorId connectorId, CarbonTableReader reader) {
     this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
-    this.carbonTableReader = reader;
+    this.carbonTableReader = requireNonNull(reader, "client is null");
   }
 
-  @Override public RecordSet getRecordSet(ConnectorTransactionHandle transactionHandle,
-      ConnectorSession session, ConnectorSplit split, List<? extends ColumnHandle> columns) {
-    requireNonNull(split, "split is null");
-    requireNonNull(columns, "columns is null");
+  public ConnectorSplitSource getSplits(ConnectorTransactionHandle transactionHandle,
+      ConnectorSession session, ConnectorTableLayoutHandle layout) {
+    CarbondataTableLayoutHandle layoutHandle = (CarbondataTableLayoutHandle) layout;
+    CarbondataTableHandle tableHandle = layoutHandle.getTable();
+    SchemaTableName key = tableHandle.getSchemaTableName();
 
-    CarbondataSplit cdSplit =
-        checkType(split, CarbondataSplit.class, "split is not class CarbondataSplit");
-    checkArgument(cdSplit.getConnectorId().equals(connectorId), "split is not for this connector");
+    // Packaging presto-TupleDomain into CarbondataColumnConstraint, to decouple from presto-spi Module
+    List<CarbondataColumnConstraint> rebuildConstraints =
+        getColumnConstraints(layoutHandle.getConstraint());
 
-    String targetCols = "";
-    // Convert all columns handles
-    ImmutableList.Builder<CarbondataColumnHandle> handles = ImmutableList.builder();
-    for (ColumnHandle handle : columns) {
-      handles.add(checkType(handle, CarbondataColumnHandle.class, "handle"));
-      targetCols += ((CarbondataColumnHandle) handle).getColumnName() + ",";
+    CarbonTableCacheModel cache = carbonTableReader.getCarbonCache(key);
+    Expression filters = parseFilterExpression(layoutHandle.getConstraint(), cache.carbonTable);
+
+    if (cache != null) {
+      try {
+        List<CarbonLocalInputSplit> splits = carbonTableReader.getInputSplits2(cache, filters);
+
+        ImmutableList.Builder<ConnectorSplit> cSplits = ImmutableList.builder();
+        for (CarbonLocalInputSplit split : splits) {
+          cSplits.add(new CarbondataSplit(connectorId, tableHandle.getSchemaTableName(),
+              layoutHandle.getConstraint(), split, rebuildConstraints));
+        }
+        return new FixedSplitSource(cSplits.build());
+      } catch (Exception ex) {
+        System.out.println(ex.toString());
+      }
     }
-
-    // Build column projection(check the column order)
-    if (targetCols.length() > 0) {
-      targetCols = targetCols.substring(0, targetCols.length() - 1);
-    }
-    else
-    {
-      targetCols = null;
-    }
-    //String cols = String.join(",", columns.stream().map(a -> ((CarbondataColumnHandle)a).getColumnName()).collect(Collectors.toList()));
-
-    CarbonTableCacheModel tableCacheModel =
-        carbonTableReader.getCarbonCache(cdSplit.getSchemaTableName());
-    checkNotNull(tableCacheModel, "tableCacheModel should not be null");
-    checkNotNull(tableCacheModel.carbonTable, "tableCacheModel.carbonTable should not be null");
-    checkNotNull(tableCacheModel.tableInfo, "tableCacheModel.tableInfo should not be null");
-
-    // Build Query Model
-    CarbonTable targetTable = tableCacheModel.carbonTable;
-    CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(targetTable, targetCols);
-    QueryModel queryModel =
-        QueryModel.createModel(targetTable.getAbsoluteTableIdentifier(), queryPlan, targetTable);
-
-    // Push down filter
-    fillFilter2QueryModel(queryModel, cdSplit.getConstraints(), targetTable);
-
-    // Return new record set
-    return new CarbondataRecordSet(targetTable, session, cdSplit,
-        handles.build(), queryModel);
+    return null;
   }
 
-  // Build filter for QueryModel
-  private void fillFilter2QueryModel(QueryModel queryModel,
-      TupleDomain<ColumnHandle> originalConstraint, CarbonTable carbonTable) {
+  public List<CarbondataColumnConstraint> getColumnConstraints(
+      TupleDomain<ColumnHandle> constraint) {
+    ImmutableList.Builder<CarbondataColumnConstraint> constraintBuilder = ImmutableList.builder();
+    for (TupleDomain.ColumnDomain<ColumnHandle> columnDomain : constraint.getColumnDomains()
+        .get()) {
+      CarbondataColumnHandle columnHandle =
+          checkType(columnDomain.getColumn(), CarbondataColumnHandle.class, "column handle");
 
-    //queryModel.setFilterExpressionResolverTree(new FilterResolverIntf());
+      constraintBuilder.add(new CarbondataColumnConstraint(columnHandle.getColumnName(),
+          Optional.of(columnDomain.getDomain()), columnHandle.isInvertedIndex()));
+    }
 
-    //Build Predicate Expression
+    return constraintBuilder.build();
+  }
+
+  /**
+   * Convert presto-TupleDomain predication into Carbon scan express condition
+   * @param originalConstraint  presto-TupleDomain
+   * @param carbonTable
+   * @return
+   */
+  public Expression parseFilterExpression(TupleDomain<ColumnHandle> originalConstraint,
+      CarbonTable carbonTable) {
     ImmutableList.Builder<Expression> filters = ImmutableList.builder();
 
     Domain domain = null;
 
     for (ColumnHandle c : originalConstraint.getDomains().get().keySet()) {
 
-      // Build ColumnExpresstion for Expresstion(Carbondata)
       CarbondataColumnHandle cdch = (CarbondataColumnHandle) c;
       Type type = cdch.getColumnType();
 
-      DataType coltype = Spi2CarbondataTypeMapper(type);
-      Expression colExpression = new ColumnExpression(cdch.getColumnName(), coltype);
+      List<CarbonColumn> ccols = carbonTable.getCreateOrderColumn(carbonTable.getFactTableName());
+      Optional<CarbonColumn> target =
+          ccols.stream().filter(a -> a.getColName().equals(cdch.getColumnName())).findFirst();
+
+      if (target.get() == null) return null;
+
+      DataType coltype = target.get().getDataType();
+      ColumnExpression colExpression =
+          new ColumnExpression(cdch.getColumnName(), target.get().getDataType());
+      //colExpression.setColIndex(cs.getSchemaOrdinal());
+      colExpression.setDimension(target.get().isDimesion());
+      colExpression.setDimension(
+          carbonTable.getDimensionByName(carbonTable.getFactTableName(), cdch.getColumnName()));
+      colExpression.setCarbonColumn(target.get());
 
       domain = originalConstraint.getDomains().get().get(c);
       checkArgument(domain.getType().isOrderable(), "Domain type must be orderable");
@@ -221,7 +229,8 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
               filters.add(new AndExpression(finalFilters, rangeFilter.get(i)));
             }
           }
-        } else if (rangeFilter.size() == 1) filters.add(rangeFilter.get(0));
+        } else if (rangeFilter.size() == 1)//only have one value
+          filters.add(rangeFilter.get(0));
       }
     }
 
@@ -235,14 +244,17 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
         }
       }
     } else if (tmp.size() == 1) finalFilters = tmp.get(0);
-    else return;
+    else//no filter
+      return null;
 
-    // todo set into QueryModel
-    CarbonInputFormatUtil.processFilterExpression(finalFilters, carbonTable);
-    queryModel.setFilterExpressionResolverTree(
-        CarbonInputFormatUtil.resolveFilter(finalFilters, queryModel.getAbsoluteTableIdentifier()));
+    return finalFilters;
   }
 
+  /**
+   * Convert presto spi Type into Carbondata Type
+   * @param colType
+   * @return
+   */
   public static DataType Spi2CarbondataTypeMapper(Type colType) {
     if (colType == BooleanType.BOOLEAN) return DataType.BOOLEAN;
     else if (colType == SmallintType.SMALLINT) return DataType.SHORT;
