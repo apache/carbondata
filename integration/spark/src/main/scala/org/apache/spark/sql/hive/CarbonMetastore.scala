@@ -161,23 +161,23 @@ class CarbonMetastore(hiveContext: HiveContext, val storePath: String,
     val statistic = new QueryStatistic()
     // creating zookeeper instance once.
     // if zookeeper is configured as carbon lock type.
-    val zookeeperUrl: String = hiveContext.getConf(CarbonCommonConstants.ZOOKEEPER_URL, null)
-    if (zookeeperUrl != null) {
-      CarbonProperties.getInstance.addProperty(CarbonCommonConstants.ZOOKEEPER_URL, zookeeperUrl)
-      ZookeeperInit.getInstance(zookeeperUrl)
-      LOGGER.info("Zookeeper url is configured. Taking the zookeeper as lock type.")
-      var configuredLockType = CarbonProperties.getInstance
-        .getProperty(CarbonCommonConstants.LOCK_TYPE)
-      if (null == configuredLockType) {
-        configuredLockType = CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER
-        CarbonProperties.getInstance
-          .addProperty(CarbonCommonConstants.LOCK_TYPE,
-            configuredLockType)
-      }
+    val zookeeperurl = hiveContext.getConf(CarbonCommonConstants.ZOOKEEPER_URL, null)
+    if (null != zookeeperurl) {
+      CarbonProperties.getInstance
+        .addProperty(CarbonCommonConstants.ZOOKEEPER_URL, zookeeperurl)
     }
-
     if (metadataPath == null) {
       return null
+    }
+    // if no locktype is configured and store type is HDFS set HDFS lock as default
+    if (null == CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.LOCK_TYPE) &&
+        FileType.HDFS == FileFactory.getFileType(metadataPath)) {
+      CarbonProperties.getInstance
+        .addProperty(CarbonCommonConstants.LOCK_TYPE,
+          CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS
+        )
+      LOGGER.info("Default lock type HDFSLOCK is configured")
     }
     val fileType = FileFactory.getFileType(metadataPath)
     val metaDataBuffer = new ArrayBuffer[TableMeta]
