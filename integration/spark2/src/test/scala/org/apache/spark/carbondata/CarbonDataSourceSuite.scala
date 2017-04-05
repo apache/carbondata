@@ -171,7 +171,7 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
       case e =>
         println(e.getMessage)
     }
-    checkAnswer(sql("select * from testdb.test1"), Seq(Row("xx", 1), Row("xx", 11)))
+    checkAnswer(sql("select count(*) from testdb.test1"), Seq(Row(2)))
     sql("drop table testdb.test1")
     sql("drop database testdb")
   }

@@ -67,7 +67,7 @@ public class SchemaReader {
       return CarbonMetadata.getInstance().getCarbonTable(
           identifier.getCarbonTableIdentifier().getTableUniqueName());
     } else {
-      return null;
+      throw new IOException("File does not exist: " + schemaFilePath);
     }
   }
 }
