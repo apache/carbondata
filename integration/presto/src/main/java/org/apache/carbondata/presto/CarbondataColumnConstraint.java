@@ -29,6 +29,9 @@ import java.util.Optional;
 import static com.google.common.base.Objects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Encapsulating presto Tuple-domain
+ */
 public class CarbondataColumnConstraint {
   private final String name;
   private final boolean invertedindexed;

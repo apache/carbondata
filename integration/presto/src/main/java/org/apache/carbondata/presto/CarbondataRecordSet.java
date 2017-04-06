@@ -74,12 +74,12 @@ public class CarbondataRecordSet implements RecordSet {
     return columns.stream().map(a -> a.getColumnType()).collect(Collectors.toList());
   }
 
+  /**
+   * get data blocks via Carbondata QueryModel API
+   */
   @Override public RecordCursor cursor() {
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<TableBlockInfo>();
 
-    //tableBlockInfoList.add(split.getLocalInputSplit().getTableBlockInfo());
-        /*BlockletInfos blockletInfos = new BlockletInfos(split.getLocalInputSplit().getNumberOfBlocklets(), 0,
-                split.getLocalInputSplit().getNumberOfBlocklets());*/
     tableBlockInfoList.add(new TableBlockInfo(split.getLocalInputSplit().getPath().toString(),
         split.getLocalInputSplit().getStart(), split.getLocalInputSplit().getSegmentId(),
         split.getLocalInputSplit().getLocations().toArray(new String[0]),

@@ -78,6 +78,10 @@ public class CarbondataRecordCursor implements RecordCursor {
     return columnHandles.get(field).getColumnType();
   }
 
+  /**
+   * get next Row/Page
+   * @return
+     */
   @Override public boolean advanceNextPosition() {
 
     if (nanoStart == 0) {
