@@ -150,12 +150,6 @@
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-yarn-api</artifactId>
-        <version>${hadoop.version}</version>
-        <scope>${hadoop.deps.scope}</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-mapreduce-client-core</artifactId>
         <version>${hadoop.version}</version>
         <scope>${hadoop.deps.scope}</scope>
@@ -315,7 +309,6 @@
         <scala.binary.version>2.10</scala.binary.version>
         <scala.version>2.10.4</scala.version>
         <maven.test.skip>true</maven.test.skip>
-        <hive.version>1.2.1</hive.version>
         <flink.version>1.1.4</flink.version>
       </properties>
       <modules>
@@ -323,7 +316,6 @@
         <module>integration/spark</module>
         <module>examples/spark</module>
         <module>integration/spark2</module>
-        <module>integration/hive</module>
         <module>examples/spark2</module>
         <module>examples/flink</module>
       </modules>
@@ -388,15 +380,6 @@
       </properties>
       <modules>
         <module>examples/flink</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>hive-1.2</id>
-      <properties>
-        <hive.version>1.2.1</hive.version>
-      </properties>
-      <modules>
-        <module>integration/hive</module>
       </modules>
     </profile>
     <profile>
