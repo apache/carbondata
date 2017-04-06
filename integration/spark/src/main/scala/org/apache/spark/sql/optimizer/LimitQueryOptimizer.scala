@@ -27,7 +27,20 @@ import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumn
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
  /**
-  * Optimize query with Limit condition
+  * Optimize query with Limit condition and group by but no order by and where clause
+  * For example:
+  *    Select A, B, C, Sum(D)
+  *    from t3
+  *    group by A, B, C
+  *    limit N
+  * Step1: get the column reverse list (C, B, A)
+  * Step2: traverse through the columns in step1 and get the dictionary distinct value list
+  * Step3: get the top N value from the list(N is limit number), if the total value count is less
+  *        than N, then get from next column
+  * Step4: Exit when value list number equals to N (if every column's distinct count is less than N
+  *        then no filters will be added.)
+  * For A, B, C  three columns, if A has i distinct values, B has j, C has k. then the max
+  * combination of them is i*j*k, the min combination is max(i,j,k)
   */
 object LimitQueryOptimizer {
     def getFilters(limit_num: Int, groupingExpressions: Seq[Expression],
@@ -40,8 +53,11 @@ object LimitQueryOptimizer {
             val value_arr = ArrayBuffer[Literal]()
             count_arr += 0
             val relation = getTableRelation(col)
-            val dictExist = relation.metaData.dictionaryMap.get(col.name).get
+            val dictExist = relation.metaData.dictionaryMap.get(col.name).getOrElse(false)
             val count_max = count_arr.max
+            /**
+             * Once a column get the N values then skip the other columns
+             */
             if (count_max < limit_num && dictExist) {
                 val dict = LimitQueryOptimizer.getDictionaryValue(col, relation).get
                 // Get distinct value list of current grouping column
@@ -74,6 +90,9 @@ object LimitQueryOptimizer {
             val carbonRelation = relation.carbonRelation.carbonRelation
             carbonRelation
         }
+        /**
+         * Construct Filter with generated dictionary value list
+         */
         var new_expr : Expression = null
         if (!expr_arr.isEmpty) {
             for (i <- 0 until expr_arr.size) {
@@ -89,6 +108,9 @@ object LimitQueryOptimizer {
         }
 
     }
+     /**
+      * get dictionary from column name and table info
+      */
     def getDictionaryValue(col: AttributeReference,
                            relation: CarbonRelation): Option[Dictionary] = {
         val tableName = col.qualifiers.head
