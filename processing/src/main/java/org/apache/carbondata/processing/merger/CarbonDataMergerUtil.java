@@ -383,6 +383,7 @@ public final class CarbonDataMergerUtil {
           tableStatusUpdationStatus = true;
         } catch (IOException e) {
           LOGGER.error("Error while writing metadata");
+          tableStatusUpdationStatus = false;
         }
       } else {
         LOGGER.error(
