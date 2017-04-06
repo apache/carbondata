@@ -24,44 +24,60 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object OrderByMdkNoFilterQuery {
   def main(args: Array[String]) {
    val cc = ExampleUtils.createCarbonContext("CarbonExample")
-
+   val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
     // Specify timestamp format based on raw data
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
+    cc.sql("DROP TABLE IF EXISTS t3")
+
+    // Create table, 6 dimensions, 1 measure
+    cc.sql("""
+           CREATE TABLE IF NOT EXISTS t3
+           (ID Int, date Date, country String,
+           name String, phonetype String, serialname char(10), salary Int)
+           STORED BY 'carbondata'
+           """)
+
+    // Load data
+    cc.sql(s"""
+           LOAD DATA LOCAL INPATH '$testData' into table t3
+           """)
 
     cc.sql("""
-           SELECT date,country,name,salary FROM sortbymdk limit 100
+           SELECT * FROM t3 limit 100
            """).show(100000)
 
     var start = System.currentTimeMillis()
     cc.sql("""
-           SELECT date,country,name,salary FROM sortbymdk ORDER BY date limit 1000
+           SELECT date,country,name,salary FROM t3 ORDER BY date limit 1000
            """).show(100000)
     print("levarage optimization query time: " + (System.currentTimeMillis() - start))
     start = System.currentTimeMillis()
     cc.sql("""
-           SELECT date,country,name,salary FROM sortbymdk
+           SELECT date,country,name,salary FROM t3
             ORDER BY date desc, country desc limit 1000
            """).show(100000)
     print("levarage optimization query time: " + (System.currentTimeMillis() - start))
     start = System.currentTimeMillis()
     cc.sql("""
-           SELECT date,country,name,salary FROM sortbymdk
+           SELECT date,country,name,salary FROM t3
             ORDER BY date, country, name limit 1000
            """).show(100000)
     print("levarage optimization query time: " + (System.currentTimeMillis() - start))
 
     start = System.currentTimeMillis()
     cc.sql("""
-           SELECT date,country,name,salary FROM sortbymdk
+           SELECT date,country,name,salary FROM t3
             ORDER BY date, country desc limit 1000
            """).show(100000)
     print("not levarage optimization query time: " + (System.currentTimeMillis() - start))
     start = System.currentTimeMillis()
     cc.sql("""
-           SELECT date,country,name,salary FROM sortbymdk
+           SELECT date,country,name,salary FROM t3
             ORDER BY date, country desc, name limit 1000
            """).show(100000)
     print("not levarage optimization query time: " + (System.currentTimeMillis() - start))
+
+    cc.sql("DROP TABLE IF EXISTS t3")
   }
 }

@@ -55,7 +55,7 @@ object CarbonExample {
            """).show()
 
     // Drop table
-    // cc.sql("DROP TABLE IF EXISTS t3")
+    cc.sql("DROP TABLE IF EXISTS t3")
   }
 
 }
