@@ -657,7 +657,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
   }
 
   def createDatabaseDirectory(dbName: String) {
-    val databasePath = storePath + File.separator + dbName
+    val databasePath = storePath + File.separator + dbName.toLowerCase
     val fileType = FileFactory.getFileType(databasePath)
     FileFactory.mkdirs(databasePath, fileType)
   }
