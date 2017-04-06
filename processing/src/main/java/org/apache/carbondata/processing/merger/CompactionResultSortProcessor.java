@@ -14,11 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.spark.merger;
+package org.apache.carbondata.processing.merger;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -28,11 +27,9 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
@@ -328,6 +325,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     dimensionColumnCount = dimensions.size();
     SortParameters parameters = createSortParameters();
     SortIntermediateFileMerger intermediateFileMerger = new SortIntermediateFileMerger(parameters);
+    // TODO: Now it is only supported onheap merge, but we can have unsafe merge
+    // as well by using UnsafeSortDataRows.
     this.sortDataRows = new SortDataRows(parameters, intermediateFileMerger);
     try {
       this.sortDataRows.initialize();
@@ -369,8 +368,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * initialise carbon data writer instance
    */
   private void initDataHandler() throws Exception {
-    CarbonFactDataHandlerModel carbonFactDataHandlerModel =
-        getCarbonFactDataHandlerModel(carbonLoadModel, carbonTable, segmentProperties, tableName,
+    CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
+        .getCarbonFactDataHandlerModel(carbonLoadModel, carbonTable, segmentProperties, tableName,
             tempStoreLocation);
     setDataFileAttributesInModel(carbonLoadModel, compactionType, carbonTable,
         carbonFactDataHandlerModel);
@@ -397,11 +396,6 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * initialise aggregation type for measures for their storage format
    */
   private void initAggType() {
-    aggType = new char[measureCount];
-    Arrays.fill(aggType, 'n');
-    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
-    for (int i = 0; i < measureCount; i++) {
-      aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
-    }
+    aggType = CarbonDataProcessorUtil.initAggType(carbonTable, tableName, measureCount);
   }
 }

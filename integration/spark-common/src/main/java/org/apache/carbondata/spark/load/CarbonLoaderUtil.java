@@ -70,9 +70,9 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.processing.merger.NodeBlockRelation;
+import org.apache.carbondata.processing.merger.NodeMultiBlockRelation;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
-import org.apache.carbondata.spark.merger.NodeBlockRelation;
-import org.apache.carbondata.spark.merger.NodeMultiBlockRelation;
 
 import com.google.gson.Gson;
 import org.apache.spark.SparkConf;
@@ -200,21 +200,6 @@ public final class CarbonLoaderUtil {
       }
     }
 
-  }
-
-  /**
-   * This method will get the store location for the given path, segemnt id and partition id
-   *
-   * @param storePath
-   * @param carbonTableIdentifier
-   * @param segmentId
-   * @return
-   */
-  public static String getStoreLocation(String storePath,
-      CarbonTableIdentifier carbonTableIdentifier, String segmentId) {
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier);
-    return carbonTablePath.getCarbonDataDirectoryPath("0", segmentId);
   }
 
   /**

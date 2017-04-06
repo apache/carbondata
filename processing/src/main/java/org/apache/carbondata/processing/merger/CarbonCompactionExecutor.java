@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.spark.merger;
+package org.apache.carbondata.processing.merger;
 
 import java.io.IOException;
 import java.util.ArrayList;

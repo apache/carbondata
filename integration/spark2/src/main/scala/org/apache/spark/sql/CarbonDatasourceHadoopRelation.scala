@@ -32,8 +32,8 @@ import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.hadoop.util.SchemaReader
+import org.apache.carbondata.processing.merger.TableMeta
 import org.apache.carbondata.spark.CarbonFilters
-import org.apache.carbondata.spark.merger.TableMeta
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 

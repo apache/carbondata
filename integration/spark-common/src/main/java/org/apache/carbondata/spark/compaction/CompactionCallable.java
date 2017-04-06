@@ -15,19 +15,30 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.merger;
+package org.apache.carbondata.spark.compaction;
 
-import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
+import java.util.concurrent.Callable;
 
-public final class CarbonDataMergerUtilResult extends SegmentUpdateDetails {
-  private boolean compactionStatus;
+import org.apache.carbondata.spark.rdd.Compactor;
 
-  public boolean getCompactionStatus() {
-    return compactionStatus;
+import org.apache.spark.sql.execution.command.CompactionCallableModel;
+
+/**
+ * Callable class which is used to trigger the compaction in a separate callable.
+ */
+public class CompactionCallable implements Callable<Void> {
+
+  private final CompactionCallableModel compactionCallableModel;
+
+  public CompactionCallable(CompactionCallableModel compactionCallableModel) {
+
+    this.compactionCallableModel = compactionCallableModel;
   }
 
-  public void setCompactionStatus(Boolean status) {
-    compactionStatus = status;
-  }
+  @Override public Void call() throws Exception {
 
+    Compactor.triggerCompaction(compactionCallableModel);
+    return null;
+
+  }
 }

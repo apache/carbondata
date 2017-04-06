@@ -196,24 +196,14 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
     } finally {
       // release lock after command execution completion
       AlterTableUtil.releaseLocks(locks, LOGGER)
-      if (carbonLock != null) {
-        if (carbonLock.unlock()) {
-          LOGGER.info("Lock released successfully")
-        } else {
-          val storeLocation = CarbonProperties.getInstance
-            .getProperty(CarbonCommonConstants.STORE_LOCATION,
-              System.getProperty("java.io.tmpdir"))
-          val lockFilePath = storeLocation + CarbonCommonConstants.FILE_SEPARATOR +
-                             oldDatabaseName + CarbonCommonConstants.FILE_SEPARATOR + newTableName +
-                             CarbonCommonConstants.FILE_SEPARATOR +
-                             LockUsage.METADATA_LOCK
-          if(carbonLock.releaseLockManually(lockFilePath)) {
-            LOGGER.info("Lock released successfully")
-          } else {
-            LOGGER.error("Unable to release lock during rename table")
-          }
-        }
-      }
+      // case specific to rename table as after table rename old table path will not be found
+      AlterTableUtil
+        .releaseLocksManually(locks,
+          locksToBeAcquired,
+          oldDatabaseName,
+          newTableName,
+          carbonTable.getStorePath,
+          LOGGER)
     }
     Seq.empty
   }

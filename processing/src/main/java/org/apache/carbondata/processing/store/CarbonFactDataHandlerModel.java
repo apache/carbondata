@@ -18,6 +18,7 @@
 package org.apache.carbondata.processing.store;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -29,12 +30,16 @@ import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
+import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
@@ -290,6 +295,73 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.bucketId = bucketId;
     carbonFactDataHandlerModel.segmentId = configuration.getSegmentId();
     carbonFactDataHandlerModel.taskExtension = taskExtension;
+    return carbonFactDataHandlerModel;
+  }
+
+  /**
+   * This method will create a model object for carbon fact data handler
+   *
+   * @param loadModel
+   * @return
+   */
+  public static CarbonFactDataHandlerModel getCarbonFactDataHandlerModel(CarbonLoadModel loadModel,
+      CarbonTable carbonTable, SegmentProperties segmentProperties, String tableName,
+      String tempStoreLocation) {
+    CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
+    carbonFactDataHandlerModel.setDatabaseName(loadModel.getDatabaseName());
+    carbonFactDataHandlerModel.setTableName(tableName);
+    carbonFactDataHandlerModel.setMeasureCount(segmentProperties.getMeasures().size());
+    carbonFactDataHandlerModel
+        .setMdKeyLength(segmentProperties.getDimensionKeyGenerator().getKeySizeInBytes());
+    carbonFactDataHandlerModel.setStoreLocation(tempStoreLocation);
+    carbonFactDataHandlerModel.setDimLens(segmentProperties.getDimColumnsCardinality());
+    carbonFactDataHandlerModel.setSegmentProperties(segmentProperties);
+    carbonFactDataHandlerModel
+        .setNoDictionaryCount(segmentProperties.getNumberOfNoDictionaryDimension());
+    carbonFactDataHandlerModel.setDimensionCount(
+        segmentProperties.getDimensions().size() - carbonFactDataHandlerModel
+            .getNoDictionaryCount());
+    List<ColumnSchema> wrapperColumnSchema = CarbonUtil
+        .getColumnSchemaList(carbonTable.getDimensionByTableName(tableName),
+            carbonTable.getMeasureByTableName(tableName));
+    carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
+    // get the cardinality for all all the columns including no dictionary columns
+    int[] formattedCardinality = CarbonUtil
+        .getFormattedCardinality(segmentProperties.getDimColumnsCardinality(), wrapperColumnSchema);
+    carbonFactDataHandlerModel.setColCardinality(formattedCardinality);
+    //TO-DO Need to handle complex types here .
+    Map<Integer, GenericDataType> complexIndexMap =
+        new HashMap<Integer, GenericDataType>(segmentProperties.getComplexDimensions().size());
+    carbonFactDataHandlerModel.setComplexIndexMap(complexIndexMap);
+    carbonFactDataHandlerModel.setDataWritingRequest(true);
+    char[] aggType = new char[segmentProperties.getMeasures().size()];
+    Arrays.fill(aggType, 'n');
+    int i = 0;
+    for (CarbonMeasure msr : segmentProperties.getMeasures()) {
+      aggType[i++] = DataTypeUtil.getAggType(msr.getDataType());
+    }
+    carbonFactDataHandlerModel.setAggType(aggType);
+    carbonFactDataHandlerModel.setFactDimLens(segmentProperties.getDimColumnsCardinality());
+    String carbonDataDirectoryPath = CarbonDataProcessorUtil
+        .checkAndCreateCarbonStoreLocation(loadModel.getStorePath(), loadModel.getDatabaseName(),
+            tableName, loadModel.getPartitionId(), loadModel.getSegmentId());
+    carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
+    List<CarbonDimension> dimensionByTableName =
+        loadModel.getCarbonDataLoadSchema().getCarbonTable().getDimensionByTableName(tableName);
+    boolean[] isUseInvertedIndexes = new boolean[dimensionByTableName.size()];
+    int index = 0;
+    for (CarbonDimension dimension : dimensionByTableName) {
+      isUseInvertedIndexes[index++] = dimension.isUseInvertedIndex();
+    }
+    carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndexes);
+    carbonFactDataHandlerModel.setPrimitiveDimLens(segmentProperties.getDimColumnsCardinality());
+    carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
+    if (segmentProperties.getNumberOfNoDictionaryDimension() > 0
+        || segmentProperties.getComplexDimensions().size() > 0) {
+      carbonFactDataHandlerModel.setMdKeyIndex(segmentProperties.getMeasures().size() + 1);
+    } else {
+      carbonFactDataHandlerModel.setMdKeyIndex(segmentProperties.getMeasures().size());
+    }
     return carbonFactDataHandlerModel;
   }
 

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.spark.merger;
+package org.apache.carbondata.processing.merger;
 
 import java.io.File;
 import java.util.AbstractQueue;
@@ -32,17 +32,17 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.processing.merger.exeception.SliceMergerException;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.apache.carbondata.spark.merger.exeception.SliceMergerException;
 
 /**
  * This is the Merger class responsible for the merging of the segments.
  */
-public class RowResultMerger extends AbstractResultProcessor {
+public class RowResultMergerProcessor extends AbstractResultProcessor {
 
   private CarbonFactHandler dataHandler;
   private SegmentProperties segprop;
@@ -54,9 +54,9 @@ public class RowResultMerger extends AbstractResultProcessor {
   private TupleConversionAdapter tupleConvertor;
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(RowResultMerger.class.getName());
+      LogServiceFactory.getLogService(RowResultMergerProcessor.class.getName());
 
-  public RowResultMerger(String databaseName,
+  public RowResultMergerProcessor(String databaseName,
       String tableName, SegmentProperties segProp, String tempStoreLocation,
       CarbonLoadModel loadModel, CompactionType compactionType) {
     this.segprop = segProp;
@@ -65,8 +65,8 @@ public class RowResultMerger extends AbstractResultProcessor {
     }
     CarbonTable carbonTable = CarbonMetadata.getInstance()
             .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
-    CarbonFactDataHandlerModel carbonFactDataHandlerModel =
-        getCarbonFactDataHandlerModel(loadModel, carbonTable, segProp, tableName,
+    CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
+        .getCarbonFactDataHandlerModel(loadModel, carbonTable, segProp, tableName,
             tempStoreLocation);
     setDataFileAttributesInModel(loadModel, compactionType, carbonTable,
         carbonFactDataHandlerModel);
@@ -78,7 +78,7 @@ public class RowResultMerger extends AbstractResultProcessor {
   private void initRecordHolderHeap(List<RawResultIterator> rawResultIteratorList) {
     // create the List of RawResultIterator.
     recordHolderHeap = new PriorityQueue<RawResultIterator>(rawResultIteratorList.size(),
-        new RowResultMerger.CarbonMdkeyComparator());
+        new RowResultMergerProcessor.CarbonMdkeyComparator());
   }
 
   /**

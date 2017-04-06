@@ -43,10 +43,9 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl
 import org.apache.carbondata.processing.exception.MultipleMatchingException
+import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CarbonDataMergerUtilResult, CompactionType}
 import org.apache.carbondata.spark.DeleteDelataResultImpl
 import org.apache.carbondata.spark.load.FailureCauses
-import org.apache.carbondata.spark.merger.{CarbonDataMergerUtil, CarbonDataMergerUtilResult, CompactionType}
-import org.apache.carbondata.spark.merger.CarbonDataMergerUtil._
 import org.apache.carbondata.spark.util.QueryPlanUtil
 
 
@@ -272,7 +271,7 @@ object IUDCommon {
       carbonRelation: CarbonRelation,
       isUpdateOperation: Boolean): Unit = {
 
-    var ishorizontalCompaction = isHorizontalCompactionEnabled()
+    var ishorizontalCompaction = CarbonDataMergerUtil.isHorizontalCompactionEnabled()
 
     if (ishorizontalCompaction == false) {
       return
@@ -288,7 +287,7 @@ object IUDCommon {
     val deleteTimeStamp = updateTimeStamp + 1
 
     // get the valid segments
-    var segLists = getValidSegmentList(absTableIdentifier)
+    var segLists = CarbonDataMergerUtil.getValidSegmentList(absTableIdentifier)
 
     if (segLists == null || segLists.size() == 0) {
       return
@@ -350,7 +349,7 @@ object IUDCommon {
     val db = carbonTable.getDatabaseName
     val table = carbonTable.getFactTableName
     // get the valid segments qualified for update compaction.
-    val validSegList = getSegListIUDCompactionQualified(segLists,
+    val validSegList = CarbonDataMergerUtil.getSegListIUDCompactionQualified(segLists,
       absTableIdentifier,
       segmentUpdateStatusManager,
       compactionTypeIUD)
@@ -406,7 +405,7 @@ object IUDCommon {
 
     val db = carbonTable.getDatabaseName
     val table = carbonTable.getFactTableName
-    val deletedBlocksList = getSegListIUDCompactionQualified(segLists,
+    val deletedBlocksList = CarbonDataMergerUtil.getSegListIUDCompactionQualified(segLists,
       absTableIdentifier,
       segmentUpdateStatusManager,
       compactionTypeIUD)
@@ -436,7 +435,7 @@ object IUDCommon {
             val blockName = segmentAndBlocks
               .substring(segmentAndBlocks.lastIndexOf("/") + 1, segmentAndBlocks.length)
 
-            val result = compactBlockDeleteDeltaFiles(segment, blockName,
+            val result = CarbonDataMergerUtil.compactBlockDeleteDeltaFiles(segment, blockName,
               absTableIdentifier,
               updateStatusDetails,
               timestamp)
@@ -453,7 +452,7 @@ object IUDCommon {
         })
       })
 
-      val updateStatus = updateStatusFile(resultList.toList.asJava,
+      val updateStatus = CarbonDataMergerUtil.updateStatusFile(resultList.toList.asJava,
         carbonTable,
         timestamp.toString,
         segmentUpdateStatusManager)

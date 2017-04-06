@@ -46,11 +46,11 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, CarbonInputSplitTaskInfo}
+import org.apache.carbondata.processing.merger._
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark.MergeResult
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
-import org.apache.carbondata.spark.merger._
 import org.apache.carbondata.spark.splits.TableSplit
 
 class CarbonMergerRDD[K, V](
@@ -153,6 +153,7 @@ class CarbonMergerRDD[K, V](
 
         carbonLoadModel.setStorePath(hdfsStoreLocation)
         // check for restructured block
+        // TODO: only in case of add and drop this variable should be true
         val restructuredBlockExists: Boolean = CarbonCompactionUtil
           .checkIfAnyRestructuredBlockExists(segmentMapping,
             dataFileMetadataSegMapping,
@@ -203,7 +204,7 @@ class CarbonMergerRDD[K, V](
           )
         } else {
           processor =
-            new RowResultMerger(
+            new RowResultMergerProcessor(
               databaseName,
               factTableName,
               segmentProperties,

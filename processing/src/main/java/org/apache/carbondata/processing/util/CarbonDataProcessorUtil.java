@@ -41,6 +41,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -472,6 +473,37 @@ public final class CarbonDataProcessorUtil {
     outputRow[outputRow.length - 1] =
         segmentProperties.getDimensionKeyGenerator().generateKey(highCardExcludedRows);
     return outputRow;
+  }
+
+  /**
+   * This method will get the store location for the given path, segment id and partition id
+   *
+   * @return data directory path
+   */
+  public static String checkAndCreateCarbonStoreLocation(String factStoreLocation,
+      String databaseName, String tableName, String partitionId, String segmentId) {
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
+    CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(factStoreLocation, carbonTableIdentifier);
+    String carbonDataDirectoryPath =
+        carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
+    CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
+    return carbonDataDirectoryPath;
+  }
+
+  /**
+   * initialise aggregation type for measures for their storage format
+   */
+  public static char[] initAggType(CarbonTable carbonTable, String tableName, int measureCount) {
+    char[] aggType = new char[measureCount];
+    Arrays.fill(aggType, 'n');
+    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
+    for (int i = 0; i < measureCount; i++) {
+      aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
+    }
+    return aggType;
   }
 
 }
