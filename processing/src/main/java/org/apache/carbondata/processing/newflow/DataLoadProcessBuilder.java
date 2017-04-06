@@ -158,9 +158,7 @@ public final class DataLoadProcessBuilder {
         loadModel.getIsEmptyDataBadRecord().split(",")[1]);
     configuration.setDataLoadProperty(DataLoadProcessorConstants.FACT_FILE_PATH,
         loadModel.getFactFilePath());
-    if (CarbonMetadata.getInstance().getCarbonTable(carbonTable.getTableUniqueName()) == null) {
-      CarbonMetadata.getInstance().addCarbonTable(carbonTable);
-    }
+    CarbonMetadata.getInstance().addCarbonTable(carbonTable);
     List<CarbonDimension> dimensions =
         carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
     List<CarbonMeasure> measures =

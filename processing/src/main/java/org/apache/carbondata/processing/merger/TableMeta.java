@@ -15,30 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.merger;
+package org.apache.carbondata.processing.merger;
 
-import java.util.concurrent.Callable;
+import java.io.Serializable;
 
-import org.apache.carbondata.spark.rdd.Compactor;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
-import org.apache.spark.sql.execution.command.CompactionCallableModel;
+public class TableMeta implements Serializable {
 
-/**
- * Callable class which is used to trigger the compaction in a separate callable.
- */
-public class CompactionCallable implements Callable<Void> {
+  private static final long serialVersionUID = -1749874611119829431L;
 
-  private final CompactionCallableModel compactionCallableModel;
+  public CarbonTableIdentifier carbonTableIdentifier;
+  public String storePath;
+  public CarbonTable carbonTable;
 
-  public CompactionCallable(CompactionCallableModel compactionCallableModel) {
-
-    this.compactionCallableModel = compactionCallableModel;
+  public TableMeta(CarbonTableIdentifier carbonTableIdentifier, String storePath,
+      CarbonTable carbonTable) {
+    this.carbonTableIdentifier = carbonTableIdentifier;
+    this.storePath = storePath;
+    this.carbonTable = carbonTable;
   }
 
-  @Override public Void call() throws Exception {
-
-    Compactor.triggerCompaction(compactionCallableModel);
-    return null;
-
-  }
 }

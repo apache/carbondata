@@ -15,26 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.merger;
+package org.apache.carbondata.processing.merger;
 
-import java.io.Serializable;
+import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+public final class CarbonDataMergerUtilResult extends SegmentUpdateDetails {
+  private boolean compactionStatus;
 
-public class TableMeta implements Serializable {
+  public boolean getCompactionStatus() {
+    return compactionStatus;
+  }
 
-  private static final long serialVersionUID = -1749874611119829431L;
-
-  public CarbonTableIdentifier carbonTableIdentifier;
-  public String storePath;
-  public CarbonTable carbonTable;
-
-  public TableMeta(CarbonTableIdentifier carbonTableIdentifier, String storePath,
-      CarbonTable carbonTable) {
-    this.carbonTableIdentifier = carbonTableIdentifier;
-    this.storePath = storePath;
-    this.carbonTable = carbonTable;
+  public void setCompactionStatus(Boolean status) {
+    compactionStatus = status;
   }
 
 }

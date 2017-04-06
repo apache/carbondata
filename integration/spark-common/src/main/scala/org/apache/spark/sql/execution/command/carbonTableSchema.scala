@@ -39,10 +39,10 @@ import org.apache.carbondata.core.service.CarbonCommonFactory
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.processing.merger.CompactionType
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.load.FailureCauses
-import org.apache.carbondata.spark.merger.CompactionType
 import org.apache.carbondata.spark.rdd.AlterTableAddColumnRDD
 import org.apache.carbondata.spark.util.{DataTypeConverterUtil, GlobalDictionaryUtil}
 

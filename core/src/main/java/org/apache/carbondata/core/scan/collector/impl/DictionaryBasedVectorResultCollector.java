@@ -51,10 +51,14 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
 
   public DictionaryBasedVectorResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
-    queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
-    queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
-    allColumnInfo = new ColumnVectorInfo[queryDimensions.length + queryMeasures.length];
-    prepareDimensionAndMeasureColumnVectors();
+    // initialize only if the current block is not a restructured block else the initialization
+    // will be taken care by RestructureBasedVectorResultCollector
+    if (!blockExecutionInfos.isRestructuredBlock()) {
+      queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
+      queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
+      allColumnInfo = new ColumnVectorInfo[queryDimensions.length + queryMeasures.length];
+      prepareDimensionAndMeasureColumnVectors();
+    }
   }
 
   protected void prepareDimensionAndMeasureColumnVectors() {

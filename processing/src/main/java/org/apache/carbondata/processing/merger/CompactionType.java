@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.spark.merger;
+package org.apache.carbondata.processing.merger;
 
 /**
  * This enum is used to define the types of Compaction.

@@ -34,8 +34,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, Ca
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.processing.merger.TableMeta
 import org.apache.carbondata.spark.{CarbonOption, _}
-import org.apache.carbondata.spark.merger.TableMeta
 
 /**
  * Carbon relation provider compliant to data source api.
