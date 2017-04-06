@@ -183,9 +183,13 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
    */
   private byte[] fillDictionaryKeyArrayWithLatestSchema(byte[] dictionaryKeyArray) {
     QueryDimension[] actualQueryDimensions = tableBlockExecutionInfos.getActualQueryDimensions();
-    long[] keyArray = updatedCurrentBlockKeyGenerator.getKeyArray(dictionaryKeyArray);
-    long[] keyArrayWithNewAddedColumns =
-        new long[keyArray.length + dimensionInfo.getNewDictionaryColumnCount()];
+    int newKeyArrayLength = dimensionInfo.getNewDictionaryColumnCount();
+    long[] keyArray = null;
+    if (null != updatedCurrentBlockKeyGenerator) {
+      keyArray = updatedCurrentBlockKeyGenerator.getKeyArray(dictionaryKeyArray);
+      newKeyArrayLength += keyArray.length;
+    }
+    long[] keyArrayWithNewAddedColumns = new long[newKeyArrayLength];
     int existingColumnKeyArrayIndex = 0;
     int newKeyArrayIndex = 0;
     for (int i = 0; i < dimensionInfo.getDimensionExists().length; i++) {
@@ -228,7 +232,8 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
     int existingColumnValueIndex = 0;
     int newKeyArrayIndex = 0;
     for (int i = 0; i < dimensionInfo.getDimensionExists().length; i++) {
-      if (!actualQueryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)) {
+      if (!actualQueryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)
+          && !actualQueryDimensions[i].getDimension().hasEncoding(Encoding.IMPLICIT)) {
         // if dimension exists then add the byte array value else add the default value
         if (dimensionInfo.getDimensionExists()[i]) {
           noDictionaryKeyArrayWithNewlyAddedColumns[newKeyArrayIndex++] =
