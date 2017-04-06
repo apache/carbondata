@@ -223,7 +223,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           }
         }
         // use to check whether all order by columns are  dimensions
-        var orderByPrefixMdkCnt: Int = 1
+        var orderByPrefixMdkCnt: Int = 0
         // use to check whether all order by columns sort directions are the same , ASC or DESC
         var sortDirection: SortDirection = null
         sortMdkDimensions = sort.order.map {
@@ -245,7 +245,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
                   null
                 } else {
                   // not prefix of mdk
-                  if (carbonDimension.getSchemaOrdinal != orderByPrefixMdkCnt) {
+                  if (carbonDimension.getKeyOrdinal != orderByPrefixMdkCnt) {
                     sortMdkPushdownFlg = false
                     null
                   } else {
@@ -269,6 +269,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             }
         }
       }
+      // print(" sortMdkPushdownFlg: " + sortMdkPushdownFlg)
       sortMdkPushdownFlg
     }
     def addTempDecoder(currentPlan: LogicalPlan): LogicalPlan = {
