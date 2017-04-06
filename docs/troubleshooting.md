@@ -226,7 +226,7 @@ who are building, deploying, and using CarbonData.
 
   **Procedure**
 
-  Worker must wait for the query execution to complete and the table to release the lock for another query execution to succeed..
+  Worker must wait for the query execution to complete and the table to release the lock for another query execution to succeed.
 
 ## Failed to create a table with a single numeric column.
 
@@ -240,7 +240,7 @@ who are building, deploying, and using CarbonData.
 
   **Possible Cause**
 
-  Behavior not supported.
+  Behaviour not supported.
 
   **Procedure**
 
