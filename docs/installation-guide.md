@@ -50,29 +50,23 @@ followed by :
 
 4. Copy the `./conf/carbon.properties.template` file from CarbonData repository to `$SPARK_HOME/conf/` folder and rename the file to `carbon.properties`.
 
-5. Copy the `./processing/carbonplugins` folder from CarbonData repository to `$SPARK_HOME/carbonlib/` folder.
-
-    **NOTE**: carbonplugins will contain .kettle folder.
-
-6. Repeat Step 2 to Step 5 in all the nodes of the cluster.
+5. Repeat Step 2 to Step 5 in all the nodes of the cluster.
     
-7. In Spark node[master], configure the properties mentioned in the following table in `$SPARK_HOME/conf/spark-defaults.conf` file.
+6. In Spark node[master], configure the properties mentioned in the following table in `$SPARK_HOME/conf/spark-defaults.conf` file.
 
    | Property | Value | Description |
    |---------------------------------|-----------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
-   | carbon.kettle.home | `$SPARK_HOME/carbonlib/carbonplugins` | Path that will be used by CarbonData internally to create graph for loading the data |
    | spark.driver.extraJavaOptions | `-Dcarbon.properties.filepath=$SPARK_HOME/conf/carbon.properties` | A string of extra JVM options to pass to the driver. For instance, GC settings or other logging. |
    | spark.executor.extraJavaOptions | `-Dcarbon.properties.filepath=$SPARK_HOME/conf/carbon.properties` | A string of extra JVM options to pass to executors. For instance, GC settings or other logging. **NOTE**: You can enter multiple values separated by space. |
 
-8. Add the following properties in `$SPARK_HOME/conf/carbon.properties` file:
+7. Add the following properties in `$SPARK_HOME/conf/carbon.properties` file:
 
    | Property             | Required | Description                                                                            | Example                             | Remark  |
    |----------------------|----------|----------------------------------------------------------------------------------------|-------------------------------------|---------|
    | carbon.storelocation | NO       | Location where data CarbonData will create the store and write the data in its own format. | hdfs://HOSTNAME:PORT/Opt/CarbonStore      | Propose to set HDFS directory |
-   | carbon.kettle.home   | YES      | Path that will be used by CarbonData internally to create graph for loading the data.         | `$SPARK_HOME/carbonlib/carbonplugins` |         |
 
 
-9. Verify the installation. For example:
+8. Verify the installation. For example:
 
    ```
    ./spark-shell --master spark://HOSTNAME:PORT --total-executor-cores 2
@@ -100,13 +94,9 @@ To get started with CarbonData : [Quick Start](quick-start-guide.md), [DDL Opera
 
     **NOTE**: Create the carbonlib folder if it does not exists inside `$SPARK_HOME` path.
 
-2. Copy the `./processing/carbonplugins` folder from CarbonData repository to `$SPARK_HOME/carbonlib/` folder.
+2. Copy the `./conf/carbon.properties.template` file from CarbonData repository to `$SPARK_HOME/conf/` folder and rename the file to `carbon.properties`.
 
-    **NOTE**: carbonplugins will contain .kettle folder.
-
-3. Copy the `./conf/carbon.properties.template` file from CarbonData repository to `$SPARK_HOME/conf/` folder and rename the file to `carbon.properties`.
-
-4. Create `tar,gz` file of carbonlib folder and move it inside the carbonlib folder.
+3. Create `tar,gz` file of carbonlib folder and move it inside the carbonlib folder.
 
     ```
 	cd $SPARK_HOME
@@ -114,7 +104,7 @@ To get started with CarbonData : [Quick Start](quick-start-guide.md), [DDL Opera
 	mv carbondata.tar.gz carbonlib/
     ```
 
-5. Configure the properties mentioned in the following table in `$SPARK_HOME/conf/spark-defaults.conf` file.
+4. Configure the properties mentioned in the following table in `$SPARK_HOME/conf/spark-defaults.conf` file.
 
    | Property | Description | Value |
    |---------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------|
@@ -127,15 +117,13 @@ To get started with CarbonData : [Quick Start](quick-start-guide.md), [DDL Opera
    | spark.driver.extraJavaOptions | A string of extra JVM options to pass to the driver. For instance, GC settings or other logging. |`-Dcarbon.properties.filepath=$SPARK_HOME/conf/carbon.properties` |
 
 
-6. Add the following properties in `$SPARK_HOME/conf/carbon.properties`:
+5. Add the following properties in `$SPARK_HOME/conf/carbon.properties`:
 
    | Property | Required | Description | Example | Default Value |
    |----------------------|----------|----------------------------------------------------------------------------------------|-------------------------------------|---------------|
    | carbon.storelocation | NO | Location where CarbonData will create the store and write the data in its own format. | hdfs://HOSTNAME:PORT/Opt/CarbonStore | Propose to set HDFS directory|
-   | carbon.kettle.home | YES | Path that will be used by CarbonData internally to create graph for loading the data. | carbondata.tar.gz/carbonlib/carbonplugins |  |
 
-
-7. Verify the installation.
+6. Verify the installation.
 
    ```
      ./bin/spark-shell --master yarn-client --driver-memory 1g
