@@ -32,7 +32,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
-import org.apache.spark.Accumulator
+import org.apache.spark.{Accumulator, SparkException}
 import org.apache.spark.rdd.{NewHadoopRDD, RDD}
 import org.apache.spark.sql._
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
@@ -784,9 +784,28 @@ object GlobalDictionaryUtil {
       }
     } catch {
       case ex: Exception =>
-        LOGGER.error(ex, "generate global dictionary failed")
-        throw ex
+        ex match {
+          case spx: SparkException =>
+            LOGGER.error(spx, "generate global dictionary failed")
+            throw new Exception("generate global dictionary failed, " +
+                                trimErrorMessage(spx.getMessage))
+          case _ =>
+            LOGGER.error(ex, "generate global dictionary failed")
+            throw ex
+        }
     }
+  }
+
+  // Get proper error message of TextParsingException
+  def trimErrorMessage(input: String): String = {
+    var errorMessage: String = null
+    if (input != null) {
+      if (input.split("Hint").length > 0 &&
+          input.split("Hint")(0).split("TextParsingException: ").length > 1) {
+        errorMessage = input.split("Hint")(0).split("TextParsingException: ")(1)
+      }
+    }
+    errorMessage
   }
 
   /**
