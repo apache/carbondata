@@ -43,6 +43,7 @@ object Spark2TestQueryExecutor {
       System.getProperty("java.io.tmpdir"))
     .addProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL)
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
+    .addProperty(CarbonCommonConstants.ENABLE_LOCK_LOG, "true")
 
 
   import org.apache.spark.sql.CarbonSession._
