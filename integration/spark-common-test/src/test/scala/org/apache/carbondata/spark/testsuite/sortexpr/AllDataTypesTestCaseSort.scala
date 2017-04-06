@@ -27,6 +27,8 @@ import org.scalatest.BeforeAndAfterAll
 class AllDataTypesTestCaseSort extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    sql("drop table if exists alldatatypestablesort")
+    sql("drop table if exists alldatatypestablesort_hive")
     sql("CREATE TABLE alldatatypestablesort (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE alldatatypestablesort OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""");
 
@@ -41,8 +43,20 @@ class AllDataTypesTestCaseSort extends QueryTest with BeforeAndAfterAll {
       sql("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestablesort_hive where empname in ('arvind','ayushi') group by empno,empname,utilization order by empno"))
   }
 
+  test("select * from alldatatypestablesort order by empname limit 10") {
+    sql("select * from alldatatypestablesort order by empname limit 10").collect()
+  }
+
+  test("select * from alldatatypestablesort order by salary limit 2") {
+    sql("select * from alldatatypestablesort order by salary limit 2").collect()
+  }
+
+  test("select * from alldatatypestablesort where empname='arvind' order by salary limit 2") {
+    sql("select * from alldatatypestablesort where empname='arvind' order by salary limit 2").collect()
+  }
+
   override def afterAll {
-    sql("drop table alldatatypestablesort")
-    sql("drop table alldatatypestablesort_hive")
+    sql("drop table if exists alldatatypestablesort")
+    sql("drop table if exists alldatatypestablesort_hive")
   }
 }

@@ -168,7 +168,21 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
           if (attrsOnSort.size() > 0 && !child.isInstanceOf[Sort]) {
             child = CarbonDictionaryTempDecoder(attrsOnSort,
               new util.HashSet[AttributeReferenceWrapper](), sort.child)
+          } else {
+            // In case of select * from query it gets logical relation and there is no way
+            // to convert the datatypes of attributes, so just add this dummy decoder to convert
+            // to dictionary datatypes.
+            child match {
+              case l: LogicalRelation =>
+                child = CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
+                  new util.HashSet[AttributeReferenceWrapper](), sort.child)
+              case Filter(cond, l: LogicalRelation) =>
+                child = CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
+                  new util.HashSet[AttributeReferenceWrapper](), sort.child)
+              case _ =>
+            }
           }
+
           if (!decoder) {
             decoder = true
             CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
@@ -609,9 +623,16 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     }
     // Remove unnecessary decoders
     val finalPlan = transFormedPlan transform {
-      case CarbonDictionaryCatalystDecoder(_, profile, _, false, child)
-        if profile.isInstanceOf[IncludeProfile] && profile.isEmpty =>
-        child
+      case cd@ CarbonDictionaryCatalystDecoder(_, profile, _, false, child) =>
+        if (profile.isInstanceOf[IncludeProfile] && profile.isEmpty) {
+          child match {
+            case l: LogicalRelation => cd
+            case Filter(condition, l: LogicalRelation) => cd
+            case _ => child
+          }
+        } else {
+          cd
+        }
     }
     finalPlan
   }
