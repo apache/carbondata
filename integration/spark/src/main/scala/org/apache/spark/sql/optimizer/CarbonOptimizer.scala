@@ -269,7 +269,6 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             }
         }
       }
-      print("sortMdkPushdownFlg" + sortMdkPushdownFlg)
       sortMdkPushdownFlg
     }
     def addTempDecoder(currentPlan: LogicalPlan): LogicalPlan = {
