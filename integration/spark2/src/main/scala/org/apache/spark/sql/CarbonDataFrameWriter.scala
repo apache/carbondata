@@ -183,7 +183,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       }
     )
     if (property.nonEmpty && property.charAt(property.length-1) == ',') {
-      property = property.replace(property.length-1, property.length, "")
+      property = property.replace(property.length - 1, property.length, "")
     }
 
     s"""
