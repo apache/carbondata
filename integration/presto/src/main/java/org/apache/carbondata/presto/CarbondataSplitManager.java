@@ -52,7 +52,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Build Carbontable splits
- * *filtering irrelevant blocks
+ * filtering irrelevant blocks
  */
 public class CarbondataSplitManager implements ConnectorSplitManager {
 
@@ -115,7 +115,7 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
    * @param originalConstraint  presto-TupleDomain
    * @param carbonTable
    * @return
-     */
+   */
   public Expression parseFilterExpression(TupleDomain<ColumnHandle> originalConstraint,
       CarbonTable carbonTable) {
     ImmutableList.Builder<Expression> filters = ImmutableList.builder();
@@ -254,7 +254,7 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
    * Convert presto spi Type into Carbondata Type
    * @param colType
    * @return
-     */
+   */
   public static DataType Spi2CarbondataTypeMapper(Type colType) {
     if (colType == BooleanType.BOOLEAN) return DataType.BOOLEAN;
     else if (colType == SmallintType.SMALLINT) return DataType.SHORT;

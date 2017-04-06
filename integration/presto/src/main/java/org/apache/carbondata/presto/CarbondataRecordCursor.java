@@ -80,8 +80,7 @@ public class CarbondataRecordCursor implements RecordCursor {
 
   /**
    * get next Row/Page
-   * @return
-     */
+   */
   @Override public boolean advanceNextPosition() {
 
     if (nanoStart == 0) {
