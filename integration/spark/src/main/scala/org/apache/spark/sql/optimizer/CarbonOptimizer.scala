@@ -213,7 +213,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
     var sortMdkDimensions: Seq[QueryDimension] = Nil
     var sortMdkPushdownFlg = false
     var carbonTable : CarbonTable = null
-    def pushDownLimitAndSortMdk(sort: Sort, child: LogicalPlan): LogicalPlan = {
+    def isCanPushDownLimitAndSortMdk(sort: Sort): Boolean = {
       if (sortMdkPushdownFlg) {
         def getCarbonSortDirection(sortDirection: SortDirection) = {
           sortDirection match {
@@ -229,54 +229,48 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
         sortMdkDimensions = sort.order.map {
           x =>
             if (!sortMdkPushdownFlg) {
-              return Sort(sort.order, sort.global, child)
-            }
-            if (!x.child.isInstanceOf[AttributeReference]) {
-              sortMdkPushdownFlg = false
-              return Sort(sort.order, sort.global, child)
-            }
-            var sortColRef = x.child.references
-            var col = sortColRef.iterator.next()
-            var colName = col.name
-            val carbonDimension =
-              carbonTable.getDimensionByName(carbonTable.getFactTableName, colName)
-            if (carbonDimension == null) {
-              sortMdkPushdownFlg = false
-              return Sort(sort.order, sort.global, child)
+              null
             } else {
-              if (carbonDimension.getSchemaOrdinal != orderByPrefixMdkCnt) {
+              if (!x.child.isInstanceOf[AttributeReference]) {
                 sortMdkPushdownFlg = false
-                return Sort(sort.order, sort.global, child)
+                null
               } else {
-                orderByPrefixMdkCnt = orderByPrefixMdkCnt + 1
+                var sortColRef = x.child.references
+                var col = sortColRef.iterator.next()
+                var colName = col.name
+                val carbonDimension =
+                  carbonTable.getDimensionByName(carbonTable.getFactTableName, colName)
+                if (carbonDimension == null) {
+                  sortMdkPushdownFlg = false
+                  null
+                } else {
+                  // not prefix of mdk
+                  if (carbonDimension.getSchemaOrdinal != orderByPrefixMdkCnt) {
+                    sortMdkPushdownFlg = false
+                    null
+                  } else {
+                    orderByPrefixMdkCnt = orderByPrefixMdkCnt + 1
+                    var qd = new QueryDimension(colName)
+                    if (sortDirection == null) {
+                      sortDirection = x.direction
+                    }
+                    // not the same sort direction
+                    if (!sortDirection.equals(x.direction)) {
+                      sortMdkPushdownFlg = false
+                      null
+                    } else {
+                      qd.setSortOrder(getCarbonSortDirection(x.direction))
+                      qd.setDimension(carbonDimension)
+                      qd
+                    }
+                  }
+                }
               }
-              var qd = new QueryDimension(colName)
-              if (sortDirection == null) {
-                sortDirection = x.direction
-              } else if (!sortDirection.equals(x.direction)) {
-                sortMdkPushdownFlg = false
-                return Sort(sort.order, sort.global, child)
-              }
-              qd.setSortOrder(getCarbonSortDirection(x.direction))
-              qd.setDimension(carbonDimension)
-              qd
             }
         }
       }
-      if (sortMdkPushdownFlg) {
-        var sortNextChild: LogicalPlan = null
-        if (child.isInstanceOf[CarbonDictionaryTempDecoder]) {
-          var tempChild = child.asInstanceOf[CarbonDictionaryTempDecoder]
-          sortNextChild = CarbonDictionaryTempDecoder(tempChild.attrList,
-            tempChild.attrsNotDecode, CarbonPushDownToScan(sortMdkDimensions, limitValue,
-              tempChild.child))
-        } else {
-          sortNextChild = CarbonPushDownToScan(sortMdkDimensions, limitValue, child)
-        }
-        CarbonMergeSort(limitValue, sort.order, sort.global, sortNextChild)
-      } else {
-        Sort(sort.order, sort.global, child)
-      }
+      print("sortMdkPushdownFlg" + sortMdkPushdownFlg)
+      sortMdkPushdownFlg
     }
     def addTempDecoder(currentPlan: LogicalPlan): LogicalPlan = {
       currentPlan match {
@@ -327,14 +321,29 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             child = CarbonDictionaryTempDecoder(attrsOnSort,
               new util.HashSet[AttributeReferenceWrapper](), sort.child)
           }
+          var tempSort: LogicalPlan = null;
+          if (isCanPushDownLimitAndSortMdk(sort)) {
+            var sortNextChild: LogicalPlan = null
+            if (child.isInstanceOf[CarbonDictionaryTempDecoder]) {
+              var tempChild = child.asInstanceOf[CarbonDictionaryTempDecoder]
+              sortNextChild = CarbonDictionaryTempDecoder(tempChild.attrList,
+                tempChild.attrsNotDecode, CarbonPushDownToScan(sortMdkDimensions, limitValue,
+                  tempChild.child))
+            } else {
+              sortNextChild = CarbonPushDownToScan(sortMdkDimensions, limitValue, child)
+            }
+            tempSort = CarbonMergeSort(limitValue, sort.order, sort.global, sortNextChild)
+          } else {
+            tempSort = Sort(sort.order, sort.global, child)
+          }
           if (!decoder) {
             decoder = true
             CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
               new util.HashSet[AttributeReferenceWrapper](),
-              pushDownLimitAndSortMdk(sort, child),
+              tempSort,
               isOuter = true)
           } else {
-            pushDownLimitAndSortMdk(sort, child)
+            tempSort
           }
 
         case union: Union
