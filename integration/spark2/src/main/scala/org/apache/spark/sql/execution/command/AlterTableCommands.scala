@@ -33,7 +33,7 @@ import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifie
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.{ColumnSchema, SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -204,7 +204,18 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
         if (carbonLock.unlock()) {
           LOGGER.info("Lock released successfully")
         } else {
-          LOGGER.error("Unable to release lock during rename table")
+          val storeLocation = CarbonProperties.getInstance
+            .getProperty(CarbonCommonConstants.STORE_LOCATION,
+              System.getProperty("java.io.tmpdir"))
+          val lockFilePath = storeLocation + CarbonCommonConstants.FILE_SEPARATOR +
+                             oldDatabaseName + CarbonCommonConstants.FILE_SEPARATOR + newTableName +
+                             CarbonCommonConstants.FILE_SEPARATOR +
+                             LockUsage.METADATA_LOCK
+          if(carbonLock.releaseLockManually(lockFilePath)) {
+            LOGGER.info("Lock released successfully")
+          } else {
+            LOGGER.error("Unable to release lock during rename table")
+          }
         }
       }
     }

@@ -381,11 +381,19 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop database testdb")
   }
 
+  test("test to check if the lock file is successfully deleted") {
+    sql("create table lock_check(id int, name string) stored by 'carbondata'")
+    sql("alter table lock_check rename to lock_rename")
+    assert(!new File(s"${ CarbonCommonConstants.STORE_LOCATION } + /default/lock_rename/meta.lock")
+      .exists())
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS restructure")
     sql("DROP TABLE IF EXISTS restructure_new")
     sql("DROP TABLE IF EXISTS restructure_test")
     sql("DROP TABLE IF EXISTS restructure_bad")
     sql("DROP TABLE IF EXISTS restructure_badnew")
+    sql("DROP TABLE IF EXISTS lock_rename")
   }
 }
