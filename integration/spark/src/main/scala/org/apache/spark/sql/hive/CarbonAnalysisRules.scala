@@ -33,31 +33,32 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
  * Insert into carbon table from other source
  */
 object CarbonPreInsertionCasts extends Rule[LogicalPlan] {
-    def apply(plan: LogicalPlan): LogicalPlan = plan.transform {
-      // Wait until children are resolved.
-      case p: LogicalPlan if !p.childrenResolved => p
+  def apply(plan: LogicalPlan): LogicalPlan = plan.transform {
+    // Wait until children are resolved.
+    case p: LogicalPlan if !p.childrenResolved => p
 
-      case p @ InsertIntoTable(relation: LogicalRelation, _, child, _, _)
-           if relation.relation.isInstanceOf[CarbonDatasourceRelation] =>
-        castChildOutput(p, relation.relation.asInstanceOf[CarbonDatasourceRelation], child)
+    case p @ InsertIntoTable(relation: LogicalRelation, _, child, _, _)
+      if relation.relation.isInstanceOf[CarbonDatasourceRelation] =>
+      castChildOutput(p, relation.relation.asInstanceOf[CarbonDatasourceRelation], child)
+  }
+
+  def castChildOutput(p: InsertIntoTable, relation: CarbonDatasourceRelation, child: LogicalPlan)
+  : LogicalPlan = {
+    if (relation.carbonRelation.output.size > CarbonCommonConstants
+      .DEFAULT_MAX_NUMBER_OF_COLUMNS) {
+      sys
+        .error("Maximum supported column by carbon is:" + CarbonCommonConstants
+          .DEFAULT_MAX_NUMBER_OF_COLUMNS
+        )
     }
-
-    def castChildOutput(p: InsertIntoTable, relation: CarbonDatasourceRelation, child: LogicalPlan)
-      : LogicalPlan = {
-      if (relation.carbonRelation.output.size > CarbonCommonConstants
-        .DEFAULT_MAX_NUMBER_OF_COLUMNS) {
-        sys
-          .error("Maximum supported column by carbon is:" + CarbonCommonConstants
-            .DEFAULT_MAX_NUMBER_OF_COLUMNS
-          )
-      }
-      if (child.output.size >= relation.carbonRelation.output.size ) {
-        InsertIntoCarbonTable(relation, p.partition, p.child, p.overwrite, p.ifNotExists)
-      } else {
-         sys.error("Cannot insert into target table because column number are different")
-      }
+    if (child.output.size >= relation.carbonRelation.output.size ) {
+      InsertIntoCarbonTable(relation, p.partition, p.child, p.overwrite, p.ifNotExists)
+    } else {
+      sys.error("Cannot insert into target table because column number are different")
     }
   }
+}
+
 
 object CarbonIUDAnalysisRule extends Rule[LogicalPlan] {
 

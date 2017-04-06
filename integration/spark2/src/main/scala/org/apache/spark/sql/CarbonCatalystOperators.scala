@@ -75,3 +75,22 @@ case class DescribeFormattedCommand(sql: String, tblIdentifier: TableIdentifier)
   override def output: Seq[AttributeReference] =
     Seq(AttributeReference("result", StringType, nullable = false)())
 }
+
+/**
+ * A logical plan representing insertion into Hive table
+ * This plan ignores nullability of ArrayType, MapType, StructType unlike InsertIntoTable
+ * because Hive Table doesn't have nullability for ARRAY, MAP,STRUCT types.
+ */
+case class InsertIntoCarbonTable (table: CarbonDatasourceHadoopRelation,
+    partition: Map[String, Option[String]],
+    child: LogicalPlan,
+    overwrite: OverwriteOptions,
+    ifNotExists: Boolean)
+  extends Command {
+
+    override def output: Seq[Attribute] = Seq.empty
+
+    // This is the expected schema of the table prepared to be inserted into
+    // including dynamic partition columns.
+    val tableOutput = table.carbonRelation.output
+}

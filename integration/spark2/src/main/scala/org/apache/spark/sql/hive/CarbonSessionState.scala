@@ -16,18 +16,22 @@
  */
 package org.apache.spark.sql.hive
 
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, ExperimentalMethods, SparkSession}
+import org.apache.spark.sql.CarbonDatasourceHadoopRelation
+import org.apache.spark.sql.catalyst.analysis.Analyzer
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 import org.apache.spark.sql.catalyst.expressions.{PredicateSubquery, ScalarSubquery}
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan}
-import org.apache.spark.sql.execution.{CarbonLateDecodeStrategy, SparkOptimizer}
+import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
 import org.apache.spark.sql.execution.command.DDLStrategy
-import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.execution.datasources._
+import org.apache.spark.sql.execution.SparkOptimizer
+import org.apache.spark.sql.ExperimentalMethods
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.CarbonSparkSqlParser
+import org.apache.spark.sql.SparkSession
 
 /**
  * Session state implementation to override sql parser and adding strategies
@@ -42,6 +46,26 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
   experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
 
   override lazy val optimizer: Optimizer = new CarbonOptimizer(catalog, conf, experimentalMethods)
+
+  override lazy val analyzer: Analyzer = {
+    new Analyzer(catalog, conf) {
+      override val extendedResolutionRules =
+        catalog.ParquetConversions ::
+        catalog.OrcConversions ::
+        CarbonPreInsertionCasts ::
+        AnalyzeCreateTable(sparkSession) ::
+        PreprocessTableInsertion(conf) ::
+        DataSourceAnalysis(conf) ::
+        (if (conf.runSQLonFile) {
+          new ResolveDataSource(sparkSession) :: Nil
+        } else {
+          Nil
+        })
+
+      override val extendedCheckRules = Seq(
+        PreWriteCheck(conf, catalog))
+    }
+  }
 }
 
 class CarbonOptimizer(
