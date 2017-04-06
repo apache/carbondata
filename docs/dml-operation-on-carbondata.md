@@ -133,14 +133,6 @@ You can use the following options to load data:
 
     NOTE: Date formats are specified by date pattern strings. The date pattern letters in CarbonData are same as in JAVA. Refer to [SimpleDateFormat](http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html).
 
-- **USE_KETTLE:** This option is used to specify whether to use kettle for loading data or not. By default kettle is not used for data loading.
-
-    ```
-    OPTIONS('USE_KETTLE'='FALSE')
-    ```
-
-   Note :  It is recommended to set the value for this option as false.
-
 - **SINGLE_PASS:** Single Pass Loading enables single job to finish data loading with dictionary generation on the fly. It enhances performance in the scenarios where the subsequent data loading after initial load involves fewer incremental updates on the dictionary.
 
    This option specifies whether to use single pass for loading data or not. By default this option is set to FALSE.
@@ -165,7 +157,6 @@ options('DELIMITER'=',', 'QUOTECHAR'='"','COMMENTCHAR'='#',
 'MULTILINE'='true','ESCAPECHAR'='\','COMPLEX_DELIMITER_LEVEL_1'='$',
 'COMPLEX_DELIMITER_LEVEL_2'=':',
 'ALL_DICTIONARY_PATH'='/opt/alldictionary/data.dictionary',
-'USE_KETTLE'='FALSE',
 'SINGLE_PASS'='TRUE'
 )
 ```
