@@ -167,6 +167,27 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql("drop table carbon_new")
   }
 
+  test("test to check if vector result collector is able to fetch large amount of data") {
+    sql("DROP TABLE IF EXISTS carbon_new")
+    sql(
+      """CREATE TABLE carbon_new (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB
+        |timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1
+        |decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2
+        |double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES
+        |("TABLE_BLOCKSIZE"= "256 MB")""".stripMargin)
+    sql("alter table carbon_new drop columns(CUST_NAME)")
+    sql(s"LOAD DATA INPATH '$resourcesPath/restructure/data_2000.csv' into table " +
+        "carbon_new OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='\"','BAD_RECORDS_ACTION'='FORCE'," +
+        "'FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1," +
+        "BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2," +
+        "INTEGER_COLUMN1')")
+    sql(
+      """alter table carbon_new add columns(CUST_NAME string) TBLPROPERTIES
+        ('DICTIONARY_EXCLUDE'='CUST_NAME', 'DEFAULT.VALUE.CUST_NAME'='testuser')""")
+    checkAnswer(sql("select distinct(CUST_NAME) from carbon_new"),Row("testuser"))
+  }
+
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS addcolumntest")
     sql("drop table if exists hivetable")

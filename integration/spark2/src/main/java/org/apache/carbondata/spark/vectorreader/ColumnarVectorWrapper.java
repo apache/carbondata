@@ -60,8 +60,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void putDecimals(int rowId, int count, Decimal value, int precision) {
     for (int i = 0; i < count; i++) {
-      rowId += i;
-      putDecimal(rowId, value, precision);
+      putDecimal(rowId++, value, precision);
     }
   }
 
@@ -79,8 +78,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void putBytes(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; i++) {
-      rowId += i;
-      putBytes(rowId, value);
+      putBytes(rowId++, value);
     }
   }
 
