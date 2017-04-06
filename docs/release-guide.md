@@ -67,7 +67,7 @@ Determine your Apache GPG key and key ID, as follows:
 gpg --list-keys
 ```
 
-This will list your GPG keys. One of these should reflect your Apache account, for exemple:
+This will list your GPG keys. One of these should reflect your Apache account, for example:
 
 ```
 pub   2048R/845E6689 2016-02-23
@@ -401,7 +401,7 @@ _Checklist to proceed to the final step:_
 
 Any issue identified during the community review and vote should be fixed in this step.
 
-To fully cacel a vote:
+To fully cancel a vote:
 
 * Cancel the current release and verify the version is back to the correct SNAPSHOT:
 
