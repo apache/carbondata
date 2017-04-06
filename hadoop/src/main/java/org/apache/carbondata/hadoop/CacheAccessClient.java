@@ -78,6 +78,15 @@ public class CacheAccessClient<K, V> {
   }
 
   /**
+   * This method will clear access count for the segments
+   *
+   * @param segmentList
+   */
+  public void clearAccessCount(List<K> segmentList) {
+    cache.clearAccessCount(segmentList);
+  }
+
+  /**
    * This method will remove the cache for a given key
    *
    * @param keys

@@ -264,7 +264,6 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
     // do block filtering and get split
     List<InputSplit> splits = getSplits(job, filterInterface, cacheClient);
-    cacheClient.close();
     // pass the invalid segment to task side in order to remove index entry in task side
     if (invalidSegments.size() > 0) {
       for (InputSplit split : splits) {
@@ -329,6 +328,10 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
             tableBlockInfo.getLocations(), tableBlockInfo.getBlockletInfos().getNoOfBlockLets(),
             tableBlockInfo.getVersion()));
       }
+      // clear segment access count ASAP
+      List<TableSegmentUniqueIdentifier> tblSegmentIdentList = new ArrayList<>(1);
+      tblSegmentIdentList.add(new TableSegmentUniqueIdentifier(absoluteTableIdentifier, segmentNo));
+      cacheClient.getSegmentAccessClient().clearAccessCount(tblSegmentIdentList);
     }
     return result;
   }
