@@ -37,6 +37,7 @@ import org.apache.carbondata.processing.newflow.converter.impl.RowConverterImpl;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordsLogger;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
  * Replace row data fields with dictionary values if column is configured dictionary encoded.
@@ -171,6 +172,13 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     if (!closed) {
       if (null != badRecordLogger) {
         badRecordLogger.closeStreams();
+        // rename the bad record in progress to normal
+        CarbonTableIdentifier identifier =
+            configuration.getTableIdentifier().getCarbonTableIdentifier();
+        CarbonDataProcessorUtil.renameBadRecordsFromInProgressToNormal(
+            identifier.getDatabaseName() + File.separator + identifier.getTableName()
+                + File.separator + configuration.getSegmentId() + File.separator + configuration
+                .getTaskNo());
       }
       super.close();
       if (converters != null) {
