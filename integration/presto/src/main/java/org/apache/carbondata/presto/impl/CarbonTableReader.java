@@ -71,22 +71,21 @@ import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
+/** CarbonTableReader will be a facade of these utils
+ *
+ * 1:CarbonMetadata,(logic table)
+ * 2:FileFactory, (physic table file)
+ * 3:CarbonCommonFactory, (offer some )
+ * 4:DictionaryFactory, (parse dictionary util)
+ */
 public class CarbonTableReader {
-
-  /** CarbonTableReader will be a facade of these utils
-   *
-   * 1:CarbonMetadata,(logic table)
-   * 2:FileFactory, (physic table file)
-   * 3:CarbonCommonFactory, (offer some )
-   * 4:DictionaryFactory, (parse dictionary util)
-   */
 
   private CarbonTableConfig config;
   private List<SchemaTableName> tableList;
   private CarbonFile dbStore;
   private FileFactory.FileType fileType;
 
-  //as a cache for Carbon reader
+  // A cache for Carbon reader
   private ConcurrentHashMap<SchemaTableName, CarbonTableCacheModel> cc;
 
   @Inject public CarbonTableReader(CarbonTableConfig config) {
@@ -94,7 +93,7 @@ public class CarbonTableReader {
     this.cc = new ConcurrentHashMap<>();
   }
 
-  //for worker node to initialize carbon metastore
+  // for worker node to initialize carbon metastore
   public CarbonTableCacheModel getCarbonCache(SchemaTableName table) {
     if (!cc.containsKey(table)) {
       try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(
@@ -120,7 +119,7 @@ public class CarbonTableReader {
     return updateSchemaList();
   }
 
-  //default PathFilter
+  // default PathFilter
   private static final PathFilter DefaultFilter = new PathFilter() {
     @Override public boolean accept(Path path) {
       return CarbonTablePath.isCarbonDataFile(path.getName());
@@ -177,7 +176,7 @@ public class CarbonTableReader {
   }
 
   public void updateSchemaTables() {
-    //update logic determine later
+    // update logic determine later
     if (dbStore == null) {
       updateSchemaList();
     }
@@ -232,14 +231,14 @@ public class CarbonTableReader {
           (org.apache.carbondata.format.TableInfo) thriftReader.read();
       thriftReader.close();
 
-      //Format Level TableInfo， need transfer to Code Level TableInfo
+      // Step3: Transform Format Level TableInfo to Code Level TableInfo
       SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
       TableInfo wrapperTableInfo = schemaConverter
           .fromExternalToWrapperTableInfo(tableInfo, table.getSchemaName(), table.getTableName(),
               storePath);
       wrapperTableInfo.setMetaDataFilepath(
           CarbonTablePath.getFolderContainingFile(cache.carbonTablePath.getSchemaFilePath()));
-      //load metadata info into CarbonMetadata
+      // Step4: Load metadata info into CarbonMetadata
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
 
       cache.tableInfo = wrapperTableInfo;
@@ -256,7 +255,7 @@ public class CarbonTableReader {
   public List<CarbonLocalInputSplit> getInputSplits2(CarbonTableCacheModel tableCacheModel,
       Expression filters) throws Exception {
 
-    //处理filter, 下推filter，将应用在Segment的索引上
+    // need apply filters to segment
     FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
 
     AbsoluteTableIdentifier absoluteTableIdentifier =
@@ -297,7 +296,7 @@ public class CarbonTableReader {
         .resolveFilter(filters, tableCacheModel.carbonTable.getAbsoluteTableIdentifier());
 
     List<CarbonLocalInputSplit> result = new ArrayList<>();
-    //for each segment fetch blocks matching filter in Driver BTree
+    // for each segment fetch blocks matching filter in Driver BTree
     for (String segmentNo : tableCacheModel.segments) {
       try {
         List<DataRefNode> dataRefNodes =
@@ -338,7 +337,7 @@ public class CarbonTableReader {
     //DriverQueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance();
     //QueryStatistic statistic = new QueryStatistic();
 
-    //读取Segment 内部的Index
+    // read segment index
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap =
         getSegmentAbstractIndexs(absoluteTableIdentifier, tablePath, segmentId, cacheClient,
             updateStatusManager);
@@ -349,13 +348,10 @@ public class CarbonTableReader {
       // build result
       for (AbstractIndex abstractIndex : segmentIndexMap.values()) {
         List<DataRefNode> filterredBlocks;
-        // if no filter is given get all blocks from Btree Index
+        // if no filter is given, get all blocks from Btree Index
         if (null == resolver) {
           filterredBlocks = getDataBlocksOfIndex(abstractIndex);
         } else {
-          //ignore filter
-          //filterredBlocks = getDataBlocksOfIndex(abstractIndex);
-
           // apply filter and get matching blocks
           filterredBlocks = filterExpressionProcessor
               .getFilterredBlocks(abstractIndex.getDataRefNode(), resolver, abstractIndex,
@@ -568,12 +564,10 @@ public class CarbonTableReader {
         try {
           Configuration conf = new Configuration();
           fs = segmentPath.getFileSystem(conf);
-          //fs.initialize(segmentPath.toUri(), conf);
 
           RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(segmentPath);
           while (iter.hasNext()) {
             LocatedFileStatus stat = iter.next();
-            //if(stat.getPath().toString().contains("carbondata"))//参看carbondata的carbonInputFilter的实现
             if (DefaultFilter.accept(stat.getPath())) {
               if (stat.isDirectory()) {
                 addInputPathRecursively(result, fs, stat.getPath(), DefaultFilter);

@@ -50,6 +50,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Build Carbontable splits
+ * filtering irrelevant blocks
+ */
 public class CarbondataSplitManager implements ConnectorSplitManager {
 
   private final String connectorId;
@@ -67,7 +71,7 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
     CarbondataTableHandle tableHandle = layoutHandle.getTable();
     SchemaTableName key = tableHandle.getSchemaTableName();
 
-    //get all filter domain
+    // Packaging presto-TupleDomain into CarbondataColumnConstraint, to decouple from presto-spi Module
     List<CarbondataColumnConstraint> rebuildConstraints =
         getColumnConstraints(layoutHandle.getConstraint());
 
@@ -106,6 +110,12 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
     return constraintBuilder.build();
   }
 
+  /**
+   * Convert presto-TupleDomain predication into Carbon scan express condition
+   * @param originalConstraint  presto-TupleDomain
+   * @param carbonTable
+   * @return
+   */
   public Expression parseFilterExpression(TupleDomain<ColumnHandle> originalConstraint,
       CarbonTable carbonTable) {
     ImmutableList.Builder<Expression> filters = ImmutableList.builder();
@@ -136,14 +146,9 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
       checkArgument(domain.getType().isOrderable(), "Domain type must be orderable");
 
       if (domain.getValues().isNone()) {
-        //return QueryBuilders.filteredQuery(null, FilterBuilders.missingFilter(columnName));
-        //return domain.isNullAllowed() ? columnName + " IS NULL" : "FALSE";
-        //new Expression()
       }
 
       if (domain.getValues().isAll()) {
-        //return QueryBuilders.filteredQuery(null, FilterBuilders.existsFilter(columnName));
-        //return domain.isNullAllowed() ? "TRUE" : columnName + " IS NOT NULL";
       }
 
       List<Object> singleValues = new ArrayList<>();
@@ -163,7 +168,6 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
                 } else {
                   GreaterThanExpression greater = new GreaterThanExpression(colExpression,
                       new LiteralExpression(value, coltype));
-                  //greater.setRangeExpression(true);
                   rangeFilter.add(greater);
                 }
                 break;
@@ -171,7 +175,6 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
                 GreaterThanEqualToExpression greater =
                     new GreaterThanEqualToExpression(colExpression,
                         new LiteralExpression(value, coltype));
-                //greater.setRangeExpression(true);
                 rangeFilter.add(greater);
                 break;
               case BELOW:
@@ -188,13 +191,11 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
               case EXACTLY:
                 LessThanEqualToExpression less = new LessThanEqualToExpression(colExpression,
                     new LiteralExpression(value, coltype));
-                //less.setRangeExpression(true);
                 rangeFilter.add(less);
                 break;
               case BELOW:
                 LessThanExpression less2 =
                     new LessThanExpression(colExpression, new LiteralExpression(value, coltype));
-                //less2.setRangeExpression(true);
                 rangeFilter.add(less2);
                 break;
               default:
@@ -249,6 +250,11 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
     return finalFilters;
   }
 
+  /**
+   * Convert presto spi Type into Carbondata Type
+   * @param colType
+   * @return
+   */
   public static DataType Spi2CarbondataTypeMapper(Type colType) {
     if (colType == BooleanType.BOOLEAN) return DataType.BOOLEAN;
     else if (colType == SmallintType.SMALLINT) return DataType.SHORT;

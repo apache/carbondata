@@ -68,12 +68,6 @@ public class CarbondataColumnHandle implements ColumnHandle {
     return columnUniqueId;
   }
 
-  /**
-   * ordinalPosition of a columnhandle is the -> number of the column in the entire list of columns of this table
-   * IT DOESNT DEPEND ON THE QUERY (select clm3, clm0, clm1  from tablename)
-   * The columnhandle of clm3 : has ordinalposition = 3
-   */
-
   @JsonCreator public CarbondataColumnHandle(@JsonProperty("connectorId") String connectorId,
       @JsonProperty("columnName") String columnName, @JsonProperty("columnType") Type columnType,
       @JsonProperty("ordinalPosition") int ordinalPosition,
