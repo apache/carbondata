@@ -70,7 +70,7 @@ public class CarbonInputSplitTaskInfo implements Distributable {
   /**
    * Finding which node has the maximum number of blocks for it.
    *
-   * @param blockList
+   * @param splitList
    * @return
    */
   public static List<String> maxNoNodes(List<CarbonInputSplit> splitList) {

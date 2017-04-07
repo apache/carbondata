@@ -15,15 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Project Name  : Carbon
- * Module Name   : CARBON spark interface
- * Created Date  : 22-Sep-2015
- * FileName   : DeleteLoadFolders.java
- * Description   : for physical deletion of load folders.
- * Class Version  : 1.0
- */
-
 package org.apache.carbondata.spark.load;
 
 import java.io.IOException;
@@ -54,7 +45,8 @@ public final class DeleteLoadFolders {
   /**
    * returns segment path
    *
-   * @param loadModel
+   * @param dbName
+   * @param tableName
    * @param storeLocation
    * @param partitionId
    * @param oneLoad

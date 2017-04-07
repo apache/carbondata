@@ -40,10 +40,9 @@ public class ColGroupDataHolder implements DataHolder {
   private int keyBlockSize;
 
   /**
-   * @param colGrpModel
-   * @param columnarSplitter
-   * @param colGroupId
+   * @param keyBlockSize
    * @param noOfRecords
+   * @param colGrpMinMax
    */
   public ColGroupDataHolder(int keyBlockSize,
        int noOfRecords,ColGroupMinMax colGrpMinMax) {

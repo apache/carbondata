@@ -15,9 +15,6 @@
  * limitations under the License.
  */
 
-/**
- *
- */
 package org.apache.carbondata.spark.splits;
 
 import java.io.ByteArrayInputStream;

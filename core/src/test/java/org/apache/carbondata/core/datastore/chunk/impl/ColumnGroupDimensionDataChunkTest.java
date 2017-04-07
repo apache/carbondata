@@ -86,7 +86,7 @@ public class ColumnGroupDimensionDataChunkTest {
   /**
    * Below method will be used to get the key structure info for the query
    *
-   * @param queryModel   query model
+   * @param ordinals   query model
    * @param keyGenerator
    * @return key structure info
    */

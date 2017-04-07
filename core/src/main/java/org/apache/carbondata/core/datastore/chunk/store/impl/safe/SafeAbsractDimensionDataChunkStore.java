@@ -47,9 +47,7 @@ public abstract class SafeAbsractDimensionDataChunkStore implements DimensionDat
   /**
    * Constructor
    *
-   * @param totalSize      total size of the data to be kept
    * @param isInvertedIdex is inverted index present
-   * @param numberOfRows   total number of rows
    */
   public SafeAbsractDimensionDataChunkStore(boolean isInvertedIdex) {
     this.isExplictSorted = isInvertedIdex;

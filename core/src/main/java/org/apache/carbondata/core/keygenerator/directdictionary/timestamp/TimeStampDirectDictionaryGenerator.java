@@ -62,7 +62,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(TimeStampDirectDictionaryGenerator.class.getName());
 
-  /**
+  /*
    * initialization block for granularityFactor and cutOffTimeStamp
    */
   static {

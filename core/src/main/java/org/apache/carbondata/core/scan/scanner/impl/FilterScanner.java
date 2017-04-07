@@ -216,7 +216,8 @@ public class FilterScanner extends AbstractBlockletScanner {
         dimensionRawColumnChunks[j] = projectionListDimensionChunk[j];
       }
     }
-    /**
+
+    /*
      * in case projection if the projected dimension are not loaded in the dimensionColumnDataChunk
      * then loading them
      */
@@ -247,9 +248,9 @@ public class FilterScanner extends AbstractBlockletScanner {
         measureRawColumnChunks[j] = projectionListMeasureChunk[j];
       }
     }
-    /**
-     * in case projection if the projected measure are not loaded in the measureColumnDataChunk
-     * then loading them
+    /*
+      in case projection if the projected measure are not loaded in the measureColumnDataChunk
+      then loading them
      */
     int[] projectionListMeasureIndexes = blockExecutionInfo.getProjectionListMeasureIndexes();
     int projectionListMeasureIndexesLength = projectionListMeasureIndexes.length;
