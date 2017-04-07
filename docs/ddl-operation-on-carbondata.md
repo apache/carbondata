@@ -189,7 +189,7 @@ of columns is used.
                     [(col_name data_type, ...)]
    STORED BY 'carbondata'
    TBLPROPERTIES('BUCKETNUMBER'='noOfBuckets',
-   'BUCKETCOLUMNS'=’’columnname')
+   'BUCKETCOLUMNS'='columnname')
 ```
   
 ## Parameter Description
