@@ -24,7 +24,7 @@
     <dependencySets>
         <dependencySet>
             <includes>
-                <include>org.huawei.datasight:*:jar</include>
+                <include>org.apache.carbondata:*:jar</include>
             </includes>
         </dependencySet>
         <dependencySet>

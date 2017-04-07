@@ -52,7 +52,7 @@ public abstract class AbstractBTreeBuilder implements BtreeBuilder {
 
   public AbstractBTreeBuilder() {
     maxNumberOfEntriesInNonLeafNodes = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty("com.huawei.datastore.internalnodesize",
+        .getProperty("org.apache.carbondata.core.datastore.internalnodesize",
             DEFAULT_NUMBER_OF_ENTRIES_NONLEAF + ""));
   }
 

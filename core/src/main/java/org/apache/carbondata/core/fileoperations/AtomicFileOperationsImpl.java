@@ -64,9 +64,6 @@ public class AtomicFileOperationsImpl implements AtomicFileOperations {
 
   }
 
-  /* (non-Javadoc)
-   * @see com.huawei.unibi.carbon.datastorage.store.fileperations.AtomicFileOperations#close()
-   */
   @Override public void close() throws IOException {
 
     if (null != dataOutStream) {
