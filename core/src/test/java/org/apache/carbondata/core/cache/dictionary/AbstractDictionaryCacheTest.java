@@ -104,10 +104,8 @@ public class AbstractDictionaryCacheTest {
   protected DictionaryColumnUniqueIdentifier createDictionaryColumnUniqueIdentifier(
       String columnId) {
 	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, DataType.STRING);
-    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
-            DataType.STRING);
-    return dictionaryColumnUniqueIdentifier;
+    return new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
+        DataType.STRING);
   }
 
   /**

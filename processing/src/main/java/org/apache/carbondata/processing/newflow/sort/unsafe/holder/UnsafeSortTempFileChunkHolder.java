@@ -255,8 +255,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
       prefetchRecordsProceesed++;
       returnRow = currentBuffer[bufferRowCounter++];
     } else {
-      Object[] outRow = getRowFromStream();
-      this.returnRow = outRow;
+      this.returnRow = getRowFromStream();
     }
   }
 

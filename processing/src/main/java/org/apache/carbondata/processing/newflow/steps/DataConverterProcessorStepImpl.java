@@ -150,13 +150,12 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     }
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
-    BadRecordsLogger badRecordsLogger = new BadRecordsLogger(identifier.getBadRecordLoggerKey(),
+    return new BadRecordsLogger(identifier.getBadRecordLoggerKey(),
         identifier.getTableName() + '_' + System.currentTimeMillis(), getBadLogStoreLocation(
         identifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + identifier
             .getTableName() + CarbonCommonConstants.FILE_SEPARATOR + configuration.getSegmentId()
             + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo()),
         badRecordsLogRedirect, badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail);
-    return badRecordsLogger;
   }
 
   private String getBadLogStoreLocation(String storeLocation) {

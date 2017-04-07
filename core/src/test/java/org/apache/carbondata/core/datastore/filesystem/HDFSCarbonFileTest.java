@@ -176,8 +176,7 @@ public class HDFSCarbonFileTest {
             @Mock
             public FileStatus[] listStatus(Path var1) throws IOException {
 
-                FileStatus[] fileStatus = new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
-                return fileStatus;
+                return new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
             }
 
         };
@@ -251,8 +250,7 @@ public class HDFSCarbonFileTest {
             @Mock
             public FileStatus[] listStatus(Path var1) throws IOException {
 
-                FileStatus fileStatus[] = new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
-                return fileStatus;
+                return new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
             }
 
         };
@@ -280,8 +278,7 @@ public class HDFSCarbonFileTest {
             @Mock
             public FileStatus[] listStatus(Path var1) throws IOException {
 
-                FileStatus[] fileStatus = new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
-                return fileStatus;
+                return new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
             }
 
         };
