@@ -191,8 +191,7 @@ public final class FileFactory {
       case VIEWFS:
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
-        FSDataOutputStream stream = fs.create(pt, true);
-        return stream;
+        return fs.create(pt, true);
       default:
         return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
     }
@@ -244,9 +243,7 @@ public final class FileFactory {
       case VIEWFS:
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
-        FSDataOutputStream stream =
-            fs.create(pt, true, bufferSize, fs.getDefaultReplication(pt), blockSize);
-        return stream;
+        return fs.create(pt, true, bufferSize, fs.getDefaultReplication(pt), blockSize);
       default:
         path = getUpdatedFilePath(path, fileType);
         return new DataOutputStream(
@@ -402,8 +399,7 @@ public final class FileFactory {
       case VIEWFS:
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
-        FSDataOutputStream stream = fs.append(pt);
-        return stream;
+        return fs.append(pt);
       default:
         return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
     }

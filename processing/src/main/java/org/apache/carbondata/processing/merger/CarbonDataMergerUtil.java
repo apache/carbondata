@@ -139,16 +139,13 @@ public final class CarbonDataMergerUtil {
    * @return
    */
   public static String getMergedLoadName(final String segmentToBeMerged) {
-    String firstSegmentName = segmentToBeMerged;
-    if (firstSegmentName.contains(".")) {
-      String beforeDecimal = firstSegmentName.substring(0, firstSegmentName.indexOf("."));
-      String afterDecimal = firstSegmentName.substring(firstSegmentName.indexOf(".") + 1);
+    if (segmentToBeMerged.contains(".")) {
+      String beforeDecimal = segmentToBeMerged.substring(0, segmentToBeMerged.indexOf("."));
+      String afterDecimal = segmentToBeMerged.substring(segmentToBeMerged.indexOf(".") + 1);
       int fraction = Integer.parseInt(afterDecimal) + 1;
-      String mergedSegmentName = beforeDecimal + "." + fraction;
-      return mergedSegmentName;
+      return beforeDecimal + "." + fraction;
     } else {
-      String mergeName = firstSegmentName + "." + 1;
-      return mergeName;
+      return segmentToBeMerged + "." + 1;
     }
 
   }
@@ -225,9 +222,9 @@ public final class CarbonDataMergerUtil {
 
         for (String compactedBlocks : updatedDeltaFilesList) {
           // Try to BlockName
-          String fullBlock = compactedBlocks;
-          int endIndex = fullBlock.lastIndexOf(File.separator);
-          String blkNoExt = fullBlock.substring(endIndex + 1, fullBlock.lastIndexOf("-"));
+          int endIndex = compactedBlocks.lastIndexOf(File.separator);
+          String blkNoExt =
+              compactedBlocks.substring(endIndex + 1, compactedBlocks.lastIndexOf("-"));
           blockNames.add(blkNoExt);
         }
 
@@ -421,10 +418,7 @@ public final class CarbonDataMergerUtil {
     // Check for segments which are qualified for IUD compaction.
     if (compactionType.equals(CompactionType.IUD_UPDDEL_DELTA_COMPACTION)) {
 
-      List<LoadMetadataDetails> listOfSegmentsToBeMerged =
-          identifySegmentsToBeMergedBasedOnIUD(sortedSegments, carbonLoadModel);
-
-      return listOfSegmentsToBeMerged;
+      return identifySegmentsToBeMergedBasedOnIUD(sortedSegments, carbonLoadModel);
     }
 
     // check preserve property and preserve the configured number of latest loads.
@@ -986,8 +980,7 @@ public final class CarbonDataMergerUtil {
 
     List<String> list = segmentUpdateStatusManager.getUpdateDeltaFiles(seg);
 
-    String fullBlock = blkName;
-    String[] FileParts = fullBlock.split(CarbonCommonConstants.FILE_SEPARATOR);
+    String[] FileParts = blkName.split(CarbonCommonConstants.FILE_SEPARATOR);
     String blockName = FileParts[FileParts.length - 1];
 
     for (String str : list) {
