@@ -427,7 +427,8 @@ public class SegmentUpdateStatusManager {
             getStartTimeOfDeltaFile(CarbonCommonConstants.DELETE_DELTA_FILE_EXT, block);
         final long deltaEndTimeStamp =
             getEndTimeOfDeltaFile(CarbonCommonConstants.DELETE_DELTA_FILE_EXT, block);
-        CarbonFile[] files = segDir.listFiles(new CarbonFileFilter() {
+
+        return segDir.listFiles(new CarbonFileFilter() {
 
           @Override public boolean accept(CarbonFile pathName) {
             String fileName = pathName.getName();
@@ -444,8 +445,6 @@ public class SegmentUpdateStatusManager {
             return false;
           }
         });
-
-        return files;
       }
     }
     return null;

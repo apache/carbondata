@@ -198,8 +198,6 @@ public class CarbonFactDataHandlerModel {
 
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
-    CarbonTableIdentifier tableIdentifier =
-        identifier;
     boolean[] isUseInvertedIndex =
         CarbonDataProcessorUtil.getIsUseInvertedIndex(configuration.getDataFields());
 
@@ -225,11 +223,11 @@ public class CarbonFactDataHandlerModel {
     }
 
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        tableIdentifier.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + tableIdentifier
+        identifier.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + identifier
             .getTableName());
     List<ColumnSchema> wrapperColumnSchema = CarbonUtil
-        .getColumnSchemaList(carbonTable.getDimensionByTableName(tableIdentifier.getTableName()),
-            carbonTable.getMeasureByTableName(tableIdentifier.getTableName()));
+        .getColumnSchemaList(carbonTable.getDimensionByTableName(identifier.getTableName()),
+            carbonTable.getMeasureByTableName(identifier.getTableName()));
     int[] colCardinality =
         CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchema);
     SegmentProperties segmentProperties =
@@ -380,10 +378,8 @@ public class CarbonFactDataHandlerModel {
             .getTableName());
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTable.getCarbonTableIdentifier());
-    String carbonDataDirectoryPath = carbonTablePath
-        .getCarbonDataDirectoryPath(configuration.getPartitionId(),
-            configuration.getSegmentId() + "");
-    return carbonDataDirectoryPath;
+    return carbonTablePath.getCarbonDataDirectoryPath(configuration.getPartitionId(),
+        configuration.getSegmentId() + "");
   }
 
   public int[] getColCardinality() {

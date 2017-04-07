@@ -340,8 +340,7 @@ public class CarbonUpdateUtil {
    */
   public static Long getTimeStampAsLong(String timtstamp) {
     try {
-      long longValue = Long.parseLong(timtstamp);
-      return longValue;
+      return Long.parseLong(timtstamp);
     } catch (NumberFormatException nfe) {
       String errorMsg = "Invalid timestamp : " + timtstamp;
       LOGGER.error(errorMsg);
@@ -358,8 +357,7 @@ public class CarbonUpdateUtil {
    */
   public static Integer getIntegerValue(String value) throws Exception {
     try {
-      int intValue = Integer.parseInt(value);
-      return intValue;
+      return Integer.parseInt(value);
     } catch (NumberFormatException nfe) {
       LOGGER.error("Invalid row : " + value + nfe.getLocalizedMessage());
       throw new Exception("Invalid row : " + nfe.getLocalizedMessage());
@@ -373,9 +371,8 @@ public class CarbonUpdateUtil {
    * @return
    */
   public static String getBlockName(String completeBlockName) {
-    String blockName =
-        completeBlockName.substring(0, completeBlockName.lastIndexOf(CarbonCommonConstants.HYPHEN));
-    return blockName;
+    return completeBlockName
+        .substring(0, completeBlockName.lastIndexOf(CarbonCommonConstants.HYPHEN));
   }
 
   /**
@@ -385,8 +382,7 @@ public class CarbonUpdateUtil {
    * @return
    */
   public static String getSegmentId(String segmentName) {
-    String id = segmentName.split(CarbonCommonConstants.UNDERSCORE)[1];
-    return id;
+    return segmentName.split(CarbonCommonConstants.UNDERSCORE)[1];
   }
 
   public static int getLatestTaskIdForSegment(String segmentId, CarbonTablePath tablePath) {

@@ -557,12 +557,11 @@ public class CarbonTablePath extends Path {
    * @return sort index carbon files
    */
   public CarbonFile[] getSortIndexFiles(CarbonFile sortIndexDir, final String columnUniqueId) {
-    CarbonFile[] files = sortIndexDir.listFiles(new CarbonFileFilter() {
+    return sortIndexDir.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
         return file.getName().startsWith(columnUniqueId) && file.getName().endsWith(SORT_INDEX_EXT);
       }
     });
-    return files;
   }
 
   /**
@@ -572,10 +571,9 @@ public class CarbonTablePath extends Path {
    * @return
    */
   public static String getCarbonDataFileName(String carbonDataFilePath) {
-    String carbonDataFileName = carbonDataFilePath
+    return carbonDataFilePath
         .substring(carbonDataFilePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR) + 1,
             carbonDataFilePath.indexOf(CARBON_DATA_EXT));
-    return carbonDataFileName;
   }
 
   /**

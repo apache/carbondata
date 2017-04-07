@@ -704,9 +704,8 @@ public final class CarbonUtil {
     if (null == prop) {
       return null;
     }
-    String basePath = prop.getProperty(CarbonCommonConstants.STORE_LOCATION,
+    return prop.getProperty(CarbonCommonConstants.STORE_LOCATION,
         CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    return basePath;
   }
 
   /**
@@ -1037,9 +1036,8 @@ public final class CarbonUtil {
         isDictionaryDimensions.add(false);
       }
     }
-    boolean[] primitive = ArrayUtils
+    return ArrayUtils
         .toPrimitive(isDictionaryDimensions.toArray(new Boolean[isDictionaryDimensions.size()]));
-    return primitive;
   }
 
   /**
@@ -1576,14 +1574,13 @@ public final class CarbonUtil {
       return true;
     }
 
-    UpdateVO updatedVODetails = invalidBlockVOForSegmentId;
-    if (null != updatedVODetails) {
+    if (null != invalidBlockVOForSegmentId) {
       Long blockTimeStamp = Long.parseLong(tableInfo.getFilePath()
           .substring(tableInfo.getFilePath().lastIndexOf('-') + 1,
               tableInfo.getFilePath().lastIndexOf('.')));
-      if ((blockTimeStamp > updatedVODetails.getFactTimestamp() && (
-          updatedVODetails.getUpdateDeltaStartTimestamp() != null
-              && blockTimeStamp < updatedVODetails.getUpdateDeltaStartTimestamp()))) {
+      if ((blockTimeStamp > invalidBlockVOForSegmentId.getFactTimestamp() && (
+          invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp() != null
+              && blockTimeStamp < invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp()))) {
         return true;
       }
     }

@@ -86,9 +86,7 @@ public class ColumnExpression extends LeafExpression {
   }
 
   @Override public ExpressionResult evaluate(RowIntf value) {
-    ExpressionResult expressionResult =
-        new ExpressionResult(dataType, (null == value ? null : value.getVal(colIndex)));
-    return expressionResult;
+    return new ExpressionResult(dataType, (null == value ? null : value.getVal(colIndex)));
   }
 
   @Override public ExpressionType getFilterExpressionType() {
