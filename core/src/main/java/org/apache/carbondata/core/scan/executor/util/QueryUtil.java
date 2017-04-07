@@ -520,7 +520,7 @@ public class QueryUtil {
 
     List<QueryDimension> dimensions = new ArrayList<QueryDimension>(origdimensions.size());
     dimensions.addAll(origdimensions);
-    /**
+    /*
      * sort based on column group id
      */
     Collections.sort(dimensions, new Comparator<QueryDimension>() {

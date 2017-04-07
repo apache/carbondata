@@ -15,9 +15,6 @@
  * limitations under the License.
  */
 
-/**
- *
- */
 package org.apache.carbondata.core.scan.model;
 
 import java.io.Serializable;

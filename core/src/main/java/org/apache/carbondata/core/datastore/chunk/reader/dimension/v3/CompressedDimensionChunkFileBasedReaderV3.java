@@ -197,7 +197,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
    * Below method will be used to convert the compressed dimension chunk raw data to actual data
    *
    * @param dimensionRawColumnChunk dimension raw chunk
-   * @param page                    number
+   * @param pageNumber              number
    * @return DimensionColumnDataChunk
    */
   @Override public DimensionColumnDataChunk convertToDimensionChunk(

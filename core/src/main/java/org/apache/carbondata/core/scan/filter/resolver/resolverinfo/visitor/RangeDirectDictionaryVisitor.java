@@ -41,7 +41,6 @@ public class RangeDirectDictionaryVisitor extends CustomTypeDictionaryVisitor
    * @param metadata
    * @throws FilterUnsupportedException,if exception occurs while evaluating
    * filter models.
-   * @throws IOException
    * @throws FilterUnsupportedException
    */
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,

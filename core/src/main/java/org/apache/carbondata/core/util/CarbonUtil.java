@@ -819,7 +819,7 @@ public final class CarbonUtil {
     char[] type = new char[encodeMetaList.size()];
     byte[] dataTypeSelected = new byte[encodeMetaList.size()];
 
-    /**
+    /*
      * to fill the meta data required for value compression model
      */
     for (int i = 0; i < dataTypeSelected.length; i++) {  // always 1

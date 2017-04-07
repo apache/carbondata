@@ -118,7 +118,7 @@ public class UnsafeVariableLengthDimesionDataChunkStore
   /**
    * Below method will be used to get the row based on row id passed
    *
-   * @param index
+   * @param rowId
    * @return row
    */
   @Override public byte[] getRow(int rowId) {

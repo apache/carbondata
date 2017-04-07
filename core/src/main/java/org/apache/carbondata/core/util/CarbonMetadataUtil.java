@@ -119,8 +119,10 @@ public class CarbonMetadataUtil {
    * Below method prepares the file footer object for carbon data file version 3
    *
    * @param infoList
-   * @param numCols
+   * @param blockletIndexs
    * @param cardinalities
+   * @param numberOfColumns
+   * @param segmentProperties
    * @return FileFooter
    */
   public static FileFooter3 convertFileFooterVersion3(List<BlockletInfo3> infoList,
@@ -137,8 +139,9 @@ public class CarbonMetadataUtil {
    * Below method will be used to get the file footer object
    *
    * @param infoList         blocklet info
+   * @param blockletIndexs
    * @param cardinalities    cardinlaity of dimension columns
-   * @param columnSchemaList column schema list
+   * @param numberOfColumns
    * @return file footer
    */
   private static FileFooter3 getFileFooter3(List<BlockletInfo3> infoList,
@@ -721,7 +724,7 @@ public class CarbonMetadataUtil {
   /**
    * Below method will be used to get the data chunk object for all the columns
    *
-   * @param blockletInfoColumnar blocklet info
+   * @param nodeHolderList       blocklet info
    * @param columnSchenma        list of columns
    * @param segmentProperties    segment properties
    * @return list of data chunks

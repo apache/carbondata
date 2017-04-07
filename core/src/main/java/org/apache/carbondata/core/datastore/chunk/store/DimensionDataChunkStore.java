@@ -36,7 +36,7 @@ public interface DimensionDataChunkStore {
    * Below method will be used to get the row
    * based on row id passed
    *
-   * @param index
+   * @param rowId
    * @return row
    */
   byte[] getRow(int rowId);
@@ -45,7 +45,7 @@ public interface DimensionDataChunkStore {
    * Below method will be used to fill the row values to buffer array
    *
    * @param rowId  row id of the data to be filled
-   * @param data   buffer in which data will be filled
+   * @param buffer   buffer in which data will be filled
    * @param offset off the of the buffer
    */
   void fillRow(int rowId, byte[] buffer, int offset);

@@ -15,9 +15,6 @@
  * limitations under the License.
  */
 
-/**
- *
- */
 package org.apache.carbondata.processing.model;
 
 import java.io.Serializable;

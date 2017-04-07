@@ -15,9 +15,6 @@
  * limitations under the License.
  */
 
-/**
- *
- */
 package org.apache.carbondata.processing.util;
 
 import java.nio.ByteBuffer;

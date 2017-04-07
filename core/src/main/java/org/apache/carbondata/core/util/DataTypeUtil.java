@@ -573,7 +573,7 @@ public final class DataTypeUtil {
    * Below method will be used to convert the data into byte[]
    *
    * @param data
-   * @param ColumnSchema
+   * @param columnSchema
    * @return actual data in byte[]
    */
   public static byte[] convertDataToBytesBasedOnDataType(String data, ColumnSchema columnSchema) {
