@@ -129,7 +129,7 @@ public class RestructureUtilTest {
     MeasureInfo measureInfo = blockExecutionInfo.getMeasureInfo();
     boolean[] measuresExist = { true, true, false };
     assertThat(measureInfo.getMeasureExists(), is(equalTo(measuresExist)));
-    Object[] defaultValues = { null, null, "3" };
+    Object[] defaultValues = { null, null, 3.0 };
     assertThat(measureInfo.getDefaultValues(), is(equalTo(defaultValues)));
   }
 }
