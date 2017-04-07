@@ -34,9 +34,7 @@ This tutorial provides a quick introduction to using CarbonData.
   EOF
   ```
 
-## Interactive Analysis with Spark Shell
-
-## Version 2.1
+## Interactive Analysis with Spark Shell Version 2.1
 
 Apache Spark Shell provides a simple way to learn the API, as well as a powerful tool to analyze data interactively. Please visit [Apache Spark Documentation](http://spark.apache.org/docs/latest/) for more details on Spark shell.
 
@@ -68,13 +66,13 @@ val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession(
 
 #### Executing Queries
 
-##### Creating a Table
+###### Creating a Table
 
 ```
 scala>carbon.sql("CREATE TABLE IF NOT EXISTS test_table(id string, name string, city string, age Int) STORED BY 'carbondata'")
 ```
 
-##### Loading Data to a Table
+###### Loading Data to a Table
 
 ```
 scala>carbon.sql("LOAD DATA INPATH 'sample.csv file path' INTO TABLE test_table")
@@ -89,8 +87,7 @@ scala>carbon.sql("SELECT * FROM test_table").show()
 scala>carbon.sql("SELECT city, avg(age), sum(age) FROM test_table GROUP BY city").show()
 ```
 
-## Interactive Analysis with Spark Shell
-## Version 1.6
+## Interactive Analysis with Spark Shell Version 1.6
 
 #### Basics
 
@@ -117,7 +114,7 @@ val cc = new CarbonContext(sc, "<hdfs store path>")
 
 #### Executing Queries
 
-##### Creating a Table
+###### Creating a Table
 
 ```
 scala>cc.sql("CREATE TABLE IF NOT EXISTS test_table (id string, name string, city string, age Int) STORED BY 'carbondata'")
@@ -128,14 +125,14 @@ To see the table created :
 scala>cc.sql("SHOW TABLES").show()
 ```
 
-##### Loading Data to a Table
+###### Loading Data to a Table
 
 ```
 scala>cc.sql("LOAD DATA INPATH 'sample.csv file path' INTO TABLE test_table")
 ```
 **NOTE**: Please provide the real file path of `sample.csv` for the above script.
 
-##### Query Data from a Table
+###### Query Data from a Table
 
 ```
 scala>cc.sql("SELECT * FROM test_table").show()
