@@ -54,14 +54,14 @@ public class LoggingServiceTest_FT extends TestCase {
   @Test public void testAudit() {
 
     String expectedAuditLine =
-        "[main] AUDIT [com.huawei.iweb.platform.logging.ft.LoggingServiceTest_FT] 127.0.0.1 "
+        "[main] AUDIT [org.apache.carbondata.common.logging.ft.LoggingServiceTest_FT] 127.0.0.1 "
             + "testuser Function Test log- audit message created";
     logger.audit("audit message created");
 
     LogManager.shutdown();
 
     try {
-      FileInputStream fstream = new FileInputStream("./unibiaudit.log");
+      FileInputStream fstream = new FileInputStream("./carbondataaudit.log");
       BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
       String actualAuditLine = null;
       String strLine = null;
