@@ -39,6 +39,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.unsafe.types.UTF8String;
 
 /**
@@ -295,7 +296,54 @@ public class RestructureUtil {
               new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
           Double parsedValue = Double.valueOf(value);
           if (!Double.isInfinite(parsedValue) && !Double.isNaN(parsedValue)) {
-            measureDefaultValue = value;
+            measureDefaultValue = parsedValue;
+          }
+      }
+    }
+    return measureDefaultValue;
+  }
+
+  /**
+   * Gets the default value based on the column data type.
+   *
+   * @param columnSchema
+   * @param defaultValue
+   * @return
+   */
+  public static Object getMeasureDefaultValueByType(ColumnSchema columnSchema,
+      byte[] defaultValue) {
+    Object measureDefaultValue = null;
+    if (!isDefaultValueNull(defaultValue)) {
+      String value = null;
+      switch (columnSchema.getDataType()) {
+        case SHORT:
+          value =
+              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          measureDefaultValue = Short.parseShort(value);
+          break;
+        case INT:
+          value =
+              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          measureDefaultValue = Integer.parseInt(value);
+          break;
+        case LONG:
+          value =
+              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          measureDefaultValue = Long.parseLong(value);
+          break;
+        case DECIMAL:
+          BigDecimal decimal = DataTypeUtil.byteToBigDecimal(defaultValue);
+          if (columnSchema.getScale() > decimal.scale()) {
+            decimal = decimal.setScale(columnSchema.getScale(), RoundingMode.HALF_UP);
+          }
+          measureDefaultValue = Decimal.apply(decimal);
+          break;
+        default:
+          value =
+              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          Double parsedValue = Double.valueOf(value);
+          if (!Double.isInfinite(parsedValue) && !Double.isNaN(parsedValue)) {
+            measureDefaultValue = parsedValue;
           }
       }
     }

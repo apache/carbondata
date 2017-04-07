@@ -82,8 +82,6 @@ private[sql] case class AlterTableAddColumns(
       schemaEvolutionEntry.setAdded(newCols.toList.asJava)
       val thriftTable = schemaConverter
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
-      thriftTable.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
-        .setTime_stamp(System.currentTimeMillis)
       AlterTableUtil
         .updateSchemaInfo(carbonTable,
           schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
@@ -301,8 +299,6 @@ private[sql] case class AlterTableDropColumns(
         }
       }
       // add deleted columns to schema evolution history and update the schema
-      tableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
-        .setTime_stamp(System.currentTimeMillis)
       val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
       schemaEvolutionEntry.setRemoved(deletedColumnSchema.toList.asJava)
       AlterTableUtil

@@ -150,12 +150,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val DECIMAL = carbonKeyWord("DECIMAL")
   protected val DOUBLE = carbonKeyWord("DOUBLE")
   protected val FLOAT = carbonKeyWord("FLOAT")
-  protected val SHORT = carbonKeyWord("SMALLINT")
+  protected val SHORT = carbonKeyWord("SHORT")
   protected val INT = carbonKeyWord("INT")
   protected val BIGINT = carbonKeyWord("BIGINT")
   protected val ARRAY = carbonKeyWord("ARRAY")
   protected val STRUCT = carbonKeyWord("STRUCT")
-
+  protected val SMALLINT = carbonKeyWord("SMALLINT")
   protected val CHANGE = carbonKeyWord("CHANGE")
   protected val TBLPROPERTIES = carbonKeyWord("TBLPROPERTIES")
 
@@ -856,7 +856,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected lazy val primitiveTypes =
     STRING ^^^ "string" | INTEGER ^^^ "integer" |
     TIMESTAMP ^^^ "timestamp" | NUMERIC ^^^ "numeric" |
-    BIGINT ^^^ "bigint" | SHORT ^^^ "smallint" |
+    BIGINT ^^^ "bigint" | (SHORT | SMALLINT) ^^^ "smallint" |
     INT ^^^ "int" | DOUBLE ^^^ "double" | FLOAT ^^^ "double" | decimalType |
     DATE ^^^ "date" | charType
 
