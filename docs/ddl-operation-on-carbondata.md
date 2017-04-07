@@ -25,10 +25,15 @@ The following DDL operations are supported in CarbonData :
 
 * [CREATE TABLE](#create-table)
 * [SHOW TABLE](#show-table)
+* [ALTER TABLE](#alter-table)
+  - [RENAME TABLE](#rename-table)
+  - [ADD COLUMN](#add-column)
+  - [DROP COLUMNs](#drop-columns)
+  - [CHANGE DATA TYPE](#change-data-type)
 * [DROP TABLE](#drop-table)
 * [COMPACTION](#compaction)
 * [BUCKETING](#bucketing)
-* [TABLE RENAME](#table-rename)
+
 
 ## CREATE TABLE
   This command can be used to create a CarbonData table by specifying the list of fields along with the table properties.
@@ -133,6 +138,172 @@ TBLPROPERTIES ('COLUMN_GROUPS'='(column1, column3),
   SHOW TABLES IN ProductSchema;
 ```
 
+## ALTER TABLE
+
+The following section shall discuss the commands to modify the physical or logical state of the existing table(s).
+
+### **RENAME TABLE**
+
+This command is used to rename the existing table.
+```
+    ALTER TABLE [db_name.]table_name RENAME TO new_table_name;
+```
+
+#### Parameter Description
+| Parameter     | Description                                                                                   |
+|---------------|-----------------------------------------------------------------------------------------------|
+| db_Name       | Name of the database. If this parameter is left unspecified, the current database is selected.|
+|table_name     | Name of the existing table.                                                                   |
+|new_table_name | New table name for the existing table.                                                        |
+
+#### Precautions
+
+- Queries that require the formation of path using the table name for reading carbon store files, running in parallel with Rename command might fail during the renaming operation.
+- Renaming of Secondary index table(s) is not permitted.
+
+#### Examples:
+
+```
+    ALTER TABLE carbon RENAME TO carbondata;
+```
+
+```
+    ALTER TABLE test_db.carbon RENAME TO test_db.carbondata;
+```
+
+### **ADD COLUMN**
+
+This command is used to add a new column to the existing table.
+
+```
+    ALTER TABLE [db_name.]table_name ADD COLUMNS (col_name data_type,...)
+    TBLPROPERTIES('DICTIONARY_INCLUDE'='col_name,...',
+    'DICTIONARY_EXCLUDE'='col_name,...',
+    'COLUMNPROPERTIES.columnName.shared_column'='sharedFolder.sharedColumnName,...',
+    'DEFAULT.VALUE.COLUMN_NAME'='default_value');
+```
+
+#### Parameter Description
+| Parameter          | Description                                                                                               |
+|--------------------|-----------------------------------------------------------------------------------------------------------|
+| db_Name            | Name of the database. If this parameter is left unspecified, the current database is selected.            |
+| table_name         | Name of the existing table.                                                                               |
+| col_name data_type | Name of comma-separated column with data type. Column names contain letters, digits, and underscores (_). |
+
+NOTE: Do not name the column after name, tupleId, PositionId, and PositionReference when creating Carbon tables because they are used internally by UPDATE, DELETE, and secondary index.
+
+#### Precautions
+
+- Apart from DICTIONARY_INCLUDE, DICTIONARY_EXCLUDE, shared_column, and default_value no other property will be read. If any other property name is specified, error will not be thrown, it will be ignored.
+- If default value is not specified, then NULL will be considered as the default value for the column.
+- For addition of column, if DICTIONARY_INCLUDE and DICTIONARY_EXCLUDE are not specified, then the decision will be taken based on data type of the column.
+
+#### Examples:
+
+```
+    ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING);
+```
+
+```
+    ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DICTIONARY_EXCLUDE'='b1');
+```
+
+```
+    ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DICTIONARY_INCLUDE'='a1');
+```
+
+```
+    ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING)
+    TBLPROPERTIES('COLUMNPROPERTIES.b1.shared_column'='sharedFolder.b1');
+```
+
+```
+    ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DEFAULT.VALUE.a1'='10');
+```
+
+
+### **DROP COLUMNS**
+
+This command is used to delete a existing column or multiple columns in a table.
+
+```
+    ALTER TABLE [db_name.]table_name DROP COLUMNS (col_name, ...);
+```
+
+#### Parameter Description
+| Parameter  | Description                                                                                              |
+|------------|----------------------------------------------------------------------------------------------------------|
+| db_Name    | Name of the database. If this parameter is left unspecified, the current database is selected.           |
+| table_name | Name of the existing table.                                                                              |
+| col_name   | Name of comma-separated column with data type. Column names contain letters, digits, and underscores (_) |
+
+#### Precautions
+
+- Deleting a column will also clear the dictionary files, provided the column is of type dictionary and is not a shared column.
+- For delete column operation, there should be at least one key column that exists in the schema after deletion else error message will be displayed and the operation shall fail.
+
+#### Examples:
+
+If the table contains 4 columns namely a1, b1, c1, and d1.
+
+- **To delete a single column:**
+
+```
+   ALTER TABLE carbon DROP COLUMNS (b1);
+```
+
+```
+    ALTER TABLE test_db.carbon DROP COLUMNS (b1);
+```
+
+
+- **To delete multiple columns:**
+
+```
+   ALTER TABLE carbon DROP COLUMNS (b1,c1);
+```
+
+```
+   ALTER TABLE carbon DROP COLUMNS (b1,c1);
+```
+
+### **CHANGE DATA TYPE**
+
+This command is used to change the data type from INT to BIGINT or decimal precision from lower to higher.
+
+```
+    ALTER TABLE [db_name.]table_name CHANGE col_name col_name changed_column_type;
+```
+
+#### Parameter Description
+| Parameter           | Description                                                                                               |
+|---------------------|-----------------------------------------------------------------------------------------------------------|
+| db_Name             | Name of the database. If this parameter is left unspecified, the current database is selected.            |
+| table_name          | Name of the existing table.                                                                               |
+| col_name            | Name of comma-separated column with data type. Column names contain letters, digits, and underscores (_). |
+| changed_column_type | The change in the data type.                                                                              |
+
+#### Precautions
+
+- Change of decimal data type from lower precision to higher precision will only be supported for cases where there is no data loss.
+
+#### Valid Scenarios
+- Invalid scenario - Change of decimal precision from (10,2) to (10,5) is not valid as in this case only scale is increased but total number of digits remain the same.
+- Valid scenario - Change of decimal precision from (10,2) to (12,3) is valid as the total number of digits are increased by 2 but scale is increased only by 1 which will not lead to any data loss.
+- Note :The allowed range is 38,38 (precision, scale) and is a valid upper case scenario which is not resulting in data loss.
+
+#### Examples:
+- **Changing data type of column a1 from INT to BIGINT**
+
+```
+   ALTER TABLE test_db.carbon CHANGE a1 a1 BIGINT;
+```
+- **Changing decimal precision of column a1 from 10 to 18.**
+
+```
+   ALTER TABLE test_db.carbon CHANGE a1 a1 DECIMAL(18,2);
+```
+
 ## DROP TABLE
 
  This command is used to delete an existing table.
@@ -228,33 +399,5 @@ of columns is used.
                   'NO_INVERTED_INDEX'='productBatch',
                   'BUCKETNUMBER'='4',
                   'BUCKETCOLUMNS'='productName')
- ```
-
-## TABLE RENAME
-  This command is used to rename the existing table.
-
-### Syntax
-```
-   ALTER TABLE [db_name.]table_name RENAME TO new_table_name;
-```
-
-### Parameter Description
-
-| Parameter | Description | 
-|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| db_name | Name of the database. If this parameter is left unspecified, the current database is selected. | 
-| table_name | Name of the existing table.|
-|new_table_name | New table name for the existing table. | 
-
-### Usage Guidelines
-Following conditions must be met for successful rename operation:
-* Queries running in parallel which requires the formation of path using the table name for reading carbon store files might fail during this operation.
-* Secondary index table rename is not permitted.
-
-### Example:
-```
-    ALTER TABLE carbon RENAME TO carbondata;
-
-   ALTER TABLE test_db.carbon RENAME TO test_db.carbondata;
 ```
 
