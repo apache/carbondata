@@ -28,7 +28,7 @@ The following DDL operations are supported in CarbonData :
 * [ALTER TABLE](#alter-table)
   - [RENAME TABLE](#rename-table)
   - [ADD COLUMN](#add-column)
-  - [DROP COLUMNs](#drop-columns)
+  - [DROP COLUMNS](#drop-columns)
   - [CHANGE DATA TYPE](#change-data-type)
 * [DROP TABLE](#drop-table)
 * [COMPACTION](#compaction)
