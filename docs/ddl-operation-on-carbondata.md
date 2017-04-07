@@ -189,8 +189,8 @@ of columns is used.
    CREATE TABLE [IF NOT EXISTS] [db_name.]table_name
                     [(col_name data_type, ...)]
    STORED BY 'carbondata'
-   TBLPROPERTIES(“BUCKETNUMBER”=”noOfBuckets”,
-   “BUCKETCOLUMNS”=’’columnname”)
+   TBLPROPERTIES('BUCKETNUMBER'='noOfBuckets',
+   'BUCKETCOLUMNS'='columnname')
 ```
   
 ## Parameter Description
