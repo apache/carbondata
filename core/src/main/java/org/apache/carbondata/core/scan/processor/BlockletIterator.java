@@ -61,13 +61,13 @@ public class BlockletIterator extends CarbonIterator<DataRefNode> {
     return hasNext;
   }
 
-  @Override
+
   /**
    * To get the next block
    * @return next data block
    *
    */
-  public DataRefNode next() {
+  @Override public DataRefNode next() {
     // get the current blocks
     DataRefNode datablockTemp = datablock;
     // store the next data block

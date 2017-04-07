@@ -69,7 +69,7 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
    * 5. Create the raw chunk object and fill the details
    *
    * @param fileReader          reader for reading the column from carbon data file
-   * @param blockletColumnIndex blocklet index of the column in carbon data file
+   * @param blockIndex          blocklet index of the column in carbon data file
    * @return measure raw chunk
    */
   @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int blockIndex)
@@ -136,9 +136,9 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
    *
    * @param fileReader
    *        reader which will be used to read the measure columns data from file
-   * @param startBlockletColumnIndex
+   * @param startColumnBlockletIndex
    *        blocklet index of the first measure column
-   * @param endBlockletColumnIndex
+   * @param endColumnBlockletIndex
    *        blocklet index of the last measure column
    * @return MeasureRawColumnChunk array
    */
@@ -201,7 +201,7 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
    * Below method will be used to convert the compressed measure chunk raw data to actual data
    *
    * @param measureRawColumnChunk measure raw chunk
-   * @param page                  number
+   * @param pageNumber            number
    * @return DimensionColumnDataChunk
    */
   @Override public MeasureColumnDataChunk convertToMeasureChunk(

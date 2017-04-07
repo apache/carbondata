@@ -30,7 +30,8 @@ public class ColumnGroupDimensionDataChunk extends AbstractDimensionDataChunk {
    * Constructor for this class
    *
    * @param dataChunk       data chunk
-   * @param chunkAttributes chunk attributes
+   * @param columnValueSize chunk attributes
+   * @param numberOfRows
    */
   public ColumnGroupDimensionDataChunk(byte[] dataChunk, int columnValueSize, int numberOfRows) {
     this.dataChunkStore = DimensionChunkStoreFactory.INSTANCE
@@ -62,7 +63,8 @@ public class ColumnGroupDimensionDataChunk extends AbstractDimensionDataChunk {
    * @param rowId
    * @param columnIndex
    * @param row
-   * @param restructuringInfo @return
+   * @param info          KeyStructureInfo
+   * @return
    */
   @Override public int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
       KeyStructureInfo info) {
@@ -79,7 +81,6 @@ public class ColumnGroupDimensionDataChunk extends AbstractDimensionDataChunk {
    * Below method will be used to get the masked key
    *
    * @param data   data
-   * @param offset offset of
    * @param info
    * @return
    */

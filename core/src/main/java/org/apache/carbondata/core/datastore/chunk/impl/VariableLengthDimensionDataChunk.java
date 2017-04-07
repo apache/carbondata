@@ -32,9 +32,10 @@ public class VariableLengthDimensionDataChunk extends AbstractDimensionDataChunk
 
   /**
    * Constructor for this class
-   *
-   * @param dataChunkStore  data chunk
-   * @param chunkAttributes chunk attributes
+   * @param dataChunks
+   * @param invertedIndex
+   * @param invertedIndexReverse
+   * @param numberOfRows
    */
   public VariableLengthDimensionDataChunk(byte[] dataChunks, int[] invertedIndex,
       int[] invertedIndexReverse, int numberOfRows) {
