@@ -126,7 +126,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
 
         SortTempChunkHolder sortTempFileChunkHolder = new UnsafeInmemoryHolder(rowPage,
             parameters.getDimColCount() + parameters.getComplexDimColCount() + parameters
-                .getMeasureColCount());
+                .getMeasureColCount(), parameters.getNumberOfSortColumns());
 
         // initialize
         sortTempFileChunkHolder.readRow();
@@ -137,7 +137,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
       for (final UnsafeInMemoryIntermediateDataMerger merger : merges) {
 
         SortTempChunkHolder sortTempFileChunkHolder =
-            new UnsafeFinalMergePageHolder(merger, parameters.getNoDictionaryDimnesionColumn(),
+            new UnsafeFinalMergePageHolder(merger, parameters.getNoDictionarySortColumn(),
                 parameters.getDimColCount() + parameters.getComplexDimColCount() + parameters
                     .getMeasureColCount());
 

@@ -45,13 +45,13 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
   private int columnSize;
 
   public UnsafeFinalMergePageHolder(UnsafeInMemoryIntermediateDataMerger merger,
-      boolean[] noDictMapping, int columnSize) {
+      boolean[] noDictSortColumnMapping, int columnSize) {
     this.actualSize = merger.getEntryCount();
     this.mergedAddresses = merger.getMergedAddresses();
     this.rowPageIndexes = merger.getRowPageIndexes();
     this.rowPages = merger.getUnsafeCarbonRowPages();
     LOGGER.audit("Processing unsafe inmemory rows page with size : " + actualSize);
-    this.comparator = new NewRowComparator(noDictMapping);
+    this.comparator = new NewRowComparator(noDictSortColumnMapping);
     this.columnSize = columnSize;
   }
 
