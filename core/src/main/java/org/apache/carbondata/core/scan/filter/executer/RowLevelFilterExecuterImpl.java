@@ -254,7 +254,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
               memberBytes = null;
             }
             record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
-                .getDataBasedOnDataType(memberBytes, dimColumnEvaluatorInfo.getDimension());
+                .getDataBasedOnDataTypeForNoDictionaryColumn(memberBytes,
+                    dimColumnEvaluatorInfo.getDimension().getDataType());
           } else {
             continue;
           }

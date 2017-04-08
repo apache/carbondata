@@ -324,7 +324,7 @@ public final class DataTypeUtil {
   }
 
   public static byte[] getBytesBasedOnDataTypeForNoDictionaryColumn(String dimensionValue,
-      DataType actualDataType) throws Throwable {
+      DataType actualDataType) {
     switch (actualDataType) {
       case STRING:
         return ByteUtil.toBytes(dimensionValue);
