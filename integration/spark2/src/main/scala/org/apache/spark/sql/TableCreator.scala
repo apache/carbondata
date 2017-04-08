@@ -33,22 +33,22 @@ object TableCreator {
 
   // detects whether complex dimension is part of dictionary_exclude
   def isComplexDimDictionaryExclude(dimensionDataType: String): Boolean = {
-    val dimensionType = Array("array", "struct")
-    dimensionType.exists(x => x.equalsIgnoreCase(dimensionDataType))
+    val dimensionTypes = Array("array", "arraytype", "struct", "structtype")
+    dimensionTypes.exists(dimensionType => dimensionType.equalsIgnoreCase(dimensionDataType))
   }
 
   // detects whether datatype is part of dictionary_exclude
   def isDataTypeSupportedForDictionary_Exclude(columnDataType: String): Boolean = {
-    val dataTypes = Array("string")
-    dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
+    val dataTypes = Array("string", "stringtype")
+    dataTypes.exists(dataType => dataType.equalsIgnoreCase(columnDataType))
   }
 
   // detect dimention data type
   def isDetectAsDimentionDatatype(dimensionDatatype: String): Boolean = {
-    val dimensionType =
+    val dimensionTypes =
       Array("string", "stringtype", "array", "arraytype", "struct",
         "structtype", "timestamp", "timestamptype", "date", "datetype")
-    dimensionType.exists(x => x.equalsIgnoreCase(dimensionDatatype))
+    dimensionTypes.exists(dimensionType => dimensionType.equalsIgnoreCase(dimensionDatatype))
   }
 
   protected def extractDimColsAndNoDictionaryFields(fields: Seq[Field],
@@ -65,13 +65,13 @@ object TableCreator {
         tableProperties(CarbonCommonConstants.DICTIONARY_EXCLUDE).split(',').map(_.trim)
       dictExcludeCols
         .foreach { dictExcludeCol =>
-          if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
+          if (!fields.exists(field => field.column.equalsIgnoreCase(dictExcludeCol))) {
             val errormsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
               " does not exist in table. Please check create table statement."
             throw new MalformedCarbonCommandException(errormsg)
           } else {
-            val dataType = fields.find(x =>
-              x.column.equalsIgnoreCase(dictExcludeCol)).get.dataType.get
+            val dataType = fields.find(field =>
+              field.column.equalsIgnoreCase(dictExcludeCol)).get.dataType.get
             if (isComplexDimDictionaryExclude(dataType)) {
               val errormsg = "DICTIONARY_EXCLUDE is unsupported for complex datatype column: " +
                 dictExcludeCol
@@ -89,7 +89,7 @@ object TableCreator {
       dictIncludeCols =
         tableProperties(CarbonCommonConstants.DICTIONARY_INCLUDE).split(",").map(_.trim)
       dictIncludeCols.foreach { distIncludeCol =>
-        if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol.trim))) {
+        if (!fields.exists(field => field.column.equalsIgnoreCase(distIncludeCol.trim))) {
           val errormsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
             " does not exist in table. Please check create table statement."
           throw new MalformedCarbonCommandException(errormsg)
@@ -99,7 +99,7 @@ object TableCreator {
 
     // include cols should contain exclude cols
     dictExcludeCols.foreach { dicExcludeCol =>
-      if (dictIncludeCols.exists(x => x.equalsIgnoreCase(dicExcludeCol))) {
+      if (dictIncludeCols.exists(col => col.equalsIgnoreCase(dicExcludeCol))) {
         val errormsg = "DICTIONARY_EXCLUDE can not contain the same column: " + dicExcludeCol +
           " with DICTIONARY_INCLUDE. Please check create table statement."
         throw new MalformedCarbonCommandException(errormsg)
@@ -110,13 +110,13 @@ object TableCreator {
     // add it to noDictionaryDims list. consider all dictionary excludes/include cols as dims
     fields.foreach(field => {
 
-      if (dictExcludeCols.toSeq.exists(x => x.equalsIgnoreCase(field.column))) {
+      if (dictExcludeCols.toSeq.exists(col => col.equalsIgnoreCase(field.column))) {
         if (DataTypeUtil.getDataType(field.dataType.get.toUpperCase()) != DataType.TIMESTAMP &&
             DataTypeUtil.getDataType(field.dataType.get.toUpperCase()) != DataType.DATE) {
           noDictionaryDims :+= field.column
         }
         dimFields += field
-      } else if (dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
+      } else if (dictIncludeCols.exists(col => col.equalsIgnoreCase(field.column))) {
         dimFields += field
       } else if (isDetectAsDimentionDatatype(field.dataType.get)) {
         dimFields += field
@@ -155,8 +155,8 @@ object TableCreator {
     // by default consider all non string cols as msrs. consider all include/ exclude cols as dims
     fields.foreach(field => {
       if (!isDetectAsDimentionDatatype(field.dataType.get)) {
-        if (!dictIncludedCols.exists(x => x.equalsIgnoreCase(field.column)) &&
-          !dictExcludedCols.exists(x => x.equalsIgnoreCase(field.column))) {
+        if (!dictIncludedCols.exists(col => col.equalsIgnoreCase(field.column)) &&
+          !dictExcludedCols.exists(col => col.equalsIgnoreCase(field.column))) {
           msrFields :+= field
         }
       }
@@ -218,9 +218,9 @@ object TableCreator {
   def rearrangedColumnGroup(colGroup: String, dims: Seq[Field]): String = {
     // if columns in column group is not in schema order than arrange it in schema order
     var colGrpFieldIndx: Seq[Int] = Seq[Int]()
-    colGroup.split(',').map(_.trim).foreach { x =>
+    colGroup.split(',').map(_.trim).foreach { col =>
       dims.zipWithIndex.foreach { dim =>
-        if (dim._1.column.equalsIgnoreCase(x)) {
+        if (dim._1.column.equalsIgnoreCase(col)) {
           colGrpFieldIndx :+= dim._2
         }
       }
@@ -315,7 +315,7 @@ object TableCreator {
       noInvertedIdxColsProps =
         tableProperties("NO_INVERTED_INDEX").split(',').map(_.trim)
       noInvertedIdxColsProps.foreach { noInvertedIdxColProp =>
-          if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
+          if (!fields.exists(field => field.column.equalsIgnoreCase(noInvertedIdxColProp))) {
             val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
               " does not exist in table. Please check create table statement."
             throw new MalformedCarbonCommandException(errormsg)
@@ -326,7 +326,7 @@ object TableCreator {
     val distinctCols = noInvertedIdxColsProps.toSet
     // extract the no inverted index columns
     fields.foreach(field => {
-      if (distinctCols.exists(x => x.equalsIgnoreCase(field.column))) {
+      if (distinctCols.exists(col => col.equalsIgnoreCase(field.column))) {
         noInvertedIdxCols :+= field.column
       }
     }
