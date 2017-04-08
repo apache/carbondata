@@ -61,8 +61,6 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
 
   @Inject
   public CarbondataRecordSetProvider(CarbondataConnectorId connectorId, CarbonTableReader reader) {
-    //this.config = requireNonNull(config, "config is null");
-    //this.connector = requireNonNull(connector, "connector is null");
     this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
     this.carbonTableReader = reader;
   }
@@ -72,9 +70,9 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
     requireNonNull(split, "split is null");
     requireNonNull(columns, "columns is null");
 
-    CarbondataSplit cdSplit =
+    CarbondataSplit carbondataSplit =
         checkType(split, CarbondataSplit.class, "split is not class CarbondataSplit");
-    checkArgument(cdSplit.getConnectorId().equals(connectorId), "split is not for this connector");
+    checkArgument(carbondataSplit.getConnectorId().equals(connectorId), "split is not for this connector");
 
     String targetCols = "";
     // Convert all columns handles
@@ -95,7 +93,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
     //String cols = String.join(",", columns.stream().map(a -> ((CarbondataColumnHandle)a).getColumnName()).collect(Collectors.toList()));
 
     CarbonTableCacheModel tableCacheModel =
-        carbonTableReader.getCarbonCache(cdSplit.getSchemaTableName());
+        carbonTableReader.getCarbonCache(carbondataSplit.getSchemaTableName());
     checkNotNull(tableCacheModel, "tableCacheModel should not be null");
     checkNotNull(tableCacheModel.carbonTable, "tableCacheModel.carbonTable should not be null");
     checkNotNull(tableCacheModel.tableInfo, "tableCacheModel.tableInfo should not be null");
@@ -107,10 +105,10 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
         QueryModel.createModel(targetTable.getAbsoluteTableIdentifier(), queryPlan, targetTable);
 
     // Push down filter
-    fillFilter2QueryModel(queryModel, cdSplit.getConstraints(), targetTable);
+    fillFilter2QueryModel(queryModel, carbondataSplit.getConstraints(), targetTable);
 
     // Return new record set
-    return new CarbondataRecordSet(targetTable, session, cdSplit,
+    return new CarbondataRecordSet(targetTable, session, carbondataSplit,
         handles.build(), queryModel);
   }
 

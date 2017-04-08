@@ -59,11 +59,11 @@ public class CarbondataMetadata implements ConnectorMetadata {
   }
 
   public List<String> listSchemaNamesInternal() {
-    List<String> ret;
+    List<String> schemaNameList;
     try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-      ret = carbonTableReader.getSchemaNames();
+      schemaNameList = carbonTableReader.getSchemaNames();
     }
-    return ret;
+    return schemaNameList;
   }
 
   @Override
@@ -109,27 +109,28 @@ public class CarbondataMetadata implements ConnectorMetadata {
     return ImmutableList.of(new SchemaTableName(prefix.getSchemaName(), prefix.getTableName()));
   }
 
-  private ConnectorTableMetadata getTableMetadata(SchemaTableName tableName) {
-    if (!listSchemaNamesInternal().contains(tableName.getSchemaName())) {
+  private ConnectorTableMetadata getTableMetadata(SchemaTableName schemaTableName) {
+    if (!listSchemaNamesInternal().contains(schemaTableName.getSchemaName())) {
       return null;
     }
 
-    CarbonTable cb = carbonTableReader.getTable(tableName);
-    if (cb == null) {
+    CarbonTable carbonTable = carbonTableReader.getTable(schemaTableName);
+    if (carbonTable == null) {
       return null;
     }
 
-    List<ColumnMetadata> spiCols = new LinkedList<>();
-    List<CarbonColumn> carbonColumns = cb.getCreateOrderColumn(tableName.getTableName());
+    List<ColumnMetadata> columnsMetaList = new LinkedList<>();
+    List<CarbonColumn> carbonColumns = carbonTable.getCreateOrderColumn(schemaTableName.getTableName());
     for (CarbonColumn col : carbonColumns) {
       //show columns command will return these data
-      Type spiType = CarbondataType2SpiMapper(col.getColumnSchema().getDataType());
-      ColumnMetadata spiCol = new ColumnMetadata(col.getColumnSchema().getColumnName(), spiType);
-      spiCols.add(spiCol);
+      Type columnType = CarbondataType2SpiMapper(col.getColumnSchema().getDataType());
+      ColumnMetadata columnMeta = new ColumnMetadata(col.getColumnSchema().getColumnName(),
+          columnType);
+      columnsMetaList.add(columnMeta);
     }
 
     //carbondata connector's table metadata
-    return new ConnectorTableMetadata(tableName, spiCols);
+    return new ConnectorTableMetadata(schemaTableName, columnsMetaList);
   }
 
   @Override public Map<String, ColumnHandle> getColumnHandles(ConnectorSession session,
@@ -141,6 +142,7 @@ public class CarbondataMetadata implements ConnectorMetadata {
         "tableHandle is not for this connector");
 
     String schemaName = handle.getSchemaTableName().getSchemaName();
+
     if (!listSchemaNamesInternal().contains(schemaName)) {
       throw new SchemaNotFoundException(schemaName);
     }
@@ -250,12 +252,6 @@ public class CarbondataMetadata implements ConnectorMetadata {
         return DateType.DATE;
       case TIMESTAMP:
         return TimestampType.TIMESTAMP;
-
-            /*case DataType.MAP:
-            case DataType.ARRAY:
-            case DataType.STRUCT:
-            case DataType.NULL:*/
-
       default:
         return VarcharType.VARCHAR;
     }
