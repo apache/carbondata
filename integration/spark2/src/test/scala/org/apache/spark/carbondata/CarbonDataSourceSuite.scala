@@ -29,6 +29,7 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
     // Drop table
     sql("DROP TABLE IF EXISTS carbon_testtable")
     sql("DROP TABLE IF EXISTS csv_table")
+    sql("DROP TABLE IF EXISTS car")
 
     // Create table
     sql(
@@ -174,6 +175,21 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from testdb.test1"), Seq(Row("xx", 1), Row("xx", 11)))
     sql("drop table testdb.test1")
     sql("drop database testdb")
+  }
+
+  test("test carbon source table with string type in dictionary_exclude") {
+    try {
+      sql("create table car( \nL_SHIPDATE string,\nL_SHIPMODE string,\nL_SHIPINSTRUCT string," +
+          "\nL_RETURNFLAG string,\nL_RECEIPTDATE string,\nL_ORDERKEY string,\nL_PARTKEY string," +
+          "\nL_SUPPKEY string,\nL_LINENUMBER int,\nL_QUANTITY decimal,\nL_EXTENDEDPRICE decimal," +
+          "\nL_DISCOUNT decimal,\nL_TAX decimal,\nL_LINESTATUS string,\nL_COMMITDATE string," +
+          "\nL_COMMENT string \n) \nUSING org.apache.spark.sql.CarbonSource\nOPTIONS (tableName " +
+          "\"car\", DICTIONARY_EXCLUDE \"L_ORDERKEY, L_PARTKEY, L_SUPPKEY, L_COMMENT\")")
+      assert(true)
+    }
+    catch {
+      case exception: Exception => assert(false)
+    }
   }
 
 }
