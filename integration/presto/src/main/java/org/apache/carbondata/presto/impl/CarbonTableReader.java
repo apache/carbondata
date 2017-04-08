@@ -52,18 +52,13 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CacheClient;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.thrift.TBase;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URI;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -82,7 +77,7 @@ public class CarbonTableReader {
 
   private CarbonTableConfig config;
   private List<SchemaTableName> tableList;
-  private CarbonFile dbStore;
+  private CarbonFile carbonFileList;
   private FileFactory.FileType fileType;
 
   // A cache for Carbon reader
@@ -98,10 +93,10 @@ public class CarbonTableReader {
     if (!cc.containsKey(table)) {
       try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(
           FileFactory.class.getClassLoader())) {
-        if (dbStore == null) {
+        if (carbonFileList == null) {
           fileType = FileFactory.getFileType(config.getStorePath());
           try {
-            dbStore = FileFactory.getCarbonFile(config.getStorePath(), fileType);
+            carbonFileList = FileFactory.getCarbonFile(config.getStorePath(), fileType);
           } catch (Exception ex) {
             throw new RuntimeException(ex);
           }
@@ -126,11 +121,11 @@ public class CarbonTableReader {
     }
   };
 
-  public boolean updateDbStore() {
-    if (dbStore == null) {
+  public boolean updateCarbonFile() {
+    if (carbonFileList == null) {
       fileType = FileFactory.getFileType(config.getStorePath());
       try {
-        dbStore = FileFactory.getCarbonFile(config.getStorePath(), fileType);
+        carbonFileList = FileFactory.getCarbonFile(config.getStorePath(), fileType);
       } catch (Exception ex) {
         throw new RuntimeException(ex);
       }
@@ -139,12 +134,12 @@ public class CarbonTableReader {
   }
 
   public List<String> updateSchemaList() {
-    updateDbStore();
+    updateCarbonFile();
 
-    if (dbStore != null) {
-      List<String> scs =
-          Stream.of(dbStore.listFiles()).map(a -> a.getName()).collect(Collectors.toList());
-      return scs;
+    if (carbonFileList != null) {
+      List<String> schemaList =
+          Stream.of(carbonFileList.listFiles()).map(a -> a.getName()).collect(Collectors.toList());
+      return schemaList;
     } else return ImmutableList.of();
   }
 
@@ -154,7 +149,7 @@ public class CarbonTableReader {
   }
 
   public Set<String> updateTableList(String dbName) {
-    List<CarbonFile> schema = Stream.of(dbStore.listFiles()).filter(a -> dbName.equals(a.getName()))
+    List<CarbonFile> schema = Stream.of(carbonFileList.listFiles()).filter(a -> dbName.equals(a.getName()))
         .collect(Collectors.toList());
     if (schema.size() > 0) {
       return Stream.of((schema.get(0)).listFiles()).map(a -> a.getName())
@@ -177,15 +172,14 @@ public class CarbonTableReader {
 
   public void updateSchemaTables() {
     // update logic determine later
-    if (dbStore == null) {
+    if (carbonFileList == null) {
       updateSchemaList();
     }
-
     tableList = new LinkedList<>();
-    for (CarbonFile db : dbStore.listFiles()) {
-      if (!db.getName().endsWith(".mdt")) {
-        for (CarbonFile table : db.listFiles()) {
-          tableList.add(new SchemaTableName(db.getName(), table.getName()));
+    for (CarbonFile cf : carbonFileList.listFiles()) {
+      if (!cf.getName().endsWith(".mdt")) {
+        for (CarbonFile table : cf.listFiles()) {
+          tableList.add(new SchemaTableName(cf.getName(), table.getName()));
         }
       }
     }

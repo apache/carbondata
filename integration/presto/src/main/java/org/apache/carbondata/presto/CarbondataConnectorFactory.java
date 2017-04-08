@@ -67,25 +67,13 @@ public class CarbondataConnectorFactory implements ConnectorFactory {
 
       LifeCycleManager lifeCycleManager = injector.getInstance(LifeCycleManager.class);
       CarbondataMetadata metadata = injector.getInstance(CarbondataMetadata.class);
-      //HiveTransactionManager transactionManager = injector.getInstance(HiveTransactionManager.class);
       ConnectorSplitManager splitManager = injector.getInstance(ConnectorSplitManager.class);
       ConnectorRecordSetProvider connectorRecordSet =
           injector.getInstance(ConnectorRecordSetProvider.class);
-      //ConnectorAccessControl accessControl = injector.getInstance(ConnectorAccessControl.class);
-
-      //ConnectorPageSourceProvider connectorPageSource = injector.getInstance(ConnectorPageSourceProvider.class);
-      //ConnectorPageSinkProvider pageSinkProvider = injector.getInstance(ConnectorPageSinkProvider.class);
-      //ConnectorNodePartitioningProvider connectorDistributionProvider = injector.getInstance(ConnectorNodePartitioningProvider.class);
-      //HiveSessionProperties hiveSessionProperties = injector.getInstance(HiveSessionProperties.class);
-      //HiveTableProperties hiveTableProperties = injector.getInstance(HiveTableProperties.class);
 
       return new CarbondataConnector(lifeCycleManager, metadata,
           new ClassLoaderSafeConnectorSplitManager(splitManager, classLoader), connectorRecordSet,
-          //new ClassLoaderSafeConnectorRecordSetProvider(, classLoader),
           classLoader
-          //new ClassLoaderSafeConnectorPageSourceProvider(connectorPageSource, classLoader),
-          //new ClassLoaderSafeConnectorPageSinkProvider(pageSinkProvider, classLoader),
-          //new ClassLoaderSafeNodePartitioningProvider(connectorDistributionProvider, classLoader),
       );
     } catch (Exception e) {
       throw Throwables.propagate(e);
