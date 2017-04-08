@@ -43,6 +43,7 @@ import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverImpl {
 
@@ -147,7 +148,9 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL.getBytes());
           continue;
         }
-        filterValuesList.add(result.getString().getBytes());
+        filterValuesList.add(DataTypeUtil
+            .getBytesBasedOnDataTypeForNoDictionaryColumn(result.getString(),
+                result.getDataType()));
       } catch (FilterIllegalMemberException e) {
         // Any invalid member while evaluation shall be ignored, system will log the
         // error only once since all rows the evaluation happens so inorder to avoid

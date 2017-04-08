@@ -220,13 +220,20 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       sql("CREATE TABLE unsortedtable_offheap_inmemory (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='')")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE unsortedtable_offheap_inmemory OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
       checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno = 11"), sql("select * from origintable1 where empno = 11"))
+      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno < 15 order by empno"), sql("select * from origintable1 where empno < 15 order by empno"))
+      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno <= 15 order by empno"), sql("select * from origintable1 where empno <= 15 order by empno"))
+      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno > 15 order by empno"), sql("select * from origintable1 where empno > 15 order by empno"))
+      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno >= 15 order by empno"), sql("select * from origintable1 where empno >= 15 order by empno"))
+      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno <> 15 order by empno"), sql("select * from origintable1 where empno <> 15 order by empno"))
+      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno in (15, 16, 17) order by empno"), sql("select * from origintable1 where empno in (15, 16, 17) order by empno"))
+      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno is null"), sql("select * from origintable1 where empno is null order by empno"))
+      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno is not null"), sql("select * from origintable1 where empno is not null order by empno"))
       checkAnswer(sql("select * from unsortedtable_offheap_inmemory order by empno"), sql("select * from origintable1 order by empno"))
     } finally {
       defaultLoadingProperties
     }
   }
-
-
+  
   override def afterAll = {
     dropTable
   }
