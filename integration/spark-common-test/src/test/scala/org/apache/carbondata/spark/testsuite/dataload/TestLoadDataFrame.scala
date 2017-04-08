@@ -27,6 +27,7 @@ import org.scalatest.BeforeAndAfterAll
 class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
   var df: DataFrame = _
   var dataFrame: DataFrame = _
+  var df2: DataFrame = _
 
 
   def buildTestData() = {
@@ -45,6 +46,9 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       StructField("string", StringType, nullable = false) :: Nil)
 
     dataFrame = sqlContext.createDataFrame(rdd, schema)
+    df2 = sqlContext.sparkContext.parallelize(1 to 1000)
+      .map(x => ("key_" + x, "str_" + x, x, x * 2, x * 3))
+      .toDF("c1", "c2", "c3", "c4", "c5")
   }
 
   def dropTable() = {
@@ -52,7 +56,9 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon2")
     sql("DROP TABLE IF EXISTS carbon3")
     sql("DROP TABLE IF EXISTS carbon4")
-
+    sql("DROP TABLE IF EXISTS carbon5")
+    sql("DROP TABLE IF EXISTS carbon6")
+    sql("DROP TABLE IF EXISTS carbon7")
   }
 
 
@@ -112,6 +118,64 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       .save()
     checkAnswer(
       sql("SELECT decimal FROM carbon4"),Seq(Row(BigDecimal.valueOf(10000.00)),Row(BigDecimal.valueOf(1234.44))))
+  }
+
+  test("test load dataframe with integer columns included in the dictionary"){
+    df2.write
+      .format("carbondata")
+      .option("tableName", "carbon5")
+      .option("compress", "true")
+      .option("dictionary_include","c3,c4")
+      .mode(SaveMode.Overwrite)
+      .save()
+    checkAnswer(
+      sql("describe formatted carbon5"),
+      Seq(Row("c1","string","DICTIONARY, KEY COLUMN"),
+        Row("c2","string","DICTIONARY, KEY COLUMN"),
+        Row("c3","int","DICTIONARY, KEY COLUMN"),
+        Row("c4","int","DICTIONARY, KEY COLUMN"),
+        Row("c5","int","MEASURE")
+      )
+    )
+  }
+
+  test("test load dataframe with string column excluded from the dictionary"){
+    df2.write
+      .format("carbondata")
+      .option("tableName", "carbon6")
+      .option("compress", "true")
+      .option("dictionary_exclude","c2")
+      .mode(SaveMode.Overwrite)
+      .save()
+    checkAnswer(
+      sql("describe formatted carbon6"),
+      Seq(Row("c1","string","DICTIONARY, KEY COLUMN"),
+        Row("c2","string","KEY COLUMN"),
+        Row("c3","int","MEASURE"),
+        Row("c4","int","MEASURE"),
+        Row("c5","int","MEASURE")
+      )
+    )
+  }
+
+  test("test load dataframe with both dictionary include and exclude specified"){
+    df2.write
+      .format("carbondata")
+      .option("tableName", "carbon7")
+      .option("compress", "true")
+      .option("dictionary_include","c3,c4")
+      .option("dictionary_exclude","c2")
+      .mode(SaveMode.Overwrite)
+      .save()
+    checkAnswer(
+      sql("describe formatted carbon7"),
+      Seq(Row("c1","string","DICTIONARY, KEY COLUMN"),
+        Row("c2","string","KEY COLUMN"),
+        Row("c3","int","DICTIONARY, KEY COLUMN"),
+        Row("c4","int","DICTIONARY, KEY COLUMN"),
+        Row("c5","int","MEASURE")
+      )
+    )
   }
 
   override def afterAll {
