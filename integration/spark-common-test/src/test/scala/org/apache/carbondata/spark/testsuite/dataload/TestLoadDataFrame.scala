@@ -129,13 +129,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
     checkAnswer(
-      sql("describe formatted carbon5"),
-      Seq(Row("c1","string","DICTIONARY, KEY COLUMN"),
-        Row("c2","string","DICTIONARY, KEY COLUMN"),
-        Row("c3","int","DICTIONARY, KEY COLUMN"),
-        Row("c4","int","DICTIONARY, KEY COLUMN"),
-        Row("c5","int","MEASURE")
-      )
+      sql("select count(*) from carbon5 where c3 > 300"), Row(700)
     )
   }
 
@@ -148,13 +142,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
     checkAnswer(
-      sql("describe formatted carbon6"),
-      Seq(Row("c1","string","DICTIONARY, KEY COLUMN"),
-        Row("c2","string","KEY COLUMN"),
-        Row("c3","int","MEASURE"),
-        Row("c4","int","MEASURE"),
-        Row("c5","int","MEASURE")
-      )
+      sql("select count(*) from carbon6 where c3 > 300"), Row(700)
     )
   }
 
@@ -168,13 +156,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
     checkAnswer(
-      sql("describe formatted carbon7"),
-      Seq(Row("c1","string","DICTIONARY, KEY COLUMN"),
-        Row("c2","string","KEY COLUMN"),
-        Row("c3","int","DICTIONARY, KEY COLUMN"),
-        Row("c4","int","DICTIONARY, KEY COLUMN"),
-        Row("c5","int","MEASURE")
-      )
+      sql("select count(*) from carbon7 where c3 > 300"), Row(700)
     )
   }
 
