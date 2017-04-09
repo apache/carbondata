@@ -17,7 +17,11 @@
 
 package org.apache.carbondata.core.util;
 
+import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
@@ -27,7 +31,13 @@ import org.apache.carbondata.core.memory.CarbonUnsafe;
  */
 public final class ByteUtil {
 
-  private static final int SIZEOF_LONG = 8;
+  public static final int SIZEOF_LONG = 8;
+
+  public static final int SIZEOF_INT = 4;
+
+  public static final int SIZEOF_SHORT = 2;
+
+  public static final String UTF8_CSN = StandardCharsets.UTF_8.name();
 
   private ByteUtil() {
 
@@ -363,4 +373,328 @@ public final class ByteUtil {
 
   }
 
+  /**
+   * Stirng => byte[]
+   *
+   * @param s
+   * @return
+   */
+  public static byte[] toBytes(String s) {
+    try {
+      return s.getBytes(UTF8_CSN);
+    } catch (UnsupportedEncodingException e) {
+      // should never happen!
+      throw new IllegalArgumentException("UTF8 decoding is not supported", e);
+    }
+  }
+
+  /**
+   * byte[] => String
+   *
+   * @param b
+   * @param off
+   * @param len
+   * @return
+   */
+  public static String toString(final byte[] b, int off, int len) {
+    if (b == null) {
+      return null;
+    }
+    if (len == 0) {
+      return "";
+    }
+    try {
+      return new String(b, off, len, UTF8_CSN);
+    } catch (UnsupportedEncodingException e) {
+      // should never happen!
+      throw new IllegalArgumentException("UTF8 encoding is not supported", e);
+    }
+  }
+
+  /**
+   * boolean => byte[]
+   *
+   * @param b
+   * @return
+   */
+  public static byte[] toBytes(final boolean b) {
+    return new byte[] { b ? (byte) -1 : (byte) 0 };
+  }
+
+  /**
+   * byte[] => boolean
+   *
+   * @param b
+   * @return
+   */
+  public static boolean toBoolean(final byte[] b) {
+    if (b.length != 1) {
+      throw new IllegalArgumentException("Array has wrong size: " + b.length);
+    }
+    return b[0] != (byte) 0;
+  }
+
+  /**
+   * short => byte[]
+   *
+   * @param val
+   * @return
+   */
+  public static byte[] toBytes(short val) {
+    byte[] b = new byte[SIZEOF_SHORT];
+    b[1] = (byte) val;
+    val >>= 8;
+    b[0] = (byte) val;
+    return b;
+  }
+
+  /**
+   * byte[] => short
+   *
+   * @param bytes
+   * @param offset
+   * @param length
+   * @return
+   */
+  public static short toShort(byte[] bytes, int offset, final int length) {
+    if (length != SIZEOF_SHORT || offset + length > bytes.length) {
+      throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_SHORT);
+    }
+    if (CarbonUnsafe.unsafe != null) {
+      if (CarbonUnsafe.ISLITTLEENDIAN) {
+        return Short.reverseBytes(
+            CarbonUnsafe.unsafe.getShort(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET));
+      } else {
+        return CarbonUnsafe.unsafe.getShort(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET);
+      }
+    } else {
+      short n = 0;
+      n ^= bytes[offset] & 0xFF;
+      n <<= 8;
+      n ^= bytes[offset + 1] & 0xFF;
+      return n;
+    }
+  }
+
+  /**
+   * int => byte[]
+   *
+   * @param val
+   * @return
+   */
+  public static byte[] toBytes(int val) {
+    byte[] b = new byte[4];
+    for (int i = 3; i > 0; i--) {
+      b[i] = (byte) val;
+      val >>>= 8;
+    }
+    b[0] = (byte) val;
+    return b;
+  }
+
+  /**
+   * byte[] => int
+   *
+   * @param bytes
+   * @param offset
+   * @param length
+   * @return
+   */
+  public static int toInt(byte[] bytes, int offset, final int length) {
+    if (length != SIZEOF_INT || offset + length > bytes.length) {
+      throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_INT);
+    }
+    if (CarbonUnsafe.unsafe != null) {
+      if (CarbonUnsafe.ISLITTLEENDIAN) {
+        return Integer.reverseBytes(
+            CarbonUnsafe.unsafe.getInt(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET));
+      } else {
+        return CarbonUnsafe.unsafe.getInt(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET);
+      }
+    } else {
+      int n = 0;
+      for (int i = offset; i < (offset + length); i++) {
+        n <<= 8;
+        n ^= bytes[i] & 0xFF;
+      }
+      return n;
+    }
+  }
+
+  /**
+   * float => byte[]
+   *
+   * @param f
+   * @return
+   */
+  public static byte[] toBytes(final float f) {
+    // Encode it as int
+    return toBytes(Float.floatToRawIntBits(f));
+  }
+
+  /**
+   * byte[] => float
+   *
+   * @param bytes
+   * @param offset
+   * @return
+   */
+  public static float toFloat(byte[] bytes, int offset) {
+    return Float.intBitsToFloat(toInt(bytes, offset, SIZEOF_INT));
+  }
+
+  /**
+   * long => byte[]
+   *
+   * @param val
+   * @return
+   */
+  public static byte[] toBytes(long val) {
+    byte[] b = new byte[8];
+    for (int i = 7; i > 0; i--) {
+      b[i] = (byte) val;
+      val >>>= 8;
+    }
+    b[0] = (byte) val;
+    return b;
+  }
+
+  /**
+   * byte[] => long
+   */
+  public static long toLong(byte[] bytes, int offset, final int length) {
+    if (length != SIZEOF_LONG || offset + length > bytes.length) {
+      throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_LONG);
+    }
+    if (CarbonUnsafe.unsafe != null) {
+      if (CarbonUnsafe.ISLITTLEENDIAN) {
+        return Long.reverseBytes(
+            CarbonUnsafe.unsafe.getLong(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET));
+      } else {
+        return CarbonUnsafe.unsafe.getLong(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET);
+      }
+    } else {
+      long l = 0;
+      for (int i = offset; i < offset + length; i++) {
+        l <<= 8;
+        l ^= bytes[i] & 0xFF;
+      }
+      return l;
+    }
+  }
+
+  /**
+   * doube => byte[]
+   *
+   * @param d
+   * @return
+   */
+  public static byte[] toBytes(final double d) {
+    // Encode it as a long
+    return toBytes(Double.doubleToRawLongBits(d));
+  }
+
+  /**
+   * byte[] => double
+   *
+   * @param bytes
+   * @param offset
+   * @return
+   */
+  public static double toDouble(final byte[] bytes, final int offset) {
+    return Double.longBitsToDouble(toLong(bytes, offset, SIZEOF_LONG));
+  }
+
+  /**
+   * BigDecimal => byte[]
+   *
+   * @param val
+   * @return
+   */
+  public static byte[] toBytes(BigDecimal val) {
+    byte[] valueBytes = val.unscaledValue().toByteArray();
+    byte[] result = new byte[valueBytes.length + SIZEOF_INT];
+    int offset = putInt(result, 0, val.scale());
+    putBytes(result, offset, valueBytes, 0, valueBytes.length);
+    return result;
+  }
+
+  /**
+   * byte[] => BigDecimal
+   *
+   * @param bytes
+   * @param offset
+   * @param length
+   * @return
+   */
+  public static BigDecimal toBigDecimal(byte[] bytes, int offset, final int length) {
+    if (bytes == null || length < SIZEOF_INT + 1 || (offset + length > bytes.length)) {
+      return null;
+    }
+
+    int scale = toInt(bytes, offset, bytes.length);
+    byte[] tcBytes = new byte[length - SIZEOF_INT];
+    System.arraycopy(bytes, offset + SIZEOF_INT, tcBytes, 0, length - SIZEOF_INT);
+    return new BigDecimal(new BigInteger(tcBytes), scale);
+  }
+
+  private static IllegalArgumentException explainWrongLengthOrOffset(final byte[] bytes,
+      final int offset, final int length, final int expectedLength) {
+    String reason;
+    if (length != expectedLength) {
+      reason = "Wrong length: " + length + ", expected " + expectedLength;
+    } else {
+      reason = "offset (" + offset + ") + length (" + length + ") exceed the"
+          + " capacity of the array: " + bytes.length;
+    }
+    return new IllegalArgumentException(reason);
+  }
+
+  /**
+   * Put an int value out to the specified byte array position.
+   *
+   * @param bytes  the byte array
+   * @param offset position in the array
+   * @param val    int to write out
+   * @return incremented offset
+   * @throws IllegalArgumentException if the byte array given doesn't have
+   *                                  enough room at the offset specified.
+   */
+  public static int putInt(byte[] bytes, int offset, int val) {
+    if (bytes.length - offset < SIZEOF_INT) {
+      throw new IllegalArgumentException(
+          "Not enough room to put an int at" + " offset " + offset + " in a " + bytes.length
+              + " byte array");
+    }
+    if (CarbonUnsafe.unsafe != null) {
+      if (CarbonUnsafe.ISLITTLEENDIAN) {
+        val = Integer.reverseBytes(val);
+      }
+      CarbonUnsafe.unsafe.putInt(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET, val);
+      return offset + ByteUtil.SIZEOF_INT;
+    } else {
+      for (int i = offset + 3; i > offset; i--) {
+        bytes[i] = (byte) val;
+        val >>>= 8;
+      }
+      bytes[offset] = (byte) val;
+      return offset + SIZEOF_INT;
+    }
+  }
+
+  /**
+   * Put bytes at the specified byte array position.
+   *
+   * @param tgtBytes  the byte array
+   * @param tgtOffset position in the array
+   * @param srcBytes  array to write out
+   * @param srcOffset source offset
+   * @param srcLength source length
+   * @return incremented offset
+   */
+  public static int putBytes(byte[] tgtBytes, int tgtOffset, byte[] srcBytes, int srcOffset,
+      int srcLength) {
+    System.arraycopy(srcBytes, srcOffset, tgtBytes, tgtOffset, srcLength);
+    return tgtOffset + srcLength;
+  }
 }

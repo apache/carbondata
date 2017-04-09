@@ -27,14 +27,14 @@ import org.apache.carbondata.processing.newflow.sort.unsafe.holder.UnsafeCarbonR
 public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
 
   /**
-   * noDictionaryColMaping mapping of dictionary dimensions and no dictionary dimensions.
+   * mapping of dictionary and no dictionary of sort_columns.
    */
-  private boolean[] noDictionaryColMaping;
+  private boolean[] noDictionarySortColumnMaping;
 
   private Object baseObject;
 
   public UnsafeRowComparator(UnsafeCarbonRowPage rowPage) {
-    this.noDictionaryColMaping = rowPage.getNoDictionaryDimensionMapping();
+    this.noDictionarySortColumnMaping = rowPage.getNoDictionarySortColumnMapping();
     this.baseObject = rowPage.getDataBlock().getBaseObject();
   }
 
@@ -47,7 +47,7 @@ public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
     long rowB = rowR.address;
     int sizeA = 0;
     int sizeB = 0;
-    for (boolean isNoDictionary : noDictionaryColMaping) {
+    for (boolean isNoDictionary : noDictionarySortColumnMaping) {
       if (isNoDictionary) {
         short aShort1 = CarbonUnsafe.unsafe.getShort(baseObject, rowA + sizeA);
         sizeA += 2;
@@ -89,7 +89,7 @@ public class UnsafeRowComparator implements Comparator<UnsafeCarbonRow> {
     long rowB = rowR.address;
     int sizeA = 0;
     int sizeB = 0;
-    for (boolean isNoDictionary : noDictionaryColMaping) {
+    for (boolean isNoDictionary : noDictionarySortColumnMaping) {
       if (isNoDictionary) {
         short aShort1 = CarbonUnsafe.unsafe.getShort(baseObjectL, rowA + sizeA);
         sizeA += 2;

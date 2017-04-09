@@ -641,6 +641,24 @@ public final class CarbonUtil {
   }
 
   /**
+   * remove the quote char for a string, e.g. "abc" => abc, 'abc' => abc
+   * @param parseStr
+   * @return
+   */
+  public static String unquoteChar(String parseStr) {
+    if (parseStr == null) {
+      return null;
+    }
+    if (parseStr.startsWith("'") && parseStr.endsWith("'")) {
+      return parseStr.substring(1, parseStr.length() - 1);
+    } else if (parseStr.startsWith("\"") && parseStr.endsWith("\"")) {
+      return parseStr.substring(1, parseStr.length() - 1);
+    } else {
+      return parseStr;
+    }
+  }
+
+  /**
    * special char delimiter Converter
    *
    * @param delimiter

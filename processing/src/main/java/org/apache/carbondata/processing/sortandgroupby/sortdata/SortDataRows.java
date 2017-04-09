@@ -191,11 +191,10 @@ public class SortDataRows {
       Object[][] toSort;
       toSort = new Object[entryCount][];
       System.arraycopy(recordHolderList, 0, toSort, 0, entryCount);
-
-      if (parameters.getNoDictionaryCount() > 0) {
-        Arrays.sort(toSort, new NewRowComparator(parameters.getNoDictionaryDimnesionColumn()));
+      if (parameters.getNumberOfNoDictSortColumns() > 0) {
+        Arrays.sort(toSort, new NewRowComparator(parameters.getNoDictionarySortColumn()));
       } else {
-        Arrays.sort(toSort, new NewRowComparatorForNormalDims(parameters.getDimColCount()));
+        Arrays.sort(toSort, new NewRowComparatorForNormalDims(parameters.getNumberOfSortColumns()));
       }
       recordHolderList = toSort;
 
@@ -385,12 +384,12 @@ public class SortDataRows {
     @Override public Void call() throws Exception {
       try {
         long startTime = System.currentTimeMillis();
-        if (parameters.getNoDictionaryCount() > 0) {
+        if (parameters.getNumberOfNoDictSortColumns() > 0) {
           Arrays.sort(recordHolderArray,
-              new NewRowComparator(parameters.getNoDictionaryDimnesionColumn()));
+              new NewRowComparator(parameters.getNoDictionarySortColumn()));
         } else {
           Arrays.sort(recordHolderArray,
-              new NewRowComparatorForNormalDims(parameters.getDimColCount()));
+              new NewRowComparatorForNormalDims(parameters.getNumberOfSortColumns()));
         }
 
         // create a new file every time
