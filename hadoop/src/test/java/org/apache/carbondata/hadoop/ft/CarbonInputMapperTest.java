@@ -135,7 +135,7 @@ public class CarbonInputMapperTest extends TestCase {
     return 0;
   }
 
-  public static class Map extends Mapper<Void, Object[], Void, Text> {
+  public static class Map extends Mapper<Void, Object[], Text, Text> {
 
     private BufferedWriter fileWriter;
 
@@ -161,6 +161,7 @@ public class CarbonInputMapperTest extends TestCase {
     @Override public void cleanup(Context context) throws IOException, InterruptedException {
       super.cleanup(context);
       fileWriter.close();
+      context.write(new Text(), new Text());
     }
   }
 
