@@ -45,7 +45,6 @@ Start Spark shell by running the following command in the Spark directory:
 ```
 ./bin/spark-shell --jars <carbondata assembly jar path>
 ```
-**NOTE**: Assembly jar will be available after [building CarbonData](https://github.com/apache/incubator-carbondata/blob/master/build/README.md) and can be copied from `./assembly/target/scala-2.1x/carbondata_xxx.jar`
 
 In this shell, SparkSession is readily available as `spark` and Spark context is readily available as `sc`.
 
@@ -97,7 +96,6 @@ Start Spark shell by running the following command in the Spark directory:
 ```
 ./bin/spark-shell --jars <carbondata assembly jar path>
 ```
-**NOTE**: Assembly jar will be available after [building CarbonData](https://github.com/apache/incubator-carbondata/blob/master/build/README.md) and can be copied from `./assembly/target/scala-2.1x/carbondata_xxx.jar`
 
 **NOTE**: In this shell, SparkContext is readily available as `sc`.
 
