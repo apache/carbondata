@@ -179,7 +179,6 @@ This command is used to add a new column to the existing table.
     ALTER TABLE [db_name.]table_name ADD COLUMNS (col_name data_type,...)
     TBLPROPERTIES('DICTIONARY_INCLUDE'='col_name,...',
     'DICTIONARY_EXCLUDE'='col_name,...',
-    'COLUMNPROPERTIES.columnName.shared_column'='sharedFolder.sharedColumnName,...',
     'DEFAULT.VALUE.COLUMN_NAME'='default_value');
 ```
 
@@ -194,7 +193,7 @@ NOTE: Do not name the column after name, tupleId, PositionId, and PositionRefere
 
 #### Precautions
 
-- Apart from DICTIONARY_INCLUDE, DICTIONARY_EXCLUDE, shared_column, and default_value no other property will be read. If any other property name is specified, error will not be thrown, it will be ignored.
+- Apart from DICTIONARY_INCLUDE, DICTIONARY_EXCLUDE and default_value no other property will be read. If any other property name is specified, error will not be thrown, it will be ignored.
 - If default value is not specified, then NULL will be considered as the default value for the column.
 - For addition of column, if DICTIONARY_INCLUDE and DICTIONARY_EXCLUDE are not specified, then the decision will be taken based on data type of the column.
 
@@ -210,11 +209,6 @@ NOTE: Do not name the column after name, tupleId, PositionId, and PositionRefere
 
 ```
     ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DICTIONARY_INCLUDE'='a1');
-```
-
-```
-    ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING)
-    TBLPROPERTIES('COLUMNPROPERTIES.b1.shared_column'='sharedFolder.b1');
 ```
 
 ```
@@ -239,7 +233,7 @@ This command is used to delete a existing column or multiple columns in a table.
 
 #### Precautions
 
-- Deleting a column will also clear the dictionary files, provided the column is of type dictionary and is not a shared column.
+- Deleting a column will also clear the dictionary files, provided the column is of type dictionary.
 - For delete column operation, there should be at least one key column that exists in the schema after deletion else error message will be displayed and the operation shall fail.
 
 #### Examples:
