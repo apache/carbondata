@@ -16,9 +16,12 @@
  */
 package org.apache.carbondata.lcm.locks;
 
+import java.io.File;
+
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.locks.LocalFileLock;
 import org.apache.carbondata.core.locks.LockUsage;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -33,6 +36,11 @@ public class LocalFileLockTest {
    * @throws java.lang.Exception
    */
   @Before public void setUp() throws Exception {
+    String rootPath = new File(this.getClass().getResource("/").getPath()
+        + "../../..").getCanonicalPath();
+    String storeLocation = rootPath + "/target/store";
+    CarbonProperties.getInstance()
+        .addProperty("carbon.storelocation", storeLocation);
   }
 
   /**
