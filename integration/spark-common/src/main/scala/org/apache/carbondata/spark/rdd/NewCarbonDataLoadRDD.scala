@@ -32,6 +32,7 @@ import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, SerializableWritable, SparkContext, SparkEnv, TaskContext}
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionWrap, RDD}
+import org.apache.spark.serializer.SerializerInstance
 import org.apache.spark.sql.Row
 import org.apache.spark.util.SparkUtil
 
@@ -408,19 +409,14 @@ class NewDataFrameLoaderRDD[K, V](
         val recordReaders = mutable.Buffer[CarbonIterator[Array[AnyRef]]]()
         val partitionIterator = firstParent[DataLoadPartitionWrap[Row]].iterator(theSplit, context)
         val serializer = SparkEnv.get.closureSerializer.newInstance()
-        var serializeBuffer: ByteBuffer = null
+        var serializeBytes: Array[Byte] = null
         while(partitionIterator.hasNext) {
           val value = partitionIterator.next()
-          val newInstance = {
-            if (serializeBuffer == null) {
-              serializeBuffer = serializer.serialize[RDD[Row]](value.rdd)
-            }
-            serializeBuffer.rewind()
-            serializer.deserialize[RDD[Row]](serializeBuffer)
+          if (serializeBytes == null) {
+            serializeBytes = serializer.serialize[RDD[Row]](value.rdd).array()
           }
-          recordReaders += new NewRddIterator(newInstance.iterator(value.partition, context),
-              carbonLoadModel,
-              context)
+          recordReaders += new LazyRddIterator(serializer, serializeBytes, value.partition,
+              carbonLoadModel, context)
         }
 
         val loader = new SparkPartitionLoader(model,
@@ -501,6 +497,69 @@ class NewRddIterator(rddIter: Iterator[Row],
 
   override def initialize: Unit = {
     SparkUtil.setTaskContext(context)
+  }
+
+}
+
+/**
+ * LazyRddIterator invoke rdd.iterator method when invoking hasNext method.
+ * @param serializer
+ * @param serializeBytes
+ * @param partition
+ * @param carbonLoadModel
+ * @param context
+ */
+class LazyRddIterator(serializer: SerializerInstance,
+    serializeBytes: Array[Byte],
+    partition: Partition,
+    carbonLoadModel: CarbonLoadModel,
+    context: TaskContext) extends CarbonIterator[Array[AnyRef]] {
+
+  val timeStampformatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+    .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  val timeStampFormat = new SimpleDateFormat(timeStampformatString)
+  val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+    .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+  val dateFormat = new SimpleDateFormat(dateFormatString)
+  val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
+  val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
+  val serializationNullFormat =
+    carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
+
+  var rddIter: Iterator[Row] = null
+  var uninitialized = true
+  var closed = false
+
+  def hasNext: Boolean = {
+    if (uninitialized) {
+      uninitialized = false
+      rddIter = serializer.deserialize[RDD[Row]](ByteBuffer.wrap(serializeBytes))
+        .iterator(partition, context)
+    }
+    if (closed) {
+      false
+    } else {
+      rddIter.hasNext
+    }
+  }
+
+  def next: Array[AnyRef] = {
+    val row = rddIter.next()
+    val columns = new Array[AnyRef](row.length)
+    for (i <- 0 until columns.length) {
+      columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
+        delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat)
+    }
+    columns
+  }
+
+  override def initialize: Unit = {
+    SparkUtil.setTaskContext(context)
+  }
+
+  override def close(): Unit = {
+    closed = true
+    rddIter = null
   }
 
 }
