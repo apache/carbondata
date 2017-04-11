@@ -60,7 +60,11 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     if (relations.nonEmpty && !isOptimized(plan)) {
       // In case scalar subquery skip the transformation and update the flag.
       if (relations.exists(_.carbonRelation.isSubquery.nonEmpty)) {
-        relations.foreach(p => p.carbonRelation.isSubquery.remove(0))
+        relations.foreach{carbonDecoderRelation =>
+          if (carbonDecoderRelation.carbonRelation.isSubquery.nonEmpty) {
+            carbonDecoderRelation.carbonRelation.isSubquery.remove(0)
+          }
+        }
         LOGGER.info("Skip CarbonOptimizer for scalar/predicate sub query")
         return plan
       }
