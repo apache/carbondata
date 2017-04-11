@@ -419,8 +419,8 @@ public class SegmentProperties {
    * @return
    */
   private int readAllComplexTypeChildren(int dimensionOrdinal, int childCount,
-                                         List<ColumnSchema> listOfColumns, CarbonDimension parentDimension,
-                                         int complexDimensionOrdinal) {
+      List<ColumnSchema> listOfColumns, CarbonDimension parentDimension,
+      int complexDimensionOrdinal) {
     for (int i = 0; i < childCount; i++) {
       ColumnSchema columnSchema = listOfColumns.get(dimensionOrdinal);
       if (columnSchema.isDimensionColumn()) {
@@ -447,18 +447,18 @@ public class SegmentProperties {
    * Read all primitive/complex children and set it as list of child carbon dimension to parent
    * dimension
    */
-  private int assignComplexOrdinal(CarbonDimension parentDimension, int complexDimensionOrdianl) {
+  private int assignComplexOrdinal(CarbonDimension parentDimension, int complexDimensionOrdinal) {
     for (int i = 0; i < parentDimension.getNumberOfChild(); i++) {
       CarbonDimension dimension = parentDimension.getListOfChildDimensions().get(i);
       if (dimension.getNumberOfChild() > 0) {
-        dimension.setComplexTypeOridnal(++complexDimensionOrdianl);
-        complexDimensionOrdianl = assignComplexOrdinal(dimension, complexDimensionOrdianl);
+        dimension.setComplexTypeOridnal(++complexDimensionOrdinal);
+        complexDimensionOrdinal = assignComplexOrdinal(dimension, complexDimensionOrdinal);
       } else {
         parentDimension.getListOfChildDimensions().get(i)
-            .setComplexTypeOridnal(++complexDimensionOrdianl);
+            .setComplexTypeOridnal(++complexDimensionOrdinal);
       }
     }
-    return complexDimensionOrdianl;
+    return complexDimensionOrdinal;
   }
 
   /**
