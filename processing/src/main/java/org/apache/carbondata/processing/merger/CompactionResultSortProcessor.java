@@ -343,12 +343,11 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * @return
    */
   private SortParameters createSortParameters() {
-    SortParameters parameters = SortParameters
+    return SortParameters
         .createSortParameters(carbonLoadModel.getDatabaseName(), tableName, dimensionColumnCount,
             segmentProperties.getComplexDimensions().size(), measureCount, noDictionaryCount,
             carbonLoadModel.getPartitionId(), segmentId, carbonLoadModel.getTaskNo(),
             noDictionaryColMapping);
-    return parameters;
   }
 
   /**

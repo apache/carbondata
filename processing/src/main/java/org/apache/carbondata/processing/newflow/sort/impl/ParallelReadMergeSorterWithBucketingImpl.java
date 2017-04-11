@@ -135,12 +135,10 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
     // Set the data file location
     String dataFolderLocation =
         storeLocation + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
-    SingleThreadFinalSortFilesMerger finalMerger =
-        new SingleThreadFinalSortFilesMerger(dataFolderLocation, sortParameters.getTableName(),
-            sortParameters.getDimColCount(), sortParameters.getComplexDimColCount(),
-            sortParameters.getMeasureColCount(), sortParameters.getNoDictionaryCount(),
-            sortParameters.getAggType(), sortParameters.getNoDictionaryDimnesionColumn());
-    return finalMerger;
+    return new SingleThreadFinalSortFilesMerger(dataFolderLocation, sortParameters.getTableName(),
+        sortParameters.getDimColCount(), sortParameters.getComplexDimColCount(),
+        sortParameters.getMeasureColCount(), sortParameters.getNoDictionaryCount(),
+        sortParameters.getAggType(), sortParameters.getNoDictionaryDimnesionColumn());
   }
 
   @Override public void close() {

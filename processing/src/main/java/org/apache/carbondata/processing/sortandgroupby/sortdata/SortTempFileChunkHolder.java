@@ -260,8 +260,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
       prefetchRecordsProceesed++;
       returnRow = currentBuffer[bufferRowCounter++];
     } else {
-      Object[] outRow = getRowFromStream();
-      this.returnRow = outRow;
+      this.returnRow = getRowFromStream();
     }
   }
 

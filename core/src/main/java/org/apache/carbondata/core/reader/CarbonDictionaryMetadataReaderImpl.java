@@ -130,9 +130,7 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
       dictionaryChunkMeta = (ColumnDictionaryChunkMeta) dictionaryMetadataFileReader.read();
     }
     // create a new instance of chunk meta wrapper using thrift object
-    CarbonDictionaryColumnMetaChunk columnMetaChunkForLastSegment =
-        getNewInstanceOfCarbonDictionaryColumnMetaChunk(dictionaryChunkMeta);
-    return columnMetaChunkForLastSegment;
+    return getNewInstanceOfCarbonDictionaryColumnMetaChunk(dictionaryChunkMeta);
   }
 
   /**
@@ -190,10 +188,8 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
    */
   private CarbonDictionaryColumnMetaChunk getNewInstanceOfCarbonDictionaryColumnMetaChunk(
       ColumnDictionaryChunkMeta dictionaryChunkMeta) {
-    CarbonDictionaryColumnMetaChunk columnMetaChunk =
-        new CarbonDictionaryColumnMetaChunk(dictionaryChunkMeta.getMin_surrogate_key(),
-            dictionaryChunkMeta.getMax_surrogate_key(), dictionaryChunkMeta.getStart_offset(),
-            dictionaryChunkMeta.getEnd_offset(), dictionaryChunkMeta.getChunk_count());
-    return columnMetaChunk;
+    return new CarbonDictionaryColumnMetaChunk(dictionaryChunkMeta.getMin_surrogate_key(),
+        dictionaryChunkMeta.getMax_surrogate_key(), dictionaryChunkMeta.getStart_offset(),
+        dictionaryChunkMeta.getEnd_offset(), dictionaryChunkMeta.getChunk_count());
   }
 }
