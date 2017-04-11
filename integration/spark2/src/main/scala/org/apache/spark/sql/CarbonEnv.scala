@@ -49,6 +49,7 @@ object CarbonEnv {
         LOGGER.info(s"carbon env initial: $storePath")
         new CarbonMetastore(sparkSession.conf, storePath)
       }
+      CarbonProperties.getInstance.addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
       carbonEnv = CarbonEnv(catalog)
       initialized = true
     }
