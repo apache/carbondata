@@ -72,33 +72,33 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
    * @param blockIndex          blocklet index of the column in carbon data file
    * @return measure raw chunk
    */
-  @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int blockIndex)
-      throws IOException {
+  @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader,
+      int blockletColumnIndex) throws IOException {
     int dataLength = 0;
     // to calculate the length of the data to be read
     // column other than last column we can subtract the offset of current column with
     // next column and get the total length.
     // but for last column we need to use lastDimensionOffset which is the end position
     // of the last dimension, we can subtract current dimension offset from lastDimesionOffset
-    if (measureColumnChunkOffsets.size() - 1 == blockIndex) {
-      dataLength = (int) (measureOffsets - measureColumnChunkOffsets.get(blockIndex));
+    if (measureColumnChunkOffsets.size() - 1 == blockletColumnIndex) {
+      dataLength = (int) (measureOffsets - measureColumnChunkOffsets.get(blockletColumnIndex));
     } else {
-      dataLength = (int) (measureColumnChunkOffsets.get(blockIndex + 1) - measureColumnChunkOffsets
-          .get(blockIndex));
+      dataLength =
+          (int) (measureColumnChunkOffsets.get(blockletColumnIndex + 1) - measureColumnChunkOffsets
+              .get(blockletColumnIndex));
     }
-    // allocate the buffer
-    ByteBuffer buffer = ByteBuffer.allocateDirect(dataLength);
+    ByteBuffer buffer = null;
     // read the data from carbon data file
     synchronized (fileReader) {
-      fileReader
-          .readByteBuffer(filePath, buffer, measureColumnChunkOffsets.get(blockIndex), dataLength);
+      buffer = fileReader
+          .readByteBuffer(filePath, measureColumnChunkOffsets.get(blockletColumnIndex), dataLength);
     }
     // get the data chunk which will have all the details about the data pages
     DataChunk3 dataChunk =
-        CarbonUtil.readDataChunk3(buffer, 0, measureColumnChunkLength.get(blockIndex));
+        CarbonUtil.readDataChunk3(buffer, 0, measureColumnChunkLength.get(blockletColumnIndex));
     // creating a raw chunks instance and filling all the details
     MeasureRawColumnChunk rawColumnChunk =
-        new MeasureRawColumnChunk(blockIndex, buffer, 0, dataLength, this);
+        new MeasureRawColumnChunk(blockletColumnIndex, buffer, 0, dataLength, this);
     int numberOfPages = dataChunk.getPage_length().size();
     byte[][] maxValueOfEachPage = new byte[numberOfPages][];
     byte[][] minValueOfEachPage = new byte[numberOfPages][];
@@ -148,11 +148,10 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     // column we can subtract the offset of start column offset with
     // end column+1 offset and get the total length.
     long currentMeasureOffset = measureColumnChunkOffsets.get(startColumnBlockletIndex);
-    ByteBuffer buffer = ByteBuffer.allocateDirect(
-        (int) (measureColumnChunkOffsets.get(endColumnBlockletIndex + 1) - currentMeasureOffset));
+    ByteBuffer buffer = null;
     // read the data from carbon data file
     synchronized (fileReader) {
-      fileReader.readByteBuffer(filePath, buffer, currentMeasureOffset,
+      buffer = fileReader.readByteBuffer(filePath, currentMeasureOffset,
           (int) (measureColumnChunkOffsets.get(endColumnBlockletIndex + 1) - currentMeasureOffset));
     }
     // create raw chunk for each measure column
@@ -224,11 +223,8 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     WriterCompressModel compressionModel = CarbonUtil.getValueCompressionModel(valueEncodeMeta);
     ValueCompressionHolder values = compressionModel.getValueCompressionHolder()[0];
     // uncompress
-    byte[] data = new byte[measureColumnChunk.data_page_length];
     ByteBuffer rawData = measureRawColumnChunk.getRawData();
-    rawData.position(copyPoint);
-    rawData.get(data);
-    values.uncompress(compressionModel.getConvertedDataType()[0], data, 0,
+    values.uncompress(compressionModel.getConvertedDataType()[0], rawData.array(), copyPoint,
         measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
         compressionModel.getMaxValue()[0], measureRawColumnChunk.getRowCount()[pageNumber]);
     CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values);

@@ -85,12 +85,10 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
   @Override public DimensionRawColumnChunk readRawDimensionChunk(FileHolder fileReader,
       int blockletIndex) throws IOException {
     DataChunk dataChunk = dimensionColumnChunk.get(blockletIndex);
-    ByteBuffer buffer =
-        ByteBuffer.allocateDirect(dataChunk.getDataPageLength());
+    ByteBuffer buffer = null;
     synchronized (fileReader) {
-      fileReader.readByteBuffer(filePath, buffer,
-          dataChunk.getDataPageOffset(),
-          dataChunk.getDataPageLength());
+      buffer = fileReader
+          .readByteBuffer(filePath, dataChunk.getDataPageOffset(), dataChunk.getDataPageLength());
     }
     DimensionRawColumnChunk rawColumnChunk = new DimensionRawColumnChunk(blockletIndex, buffer, 0,
         dataChunk.getDataPageLength(), this);
@@ -110,10 +108,8 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
     FileHolder fileReader = dimensionRawColumnChunk.getFileReader();
 
     ByteBuffer rawData = dimensionRawColumnChunk.getRawData();
-    rawData.position(dimensionRawColumnChunk.getOffSet());
-    byte[] data = new byte[dimensionRawColumnChunk.getLength()];
-    rawData.get(data);
-    dataPage = COMPRESSOR.unCompressByte(data);
+    dataPage = COMPRESSOR.unCompressByte(rawData.array(), dimensionRawColumnChunk.getOffSet(),
+        dimensionRawColumnChunk.getLength());
 
     // if row id block is present then read the row id chunk and uncompress it
     DataChunk dataChunk = dimensionColumnChunk.get(blockIndex);

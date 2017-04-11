@@ -20,6 +20,7 @@ package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
@@ -73,16 +74,14 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
     // which we have to skip
     dataOffsets[0] = CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
     // creating a byte buffer which will wrap the length of the row
-    ByteBuffer buffer = ByteBuffer.allocate(CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
+    ByteBuffer buffer = ByteBuffer.wrap(data);
     for (int i = 1; i < numberOfRows; i++) {
-      buffer.put(data, startOffset, CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
-      buffer.flip();
+      buffer.position(startOffset);
       // so current row position will be
       // previous row length + 2 bytes used for storing previous row data
       startOffset += buffer.getShort() + CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
       // as same byte buffer is used to avoid creating many byte buffer for each row
       // we need to clear the byte buffer
-      buffer.clear();
       dataOffsets[i] = startOffset + CarbonCommonConstants.SHORT_SIZE_IN_BYTE;
     }
   }
@@ -111,6 +110,35 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
     byte[] currentRowData = new byte[length];
     System.arraycopy(data, currentDataOffset, currentRowData, 0, length);
     return currentRowData;
+  }
+
+  @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+    // if column was explicitly sorted we need to get the rowid based inverted index reverse
+    if (isExplictSorted) {
+      rowId = invertedIndexReverse[rowId];
+    }
+    // now to get the row from memory block we need to do following thing
+    // 1. first get the current offset
+    // 2. if it's not a last row- get the next row offset
+    // Subtract the current row offset + 2 bytes(to skip the data length) with next row offset
+    // else subtract the current row offset with complete data
+    // length get the offset of set of data
+    int currentDataOffset = dataOffsets[rowId];
+    short length = 0;
+    // calculating the length of data
+    if (rowId < numberOfRows - 1) {
+      length = (short) (dataOffsets[rowId + 1] - (currentDataOffset
+          + CarbonCommonConstants.SHORT_SIZE_IN_BYTE));
+    } else {
+      // for last record
+      length = (short) (this.data.length - currentDataOffset);
+    }
+    if (ByteUtil.UnsafeComparer.INSTANCE.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+        CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentDataOffset, length)) {
+      vector.putNull(vectorRow);
+    } else {
+      vector.putBytes(vectorRow, currentDataOffset, length, data);
+    }
   }
 
   @Override public int compareTo(int index, byte[] compareValue) {
