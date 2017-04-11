@@ -34,7 +34,7 @@ import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
-import org.apache.carbondata.processing.newflow.sort.Sorter;
+import org.apache.carbondata.processing.newflow.sort.AbstractMergeSorter;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortIntermediateFileMerger;
@@ -50,7 +50,7 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
  * This step is specifically for bucketing, it sorts each bucket data separately and write to
  * temp files.
  */
-public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
+public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorter {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(ParallelReadMergeSorterImpl.class.getName());
@@ -100,17 +100,21 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
       throw new CarbonDataLoadingException(e);
     }
     this.executorService = Executors.newFixedThreadPool(iterators.length);
+    this.threadStatusObserver = new ThreadStatusObserver(this.executorService);
     final int batchSize = CarbonProperties.getInstance().getBatchSize();
     try {
       for (int i = 0; i < iterators.length; i++) {
-        executorService.submit(new SortIteratorThread(iterators[i], sortDataRows, rowCounter));
+        executorService.submit(new SortIteratorThread(iterators[i], sortDataRows, rowCounter,
+            this.threadStatusObserver));
       }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
       processRowToNextStep(sortDataRows, sortParameters);
     } catch (Exception e) {
+      checkError();
       throw new CarbonDataLoadingException("Problem while shutdown the server ", e);
     }
+    checkError();
     try {
       intermediateFileMerger.finish();
     } catch (CarbonDataWriterException e) {
@@ -197,11 +201,14 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
 
     private AtomicLong rowCounter;
 
+    private ThreadStatusObserver threadStatusObserver;
+
     public SortIteratorThread(Iterator<CarbonRowBatch> iterator, SortDataRows[] sortDataRows,
-        AtomicLong rowCounter) {
+        AtomicLong rowCounter, ThreadStatusObserver observer) {
       this.iterator = iterator;
       this.sortDataRows = sortDataRows;
       this.rowCounter = rowCounter;
+      this.threadStatusObserver = observer;
     }
 
     @Override public Void call() throws CarbonDataLoadingException {
@@ -222,6 +229,7 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
         }
       } catch (Exception e) {
         LOGGER.error(e);
+        this.threadStatusObserver.notifyFailed(e);
         throw new CarbonDataLoadingException(e);
       }
       return null;
