@@ -156,9 +156,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   private void doExecute(Iterator<CarbonRowBatch> iterator, int partitionId, int iteratorIndex) {
     String storeLocation = getStoreLocation(tableIdentifier, String.valueOf(partitionId));
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
-        .createCarbonFactDataHandlerModel(configuration, storeLocation, partitionId, 0);
-    model.getCarbonDataFileAttributes()
-        .setFactTimeStamp(model.getCarbonDataFileAttributes().getFactTimeStamp() + iteratorIndex);
+        .createCarbonFactDataHandlerModel(configuration, storeLocation, partitionId, iteratorIndex);
     CarbonFactHandler dataHandler = null;
     boolean rowsNotExist = true;
     while (iterator.hasNext()) {

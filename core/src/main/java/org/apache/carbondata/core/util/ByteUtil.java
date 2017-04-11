@@ -441,6 +441,7 @@ public final class ByteUtil {
    * @return
    */
   public static byte[] toBytes(short val) {
+    val = (short)(val ^ Short.MIN_VALUE);
     byte[] b = new byte[SIZEOF_SHORT];
     b[1] = (byte) val;
     val >>= 8;
@@ -460,20 +461,21 @@ public final class ByteUtil {
     if (length != SIZEOF_SHORT || offset + length > bytes.length) {
       throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_SHORT);
     }
+    short n = 0;
     if (CarbonUnsafe.unsafe != null) {
       if (CarbonUnsafe.ISLITTLEENDIAN) {
-        return Short.reverseBytes(
+        n = Short.reverseBytes(
             CarbonUnsafe.unsafe.getShort(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET));
       } else {
-        return CarbonUnsafe.unsafe.getShort(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET);
+        n = CarbonUnsafe.unsafe.getShort(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET);
       }
     } else {
-      short n = 0;
+
       n ^= bytes[offset] & 0xFF;
       n <<= 8;
       n ^= bytes[offset + 1] & 0xFF;
-      return n;
     }
+    return (short)(n ^ Short.MIN_VALUE);
   }
 
   /**
@@ -483,6 +485,7 @@ public final class ByteUtil {
    * @return
    */
   public static byte[] toBytes(int val) {
+    val = val ^ Integer.MIN_VALUE;
     byte[] b = new byte[4];
     for (int i = 3; i > 0; i--) {
       b[i] = (byte) val;
@@ -504,21 +507,21 @@ public final class ByteUtil {
     if (length != SIZEOF_INT || offset + length > bytes.length) {
       throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_INT);
     }
+    int n = 0;
     if (CarbonUnsafe.unsafe != null) {
       if (CarbonUnsafe.ISLITTLEENDIAN) {
-        return Integer.reverseBytes(
+        n = Integer.reverseBytes(
             CarbonUnsafe.unsafe.getInt(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET));
       } else {
-        return CarbonUnsafe.unsafe.getInt(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET);
+        n = CarbonUnsafe.unsafe.getInt(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET);
       }
     } else {
-      int n = 0;
       for (int i = offset; i < (offset + length); i++) {
         n <<= 8;
         n ^= bytes[i] & 0xFF;
       }
-      return n;
     }
+    return n ^ Integer.MIN_VALUE;
   }
 
   /**
@@ -550,6 +553,7 @@ public final class ByteUtil {
    * @return
    */
   public static byte[] toBytes(long val) {
+    val = val ^ Long.MIN_VALUE;
     byte[] b = new byte[8];
     for (int i = 7; i > 0; i--) {
       b[i] = (byte) val;
@@ -566,21 +570,21 @@ public final class ByteUtil {
     if (length != SIZEOF_LONG || offset + length > bytes.length) {
       throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_LONG);
     }
+    long l = 0;
     if (CarbonUnsafe.unsafe != null) {
       if (CarbonUnsafe.ISLITTLEENDIAN) {
-        return Long.reverseBytes(
+        l = Long.reverseBytes(
             CarbonUnsafe.unsafe.getLong(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET));
       } else {
-        return CarbonUnsafe.unsafe.getLong(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET);
+        l = CarbonUnsafe.unsafe.getLong(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET);
       }
     } else {
-      long l = 0;
       for (int i = offset; i < offset + length; i++) {
         l <<= 8;
         l ^= bytes[i] & 0xFF;
       }
-      return l;
     }
+    return l ^ Long.MIN_VALUE;
   }
 
   /**
