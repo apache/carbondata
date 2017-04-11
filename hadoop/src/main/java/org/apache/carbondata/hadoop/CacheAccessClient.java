@@ -18,7 +18,9 @@ package org.apache.carbondata.hadoop;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -30,7 +32,7 @@ public class CacheAccessClient<K, V> {
   /**
    * List of segments
    */
-  private List<K> segmentList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  private Set<K> segmentSet = new HashSet<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   private Cache<K, V> cache;
 
@@ -48,7 +50,7 @@ public class CacheAccessClient<K, V> {
   public V getIfPresent(K key) {
     V value = cache.getIfPresent(key);
     if (value != null) {
-      segmentList.add(key);
+      segmentSet.add(key);
     }
     return value;
   }
@@ -64,7 +66,7 @@ public class CacheAccessClient<K, V> {
   public V get(K key) throws IOException {
     V value = cache.get(key);
     if (value != null) {
-      segmentList.add(key);
+      segmentSet.add(key);
     }
     return value;
   }
@@ -73,7 +75,9 @@ public class CacheAccessClient<K, V> {
    * the method is used to clear access count of the unused segments cacheable object
    */
   public void close() {
-    cache.clearAccessCount(segmentList);
+    List<K> segmentArrayList = new ArrayList<>(segmentSet.size());
+    segmentArrayList.addAll(segmentSet);
+    cache.clearAccessCount(segmentArrayList);
     cache = null;
   }
 
@@ -86,6 +90,17 @@ public class CacheAccessClient<K, V> {
     for (K key : keys) {
       cache.invalidate(key);
     }
+  }
+
+  /**
+   * This method will clear the access count for a given list of segments
+   *
+   * @param segmentList
+   */
+  public void clearAccessCount(List<K> segmentList) {
+    cache.clearAccessCount(segmentList);
+    // remove from segment set so that access count is not decremented again during close operation
+    segmentSet.removeAll(segmentList);
   }
 
 }

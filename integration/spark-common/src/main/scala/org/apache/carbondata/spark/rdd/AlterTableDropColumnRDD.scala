@@ -21,7 +21,7 @@ import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.dictionary.ManageDictionary
+import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.encoder.Encoding
@@ -65,7 +65,7 @@ class AlterTableDropColumnRDD[K, V](sc: SparkContext,
         val columnSchema = split.asInstanceOf[DropColumnPartition].columnSchema
         if (columnSchema.hasEncoding(Encoding.DICTIONARY) &&
             !columnSchema.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-          ManageDictionary
+          ManageDictionaryAndBTree
             .deleteDictionaryFileAndCache(columnSchema, carbonTableIdentifier, carbonStorePath)
         }
       } catch {
