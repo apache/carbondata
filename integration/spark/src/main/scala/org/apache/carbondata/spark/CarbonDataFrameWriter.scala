@@ -175,9 +175,10 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
   }
 
   private def makeCreateTableString(schema: StructType, options: CarbonOption): String = {
-    val properties = Map("DICTIONARY_INCLUDE" -> options.dictionaryInclude,
-      "DICTIONARY_EXCLUDE" -> options.dictionaryExclude).filter(_._2.isDefined)
-      .map(p => s"'${p._1}' = '${p._2.get}'").mkString(",")
+    val properties = Map(
+      "DICTIONARY_INCLUDE" -> options.dictionaryInclude,
+      "DICTIONARY_EXCLUDE" -> options.dictionaryExclude
+    ).filter(_._2.isDefined).map(p => s"'${p._1}' = '${p._2.get}'").mkString(",")
     val carbonSchema = schema.map { field =>
       s"${ field.name } ${ convertToCarbonType(field.dataType) }"
     }
