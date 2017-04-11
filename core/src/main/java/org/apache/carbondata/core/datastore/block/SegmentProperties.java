@@ -372,7 +372,7 @@ public class SegmentProperties {
           isComplexDimensionStarted = true;
           int previouseOrdinal = dimensonOrdinal;
           dimensonOrdinal =
-              readAllComplexTypeChildrens(dimensonOrdinal, columnSchema.getNumberOfChild(),
+              readAllComplexTypeChildren(dimensonOrdinal, columnSchema.getNumberOfChild(),
                   columnsInTable, carbonDimension, complexTypeOrdinal);
           int numberOfChildrenDimensionAdded = dimensonOrdinal - previouseOrdinal;
           for (int i = 0; i < numberOfChildrenDimensionAdded; i++) {
@@ -418,25 +418,25 @@ public class SegmentProperties {
    * @param parentDimension
    * @return
    */
-  private int readAllComplexTypeChildrens(int dimensionOrdinal, int childCount,
-      List<ColumnSchema> listOfColumns, CarbonDimension parentDimension,
-      int complexDimensionOrdianl) {
+  private int readAllComplexTypeChildren(int dimensionOrdinal, int childCount,
+                                         List<ColumnSchema> listOfColumns, CarbonDimension parentDimension,
+                                         int complexDimensionOrdinal) {
     for (int i = 0; i < childCount; i++) {
       ColumnSchema columnSchema = listOfColumns.get(dimensionOrdinal);
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
               new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1,
-                  complexDimensionOrdianl++);
+                  complexDimensionOrdinal++);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           parentDimension.getListOfChildDimensions().add(complexDimension);
           dimensionOrdinal =
-              readAllComplexTypeChildrens(dimensionOrdinal, columnSchema.getNumberOfChild(),
-                  listOfColumns, complexDimension, complexDimensionOrdianl);
+              readAllComplexTypeChildren(dimensionOrdinal, columnSchema.getNumberOfChild(),
+                  listOfColumns, complexDimension, complexDimensionOrdinal);
         } else {
           parentDimension.getListOfChildDimensions().add(
               new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1,
-                  complexDimensionOrdianl++));
+                  complexDimensionOrdinal++));
         }
       }
     }
