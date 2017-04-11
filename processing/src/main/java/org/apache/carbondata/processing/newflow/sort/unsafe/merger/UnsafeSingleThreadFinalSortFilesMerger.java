@@ -80,6 +80,8 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
 
   private String tableName;
 
+  private boolean isStopProcess;
+
   public UnsafeSingleThreadFinalSortFilesMerger(SortParameters parameters) {
     this.parameters = parameters;
     // set measure and dimension count
@@ -304,5 +306,13 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
       }
       recordHolderHeapLocal = null;
     }
+  }
+
+  public boolean isStopProcess() {
+    return isStopProcess;
+  }
+
+  public void setStopProcess(boolean stopProcess) {
+    isStopProcess = stopProcess;
   }
 }
