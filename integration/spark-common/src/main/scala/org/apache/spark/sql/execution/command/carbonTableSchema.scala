@@ -152,7 +152,7 @@ case class AlterTableDropColumnModel(databaseName: Option[String],
     tableName: String,
     columns: List[String])
 
-class AlterTableProcessor(
+class AlterTableColumnSchemaGenerator(
     alterTableModel: AlterTableAddColumnsModel,
     dbName: String,
     tableInfo: TableInfo,
@@ -253,12 +253,6 @@ class AlterTableProcessor(
         }
       }
     }
-    // generate dictionary files for the newly added columns
-    new AlterTableAddColumnRDD(sc,
-      newCols,
-      alterTableModel,
-      tableIdentifier,
-      storePath).collect()
     tableSchema.setListOfColumns(allColumns.asJava)
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)

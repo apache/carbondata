@@ -64,11 +64,17 @@ object AlterTableUtil {
     }
     // acquire the lock first
     val table = relation.tableMeta.carbonTable
-    var acquiredLocks = ListBuffer[ICarbonLock]()
-    locksToBeAcquired.foreach { lock =>
-      acquiredLocks += getLockObject(table, lock, LOGGER)
+    val acquiredLocks = ListBuffer[ICarbonLock]()
+    try {
+      locksToBeAcquired.foreach { lock =>
+        acquiredLocks += getLockObject(table, lock, LOGGER)
+      }
+      acquiredLocks.toList
+    } catch {
+      case e: Exception =>
+        releaseLocks(acquiredLocks.toList, LOGGER)
+        throw e
     }
-    acquiredLocks.toList
   }
 
   /**
@@ -249,7 +255,7 @@ object AlterTableUtil {
     val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
     val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
     if (updatedTime > lastUpdatedTime) {
-      LOGGER.error(s"Reverting changes for $dbName.$tableName")
+      LOGGER.info(s"Reverting changes for $dbName.$tableName")
       val addedSchemas = evolutionEntryList.get(evolutionEntryList.size() - 1).added
       thriftTable.fact_table.table_columns.removeAll(addedSchemas)
       CarbonEnv.get.carbonMetastore.revertTableSchema(carbonTable.getCarbonTableIdentifier,
