@@ -372,7 +372,7 @@ public class SegmentProperties {
           isComplexDimensionStarted = true;
           int previouseOrdinal = dimensonOrdinal;
           dimensonOrdinal =
-              readAllComplexTypeChildrens(dimensonOrdinal, columnSchema.getNumberOfChild(),
+              readAllComplexTypeChildren(dimensonOrdinal, columnSchema.getNumberOfChild(),
                   columnsInTable, carbonDimension, complexTypeOrdinal);
           int numberOfChildrenDimensionAdded = dimensonOrdinal - previouseOrdinal;
           for (int i = 0; i < numberOfChildrenDimensionAdded; i++) {
@@ -418,25 +418,25 @@ public class SegmentProperties {
    * @param parentDimension
    * @return
    */
-  private int readAllComplexTypeChildrens(int dimensionOrdinal, int childCount,
+  private int readAllComplexTypeChildren(int dimensionOrdinal, int childCount,
       List<ColumnSchema> listOfColumns, CarbonDimension parentDimension,
-      int complexDimensionOrdianl) {
+      int complexDimensionOrdinal) {
     for (int i = 0; i < childCount; i++) {
       ColumnSchema columnSchema = listOfColumns.get(dimensionOrdinal);
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
               new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1,
-                  complexDimensionOrdianl++);
+                  complexDimensionOrdinal++);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           parentDimension.getListOfChildDimensions().add(complexDimension);
           dimensionOrdinal =
-              readAllComplexTypeChildrens(dimensionOrdinal, columnSchema.getNumberOfChild(),
-                  listOfColumns, complexDimension, complexDimensionOrdianl);
+              readAllComplexTypeChildren(dimensionOrdinal, columnSchema.getNumberOfChild(),
+                  listOfColumns, complexDimension, complexDimensionOrdinal);
         } else {
           parentDimension.getListOfChildDimensions().add(
               new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1,
-                  complexDimensionOrdianl++));
+                  complexDimensionOrdinal++));
         }
       }
     }
@@ -447,18 +447,18 @@ public class SegmentProperties {
    * Read all primitive/complex children and set it as list of child carbon dimension to parent
    * dimension
    */
-  private int assignComplexOrdinal(CarbonDimension parentDimension, int complexDimensionOrdianl) {
+  private int assignComplexOrdinal(CarbonDimension parentDimension, int complexDimensionOrdinal) {
     for (int i = 0; i < parentDimension.getNumberOfChild(); i++) {
       CarbonDimension dimension = parentDimension.getListOfChildDimensions().get(i);
       if (dimension.getNumberOfChild() > 0) {
-        dimension.setComplexTypeOridnal(++complexDimensionOrdianl);
-        complexDimensionOrdianl = assignComplexOrdinal(dimension, complexDimensionOrdianl);
+        dimension.setComplexTypeOridnal(++complexDimensionOrdinal);
+        complexDimensionOrdinal = assignComplexOrdinal(dimension, complexDimensionOrdinal);
       } else {
         parentDimension.getListOfChildDimensions().get(i)
-            .setComplexTypeOridnal(++complexDimensionOrdianl);
+            .setComplexTypeOridnal(++complexDimensionOrdinal);
       }
     }
-    return complexDimensionOrdianl;
+    return complexDimensionOrdinal;
   }
 
   /**
