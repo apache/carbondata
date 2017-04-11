@@ -38,6 +38,7 @@ import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.filter.intf.RowImpl;
+import org.apache.carbondata.core.util.BitSetGroup;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -386,5 +387,16 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     };
     SegmentProperties segmentProperties = new SegmentProperties(columnsInTable, columnCardinality);
     assertTrue(FilterUtil.prepareDefaultStartIndexKey(segmentProperties) instanceof IndexKey);
+  }
+
+  @Test public void testCreateBitSetGroupWithDefaultValue() {
+    // test for exactly divisible values
+    BitSetGroup bitSetGroupWithDefaultValue =
+        FilterUtil.createBitSetGroupWithDefaultValue(14, 448000, true);
+    assertTrue(bitSetGroupWithDefaultValue.getNumberOfPages() == 14);
+    // test for remainder values
+    bitSetGroupWithDefaultValue =
+        FilterUtil.createBitSetGroupWithDefaultValue(15, 448200, true);
+    assertTrue(bitSetGroupWithDefaultValue.getNumberOfPages() == 15);
   }
 }
