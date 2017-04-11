@@ -24,6 +24,7 @@ import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.metadata.CarbonMetadata
 
 class AlterTableRevertTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -41,7 +42,7 @@ class AlterTableRevertTestCase extends QueryTest with BeforeAndAfterAll {
       hiveClient.runSqlHive("set hive.security.authorization.enabled=true")
       sql(
         "Alter table reverttest add columns(newField string) TBLPROPERTIES" +
-        "('DICTIONARY_EXCLUDE'='newField','DEFAULT.VALUE.charfield'='def')")
+        "('DEFAULT.VALUE.newField'='def')")
       hiveClient.runSqlHive("set hive.security.authorization.enabled=false")
       intercept[AnalysisException] {
         sql("select newField from reverttest")
@@ -76,6 +77,22 @@ class AlterTableRevertTestCase extends QueryTest with BeforeAndAfterAll {
     }
     assert(
       sql("select intfield from reverttest").schema.fields.apply(0).dataType.simpleString == "int")
+  }
+
+  test("test to check if dictionary files are deleted for new column if query fails") {
+    intercept[RuntimeException] {
+      hiveClient.runSqlHive("set hive.security.authorization.enabled=true")
+      sql(
+        "Alter table reverttest add columns(newField string) TBLPROPERTIES" +
+        "('DEFAULT.VALUE.newField'='def')")
+      hiveClient.runSqlHive("set hive.security.authorization.enabled=false")
+      intercept[AnalysisException] {
+        sql("select newField from reverttest")
+      }
+      val carbonTable = CarbonMetadata.getInstance.getCarbonTable("default_reverttest")
+
+      assert(new File(carbonTable.getMetaDataFilepath).listFiles().length < 6)
+    }
   }
 
   override def afterAll() {
