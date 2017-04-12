@@ -290,8 +290,8 @@ This command will allow to delete the CarbonData segment(s) from the store based
 The segment created before the particular date will be removed from the specific stores.
 
 ```
-DELETE FROM TABLE [schema_name.]table_name 
-WHERE[DATE_FIELD]BEFORE [DATE_VALUE]
+DELETE SEGMENTS FROM TABLE [db_name.]table_name 
+WHERE DATE_FIELD BEFORE DATE_VALUE
 ```
 
 ### Parameter Description
