@@ -193,7 +193,8 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
     s"""
           LOAD DATA INPATH '$csvFolder'
           INTO TABLE ${options.dbName}.${options.tableName}
-          OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}')
+          OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}',
+          'SINGLE_PASS' = '${options.singlePass}')
       """
   }
 

@@ -59,6 +59,8 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon5")
     sql("DROP TABLE IF EXISTS carbon6")
     sql("DROP TABLE IF EXISTS carbon7")
+    sql("DROP TABLE IF EXISTS carbon8")
+    sql("DROP TABLE IF EXISTS carbon9")
   }
 
 
@@ -164,6 +166,36 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       .save()
     checkAnswer(
       sql("select count(*) from carbon7 where c3 > 300"), Row(700)
+    )
+  }
+
+  test("test load dataframe with single pass enabled") {
+    // save dataframe to carbon file
+    df.write
+      .format("carbondata")
+      .option("tableName", "carbon8")
+      .option("tempCSV", "false")
+      .option("single_pass", "true")
+      .option("compress", "false")
+      .mode(SaveMode.Overwrite)
+      .save()
+    checkAnswer(
+      sql("select count(*) from carbon8 where c3 > 500"), Row(500)
+    )
+  }
+
+  test("test load dataframe with single pass disabled") {
+    // save dataframe to carbon file
+    df.write
+      .format("carbondata")
+      .option("tableName", "carbon9")
+      .option("tempCSV", "true")
+      .option("single_pass", "false")
+      .option("compress", "false")
+      .mode(SaveMode.Overwrite)
+      .save()
+    checkAnswer(
+      sql("select count(*) from carbon9 where c3 > 500"), Row(500)
     )
   }
 
