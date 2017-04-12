@@ -207,10 +207,9 @@ class CarbonScanRDD(
       new Iterator[Any] {
         private var havePair = false
         private var finished = false
-        private var count = 0
 
         context.addTaskCompletionListener { context =>
-          logStatistics(queryStartTime, count, model.getStatisticsRecorder)
+          logStatistics(queryStartTime, model.getStatisticsRecorder)
           reader.close()
         }
 
@@ -231,7 +230,6 @@ class CarbonScanRDD(
           }
           havePair = false
           val value = reader.getCurrentValue
-          count += 1
           value
         }
       }
@@ -265,18 +263,11 @@ class CarbonScanRDD(
     format
   }
 
-  def logStatistics(queryStartTime: Long, recordCount: Int,
-      recorder: QueryStatisticsRecorder): Unit = {
+  def logStatistics(queryStartTime: Long, recorder: QueryStatisticsRecorder): Unit = {
     var queryStatistic = new QueryStatistic()
     queryStatistic.addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
       System.currentTimeMillis - queryStartTime)
     recorder.recordStatistics(queryStatistic)
-    // result size
-    queryStatistic = new QueryStatistic()
-    queryStatistic.addCountStatistic(QueryStatisticsConstants.RESULT_SIZE, recordCount)
-    recorder.recordStatistics(queryStatistic)
-    // print executor query statistics for each task_id
-    recorder.logStatisticsAsTableExecutor()
   }
 
   /**
