@@ -68,8 +68,8 @@ The following DDL operations are supported in CarbonData :
 
        Column groups with more than one column are stored in row format, instead of columnar format. By default, each column is a separate column group.
 ```
-TBLPROPERTIES ('COLUMN_GROUPS'='(column1, column3),
-(Column4,Column5,Column6)')
+TBLPROPERTIES ('COLUMN_GROUPS'='(column1, column2),
+(Column3,Column4,Column5)')
 ```
 
    - **Table Block Size Configuration**
@@ -214,17 +214,17 @@ of columns is used.
 ```
  CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
                                 productNumber Int,
+                                saleQuantity Int,
                                 productName String,
                                 storeCity String,
                                 storeProvince String,
                                 productCategory String,
                                 productBatch String,
-                                saleQuantity Int,
                                 revenue Int)
    STORED BY 'carbondata'
-   TBLPROPERTIES ('COLUMN_GROUPS'='(productName,productNumber)',
+   TBLPROPERTIES ('COLUMN_GROUPS'='(productNumber,saleQuantity)',
                   'DICTIONARY_EXCLUDE'='productName',
-                  'DICTIONARY_INCLUDE'='productNumber',
+                  'DICTIONARY_INCLUDE'='productNumber,saleQuantity',
                   'NO_INVERTED_INDEX'='productBatch',
                   'BUCKETNUMBER'='4',
                   'BUCKETCOLUMNS'='productName')
