@@ -291,7 +291,7 @@ The segment created before the particular date will be removed from the specific
 
 ```
 DELETE SEGMENTS FROM TABLE [db_name.]table_name 
-WHERE DATE_FIELD BEFORE DATE_VALUE
+WHERE STARTTIME BEFORE DATE_VALUE
 ```
 
 ### Parameter Description
