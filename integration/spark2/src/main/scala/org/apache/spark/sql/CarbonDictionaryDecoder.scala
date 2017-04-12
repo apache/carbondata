@@ -626,6 +626,16 @@ class DictionaryLoader(storePath: String,
         cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
       allDicts = forwardDictionaryCache.getAll(allDictIdentifiers.asJava)
       isDictionaryLoaded = true
+      val dictionaryTaskCleaner = TaskContext.get
+      if (dictionaryTaskCleaner != null) {
+        dictionaryTaskCleaner.addTaskCompletionListener(_ =>
+          allDicts.asScala.foreach { dictionary =>
+            if (null != dictionary) {
+              dictionary.clear()
+            }
+          }
+        )
+      }
     }
   }
 
