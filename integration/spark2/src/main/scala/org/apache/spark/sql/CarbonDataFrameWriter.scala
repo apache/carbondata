@@ -162,21 +162,10 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
     val carbonSchema = schema.map { field =>
       s"${ field.name } ${ convertToCarbonType(field.dataType) }"
     }
-    val property = new StringBuilder
-    property.append(
-      if (options.dictionaryInclude.isDefined) {
-        s"'DICTIONARY_INCLUDE' = '${options.dictionaryInclude.get}' ,"
-      } else {
-        ""
-      }
-    ).append(
-      if (options.dictionaryExclude.isDefined) {
-        s"'DICTIONARY_EXCLUDE' = '${options.dictionaryExclude.get}'"
-      } else {
-        ""
-      }
-    )
-
+    val property = Map(
+      "DICTIONARY_INCLUDE" -> options.dictionaryInclude,
+      "DICTIONARY_EXCLUDE" -> options.dictionaryExclude
+    ).filter(_._2.isDefined).map(p => s"'${p._1}' = '${p._2.get}'").mkString(",")
     s"""
        | CREATE TABLE IF NOT EXISTS ${options.dbName}.${options.tableName}
        | (${ carbonSchema.mkString(", ") })
