@@ -308,6 +308,7 @@ public class CarbonFactDataHandlerModel {
       CarbonTable carbonTable, SegmentProperties segmentProperties, String tableName,
       String tempStoreLocation) {
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
+    carbonFactDataHandlerModel.setSchemaUpdatedTimeStamp(carbonTable.getTableLastUpdatedTime());
     carbonFactDataHandlerModel.setDatabaseName(loadModel.getDatabaseName());
     carbonFactDataHandlerModel.setTableName(tableName);
     carbonFactDataHandlerModel.setMeasureCount(segmentProperties.getMeasures().size());

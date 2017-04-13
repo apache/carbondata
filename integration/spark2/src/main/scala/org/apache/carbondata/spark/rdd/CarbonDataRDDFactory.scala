@@ -162,6 +162,7 @@ object CarbonDataRDDFactory {
           case e: Exception =>
             LOGGER.error(s"Exception in start compaction thread. ${ e.getMessage }")
             lock.unlock()
+            throw e
         }
       } else {
         LOGGER.audit("Not able to acquire the compaction lock for table " +
@@ -334,11 +335,11 @@ object CarbonDataRDDFactory {
                       .tablesMeta.toArray, skipCompactionTables.asJava
                   )
             }
-            // giving the user his error for telling in the beeline if his triggered table
-            // compaction is failed.
-            if (!triggeredCompactionStatus) {
-              throw new Exception("Exception in compaction " + exception.getMessage)
-            }
+          }
+          // giving the user his error for telling in the beeline if his triggered table
+          // compaction is failed.
+          if (!triggeredCompactionStatus) {
+            throw new Exception("Exception in compaction " + exception.getMessage)
           }
         } finally {
           executor.shutdownNow()
