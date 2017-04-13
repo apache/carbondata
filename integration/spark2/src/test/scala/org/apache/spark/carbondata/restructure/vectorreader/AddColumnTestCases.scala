@@ -187,6 +187,50 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select distinct(CUST_NAME) from carbon_new"),Row("testuser"))
   }
 
+  test("test to check if intField returns correct result") {
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql("CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField timestamp, decimalField decimal(6,2)) STORED BY 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(
+      "Alter table carbon_table add columns(newField int) TBLPROPERTIES" +
+      "('DEFAULT.VALUE.newField'='67890')")
+    checkAnswer(sql("select distinct(newField) from carbon_table"), Row(67890))
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+  test("test to check if shortField returns correct result") {
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql("CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField timestamp, decimalField decimal(6,2)) STORED BY 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(
+      "Alter table carbon_table add columns(newField short) TBLPROPERTIES" +
+      "('DEFAULT.VALUE.newField'='1')")
+    checkAnswer(sql("select distinct(newField) from carbon_table"), Row(1))
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+  test("test to check if doubleField returns correct result") {
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql("CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField timestamp, decimalField decimal(6,2)) STORED BY 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(
+      "Alter table carbon_table add columns(newField double) TBLPROPERTIES" +
+      "('DEFAULT.VALUE.newField'='1457567.87')")
+    checkAnswer(sql("select distinct(newField) from carbon_table"), Row(1457567.87))
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+  test("test to check if decimalField returns correct result") {
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql("CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField timestamp, decimalField decimal(6,2)) STORED BY 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(
+      "Alter table carbon_table add columns(newField decimal(5,2)) TBLPROPERTIES" +
+      "('DEFAULT.VALUE.newField'='21.87')")
+    checkAnswer(sql("select distinct(newField) from carbon_table"), Row(21.87))
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
 
   override def afterAll {
     sql("DROP TABLE IF EXISTS addcolumntest")

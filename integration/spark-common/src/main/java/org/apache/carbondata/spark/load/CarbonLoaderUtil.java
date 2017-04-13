@@ -184,7 +184,7 @@ public final class CarbonLoaderUtil {
           try {
             long startTime = System.currentTimeMillis();
             File file = new File(localStoreLocation);
-            CarbonUtil.deleteFoldersAndFiles(file.getParentFile());
+            CarbonUtil.deleteFoldersAndFiles(file);
             LOGGER.info(
                 "Deleted the local store location" + localStoreLocation + " : TIme taken: " + (
                     System.currentTimeMillis() - startTime));
