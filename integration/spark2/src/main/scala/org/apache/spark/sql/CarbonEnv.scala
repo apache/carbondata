@@ -17,7 +17,10 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.hive.CarbonMetastore
+import java.util.Map
+import java.util.concurrent.ConcurrentHashMap
+
+import org.apache.spark.sql.hive.{CarbonMetastore, CarbonSessionCatalog}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -28,13 +31,11 @@ import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 /**
  * Carbon Environment for unified context
  */
-case class CarbonEnv(carbonMetastore: CarbonMetastore)
+class CarbonEnv {
 
-object CarbonEnv {
+  var carbonMetastore: CarbonMetastore = _
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
-  @volatile private var carbonEnv: CarbonEnv = _
 
   // set readsupport class global so that the executor can get it.
   SparkReadSupport.readSupportClass = classOf[SparkRowReadSupportImpl]
@@ -43,20 +44,35 @@ object CarbonEnv {
 
   def init(sparkSession: SparkSession): Unit = {
     if (!initialized) {
-      val catalog = {
+      carbonMetastore = {
         val storePath =
           CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
         LOGGER.info(s"carbon env initial: $storePath")
         new CarbonMetastore(sparkSession.conf, storePath)
       }
       CarbonProperties.getInstance.addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
-      carbonEnv = CarbonEnv(catalog)
       initialized = true
     }
   }
+}
 
-  def get: CarbonEnv = {
-    carbonEnv
+object CarbonEnv {
+
+  val carbonEnvMap: Map[SparkSession, CarbonEnv] =
+    new ConcurrentHashMap[SparkSession, CarbonEnv]
+
+  def getInstance(sparkSession: SparkSession): CarbonEnv = {
+    if (sparkSession.isInstanceOf[CarbonSession]) {
+      sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog].carbonEnv
+    } else {
+      var carbonEnv: CarbonEnv = carbonEnvMap.get(sparkSession)
+      if (carbonEnv == null) {
+        carbonEnv = new CarbonEnv
+        carbonEnv.init(sparkSession)
+        carbonEnvMap.put(sparkSession, carbonEnv)
+      }
+      carbonEnv
+    }
   }
 }
 

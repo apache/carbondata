@@ -46,16 +46,11 @@ case class CarbonDatasourceHadoopRelation(
   extends BaseRelation {
 
   lazy val absIdentifier = AbsoluteTableIdentifier.fromTablePath(paths.head)
-  lazy val carbonTable = SchemaReader.readCarbonTableFromStore(absIdentifier)
-  lazy val carbonRelation: CarbonRelation = {
-    CarbonRelation(
-      carbonTable.getDatabaseName,
-      carbonTable.getFactTableName,
-      CarbonSparkUtil.createSparkMeta(carbonTable),
-      new TableMeta(carbonTable.getCarbonTableIdentifier, paths.head, carbonTable),
-      None
-    )
-  }
+  lazy val carbonTable = carbonRelation.tableMeta.carbonTable
+  lazy val carbonRelation: CarbonRelation = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    .lookupRelation(Some(absIdentifier.getCarbonTableIdentifier.getDatabaseName),
+      absIdentifier.getCarbonTableIdentifier.getTableName)(sparkSession)
+    .asInstanceOf[CarbonRelation]
 
   override def sqlContext: SQLContext = sparkSession.sqlContext
 
@@ -72,6 +67,7 @@ case class CarbonDatasourceHadoopRelation(
     new CarbonScanRDD(sqlContext.sparkContext, projection, filterExpression.orNull,
       absIdentifier, carbonTable)
   }
+
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)
 
   override def toString: String = {

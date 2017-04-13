@@ -45,7 +45,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
   // will be called if hive supported create table command is provided
   override def createRelation(sqlContext: SQLContext,
       parameters: Map[String, String]): BaseRelation = {
-    CarbonEnv.init(sqlContext.sparkSession)
+    CarbonEnv.getInstance(sqlContext.sparkSession)
     // if path is provided we can directly create Hadoop relation. \
     // Otherwise create datasource relation
     parameters.get("tablePath") match {
@@ -61,13 +61,14 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
         CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(tablePath), parameters, None)
     }
   }
+
   // called by any write operation like INSERT INTO DDL or DataFrame.write API
   override def createRelation(
       sqlContext: SQLContext,
       mode: SaveMode,
       parameters: Map[String, String],
       data: DataFrame): BaseRelation = {
-    CarbonEnv.init(sqlContext.sparkSession)
+    CarbonEnv.getInstance(sqlContext.sparkSession)
     // User should not specify path since only one store is supported in carbon currently,
     // after we support multi-store, we can remove this limitation
     require(!parameters.contains("path"), "'path' should not be specified, " +
@@ -109,7 +110,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       sqlContext: SQLContext,
       parameters: Map[String, String],
       dataSchema: StructType): BaseRelation = {
-    CarbonEnv.init(sqlContext.sparkSession)
+    CarbonEnv.getInstance(sqlContext.sparkSession)
     addLateDecodeOptimization(sqlContext.sparkSession)
     val path = createTableIfNotExists(sqlContext.sparkSession, parameters, dataSchema)
     CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(path), parameters,
@@ -138,8 +139,9 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
     val options = new CarbonOption(parameters)
     try {
-      CarbonEnv.get.carbonMetastore.lookupRelation(Option(dbName), tableName)(sparkSession)
-      CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
+      CarbonEnv.getInstance(sparkSession).carbonMetastore
+        .lookupRelation(Option(dbName), tableName)(sparkSession)
+      CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath + s"/$dbName/$tableName"
     } catch {
       case ex: NoSuchTableException =>
         val fields = dataSchema.map { col =>
@@ -162,23 +164,23 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
         val map = scala.collection.mutable.Map[String, String]()
         parameters.foreach { parameter => map.put(parameter._1, parameter._2.toLowerCase) }
         val bucketFields = if (options.isBucketingEnabled) {
-            if (options.bucketNumber.toString.contains("-") ||
-                options.bucketNumber.toString.contains("+") ) {
-              throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED" +
-                                                        options.bucketNumber.toString)
-            }
-            else {
-              Some(BucketFields(options.bucketColumns.toLowerCase.split(",").map(_.trim),
-                options.bucketNumber))
-            }
-          } else {
-            None
+          if (options.bucketNumber.toString.contains("-") ||
+              options.bucketNumber.toString.contains("+")) {
+            throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED" +
+                                                      options.bucketNumber.toString)
           }
+          else {
+            Some(BucketFields(options.bucketColumns.toLowerCase.split(",").map(_.trim),
+              options.bucketNumber))
+          }
+        } else {
+          None
+        }
 
         val cm = TableCreator.prepareTableModel(ifNotExistPresent = false, Option(dbName),
           tableName, fields, Nil, bucketFields, map)
         CreateTable(cm, false).run(sparkSession)
-        CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
+        CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath + s"/$dbName/$tableName"
       case ex: Exception =>
         throw new Exception("do not have dbname and tablename for carbon table", ex)
     }
