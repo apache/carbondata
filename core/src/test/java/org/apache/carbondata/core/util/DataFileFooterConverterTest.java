@@ -147,7 +147,7 @@ public class DataFileFooterConverterTest {
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
     tableBlockInfoList.add(tableBlockInfo);
     List<DataFileFooter> dataFileFooterList =
-        dataFileFooterConverter.getIndexInfo("indexfile", tableBlockInfoList);
+        dataFileFooterConverter.getIndexInfo("indexfile", null);
     byte[] exp = dataFileFooterList.get(0).getBlockletIndex().getBtreeIndex().getStartKey();
     byte[] res = "1".getBytes();
     for (int i = 0; i < exp.length; i++) {

@@ -58,6 +58,7 @@ import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.index.IndexInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -974,23 +975,11 @@ public final class CarbonUtil {
   /**
    * The method returns the B-Tree for a particular taskId
    *
-   * @param taskId
-   * @param tableBlockInfoList
-   * @param absoluteTableIdentifier
+   * @param indexInfo
    */
-  public static long calculateDriverBTreeSize(String taskId, String bucketNumber,
-      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier absoluteTableIdentifier) {
-    // need to sort the  block info list based for task in ascending  order so
-    // it will be sinkup with block index read from file
-    Collections.sort(tableBlockInfoList);
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
+  public static long calculateDriverBTreeSize(IndexInfo indexInfo) {
     // geting the index file path
-    //TODO need to pass proper partition number when partiton will be supported
-    String carbonIndexFilePath = carbonTablePath
-        .getCarbonIndexFilePath(taskId, "0", tableBlockInfoList.get(0).getSegmentId(),
-            bucketNumber);
+    String carbonIndexFilePath = indexInfo.getFilePath();
     CarbonFile carbonFile = FileFactory
         .getCarbonFile(carbonIndexFilePath, FileFactory.getFileType(carbonIndexFilePath));
     // in case of carbonIndex file whole file is meta only so reading complete file.
@@ -1213,29 +1202,17 @@ public final class CarbonUtil {
   /**
    * Below method will be used to get all the block index info from index file
    *
-   * @param taskId                  task id of the file
-   * @param tableBlockInfoList      list of table block
-   * @param absoluteTableIdentifier absolute table identifier
+   * @param indexInfo      list of table block
    * @return list of block info
    * @throws IOException if any problem while reading
    */
-  public static List<DataFileFooter> readCarbonIndexFile(String taskId, String bucketNumber,
-      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier absoluteTableIdentifier)
+  public static List<DataFileFooter> readCarbonIndexFile(IndexInfo indexInfo)
       throws IOException {
-    // need to sort the  block info list based for task in ascending  order so
-    // it will be sinkup with block index read from file
-    Collections.sort(tableBlockInfoList);
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
     // geting the index file path
-    //TODO need to pass proper partition number when partiton will be supported
-    String carbonIndexFilePath = carbonTablePath
-        .getCarbonIndexFilePath(taskId, "0", tableBlockInfoList.get(0).getSegmentId(),
-            bucketNumber);
+    String carbonIndexFilePath = indexInfo.getFilePath();
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
     // read the index info and return
-    return fileFooterConverter.getIndexInfo(carbonIndexFilePath, tableBlockInfoList);
+    return fileFooterConverter.getIndexInfo(carbonIndexFilePath, indexInfo);
   }
 
   /**

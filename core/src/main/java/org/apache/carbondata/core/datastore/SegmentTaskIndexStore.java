@@ -33,10 +33,10 @@ import org.apache.carbondata.core.cache.CarbonLRUCache;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.SegmentTaskIndex;
 import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper;
-import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.index.IndexInfo;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -167,11 +167,11 @@ public class SegmentTaskIndexStore
    * @throws IOException
    */
   private SegmentTaskIndexWrapper loadAndGetTaskIdToSegmentsMap(
-      Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos,
+      Map<String, List<IndexInfo>> segmentToTableBlocksInfos,
       AbsoluteTableIdentifier absoluteTableIdentifier,
       TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier) throws IOException {
     // task id to segment map
-    Iterator<Map.Entry<String, List<TableBlockInfo>>> iteratorOverSegmentBlocksInfos =
+    Iterator<Map.Entry<String, List<IndexInfo>>> iteratorOverSegmentBlocksInfos =
         segmentToTableBlocksInfos.entrySet().iterator();
     Map<TaskBucketHolder, AbstractIndex> taskIdToSegmentIndexMap = null;
     SegmentTaskIndexWrapper segmentTaskIndexWrapper = null;
@@ -182,9 +182,9 @@ public class SegmentTaskIndexStore
     try {
       while (iteratorOverSegmentBlocksInfos.hasNext()) {
         // segment id to table block mapping
-        Map.Entry<String, List<TableBlockInfo>> next = iteratorOverSegmentBlocksInfos.next();
+        Map.Entry<String, List<IndexInfo>> next = iteratorOverSegmentBlocksInfos.next();
         // group task id to table block info mapping for the segment
-        Map<TaskBucketHolder, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
+        Map<TaskBucketHolder, IndexInfo> taskIdToTableBlockInfoMap =
             mappedAndGetTaskIdToTableBlockInfo(segmentToTableBlocksInfos);
         segmentId = next.getKey();
         // get the existing map of task id to table segment map
@@ -217,22 +217,21 @@ public class SegmentTaskIndexStore
                 segmentTaskIndexWrapper = new SegmentTaskIndexWrapper(taskIdToSegmentIndexMap);
                 segmentTaskIndexWrapper.incrementAccessCount();
               }
-              Iterator<Map.Entry<TaskBucketHolder, List<TableBlockInfo>>> iterator =
+              Iterator<Map.Entry<TaskBucketHolder, IndexInfo>> iterator =
                   taskIdToTableBlockInfoMap.entrySet().iterator();
               long requiredSize =
-                  calculateRequiredSize(taskIdToTableBlockInfoMap, absoluteTableIdentifier);
+                  calculateRequiredSize(taskIdToTableBlockInfoMap);
               segmentTaskIndexWrapper
                   .setMemorySize(requiredSize + segmentTaskIndexWrapper.getMemorySize());
               boolean isAddedToLruCache =
                   lruCache.put(lruCacheKey, segmentTaskIndexWrapper, requiredSize);
               if (isAddedToLruCache) {
                 while (iterator.hasNext()) {
-                  Map.Entry<TaskBucketHolder, List<TableBlockInfo>> taskToBlockInfoList =
+                  Map.Entry<TaskBucketHolder, IndexInfo> indexInfo =
                       iterator.next();
-                  taskBucketHolder = taskToBlockInfoList.getKey();
+                  taskBucketHolder = indexInfo.getKey();
                   taskIdToSegmentIndexMap.put(taskBucketHolder,
-                      loadBlocks(taskBucketHolder, taskToBlockInfoList.getValue(),
-                          absoluteTableIdentifier));
+                      loadBlocks(indexInfo.getValue()));
                 }
               } else {
                 throw new IndexBuilderException(
@@ -264,19 +263,13 @@ public class SegmentTaskIndexStore
     return segmentTaskIndexWrapper;
   }
 
-  private long calculateRequiredSize(
-      Map<TaskBucketHolder, List<TableBlockInfo>> taskIdToTableBlockInfoMap,
-      AbsoluteTableIdentifier absoluteTableIdentifier) {
-    Iterator<Map.Entry<TaskBucketHolder, List<TableBlockInfo>>> iterator =
+  private long calculateRequiredSize(Map<TaskBucketHolder, IndexInfo> taskIdToTableBlockInfoMap) {
+    Iterator<Map.Entry<TaskBucketHolder, IndexInfo>> iterator =
         taskIdToTableBlockInfoMap.entrySet().iterator();
-    TaskBucketHolder taskBucketHolder;
     long driverBTreeSize = 0;
     while (iterator.hasNext()) {
-      Map.Entry<TaskBucketHolder, List<TableBlockInfo>> taskToBlockInfoList = iterator.next();
-      taskBucketHolder = taskToBlockInfoList.getKey();
-      driverBTreeSize += CarbonUtil
-          .calculateDriverBTreeSize(taskBucketHolder.taskNo, taskBucketHolder.bucketNumber,
-              taskToBlockInfoList.getValue(), absoluteTableIdentifier);
+      Map.Entry<TaskBucketHolder, IndexInfo> taskToBlockInfoList = iterator.next();
+      driverBTreeSize += CarbonUtil.calculateDriverBTreeSize(taskToBlockInfoList.getValue());
     }
     return driverBTreeSize;
   }
@@ -288,25 +281,20 @@ public class SegmentTaskIndexStore
    * @param segmentToTableBlocksInfos segment if to table blocks info map
    * @return task id to table block info mapping
    */
-  private Map<TaskBucketHolder, List<TableBlockInfo>> mappedAndGetTaskIdToTableBlockInfo(
-      Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos) {
-    Map<TaskBucketHolder, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
+  private Map<TaskBucketHolder, IndexInfo> mappedAndGetTaskIdToTableBlockInfo(
+      Map<String, List<IndexInfo>> segmentToTableBlocksInfos) {
+    Map<TaskBucketHolder, IndexInfo> taskIdToTableBlockInfoMap =
         new ConcurrentHashMap<>();
-    Iterator<Entry<String, List<TableBlockInfo>>> iterator =
+    Iterator<Entry<String, List<IndexInfo>>> iterator =
         segmentToTableBlocksInfos.entrySet().iterator();
     while (iterator.hasNext()) {
-      Entry<String, List<TableBlockInfo>> next = iterator.next();
-      List<TableBlockInfo> value = next.getValue();
-      for (TableBlockInfo blockInfo : value) {
-        String taskNo = DataFileUtil.getTaskNo(blockInfo.getFilePath());
-        String bucketNo = DataFileUtil.getBucketNo(blockInfo.getFilePath());
+      Entry<String, List<IndexInfo>> next = iterator.next();
+      List<IndexInfo> value = next.getValue();
+      for (IndexInfo indexInfo : value) {
+        String taskNo = DataFileUtil.getTaskNoFromIndex(indexInfo.getFilePath());
+        String bucketNo = DataFileUtil.getBucketNoFromIndex(indexInfo.getFilePath());
         TaskBucketHolder bucketHolder = new TaskBucketHolder(taskNo, bucketNo);
-        List<TableBlockInfo> list = taskIdToTableBlockInfoMap.get(bucketHolder);
-        if (null == list) {
-          list = new ArrayList<TableBlockInfo>();
-          taskIdToTableBlockInfoMap.put(bucketHolder, list);
-        }
-        list.add(blockInfo);
+        taskIdToTableBlockInfoMap.put(bucketHolder, indexInfo);
       }
 
     }
@@ -333,18 +321,16 @@ public class SegmentTaskIndexStore
   /**
    * Below method will be used to load the blocks
    *
-   * @param tableBlockInfoList
+   * @param indexInfo
    * @return loaded segment
    * @throws IOException
    */
-  private AbstractIndex loadBlocks(TaskBucketHolder taskBucketHolder,
-      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier tableIdentifier)
+  private AbstractIndex loadBlocks(IndexInfo indexInfo)
       throws IOException {
     // all the block of one task id will be loaded together
     // so creating a list which will have all the data file meta data to of one task
     List<DataFileFooter> footerList = CarbonUtil
-        .readCarbonIndexFile(taskBucketHolder.taskNo, taskBucketHolder.bucketNumber,
-            tableBlockInfoList, tableIdentifier);
+        .readCarbonIndexFile(indexInfo);
     AbstractIndex segment = new SegmentTaskIndex();
     // file path of only first block is passed as it all table block info path of
     // same task id will be same

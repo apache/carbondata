@@ -72,6 +72,11 @@ public class TableBlockInfo implements Distributable, Serializable {
   private Map<String, String> blockStorageIdMap =
           new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
+  public TableBlockInfo(String filePath, String segmentId) {
+    this.filePath = FileFactory.getUpdatedFilePath(filePath);
+    this.segmentId = segmentId;
+  }
+
   public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
       long blockLength, ColumnarFormatVersion version) {
     this.filePath = FileFactory.getUpdatedFilePath(filePath);
@@ -147,6 +152,10 @@ public class TableBlockInfo implements Distributable, Serializable {
    */
   public long getBlockLength() {
     return blockLength;
+  }
+
+  public long setBlockLength(long blockLength) {
+    return this.blockLength = blockLength;
   }
 
   /*
@@ -262,6 +271,10 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   @Override public String[] getLocations() {
     return locations;
+  }
+
+  public String[] setLocations(String[] locations) {
+    return this.locations = this.locations;
   }
 
   /**
