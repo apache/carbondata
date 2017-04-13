@@ -33,7 +33,7 @@ import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
-import org.apache.carbondata.processing.newflow.sort.Sorter;
+import org.apache.carbondata.processing.newflow.sort.AbstractMergeSorter;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortIntermediateFileMerger;
@@ -47,7 +47,7 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
  * First it sorts the data and write to temp files. These temp files will be merge sorted to get
  * final merge sort result.
  */
-public class ParallelReadMergeSorterImpl implements Sorter {
+public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(ParallelReadMergeSorterImpl.class.getName());
@@ -57,8 +57,6 @@ public class ParallelReadMergeSorterImpl implements Sorter {
   private SortIntermediateFileMerger intermediateFileMerger;
 
   private ExecutorService executorService;
-
-  private ThreadStatusObserver threadStatusObserver;
 
   private SingleThreadFinalSortFilesMerger finalMerger;
 
@@ -153,18 +151,6 @@ public class ParallelReadMergeSorterImpl implements Sorter {
     }
   }
 
-  /**
-   * Below method will be used to check error in exception
-   */
-  private void checkError() {
-    if (threadStatusObserver.getThrowable() != null) {
-      if (threadStatusObserver.getThrowable() instanceof CarbonDataLoadingException) {
-        throw (CarbonDataLoadingException) threadStatusObserver.getThrowable();
-      } else {
-        throw new CarbonDataLoadingException(threadStatusObserver.getThrowable());
-      }
-    }
-  }
   /**
    * Below method will be used to process data to next step
    */
