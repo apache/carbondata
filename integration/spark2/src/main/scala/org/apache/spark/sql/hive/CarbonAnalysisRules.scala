@@ -18,6 +18,7 @@
 package org.apache.spark.sql.hive
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Cast, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules._
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -52,7 +53,21 @@ object CarbonPreInsertionCasts extends Rule[LogicalPlan] {
         )
     }
     if (child.output.size >= relation.carbonRelation.output.size) {
-      InsertIntoCarbonTable(relation, p.partition, p.child, p.overwrite, p.ifNotExists)
+      val newChildOutput = child.output.zipWithIndex.map { columnWithIndex =>
+        columnWithIndex._1 match {
+          case attr: Alias =>
+            Alias(attr.child, s"col${ columnWithIndex._2 }")(attr.exprId)
+          case attr: Attribute =>
+            Alias(attr, s"col${ columnWithIndex._2 }")(NamedExpression.newExprId)
+          case attr => attr
+        }
+      }
+      val newChild: LogicalPlan = if (newChildOutput == child.output) {
+        p.child
+      } else {
+        Project(newChildOutput, child)
+      }
+      InsertIntoCarbonTable(relation, p.partition, newChild, p.overwrite, p.ifNotExists)
     } else {
       sys.error("Cannot insert into target table because column number are different")
     }
