@@ -156,9 +156,10 @@ This command is used to rename the existing table.
 |table_name     | Name of the existing table.                                                                   |
 |new_table_name | New table name for the existing table.                                                        |
 
-#### Precautions
+#### Usage Guidelines
 
 - Queries that require the formation of path using the table name for reading carbon store files, running in parallel with Rename command might fail during the renaming operation.
+
 - Renaming of Secondary index table(s) is not permitted.
 
 #### Examples:
@@ -191,10 +192,12 @@ This command is used to add a new column to the existing table.
 
 NOTE: Do not name the column after name, tupleId, PositionId, and PositionReference when creating Carbon tables because they are used internally by UPDATE, DELETE, and secondary index.
 
-#### Precautions
+#### Usage Guidelines
 
 - Apart from DICTIONARY_INCLUDE, DICTIONARY_EXCLUDE and default_value no other property will be read. If any other property name is specified, error will not be thrown, it will be ignored.
+
 - If default value is not specified, then NULL will be considered as the default value for the column.
+
 - For addition of column, if DICTIONARY_INCLUDE and DICTIONARY_EXCLUDE are not specified, then the decision will be taken based on data type of the column.
 
 #### Examples:
@@ -231,9 +234,10 @@ This command is used to delete a existing column or multiple columns in a table.
 | table_name | Name of the existing table.                                                                              |
 | col_name   | Name of comma-separated column with data type. Column names contain letters, digits, and underscores (_) |
 
-#### Precautions
+#### Usage Guidelines
 
 - Deleting a column will also clear the dictionary files, provided the column is of type dictionary.
+
 - For delete column operation, there should be at least one key column that exists in the schema after deletion else error message will be displayed and the operation shall fail.
 
 #### Examples:
@@ -277,13 +281,15 @@ This command is used to change the data type from INT to BIGINT or decimal preci
 | col_name            | Name of comma-separated column with data type. Column names contain letters, digits, and underscores (_). |
 | changed_column_type | The change in the data type.                                                                              |
 
-#### Precautions
+#### Usage Guidelines
 
 - Change of decimal data type from lower precision to higher precision will only be supported for cases where there is no data loss.
 
 #### Valid Scenarios
 - Invalid scenario - Change of decimal precision from (10,2) to (10,5) is not valid as in this case only scale is increased but total number of digits remain the same.
+
 - Valid scenario - Change of decimal precision from (10,2) to (12,3) is valid as the total number of digits are increased by 2 but scale is increased only by 1 which will not lead to any data loss.
+
 - Note :The allowed range is 38,38 (precision, scale) and is a valid upper case scenario which is not resulting in data loss.
 
 #### Examples:
@@ -358,14 +364,14 @@ of columns is used.
    'BUCKETCOLUMNS'='columnname')
 ```
   
-## Parameter Description
+### Parameter Description
 
 | Parameter 	| Description 	| Optional 	|
 |---------------	|------------------------------------------------------------------------------------------------------------------------------	|----------	|
 | BUCKETNUMBER 	| Specifies the number of Buckets to be created. 	| No 	|
 | BUCKETCOLUMNS 	| Specify the columns to be considered for Bucketing  	| No 	|
 
-## Usage Guidelines
+### Usage Guidelines
 
 - The feature is supported for Spark 1.6.2 onwards, but the performance optimization is evident from Spark 2.1 onwards.
 
@@ -374,7 +380,7 @@ of columns is used.
 - Columns in the BUCKETCOLUMN parameter must be only dimension. The BUCKETCOLUMN parameter can not be a measure or a combination of measures and dimensions.
 
 
-## Example :
+### Example :
 
 ```
  CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
