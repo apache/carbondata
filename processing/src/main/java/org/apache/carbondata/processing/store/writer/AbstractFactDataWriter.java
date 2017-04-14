@@ -150,7 +150,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   /**
    * list of blocklet index
    */
-  protected List<org.apache.carbondata.format.BlockletIndex> blockletIndex;
+  protected List<org.apache.carbondata.format.BlockletIndex> blockletIndexList;
 
   public AbstractFactDataWriter(CarbonDataWriterVo dataWriterVo) {
     this.dataWriterVo = dataWriterVo;
@@ -203,7 +203,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     this.dataChunksOffsets = new ArrayList<>();
     this.dataChunksLength = new ArrayList<>();
     blockletMetadata = new ArrayList<BlockletInfo3>();
-    blockletIndex = new ArrayList<>();
+    blockletIndexList = new ArrayList<>();
   }
 
   /**
@@ -266,7 +266,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       this.dataChunksOffsets = new ArrayList<>();
       this.dataChunksLength = new ArrayList<>();
       this.blockletMetadata = new ArrayList<>();
-      this.blockletIndex = new ArrayList<>();
+      this.blockletIndexList = new ArrayList<>();
       CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
       // rename carbon data file from in progress status to actual
       renameCarbonDataFile();
@@ -378,7 +378,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     minmax.setMaxValues(currentMaxValue);
     BlockletIndex blockletIndex = new BlockletIndex(btree, minmax);
     BlockIndexInfo blockIndexInfo =
-        new BlockIndexInfo(numberOfRows, carbonDataFileName, currentPosition, blockletIndex);
+        new BlockIndexInfo(numberOfRows, carbonDataFileName, currentPosition, blockletIndex,
+            blockletInfoList.size());
     blockIndexInfoList.add(blockIndexInfo);
   }
 

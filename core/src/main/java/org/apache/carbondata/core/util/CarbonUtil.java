@@ -1228,7 +1228,9 @@ public final class CarbonUtil {
             bucketNumber, CarbonTablePath.DataFileUtil
                 .getTimeStampFromFileName(tableBlockInfoList.get(0).getFilePath()),
             tableBlockInfoList.get(0).getVersion());
-    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
+    AbstractDataFileFooterConverter fileFooterConverter =
+        DataFileFooterConverterFactory.getInstance()
+            .getDataFileFooterConverter(tableBlockInfoList.get(0).getVersion());
     // read the index info and return
     return fileFooterConverter.getIndexInfo(carbonIndexFilePath, tableBlockInfoList);
   }

@@ -314,7 +314,7 @@ public class CarbonMetadataUtilTest {
         new org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex(
             blockletBTreeIndex, blockletMinMaxIndex);
 
-    BlockIndexInfo blockIndexInfo = new BlockIndexInfo(1, "file", 1, blockletIndex);
+    BlockIndexInfo blockIndexInfo = new BlockIndexInfo(1, "file", 1, blockletIndex,1);
 
     List<BlockIndexInfo> blockIndexInfoList = new ArrayList<>();
     blockIndexInfoList.add(blockIndexInfo);

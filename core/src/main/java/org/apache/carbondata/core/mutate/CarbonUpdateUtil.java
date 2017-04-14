@@ -258,7 +258,6 @@ public class CarbonUpdateUtil {
         }
 
         status = true;
-      } else {
         LOGGER.error("Not able to acquire the lock for Table status updation for table " + table
                 .getDatabaseName() + "." + table.getFactTableName());
       }
