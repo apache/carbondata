@@ -187,6 +187,25 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select distinct(CUST_NAME) from carbon_new"),Row("testuser"))
   }
 
+  test("test for checking newly added measure column for is null condition") {
+    sql("DROP TABLE IF EXISTS carbon_measure_is_null")
+    sql("CREATE TABLE carbon_measure_is_null (CUST_ID int,CUST_NAME String) STORED BY 'carbondata'")
+    sql(
+      s"LOAD DATA INPATH '$resourcesPath/restructure/data6.csv' into table carbon_measure_is_null" +
+      s" OPTIONS" +
+      s"('BAD_RECORDS_LOGGER_ENABLE'='TRUE', " +
+      s"'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME')")
+    sql("ALTER TABLE carbon_measure_is_null ADD COLUMNS (a6 int)")
+    sql(
+      s"LOAD DATA INPATH '$resourcesPath/restructure/data6.csv' into table carbon_measure_is_null" +
+      s" OPTIONS" +
+      s"('BAD_RECORDS_LOGGER_ENABLE'='TRUE', " +
+      s"'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,a6')")
+    checkAnswer(sql("select * from carbon_measure_is_null"),
+      sql("select * from carbon_measure_is_null where a6 is null"))
+    checkAnswer(sql("select count(*) from carbon_measure_is_null where a6 is not null"), Row(0))
+    sql("DROP TABLE IF EXISTS carbon_measure_is_null")
+  }
   test("test to check if intField returns correct result") {
     sql("DROP TABLE IF EXISTS carbon_table")
     sql("CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField timestamp, decimalField decimal(6,2)) STORED BY 'carbondata'")
@@ -229,6 +248,33 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
       "('DEFAULT.VALUE.newField'='21.87')")
     checkAnswer(sql("select distinct(newField) from carbon_table"), Row(21.87))
     sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+
+  test("test for checking newly added dictionary column for is null condition") {
+    sql("DROP TABLE IF EXISTS carbon_dictionary_is_null")
+    sql(
+      "CREATE TABLE carbon_dictionary_is_null (CUST_ID int,CUST_NAME String) STORED BY " +
+      "'carbondata'")
+    sql(
+      s"LOAD DATA INPATH '$resourcesPath/restructure/data6.csv' into table " +
+      s"carbon_dictionary_is_null" +
+      s" OPTIONS" +
+      s"('BAD_RECORDS_LOGGER_ENABLE'='TRUE', " +
+      s"'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME')")
+    sql(
+      "ALTER TABLE carbon_dictionary_is_null ADD COLUMNS (a6 int) tblproperties" +
+      "('dictionary_include'='a6')")
+    sql(
+      s"LOAD DATA INPATH '$resourcesPath/restructure/data6.csv' into table " +
+      s"carbon_dictionary_is_null" +
+      s" OPTIONS" +
+      s"('BAD_RECORDS_LOGGER_ENABLE'='TRUE', " +
+      s"'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,a6')")
+    checkAnswer(sql("select * from carbon_dictionary_is_null"),
+      sql("select * from carbon_dictionary_is_null where a6 is null"))
+    checkAnswer(sql("select count(*) from carbon_dictionary_is_null where a6 is not null"), Row(0))
+    sql("DROP TABLE IF EXISTS carbon_dictionary_is_null")
   }
 
 
