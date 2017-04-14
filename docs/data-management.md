@@ -47,12 +47,12 @@ This tutorial is going to introduce you to the conceptual details of data manage
 | Success | All the data is loaded into table and no bad records found. |
 | Partial Success | Data is loaded into table and bad records are found. Bad records are stored at carbon.badrecords.location. |
    
-   In case of failure, the error will be logged in error log. Details of loads can be seen with [SHOW SEGMENTS](dml-operation-on-carbondata.md) command. The show segment command output consists of :
+   In case of failure, the error will be logged in error log. Details of loads can be seen with [SHOW SEGMENTS](dml-operation-on-carbondata.md#show-segments) command. The show segment command output consists of :
    
-   - SegmentSequenceID
-   - START_TIME OF LOAD
-   - END_TIME OF LOAD 
-   - LOAD STATUS
+   - SegmentSequenceId
+   - Status
+   - Load Start Time
+   - Load End Time
  
    The latest load will be displayed first in the output.
    
