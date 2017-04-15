@@ -52,7 +52,7 @@ This tutorial is going to introduce you to the conceptual details of data manage
    - SegmentSequenceId
    - Status
    - Load Start Time
-   - Load End Time
+   - Load End Time 
  
    The latest load will be displayed first in the output.
    
