@@ -17,6 +17,7 @@
 package org.apache.spark.sql.hive
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 
@@ -41,8 +42,8 @@ object CarbonHiveMetadataUtil {
       tableName: String,
       sparkSession: SparkSession): Unit = {
     try {
-      sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client.
-        runSqlHive(s"DROP TABLE IF EXISTS $databaseName.$tableName")
+      val tabelIdentifier = TableIdentifier(tableName, Some(databaseName))
+      sparkSession.sessionState.catalog.dropTable(tabelIdentifier, true, false)
     } catch {
       case e: Exception =>
         LOGGER.audit(
