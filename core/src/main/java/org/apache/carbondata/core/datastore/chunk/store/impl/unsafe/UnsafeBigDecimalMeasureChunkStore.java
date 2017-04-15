@@ -124,11 +124,10 @@ public class UnsafeBigDecimalMeasureChunkStore extends UnsafeAbstractMeasureData
       int OffsetOfNextdata = CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + this.offsetStartPosition + ((index + 1)
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
-      length =
-          (short) (OffsetOfNextdata - (currentDataOffset + CarbonCommonConstants.INT_SIZE_IN_BYTE));
+      length = OffsetOfNextdata - (currentDataOffset + CarbonCommonConstants.INT_SIZE_IN_BYTE);
     } else {
       // for last record we need to subtract with data length
-      length = (short) (this.offsetStartPosition - currentDataOffset);
+      length = (int) this.offsetStartPosition - currentDataOffset;
     }
     byte[] row = new byte[length];
     CarbonUnsafe.unsafe.copyMemory(dataPageMemoryBlock.getBaseObject(),
