@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.spark.util
 
-import java.io.File
 import java.util.concurrent.{Callable, Executors}
 
 import scala.collection.mutable.ListBuffer
@@ -64,6 +63,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
       CarbonCommonConstants.CARBON_DATE_FORMAT,
       CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))  
     carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
+    carbonLoadModel.setMaxColumns("2000")
     carbonLoadModel
   }
 
@@ -88,6 +88,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
       "employee")(sqlContext)
       .asInstanceOf[CarbonRelation]
   }
+
   def writedummydata(filePath: String, recCount: Int) = {
     var a: Int = 0
     var records: StringBuilder = StringBuilder.newBuilder
@@ -98,6 +99,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     dis.writeBytes(records.toString())
     dis.close()
   }
+
   test("concurrent dictionary generation") {
     CarbonProperties.getInstance.addProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME, "-1")
     val noOfFiles = 5
@@ -114,8 +116,8 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
       for (i <- 0 until noOfFiles) {
         dictGenerators.add(new DictGenerator(loadModels(i)))
       }
-      val executorService = Executors.newFixedThreadPool(10);
-      val results = executorService.invokeAll(dictGenerators);
+      val executorService = Executors.newFixedThreadPool(10)
+      val results = executorService.invokeAll(dictGenerators)
       for (i <- 0 until noOfFiles) {
         val res = results.get(i).get
         assert("Pass".equals(res))
@@ -128,7 +130,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     val carbonTableIdentifier = sampleRelation.tableMeta.carbonTable.getCarbonTableIdentifier
     val columnIdentifier = sampleRelation.tableMeta.carbonTable.getDimensionByName("employee", "empid").getColumnIdentifier
     val carbonTablePath = PathFactory.getInstance()
-        .getCarbonTablePath(sampleRelation.tableMeta.storePath, carbonTableIdentifier);
+        .getCarbonTablePath(sampleRelation.tableMeta.storePath, carbonTableIdentifier)
     val dictPath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId)
     val dictFile = FileFactory.getCarbonFile(dictPath, FileFactory.getFileType(dictPath))
     val offSet = dictFile.getSize
@@ -146,11 +148,13 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
       file.delete()
     }
   }
+
   override def afterAll {
     sql("drop table if exists employee")
     CarbonProperties.getInstance.addProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME,
         Integer.toString(CarbonCommonConstants.DEFAULT_MAX_QUERY_EXECUTION_TIME))
   }
+
   class DictGenerator(loadModel: CarbonLoadModel) extends Callable[String] {
    override def call:String = {
      var result = "Pass"

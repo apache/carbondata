@@ -46,6 +46,10 @@ public class CarbonDataLoadConfiguration {
 
   private BucketingInfo bucketingInfo;
 
+  private String numberOfColumns;
+
+  private String maxColumns;
+
   private Map<String, Object> dataLoadProperties = new HashMap<>();
 
   /**
@@ -183,6 +187,14 @@ public class CarbonDataLoadConfiguration {
 
   public void setTaskNo(String taskNo) {
     this.taskNo = taskNo;
+  }
+
+  public void setMaxColumns(String maxColumns) {
+    this.maxColumns = maxColumns;
+  }
+
+  public void setNumberOfColumns(int numberOfColumns) {
+    this.numberOfColumns = String.valueOf(numberOfColumns);
   }
 
   public void setDataLoadProperty(String key, Object value) {

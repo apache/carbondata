@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.integration.spark.testsuite.dataload
 
-import java.io.File
 
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.{DataFrame, Row, SQLContext, SaveMode}
