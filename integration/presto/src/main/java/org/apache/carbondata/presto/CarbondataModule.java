@@ -19,6 +19,8 @@ package org.apache.carbondata.presto;
 
 import org.apache.carbondata.presto.impl.CarbonTableConfig;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
+
+import com.facebook.presto.spi.connector.ConnectorPageSourceProvider;
 import com.facebook.presto.spi.connector.ConnectorRecordSetProvider;
 import com.facebook.presto.spi.connector.ConnectorSplitManager;
 import com.facebook.presto.spi.type.Type;
@@ -55,7 +57,10 @@ public class CarbondataModule implements Module {
     binder.bind(ConnectorSplitManager.class).to(CarbondataSplitManager.class).in(Scopes.SINGLETON);
     binder.bind(ConnectorRecordSetProvider.class).to(CarbondataRecordSetProvider.class)
         .in(Scopes.SINGLETON);
+    binder.bind(ConnectorPageSourceProvider.class).to(CarbondataPageSourceProvider.class)
+        .in(Scopes.SINGLETON);
     binder.bind(CarbondataHandleResolver.class).in(Scopes.SINGLETON);
+    binder.bind(CarbondataRecordSetProvider.class).in(Scopes.SINGLETON);
     configBinder(binder).bindConfig(CarbonTableConfig.class);
   }
 
