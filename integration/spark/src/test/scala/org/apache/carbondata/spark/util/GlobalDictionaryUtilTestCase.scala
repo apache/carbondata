@@ -70,6 +70,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
       CarbonCommonConstants.CARBON_DATE_FORMAT,
       CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))  
     carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
+    carbonLoadModel.setMaxColumns("2000")
     carbonLoadModel
   }
 

@@ -84,46 +84,42 @@ class TestDataLoadWithColumnsMoreThanSchema extends QueryTest with BeforeAndAfte
   }
 
   test("test for maxcolumns option value greater than threshold value for maxcolumns") {
-    sql("DROP TABLE IF EXISTS valid_max_columns_test")
-    sql("CREATE TABLE valid_max_columns_test (imei string,age int,task bigint,num double,level decimal(10,3),productdate timestamp,mark int,name string)STORED BY 'org.apache.carbondata.format'")
-    try {
+    intercept[Exception] {
+      sql("DROP TABLE IF EXISTS valid_max_columns_test")
+      sql(
+        "CREATE TABLE valid_max_columns_test (imei string,age int,task bigint,num double,level decimal(10,3),productdate timestamp,mark int,name string)STORED BY 'org.apache.carbondata.format'")
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/character_carbon.csv' into table valid_max_columns_test options('MAXCOLUMNS'='22000')")
-      checkAnswer(sql("select count(*) from valid_max_columns_test"),
-        sql("select count(*) from hive_char_test"))
-    } catch {
-      case _: Throwable => assert(false)
     }
   }
 
   test("test for boundary value for maxcolumns") {
-    sql("DROP TABLE IF EXISTS boundary_max_columns_test")
-    sql("CREATE TABLE boundary_max_columns_test (empno string, empname String, designation String, doj String, " +
+    intercept[Exception] {
+      sql("DROP TABLE IF EXISTS boundary_max_columns_test")
+      sql(
+        "CREATE TABLE boundary_max_columns_test (empno string, empname String, designation " +
+        "String, doj String, " +
         "workgroupcategory string, workgroupcategoryname String, deptno string, deptname String, " +
         "projectcode string, projectjoindate String, projectenddate String,attendance double," +
         "utilization double,salary double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES" +
         "('DICTIONARY_EXCLUDE'='empno,empname,designation,doj,workgroupcategory," +
         "workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate')")
-    try {
-      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' into table boundary_max_columns_test options('MAXCOLUMNS'='14')")
-      assert(true)
-    } catch {
-      case _: Throwable => assert(false)
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' into table boundary_max_columns_test" +
+          s" options('MAXCOLUMNS'='14')")
+
     }
   }
 
   test("test for maxcolumns value less than columns in 1st line of csv file") {
-    sql("DROP TABLE IF EXISTS boundary_max_columns_test")
-    sql("CREATE TABLE boundary_max_columns_test (empno string, empname String, designation String, doj String, " +
+    intercept[Exception] {
+      sql("DROP TABLE IF EXISTS boundary_max_columns_test")
+      sql(
+        "CREATE TABLE boundary_max_columns_test (empno string, empname String, designation String, doj String, " +
         "workgroupcategory string, workgroupcategoryname String, deptno string, deptname String, " +
         "projectcode string, projectjoindate String, projectenddate String,attendance double," +
         "utilization double,salary double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES" +
         "('DICTIONARY_EXCLUDE'='empno,empname,designation,doj,workgroupcategory," +
         "workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate')")
-    try {
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' into table boundary_max_columns_test options('MAXCOLUMNS'='13')")
-      assert(true)
-    } catch {
-      case _: Throwable => assert(false)
     }
   }
 
