@@ -33,6 +33,7 @@ import org.apache.carbondata.core.scan.result.impl.NonFilterQueryScannedResult;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * Blocklet scanner class to process the block
@@ -48,8 +49,13 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
 
   private AbstractScannedResult emptyResult;
 
+  private boolean prefetch;
+
   public AbstractBlockletScanner(BlockExecutionInfo tableBlockExecutionInfos) {
     this.blockExecutionInfo = tableBlockExecutionInfos;
+    this.prefetch = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_QUERY_PREFETCH_BLOCKLET,
+            CarbonCommonConstants.CARBON_QUERY_PREFETCH_BLOCKLET_DEFAULT));
   }
 
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
@@ -83,6 +89,9 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     scannedResult.setBlockletId(
         blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR + blocksChunkHolder
             .getDataBlock().nodeNumber());
+    if (!prefetch) {
+      readBlocklet(blocksChunkHolder);
+    }
     DimensionRawColumnChunk[] dimensionRawColumnChunks =
         blocksChunkHolder.getDimensionRawDataChunk();
     DimensionColumnDataChunk[][] dimensionColumnDataChunks =
