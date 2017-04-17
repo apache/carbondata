@@ -24,7 +24,6 @@ The following sections will elaborate on the above topics :
 * [Suggestions to create CarbonData Table](#suggestions-to-create-carbondata-table)
 * [Optimizing Mass Data Loading](#optimizing-mass-data-loading)
 * [Configurations For Optimizing CarbonData Performance](#configurations-for-optimizing-carbondata-performance)
-*
 
 ## Suggestions to Create CarbonData Table
 
