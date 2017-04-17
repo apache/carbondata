@@ -175,6 +175,63 @@ object HiveExample {
       rowsFetched = rowsFetched + 1
     }
     println(s"******Total Number Of Rows Fetched ****** $rowsFetched")
+
+    logger.info("Fetching the Individual Columns ")
+    //fetching the seperate columns
+    var individualColRowsFetched = 0
+
+    val resultIndividualCol = stmt.executeQuery("SELECT NAME FROM HIVE_CARBON_EXAMPLE")
+
+    while(resultIndividualCol.next){
+      if (individualColRowsFetched == 0) {
+        println("+--------------+")
+        println("| NAME         |")
+
+        println("+---++---------+")
+
+        val resultName = resultIndividualCol.getString("name")
+
+        println(s"| $resultName    |")
+        println("+---+" + "+---------+")
+      }
+      else {
+        val resultName = resultIndividualCol.getString("NAME")
+
+        println(s"| $resultName      |" )
+        println("+---+" + "+---------+" )
+      }
+      individualColRowsFetched =  individualColRowsFetched +1
+    }
+    println(s" ********** Total Rows Fetched When Quering The Individual Column ********** $individualColRowsFetched")
+
+    logger.info("Fetching the Out Of Order Columns ")
+
+    val resultOutOfOrderCol = stmt.executeQuery("SELECT SALARY,ID,NAME FROM HIVE_CARBON_EXAMPLE")
+    var outOfOrderColFetched = 0
+    while (resultOutOfOrderCol.next()){
+      if (outOfOrderColFetched == 0) {
+        println("+---+" + "+-------+" + "+--------------+")
+        println("| Salary|" + "| ID |" + "| NAME        |")
+
+        println("+---+" + "+-------+" + "+--------------+")
+
+        val resultId = resultOutOfOrderCol.getString("id")
+        val resultName = resultOutOfOrderCol.getString("name")
+        val resultSalary = resultOutOfOrderCol.getString("salary")
+
+        println(s"| $resultSalary |" + s"| $resultId |" + s"| $resultName  |")
+        println("+---+" + "+-------+" + "+--------------+")
+      }
+      else {
+        val resultId = resultOutOfOrderCol.getString("ID")
+        val resultName = resultOutOfOrderCol.getString("NAME")
+        val resultSalary = resultOutOfOrderCol.getString("SALARY")
+
+        println(s"| $resultSalary |" + s"| $resultId |" + s"| $resultName   |")
+        println("+---+" + "+-------+" + "+--------------+")
+      }
+      outOfOrderColFetched =  outOfOrderColFetched +1
+    }
     hiveEmbeddedServer2.stop()
     System.exit(0)
   }
