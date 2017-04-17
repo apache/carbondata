@@ -48,7 +48,16 @@ class CarbonSparkSqlParser(conf: SQLConf) extends AbstractSqlParser {
       case ce: MalformedCarbonCommandException =>
         throw ce
       case ex =>
-        astBuilder.parser.parse(sqlText)
+        try {
+          astBuilder.parser.parse(sqlText)
+        } catch {
+          case mce: MalformedCarbonCommandException =>
+            throw mce
+          case e =>
+            sys
+              .error("\n" + "BaseSqlParser>>>> " + ex.getMessage + "\n" + "CarbonSqlParser>>>> " +
+                     e.getMessage)
+        }
     }
   }
 
