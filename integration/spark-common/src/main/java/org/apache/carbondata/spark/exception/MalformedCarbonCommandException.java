@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.exception;
 
+// After parsing carbon query successfully , if any validation fails then
+// use MalformedCarbonCommandException
 public class MalformedCarbonCommandException extends Exception {
 
 
