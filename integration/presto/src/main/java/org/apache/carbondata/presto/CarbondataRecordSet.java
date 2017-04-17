@@ -99,12 +99,10 @@ public class CarbondataRecordSet implements RecordSet {
       RecordCursor rc = new CarbondataRecordCursor(readSupport, carbonIterator, columns, split);
       return rc;
     } catch (QueryExecutionException e) {
-      //throw new InterruptedException(e.getMessage());
-      System.out.println(e.getMessage());
-    } catch (Exception ex) {
-      System.out.println(ex.toString());
+       throw new RuntimeException(e.getMessage(), e);
+   } catch (Exception ex) {
+      throw new RuntimeException(ex.getMessage(), ex);
     }
-    return null;
   }
 }
 

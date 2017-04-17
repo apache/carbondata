@@ -123,9 +123,8 @@ public class CarbondataMetadata implements ConnectorMetadata {
     List<CarbonColumn> carbonColumns = carbonTable.getCreateOrderColumn(schemaTableName.getTableName());
     for (CarbonColumn col : carbonColumns) {
       //show columns command will return these data
-      Type columnType = CarbondataType2SpiMapper(col.getColumnSchema().getDataType());
-      ColumnMetadata columnMeta = new ColumnMetadata(col.getColumnSchema().getColumnName(),
-          columnType);
+      Type columnType = CarbondataType2SpiMapper(col.getColumnSchema());
+      ColumnMetadata columnMeta = new ColumnMetadata(col.getColumnSchema().getColumnName(), columnType);
       columnsMetaList.add(columnMeta);
     }
 
@@ -162,21 +161,21 @@ public class CarbondataMetadata implements ConnectorMetadata {
       column.getNumberOfChild();
       column.getListOfChildDimensions();
 
-      Type spiType = CarbondataType2SpiMapper(cs.getDataType());
+      Type spiType = CarbondataType2SpiMapper(cs);
       columnHandles.put(cs.getColumnName(),
           new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType, column.getSchemaOrdinal(),
               column.getKeyOrdinal(), column.getColumnGroupOrdinal(), false, cs.getColumnGroupId(),
-              cs.getColumnUniqueId(), cs.isUseInvertedIndex()));
+              cs.getColumnUniqueId(), cs.isUseInvertedIndex(), cs.getPrecision(), cs.getScale()));
     }
 
     for (CarbonMeasure measure : cb.getMeasureByTableName(tableName)) {
       ColumnSchema cs = measure.getColumnSchema();
 
-      Type spiType = CarbondataType2SpiMapper(cs.getDataType());
+      Type spiType = CarbondataType2SpiMapper(cs);
       columnHandles.put(cs.getColumnName(),
           new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType, cs.getSchemaOrdinal(),
               measure.getOrdinal(), cs.getColumnGroupId(), true, cs.getColumnGroupId(),
-              cs.getColumnUniqueId(), cs.isUseInvertedIndex()));
+              cs.getColumnUniqueId(), cs.isUseInvertedIndex(), cs.getPrecision(), cs.getScale()));
     }
 
     //should i cache it?
@@ -230,7 +229,8 @@ public class CarbondataMetadata implements ConnectorMetadata {
     return getTableMetadata(carbondataTableHandle.getSchemaTableName());
   }
 
-  public static Type CarbondataType2SpiMapper(DataType colType) {
+  public static Type CarbondataType2SpiMapper(ColumnSchema columnSchema) {
+    DataType colType = columnSchema.getDataType();
     switch (colType) {
       case BOOLEAN:
         return BooleanType.BOOLEAN;
@@ -243,9 +243,12 @@ public class CarbondataMetadata implements ConnectorMetadata {
       case FLOAT:
       case DOUBLE:
         return DoubleType.DOUBLE;
-
       case DECIMAL:
-        return DecimalType.createDecimalType();
+        if(columnSchema.getPrecision() > 0){
+          return DecimalType.createDecimalType(columnSchema.getPrecision(), columnSchema.getScale());
+        } else {
+          return DecimalType.createDecimalType();
+        }
       case STRING:
         return VarcharType.VARCHAR;
       case DATE:
