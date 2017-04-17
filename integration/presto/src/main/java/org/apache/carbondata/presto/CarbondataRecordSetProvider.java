@@ -129,7 +129,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
       CarbondataColumnHandle cdch = (CarbondataColumnHandle) c;
       Type type = cdch.getColumnType();
 
-      DataType coltype = Spi2CarbondataTypeMapper(type);
+      DataType coltype = Spi2CarbondataTypeMapper(cdch);
       Expression colExpression = new ColumnExpression(cdch.getColumnName(), coltype);
 
       domain = originalConstraint.getDomains().get().get(c);
@@ -200,6 +200,10 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
         if (coltype.equals(DataType.STRING)) {
           ex = new EqualToExpression(colExpression,
               new LiteralExpression(((Slice) singleValues.get(0)).toStringUtf8(), coltype));
+        } else if (coltype.equals(DataType.TIMESTAMP) || coltype.equals(DataType.DATE)) {
+          Long value = (Long) singleValues.get(0) * 1000;
+          ex = new EqualToExpression(colExpression,
+              new LiteralExpression(value , coltype));
         } else ex = new EqualToExpression(colExpression,
             new LiteralExpression(singleValues.get(0), coltype));
         filters.add(ex);
@@ -241,16 +245,18 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
         CarbonInputFormatUtil.resolveFilter(finalFilters, queryModel.getAbsoluteTableIdentifier()));
   }
 
-  public static DataType Spi2CarbondataTypeMapper(Type colType) {
+  public static DataType Spi2CarbondataTypeMapper(CarbondataColumnHandle carbondataColumnHandle) {
+    Type colType = carbondataColumnHandle.getColumnType();
     if (colType == BooleanType.BOOLEAN) return DataType.BOOLEAN;
     else if (colType == SmallintType.SMALLINT) return DataType.SHORT;
     else if (colType == IntegerType.INTEGER) return DataType.INT;
     else if (colType == BigintType.BIGINT) return DataType.LONG;
     else if (colType == DoubleType.DOUBLE) return DataType.DOUBLE;
-    else if (colType == DecimalType.createDecimalType()) return DataType.DECIMAL;
     else if (colType == VarcharType.VARCHAR) return DataType.STRING;
     else if (colType == DateType.DATE) return DataType.DATE;
     else if (colType == TimestampType.TIMESTAMP) return DataType.TIMESTAMP;
+    else if (colType == DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
+        carbondataColumnHandle.getScale())) return DataType.DECIMAL;
     else return DataType.STRING;
   }
 

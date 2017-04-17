@@ -18,7 +18,14 @@
 package org.apache.carbondata.presto;
 
 import com.facebook.presto.spi.RecordCursor;
+import com.facebook.presto.spi.type.DecimalType;
+import com.facebook.presto.spi.type.Decimals;
+import com.facebook.presto.spi.type.TimestampType;
 import com.facebook.presto.spi.type.Type;
+import com.facebook.presto.spi.block.Block;
+import com.facebook.presto.spi.block.BlockBuilder;
+import com.facebook.presto.spi.block.BlockBuilderStatus;
+
 import com.google.common.base.Strings;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
@@ -26,16 +33,22 @@ import io.airlift.slice.Slices;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 
 import static com.facebook.presto.spi.type.BooleanType.BOOLEAN;
+import static com.facebook.presto.spi.type.Decimals.isShortDecimal;
+import static com.facebook.presto.spi.type.Decimals.rescale;
 import static com.facebook.presto.spi.type.DoubleType.DOUBLE;
 import static com.facebook.presto.spi.type.VarcharType.VARCHAR;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static io.airlift.slice.Slices.utf8Slice;
 
 public class CarbondataRecordCursor implements RecordCursor {
 
@@ -114,8 +127,10 @@ public class CarbondataRecordCursor implements RecordCursor {
 
   @Override public long getLong(int field) {
     String timeStr = getFieldValue(field);
-    Long milliSec = 0L;
-
+    Type actual = getType(field);
+    if(actual instanceof TimestampType){
+      return new Timestamp(Long.parseLong(timeStr)).getTime()/1000;
+    }
     //suppose the
     return Math.round(Double.parseDouble(getFieldValue(field)));
   }
@@ -126,8 +141,41 @@ public class CarbondataRecordCursor implements RecordCursor {
   }
 
   @Override public Slice getSlice(int field) {
-    checkFieldType(field, VARCHAR);
-    return Slices.utf8Slice(getFieldValue(field));
+    Type decimalType = getType(field);
+    if (decimalType instanceof DecimalType) {
+      DecimalType actual = (DecimalType) decimalType;
+      CarbondataColumnHandle carbondataColumnHandle = columnHandles.get(field);
+      if(carbondataColumnHandle.getPrecision() > 0 ) {
+        checkFieldType(field, DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(), carbondataColumnHandle.getScale()));
+      } else {
+        checkFieldType(field, DecimalType.createDecimalType());
+      }
+      String fieldValue = getFieldValue(field);
+      BigDecimal bigDecimalValue = new BigDecimal(fieldValue);
+      if (isShortDecimal(decimalType)) {
+        return utf8Slice(Decimals.toString(bigDecimalValue.longValue(), actual.getScale()));
+      } else {
+        if (bigDecimalValue.scale() > actual.getScale()) {
+          BigInteger unscaledDecimal =
+              rescale(bigDecimalValue.unscaledValue(), bigDecimalValue.scale(),
+                  bigDecimalValue.scale());
+          Slice decimalSlice = Decimals.encodeUnscaledValue(unscaledDecimal);
+          return utf8Slice(Decimals.toString(decimalSlice, actual.getScale()));
+          //return decimalSlice;
+        } else {
+          BigInteger unscaledDecimal =
+              rescale(bigDecimalValue.unscaledValue(), bigDecimalValue.scale(), actual.getScale());
+          Slice decimalSlice = Decimals.encodeUnscaledValue(unscaledDecimal);
+          return utf8Slice(Decimals.toString(decimalSlice, actual.getScale()));
+          //return decimalSlice;
+
+        }
+
+      }
+    } else {
+      checkFieldType(field, VARCHAR);
+      return utf8Slice(getFieldValue(field));
+    }
   }
 
   @Override public Object getObject(int field) {

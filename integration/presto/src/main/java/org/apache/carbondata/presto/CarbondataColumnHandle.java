@@ -46,6 +46,14 @@ public class CarbondataColumnHandle implements ColumnHandle {
   private final String columnUniqueId;
   private final boolean isInvertedIndex;
 
+  /**
+   * Used when this column contains decimal data.
+   */
+  private int scale;
+
+  private int precision;
+
+
   public boolean isMeasure() {
     return isMeasure;
   }
@@ -76,7 +84,9 @@ public class CarbondataColumnHandle implements ColumnHandle {
       @JsonProperty("isMeasure") boolean isMeasure,
       @JsonProperty("columnGroupId") int columnGroupId,
       @JsonProperty("columnUniqueId") String columnUniqueId,
-      @JsonProperty("isInvertedIndex") boolean isInvertedIndex) {
+      @JsonProperty("isInvertedIndex") boolean isInvertedIndex,
+      @JsonProperty("precision") int precision,
+      @JsonProperty("scale") int scale) {
     this.connectorId = requireNonNull(connectorId, "connectorId is null");
     this.columnName = requireNonNull(columnName, "columnName is null");
     this.columnType = requireNonNull(columnType, "columnType is null");
@@ -89,6 +99,8 @@ public class CarbondataColumnHandle implements ColumnHandle {
     this.columnGroupId = requireNonNull(columnGroupId, "columnGroupId is null");
     this.columnUniqueId = columnUniqueId;//requireNonNull(columnUniqueId, "columnUniqueId is null");
     this.isInvertedIndex = requireNonNull(isInvertedIndex, "isInvertedIndex is null");
+    this.precision = precision;
+    this.scale = scale;
   }
 
   @JsonProperty public String getConnectorId() {
@@ -132,4 +144,15 @@ public class CarbondataColumnHandle implements ColumnHandle {
     return toStringHelper(this).add("connectorId", connectorId).add("columnName", columnName)
         .add("columnType", columnType).add("ordinalPosition", ordinalPosition).toString();
   }
+
+  @JsonProperty public int getScale() {
+    return scale;
+  }
+
+  @JsonProperty public int getPrecision() {
+    return precision;
+  }
+
+
+
 }
