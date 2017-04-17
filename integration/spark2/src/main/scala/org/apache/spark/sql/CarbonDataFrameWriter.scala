@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql
 
+import scala.collection.mutable
+
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.execution.command.LoadTable
@@ -33,8 +35,8 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
 
   def saveAsCarbonFile(parameters: Map[String, String] = Map()): Unit = {
     // create a new table using dataframe's schema and write its content into the table
-    sqlContext.sparkSession.sql(
-      makeCreateTableString(dataFrame.schema, new CarbonOption(parameters)))
+    val sqlString = makeCreateTableString(dataFrame.schema, new CarbonOption(parameters))
+    sqlContext.sparkSession.sql(sqlString)
     writeToCarbonFile(parameters)
   }
 
@@ -84,7 +86,8 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
     LOGGER.info(s"temporary CSV file size: ${countSize / 1024 / 1024} MB")
 
     try {
-      sqlContext.sql(makeLoadString(tempCSVFolder, options))
+      val sqlString = makeLoadString(tempCSVFolder, options)
+      sqlContext.sql(sqlString)
     } finally {
       fs.delete(tempCSVPath, true)
     }
@@ -164,7 +167,8 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
     }
     val property = Map(
       "DICTIONARY_INCLUDE" -> options.dictionaryInclude,
-      "DICTIONARY_EXCLUDE" -> options.dictionaryExclude
+      "DICTIONARY_EXCLUDE" -> options.dictionaryExclude,
+      "SORT_COLUMNS" -> options.sortColumns
     ).filter(_._2.isDefined).map(p => s"'${p._1}' = '${p._2.get}'").mkString(",")
     s"""
        | CREATE TABLE IF NOT EXISTS ${options.dbName}.${options.tableName}

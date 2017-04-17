@@ -57,5 +57,7 @@ class CarbonOption(options: Map[String, String]) {
   def isBucketingEnabled: Boolean = options.contains("bucketcolumns") &&
                                     options.contains("bucketnumber")
 
+  def sortColumns: Option[String] = options.get("sort_columns")
+
   def toMap: Map[String, String] = options
 }
