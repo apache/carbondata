@@ -20,6 +20,7 @@ package org.apache.carbondata.core.metadata.schema;
 import java.io.Serializable;
 import java.util.List;
 
+import org.apache.carbondata.core.metadata.schema.partition.Partitioning;
 import org.apache.carbondata.core.metadata.schema.partition.SinglePartition;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
@@ -39,19 +40,29 @@ public class PartitionInfo implements Serializable {
   private List<ColumnSchema> columnSchemaList;
 
   /**
+   * partition type
+   */
+  private List<Partitioning> partitioning_list;
+
+  /**
    * Partition list
    */
   private List<SinglePartition> partitionList;
 
   public PartitionInfo(List<SinglePartition> partitionList, List<ColumnSchema> columnSchemaList,
-      int numberOfPartitions) {
+      List<Partitioning> partitioning_list, int numberOfPartitions) {
     this.columnSchemaList = columnSchemaList;
+    this.partitioning_list = partitioning_list;
     this.partitionList = partitionList;
     this.numberOfPartitions = numberOfPartitions;
   }
 
   public List<ColumnSchema> getColumnSchemaList() {
     return columnSchemaList;
+  }
+
+  public List<Partitioning> getPartitioningList() {
+    return partitioning_list;
   }
 
   public int getNumberOfPartitions() {

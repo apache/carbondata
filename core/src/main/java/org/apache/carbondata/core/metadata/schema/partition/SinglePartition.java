@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 public class SinglePartition implements Serializable {
 
@@ -34,6 +35,11 @@ public class SinglePartition implements Serializable {
   private String partition_name;
 
   /**
+   * Partition columns
+   */
+  private List<ColumnSchema> columnSchemaList;
+
+  /**
    * partition type
    */
   private List<Partitioning> partitioning_list;
@@ -45,24 +51,29 @@ public class SinglePartition implements Serializable {
 
   /**
    *
+   * @param columnSchemaList
    * @param partitioning_list
    * @param value_list
    */
-  public SinglePartition(List<Partitioning> partitioning_list, List<String> value_list) {
+  public SinglePartition(List<ColumnSchema> columnSchemaList, List<Partitioning> partitioning_list,
+      List<String> value_list) {
+    this.columnSchemaList = columnSchemaList;
     this.partitioning_list = partitioning_list;
     this.boundary_value_list = value_list;
   }
 
   /**
    *
-   * @param partition_id
+   * @param partition_name
+   * @param columnSchemaList
    * @param partitioning_list
    * @param value_list
    */
-  public SinglePartition(int partition_id, List<Partitioning> partitioning_list,
+  public SinglePartition(String partition_name, List<ColumnSchema> columnSchemaList,
+      List<Partitioning> partitioning_list,
       List<String> value_list) {
-    this(partitioning_list, value_list);
-    this.partition_id = partition_id;
+    this(columnSchemaList, partitioning_list, value_list);
+    this.partition_name = partition_name;
   }
 
   /**
@@ -84,11 +95,33 @@ public class SinglePartition implements Serializable {
   }
 
   /**
-   * @param partition_id
+   * @return boundary_value_list
+   */
+  public List<String> getBoundaryValue() {
+    return boundary_value_list;
+  }
+
+  /**
+   * @param partitionName
+   */
+  public void setPartitionName(String partitionName) {
+    this.partition_name = partitionName;
+  }
+
+  /**
+   * set partition name
+   * @param id
+   */
+  public void setPartitionNameById(int id) {
+    this.partition_name = CarbonCommonConstants.CARBON_PARTITION_NAME_PREFIX + id;
+  }
+
+  /**
+   * @param id
    * @return
    */
-  public String getPartitionNameById(int partition_id) {
-    this.partition_name = CarbonCommonConstants.CARBON_PARTITION_NAME_PREFIX + partition_id;
+  public String getPartitionNameById(int id) {
+    this.partition_name = CarbonCommonConstants.CARBON_PARTITION_NAME_PREFIX + id;
     return partition_name;
   }
 }
