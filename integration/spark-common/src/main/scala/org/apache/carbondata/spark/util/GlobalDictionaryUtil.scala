@@ -830,9 +830,9 @@ object GlobalDictionaryUtil {
     val dictLock = CarbonLockFactory
       .getCarbonLockObj(carbonTablePath.getRelativeDictionaryDirectory,
         columnSchema.getColumnUniqueId + LockUsage.LOCK)
-
-    val isDictionaryLocked = dictLock.lockWithRetries()
+    var isDictionaryLocked = false
     try {
+      isDictionaryLocked = dictLock.lockWithRetries()
       if (isDictionaryLocked) {
         LOGGER.info(s"Successfully able to get the dictionary lock for ${
           columnSchema.getColumnName
