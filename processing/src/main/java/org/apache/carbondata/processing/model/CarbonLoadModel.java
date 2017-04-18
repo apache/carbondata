@@ -171,6 +171,7 @@ public class CarbonLoadModel implements Serializable {
    */
   private boolean preFetch;
 
+  private String numberOfcolumns;
   /**
    * get escape char
    *

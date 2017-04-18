@@ -21,6 +21,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
+
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
 import org.apache.hadoop.conf.Configuration;
@@ -63,6 +66,14 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   public static final boolean HEADER_PRESENT_DEFAULT = false;
   public static final String READ_BUFFER_SIZE = "carbon.csvinputformat.read.buffer.size";
   public static final String READ_BUFFER_SIZE_DEFAULT = "65536";
+  public static final String MAX_COLUMNS = "carbon.csvinputformat.max.columns";
+  public static final String NUMBER_OF_COLUMNS = "carbon.csvinputformat.number.of.columns";
+  public static final int DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING = 2000;
+  public static final int THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING = 20000;
+
+  private static LogService LOGGER =
+      LogServiceFactory.getLogService(CSVInputFormat.class.toString());
+
 
   @Override
   public RecordReader<NullWritable, StringArrayWritable> createRecordReader(InputSplit inputSplit,
@@ -145,6 +156,16 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     }
   }
 
+  public static void setMaxColumns(Configuration configuration, String maxColumns) {
+    if (maxColumns != null) {
+      configuration.set(MAX_COLUMNS, maxColumns);
+    }
+  }
+
+  public static void setNumberOfColumns(Configuration configuration, String numberOfColumns) {
+    configuration.set(NUMBER_OF_COLUMNS, numberOfColumns);
+  }
+
   /**
    * Treats value as line in file. Key is null.
    */
@@ -220,8 +241,8 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
       parserSettings.setIgnoreTrailingWhitespaces(false);
       parserSettings.setSkipEmptyLines(false);
       parserSettings.setMaxCharsPerColumn(100000);
-      // TODO get from csv file.
-      parserSettings.setMaxColumns(1000);
+      String maxColumns = job.get(MAX_COLUMNS);
+      parserSettings.setMaxColumns(Integer.parseInt(maxColumns));
       parserSettings.getFormat().setQuote(job.get(QUOTE, QUOTE_DEFAULT).charAt(0));
       parserSettings.getFormat().setQuoteEscape(job.get(ESCAPE, ESCAPE_DEFAULT).charAt(0));
       if (start == 0) {

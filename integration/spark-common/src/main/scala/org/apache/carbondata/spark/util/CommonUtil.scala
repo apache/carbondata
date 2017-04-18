@@ -273,6 +273,9 @@ object CommonUtil {
     CSVInputFormat.setCommentCharacter(configuration, carbonLoadModel.getCommentChar)
     CSVInputFormat.setCSVDelimiter(configuration, carbonLoadModel.getCsvDelimiter)
     CSVInputFormat.setEscapeCharacter(configuration, carbonLoadModel.getEscapeChar)
+    CSVInputFormat.setMaxColumns(configuration, carbonLoadModel.getMaxColumns)
+    CSVInputFormat.setNumberOfColumns(configuration, carbonLoadModel.getCsvHeaderColumns.length
+      .toString)
     CSVInputFormat.setHeaderExtractionEnabled(configuration,
       carbonLoadModel.getCsvHeader == null || carbonLoadModel.getCsvHeader.isEmpty)
     CSVInputFormat.setQuoteCharacter(configuration, carbonLoadModel.getQuoteChar)
@@ -342,7 +345,59 @@ object CommonUtil {
           + "the same. Input file : " + csvFile)
       }
     }
-
     csvColumns
   }
+
+  def validateMaxColumns(csvHeaders: Array[String], maxColumns: String): Int = {
+    /*
+    User configures both csvheadercolumns, maxcolumns,
+      if csvheadercolumns >= maxcolumns, give error
+      if maxcolumns > threashold, give error
+    User configures csvheadercolumns
+      if csvheadercolumns >= maxcolumns(default) then maxcolumns = csvheadercolumns+1
+      if csvheadercolumns >= threashold, give error
+    User configures nothing
+      if csvheadercolumns >= maxcolumns(default) then maxcolumns = csvheadercolumns+1
+      if csvheadercolumns >= threashold, give error
+     */
+    val columnCountInSchema = csvHeaders.length
+    var maxNumberOfColumnsForParsing = 0
+    val maxColumnsInt = getMaxColumnValue(maxColumns)
+    if (maxColumnsInt != null) {
+      if (columnCountInSchema >= maxColumnsInt) {
+        sys.error(s"csv headers should be less than the max columns: $maxColumnsInt")
+      } else if (maxColumnsInt > CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
+        sys.error(s"max columns cannot be greater than the threshold value: ${
+          CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING
+        }")
+      } else {
+        maxNumberOfColumnsForParsing = maxColumnsInt
+      }
+    } else if (columnCountInSchema >= CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
+      sys.error(s"csv header columns should be less than max threashold: ${
+        CSVInputFormat
+          .THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING
+      }")
+    } else if (columnCountInSchema >= CSVInputFormat.DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
+      maxNumberOfColumnsForParsing = columnCountInSchema + 1
+    } else {
+      maxNumberOfColumnsForParsing = CSVInputFormat.DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING
+    }
+    maxNumberOfColumnsForParsing
+  }
+
+  private def getMaxColumnValue(maxColumn: String): Integer = {
+    if (maxColumn != null) {
+      try {
+        maxColumn.toInt
+      } catch {
+        case e: Exception =>
+          LOGGER.error(s"Invalid value for max column in load options ${ e.getMessage }")
+          null
+      }
+    } else {
+      null
+    }
+  }
+
 }
