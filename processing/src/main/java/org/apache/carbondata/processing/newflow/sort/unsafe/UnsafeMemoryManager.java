@@ -33,9 +33,22 @@ public class UnsafeMemoryManager {
       LogServiceFactory.getLogService(UnsafeMemoryManager.class.getName());
 
   static {
-    long size = Long.parseLong(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB,
-            CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT));
+    long size;
+    try {
+      size = Long.parseLong(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB,
+              CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT));
+    } catch (Exception e) {
+      size = Long.parseLong(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT);
+      LOGGER.info("Wrong memory size given, "
+          + "so setting default value to " + size);
+    }
+    if (size < 1024) {
+      size = 1024;
+      LOGGER.info("It is not recommended to keep unsafe memory size less than 1024MB, "
+          + "so setting default value to " + size);
+    }
+
 
     boolean offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
@@ -67,7 +80,16 @@ public class UnsafeMemoryManager {
   private UnsafeMemoryManager(long totalMemory, MemoryAllocator allocator) {
     this.totalMemory = totalMemory;
     this.allocator = allocator;
-    minimumMemory = (long) (totalMemory * ((double) 10 / 100));
+    long numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
+    long sortMemoryChunkSize = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
+    sortMemoryChunkSize = sortMemoryChunkSize * 1024 * 1024;
+    long totalWorkingMemoryForAllThreads = sortMemoryChunkSize * numberOfCores;
+    if (totalWorkingMemoryForAllThreads >= totalMemory) {
+      throw new RuntimeException("Working memory should be less than total memory configured, "
+          + "so either reduce the loading threads or increase the memory size. "
+          + "(Number of threads * number of threads) should be less than total unsafe memory");
+    }
+    minimumMemory = totalWorkingMemoryForAllThreads;
     LOGGER.info("Memory manager is created with size " + totalMemory + " with " + allocator
         + " and minimum reserve memory " + minimumMemory);
   }
