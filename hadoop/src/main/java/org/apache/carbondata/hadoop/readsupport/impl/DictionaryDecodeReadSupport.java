@@ -87,6 +87,9 @@ public class DictionaryDecodeReadSupport<T> implements CarbonReadSupport<T> {
    * threshold is reached
    */
   @Override public void close() {
+    if (dictionaries == null) {
+      return;
+    }
     for (int i = 0; i < dictionaries.length; i++) {
       CarbonUtil.clearDictionaryCache(dictionaries[i]);
     }

@@ -109,6 +109,8 @@ public class ColumnSchema implements Serializable {
    */
   private boolean invisible = false;
 
+  private boolean isSortColumn = false;
+
   /**
    * @return the columnName
    */
@@ -410,5 +412,13 @@ public class ColumnSchema implements Serializable {
 
   public void setSchemaOrdinal(int schemaOrdinal) {
     this.schemaOrdinal = schemaOrdinal;
+  }
+
+  public boolean isSortColumn() {
+    return isSortColumn;
+  }
+
+  public void setSortColumn(boolean sortColumn) {
+    isSortColumn = sortColumn;
   }
 }
