@@ -116,6 +116,16 @@ public class CarbonTable implements Serializable {
    */
   private int blockSize;
 
+  /**
+   * the number of columns in SORT_COLUMNS
+   */
+  private int numberOfSortColumns;
+
+  /**
+   * the number of no dictionary columns in SORT_COLUMNS
+   */
+  private int numberOfNoDictSortColumns;
+
   public CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableImplicitDimensionsMap = new HashMap<String, List<CarbonDimension>>();
@@ -238,10 +248,16 @@ public class CarbonTable implements Serializable {
           i = dimensionOrdinal - 1;
           complexTypeOrdinal = assignComplexOrdinal(complexDimension, complexTypeOrdinal);
         } else {
+          if (!columnSchema.isInvisible() && columnSchema.isSortColumn()) {
+            this.numberOfSortColumns++;
+          }
           if (!columnSchema.getEncodingList().contains(Encoding.DICTIONARY)) {
             CarbonDimension dimension =
                     new CarbonDimension(columnSchema, dimensionOrdinal++,
                             columnSchema.getSchemaOrdinal(), -1, -1, -1);
+            if (!columnSchema.isInvisible() && columnSchema.isSortColumn()) {
+              this.numberOfNoDictSortColumns++;
+            }
             allDimensions.add(dimension);
             primitiveDimensions.add(dimension);
           } else if (columnSchema.getEncodingList().contains(Encoding.DICTIONARY)
@@ -638,5 +654,13 @@ public class CarbonTable implements Serializable {
       }
     }
     tableMeasuresMap.put(tableName, visibleMeasures);
+  }
+
+  public int getNumberOfSortColumns() {
+    return numberOfSortColumns;
+  }
+
+  public int getNumberOfNoDictSortColumns() {
+    return numberOfNoDictSortColumns;
   }
 }

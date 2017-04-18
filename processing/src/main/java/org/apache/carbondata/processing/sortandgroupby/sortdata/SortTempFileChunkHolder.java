@@ -133,6 +133,11 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   private boolean[] isNoDictionaryDimensionColumn;
 
   /**
+   * to store whether sort column is of dictionary type or not
+   */
+  private boolean[] isNoDictionarySortColumn;
+
+  /**
    * Constructor to initialize
    *
    * @param tempFile
@@ -146,7 +151,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    */
   public SortTempFileChunkHolder(File tempFile, int dimensionCount, int complexDimensionCount,
       int measureCount, int fileBufferSize, int noDictionaryCount, char[] aggType,
-      boolean[] isNoDictionaryDimensionColumn) {
+      boolean[] isNoDictionaryDimensionColumn, boolean[] isNoDictionarySortColumn) {
     // set temp file
     this.tempFile = tempFile;
 
@@ -160,7 +165,9 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     this.fileBufferSize = fileBufferSize;
     this.executorService = Executors.newFixedThreadPool(1);
     this.aggType = aggType;
+
     this.isNoDictionaryDimensionColumn = isNoDictionaryDimensionColumn;
+    this.isNoDictionarySortColumn = isNoDictionarySortColumn;
   }
 
   /**
@@ -409,7 +416,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     int[] rightMdkArray = (int[]) other.returnRow[0];
     byte[][] leftNonDictArray = (byte[][]) returnRow[1];
     byte[][] rightNonDictArray = (byte[][]) other.returnRow[1];
-    for (boolean isNoDictionary : isNoDictionaryDimensionColumn) {
+    for (boolean isNoDictionary : isNoDictionarySortColumn) {
       if (isNoDictionary) {
         diff = UnsafeComparer.INSTANCE
             .compareTo(leftNonDictArray[noDictionaryIndex], rightNonDictArray[noDictionaryIndex]);

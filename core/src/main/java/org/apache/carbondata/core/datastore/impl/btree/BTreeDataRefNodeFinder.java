@@ -49,18 +49,20 @@ public class BTreeDataRefNodeFinder implements DataRefNodeFinder {
   private int[] eachColumnValueSize;
 
   /**
-   * this will be used during search for no dictionary column
+   * the number of no dictionary columns in SORT_COLUMNS
    */
-  private int numberOfNoDictionaryColumns;
+  private int numberOfNoDictSortColumns;
 
-  public BTreeDataRefNodeFinder(int[] eachColumnValueSize) {
+  /**
+   * the number of columns in SORT_COLUMNS
+   */
+  private int numberOfSortColumns;
+
+  public BTreeDataRefNodeFinder(int[] eachColumnValueSize, int numberOfSortColumns,
+      int numberOfNoDictSortColumns) {
     this.eachColumnValueSize = eachColumnValueSize;
-
-    for (int i = 0; i < eachColumnValueSize.length; i++) {
-      if (eachColumnValueSize[i] == -1) {
-        numberOfNoDictionaryColumns++;
-      }
-    }
+    this.numberOfNoDictSortColumns = numberOfNoDictSortColumns;
+    this.numberOfSortColumns = numberOfSortColumns;
   }
 
   /**
@@ -213,7 +215,7 @@ public class BTreeDataRefNodeFinder implements DataRefNodeFinder {
     int dictionaryKeyOffset = 0;
     int nonDictionaryKeyOffset = 0;
     int compareResult = 0;
-    int processedNoDictionaryColumn = numberOfNoDictionaryColumns;
+    int processedNoDictionaryColumn = numberOfNoDictSortColumns;
     ByteBuffer firstNoDictionaryKeyBuffer = ByteBuffer.wrap(first.getNoDictionaryKeys());
     ByteBuffer secondNoDictionaryKeyBuffer = ByteBuffer.wrap(second.getNoDictionaryKeys());
     int actualOffset = 0;
@@ -221,7 +223,7 @@ public class BTreeDataRefNodeFinder implements DataRefNodeFinder {
     int firstNoDcitionaryLength = 0;
     int secondNodeDictionaryLength = 0;
 
-    for (int i = 0; i < eachColumnValueSize.length; i++) {
+    for (int i = 0; i < numberOfSortColumns; i++) {
 
       if (eachColumnValueSize[i] != NO_DCITIONARY_COLUMN_VALUE) {
         compareResult = ByteUtil.UnsafeComparer.INSTANCE

@@ -72,7 +72,8 @@ public class RangeNoDictionaryTypeVisitor extends NoDictionaryTypeVisitor
       throw new FilterUnsupportedException(e);
     }
     resolvedFilterObject = FilterUtil
-        .getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal, metadata.isIncludeFilter());
+        .getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal, metadata.isIncludeFilter(),
+            metadata.getColumnExpression().getDataType());
     visitableObj.setFilterValues(resolvedFilterObject);
   }
 }

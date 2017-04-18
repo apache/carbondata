@@ -153,7 +153,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
     this.aggType = parameters.getAggType();
     this.isNoDictionaryDimensionColumn = parameters.getNoDictionaryDimnesionColumn();
     this.nullSetWordsLength = ((measureCount - 1) >> 6) + 1;
-    comparator = new NewRowComparator(isNoDictionaryDimensionColumn);
+    comparator = new NewRowComparator(parameters.getNoDictionarySortColumn());
     initialize();
   }
 

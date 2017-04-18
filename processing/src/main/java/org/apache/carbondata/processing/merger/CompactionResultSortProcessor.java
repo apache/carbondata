@@ -359,10 +359,18 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   private void initializeFinalThreadMergerForMergeSort() {
     String sortTempFileLocation = tempStoreLocation + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
+    boolean[] noDictionarySortColumnMapping = null;
+    if (noDictionaryColMapping.length == this.segmentProperties.getNumberOfSortColumns()) {
+      noDictionarySortColumnMapping = noDictionaryColMapping;
+    } else {
+      noDictionarySortColumnMapping = new boolean[this.segmentProperties.getNumberOfSortColumns()];
+      System.arraycopy(noDictionaryColMapping, 0,
+          noDictionarySortColumnMapping, 0, noDictionarySortColumnMapping.length);
+    }
     finalMerger =
         new SingleThreadFinalSortFilesMerger(sortTempFileLocation, tableName, dimensionColumnCount,
             segmentProperties.getComplexDimensions().size(), measureCount, noDictionaryCount,
-            aggType, noDictionaryColMapping);
+            aggType, noDictionaryColMapping, noDictionarySortColumnMapping);
   }
 
   /**
