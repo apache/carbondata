@@ -33,9 +33,22 @@ public class UnsafeMemoryManager {
       LogServiceFactory.getLogService(UnsafeMemoryManager.class.getName());
 
   static {
-    long size = Long.parseLong(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB,
-            CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT));
+    long size;
+    try {
+      size = Long.parseLong(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB,
+              CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT));
+    } catch (Exception e) {
+      size = Long.parseLong(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT);
+      LOGGER.info("Wrong memory size given, "
+          + "so setting default value to " + size);
+    }
+    if (size < 1024) {
+      size = 1024;
+      LOGGER.info("It is not recommended to keep unsafe memory size less than 1024MB, "
+          + "so setting default value to " + size);
+    }
+
 
     boolean offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
@@ -69,7 +82,7 @@ public class UnsafeMemoryManager {
     this.allocator = allocator;
     long numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
     long sortMemoryChunkSize = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
-    sortMemoryChunkSize = sortMemoryChunkSize * 1024 *1024;
+    sortMemoryChunkSize = sortMemoryChunkSize * 1024 * 1024;
     long totalWorkingMemoryForAllThreads = sortMemoryChunkSize * numberOfCores;
     if (totalWorkingMemoryForAllThreads >= totalMemory) {
       throw new RuntimeException("Working memory should be less than total memory configured, "

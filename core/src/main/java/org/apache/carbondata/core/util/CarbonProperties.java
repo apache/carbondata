@@ -622,7 +622,14 @@ public final class CarbonProperties {
     if (inMemoryChunkSizeInMB > 1024) {
       inMemoryChunkSizeInMB = 1024;
       LOGGER.error(
-          "It is not recommended to increase the sort memory chunk size more than 1024MB, so setting the value to "
+          "It is not recommended to increase the sort memory chunk size more than 1024MB, "
+              + "so setting the value to "
+              + inMemoryChunkSizeInMB);
+    } else if (inMemoryChunkSizeInMB < 32) {
+      inMemoryChunkSizeInMB = 32;
+      LOGGER.error(
+          "It is not recommended to decrease the sort memory chunk size less than 32MB, "
+              + "so setting the value to "
               + inMemoryChunkSizeInMB);
     }
     return inMemoryChunkSizeInMB;
