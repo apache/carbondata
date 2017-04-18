@@ -1185,6 +1185,8 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_BAD_RECORDS_ACTION_DEFAULT = "FORCE";
 
+  public static final String CARBON_PARTITION_NAME_PREFIX = "Part_";
+
   private CarbonCommonConstants() {
   }
 }
