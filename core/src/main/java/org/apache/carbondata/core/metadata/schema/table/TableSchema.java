@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
+import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
@@ -65,6 +66,11 @@ public class TableSchema implements Serializable {
    * Information about bucketing of fields and number of buckets
    */
   private BucketingInfo bucketingInfo;
+
+  /**
+   * Information about partition type, partition column, numbers
+   */
+  private PartitionInfo partitionInfo;
 
   public TableSchema() {
     this.listOfColumns = new ArrayList<ColumnSchema>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -183,5 +189,13 @@ public class TableSchema implements Serializable {
 
   public void setBucketingInfo(BucketingInfo bucketingInfo) {
     this.bucketingInfo = bucketingInfo;
+  }
+
+  public PartitionInfo getPartitionInfo() {
+    return partitionInfo;
+  }
+
+  public void setpartitionInfo(PartitionInfo partitionInfo) {
+    this.partitionInfo = partitionInfo;
   }
 }
