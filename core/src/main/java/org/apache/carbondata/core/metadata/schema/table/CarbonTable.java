@@ -27,11 +27,13 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
+import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.stats.PartitionStatistic;
 
 /**
  * Mapping class for Carbon actual table
@@ -92,6 +94,15 @@ public class CarbonTable implements Serializable {
   private Map<String, BucketingInfo> tableBucketMap;
 
   /**
+   * table partition info
+   */
+  private Map<String, PartitionInfo> tablePartitionMap;
+
+  /**
+   * statistic information of partition table
+   */
+  private PartitionStatistic partitionStatistic;
+  /**
    * tableUniqueName
    */
   private String tableUniqueName;
@@ -131,6 +142,7 @@ public class CarbonTable implements Serializable {
     this.tableImplicitDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableMeasuresMap = new HashMap<String, List<CarbonMeasure>>();
     this.tableBucketMap = new HashMap<>();
+    this.tablePartitionMap = new HashMap<>();
     this.aggregateTablesName = new ArrayList<String>();
     this.createOrderColumn = new HashMap<String, List<CarbonColumn>>();
     this.tablePrimitiveDimensionsMap = new HashMap<String, List<CarbonDimension>>();
@@ -564,6 +576,14 @@ public class CarbonTable implements Serializable {
 
   public BucketingInfo getBucketingInfo(String tableName) {
     return tableBucketMap.get(tableName);
+  }
+
+  public PartitionInfo getPartitionInfo(String tableName) {
+    return tablePartitionMap.get(tableName);
+  }
+
+  public PartitionStatistic getPartitionStatistic() {
+    return partitionStatistic;
   }
 
   /**
