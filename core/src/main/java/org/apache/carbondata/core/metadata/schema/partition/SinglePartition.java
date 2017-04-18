@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
-public class SinglePartition implements Serializable{
+public class SinglePartition implements Serializable {
 
   /**
    * partition id

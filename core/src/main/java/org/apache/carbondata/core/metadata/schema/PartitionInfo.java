@@ -26,7 +26,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 /**
  * Partition information
  */
-public class PartitionInfo implements Serializable{
+public class PartitionInfo implements Serializable {
 
   /**
    * Partition numbers

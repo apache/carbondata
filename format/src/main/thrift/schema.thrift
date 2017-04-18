@@ -51,8 +51,9 @@ enum Encoding{
 
 enum Partitioning{
   RANGE = 0;
-  LIST = 1;
-  HASH = 2;
+  RANGE_INTERVAL = 1;
+  LIST = 2;
+  HASH = 3;
 }
 
 /**
