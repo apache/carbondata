@@ -22,7 +22,7 @@ This tutorial guides you to create CarbonData Tables and optimize performance.
 The following sections will elaborate on the above topics :
 
 * [Suggestions to create CarbonData Table](#suggestions-to-create-carbondata-table)
-* [Optimizing Mass Data Loading](#optimizing-mass-data-loading)
+* [Configuration for Optimizing Data Loading performance for Massive Data](#configuration-for-optimizing-data-loading-performance-for-massive-data)
 * [Configurations For Optimizing CarbonData Performance](#configurations-for-optimizing-carbondata-performance)
 
 ## Suggestions to Create CarbonData Table
@@ -162,7 +162,7 @@ excessive memory usage.
 1 million.
 
 
-## Optimizing Mass Data Loading
+## Configuration for Optimizing Data Loading performance for Massive Data
 
  CarbonData will do a lot steps to load mass data, eg. sort step when inserting data  consumes a lot of memory and disk IO.
  Sometimes CarbonData will complains the "Out Of Memory". If you do not have much memory to use then you may prefer to slow the
