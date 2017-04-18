@@ -604,6 +604,31 @@ public final class CarbonProperties {
   }
 
   /**
+   * Get the sort chunk memory size
+   * @return
+   */
+  public int getSortMemoryChunkSizeInMB() {
+    int inMemoryChunkSizeInMB;
+    try {
+      inMemoryChunkSizeInMB = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB,
+              CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT));
+    } catch (Exception e) {
+      inMemoryChunkSizeInMB =
+          Integer.parseInt(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT);
+      LOGGER.error("Problem in parsing the sort memory chunk size, setting with default value"
+          + inMemoryChunkSizeInMB);
+    }
+    if (inMemoryChunkSizeInMB > 1024) {
+      inMemoryChunkSizeInMB = 1024;
+      LOGGER.error(
+          "It is not recommended to increase the sort memory chunk size more than 1024MB, so setting the value to "
+              + inMemoryChunkSizeInMB);
+    }
+    return inMemoryChunkSizeInMB;
+  }
+
+  /**
    * Batch size of rows while sending data from one step to another in data loading.
    *
    * @return

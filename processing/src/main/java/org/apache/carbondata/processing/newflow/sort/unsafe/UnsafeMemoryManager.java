@@ -67,7 +67,16 @@ public class UnsafeMemoryManager {
   private UnsafeMemoryManager(long totalMemory, MemoryAllocator allocator) {
     this.totalMemory = totalMemory;
     this.allocator = allocator;
-    minimumMemory = (long) (totalMemory * ((double) 10 / 100));
+    long numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
+    long sortMemoryChunkSize = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
+    sortMemoryChunkSize = sortMemoryChunkSize * 1024 *1024;
+    long totalWorkingMemoryForAllThreads = sortMemoryChunkSize * numberOfCores;
+    if (totalWorkingMemoryForAllThreads >= totalMemory) {
+      throw new RuntimeException("Working memory should be less than total memory configured, "
+          + "so either reduce the loading threads or increase the memory size. "
+          + "(Number of threads * number of threads) should be less than total unsafe memory");
+    }
+    minimumMemory = totalWorkingMemoryForAllThreads;
     LOGGER.info("Memory manager is created with size " + totalMemory + " with " + allocator
         + " and minimum reserve memory " + minimumMemory);
   }
