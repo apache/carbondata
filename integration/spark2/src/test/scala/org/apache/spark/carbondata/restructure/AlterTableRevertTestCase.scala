@@ -22,6 +22,7 @@ import java.io.File
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
+import org.apache.spark.util.AlterTableUtil
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.metadata.CarbonMetadata
@@ -93,6 +94,17 @@ class AlterTableRevertTestCase extends QueryTest with BeforeAndAfterAll {
 
       assert(new File(carbonTable.getMetaDataFilepath).listFiles().length < 6)
     }
+  }
+
+  test("test to check if exception during rename table does not throws table not found exception") {
+    val locks = AlterTableUtil
+      .validateTableAndAcquireLock("default", "reverttest", List("meta.lock"))(sqlContext
+        .sparkSession)
+    val exception = intercept[RuntimeException] {
+      sql("alter table reverttest rename to revert")
+    }
+    AlterTableUtil.releaseLocks(locks)
+    assert(exception.getMessage == "Alter table rename table operation failed: Table is locked for updation. Please try after some time")
   }
 
   override def afterAll() {
