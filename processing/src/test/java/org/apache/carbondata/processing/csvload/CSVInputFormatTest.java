@@ -150,6 +150,8 @@ public class CSVInputFormatTest extends TestCase {
 
   private void prepareConf(Configuration conf) {
     conf.setBoolean(CSVInputFormat.HEADER_PRESENT, true);
+    conf.set(CSVInputFormat.MAX_COLUMNS, "10");
+    conf.set(CSVInputFormat.NUMBER_OF_COLUMNS, "7");
   }
 
   private void deleteOutput(File output) {
