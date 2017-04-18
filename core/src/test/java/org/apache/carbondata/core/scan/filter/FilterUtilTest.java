@@ -37,6 +37,7 @@ import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
+import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.RowImpl;
 import org.apache.carbondata.core.util.BitSetGroup;
 
@@ -363,7 +364,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     assertFalse(result);
   }
 
-  @Test public void testGetNoDictionaryValKeyMemberForFilter() {
+  @Test public void testGetNoDictionaryValKeyMemberForFilter() throws FilterUnsupportedException {
     boolean isIncludeFilter = true;
     AbsoluteTableIdentifier absoluteTableIdentifier =
         new AbsoluteTableIdentifier(this.carbonStorePath, carbonTableIdentifier);
@@ -371,7 +372,9 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     List<String> evaluateResultListFinal = new ArrayList<>();
     evaluateResultListFinal.add("test1");
     evaluateResultListFinal.add("test2");
-    assertTrue(FilterUtil.getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal, isIncludeFilter) instanceof DimColumnFilterInfo);
+    assertTrue(FilterUtil
+        .getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal, isIncludeFilter,
+            DataType.STRING) instanceof DimColumnFilterInfo);
   }
 
   @Test public void testPrepareDefaultStartIndexKey() throws KeyGenException {

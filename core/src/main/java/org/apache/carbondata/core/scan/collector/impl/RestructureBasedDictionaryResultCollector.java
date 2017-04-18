@@ -48,7 +48,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     int rowCounter = 0;
     int[] surrogateResult;
-    String[] noDictionaryKeys;
+    byte[][] noDictionaryKeys;
     byte[][] complexTypeKeyArray;
     BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
         scannedResult.getDeleteDeltaDataCache();
@@ -58,7 +58,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
       Object[] row = new Object[queryDimensions.length + queryMeasures.length];
       if (isDimensionExists) {
         surrogateResult = scannedResult.getDictionaryKeyIntegerArray();
-        noDictionaryKeys = scannedResult.getNoDictionaryKeyStringArray();
+        noDictionaryKeys = scannedResult.getNoDictionaryKeyArray();
         complexTypeKeyArray = scannedResult.getComplexTypeKeyArray();
         dictionaryColumnIndex = 0;
         noDictionaryColumnIndex = 0;

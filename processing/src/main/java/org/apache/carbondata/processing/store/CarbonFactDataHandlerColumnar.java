@@ -781,13 +781,15 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     int i = 0;
     int dictionaryColumnCount = -1;
     int noDictionaryColumnCount = -1;
+    boolean isSortColumn = false;
     for (i = 0; i < dimensionType.length; i++) {
+      isSortColumn = i < segmentProperties.getNumberOfSortColumns();
       if (dimensionType[i]) {
         dictionaryColumnCount++;
         if (colGrpModel.isColumnar(dictionaryColumnCount)) {
           submit.add(executorService.submit(
-              new BlockSortThread(i, dataHolders[dictionaryColumnCount].getData(), true,
-                  isUseInvertedIndex[i])));
+              new BlockSortThread(i, dataHolders[dictionaryColumnCount].getData(), isSortColumn,
+                  isUseInvertedIndex[i] & isSortColumn)));
         } else {
           submit.add(
               executorService.submit(new ColGroupBlockStorage(dataHolders[dictionaryColumnCount])));
@@ -795,7 +797,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       } else {
         submit.add(executorService.submit(
             new BlockSortThread(i, noDictionaryColumnsData[++noDictionaryColumnCount], false, true,
-                true, isUseInvertedIndex[i])));
+                isSortColumn, isUseInvertedIndex[i] & isSortColumn)));
       }
     }
     for (int k = 0; k < complexColCount; k++) {
@@ -819,7 +821,42 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
     byte[] composedNonDictStartKey = null;
     byte[] composedNonDictEndKey = null;
-    if (noDictionaryStartKey != null) {
+
+    int numberOfDictSortColumns = segmentProperties.getNumberOfDictSortColumns();
+    // generate start/end key by sort_columns
+    if (numberOfDictSortColumns > 0) {
+      // if sort_columns contain dictionary columns
+      int[] keySize = columnarSplitter.getBlockKeySize();
+      if (keySize.length > numberOfDictSortColumns) {
+        int newMdkLength = 0;
+        for (int index = 0; index < numberOfDictSortColumns; index++) {
+          newMdkLength += keySize[index];
+        }
+        byte[] newStartKeyOfSortKey = new byte[newMdkLength];
+        byte[] newEndKeyOfSortKey = new byte[newMdkLength];
+        System.arraycopy(startkeyLocal, 0, newStartKeyOfSortKey, 0, newMdkLength);
+        System.arraycopy(endKeyLocal, 0, newEndKeyOfSortKey, 0, newMdkLength);
+        startkeyLocal = newStartKeyOfSortKey;
+        endKeyLocal = newEndKeyOfSortKey;
+      }
+    } else {
+      startkeyLocal = new byte[0];
+      endKeyLocal = new byte[0];
+    }
+
+    int numberOfNoDictSortColumns = segmentProperties.getNumberOfNoDictSortColumns();
+    if (numberOfNoDictSortColumns > 0) {
+      // if sort_columns contain no-dictionary columns
+      if (noDictionaryStartKey.length > numberOfNoDictSortColumns) {
+        byte[][] newNoDictionaryStartKey = new byte[numberOfNoDictSortColumns][];
+        byte[][] newNoDictionaryEndKey = new byte[numberOfNoDictSortColumns][];
+        System.arraycopy(noDictionaryStartKey, 0, newNoDictionaryStartKey, 0,
+            numberOfNoDictSortColumns);
+        System
+            .arraycopy(noDictionaryEndKey, 0, newNoDictionaryEndKey, 0, numberOfNoDictSortColumns);
+        noDictionaryStartKey = newNoDictionaryStartKey;
+        noDictionaryEndKey = newNoDictionaryEndKey;
+      }
       composedNonDictStartKey =
           NonDictionaryUtil.packByteBufferIntoSingleByteArray(noDictionaryStartKey);
       composedNonDictEndKey =

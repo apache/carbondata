@@ -88,7 +88,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     int rowCounter = 0;
     int[] surrogateResult;
-    String[] noDictionaryKeys;
+    byte[][] noDictionaryKeys;
     byte[][] complexTypeKeyArray;
     BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
         scannedResult.getDeleteDeltaDataCache();
@@ -96,7 +96,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       Object[] row = new Object[queryDimensions.length + queryMeasures.length];
       if (isDimensionExists) {
         surrogateResult = scannedResult.getDictionaryKeyIntegerArray();
-        noDictionaryKeys = scannedResult.getNoDictionaryKeyStringArray();
+        noDictionaryKeys = scannedResult.getNoDictionaryKeyArray();
         complexTypeKeyArray = scannedResult.getComplexTypeKeyArray();
         dictionaryColumnIndex = 0;
         noDictionaryColumnIndex = 0;
@@ -120,7 +120,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
   }
 
   protected void fillDimensionData(AbstractScannedResult scannedResult, int[] surrogateResult,
-      String[] noDictionaryKeys, byte[][] complexTypeKeyArray,
+      byte[][] noDictionaryKeys, byte[][] complexTypeKeyArray,
       Map<Integer, GenericQueryType> comlexDimensionInfoMap, Object[] row, int i) {
     if (!dictionaryEncodingArray[i]) {
       if (implictColumnArray[i]) {
@@ -134,9 +134,9 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
               DataTypeUtil.getDataBasedOnDataType(scannedResult.getBlockletId(), DataType.STRING);
         }
       } else {
-        row[order[i]] = DataTypeUtil
-            .getDataBasedOnDataType(noDictionaryKeys[noDictionaryColumnIndex++],
-                queryDimensions[i].getDimension().getDataType());
+        row[order[i]] = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(
+            noDictionaryKeys[noDictionaryColumnIndex++],
+            queryDimensions[i].getDimension().getDataType());
       }
     } else if (directDictionaryEncodingArray[i]) {
       if (directDictionaryGenerators[i] != null) {

@@ -55,6 +55,14 @@ public class SegmentProperties {
   private KeyGenerator dimensionKeyGenerator;
 
   /**
+   * key generator which was used to generate the mdkey for dimensions in SORT_COLUMNS
+   * if SORT_COLUMNS contains all dimensions, it is same with dimensionKeyGenerator
+   * otherwise, it is different with dimensionKeyGenerator, the number of its dimensions is less
+   * than dimensionKeyGenerator.
+   */
+  private KeyGenerator sortColumnsGenerator;
+
+  /**
    * list of dimension present in the block
    */
   private List<CarbonDimension> dimensions;
@@ -150,6 +158,10 @@ public class SegmentProperties {
    * column group model
    */
   private ColumnGroupModel colGroupModel;
+
+  private int numberOfSortColumns = 0;
+
+  private int numberOfNoDictSortColumns = 0;
 
   public SegmentProperties(List<ColumnSchema> columnsInTable, int[] columnCardinality) {
     dimensions = new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -336,6 +348,9 @@ public class SegmentProperties {
         if (CarbonUtil.hasEncoding(columnSchema.getEncodingList(), Encoding.DICTIONARY)
             && !isComplexDimensionStarted && columnSchema.getNumberOfChild() == 0) {
           cardinalityIndexForNormalDimensionColumn.add(tableOrdinal);
+          if (columnSchema.isSortColumn()) {
+            this.numberOfSortColumns++;
+          }
           if (columnSchema.isColumnar()) {
             // if it is a columnar dimension participated in mdkey then added
             // key ordinal and dimension ordinal
@@ -385,6 +400,10 @@ public class SegmentProperties {
           // for no dictionary dimension
           carbonDimension = new CarbonDimension(columnSchema, dimensonOrdinal++, -1, -1, -1);
           numberOfNoDictionaryDimension++;
+          if (columnSchema.isSortColumn()) {
+            this.numberOfSortColumns++;
+            this.numberOfNoDictSortColumns++;
+          }
         }
         dimensions.add(carbonDimension);
       } else {
@@ -511,6 +530,14 @@ public class SegmentProperties {
     int[] bitLength = CarbonUtil.getDimensionBitLength(dimColumnsCardinality, dimensionPartitions);
     // create a key generator
     this.dimensionKeyGenerator = new MultiDimKeyVarLengthGenerator(bitLength);
+    if (this.getNumberOfDictSortColumns() == bitLength.length) {
+      this.sortColumnsGenerator = this.dimensionKeyGenerator;
+    } else {
+      int numberOfDictSortColumns = this.getNumberOfDictSortColumns();
+      int [] sortColumnBitLength = new int[numberOfDictSortColumns];
+      System.arraycopy(bitLength, 0, sortColumnBitLength, 0, numberOfDictSortColumns);
+      this.sortColumnsGenerator = new MultiDimKeyVarLengthGenerator(sortColumnBitLength);
+    }
     this.fixedLengthKeySplitter =
         new MultiDimKeyVarLengthVariableSplitGenerator(bitLength, dimensionPartitions);
     // get the size of each value in file block
@@ -634,6 +661,10 @@ public class SegmentProperties {
    */
   public KeyGenerator getDimensionKeyGenerator() {
     return dimensionKeyGenerator;
+  }
+
+  public KeyGenerator getSortColumnsGenerator() {
+    return sortColumnsGenerator;
   }
 
   /**
@@ -797,4 +828,15 @@ public class SegmentProperties {
     return CarbonUtil.getMeasureFromCurrentBlock(this.measures, columnId);
   }
 
+  public int getNumberOfSortColumns() {
+    return numberOfSortColumns;
+  }
+
+  public int getNumberOfNoDictSortColumns() {
+    return numberOfNoDictSortColumns;
+  }
+
+  public int getNumberOfDictSortColumns() {
+    return this.numberOfSortColumns - this.numberOfNoDictSortColumns;
+  }
 }

@@ -204,6 +204,13 @@ public class CarbonFactDataHandlerModel {
         CarbonDataProcessorUtil.getIsUseInvertedIndex(configuration.getDataFields());
 
     int[] dimLensWithComplex = configuration.getCardinalityFinder().getCardinality();
+    if (!configuration.isSortTable()) {
+      for (int i = 0; i < dimLensWithComplex.length; i++) {
+        if (dimLensWithComplex[i] != 0) {
+          dimLensWithComplex[i] = Integer.MAX_VALUE;
+        }
+      }
+    }
     List<Integer> dimsLenList = new ArrayList<Integer>();
     for (int eachDimLen : dimLensWithComplex) {
       if (eachDimLen != 0) dimsLenList.add(eachDimLen);

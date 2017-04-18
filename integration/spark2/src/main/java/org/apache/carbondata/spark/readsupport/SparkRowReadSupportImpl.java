@@ -28,18 +28,25 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 
 public class SparkRowReadSupportImpl extends DictionaryDecodeReadSupport<InternalRow> {
 
+  boolean[] isMeasure;
+
   @Override public void initialize(CarbonColumn[] carbonColumns,
       AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException {
-    super.initialize(carbonColumns, absoluteTableIdentifier);
     //can initialize and generate schema here.
+    isMeasure = new boolean[carbonColumns.length];
+    dataTypes = new DataType[carbonColumns.length];
+    for (int i = 0; i < carbonColumns.length; i++) {
+      isMeasure[i] = !carbonColumns[i].isDimesion();
+      dataTypes[i] = carbonColumns[i].getDataType();
+    }
   }
 
   @Override public InternalRow readRow(Object[] data) {
-    for (int i = 0; i < dictionaries.length; i++) {
+    for (int i = 0; i < isMeasure.length; i++) {
       if (data[i] == null) {
         continue;
       }
-      if (dictionaries[i] == null) {
+      if (isMeasure[i]) {
         if (dataTypes[i].equals(DataType.INT)) {
           data[i] = ((Long)(data[i])).intValue();
         } else if (dataTypes[i].equals(DataType.SHORT)) {

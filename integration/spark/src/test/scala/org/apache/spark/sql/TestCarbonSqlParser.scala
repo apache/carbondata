@@ -32,23 +32,15 @@ private class TestCarbonSqlParserStub extends CarbonSqlParser {
 
   def updateColumnGroupsInFieldTest(fields: Seq[Field], tableProperties: Map[String, String]): Seq[String] = {
 
-     var (dims: Seq[Field], noDictionaryDims: Seq[String]) = extractDimColsAndNoDictionaryFields(
-      fields, tableProperties)
-    val msrs: Seq[Field] = extractMsrColsFromFields(fields, tableProperties)
+     var (dims, msrs, noDictionaryDims, sortkey) = extractDimAndMsrFields(fields, tableProperties)
 
     updateColumnGroupsInField(tableProperties,
         noDictionaryDims, msrs, dims)
   }
 
-  def extractDimColsAndNoDictionaryFieldsTest(fields: Seq[Field], tableProperties: Map[String, String]): (Seq[Field],
-    Seq[String]) = {
-
-    extractDimColsAndNoDictionaryFields(fields, tableProperties)
-  }
-
-  def extractMsrColsFromFieldsTest(fields: Seq[Field], tableProperties: Map[String, String]): (Seq[Field]) = {
-
-    extractMsrColsFromFields(fields, tableProperties)
+  def extractDimAndMsrFieldsTest(fields: Seq[Field],
+      tableProperties: Map[String, String]): (Seq[Field], Seq[Field], Seq[String], Seq[String]) = {
+    extractDimAndMsrFields(fields, tableProperties)
   }
 
 
@@ -199,7 +191,7 @@ class TestCarbonSqlParser extends QueryTest {
     val fields: Seq[Field] = loadAllFields
 
     val stub = new TestCarbonSqlParserStub()
-    val (dimCols, noDictionary) = stub.extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
+    val (dimCols, _, noDictionary, _) = stub.extractDimAndMsrFieldsTest(fields, tableProperties)
 
     // testing col
 
@@ -219,9 +211,7 @@ class TestCarbonSqlParser extends QueryTest {
     val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col1")
     val fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
-    val (dimCols, noDictionary) = stub
-      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
-    val msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+    val (dimCols, msrCols, noDictionary, _) = stub.extractDimAndMsrFieldsTest(fields, tableProperties)
 
     //below fields should be available in dimensions list
     assert(dimCols.size == 7)
@@ -242,9 +232,7 @@ class TestCarbonSqlParser extends QueryTest {
     val tableProperties = Map(CarbonCommonConstants.DICTIONARY_INCLUDE -> "col1")
     val fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
-    val (dimCols, noDictionary) = stub
-      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
-    val msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+    val (dimCols, msrCols, noDictionary, _) = stub.extractDimAndMsrFieldsTest(fields, tableProperties)
 
     //below dimension fields should be available in dimensions list
     assert(dimCols.size == 7)
@@ -264,9 +252,8 @@ class TestCarbonSqlParser extends QueryTest {
     val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col1", CarbonCommonConstants.DICTIONARY_INCLUDE -> "col4")
     val fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
-    val (dimCols, noDictionary) = stub
-      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
-    val msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+    val (dimCols, msrCols, noDictionary, _) = stub.extractDimAndMsrFieldsTest(fields,
+      tableProperties)
 
     //below dimension fields should be available in dimensions list
     assert(dimCols.size == 8)
@@ -287,9 +274,7 @@ class TestCarbonSqlParser extends QueryTest {
     val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col3", CarbonCommonConstants.DICTIONARY_INCLUDE -> "col2")
     val fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
-    val (dimCols, noDictionary) = stub
-      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
-    val msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+    val (dimCols, msrCols, noDictionary, _) = stub.extractDimAndMsrFieldsTest(fields, tableProperties)
 
     //below dimension fields should be available in dimensions list
     assert(dimCols.size == 7)
@@ -310,9 +295,7 @@ class TestCarbonSqlParser extends QueryTest {
     val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col1", CarbonCommonConstants.DICTIONARY_INCLUDE -> "col2")
     val fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
-    val (dimCols, noDictionary) = stub
-      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
-    val msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+    val (dimCols, msrCols, noDictionary, _) = stub.extractDimAndMsrFieldsTest(fields, tableProperties)
 
     //below dimension fields should be available in dimensions list
     assert(dimCols.size == 7)
@@ -333,9 +316,7 @@ class TestCarbonSqlParser extends QueryTest {
     val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col2", CarbonCommonConstants.DICTIONARY_INCLUDE -> "col1")
     val fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
-    val (dimCols, noDictionary) = stub
-      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
-    val msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+    val (dimCols, msrCols, noDictionary, _) = stub.extractDimAndMsrFieldsTest(fields, tableProperties)
 
     //below dimension fields should be available in dimensions list
     assert(dimCols.size == 7)
@@ -358,9 +339,7 @@ class TestCarbonSqlParser extends QueryTest {
     )
     val fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
-    val (dimCols, noDictionary) = stub
-      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
-    val msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+    val (dimCols, msrCols, noDictionary, _) = stub.extractDimAndMsrFieldsTest(fields, tableProperties)
 
     //below dimension fields should be available in dimensions list
     assert(dimCols.size == 8)
@@ -382,9 +361,7 @@ class TestCarbonSqlParser extends QueryTest {
     val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE-> "col2", CarbonCommonConstants.DICTIONARY_INCLUDE -> "col3")
     val fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
-    val (dimCols, noDictionary) = stub
-      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
-    val msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+    val (dimCols, msrCols, noDictionary, _) = stub.extractDimAndMsrFieldsTest(fields, tableProperties)
 
     //below dimension fields should be available in dimensions list
     assert(dimCols.size == 7)
@@ -402,10 +379,11 @@ class TestCarbonSqlParser extends QueryTest {
 
   // Testing the extracting of measures
   test("Test-extractMsrColsFromFields") {
-    val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col2", CarbonCommonConstants.DICTIONARY_INCLUDE -> "col1")
+    val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col2",
+      CarbonCommonConstants.DICTIONARY_INCLUDE -> "col1")
     val fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
-    val msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+    val (_, msrCols, _, _) = stub.extractDimAndMsrFieldsTest(fields, tableProperties)
 
     // testing col
     assert(msrCols.lift(0).get.column.equalsIgnoreCase("col4"))

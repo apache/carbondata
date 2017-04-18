@@ -199,7 +199,9 @@ class InMemoryBTreeIndex implements Index {
 
       // Add all blocks of btree into result
       DataRefNodeFinder blockFinder =
-          new BTreeDataRefNodeFinder(segmentProperties.getEachDimColumnValueSize());
+          new BTreeDataRefNodeFinder(segmentProperties.getEachDimColumnValueSize(),
+              segmentProperties.getNumberOfSortColumns(),
+              segmentProperties.getNumberOfNoDictSortColumns());
       DataRefNode startBlock =
           blockFinder.findFirstDataBlock(abstractIndex.getDataRefNode(), startIndexKey);
       DataRefNode endBlock =

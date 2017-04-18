@@ -80,6 +80,10 @@ public class CarbonDataLoadConfiguration {
 
   private DictionaryCardinalityFinder cardinalityFinder;
 
+  private int numberOfSortColumns;
+
+  private int numberOfNoDictSortColumns;
+
   public CarbonDataLoadConfiguration() {
   }
 
@@ -123,6 +127,26 @@ public class CarbonDataLoadConfiguration {
       }
     }
     return dimCount;
+  }
+
+  public void setNumberOfSortColumns(int numberOfSortColumns) {
+    this.numberOfSortColumns = numberOfSortColumns;
+  }
+
+  public int getNumberOfSortColumns() {
+    return this.numberOfSortColumns;
+  }
+
+  public boolean isSortTable() {
+    return this.numberOfSortColumns > 0;
+  }
+
+  public void setNumberOfNoDictSortColumns(int numberOfNoDictSortColumns) {
+    this.numberOfNoDictSortColumns = numberOfNoDictSortColumns;
+  }
+
+  public int getNumberOfNoDictSortColumns() {
+    return this.numberOfNoDictSortColumns;
   }
 
   public int getComplexDimensionCount() {
