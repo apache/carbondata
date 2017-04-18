@@ -131,6 +131,28 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table")
   }
 
+
+  test("test add column compaction") {
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql(
+      "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+      "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("Alter table carbon_table add columns(decimalField decimal(6,2))")
+
+    sql("Alter table carbon_table compact 'minor'")
+
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS addcolumntest")
     sql("drop table if exists hivetable")
