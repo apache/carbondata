@@ -111,6 +111,34 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("test load dataframe without sort") {
+    df.write
+        .format("carbondata")
+        .option("tableName", "carbon3")
+        .option("sort_columns", "")
+        .mode(SaveMode.Overwrite)
+        .save()
+    sql("select count(*) from carbon3 where c3 > 400").show
+    df.registerTempTable("temp")
+    sql("select count(*) from temp where c3 > 400").show
+    //sql("select * from carbon3 where c3 > 500").show
+    checkAnswer(
+      sql("select count(*) from carbon3 where c3 > 500"), Row(500)
+    )
+  }
+
+  test("test load dataframe using sort_columns") {
+    df.write
+        .format("carbondata")
+        .option("tableName", "carbon3")
+        .option("sort_columns", "c2, c3")
+        .mode(SaveMode.Overwrite)
+        .save()
+    checkAnswer(
+      sql("select count(*) from carbon3 where c3 > 500"), Row(500)
+    )
+  }
+
   test("test decimal values for dataframe load"){
     dataFrame.write
       .format("carbondata")

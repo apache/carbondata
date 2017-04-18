@@ -231,14 +231,14 @@ public class CarbonInputSplit extends FileSplit
     }
 
     // Comparing the time task id of the file to other
-    // if both the task id of the file is same then we need to compare the
-    // offset of
-    // the file
+    // if both the task id of the file is same then we need to compare the offset of the file
     String filePath1 = this.getPath().getName();
     String filePath2 = other.getPath().getName();
     if (CarbonTablePath.isCarbonDataFile(filePath1)) {
-      int firstTaskId = Integer.parseInt(CarbonTablePath.DataFileUtil.getTaskNo(filePath1));
-      int otherTaskId = Integer.parseInt(CarbonTablePath.DataFileUtil.getTaskNo(filePath2));
+      int firstTaskId =
+          Integer.parseInt(CarbonTablePath.DataFileUtil.getTaskNo(filePath1).split("_")[0]);
+      int otherTaskId =
+          Integer.parseInt(CarbonTablePath.DataFileUtil.getTaskNo(filePath2).split("_")[0]);
       if (firstTaskId != otherTaskId) {
         return firstTaskId - otherTaskId;
       }
