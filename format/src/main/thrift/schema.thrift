@@ -131,9 +131,10 @@ struct SchemaEvolution{
  */
 struct SinglePartition{
     1: required i32 partition_id;
-    2: required list<Partitioning> partitioning_list;
-    3: required list<string> boundary_value_list;
-    4: optional string partition_name;
+    2: required list<ColumnSchema> partition_columns;
+    3: required list<Partitioning> partitioning_list;
+    4: required list<string> boundary_value_list;
+    5: optional string partition_name;
 }
 
 /**
@@ -142,7 +143,8 @@ struct SinglePartition{
 struct PartitionInfo{
     1: required list<SinglePartition> partition_list;
     2: required list<ColumnSchema> partition_columns;
-    3: required i32 number_of_partitions;
+    3: required list<Partitioning> partitioning_list;
+    4: required i32 number_of_partitions;
 }
 
 /**
