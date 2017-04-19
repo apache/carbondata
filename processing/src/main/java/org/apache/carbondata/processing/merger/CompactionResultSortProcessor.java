@@ -184,8 +184,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    *
    * @param resultIteratorList
    */
-  private void processResult(List<RawResultIterator> resultIteratorList)
-      throws Exception {
+  private void processResult(List<RawResultIterator> resultIteratorList) throws Exception {
     for (RawResultIterator resultIterator : resultIteratorList) {
       while (resultIterator.hasNext()) {
         addRowForSorting(prepareRowObjectForSorting(resultIterator.next()));
@@ -250,7 +249,9 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   private Object getConvertedMeasureValue(Object value, char aggType) {
     switch (aggType) {
       case CarbonCommonConstants.BIG_DECIMAL_MEASURE:
-        value = ((org.apache.spark.sql.types.Decimal) value).toJavaBigDecimal();
+        if (value != null) {
+          value = ((org.apache.spark.sql.types.Decimal) value).toJavaBigDecimal();
+        }
         return value;
       default:
         return value;

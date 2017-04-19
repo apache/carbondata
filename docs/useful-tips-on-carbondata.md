@@ -162,19 +162,22 @@ excessive memory usage.
 1 million.
 
 
+
 ## Configuration for Optimizing Data Loading performance for Massive Data
 
- CarbonData will do a lot steps to load mass data, eg. sort step when inserting data  consumes a lot of memory and disk IO.
- Sometimes CarbonData will complains the "Out Of Memory". If you do not have much memory to use then you may prefer to slow the
- speed of loading data instead of suffering failing. You may try to modify carbon.properties as suggested below(CarbonData 1.0.0):
 
-| Parameter | Location | Used For  | Description | Tuning |
-|-----------|----------|-----------|-------------|--------|
-|carbon.number.of.cores.while.loading|carbon.properties|Data loading|Specifies the number of cores used for data processing during data loading in CarbonData. |Default: 2.This value should be >= 2 If you have huge memory and cpus, increase it as you will|
-|carbon.sort.size|Data loading|Threshhold to write local file in sort step when loading data|Default: 100000. The value should be >= 100. If you have huge memory and cpus, increase it as you will|
-|carbon.sort.file.write.buffer.size|Data loading|DataOutputStream buffer. Default:  50000. | If you have huge memory and cpus, increase it as you will|
-|carbon.number.of.cores.block.sort|Data loading|Specifies the number of cores used for  sorting data .Default: 7  | If you have huge memory and cpus, increase it as you will|
-|carbon.merge.sort.reader.thread|Data loading|Specifies the number of cores used for temp file merging during data loading in CarbonData. Default: 3 . The value should be >= 2| If you have huge memory and cpus, increase it as you will|
+ CarbonData supports large data load, in this process sorting data while loading consumes a lot of memory and disk IO and
+ this can result sometimes in "Out Of Memory" exception.
+ If you do not have much memory to use, then you may prefer to slow the speed of data loading instead of data load failure.
+ You can configure CarbonData by tuning following properties in carbon.properties file to get a better performance.:
+
+| Parameter | Default Value | Description/Tuning |
+|-----------|-------------|--------|
+|carbon.number.of.cores.while.loading|Default: 2.This value should be >= 2|Specifies the number of cores used for data processing during data loading in CarbonData. |
+|carbon.sort.size|Data loading|Default: 100000. The value should be >= 100.|Threshhold to write local file in sort step when loading data|
+|carbon.sort.file.write.buffer.size|Default:  50000.|DataOutputStream buffer. |
+|carbon.number.of.cores.block.sort|Default: 7 | If you have huge memory and cpus, increase it as you will|
+|carbon.merge.sort.reader.thread|Default: 3 |Specifies the number of cores used for temp file merging during data loading in CarbonData.|
 
 For example, if there are  10 million records ,and i have only 16 cores ,64GB memory, will be loaded to CarbonData table.
 Using the default configuration  always fail in sort step. Modify carbon.properties as suggested below
