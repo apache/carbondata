@@ -74,6 +74,7 @@ public class CacheProviderTest {
     // assert that dictionary cache is an instance of Reverse dictionary cache
     assertTrue(reverseDictionaryCache instanceof ReverseDictionaryCache);
     assertFalse(reverseDictionaryCache instanceof ForwardDictionaryCache);
+    cacheProvider.dropAllCache();
   }
 
   /**
@@ -114,5 +115,6 @@ public class CacheProviderTest {
     String executorCacheSize = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE);
     assertEquals(1024 * 1024 * Integer.parseInt(executorCacheSize), lruCacheMemorySize);
+    cacheProvider.dropAllCache();
   }
 }
