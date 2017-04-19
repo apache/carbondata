@@ -42,18 +42,30 @@ public class PartitionInfo implements Serializable {
   /**
    * partition type
    */
-  private List<Partitioning> partitioning_list;
+  private Partitioning partitioning;
 
   /**
    * Partition list
    */
   private List<SinglePartition> partitionList;
 
-  public PartitionInfo(List<SinglePartition> partitionList, List<ColumnSchema> columnSchemaList,
-      List<Partitioning> partitioning_list, int numberOfPartitions) {
+  /**
+   * @param columnSchemaList
+   * @param partitioning
+   */
+  public PartitionInfo(List<ColumnSchema> columnSchemaList, Partitioning partitioning) {
     this.columnSchemaList = columnSchemaList;
-    this.partitioning_list = partitioning_list;
-    this.partitionList = partitionList;
+    this.partitioning = partitioning;
+  }
+
+  /**
+   * @param columnSchemaList
+   * @param partitioning
+   * @param numberOfPartitions
+   */
+  public PartitionInfo(List<ColumnSchema> columnSchemaList, Partitioning partitioning,
+      int numberOfPartitions) {
+    this(columnSchemaList, partitioning);
     this.numberOfPartitions = numberOfPartitions;
   }
 
@@ -61,8 +73,8 @@ public class PartitionInfo implements Serializable {
     return columnSchemaList;
   }
 
-  public List<Partitioning> getPartitioningList() {
-    return partitioning_list;
+  public Partitioning getPartitioning() {
+    return partitioning;
   }
 
   public int getNumberOfPartitions() {
