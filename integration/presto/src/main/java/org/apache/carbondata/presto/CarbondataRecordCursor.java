@@ -17,29 +17,23 @@
 
 package org.apache.carbondata.presto;
 
-import com.facebook.presto.spi.RecordCursor;
-import com.facebook.presto.spi.type.DecimalType;
-import com.facebook.presto.spi.type.Decimals;
-import com.facebook.presto.spi.type.TimestampType;
-import com.facebook.presto.spi.type.Type;
-import com.facebook.presto.spi.block.Block;
-import com.facebook.presto.spi.block.BlockBuilder;
-import com.facebook.presto.spi.block.BlockBuilderStatus;
-
-import com.google.common.base.Strings;
-import io.airlift.log.Logger;
-import io.airlift.slice.Slice;
-import io.airlift.slice.Slices;
-import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
-
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
+
+import com.facebook.presto.spi.RecordCursor;
+import com.facebook.presto.spi.type.DecimalType;
+import com.facebook.presto.spi.type.Decimals;
+import com.facebook.presto.spi.type.TimestampType;
+import com.facebook.presto.spi.type.Type;
+import com.google.common.base.Strings;
+import io.airlift.log.Logger;
+import io.airlift.slice.Slice;
 
 import static com.facebook.presto.spi.type.BooleanType.BOOLEAN;
 import static com.facebook.presto.spi.type.Decimals.isShortDecimal;
@@ -103,11 +97,9 @@ public class CarbondataRecordCursor implements RecordCursor {
     if (rowCursor.hasNext()) {
       Object[] columns = readSupport.readRow(rowCursor.next());
       fields = new ArrayList<String>();
-      if(columns != null && columns.length > 0)
-      {
-        for(Object value : columns){
-          if(value != null )
-          {
+      if (columns != null && columns.length > 0) {
+        for (Object value : columns) {
+          if (value != null) {
             fields.add(value.toString());
           } else {
             fields.add(null);
@@ -128,8 +120,8 @@ public class CarbondataRecordCursor implements RecordCursor {
   @Override public long getLong(int field) {
     String timeStr = getFieldValue(field);
     Type actual = getType(field);
-    if(actual instanceof TimestampType){
-      return new Timestamp(Long.parseLong(timeStr)).getTime()/1000;
+    if (actual instanceof TimestampType) {
+      return new Timestamp(Long.parseLong(timeStr)).getTime() / 1000;
     }
     //suppose the
     return Math.round(Double.parseDouble(getFieldValue(field)));
@@ -141,18 +133,19 @@ public class CarbondataRecordCursor implements RecordCursor {
   }
 
   @Override public Slice getSlice(int field) {
-    Type decimalType = getType(field);
-    if (decimalType instanceof DecimalType) {
-      DecimalType actual = (DecimalType) decimalType;
+    Type type = getType(field);
+    if (type instanceof DecimalType) {
+      DecimalType actual = (DecimalType) type;
       CarbondataColumnHandle carbondataColumnHandle = columnHandles.get(field);
-      if(carbondataColumnHandle.getPrecision() > 0 ) {
-        checkFieldType(field, DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(), carbondataColumnHandle.getScale()));
+      if (carbondataColumnHandle.getPrecision() > 0) {
+        checkFieldType(field, DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
+            carbondataColumnHandle.getScale()));
       } else {
         checkFieldType(field, DecimalType.createDecimalType());
       }
       String fieldValue = getFieldValue(field);
       BigDecimal bigDecimalValue = new BigDecimal(fieldValue);
-      if (isShortDecimal(decimalType)) {
+      if (isShortDecimal(type)) {
         return utf8Slice(Decimals.toString(bigDecimalValue.longValue(), actual.getScale()));
       } else {
         if (bigDecimalValue.scale() > actual.getScale()) {
@@ -168,9 +161,7 @@ public class CarbondataRecordCursor implements RecordCursor {
           Slice decimalSlice = Decimals.encodeUnscaledValue(unscaledDecimal);
           return utf8Slice(Decimals.toString(decimalSlice, actual.getScale()));
           //return decimalSlice;
-
         }
-
       }
     } else {
       checkFieldType(field, VARCHAR);
@@ -179,7 +170,70 @@ public class CarbondataRecordCursor implements RecordCursor {
   }
 
   @Override public Object getObject(int field) {
-    return null;
+    if (columnHandles.get(field).getColumnType().getDisplayName().startsWith("array")) {
+      Object arrValues = getData(field);
+      return arrValues;
+    } else {
+      return null;
+    }
+  }
+
+  private Object getData(int field) {
+    String fieldValue = getFieldValue(field);
+    String[] data =
+        fieldValue.replaceAll("\\[", "").replaceAll("\\]", "").replaceAll("\\s", "").split(",");
+    Type arrDatatype = columnHandles.get(field).getColumnType().getTypeParameters().get(0);
+    String typeName = arrDatatype.getDisplayName();
+    if (typeName.equals("boolean")) {
+      Boolean[] boolResults = new Boolean[data.length];
+      for (int i = 0; i < boolResults.length; i++) {
+        boolResults[i] = checkNullValue(data[i]) ? null : Boolean.parseBoolean(data[i]);
+      }
+      return boolResults;
+    } else if (typeName.equals("long") || typeName.equals("bigint")) {
+      Long[] longResults = new Long[data.length];
+      for (int i = 0; i < longResults.length; i++) {
+        longResults[i] = checkNullValue(data[i]) ? null : Long.parseLong(data[i]);
+      }
+      return longResults;
+    } else if (typeName.equals("date") || typeName.equals("integer")) {
+      Integer[] intResults = new Integer[data.length];
+      for (int i = 0; i < intResults.length; i++) {
+        intResults[i] = checkNullValue(data[i]) ? null : Integer.parseInt(data[i]);
+      }
+      return intResults;
+    } else if (typeName.equals("double")) {
+      Double[] doubleResults = new Double[data.length];
+      for (int i = 0; i < doubleResults.length; i++) {
+        doubleResults[i] = checkNullValue(data[i]) ? null : Double.parseDouble(data[i]);
+      }
+      return doubleResults;
+    } else if (typeName.equals("float")) {
+      Float[] floatResults = new Float[data.length];
+      for (int i = 0; i < floatResults.length; i++) {
+        floatResults[i] = checkNullValue(data[i]) ? null : Float.parseFloat(data[i]);
+      }
+      return floatResults;
+    } else if (typeName.contains("decimal")) {
+      BigDecimal[] bigDecimalResults = new BigDecimal[data.length];
+      for (int i = 0; i < data.length; i++) {
+        bigDecimalResults[i] = checkNullValue(data[i]) ? null : new BigDecimal(data[i]);
+      }
+      return bigDecimalResults;
+    } else if (typeName.equals("timestamp")) {
+      Long[] timestampResults = new Long[data.length];
+      for (int i = 0; i < timestampResults.length; i++) {
+        timestampResults[i] = checkNullValue(data[i]) ?
+            null :
+            new Timestamp(Long.parseLong(data[i])).getTime() / 1000;
+      }
+      return timestampResults;
+    } else return data;
+
+  }
+
+  private boolean checkNullValue(String val) {
+    return val.equals("null");
   }
 
   @Override public boolean isNull(int field) {

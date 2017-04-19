@@ -29,6 +29,7 @@ import com.facebook.presto.spi.predicate.Domain;
 import com.facebook.presto.spi.predicate.Range;
 import com.facebook.presto.spi.predicate.TupleDomain;
 import com.facebook.presto.spi.type.*;
+import com.facebook.presto.type.ArrayType;
 import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slice;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -257,6 +258,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
     else if (colType == TimestampType.TIMESTAMP) return DataType.TIMESTAMP;
     else if (colType == DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
         carbondataColumnHandle.getScale())) return DataType.DECIMAL;
+    else if(colType instanceof ArrayType) return DataType.ARRAY;
     else return DataType.STRING;
   }
 
