@@ -67,7 +67,7 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     s"""LOAD DATA LOCAL INPATH '$resourcesPath/badrecords/datasample.csv' INTO TABLE
          |restructure_bad OPTIONS
          |('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'bad_records_logger_enable'='true',
-         |'bad_records_action'='redirect')"""
+         |'bad_records_action'='force')"""
       .stripMargin)
 
   }
