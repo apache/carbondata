@@ -108,15 +108,14 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     if (scannedResult != null && scannedResult.hasNext()) {
       return true;
     } else {
+      if (null != scannedResult) {
+        scannedResult.freeMemory();
+      }
       return dataBlockIterator.hasNext() || nextBlock.get() || nextRead.get();
     }
   }
 
   protected boolean updateScanner() {
-    // clear the current result if all the records are processed
-    if (scannedResult != null && !scannedResult.hasNext()) {
-      scannedResult.freeMemory();
-    }
     try {
       if (scannedResult != null && scannedResult.hasNext()) {
         return true;

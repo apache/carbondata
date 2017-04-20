@@ -314,11 +314,39 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
   @Override public void writeBlockletData(NodeHolder holder) throws CarbonDataWriterException {
     // check the number of pages present in data holder, if pages is exceeding threshold
     // it will write the pages to file
-    if (dataWriterHolder.getSize() + holder.getHolderSize() >= blockletSize) {
-      LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getSize());
-      writeDataToFile(fileChannel);
+    // condition for writting all the pages
+    if (!holder.isWriteAll()) {
+      boolean isAdded = false;
+      // check if size more than blocklet size then write the page
+      if (dataWriterHolder.getSize() + holder.getHolderSize() >= blockletSize) {
+        // if one page size is more than blocklet size
+        if (dataWriterHolder.getNodeHolder().size() == 0) {
+          isAdded = true;
+          dataWriterHolder.addNodeHolder(holder);
+        }
+        LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getSize());
+        // write the data
+        writeDataToFile(fileChannel);
+      }
+      if (!isAdded) {
+        dataWriterHolder.addNodeHolder(holder);
+      }
+    } else {
+      //for last blocklet check if the last page will exceed the blocklet size then write
+      // existing pages and then last page
+      if (dataWriterHolder.getSize() + holder.getHolderSize() >= blockletSize
+          && dataWriterHolder.getNodeHolder().size() > 0) {
+        LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getSize());
+        writeDataToFile(fileChannel);
+        dataWriterHolder.addNodeHolder(holder);
+        LOGGER.info("Number of Pages for blocklet is: " + "1");
+        writeDataToFile(fileChannel);
+      } else {
+        dataWriterHolder.addNodeHolder(holder);
+        LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getSize());
+        writeDataToFile(fileChannel);
+      }
     }
-    dataWriterHolder.addNodeHolder(holder);
   }
 
   private void writeDataToFile(FileChannel channel) {
@@ -538,19 +566,21 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
    * @throws CarbonDataWriterException
    */
   public void closeWriter() throws CarbonDataWriterException {
-    if (dataWriterHolder.getNodeHolder().size() > 0) {
-      writeDataToFile(fileChannel);
-      writeBlockletInfoToFile(fileChannel, carbonDataFileTempPath);
-      CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
-      renameCarbonDataFile();
-      copyCarbonDataFileToCarbonStorePath(
-          this.carbonDataFileTempPath.substring(0, this.carbonDataFileTempPath.lastIndexOf('.')));
-      try {
-        writeIndexFile();
-      } catch (IOException e) {
-        throw new CarbonDataWriterException("Problem while writing the index file", e);
-      }
+    CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
+    renameCarbonDataFile();
+    copyCarbonDataFileToCarbonStorePath(
+        this.carbonDataFileTempPath.substring(0, this.carbonDataFileTempPath.lastIndexOf('.')));
+    try {
+      writeIndexFile();
+    } catch (IOException e) {
+      throw new CarbonDataWriterException("Problem while writing the index file", e);
     }
     closeExecutorService();
+  }
+
+  @Override public void writeBlockletInfoToFile() throws CarbonDataWriterException {
+    if (this.blockletMetadata.size() > 0) {
+      writeBlockletInfoToFile(fileChannel, carbonDataFileTempPath);
+    }
   }
 }

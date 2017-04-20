@@ -26,6 +26,8 @@ public class UnsafeMemoryAllocator implements MemoryAllocator {
   @Override
   public MemoryBlock allocate(long size) throws OutOfMemoryError {
     long address = CarbonUnsafe.unsafe.allocateMemory(size);
+    // initializing memory with zero
+    CarbonUnsafe.unsafe.setMemory(null, address, size, (byte) 0);
     return new MemoryBlock(null, address, size);
   }
 
