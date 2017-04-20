@@ -17,14 +17,20 @@
 
 package org.apache.carbondata.core.stats;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class PartitionStatistic {
 
-  private int numberOfPartitions = 0;
+  private int numberOfPartitions;
 
   private Map<Integer, Integer> partitionIdToRowCountMap;
 
+  public PartitionStatistic() {
+    this.numberOfPartitions = 0;
+    this.partitionIdToRowCountMap = new HashMap<>();
+  }
+  
   public void setNumberOfPartitions(int n) {
     this.numberOfPartitions = n;
   }
