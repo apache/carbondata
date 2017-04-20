@@ -361,7 +361,7 @@ class TableNewProcessor(cm: TableModel) {
     var index = 0
     var bitmapStr: String = cm.tableProperties
       .get(CarbonCommonConstants.BITMAP_ENCODING).getOrElse(null)
-    var bitmapCols: Array[String] = null
+    var bitmapCols: Array[String] = new Array[String](0)
     if (bitmapStr != null) {
       bitmapCols = bitmapStr.split(CarbonCommonConstants.COMMA)
     }
