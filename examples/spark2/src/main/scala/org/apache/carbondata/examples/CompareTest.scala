@@ -266,6 +266,7 @@ object CompareTest {
           .option("tempCSV", "false")
           .option("single_pass", "true")
           .option("dictionary_exclude", "id") // id is high cardinality column
+          .option("sort_columns", "")
           .mode(SaveMode.Overwrite)
           .save()
     }
@@ -278,6 +279,7 @@ object CompareTest {
     val loadParquetTime = loadParquetTable(spark, df)
     val loadCarbonV3Time = loadCarbonTable(spark, df, version = "3")
     println(s"load completed, time: $loadParquetTime, $loadCarbonV3Time")
+    df.unpersist()
     spark.read.parquet(parquetTableName).registerTempTable(parquetTableName)
   }
 

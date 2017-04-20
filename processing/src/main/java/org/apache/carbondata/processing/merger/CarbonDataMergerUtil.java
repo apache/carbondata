@@ -853,12 +853,12 @@ public final class CarbonDataMergerUtil {
    * @return
    */
   public static List<String> getValidSegmentList(AbsoluteTableIdentifier absoluteTableIdentifier)
-          throws IOException {
+      throws IOException {
 
     SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegments = null;
     try {
       validAndInvalidSegments =
-              new SegmentStatusManager(absoluteTableIdentifier).getValidAndInvalidSegments();
+          new SegmentStatusManager(absoluteTableIdentifier).getValidAndInvalidSegments();
     } catch (IOException e) {
       LOGGER.error("Error while getting valid segment list for a table identifier");
       throw new IOException();
@@ -913,9 +913,9 @@ public final class CarbonDataMergerUtil {
 
   private static boolean isSegmentValid(LoadMetadataDetails seg) {
     return seg.getLoadStatus().equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
-            || seg.getLoadStatus()
-            .equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS) || seg
-            .getLoadStatus().equalsIgnoreCase(CarbonCommonConstants.MARKED_FOR_UPDATE);
+        || seg.getLoadStatus()
+        .equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS) || seg
+        .getLoadStatus().equalsIgnoreCase(CarbonCommonConstants.MARKED_FOR_UPDATE);
   }
 
   /**
@@ -1200,16 +1200,16 @@ public final class CarbonDataMergerUtil {
     CarbonDeleteFilesDataReader dataReader = new CarbonDeleteFilesDataReader();
     try {
       deleteDeltaBlockDetails =
-              dataReader.getCompactedDeleteDeltaFileFromBlock(deleteDeltaFiles, blockName);
+          dataReader.getCompactedDeleteDeltaFileFromBlock(deleteDeltaFiles, blockName);
     } catch (Exception e) {
       String blockFilePath = fullBlockFilePath
-              .substring(0, fullBlockFilePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
+          .substring(0, fullBlockFilePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
       LOGGER.error("Error while getting the delete delta blocks in path " + blockFilePath);
       throw new IOException();
     }
     CarbonDeleteDeltaWriterImpl carbonDeleteWriter =
-            new CarbonDeleteDeltaWriterImpl(fullBlockFilePath,
-                    FileFactory.getFileType(fullBlockFilePath));
+        new CarbonDeleteDeltaWriterImpl(fullBlockFilePath,
+            FileFactory.getFileType(fullBlockFilePath));
     try {
       carbonDeleteWriter.write(deleteDeltaBlockDetails);
     } catch (IOException e) {
@@ -1220,11 +1220,11 @@ public final class CarbonDataMergerUtil {
   }
 
   public static Boolean updateStatusFile(
-          List<CarbonDataMergerUtilResult> updateDataMergerDetailsList, CarbonTable table,
-          String timestamp, SegmentUpdateStatusManager segmentUpdateStatusManager) {
+      List<CarbonDataMergerUtilResult> updateDataMergerDetailsList, CarbonTable table,
+      String timestamp, SegmentUpdateStatusManager segmentUpdateStatusManager) {
 
     List<SegmentUpdateDetails> segmentUpdateDetails =
-            new ArrayList<SegmentUpdateDetails>(updateDataMergerDetailsList.size());
+        new ArrayList<SegmentUpdateDetails>(updateDataMergerDetailsList.size());
 
 
     // Check the list output.
@@ -1235,10 +1235,10 @@ public final class CarbonDataMergerUtil {
         tempSegmentUpdateDetails.setBlockName(carbonDataMergerUtilResult.getBlockName());
 
         for (SegmentUpdateDetails origDetails : segmentUpdateStatusManager
-                .getUpdateStatusDetails()) {
+            .getUpdateStatusDetails()) {
           if (origDetails.getBlockName().equalsIgnoreCase(carbonDataMergerUtilResult.getBlockName())
-                  && origDetails.getSegmentName()
-                  .equalsIgnoreCase(carbonDataMergerUtilResult.getSegmentName())) {
+              && origDetails.getSegmentName()
+              .equalsIgnoreCase(carbonDataMergerUtilResult.getSegmentName())) {
 
             tempSegmentUpdateDetails.setDeletedRowsInBlock(origDetails.getDeletedRowsInBlock());
             tempSegmentUpdateDetails.setStatus(origDetails.getStatus());
@@ -1247,9 +1247,9 @@ public final class CarbonDataMergerUtil {
         }
 
         tempSegmentUpdateDetails.setDeleteDeltaStartTimestamp(
-                carbonDataMergerUtilResult.getDeleteDeltaStartTimestamp());
+            carbonDataMergerUtilResult.getDeleteDeltaStartTimestamp());
         tempSegmentUpdateDetails
-              .setDeleteDeltaEndTimestamp(carbonDataMergerUtilResult.getDeleteDeltaEndTimestamp());
+            .setDeleteDeltaEndTimestamp(carbonDataMergerUtilResult.getDeleteDeltaEndTimestamp());
 
         segmentUpdateDetails.add(tempSegmentUpdateDetails);
       } else return false;
@@ -1262,8 +1262,8 @@ public final class CarbonDataMergerUtil {
     AbsoluteTableIdentifier absoluteTableIdentifier = table.getAbsoluteTableIdentifier();
 
     CarbonTablePath carbonTablePath = CarbonStorePath
-            .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-                    absoluteTableIdentifier.getCarbonTableIdentifier());
+        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+            absoluteTableIdentifier.getCarbonTableIdentifier());
 
     String tableStatusPath = carbonTablePath.getTableStatusFilePath();
 
@@ -1277,38 +1277,38 @@ public final class CarbonDataMergerUtil {
       lockStatus = carbonLock.lockWithRetries();
       if (lockStatus) {
         LOGGER.info(
-                "Acquired lock for table" + table.getDatabaseName() + "." + table.getFactTableName()
-                        + " for table status updation");
+            "Acquired lock for table" + table.getDatabaseName() + "." + table.getFactTableName()
+                + " for table status updation");
 
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
-                segmentStatusManager.readLoadMetadata(metaDataFilepath);
+            segmentStatusManager.readLoadMetadata(metaDataFilepath);
 
         for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
           if (loadMetadata.getLoadName().equalsIgnoreCase("0")) {
             loadMetadata.setUpdateStatusFileName(
-                    CarbonUpdateUtil.getUpdateStatusFileName(timestamp));
+                CarbonUpdateUtil.getUpdateStatusFileName(timestamp));
           }
         }
         try {
           segmentStatusManager
-                  .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
+              .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
         } catch (IOException e) {
           return false;
         }
       } else {
         LOGGER.error("Not able to acquire the lock for Table status updation for table " + table
-                .getDatabaseName() + "." + table.getFactTableName());
+            .getDatabaseName() + "." + table.getFactTableName());
       }
     } finally {
       if (lockStatus) {
         if (carbonLock.unlock()) {
           LOGGER.info(
-                 "Table unlocked successfully after table status updation" + table.getDatabaseName()
-                          + "." + table.getFactTableName());
+              "Table unlocked successfully after table status updation" + table.getDatabaseName()
+                  + "." + table.getFactTableName());
         } else {
           LOGGER.error(
-                  "Unable to unlock Table lock for table" + table.getDatabaseName() + "." + table
-                          .getFactTableName() + " during table status updation");
+              "Unable to unlock Table lock for table" + table.getDatabaseName() + "." + table
+                  .getFactTableName() + " during table status updation");
         }
       }
     }
@@ -1326,7 +1326,7 @@ public final class CarbonDataMergerUtil {
 
     String metadataPath = model.getCarbonDataLoadSchema().getCarbonTable().getMetaDataFilepath();
     AbsoluteTableIdentifier absoluteTableIdentifier =
-            model.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
+        model.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
     LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metadataPath);
     List<LoadMetadataDetails> originalList = Arrays.asList(details);
@@ -1340,24 +1340,24 @@ public final class CarbonDataMergerUtil {
 
 
     ICarbonLock carbonTableStatusLock = CarbonLockFactory.getCarbonLockObj(
-            model.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier(),
-            LockUsage.TABLE_STATUS_LOCK);
+        model.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier(),
+        LockUsage.TABLE_STATUS_LOCK);
 
     try {
       if (carbonTableStatusLock.lockWithRetries()) {
         LOGGER.info(
             "Acquired lock for the table " + model.getDatabaseName() + "." + model.getTableName()
-                        + " for table status updation ");
+                + " for table status updation ");
         CarbonTablePath carbonTablePath = CarbonStorePath
-                .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-                        absoluteTableIdentifier.getCarbonTableIdentifier());
+            .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+                absoluteTableIdentifier.getCarbonTableIdentifier());
 
         segmentStatusManager.writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePath(),
-                originalList.toArray(new LoadMetadataDetails[originalList.size()]));
+            originalList.toArray(new LoadMetadataDetails[originalList.size()]));
       } else {
         LOGGER.error(
-                "Could not able to obtain lock for table" + model.getDatabaseName() + "." + model
-                        .getTableName() + "for table status updation");
+            "Could not able to obtain lock for table" + model.getDatabaseName() + "." + model
+                .getTableName() + "for table status updation");
         throw new Exception("Failed to update the MajorCompactionStatus.");
       }
     } catch (IOException e) {
@@ -1366,11 +1366,11 @@ public final class CarbonDataMergerUtil {
     } finally {
       if (carbonTableStatusLock.unlock()) {
         LOGGER.info(
-                "Table unlocked successfully after table status updation" + model.getDatabaseName()
-                        + "." + model.getTableName());
+            "Table unlocked successfully after table status updation" + model.getDatabaseName()
+                + "." + model.getTableName());
       } else {
         LOGGER.error("Unable to unlock Table lock for table" + model.getDatabaseName() + "." + model
-                .getTableName() + " during table status updation");
+            .getTableName() + " during table status updation");
       }
     }
 

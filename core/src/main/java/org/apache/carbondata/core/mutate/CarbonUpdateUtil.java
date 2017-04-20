@@ -54,7 +54,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 public class CarbonUpdateUtil {
 
   private static final LogService LOGGER =
-          LogServiceFactory.getLogService(CarbonUpdateUtil.class.getName());
+      LogServiceFactory.getLogService(CarbonUpdateUtil.class.getName());
 
   /**
    * returns required filed from tuple id
@@ -86,11 +86,11 @@ public class CarbonUpdateUtil {
    */
   public static String getTableBlockPath(String tid, String factPath) {
     String part =
-            CarbonTablePath.addPartPrefix(getRequiredFieldFromTID(tid, TupleIdEnum.PART_ID));
+        CarbonTablePath.addPartPrefix(getRequiredFieldFromTID(tid, TupleIdEnum.PART_ID));
     String segment =
-            CarbonTablePath.addSegmentPrefix(getRequiredFieldFromTID(tid, TupleIdEnum.SEGMENT_ID));
+        CarbonTablePath.addSegmentPrefix(getRequiredFieldFromTID(tid, TupleIdEnum.SEGMENT_ID));
     return factPath + CarbonCommonConstants.FILE_SEPARATOR + part
-            + CarbonCommonConstants.FILE_SEPARATOR + segment;
+        + CarbonCommonConstants.FILE_SEPARATOR + segment;
 
   }
 
@@ -103,7 +103,7 @@ public class CarbonUpdateUtil {
    * @return
    */
   public static String getDeleteDeltaFilePath(String blockPath, String blockName,
-                                              String timestamp) {
+      String timestamp) {
     return blockPath + CarbonCommonConstants.FILE_SEPARATOR + blockName
         + CarbonCommonConstants.HYPHEN + timestamp + CarbonCommonConstants.DELETE_DELTA_FILE_EXT;
 
@@ -119,7 +119,7 @@ public class CarbonUpdateUtil {
       CarbonTable table, String updateStatusFileIdentifier, boolean isCompaction) {
     boolean status = false;
     SegmentUpdateStatusManager segmentUpdateStatusManager =
-            new SegmentUpdateStatusManager(table.getAbsoluteTableIdentifier());
+        new SegmentUpdateStatusManager(table.getAbsoluteTableIdentifier());
     ICarbonLock updateLock = segmentUpdateStatusManager.getTableUpdateStatusLock();
     boolean lockStatus = false;
 
@@ -130,12 +130,12 @@ public class CarbonUpdateUtil {
         AbsoluteTableIdentifier absoluteTableIdentifier = table.getAbsoluteTableIdentifier();
 
         CarbonTablePath carbonTablePath = CarbonStorePath
-                .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-                        absoluteTableIdentifier.getCarbonTableIdentifier());
+            .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+                absoluteTableIdentifier.getCarbonTableIdentifier());
 
         // read the existing file if present and update the same.
         SegmentUpdateDetails[] oldDetails = segmentUpdateStatusManager
-                .getUpdateStatusDetails();
+            .getUpdateStatusDetails();
 
         List<SegmentUpdateDetails> oldList = new ArrayList(Arrays.asList(oldDetails));
 
@@ -187,9 +187,9 @@ public class CarbonUpdateUtil {
    * @return
    */
   public static boolean updateTableMetadataStatus(Set<String> updatedSegmentsList,
-                                                  CarbonTable table, String updatedTimeStamp,
-                                                  boolean isTimestampUpdationRequired,
-                                                  List<String> segmentsToBeDeleted) {
+      CarbonTable table, String updatedTimeStamp,
+      boolean isTimestampUpdationRequired,
+      List<String> segmentsToBeDeleted) {
 
     boolean status = false;
 
@@ -198,8 +198,8 @@ public class CarbonUpdateUtil {
     AbsoluteTableIdentifier absoluteTableIdentifier = table.getAbsoluteTableIdentifier();
 
     CarbonTablePath carbonTablePath = CarbonStorePath
-            .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-                    absoluteTableIdentifier.getCarbonTableIdentifier());
+        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+            absoluteTableIdentifier.getCarbonTableIdentifier());
 
     String tableStatusPath = carbonTablePath.getTableStatusFilePath();
 
@@ -211,11 +211,11 @@ public class CarbonUpdateUtil {
       lockStatus = carbonLock.lockWithRetries();
       if (lockStatus) {
         LOGGER.info(
-                "Acquired lock for table" + table.getDatabaseName() + "." + table.getFactTableName()
-                        + " for table status updation");
+            "Acquired lock for table" + table.getDatabaseName() + "." + table.getFactTableName()
+                + " for table status updation");
 
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
-                segmentStatusManager.readLoadMetadata(metaDataFilepath);
+            segmentStatusManager.readLoadMetadata(metaDataFilepath);
 
         for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
 
@@ -223,7 +223,7 @@ public class CarbonUpdateUtil {
             // we are storing the link between the 2 status files in the segment 0 only.
             if (loadMetadata.getLoadName().equalsIgnoreCase("0")) {
               loadMetadata.setUpdateStatusFileName(
-                      CarbonUpdateUtil.getUpdateStatusFileName(updatedTimeStamp));
+                  CarbonUpdateUtil.getUpdateStatusFileName(updatedTimeStamp));
             }
 
             // if the segments is in the list of marked for delete then update the status.
@@ -252,7 +252,7 @@ public class CarbonUpdateUtil {
 
         try {
           segmentStatusManager
-                  .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
+              .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
         } catch (IOException e) {
           return false;
         }
@@ -260,18 +260,18 @@ public class CarbonUpdateUtil {
         status = true;
       } else {
         LOGGER.error("Not able to acquire the lock for Table status updation for table " + table
-                .getDatabaseName() + "." + table.getFactTableName());
+            .getDatabaseName() + "." + table.getFactTableName());
       }
     } finally {
       if (lockStatus) {
         if (carbonLock.unlock()) {
           LOGGER.info(
-                 "Table unlocked successfully after table status updation" + table.getDatabaseName()
-                          + "." + table.getFactTableName());
+              "Table unlocked successfully after table status updation" + table.getDatabaseName()
+                  + "." + table.getFactTableName());
         } else {
           LOGGER.error(
-                  "Unable to unlock Table lock for table" + table.getDatabaseName() + "." + table
-                          .getFactTableName() + " during table status updation");
+              "Unable to unlock Table lock for table" + table.getDatabaseName() + "." + table
+                  .getFactTableName() + " during table status updation");
         }
       }
     }
@@ -287,7 +287,7 @@ public class CarbonUpdateUtil {
    */
   public static String getUpdateStatusFileName(String updatedTimeStamp) {
     return CarbonCommonConstants.TABLEUPDATESTATUS_FILENAME + CarbonCommonConstants.HYPHEN
-            + updatedTimeStamp;
+        + updatedTimeStamp;
   }
 
   /**
@@ -301,13 +301,13 @@ public class CarbonUpdateUtil {
     AbsoluteTableIdentifier absoluteTableIdentifier = table.getAbsoluteTableIdentifier();
 
     CarbonTablePath carbonTablePath = CarbonStorePath
-            .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-                    absoluteTableIdentifier.getCarbonTableIdentifier());
+        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+            absoluteTableIdentifier.getCarbonTableIdentifier());
     // as of now considering only partition 0.
     String partitionId = "0";
     String partitionDir = carbonTablePath.getPartitionDir(partitionId);
     CarbonFile file =
-            FileFactory.getCarbonFile(partitionDir, FileFactory.getFileType(partitionDir));
+        FileFactory.getCarbonFile(partitionDir, FileFactory.getFileType(partitionDir));
     if (!file.exists()) {
       return;
     }
@@ -317,8 +317,8 @@ public class CarbonUpdateUtil {
         @Override public boolean accept(CarbonFile file) {
           String fileName = file.getName();
           return (fileName.endsWith(timeStamp + CarbonCommonConstants.UPDATE_DELTA_FILE_EXT)
-                  || fileName.endsWith(timeStamp + CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
-                  || fileName.endsWith(timeStamp + CarbonCommonConstants.DELETE_DELTA_FILE_EXT));
+              || fileName.endsWith(timeStamp + CarbonCommonConstants.UPDATE_INDEX_FILE_EXT)
+              || fileName.endsWith(timeStamp + CarbonCommonConstants.DELETE_DELTA_FILE_EXT));
         }
       });
       // deleting the files of a segment.
@@ -390,7 +390,7 @@ public class CarbonUpdateUtil {
 
     // scan all the carbondata files and get the latest task ID.
     CarbonFile segment =
-            FileFactory.getCarbonFile(segmentDirPath, FileFactory.getFileType(segmentDirPath));
+        FileFactory.getCarbonFile(segmentDirPath, FileFactory.getFileType(segmentDirPath));
     CarbonFile[] dataFiles = segment.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
 
@@ -420,7 +420,7 @@ public class CarbonUpdateUtil {
 
     // scan all the carbondata files and get the latest task ID.
     CarbonFile segment =
-            FileFactory.getCarbonFile(segmentDirPath, FileFactory.getFileType(segmentDirPath));
+        FileFactory.getCarbonFile(segmentDirPath, FileFactory.getFileType(segmentDirPath));
 
     CarbonFile[] dataFiles = segment.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
@@ -495,8 +495,8 @@ public class CarbonUpdateUtil {
     SegmentStatusManager ssm = new SegmentStatusManager(table.getAbsoluteTableIdentifier());
 
     CarbonTablePath carbonTablePath = CarbonStorePath
-            .getCarbonTablePath(table.getAbsoluteTableIdentifier().getStorePath(),
-                    table.getAbsoluteTableIdentifier().getCarbonTableIdentifier());
+        .getCarbonTablePath(table.getAbsoluteTableIdentifier().getStorePath(),
+            table.getAbsoluteTableIdentifier().getCarbonTableIdentifier());
 
     LoadMetadataDetails[] details = ssm.readLoadMetadata(table.getMetaDataFilepath());
 
@@ -513,23 +513,23 @@ public class CarbonUpdateUtil {
       // if the segment is mark for delete or compacted then any way it will get deleted.
 
       if (segment.getLoadStatus().equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
-              || segment.getLoadStatus()
-              .equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)) {
+          || segment.getLoadStatus()
+          .equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)) {
 
         // take the list of files from this segment.
         String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", segment.getLoadName());
         CarbonFile segDir =
-                FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
+            FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
         CarbonFile[] allSegmentFiles = segDir.listFiles();
 
         // scan through the segment and find the carbondatafiles and index files.
         SegmentUpdateStatusManager updateStatusManager =
-                new SegmentUpdateStatusManager(table.getAbsoluteTableIdentifier());
+            new SegmentUpdateStatusManager(table.getAbsoluteTableIdentifier());
 
         // get Invalid update  delta files.
         CarbonFile[] invalidUpdateDeltaFiles = updateStatusManager
-                .getUpdateDeltaFilesList(segment.getLoadName(), false,
-                        CarbonCommonConstants.UPDATE_DELTA_FILE_EXT, true, allSegmentFiles);
+            .getUpdateDeltaFilesList(segment.getLoadName(), false,
+                CarbonCommonConstants.UPDATE_DELTA_FILE_EXT, true, allSegmentFiles);
 
         // now for each invalid delta file need to check the query execution time out
         // and then delete.
@@ -541,8 +541,8 @@ public class CarbonUpdateUtil {
 
         // do the same for the index files.
         CarbonFile[] invalidIndexFiles = updateStatusManager
-                .getUpdateDeltaFilesList(segment.getLoadName(), false,
-                        CarbonCommonConstants.UPDATE_INDEX_FILE_EXT, true, allSegmentFiles);
+            .getUpdateDeltaFilesList(segment.getLoadName(), false,
+                CarbonCommonConstants.UPDATE_INDEX_FILE_EXT, true, allSegmentFiles);
 
         // now for each invalid index file need to check the query execution time out
         // and then delete.
@@ -571,16 +571,16 @@ public class CarbonUpdateUtil {
           // case 1
           if (CarbonUpdateUtil.isBlockInvalid(block.getStatus())) {
             completeListOfDeleteDeltaFiles = updateStatusManager
-                    .getDeleteDeltaInvalidFilesList(segment.getLoadName(), block, true,
-                            allSegmentFiles);
+                .getDeleteDeltaInvalidFilesList(segment.getLoadName(), block, true,
+                    allSegmentFiles);
             for (CarbonFile invalidFile : completeListOfDeleteDeltaFiles) {
 
               compareTimestampsAndDelete(invalidFile, forceDelete, false);
             }
 
             CarbonFile[] blockRelatedFiles = updateStatusManager
-                    .getAllBlockRelatedFiles(block.getBlockName(), allSegmentFiles,
-                            block.getActualBlockName());
+                .getAllBlockRelatedFiles(block.getBlockName(), allSegmentFiles,
+                    block.getActualBlockName());
 
             // now for each invalid index file need to check the query execution time out
             // and then delete.
@@ -593,8 +593,8 @@ public class CarbonUpdateUtil {
 
           } else {
             invalidDeleteDeltaFiles = updateStatusManager
-                    .getDeleteDeltaInvalidFilesList(segment.getLoadName(), block, false,
-                            allSegmentFiles);
+                .getDeleteDeltaInvalidFilesList(segment.getLoadName(), block, false,
+                    allSegmentFiles);
             for (CarbonFile invalidFile : invalidDeleteDeltaFiles) {
 
               compareTimestampsAndDelete(invalidFile, forceDelete, false);
@@ -608,10 +608,10 @@ public class CarbonUpdateUtil {
     if (null != validUpdateStatusFile && !validUpdateStatusFile.isEmpty()) {
 
       final String updateStatusTimestamp = validUpdateStatusFile
-              .substring(validUpdateStatusFile.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1);
+          .substring(validUpdateStatusFile.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1);
 
       CarbonFile metaFolder = FileFactory.getCarbonFile(carbonTablePath.getMetadataDirectoryPath(),
-              FileFactory.getFileType(carbonTablePath.getMetadataDirectoryPath()));
+          FileFactory.getFileType(carbonTablePath.getMetadataDirectoryPath()));
 
       CarbonFile[] invalidUpdateStatusFiles = metaFolder.listFiles(new CarbonFileFilter() {
         @Override public boolean accept(CarbonFile file) {
@@ -645,7 +645,7 @@ public class CarbonUpdateUtil {
     int maxTime;
     try {
       maxTime = Integer.parseInt(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME));
+          .getProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME));
     } catch (NumberFormatException e) {
       maxTime = CarbonCommonConstants.DEFAULT_MAX_QUERY_EXECUTION_TIME;
     }
@@ -665,15 +665,15 @@ public class CarbonUpdateUtil {
    * @param isUpdateStatusFile if true then the parsing of file name logic changes.
    */
   private static void compareTimestampsAndDelete(CarbonFile invalidFile,
-                                                 boolean forceDelete, boolean isUpdateStatusFile) {
+      boolean forceDelete, boolean isUpdateStatusFile) {
     long fileTimestamp = 0L;
 
     if (isUpdateStatusFile) {
       fileTimestamp = CarbonUpdateUtil.getTimeStampAsLong(invalidFile.getName()
-              .substring(invalidFile.getName().lastIndexOf(CarbonCommonConstants.HYPHEN) + 1));
+          .substring(invalidFile.getName().lastIndexOf(CarbonCommonConstants.HYPHEN) + 1));
     } else {
       fileTimestamp = CarbonUpdateUtil.getTimeStampAsLong(
-              CarbonTablePath.DataFileUtil.getTimeStampFromFileName(invalidFile.getName()));
+          CarbonTablePath.DataFileUtil.getTimeStampFromFileName(invalidFile.getName()));
     }
 
     // if the timestamp of the file is more than the current time by query execution timeout.
@@ -698,7 +698,7 @@ public class CarbonUpdateUtil {
    */
   public static boolean isBlockInvalid(String blockStatus) {
     if (blockStatus.equalsIgnoreCase(CarbonCommonConstants.COMPACTED) || blockStatus
-            .equalsIgnoreCase(CarbonCommonConstants.MARKED_FOR_DELETE)) {
+        .equalsIgnoreCase(CarbonCommonConstants.MARKED_FOR_DELETE)) {
       return true;
     }
     return false;
@@ -718,7 +718,7 @@ public class CarbonUpdateUtil {
    * @param segmentBlockCount
    */
   public static void decrementDeletedBlockCount(SegmentUpdateDetails details,
-                                                Map<String, Long> segmentBlockCount) {
+      Map<String, Long> segmentBlockCount) {
 
     String segId = details.getSegmentName();
 
@@ -751,12 +751,12 @@ public class CarbonUpdateUtil {
    * @param segmentUpdateStatusManager
    */
   public static void createBlockDetailsMap(BlockMappingVO blockMappingVO,
-                                           SegmentUpdateStatusManager segmentUpdateStatusManager) {
+      SegmentUpdateStatusManager segmentUpdateStatusManager) {
 
     Map<String, Long> blockRowCountMap = blockMappingVO.getBlockRowCountMapping();
 
     Map<String, RowCountDetailsVO> outputMap =
-            new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     for (Map.Entry<String, Long> blockRowEntry : blockRowCountMap.entrySet()) {
       String key = blockRowEntry.getKey();
@@ -771,7 +771,7 @@ public class CarbonUpdateUtil {
       }
 
       RowCountDetailsVO rowCountDetailsVO =
-              new RowCountDetailsVO(blockRowEntry.getValue(), alreadyDeletedCount);
+          new RowCountDetailsVO(blockRowEntry.getValue(), alreadyDeletedCount);
       outputMap.put(key, rowCountDetailsVO);
 
     }
@@ -789,8 +789,8 @@ public class CarbonUpdateUtil {
   public static String getSegmentBlockNameKey(String segID, String blockName) {
 
     String blockNameWithOutPart = blockName
-            .substring(blockName.indexOf(CarbonCommonConstants.HYPHEN) + 1,
-                    blockName.lastIndexOf(CarbonTablePath.getCarbonDataExtension()));
+        .substring(blockName.indexOf(CarbonCommonConstants.HYPHEN) + 1,
+            blockName.lastIndexOf(CarbonTablePath.getCarbonDataExtension()));
 
     return segID + CarbonCommonConstants.FILE_SEPARATOR + blockNameWithOutPart;
 
