@@ -637,8 +637,15 @@ case class LoadTable(
     // write TableInfo
     CarbonMetastore.writeThriftTableToSchemaFile(schemaFilePath, tableInfo)
 
-    // update Metadata
+
     val catalog = CarbonEnv.get.carbonMetastore
+
+    // upate the schema modified time
+    catalog.updateSchemasUpdatedTime(catalog.touchSchemaFileSystemTime(
+      carbonLoadModel.getDatabaseName,
+      carbonLoadModel.getTableName))
+
+    // update Metadata
     catalog.updateMetadataByThriftTable(schemaFilePath, tableInfo,
       model.table.getDatabaseName, model.table.getTableName, carbonLoadModel.getStorePath)
 
