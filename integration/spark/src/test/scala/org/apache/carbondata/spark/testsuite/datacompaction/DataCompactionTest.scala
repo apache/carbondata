@@ -190,7 +190,7 @@ class DataCompactionTest extends QueryTest with BeforeAndAfterAll {
     sql("update cardinalityUpdateTest set (FirstName) = ('FirstTwentyOne') where ID = 2").show()
 
     // alter table.
-    sql("alter table cardinalityUpdateTest compact 'major'").show()
+    sql("alter table cardinalityUpdateTest compact 'major'")
 
     // Verify the new updated value in compacted segment.
     // now check the answers it should be same.

@@ -78,8 +78,6 @@ public class BlockIndexStoreTest extends TestCase {
 
   @Test public void testLoadAndGetTaskIdToSegmentsMapForSingleSegment()
       throws IOException {
-    String canonicalPath =
-        new File(this.getClass().getResource("/").getPath() + "/../../").getCanonicalPath();
     File file = getPartFile();
     TableBlockInfo info =
         new TableBlockInfo(file.getAbsolutePath(), 0, "0", new String[] { "loclhost" },

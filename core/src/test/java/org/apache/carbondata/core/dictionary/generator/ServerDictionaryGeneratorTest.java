@@ -178,7 +178,6 @@ public class ServerDictionaryGeneratorTest {
     firstKey.setColumnName(empColumnSchema.getColumnName());
     firstKey.setData("FirstKey");
     serverDictionaryGenerator.initializeGeneratorForTable(firstKey);
-    Integer value = serverDictionaryGenerator.generateKey(firstKey);
 
     //Update generator with a new dimension
 
