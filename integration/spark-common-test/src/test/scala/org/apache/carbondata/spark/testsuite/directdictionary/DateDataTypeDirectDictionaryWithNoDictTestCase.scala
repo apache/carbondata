@@ -62,7 +62,7 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
   }
 
   test("select doj from directDictionaryTable") {
-    sql("select doj from directDictionaryTable").show()
+    sql("select doj from directDictionaryTable")
     checkAnswer(
       sql("select doj from directDictionaryTable"),
       Seq(Row(Date.valueOf("2016-03-14")),
@@ -74,7 +74,7 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
 
 
   test("select doj from directDictionaryTable with equals filter") {
-    sql("select doj from directDictionaryTable where doj='2016-03-14 15:00:09'").show()
+    sql("select doj from directDictionaryTable where doj='2016-03-14 15:00:09'")
     checkAnswer(
       sql("select doj from directDictionaryTable where doj='2016-03-14'"),
       Seq(Row(Date.valueOf("2016-03-14")))
@@ -83,7 +83,7 @@ class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with Befo
   }
 
   test("select doj from directDictionaryTable with greater than filter") {
-    sql("select doj from directDictionaryTable where doj>'2016-03-14 15:00:09'").show()
+    sql("select doj from directDictionaryTable where doj>'2016-03-14 15:00:09'")
     checkAnswer(
       sql("select doj from directDictionaryTable where doj>'2016-03-14 15:00:09'"),
       Seq(Row(Date.valueOf("2016-04-14")))

@@ -150,8 +150,6 @@ public class IncrementalColumnDictionaryGeneratorTest {
     // Create the generator and add the keys to dictionary
     IncrementalColumnDictionaryGenerator generator =
         new IncrementalColumnDictionaryGenerator(carbonDimension, 10);
-    Integer generatedKey = generator.generateKey("First");
-    Integer obtainedKey = generator.getOrGenerateKey("First");
 
     // Create a table schema for saving the dictionary
     TableSchema tableSchema = new TableSchema();
