@@ -116,7 +116,10 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
     try {
       File[] filesToMergeSort = getFilesToMergeSort();
       this.fileCounter = rowPages.length + filesToMergeSort.length + merges.size();
-
+      if (fileCounter == 0) {
+        LOGGER.info("No files to merge sort");
+        return;
+      }
       LOGGER.info("Number of row pages: " + this.fileCounter);
 
       // create record holder heap

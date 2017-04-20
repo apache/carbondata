@@ -99,6 +99,48 @@ public final class CarbonLoaderUtil {
     }
   }
 
+  /**
+   * the method returns true if the segment has carbondata file else returns false.
+   *
+   * @param loadModel
+   * @param currentLoad
+   * @return
+   */
+  public static boolean isValidSegment(CarbonLoadModel loadModel,
+      int currentLoad) {
+    CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema()
+        .getCarbonTable();
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(
+        loadModel.getStorePath(), carbonTable.getCarbonTableIdentifier());
+
+    int fileCount = 0;
+    int partitionCount = carbonTable.getPartitionCount();
+    for (int i = 0; i < partitionCount; i++) {
+      String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(i + "",
+          currentLoad + "");
+      CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath,
+          FileFactory.getFileType(segmentPath));
+      CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
+
+        @Override
+        public boolean accept(CarbonFile file) {
+          return file.getName().endsWith(
+              CarbonTablePath.getCarbonIndexExtension())
+              || file.getName().endsWith(
+              CarbonTablePath.getCarbonDataExtension());
+        }
+
+      });
+      fileCount += files.length;
+      if (files.length > 0) {
+        return true;
+      }
+    }
+    if (fileCount == 0) {
+      return false;
+    }
+    return true;
+  }
   public static void deletePartialLoadDataIfExist(CarbonLoadModel loadModel,
       final boolean isCompactionFlow) throws IOException {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();

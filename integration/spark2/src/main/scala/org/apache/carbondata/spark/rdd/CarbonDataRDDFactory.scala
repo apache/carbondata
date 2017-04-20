@@ -808,6 +808,17 @@ object CarbonDataRDDFactory {
         shutdownDictionaryServer(carbonLoadModel, result, false)
         throw new Exception(errorMessage)
       } else {
+        // if segment is empty then fail the data load
+        if (!CarbonLoaderUtil.isValidSegment(carbonLoadModel, currentLoadCount)) {
+          CarbonLoaderUtil.deleteSegment(carbonLoadModel, currentLoadCount)
+          LOGGER.info("********clean up done**********")
+          LOGGER.audit(s"Data load is failed for " +
+                       s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }" +
+                       " as there is no data to load")
+          LOGGER.warn("Cannot write load metadata file as data load failed")
+          shutdownDictionaryServer(carbonLoadModel, result, false)
+          throw new Exception("No Data to load")
+        }
         val metadataDetails = status(0)._2
         if (!isAgg) {
           val status = CarbonLoaderUtil.recordLoadMetadata(currentLoadCount, metadataDetails,
