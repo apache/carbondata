@@ -118,6 +118,14 @@ struct SchemaEvolutionEntry{
  */
 struct SchemaEvolution{
     1: required list<SchemaEvolutionEntry> schema_evolution_history;
+    2: required map<i64, list<AlterOperation>> operation_history;
+}
+
+enum AlterOperation {
+  AddColumn = 0,
+  RemoveColumn = 1,
+  DataTypeChange = 2,
+  RenameTable = 3
 }
 
 /**

@@ -44,6 +44,7 @@ import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.format.TableInfo
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, CarbonInputSplitTaskInfo}
 import org.apache.carbondata.processing.merger._
@@ -158,7 +159,7 @@ class CarbonMergerRDD[K, V](
         val restructuredBlockExists: Boolean = CarbonCompactionUtil
           .checkIfAnyRestructuredBlockExists(segmentMapping,
             dataFileMetadataSegMapping,
-            carbonTable.getTableLastUpdatedTime)
+            carbonTable)
         exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties,
           carbonTable, dataFileMetadataSegMapping, restructuredBlockExists)
 

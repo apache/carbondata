@@ -28,6 +28,7 @@ import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.format.AlterOperation;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -85,7 +86,7 @@ public class ThriftWrapperSchemaConverterImplTest {
     thriftColumnSchemas.add(thriftColumnSchema);
     thriftSchemaEvolutionEntries = new ArrayList<>();
     thriftSchemaEvolutionEntries.add(schemaEvolEntry);
-    schemaEvol = new org.apache.carbondata.format.SchemaEvolution(thriftSchemaEvolutionEntries);
+    schemaEvol = new org.apache.carbondata.format.SchemaEvolution(thriftSchemaEvolutionEntries, new HashMap<Long, List<AlterOperation>>());
 
     new MockUp<SchemaEvolution>() {
       @Mock public List<SchemaEvolutionEntry> getSchemaEvolutionEntryList() {
@@ -410,7 +411,7 @@ public class ThriftWrapperSchemaConverterImplTest {
         thriftWrapperSchemaConverter.fromWrapperToExternalSchemaEvolution(schemaEvolution);
 
     org.apache.carbondata.format.SchemaEvolution expectedResult =
-        new org.apache.carbondata.format.SchemaEvolution(thriftSchemaEvolutionEntries);
+        new org.apache.carbondata.format.SchemaEvolution(thriftSchemaEvolutionEntries, new HashMap<Long, List<AlterOperation>>());
     assertEquals(expectedResult, actualResult);
   }
 

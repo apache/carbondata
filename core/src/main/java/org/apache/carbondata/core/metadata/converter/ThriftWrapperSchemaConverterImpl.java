@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.metadata.converter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -27,6 +28,7 @@ import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.format.AlterOperation;
 
 /**
  * Thrift schema to carbon schema converter and vice versa
@@ -77,7 +79,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       thriftSchemaEvolEntryList
           .add(fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry));
     }
-    return new org.apache.carbondata.format.SchemaEvolution(thriftSchemaEvolEntryList);
+    return new org.apache.carbondata.format.SchemaEvolution(thriftSchemaEvolEntryList,
+        new HashMap<Long, List<AlterOperation>>());
   }
 
   /**
@@ -269,6 +272,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     }
     SchemaEvolution wrapperSchemaEvolution = new SchemaEvolution();
     wrapperSchemaEvolution.setSchemaEvolutionEntryList(wrapperSchemaEvolEntryList);
+    wrapperSchemaEvolution.setOperationsMap(externalSchemaEvolution.operation_history);
     return wrapperSchemaEvolution;
   }
 

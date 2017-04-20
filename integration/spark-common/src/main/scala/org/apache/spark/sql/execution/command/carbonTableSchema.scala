@@ -39,6 +39,7 @@ import org.apache.carbondata.core.service.CarbonCommonFactory
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.format.AlterOperation
 import org.apache.carbondata.processing.merger.CompactionType
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.CarbonSparkFactory
@@ -469,6 +470,7 @@ class TableNewProcessor(cm: TableModel) {
     val tableSchema = new TableSchema()
     val schemaEvol = new SchemaEvolution()
     schemaEvol.setSchemaEvolutionEntryList(new util.ArrayList[SchemaEvolutionEntry]())
+    schemaEvol.setOperationsMap(new util.HashMap[java.lang.Long, util.List[AlterOperation]]())
     tableSchema.setTableId(UUID.randomUUID().toString)
     // populate table properties map
     val tablePropertiesMap = new java.util.HashMap[String, String]()

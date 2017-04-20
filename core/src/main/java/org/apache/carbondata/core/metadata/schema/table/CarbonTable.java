@@ -32,6 +32,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.format.AlterOperation;
 
 /**
  * Mapping class for Carbon actual table
@@ -116,6 +117,11 @@ public class CarbonTable implements Serializable {
    */
   private int blockSize;
 
+  /**
+   * Map of the time on which Operation was performed and the Operation Type.
+   */
+  private Map<Long, List<AlterOperation>> operationsMap;
+
   public CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableImplicitDimensionsMap = new HashMap<String, List<CarbonDimension>>();
@@ -124,6 +130,7 @@ public class CarbonTable implements Serializable {
     this.aggregateTablesName = new ArrayList<String>();
     this.createOrderColumn = new HashMap<String, List<CarbonColumn>>();
     this.tablePrimitiveDimensionsMap = new HashMap<String, List<CarbonDimension>>();
+    this.operationsMap = new HashMap<>();
   }
 
   /**
@@ -151,6 +158,7 @@ public class CarbonTable implements Serializable {
     }
     tableBucketMap.put(tableInfo.getFactTable().getTableName(),
         tableInfo.getFactTable().getBucketingInfo());
+    operationsMap.putAll(tableInfo.getFactTable().getSchemaEvalution().getOperationsMap());
   }
 
   /**
@@ -229,7 +237,7 @@ public class CarbonTable implements Serializable {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
               new CarbonDimension(columnSchema, dimensionOrdinal++,
-                    columnSchema.getSchemaOrdinal(), -1, -1, ++complexTypeOrdinal);
+                  columnSchema.getSchemaOrdinal(), -1, -1, ++complexTypeOrdinal);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           allDimensions.add(complexDimension);
           dimensionOrdinal =
@@ -240,15 +248,15 @@ public class CarbonTable implements Serializable {
         } else {
           if (!columnSchema.getEncodingList().contains(Encoding.DICTIONARY)) {
             CarbonDimension dimension =
-                    new CarbonDimension(columnSchema, dimensionOrdinal++,
-                            columnSchema.getSchemaOrdinal(), -1, -1, -1);
+                new CarbonDimension(columnSchema, dimensionOrdinal++,
+                    columnSchema.getSchemaOrdinal(), -1, -1, -1);
             allDimensions.add(dimension);
             primitiveDimensions.add(dimension);
           } else if (columnSchema.getEncodingList().contains(Encoding.DICTIONARY)
               && columnSchema.getColumnGroupId() == -1) {
             CarbonDimension dimension =
-                    new CarbonDimension(columnSchema, dimensionOrdinal++,
-                            columnSchema.getSchemaOrdinal(), keyOrdinal++, -1, -1);
+                new CarbonDimension(columnSchema, dimensionOrdinal++,
+                    columnSchema.getSchemaOrdinal(), keyOrdinal++, -1, -1);
             allDimensions.add(dimension);
             primitiveDimensions.add(dimension);
           } else {
@@ -256,15 +264,15 @@ public class CarbonTable implements Serializable {
                 previousColumnGroupId == columnSchema.getColumnGroupId() ? ++columnGroupOrdinal : 0;
             previousColumnGroupId = columnSchema.getColumnGroupId();
             CarbonDimension dimension = new CarbonDimension(columnSchema, dimensionOrdinal++,
-                    columnSchema.getSchemaOrdinal(), keyOrdinal++,
-                    columnGroupOrdinal, -1);
+                columnSchema.getSchemaOrdinal(), keyOrdinal++,
+                columnGroupOrdinal, -1);
             allDimensions.add(dimension);
             primitiveDimensions.add(dimension);
           }
         }
       } else {
         allMeasures.add(new CarbonMeasure(columnSchema, measureOrdinal++,
-                 columnSchema.getSchemaOrdinal()));
+            columnSchema.getSchemaOrdinal()));
       }
     }
     fillVisibleDimensions(tableSchema.getTableName());
@@ -297,14 +305,14 @@ public class CarbonTable implements Serializable {
    */
   private int readAllComplexTypeChildrens(int dimensionOrdinal, int childCount,
       List<ColumnSchema> listOfColumns, CarbonDimension parentDimension,
-                                          List<CarbonDimension> primitiveDimensions) {
+      List<CarbonDimension> primitiveDimensions) {
     for (int i = 0; i < childCount; i++) {
       ColumnSchema columnSchema = listOfColumns.get(dimensionOrdinal);
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
               new CarbonDimension(columnSchema, dimensionOrdinal++,
-                        columnSchema.getSchemaOrdinal(), -1, -1, -1);
+                  columnSchema.getSchemaOrdinal(), -1, -1, -1);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           parentDimension.getListOfChildDimensions().add(complexDimension);
           dimensionOrdinal =
@@ -312,8 +320,8 @@ public class CarbonTable implements Serializable {
                   listOfColumns, complexDimension, primitiveDimensions);
         } else {
           CarbonDimension carbonDimension =
-                  new CarbonDimension(columnSchema, dimensionOrdinal++,
-                          columnSchema.getSchemaOrdinal(), -1, -1, -1);
+              new CarbonDimension(columnSchema, dimensionOrdinal++,
+                  columnSchema.getSchemaOrdinal(), -1, -1, -1);
           parentDimension.getListOfChildDimensions().add(carbonDimension);
           primitiveDimensions.add(carbonDimension);
         }
@@ -521,6 +529,14 @@ public class CarbonTable implements Serializable {
       }
     }
     return null;
+  }
+
+  /**
+   * return the operations map
+   * @return
+   */
+  public Map<Long, List<AlterOperation>> getOperationsMap() {
+    return this.operationsMap;
   }
 
   /**
