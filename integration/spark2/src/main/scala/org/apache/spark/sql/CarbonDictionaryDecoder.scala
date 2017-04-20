@@ -46,7 +46,8 @@ case class CarbonDictionaryDecoder(
     relations: Seq[CarbonDecoderRelation],
     profile: CarbonProfile,
     aliasMap: CarbonAliasDecoderRelation,
-    child: SparkPlan)
+    child: SparkPlan,
+    sparkSession: SparkSession)
   extends UnaryExecNode with CodegenSupport {
 
   override val output: Seq[Attribute] =
@@ -62,7 +63,7 @@ case class CarbonDictionaryDecoder(
 
   override def doExecute(): RDD[InternalRow] = {
     attachTree(this, "execute") {
-      val storePath = CarbonEnv.get.carbonMetastore.storePath
+      val storePath = CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath
       val absoluteTableIdentifiers = relations.map { relation =>
         val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
         (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
@@ -116,7 +117,7 @@ case class CarbonDictionaryDecoder(
 
   override def doConsume(ctx: CodegenContext, input: Seq[ExprCode], row: ExprCode): String = {
 
-    val storePath = CarbonEnv.get.carbonMetastore.storePath
+    val storePath = CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath
     val absoluteTableIdentifiers = relations.map { relation =>
       val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
       (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
@@ -436,10 +437,11 @@ class CarbonDecoderRDD(
     profile: CarbonProfile,
     aliasMap: CarbonAliasDecoderRelation,
     prev: RDD[InternalRow],
-    output: Seq[Attribute])
+    output: Seq[Attribute],
+    sparkSession: SparkSession)
   extends RDD[InternalRow](prev) {
 
-  private val storepath = CarbonEnv.get.carbonMetastore.storePath
+  private val storepath = CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath
 
   def canBeDecoded(attr: Attribute): Boolean = {
     profile match {

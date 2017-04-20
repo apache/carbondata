@@ -16,22 +16,98 @@
  */
 package org.apache.spark.sql.hive
 
-import org.apache.spark.sql.CarbonDatasourceHadoopRelation
-import org.apache.spark.sql.catalyst.analysis.Analyzer
-import org.apache.spark.sql.catalyst.catalog.SessionCatalog
+import org.apache.hadoop.conf.Configuration
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, ExperimentalMethods, SparkSession}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.{Analyzer, FunctionRegistry}
+import org.apache.spark.sql.catalyst.catalog.{FunctionResourceLoader, GlobalTempViewManager, SessionCatalog}
 import org.apache.spark.sql.catalyst.expressions.{PredicateSubquery, ScalarSubquery}
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserInterface
-import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
 import org.apache.spark.sql.execution.command.DDLStrategy
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.execution.SparkOptimizer
-import org.apache.spark.sql.ExperimentalMethods
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.CarbonSparkSqlParser
-import org.apache.spark.sql.SparkSession
+
+import org.apache.carbondata.processing.merger.TableMeta
+
+/**
+ * This class will have carbon catalog and refresh the relation from cache if the carbontable in
+ * carbon catalog is not same as cached carbon relation's carbon table
+ *
+ * @param externalCatalog
+ * @param globalTempViewManager
+ * @param sparkSession
+ * @param functionResourceLoader
+ * @param functionRegistry
+ * @param conf
+ * @param hadoopConf
+ */
+class CarbonSessionCatalog(
+    externalCatalog: HiveExternalCatalog,
+    globalTempViewManager: GlobalTempViewManager,
+    sparkSession: SparkSession,
+    functionResourceLoader: FunctionResourceLoader,
+    functionRegistry: FunctionRegistry,
+    conf: SQLConf,
+    hadoopConf: Configuration)
+  extends HiveSessionCatalog(
+    externalCatalog,
+    globalTempViewManager,
+    sparkSession,
+    functionResourceLoader,
+    functionRegistry,
+    conf,
+    hadoopConf) {
+
+  lazy val carbonEnv = {
+    val env = new CarbonEnv
+    env.init(sparkSession)
+    env
+  }
+
+  /**
+   * This method will invalidate carbonrelation from cache if carbon table is updated in
+   * carbon catalog
+   *
+   * @param name
+   * @param alias
+   * @return
+   */
+  override def lookupRelation(name: TableIdentifier,
+      alias: Option[String]): LogicalPlan = {
+    super.lookupRelation(name, alias) match {
+      case SubqueryAlias(_,
+          LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _),
+          _) =>
+        refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
+      case LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
+        refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
+      case relation => relation
+    }
+  }
+
+  private def refreshRelationFromCache(name: TableIdentifier,
+      alias: Option[String],
+      carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation): LogicalPlan = {
+    carbonEnv.carbonMetastore.checkSchemasModifiedTimeAndReloadTables
+    carbonEnv.carbonMetastore
+      .getTableFromMetadata(carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
+        carbonDatasourceHadoopRelation.carbonTable.getFactTableName) match {
+      case tableMeta: TableMeta =>
+        if (tableMeta.carbonTable.getTableLastUpdatedTime !=
+            carbonDatasourceHadoopRelation.carbonTable.getTableLastUpdatedTime) {
+          refreshTable(name)
+        }
+      case _ => refreshTable(name)
+    }
+    super.lookupRelation(name, alias)
+  }
+}
 
 /**
  * Session state implementation to override sql parser and adding strategies
@@ -65,6 +141,20 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
       override val extendedCheckRules = Seq(
         PreWriteCheck(conf, catalog))
     }
+  }
+
+  /**
+   * Internal catalog for managing table and database states.
+   */
+  override lazy val catalog = {
+    new CarbonSessionCatalog(
+      sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog],
+      sparkSession.sharedState.globalTempViewManager,
+      sparkSession,
+      functionResourceLoader,
+      functionRegistry,
+      conf,
+      newHadoopConf())
   }
 }
 

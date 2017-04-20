@@ -70,7 +70,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           CarbonDictionaryDecoder(relations,
             profile,
             aliasMap,
-            planLater(child)
+            planLater(child),
+            SparkSession.getActiveSession.get
           ) :: Nil
         }
       case _ => Nil
@@ -95,7 +96,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       newAttr
     }
     new CarbonDecoderRDD(Seq(relation), IncludeProfile(attrs),
-      CarbonAliasDecoderRelation(), rdd, output)
+      CarbonAliasDecoderRelation(), rdd, output, SparkSession.getActiveSession.get)
   }
 
   private[this] def toCatalystRDD(
