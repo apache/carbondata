@@ -129,8 +129,8 @@ public final class DataLoadProcessBuilder {
     CarbonDataLoadConfiguration configuration = new CarbonDataLoadConfiguration();
     String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
-    String tempLocationKey = databaseName + CarbonCommonConstants.UNDERSCORE + tableName
-        + CarbonCommonConstants.UNDERSCORE + loadModel.getTaskNo();
+    String tempLocationKey = CarbonDataProcessorUtil
+        .getTempStoreLocationKey(databaseName, tableName, loadModel.getTaskNo(), false);
     CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation);
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, loadModel.getStorePath());

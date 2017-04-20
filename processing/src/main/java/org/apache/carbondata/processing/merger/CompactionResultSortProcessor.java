@@ -348,7 +348,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
         .createSortParameters(carbonLoadModel.getDatabaseName(), tableName, dimensionColumnCount,
             segmentProperties.getComplexDimensions().size(), measureCount, noDictionaryCount,
             carbonLoadModel.getPartitionId(), segmentId, carbonLoadModel.getTaskNo(),
-            noDictionaryColMapping);
+            noDictionaryColMapping, true);
     return parameters;
   }
 
@@ -390,7 +390,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   private void initTempStoreLocation() {
     tempStoreLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(carbonLoadModel.getDatabaseName(), tableName,
-            carbonLoadModel.getTaskNo(), carbonLoadModel.getPartitionId(), segmentId, false);
+            carbonLoadModel.getTaskNo(), carbonLoadModel.getPartitionId(), segmentId, true);
   }
 
   /**

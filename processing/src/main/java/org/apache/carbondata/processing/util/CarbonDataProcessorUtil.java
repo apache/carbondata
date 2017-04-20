@@ -193,12 +193,8 @@ public final class CarbonDataProcessorUtil {
    */
   public static String getLocalDataFolderLocation(String databaseName, String tableName,
       String taskId, String partitionId, String segmentId, boolean isCompactionFlow) {
-    String tempLocationKey = databaseName + CarbonCommonConstants.UNDERSCORE + tableName
-        + CarbonCommonConstants.UNDERSCORE + taskId;
-    if (isCompactionFlow) {
-      tempLocationKey = CarbonCommonConstants.COMPACTION_KEY_WORD + '_' + tempLocationKey;
-    }
-
+    String tempLocationKey =
+        getTempStoreLocationKey(databaseName, tableName, taskId, isCompactionFlow);
     String baseStorePath = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
     CarbonTable carbonTable = CarbonMetadata.getInstance()
@@ -209,6 +205,26 @@ public final class CarbonDataProcessorUtil {
         carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId + "");
     String localDataLoadFolderLocation = carbonDataDirectoryPath + File.separator + taskId;
     return localDataLoadFolderLocation;
+  }
+
+  /**
+   * This method will form the key for getting the temporary location set in carbon properties
+   *
+   * @param databaseName
+   * @param tableName
+   * @param taskId
+   * @param isCompactionFlow
+   * @return
+   */
+  public static String getTempStoreLocationKey(String databaseName, String tableName, String taskId,
+      boolean isCompactionFlow) {
+    String tempLocationKey = databaseName + CarbonCommonConstants.UNDERSCORE + tableName
+        + CarbonCommonConstants.UNDERSCORE + taskId;
+    if (isCompactionFlow) {
+      tempLocationKey = CarbonCommonConstants.COMPACTION_KEY_WORD + CarbonCommonConstants.UNDERSCORE
+          + tempLocationKey;
+    }
+    return tempLocationKey;
   }
 
   /**

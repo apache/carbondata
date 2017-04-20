@@ -423,7 +423,8 @@ public class SortParameters {
 
   public static SortParameters createSortParameters(String databaseName, String tableName,
       int dimColCount, int complexDimColCount, int measureColCount, int noDictionaryCount,
-      String partitionID, String segmentId, String taskNo, boolean[] noDictionaryColMaping) {
+      String partitionID, String segmentId, String taskNo, boolean[] noDictionaryColMaping,
+      boolean isCompactionFlow) {
     SortParameters parameters = new SortParameters();
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
     parameters.setDatabaseName(databaseName);
@@ -458,7 +459,8 @@ public class SortParameters {
     LOGGER.info("File Buffer Size: " + parameters.getFileBufferSize());
 
     String carbonDataDirectoryPath = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(databaseName, tableName, taskNo, partitionID, segmentId, false);
+        .getLocalDataFolderLocation(databaseName, tableName, taskNo, partitionID, segmentId,
+            isCompactionFlow);
     parameters.setTempFileLocation(
         carbonDataDirectoryPath + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     LOGGER.info("temp file location" + parameters.getTempFileLocation());

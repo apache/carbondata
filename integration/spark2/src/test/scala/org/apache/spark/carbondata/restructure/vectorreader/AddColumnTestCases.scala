@@ -294,6 +294,20 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_dictionary_is_null")
   }
 
+  test("test add column for new decimal column filter query") {
+    sql("DROP TABLE IF EXISTS alter_decimal_filter")
+    sql(
+      "create table alter_decimal_filter (n1 string, n2 int, n3 decimal(3,2)) stored by " +
+      "'carbondata'")
+    sql("insert into alter_decimal_filter select 'xx',1,1.22")
+    sql("insert into alter_decimal_filter select 'xx',1,1.23")
+    sql("alter table alter_decimal_filter change n3 n3 decimal(8,4)")
+    sql("insert into alter_decimal_filter select 'dd',2,111.111")
+    sql("select * from alter_decimal_filter where n3 = 1.22").show()
+    checkAnswer(sql("select * from alter_decimal_filter where n3 = 1.22"),
+      Row("xx", 1, new BigDecimal(1.2200).setScale(4, RoundingMode.HALF_UP)))
+    sql("DROP TABLE IF EXISTS alter_decimal_filter")
+  }
 
   override def afterAll {
     sql("DROP TABLE IF EXISTS addcolumntest")
