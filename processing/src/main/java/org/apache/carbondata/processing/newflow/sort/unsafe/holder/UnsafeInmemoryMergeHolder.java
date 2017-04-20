@@ -43,6 +43,8 @@ public class UnsafeInmemoryMergeHolder implements Comparable<UnsafeInmemoryMerge
 
   private Object baseObject;
 
+  private byte index;
+
   public UnsafeInmemoryMergeHolder(UnsafeCarbonRowPage rowPage, byte index) {
     this.actualSize = rowPage.getBuffer().getActualSize();
     this.rowPage = rowPage;
@@ -50,7 +52,7 @@ public class UnsafeInmemoryMergeHolder implements Comparable<UnsafeInmemoryMerge
     this.comparator = new UnsafeRowComparator(rowPage);
     this.baseObject = rowPage.getDataBlock().getBaseObject();
     currentRow = new UnsafeCarbonRowForMerge();
-    currentRow.index = index;
+    this.index = index;
   }
 
   public boolean hasNext() {
@@ -62,7 +64,9 @@ public class UnsafeInmemoryMergeHolder implements Comparable<UnsafeInmemoryMerge
 
   public void readRow() {
     address = rowPage.getBuffer().get(counter);
+    currentRow = new UnsafeCarbonRowForMerge();
     currentRow.address = address + rowPage.getDataBlock().getBaseOffset();
+    currentRow.index = index;
     counter++;
   }
 

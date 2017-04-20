@@ -1081,7 +1081,7 @@ public final class CarbonCommonConstants {
 
   public static final String ENABLE_INMEMORY_MERGE_SORT = "enable.inmemory.merge.sort";
 
-  public static final String ENABLE_INMEMORY_MERGE_SORT_DEFAULT = "true";
+  public static final String ENABLE_INMEMORY_MERGE_SORT_DEFAULT = "false";
 
   public static final String OFFHEAP_SORT_CHUNK_SIZE_IN_MB = "offheap.sort.chunk.size.inmb";
 

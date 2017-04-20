@@ -248,69 +248,6 @@ public final class ByteUtil {
       return len1 - len2;
     }
 
-    public int compareUnsafeTo(Object baseObject1, Object baseObject2, long address1, long address2,
-        int len1, int len2, int minLength) {
-
-      int minWords = 0;
-
-      /*
-       * Compare 8 bytes at a time. Benchmarking shows comparing 8 bytes
-       * at a time is no slower than comparing 4 bytes at a time even on
-       * 32-bit. On the other hand, it is substantially faster on 64-bit.
-       */
-      if (minLength > 7) {
-        minWords = minLength / SIZEOF_LONG;
-        for (int i = 0; i < minWords * SIZEOF_LONG; i += SIZEOF_LONG) {
-          long lw = CarbonUnsafe.unsafe
-              .getLong(baseObject1, CarbonUnsafe.BYTE_ARRAY_OFFSET + (long) i + address1);
-          long rw = CarbonUnsafe.unsafe
-              .getLong(baseObject2, CarbonUnsafe.BYTE_ARRAY_OFFSET + (long) i + address2);
-          long diff = lw ^ rw;
-
-          if (diff != 0) {
-            if (!CarbonUnsafe.ISLITTLEENDIAN) {
-              return lessThanUnsigned(lw, rw) ? -1 : 1;
-            }
-
-            // Use binary search
-            int k = 0;
-            int y;
-            int x = (int) diff;
-            if (x == 0) {
-              x = (int) (diff >>> 32);
-              k = 32;
-            }
-            y = x << 16;
-            if (y == 0) {
-              k += 16;
-            } else {
-              x = y;
-            }
-
-            y = x << 8;
-            if (y == 0) {
-              k += 8;
-            }
-            return (int) (((lw >>> k) & 0xFFL) - ((rw >>> k) & 0xFFL));
-          }
-        }
-      }
-
-      // The epilogue to cover the last (minLength % 8) elements.
-      for (int i = minWords * SIZEOF_LONG; i < minLength; i++) {
-        int a =
-            (CarbonUnsafe.unsafe.getByte(baseObject1, CarbonUnsafe.BYTE_ARRAY_OFFSET + i + address1)
-                & 0xff);
-        int b =
-            (CarbonUnsafe.unsafe.getByte(baseObject2, CarbonUnsafe.BYTE_ARRAY_OFFSET + i + address2)
-                & 0xff);
-        if (a != b) {
-          return a - b;
-        }
-      }
-      return len1 - len2;
-    }
-
     public boolean equals(byte[] buffer1, byte[] buffer2) {
       if (buffer1.length != buffer2.length) {
         return false;
