@@ -46,6 +46,10 @@ case class CarbonDictionaryCatalystDecoder(
         val logicalOut =
           CarbonDictionaryDecoder.updateAttributes(child.output, relations, aliasMap)
         CarbonDictionaryDecoder.convertOutput(logicalOut, relations, profile, aliasMap)
+      case Join(l: LogicalRelation, r: LogicalRelation, _, _) =>
+        val logicalOut =
+          CarbonDictionaryDecoder.updateAttributes(child.output, relations, aliasMap)
+        CarbonDictionaryDecoder.convertOutput(logicalOut, relations, profile, aliasMap)
       case _ => CarbonDictionaryDecoder.convertOutput(child.output, relations, profile, aliasMap)
     }
   }
