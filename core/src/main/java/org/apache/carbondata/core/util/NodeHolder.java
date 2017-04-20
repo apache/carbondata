@@ -156,6 +156,12 @@ public class NodeHolder {
   private int holderSize;
 
   /**
+   * to check all the pages to be
+   * written, this will be used for v3 format
+   */
+  private boolean writeAll;
+
+  /**
    * @return the keyArray
    */
   public byte[][] getKeyArray() {
@@ -439,5 +445,12 @@ public class NodeHolder {
 
   public void setHolderSize(int holderSize) {
     this.holderSize = holderSize;
+  }
+
+  public void setWriteAll(boolean writeAll) {
+    this.writeAll = writeAll;
+  }
+  public boolean isWriteAll() {
+    return this.writeAll;
   }
 }

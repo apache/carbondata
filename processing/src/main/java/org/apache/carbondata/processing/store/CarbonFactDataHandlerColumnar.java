@@ -463,8 +463,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     if (this.entryCount == this.blockletSize) {
       try {
         semaphore.acquire();
-        producerExecutorServiceTaskList.add(producerExecutorService
-            .submit(new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter)));
+        producerExecutorServiceTaskList.add(producerExecutorService.submit(
+            new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter, false)));
         blockletProcessingCount.incrementAndGet();
         // set the entry count to zero
         processedDataCount += entryCount;
@@ -861,7 +861,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     // than 0
     if (this.entryCount > 0) {
       producerExecutorServiceTaskList.add(producerExecutorService
-          .submit(new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter)));
+          .submit(new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter, true)));
       blockletProcessingCount.incrementAndGet();
       processedDataCount += entryCount;
     }
@@ -1330,12 +1330,14 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     private BlockletDataHolder blockletDataHolder;
     private List<Object[]> dataRows;
     private int sequenceNumber;
+    private boolean isWriteAll;
 
     private Producer(BlockletDataHolder blockletDataHolder, List<Object[]> dataRows,
-        int sequenceNumber) {
+        int sequenceNumber, boolean isWriteAll) {
       this.blockletDataHolder = blockletDataHolder;
       this.dataRows = dataRows;
       this.sequenceNumber = sequenceNumber;
+      this.isWriteAll = isWriteAll;
     }
 
     /**
@@ -1347,6 +1349,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     @Override public Void call() throws Exception {
       try {
         NodeHolder nodeHolder = processDataRows(dataRows);
+        nodeHolder.setWriteAll(isWriteAll);
         // insert the object in array according to sequence number
         int indexInNodeHolderArray = (sequenceNumber - 1) % numberOfCores;
         blockletDataHolder.put(nodeHolder, indexInNodeHolderArray);
