@@ -21,7 +21,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.util.ExampleUtils
 
-object CarbonExample {
+object CarbonBitMapEncodingExample {
 
   def main(args: Array[String]) {
     val cc = ExampleUtils.createCarbonContext("CarbonExample")
@@ -59,7 +59,7 @@ object CarbonExample {
            """).show()
 
     // Drop table
-    cc.sql("DROP TABLE IF EXISTS t3")
+    // cc.sql("DROP TABLE IF EXISTS t3")
   }
 
 }

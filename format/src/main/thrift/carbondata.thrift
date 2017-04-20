@@ -129,6 +129,7 @@ struct DataChunk2{
     9: optional list<binary> encoder_meta; // extra information required by encoders
     10: optional BlockletMinMaxIndex min_max; 
     11: optional i32 numberOfRowsInpage;
+    12: optional list<i32> bitmap_encoded_dictionaries;
  }
 
 

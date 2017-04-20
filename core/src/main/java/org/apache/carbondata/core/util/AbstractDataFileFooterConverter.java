@@ -219,6 +219,8 @@ public abstract class AbstractDataFileFooterConverter {
         return Encoding.BIT_PACKED;
       case DIRECT_DICTIONARY:
         return Encoding.DIRECT_DICTIONARY;
+      case BITMAP:
+        return Encoding.BITMAP;
       default:
         throw new IllegalArgumentException(encoderThrift.toString() + " is not supported");
     }
