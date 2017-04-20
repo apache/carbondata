@@ -293,6 +293,17 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     sql("alter table default.restructure change intfield intField bigint")
     checkExistence(sql("desc restructure"), true, "intfieldbigint")
     sql("alter table default.restructure change decimalfield deciMalfield Decimal(11,3)")
+    sql("alter table default.restructure change decimalfield deciMalfield Decimal(12,3)")
+    intercept[RuntimeException] {
+      sql("alter table default.restructure change decimalfield deciMalfield Decimal(12,3)")
+    }
+    intercept[RuntimeException] {
+      sql("alter table default.restructure change decimalfield deciMalfield Decimal(13,1)")
+    }
+    intercept[RuntimeException] {
+      sql("alter table default.restructure change decimalfield deciMalfield Decimal(13,5)")
+    }
+    sql("alter table default.restructure change decimalfield deciMalfield Decimal(13,4)")
   }
 
   test("test change datatype of string to int column") {

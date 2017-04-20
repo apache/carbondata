@@ -177,11 +177,11 @@ object CarbonScalaUtil {
             } cannot be modified. Specified precision value ${
               dataTypeInfo
                 .precision
-            } should be greater or equal to current precision value ${
+            } should be greater than current precision value ${
               carbonColumn.getColumnSchema
                 .getPrecision
             }")
-        } else if (dataTypeInfo.scale <= carbonColumn.getColumnSchema.getScale) {
+        } else if (dataTypeInfo.scale < carbonColumn.getColumnSchema.getScale) {
           sys
             .error(s"Given column ${
               carbonColumn
