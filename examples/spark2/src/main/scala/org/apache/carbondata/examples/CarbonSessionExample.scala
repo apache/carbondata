@@ -38,19 +38,19 @@ object CarbonSessionExample {
 
     import org.apache.spark.sql.CarbonSession._
 
-    val spark = SparkSession
+    val carbon = SparkSession
       .builder()
       .master("local")
       .appName("CarbonSessionExample")
       .config("spark.sql.warehouse.dir", warehouse)
       .getOrCreateCarbonSession(storeLocation, metastoredb)
 
-    spark.sparkContext.setLogLevel("WARN")
+    carbon.sparkContext.setLogLevel("WARN")
 
-    spark.sql("DROP TABLE IF EXISTS carbon_table")
+    carbon.sql("DROP TABLE IF EXISTS carbon_table")
 
     // Create table
-    spark.sql(
+    carbon.sql(
       s"""
          | CREATE TABLE carbon_table(
          |    shortField short,
@@ -72,7 +72,7 @@ object CarbonSessionExample {
     val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
 
     // scalastyle:off
-    spark.sql(
+    carbon.sql(
       s"""
          | LOAD DATA LOCAL INPATH '$path'
          | INTO TABLE carbon_table
@@ -80,40 +80,40 @@ object CarbonSessionExample {
        """.stripMargin)
     // scalastyle:on
 
-    spark.sql("""
+    carbon.sql("""
              SELECT *
              FROM carbon_table
              where stringfield = 'spark' and decimalField > 40
               """).show
 
-    spark.sql("""
+    carbon.sql("""
              SELECT *
              FROM carbon_table where length(stringField) = 5
               """).show
 
-    spark.sql("""
+    carbon.sql("""
              SELECT *
              FROM carbon_table where date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
               """).show
 
-    spark.sql("""
+    carbon.sql("""
              select count(stringField) from carbon_table
               """.stripMargin).show
 
-    spark.sql("""
+    carbon.sql("""
            SELECT sum(intField), stringField
            FROM carbon_table
            GROUP BY stringField
               """).show
 
-    spark.sql(
+    carbon.sql(
       """
         |select t1.*, t2.*
         |from carbon_table t1, carbon_table t2
         |where t1.stringField = t2.stringField
       """.stripMargin).show
 
-    spark.sql(
+    carbon.sql(
       """
         |with t1 as (
         |select * from carbon_table
@@ -132,7 +132,8 @@ object CarbonSessionExample {
               """).show
 
     // Drop table
-    spark.sql("DROP TABLE IF EXISTS carbon_table")
+    carbon.sql("DROP TABLE IF EXISTS carbon_table")
+    carbon.stop()
   }
 
 }
