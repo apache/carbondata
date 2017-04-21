@@ -107,7 +107,7 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
                 bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
           }
           return org.apache.spark.sql.types.Decimal
-              .apply(bigDecimalMsrValue, carbonMeasure.getPrecision(), carbonMeasure.getScale());
+              .apply(bigDecimalMsrValue);
         default:
           return dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
       }
