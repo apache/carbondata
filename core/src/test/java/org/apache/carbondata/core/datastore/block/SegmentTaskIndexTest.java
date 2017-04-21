@@ -58,7 +58,6 @@ public class SegmentTaskIndexTest {
       @Mock public void build(BTreeBuilderInfo segmentBuilderInfos) {}
     };
     long numberOfRows = 100;
-    SegmentTaskIndex segmentTaskIndex = new SegmentTaskIndex();
     columnSchema.setColumnName("employeeName");
     columnSchemaList.add(new ColumnSchema());
 
@@ -68,6 +67,9 @@ public class SegmentTaskIndexTest {
     footer.setNumberOfRows(numberOfRows);
     footerList.add(footer);
 
+    SegmentProperties properties = new SegmentProperties(footerList.get(0).getColumnInTable(),
+        footerList.get(0).getSegmentInfo().getColumnCardinality());
+    SegmentTaskIndex segmentTaskIndex = new SegmentTaskIndex(properties);
     segmentTaskIndex.buildIndex(footerList);
     assertEquals(footerList.get(0).getNumberOfRows(), numberOfRows);
 
