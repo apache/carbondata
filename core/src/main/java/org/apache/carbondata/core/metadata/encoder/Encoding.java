@@ -26,5 +26,6 @@ public enum Encoding {
   INVERTED_INDEX,
   BIT_PACKED,
   DIRECT_DICTIONARY,
-  IMPLICIT;
+  IMPLICIT,
+  BITMAP;
 }

@@ -47,6 +47,7 @@ enum Encoding{
 	INVERTED_INDEX = 3; // Identifies that a column is encoded using inverted index, can be used only along with dictionary encoding
 	BIT_PACKED = 4;	// Identifies that a column is encoded using bit packing, can be used only along with dictionary encoding
 	DIRECT_DICTIONARY = 5; // Identifies that a column is direct dictionary encoded
+	BITMAP = 6; // Identifies that a column is bitmap encoded
 }
 
 
