@@ -153,6 +153,60 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table")
   }
 
+  test("test to add column with char datatype") {
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql(
+      "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+      "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("Alter table carbon_table add columns(newfield char(10)) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='char')")
+    checkAnswer(sql("select distinct(newfield) from carbon_table"),Row("char"))
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+  test("test to check if exception is thrown with wrong char syntax") {
+    intercept[Exception] {
+      sql("DROP TABLE IF EXISTS carbon_table")
+      sql(
+        "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+
+        "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+        "('DICTIONARY_EXCLUDE'='charField')")
+      sql(
+        "Alter table carbon_table add columns(newfield char) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
+  }
+
+  test("test to add column with varchar datatype") {
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql(
+      "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+      "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("Alter table carbon_table add columns(newfield varchar(10)) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='char')")
+    checkAnswer(sql("select distinct(newfield) from carbon_table"),Row("char"))
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+  test("test to check if exception is thrown with wrong varchar syntax") {
+    intercept[Exception] {
+      sql("DROP TABLE IF EXISTS carbon_table")
+      sql(
+        "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+
+        "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+        "('DICTIONARY_EXCLUDE'='charField')")
+      sql(
+        "Alter table carbon_table add columns(newfield varchar) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS addcolumntest")
     sql("drop table if exists hivetable")

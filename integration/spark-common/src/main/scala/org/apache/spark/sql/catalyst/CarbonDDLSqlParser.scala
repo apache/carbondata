@@ -146,6 +146,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val TIMESTAMP = carbonKeyWord("TIMESTAMP")
   protected val DATE = carbonKeyWord("DATE")
   protected val CHAR = carbonKeyWord("CHAR")
+  protected val VARCHAR = carbonKeyWord("VARCHAR")
   protected val NUMERIC = carbonKeyWord("NUMERIC")
   protected val DECIMAL = carbonKeyWord("DECIMAL")
   protected val DOUBLE = carbonKeyWord("DOUBLE")
@@ -582,7 +583,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    */
   def isDetectAsDimentionDatatype(dimensionDatatype: String): Boolean = {
     val dimensionType = Array("string", "array", "struct", "timestamp", "date", "char")
-    dimensionType.exists(x => x.equalsIgnoreCase(dimensionDatatype))
+    dimensionType.exists(x => dimensionDatatype.toLowerCase.contains(x))
   }
 
   /**
@@ -864,7 +865,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * Matching the decimal(10,0) data type and returning the same.
    */
   private lazy val charType =
-    CHAR ~ ("(" ~>numericLit <~ ")").? ^^ {
+    (CHAR | VARCHAR ) ~ ("(" ~>numericLit <~ ")") ^^ {
       case char ~ digit =>
         s"$char($digit)"
     }
