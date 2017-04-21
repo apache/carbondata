@@ -79,11 +79,11 @@ class CarbonMergerRDD[K, V](
     val iter = new Iterator[(K, V)] {
 
       carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-      val tempLocationKey: String = CarbonCommonConstants
-                                      .COMPACTION_KEY_WORD + '_' + carbonLoadModel
-                                      .getDatabaseName + '_' + carbonLoadModel
-                                      .getTableName + '_' + carbonLoadModel.getTaskNo
-
+      val tempLocationKey = CarbonDataProcessorUtil
+        .getTempStoreLocationKey(carbonLoadModel.getDatabaseName,
+          carbonLoadModel.getTableName,
+          carbonLoadModel.getTaskNo,
+          true)
       // this property is used to determine whether temp location for carbon is inside
       // container temp dir or is yarn application directory.
       val carbonUseLocalDir = CarbonProperties.getInstance()

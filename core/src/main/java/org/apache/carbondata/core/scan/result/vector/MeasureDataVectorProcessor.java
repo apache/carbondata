@@ -251,6 +251,9 @@ public class MeasureDataVectorProcessor {
         } else {
           BigDecimal decimal =
               dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(currentRow);
+          if (info.measure.getMeasure().getScale() > decimal.scale()) {
+            decimal = decimal.setScale(info.measure.getMeasure().getScale());
+          }
           Decimal toDecimal = Decimal.apply(decimal);
           vector.putDecimal(vectorOffset, toDecimal, precision);
         }
