@@ -366,6 +366,12 @@ class TableNewProcessor(cm: TableModel) {
     val LOGGER = LogServiceFactory.getLogService(TableNewProcessor.getClass.getName)
     var allColumns = Seq[ColumnSchema]()
     var index = 0
+    var bitmapStr: String = cm.tableProperties
+    .get(CarbonCommonConstants.BITMAP_ENCODING).getOrElse(null)
+    var bitmapCols: Array[String] = new Array[String](0)
+    if (bitmapStr != null) {
+       bitmapCols = bitmapStr.split(CarbonCommonConstants.COMMA)
+     }
     var measureCount = 0
 
     // Sort columns should be at the begin of all columns
@@ -373,6 +379,9 @@ class TableNewProcessor(cm: TableModel) {
       val field = cm.dimCols.find(keyDim equals _.column).get
       val encoders = new java.util.ArrayList[Encoding]()
       encoders.add(Encoding.DICTIONARY)
+      if (bitmapCols.contains(field.column)) {
+        encoders.add(Encoding.BITMAP)
+      }
       val columnSchema: ColumnSchema = getColumnSchema(
         DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
         field.name.getOrElse(field.column),
