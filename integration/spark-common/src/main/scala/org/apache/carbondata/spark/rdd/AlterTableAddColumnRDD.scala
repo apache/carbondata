@@ -25,6 +25,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.spark.util.GlobalDictionaryUtil
 
@@ -51,6 +52,9 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
     carbonTableIdentifier: CarbonTableIdentifier,
     carbonStorePath: String) extends RDD[(Int, String)](sc, Nil) {
 
+  val lockType: String = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.LOCK_TYPE,
+    CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
+
   override def getPartitions: Array[Partition] = {
     newColumns.zipWithIndex.map { column =>
       new AddColumnPartition(id, column._2, column._1)
@@ -74,6 +78,7 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
             rawData = new String(columnSchema.getDefaultValue,
               CarbonCommonConstants.DEFAULT_CHARSET_CLASS)
           }
+          CarbonProperties.getInstance.addProperty(CarbonCommonConstants.LOCK_TYPE, lockType)
           GlobalDictionaryUtil
             .loadDefaultDictionaryValueForNewColumn(carbonTablePath,
               columnSchema,
