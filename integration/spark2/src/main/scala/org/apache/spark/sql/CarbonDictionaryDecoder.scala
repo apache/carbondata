@@ -17,6 +17,9 @@
 
 package org.apache.spark.sql
 
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
+
 import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
@@ -256,28 +259,30 @@ case class CarbonDictionaryDecoder(
 
   private def getDictionaryWrapper(atiMap: Map[String, AbsoluteTableIdentifier],
       cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary], storePath: String) = {
+    val allDictIdentifiers = new ArrayBuffer[DictionaryColumnUniqueIdentifier]()
     val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryColumnIds.map {
       case (tableName, columnIdentifier, carbonDimension) =>
         if (columnIdentifier != null) {
           try {
+            val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
+              atiMap(tableName).getCarbonTableIdentifier,
+              columnIdentifier, carbonDimension.getDataType)
+            allDictIdentifiers += dictionaryColumnUniqueIdentifier;
             new ForwardDictionaryWrapper(
               storePath,
-              atiMap(tableName),
-              columnIdentifier,
-              carbonDimension.getDataType,
-              cache.get(
-                new DictionaryColumnUniqueIdentifier(
-                  atiMap(tableName).getCarbonTableIdentifier,
-                  columnIdentifier
-                )
-              )
-            )
+              dictionaryColumnUniqueIdentifier)
           } catch {
             case _: Throwable => null
           }
         } else {
           null
         }
+    }
+    val dictionaryLoader = new DictionaryLoader(storePath, allDictIdentifiers.toList)
+    dicts.foreach { dict =>
+      if (dict != null) {
+        dict.setDictionaryLoader(dictionaryLoader)
+      }
     }
     dicts
   }
@@ -578,37 +583,70 @@ class CarbonDecoderRDD(
  * It is a wrapper around Dictionary, it is a work around to keep the dictionary serializable in
  * case of codegen
  * @param storePath
- * @param absoluteTableIdentifier
- * @param columnIdentifier
- * @param dataType
- * @param dictionary
  */
-class ForwardDictionaryWrapper(val storePath: String,
-    val absoluteTableIdentifier: AbsoluteTableIdentifier,
-    columnIdentifier: ColumnIdentifier,
-    dataType: DataType, @transient var dictionary: Dictionary) extends Serializable {
+class ForwardDictionaryWrapper(
+    val storePath: String,
+    dictIdentifier: DictionaryColumnUniqueIdentifier) extends Serializable {
 
+  var dictionary: Dictionary = null
+
+  var dictionaryLoader: DictionaryLoader = _
 
   def getDictionaryValueForKeyInBytes (surrogateKey: Int): Array[Byte] = {
     if (dictionary == null) {
-      createDictionary
+      dictionary = dictionaryLoader.getDictionary(dictIdentifier)
     }
     dictionary.getDictionaryValueForKeyInBytes(surrogateKey)
   }
 
-  private def createDictionary = {
-    val cacheProvider: CacheProvider = CacheProvider.getInstance
-    val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
-    dictionary = forwardDictionaryCache.get(new DictionaryColumnUniqueIdentifier(
-      absoluteTableIdentifier.getCarbonTableIdentifier,
-      columnIdentifier, dataType))
+  def setDictionaryLoader(loader: DictionaryLoader): Unit = {
+    dictionaryLoader = loader
   }
 
   def clear(): Unit = {
     if (dictionary == null) {
-      createDictionary
+      dictionary = dictionaryLoader.getDictionary(dictIdentifier)
     }
     dictionary.clear()
   }
+}
+
+/**
+ * It is Dictionary Loader class to load all dictionaries at a time instead of one by one.
+ */
+class DictionaryLoader(storePath: String,
+    allDictIdentifiers: List[DictionaryColumnUniqueIdentifier]) extends Serializable {
+
+  var isDictionaryLoaded = false
+
+  var allDicts : java.util.List[Dictionary] = _
+
+  private def loadDictionary(): Unit = {
+    if (!isDictionaryLoaded) {
+      val cacheProvider: CacheProvider = CacheProvider.getInstance
+      val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+      allDicts = forwardDictionaryCache.getAll(allDictIdentifiers.asJava)
+      isDictionaryLoaded = true
+      val dictionaryTaskCleaner = TaskContext.get
+      if (dictionaryTaskCleaner != null) {
+        dictionaryTaskCleaner.addTaskCompletionListener(_ =>
+          allDicts.asScala.foreach { dictionary =>
+            if (null != dictionary) {
+              dictionary.clear()
+            }
+          }
+        )
+      }
+    }
+  }
+
+  def getDictionary(dictIdent: DictionaryColumnUniqueIdentifier): Dictionary = {
+    if (!isDictionaryLoaded) {
+      loadDictionary()
+    }
+    val findValue = allDictIdentifiers.zipWithIndex.find(p => p._1.equals(dictIdent)).get
+    allDicts.get(findValue._2)
+  }
+
 }
