@@ -18,12 +18,7 @@ package org.apache.carbondata.hadoop;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.DataRefNode;
@@ -409,7 +404,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private List<TableBlockInfo> getTableBlockInfo(JobContext job,
       TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier,
       Set<SegmentTaskIndexStore.TaskBucketHolder> taskKeys, UpdateVO updateDetails,
-      SegmentUpdateStatusManager updateStatusManager, String segmentId)
+      SegmentUpdateStatusManager updateStatusManager,
+      String segmentId, Set<SegmentTaskIndexStore.TaskBucketHolder> validTaskKeys)
     throws IOException {
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<TableBlockInfo>();
 
@@ -426,7 +422,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       // tableSegmentUniqueIdentifiertimestamp if time stamp is greater
       // then add as TableInfo object.
       if (isValidBlockBasedOnUpdateDetails(taskKeys, carbonInputSplit, updateDetails,
-          updateStatusManager, segmentId)) {
+          updateStatusManager, segmentId, validTaskKeys)) {
         BlockletInfos blockletInfos = new BlockletInfos(carbonInputSplit.getNumberOfBlocklets(), 0,
             carbonInputSplit.getNumberOfBlocklets());
         tableBlockInfoList.add(
@@ -440,8 +436,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   private boolean isValidBlockBasedOnUpdateDetails(
-      Set<SegmentTaskIndexStore.TaskBucketHolder> taskKeys, CarbonInputSplit carbonInputSplit,
-      UpdateVO updateDetails, SegmentUpdateStatusManager updateStatusManager, String segmentId) {
+          Set<SegmentTaskIndexStore.TaskBucketHolder> taskKeys, CarbonInputSplit carbonInputSplit,
+          UpdateVO updateDetails, SegmentUpdateStatusManager updateStatusManager, String segmentId,
+          Set<SegmentTaskIndexStore.TaskBucketHolder> validTaskKeys) {
     String taskID = null;
     if (null != carbonInputSplit) {
       if (!updateStatusManager.isBlockValid(segmentId, carbonInputSplit.getPath().getName())) {
@@ -458,7 +455,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
       SegmentTaskIndexStore.TaskBucketHolder taskBucketHolder =
           new SegmentTaskIndexStore.TaskBucketHolder(taskID, bucketNo);
-
+      validTaskKeys.add(taskBucketHolder);
       String blockTimestamp = carbonInputSplit.getPath().getName()
           .substring(carbonInputSplit.getPath().getName().lastIndexOf('-') + 1,
               carbonInputSplit.getPath().getName().lastIndexOf('.'));
@@ -504,10 +501,12 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       // if the segment is updated only the updated blocks TableInfo instance has to be
       // retrieved. the same will be filtered based on taskKeys , if the task is same
       // for the block then dont add it since already its btree is loaded.
+      Set<SegmentTaskIndexStore.TaskBucketHolder> validTaskKeys =
+          new HashSet<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
       List<TableBlockInfo> tableBlockInfoList =
           getTableBlockInfo(job, tableSegmentUniqueIdentifier, taskKeys,
               updateStatusManager.getInvalidTimestampRange(segmentId), updateStatusManager,
-              segmentId);
+              segmentId, validTaskKeys);
       if (!tableBlockInfoList.isEmpty()) {
         // getFileStatusOfSegments(job, new int[]{ segmentId }, fileStatusList);
         Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos = new HashMap<>();
@@ -518,6 +517,16 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         segmentTaskIndexWrapper =
             cacheClient.getSegmentAccessClient().get(tableSegmentUniqueIdentifier);
         segmentIndexMap = segmentTaskIndexWrapper.getTaskIdToTableSegmentMap();
+      }
+
+      if (null != taskKeys) {
+        Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> finalMap =
+            new HashMap<>(validTaskKeys.size());
+
+        for (SegmentTaskIndexStore.TaskBucketHolder key : validTaskKeys) {
+          finalMap.put(key, segmentIndexMap.get(key));
+        }
+        segmentIndexMap = finalMap;
       }
     }
     return segmentIndexMap;
