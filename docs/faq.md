@@ -76,8 +76,8 @@ The property carbon.lock.type configuration specifies the type of lock to be acq
 In order to build CarbonData project it is necessary to specify the spark profile. The spark profile sets the Spark Version. You need to specify the ``spark version`` while using Maven to build project.
 
 ## How Carbon will behave when execute insert operation in abnormal scenarios?
-Carbon support insert operetion, you can refer to the syntax mentioned in DML Operations on CarbonData.
-First, create a soucre table and load data into this created table. Create source table as follows:
+Carbon support insert operation, you can refer to the syntax mentioned in DML Operations on CarbonData.
+First, create a soucre table in spark-sql and load data into this created table. 
 ```
 CREATE TABLE source_table(
 id String,
@@ -85,16 +85,16 @@ name String,
 city String)
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ",";
 ```
-Data inside source table as follows:
 ```
 SELECT * FROM source_table;
-1	jack	beijing
-2	erlu	hangzhou
-3	davi	shenzhen
+id  name    city
+1   jack    beijing
+2   erlu    hangzhou
+3   davi    shenzhen
 ```
 **Scenario 1** :
 
-Since the column order in carbon table is different from source table, you may get unexpected result when query carbon table. This phenomenon is same with insert data into hive table. Create carbon table as follows:
+Suppose, the column order in carbon table is different from source table, use script "SELECT * FROM carbon table" to query, will get the column order similar as source table, rather than in carbon table's column order as expected. 
 ```
 CREATE TABLE IF NOT EXISTS carbon_table(
 id String,
@@ -102,18 +102,19 @@ city String,
 name String)
 STORED BY 'carbondata';
 ```
-Then execute insert into operation:
 ```
 INSERT INTO TABLE carbon_table SELECT * FROM source_table;
 ```
-After insert operation, you will get the data in source table's order when query carbon table, rather than in carbon table's column order as expected.
 ```
 SELECT * FROM carbon_table;
-1	jack	beijing
-2	erlu	hangzhou
-3	davi	shenzhen
+id  city    name
+1   jack    beijing
+2   erlu    hangzhou
+3   davi    shenzhen
 ```
-As result shows, the second column is city in carbon table, but what inside is name, such as jack. If you want to insert data into corresponding column in carbon table, you have to specify the column order same in insert statment. 
+As result shows, the second column is city in carbon table, but what inside is name, such as jack. This phenomenon is same with insert data into hive table.
+
+If you want to insert data into corresponding column in carbon table, you have to specify the column order same in insert statment. 
 ```
 INSERT INTO TABLE carbon_table SELECT id, city, name FROM source_table;
 ```
@@ -126,6 +127,6 @@ INSERT INTO TABLE carbon_table SELECT id, city FROM source_table;
 ```
 **Scenario 3** :
 
-When the column type in carbon table is different from from the column specified in select statement. The insert operation will still success, but you may get unexpected result because NULL will be substitute value when conversion type failed.
+When the column type in carbon table is different from from the column specified in select statement. The insert operation will still success, but you may get NULL in result, because NULL will be substitute value when conversion type failed.
 
 
