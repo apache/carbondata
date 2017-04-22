@@ -76,7 +76,7 @@ The property carbon.lock.type configuration specifies the type of lock to be acq
 In order to build CarbonData project it is necessary to specify the spark profile. The spark profile sets the Spark Version. You need to specify the ``spark version`` while using Maven to build project.
 
 ## How Carbon will behave when execute insert operation in abnormal scenarios?
-Carbon support insert operation, you can refer to the syntax mentioned in DML Operations on CarbonData.
+Carbon support insert operation, you can refer to the syntax mentioned in [DML Operations on CarbonData](http://carbondata.apache.org/dml-operation-on-carbondata).
 First, create a soucre table in spark-sql and load data into this created table. 
 ```
 CREATE TABLE source_table(
