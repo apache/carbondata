@@ -352,6 +352,8 @@ public class SegmentTaskIndexStore
         .readCarbonIndexFile(taskBucketHolder.taskNo, taskBucketHolder.bucketNumber,
             tableBlockInfoList, tableIdentifier);
 
+    // Reuse SegmentProperties object if tableIdentifier, columnsInTable and columnCardinality are
+    // the same.
     List<ColumnSchema> columnsInTable = footerList.get(0).getColumnInTable();
     int[] columnCardinality = footerList.get(0).getSegmentInfo().getColumnCardinality();
     SegmentPropertiesWrapper segmentPropertiesWrapper =
@@ -420,10 +422,14 @@ public class SegmentTaskIndexStore
     }
   }
 
+  /**
+   * This class wraps tableIdentifier, columnsInTable and columnCardinality as a key to determine
+   * whether the SegmentProperties object can be reused.
+   */
   public static class SegmentPropertiesWrapper {
-    private AbsoluteTableIdentifier tableIdentifier = null;
-    private List<ColumnSchema> columnsInTable = null;
-    private int[] columnCardinality = null;
+    private AbsoluteTableIdentifier tableIdentifier;
+    private List<ColumnSchema> columnsInTable;
+    private int[] columnCardinality;
 
     public SegmentPropertiesWrapper(AbsoluteTableIdentifier tableIdentifier,
         List<ColumnSchema> columnsInTable, int[] columnCardinality) {
