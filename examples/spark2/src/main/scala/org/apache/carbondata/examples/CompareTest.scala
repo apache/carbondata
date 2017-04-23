@@ -70,7 +70,7 @@ object CompareTest {
     val rdd = spark.sparkContext
         .parallelize(1 to 10 * 1000 * 1000, 4)
         .map { x =>
-          ("city" + x % 8, "country" + x % 1103, "planet" + x % 10007, x.toString,
+          ("city" + x % 8, "country" + x % 1103, "planet" + x % 10007, "IDENTIFIER" + x.toString,
           (x % 16).toShort, x / 2, (x << 1).toLong, x.toDouble / 13, x.toDouble / 11)
         }.map { x =>
           Row(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9)
@@ -279,6 +279,7 @@ object CompareTest {
     val loadParquetTime = loadParquetTable(spark, df)
     val loadCarbonV3Time = loadCarbonTable(spark, df, version = "3")
     println(s"load completed, time: $loadParquetTime, $loadCarbonV3Time")
+    df.unpersist()
     spark.read.parquet(parquetTableName).registerTempTable(parquetTableName)
   }
 
@@ -326,7 +327,6 @@ object CompareTest {
           s""""fetched":${parquetResult(index)._2}, """ +
           s""""type":"${query.queryType}", """ +
           s""""desc":"${query.desc}",  """ +
-          s""""timestamp": "$timestamp" """ +
           s""""date": "${formatter.format(date)}" """ +
           "}"
       )
