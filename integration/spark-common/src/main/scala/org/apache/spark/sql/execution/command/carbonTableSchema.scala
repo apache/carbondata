@@ -373,9 +373,6 @@ class TableNewProcessor(cm: TableModel) {
       val field = cm.dimCols.find(keyDim equals _.column).get
       val encoders = new java.util.ArrayList[Encoding]()
       encoders.add(Encoding.DICTIONARY)
-      if (bitmapCols.contains(field.column)) {
-        encoders.add(Encoding.BITMAP)
-      }
       val columnSchema: ColumnSchema = getColumnSchema(
         DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
         field.name.getOrElse(field.column),
@@ -388,6 +385,10 @@ class TableNewProcessor(cm: TableModel) {
         field.scale,
         field.schemaOrdinal)
       columnSchema.setSortColumn(true)
+      if (bitmapCols.contains(field.column)
+          && columnSchema.getEncodingList.contains(Encoding.DICTIONARY)) {
+        columnSchema.getEncodingList.add(Encoding.BITMAP)
+      }
       allColumns :+= columnSchema
       index = index + 1
     }
@@ -408,6 +409,10 @@ class TableNewProcessor(cm: TableModel) {
           field.precision,
           field.scale,
           field.schemaOrdinal)
+        if (bitmapCols.contains(field.column)
+            && columnSchema.getEncodingList.contains(Encoding.DICTIONARY)) {
+          columnSchema.getEncodingList.add(Encoding.BITMAP)
+        }
         allColumns :+= columnSchema
         index = index + 1
         if (field.children.isDefined && field.children.get != null) {
