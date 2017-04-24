@@ -17,10 +17,12 @@
 
 package org.apache.spark.carbondata.restructure.rowreader
 
+import java.io.{File, FileOutputStream, FileWriter}
 import java.math.{BigDecimal, RoundingMode}
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
@@ -203,6 +205,25 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
         "('DICTIONARY_EXCLUDE'='charField')")
       sql(
         "Alter table carbon_table add columns(newfield varchar) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
+  }
+
+  test ("test to check if exception is thrown if table is locked for updation") {
+    intercept[Exception] {
+      sql("DROP TABLE IF EXISTS carbon_table")
+      sql(
+        "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+        "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+        "('DICTIONARY_EXCLUDE'='charField')")
+      val lockFilePath = s"${ TestQueryExecutor.storeLocation }/default/carbon_table/meta.lock"
+      new File(lockFilePath).createNewFile()
+      sql(
+        "Alter table carbon_table add columns(newfield string) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
+      new FileOutputStream(lockFilePath).getChannel.lock()
+      sql(
+        "Alter table carbon_table drop columns(newfield)")
+      new File(lockFilePath).delete()
       sql("DROP TABLE IF EXISTS carbon_table")
     }
   }
