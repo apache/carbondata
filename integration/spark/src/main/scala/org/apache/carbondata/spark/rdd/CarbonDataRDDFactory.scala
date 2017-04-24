@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.rdd
 
+import java.text.SimpleDateFormat
 import java.util
 import java.util.UUID
 import java.util.concurrent._
@@ -28,10 +29,11 @@ import scala.util.control.Breaks._
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{SparkEnv, SparkException}
-import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, UpdateCoalescedRDD}
+import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, NewHadoopRDD, RDD, UpdateCoalescedRDD}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, ExecutionErrors, UpdateTableModel}
 import org.apache.spark.sql.hive.DistributionUtil
@@ -43,12 +45,15 @@ import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarFormatVersion}
+import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
 import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.processing.csvload.BlockDetails
+import org.apache.carbondata.processing.csvload.{BlockDetails, CSVInputFormat, StringArrayWritable}
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.processing.model.CarbonLoadModel
@@ -56,7 +61,7 @@ import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingExcep
 import org.apache.carbondata.spark._
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.splits.TableSplit
-import org.apache.carbondata.spark.util.{CarbonQueryUtil, CommonUtil}
+import org.apache.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil, CommonUtil}
 
 /**
  * This is the factory class which can create different RDD depends on user needs.
@@ -732,6 +737,23 @@ object CarbonDataRDDFactory {
 
       }
 
+      def loadDataForPartitionTable(): Unit = {
+        try {
+          val rdd = repartitionInputData(sqlContext, dataFrame, carbonLoadModel)
+          status = new DataLoaderForPartitionTableRDD(sqlContext.sparkContext,
+            new DataLoadResultImpl(),
+            carbonLoadModel,
+            currentLoadCount,
+            tableCreationTime,
+            schemaLastUpdatedTime,
+            rdd).collect()
+        } catch {
+          case ex: Exception =>
+            LOGGER.error(ex, "load data failed for partition table")
+            throw ex
+        }
+      }
+
       if (!updateModel.isDefined) {
       CarbonLoaderUtil.checkAndCreateCarbonDataLocation(storePath,
         carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName, currentLoadCount.toString)
@@ -742,10 +764,11 @@ object CarbonDataRDDFactory {
       try {
         if (updateModel.isDefined) {
           loadDataFrameForUpdate()
+        } else if (carbonTable.getPartitionInfo(carbonTable.getFactTableName) != null) {
+          loadDataForPartitionTable()
         } else if (dataFrame.isDefined) {
           loadDataFrame()
-        }
-        else {
+        } else {
           loadDataFile()
         }
         if (updateModel.isDefined) {
@@ -929,6 +952,82 @@ object CarbonDataRDDFactory {
       }
     }
 
+  }
+
+  /**
+   * repartition the input data for partiton table.
+   * @param sqlContext
+   * @param dataFrame
+   * @param carbonLoadModel
+   * @return
+   */
+  private def repartitionInputData(sqlContext: SQLContext,
+      dataFrame: Option[DataFrame],
+      carbonLoadModel: CarbonLoadModel): RDD[Row] = {
+    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionColumn = partitionInfo.getColumnSchemaList.get(0).getColumnName
+    val partitionColumnDataType = partitionInfo.getColumnSchemaList.get(0).getDataType
+    val columns = carbonLoadModel.getCsvHeaderColumns
+    var partitionColumnIndex = -1
+    for (i <- 0 until columns.length) {
+      if (partitionColumn.equals(columns(i))) {
+        partitionColumnIndex = i
+      }
+    }
+    if (partitionColumnIndex == -1) {
+      throw new DataLoadingException("Partition column not found.")
+    }
+    // generate RDD[(K, V)] to use the partitionBy method of PairRDDFunctions
+    val inputRDD: RDD[(String, Row)] = if (dataFrame.isDefined) {
+      // input data from DataFrame
+      val timestampFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+        .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      val timeStampFormat = new SimpleDateFormat(timestampFormatString)
+      val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+        .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      val dateFormat = new SimpleDateFormat(dateFormatString)
+      val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
+      val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
+      val serializationNullFormat =
+        carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
+      dataFrame.get.rdd.map { row =>
+        (CarbonScalaUtil.getString(row.get(partitionColumnIndex), serializationNullFormat,
+          delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat), row)
+      }
+    } else {
+      // input data from files
+      val hadoopConfiguration = new Configuration()
+      CommonUtil.configureCSVInputFormat(hadoopConfiguration, carbonLoadModel)
+      hadoopConfiguration.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
+      val columnCount = columns.length
+      new NewHadoopRDD[NullWritable, StringArrayWritable](
+        sqlContext.sparkContext,
+        classOf[CSVInputFormat],
+        classOf[NullWritable],
+        classOf[StringArrayWritable],
+        hadoopConfiguration)
+        .map { currentRow =>
+          val row = new StringArrayRow(new Array[String](columnCount))
+          (currentRow._2.get()(partitionColumnIndex), row.setValues(currentRow._2.get()))
+        }
+    }
+    if (partitionColumnDataType == DataType.STRING) {
+      if (partitionInfo.getPartitionType == PartitionType.RANGE) {
+        inputRDD.map { row => (ByteUtil.toBytes(row._1), row._2) }
+          .partitionBy(PartitionFactory.getPartitioner(partitionInfo))
+          .map(_._2)
+      } else {
+        inputRDD.partitionBy(PartitionFactory.getPartitioner(partitionInfo))
+          .map(_._2)
+      }
+    } else {
+      inputRDD.map { row =>
+        (PartitionUtil.getDataBasedOnDataType(row._1, partitionColumnDataType), row._2)
+      }
+        .partitionBy(PartitionFactory.getPartitioner(partitionInfo))
+        .map(_._2)
+    }
   }
 
   private def shutDownDictionaryServer(carbonLoadModel: CarbonLoadModel,
