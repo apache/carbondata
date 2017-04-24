@@ -266,7 +266,7 @@ class AlterTableColumnSchemaGenerator(
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
     if (alterTableModel.highCardinalityDims.contains(colName)) {
-      encoders.remove(encoders.remove(Encoding.DICTIONARY))
+      encoders.remove(Encoding.DICTIONARY)
     }
     if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
@@ -331,7 +331,7 @@ class TableNewProcessor(cm: TableModel) {
     columnSchema.setColumnName(colName)
     val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
     if (highCardinalityDims.contains(colName)) {
-      encoders.remove(encoders.remove(Encoding.DICTIONARY))
+      encoders.remove(Encoding.DICTIONARY)
     }
     if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
