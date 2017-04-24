@@ -391,9 +391,12 @@ class TableNewProcessor(cm: TableModel) {
         field.scale,
         field.schemaOrdinal)
       columnSchema.setSortColumn(true)
-      if (bitmapCols.contains(field.column)
-          && columnSchema.getEncodingList.contains(Encoding.DICTIONARY)) {
-        columnSchema.getEncodingList.add(Encoding.BITMAP)
+      if (bitmapCols.contains(field.column)) {
+        if (columnSchema.getEncodingList.contains(Encoding.DICTIONARY)) {
+          columnSchema.getEncodingList.add(Encoding.BITMAP)
+        } else {
+          throw new Exception("bitmap encoding column must have dictionary encoding")
+        }
       }
       allColumns :+= columnSchema
       index = index + 1
@@ -415,9 +418,12 @@ class TableNewProcessor(cm: TableModel) {
           field.precision,
           field.scale,
           field.schemaOrdinal)
-        if (bitmapCols.contains(field.column)
-            && columnSchema.getEncodingList.contains(Encoding.DICTIONARY)) {
-          columnSchema.getEncodingList.add(Encoding.BITMAP)
+        if (bitmapCols.contains(field.column)) {
+          if (columnSchema.getEncodingList.contains(Encoding.DICTIONARY)) {
+            columnSchema.getEncodingList.add(Encoding.BITMAP)
+          } else {
+            throw new Exception("bitmap encoding column must have dictionary encoding")
+          }
         }
         allColumns :+= columnSchema
         index = index + 1

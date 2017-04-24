@@ -43,6 +43,18 @@ object CarbonBitMapEncodingExample {
            TBLPROPERTIES ('BITMAP'='country,name')
            """)
 
+    // Throw Exception when Create BITMAP table
+    try {
+      cc.sql("""
+           CREATE TABLE IF NOT EXISTS bitmapTable
+           (ID Int, date Date, country String,
+           name String, phonetype String, serialname char(10), salary Int)
+           STORED BY 'carbondata'
+           TBLPROPERTIES ('BITMAP'='country,name', 'DICTIONARY_EXCLUDE'='name')
+           """)
+    } catch {
+      case ex: Exception => print(" create bitmap table failed")
+    }
     // Create no BITMAP table, 6 dimensions, 1 measure
     cc.sql("""
            CREATE TABLE IF NOT EXISTS noBitmapTable
