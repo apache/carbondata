@@ -194,14 +194,14 @@ object AlterTableUtil {
    *
    * @param oldTableIdentifier
    * @param newTableName
-   * @param lastUpdatedTime
+   * @param timeStamp
    * @param sparkSession
    */
   def revertRenameTableChanges(oldTableIdentifier: TableIdentifier,
       newTableName: String,
       storePath: String,
       tableId: String,
-      lastUpdatedTime: Long)
+      timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
     val database = oldTableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
     val newCarbonTableIdentifier = new CarbonTableIdentifier(database, newTableName, tableId)
@@ -215,7 +215,7 @@ object AlterTableUtil {
         .readSchemaFile(tableMetadataFile)
       val evolutionEntryList = tableInfo.fact_table.schema_evolution.schema_evolution_history
       val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
-      if (updatedTime > lastUpdatedTime) {
+      if (updatedTime == timeStamp) {
         LOGGER.error(s"Reverting changes for $database.${ oldTableIdentifier.table }")
         FileFactory.getCarbonFile(carbonTablePath.getPath, fileType)
           .renameForce(carbonTablePath.getParent.toString + CarbonCommonConstants.FILE_SEPARATOR +
@@ -237,10 +237,10 @@ object AlterTableUtil {
    *
    * @param dbName
    * @param tableName
-   * @param lastUpdatedTime
+   * @param timeStamp
    * @param sparkSession
    */
-  def revertAddColumnChanges(dbName: String, tableName: String, lastUpdatedTime: Long)
+  def revertAddColumnChanges(dbName: String, tableName: String, timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
     val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation].tableMeta
@@ -253,7 +253,7 @@ object AlterTableUtil {
       .readSchemaFile(tableMetadataFile)
     val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
     val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
-    if (updatedTime > lastUpdatedTime) {
+    if (updatedTime == timeStamp) {
       LOGGER.info(s"Reverting changes for $dbName.$tableName")
       val addedSchemas = evolutionEntryList.get(evolutionEntryList.size() - 1).added
       thriftTable.fact_table.table_columns.removeAll(addedSchemas)
@@ -268,10 +268,10 @@ object AlterTableUtil {
    *
    * @param dbName
    * @param tableName
-   * @param lastUpdatedTime
+   * @param timeStamp
    * @param sparkSession
    */
-  def revertDropColumnChanges(dbName: String, tableName: String, lastUpdatedTime: Long)
+  def revertDropColumnChanges(dbName: String, tableName: String, timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
     val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation].tableMeta
@@ -283,7 +283,7 @@ object AlterTableUtil {
       .readSchemaFile(tableMetadataFile)
     val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
     val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
-    if (updatedTime > lastUpdatedTime) {
+    if (updatedTime == timeStamp) {
       LOGGER.error(s"Reverting changes for $dbName.$tableName")
       val removedSchemas = evolutionEntryList.get(evolutionEntryList.size() - 1).removed
       thriftTable.fact_table.table_columns.asScala.foreach { columnSchema =>
@@ -304,10 +304,10 @@ object AlterTableUtil {
    *
    * @param dbName
    * @param tableName
-   * @param lastUpdatedTime
+   * @param timeStamp
    * @param sparkSession
    */
-  def revertDataTypeChanges(dbName: String, tableName: String, lastUpdatedTime: Long)
+  def revertDataTypeChanges(dbName: String, tableName: String, timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
     val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation].tableMeta
@@ -319,7 +319,7 @@ object AlterTableUtil {
       .readSchemaFile(tableMetadataFile)
     val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
     val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
-    if (updatedTime > lastUpdatedTime) {
+    if (updatedTime == timeStamp) {
       LOGGER.error(s"Reverting changes for $dbName.$tableName")
       val removedColumns = evolutionEntryList.get(evolutionEntryList.size() - 1).removed
       thriftTable.fact_table.table_columns.asScala.foreach { columnSchema =>

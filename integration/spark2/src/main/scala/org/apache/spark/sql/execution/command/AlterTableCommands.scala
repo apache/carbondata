@@ -29,9 +29,10 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.{ColumnSchema, SchemaEvolutionEntry, TableInfo}
@@ -51,15 +52,20 @@ private[sql] case class AlterTableAddColumns(
     LOGGER.audit(s"Alter table add columns request has been received for $dbName.$tableName")
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
     var locks = List.empty[ICarbonLock]
-    var lastUpdatedTime = 0L
+    var timeStamp = 0L
     var newCols = Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]()
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation].tableMeta
-      .carbonTable
+    var carbonTable: CarbonTable = null
     try {
-      lastUpdatedTime = carbonTable.getTableLastUpdatedTime
       locks = AlterTableUtil
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
+      // Consider a concurrent scenario where 2 alter operations are executed in parallel. 1st
+      // operation is success and updates the schema file. 2nd operation will get the lock after
+      // completion of 1st operation but as look up relation is called before it will have the
+      // older carbon table and this can lead to inconsistent state in the system. Therefor look
+      // up relation should be called after acquiring the lock
+      carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+        .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
+        .tableMeta.carbonTable
       // get the latest carbon table and check for column existence
       // read the latest schema file
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
@@ -84,8 +90,9 @@ private[sql] case class AlterTableAddColumns(
         newCols,
         carbonTable.getCarbonTableIdentifier,
         carbonTable.getStorePath).collect()
+      timeStamp = System.currentTimeMillis
       val schemaEvolutionEntry = new org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
-      schemaEvolutionEntry.setTimeStamp(System.currentTimeMillis)
+      schemaEvolutionEntry.setTimeStamp(timeStamp)
       schemaEvolutionEntry.setAdded(newCols.toList.asJava)
       val thriftTable = schemaConverter
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
@@ -105,7 +112,7 @@ private[sql] case class AlterTableAddColumns(
             newCols,
             carbonTable.getCarbonTableIdentifier,
             carbonTable.getStorePath).collect()
-          AlterTableUtil.revertAddColumnChanges(dbName, tableName, lastUpdatedTime)(sparkSession)
+          AlterTableUtil.revertAddColumnChanges(dbName, tableName, timeStamp)(sparkSession)
         }
         sys.error(s"Alter table add operation failed: ${e.getMessage}")
     } finally {
@@ -155,13 +162,15 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
       LockUsage.CLEAN_FILES_LOCK,
       LockUsage.DROP_TABLE_LOCK)
     var locks = List.empty[ICarbonLock]
-    var lastUpdatedTime = 0L
-    val carbonTable = relation.tableMeta.carbonTable
+    var timeStamp = 0L
+    var carbonTable: CarbonTable = null
     try {
-      lastUpdatedTime = carbonTable.getTableLastUpdatedTime
       locks = AlterTableUtil
         .validateTableAndAcquireLock(oldDatabaseName, oldTableName, locksToBeAcquired)(
             sparkSession)
+      carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+        .lookupRelation(Some(oldDatabaseName), oldTableName)(sparkSession)
+        .asInstanceOf[CarbonRelation].tableMeta.carbonTable
       // get the latest carbon table and check for column existence
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
         carbonTable.getCarbonTableIdentifier)
@@ -170,7 +179,8 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
         .carbonMetastore.readSchemaFile(tableMetadataFile)
       val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
       schemaEvolutionEntry.setTableName(newTableName)
-      schemaEvolutionEntry.setTime_stamp(System.currentTimeMillis())
+      timeStamp = System.currentTimeMillis()
+      schemaEvolutionEntry.setTime_stamp(timeStamp)
       renameBadRecords(oldTableName, newTableName, oldDatabaseName)
       val fileType = FileFactory.getFileType(tableMetadataFile)
       if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
@@ -205,25 +215,29 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
     } catch {
       case e: Exception => LOGGER
         .error("Rename table failed: " + e.getMessage)
-        AlterTableUtil
-          .revertRenameTableChanges(oldTableIdentifier,
-            newTableName,
-            carbonTable.getStorePath,
-            carbonTable.getCarbonTableIdentifier.getTableId,
-            lastUpdatedTime)(
-            sparkSession)
-        renameBadRecords(newTableName, oldTableName, oldDatabaseName)
+        if (carbonTable != null) {
+          AlterTableUtil
+            .revertRenameTableChanges(oldTableIdentifier,
+              newTableName,
+              carbonTable.getStorePath,
+              carbonTable.getCarbonTableIdentifier.getTableId,
+              timeStamp)(
+              sparkSession)
+          renameBadRecords(newTableName, oldTableName, oldDatabaseName)
+        }
         sys.error(s"Alter table rename table operation failed: ${e.getMessage}")
     } finally {
       // release lock after command execution completion
       AlterTableUtil.releaseLocks(locks)
       // case specific to rename table as after table rename old table path will not be found
-      AlterTableUtil
-        .releaseLocksManually(locks,
-          locksToBeAcquired,
-          oldDatabaseName,
-          newTableName,
-          carbonTable.getStorePath)
+      if (carbonTable != null) {
+        AlterTableUtil
+          .releaseLocksManually(locks,
+            locksToBeAcquired,
+            oldDatabaseName,
+            newTableName,
+            carbonTable.getStorePath)
+      }
     }
     Seq.empty
   }
@@ -258,16 +272,16 @@ private[sql] case class AlterTableDropColumns(
       .getOrElse(sparkSession.catalog.currentDatabase)
     LOGGER.audit(s"Alter table drop columns request has been received for $dbName.$tableName")
     var locks = List.empty[ICarbonLock]
-    var lastUpdatedTime = 0L
+    var timeStamp = 0L
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
     // get the latest carbon table and check for column existence
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation].tableMeta
-      .carbonTable
+    var carbonTable: CarbonTable = null
     try {
-      lastUpdatedTime = carbonTable.getTableLastUpdatedTime
       locks = AlterTableUtil
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
+      carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+        .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
+        .tableMeta.carbonTable
       // check each column existence in the table
       val tableColumns = carbonTable.getCreateOrderColumn(tableName).asScala
       var dictionaryColumns = Seq[org.apache.carbondata.core.metadata.schema.table.column
@@ -318,7 +332,8 @@ private[sql] case class AlterTableDropColumns(
         }
       }
       // add deleted columns to schema evolution history and update the schema
-      val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
+      timeStamp = System.currentTimeMillis
+      val schemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
       schemaEvolutionEntry.setRemoved(deletedColumnSchema.toList.asJava)
       AlterTableUtil
         .updateSchemaInfo(carbonTable,
@@ -336,7 +351,9 @@ private[sql] case class AlterTableDropColumns(
     } catch {
       case e: Exception => LOGGER
         .error("Alter table drop columns failed : " + e.getMessage)
-        AlterTableUtil.revertDropColumnChanges(dbName, tableName, lastUpdatedTime)(sparkSession)
+        if (carbonTable != null) {
+          AlterTableUtil.revertDropColumnChanges(dbName, tableName, timeStamp)(sparkSession)
+        }
         sys.error(s"Alter table drop column operation failed: ${e.getMessage}")
     } finally {
       // release lock after command execution completion
@@ -359,14 +376,14 @@ private[sql] case class AlterTableDataTypeChange(
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
     var locks = List.empty[ICarbonLock]
     // get the latest carbon table and check for column existence
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation].tableMeta
-      .carbonTable
-    var lastUpdatedTime = 0L
+    var carbonTable: CarbonTable = null
+    var timeStamp = 0L
     try {
-      lastUpdatedTime = carbonTable.getTableLastUpdatedTime
       locks = AlterTableUtil
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
+      carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+        .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
+        .tableMeta.carbonTable
       val columnName = alterTableDataTypeChangeModel.columnName
       val carbonColumns = carbonTable.getCreateOrderColumn(tableName).asScala.filter(!_.isInvisible)
       if (!carbonColumns.exists(_.getColName.equalsIgnoreCase(columnName))) {
@@ -403,7 +420,8 @@ private[sql] case class AlterTableDataTypeChange(
           addColumnSchema = columnSchema
         }
       }
-      val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
+      timeStamp = System.currentTimeMillis
+      val schemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
       schemaEvolutionEntry.setAdded(List(addColumnSchema).asJava)
       schemaEvolutionEntry.setRemoved(List(deletedColumnSchema).asJava)
       tableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
@@ -418,7 +436,9 @@ private[sql] case class AlterTableDataTypeChange(
     } catch {
       case e: Exception => LOGGER
         .error("Alter table change datatype failed : " + e.getMessage)
-        AlterTableUtil.revertDataTypeChanges(dbName, tableName, lastUpdatedTime)(sparkSession)
+        if (carbonTable != null) {
+          AlterTableUtil.revertDataTypeChanges(dbName, tableName, timeStamp)(sparkSession)
+        }
         sys.error(s"Alter table data type change operation failed: ${e.getMessage}")
     } finally {
       // release lock after command execution completion
