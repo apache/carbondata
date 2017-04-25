@@ -25,7 +25,8 @@ import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{CreateTableContext,
 TablePropertyListContext}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
-import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field, TableModel}
+import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field,
+PartitionerField, TableModel}
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
 
 import org.apache.carbondata.spark.CarbonOption
@@ -88,6 +89,8 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         operationNotAllowed("CREATE TABLE ... CLUSTERED BY", ctx)
       }
       val partitionCols = Option(ctx.partitionColumns).toSeq.flatMap(visitColTypeList)
+      val partitionFields = partitionCols.map(x =>
+                              PartitionerField(x.name, Some(x.dataType.toString), null))
       val cols = Option(ctx.columns).toSeq.flatMap(visitColTypeList)
       val properties = Option(ctx.tablePropertyList).map(visitPropertyKeyValues)
         .getOrElse(Map.empty)
@@ -102,18 +105,14 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
                             duplicateColumns.mkString("[", ",", "]"), ctx)
       }
 
-      // For Hive tables, partition columns must not be part of the schema
+      // partition columns must be part of the schema
       val badPartCols = partitionCols.map(_.name).toSet.intersect(colNames.toSet)
-      if (badPartCols.nonEmpty) {
-        operationNotAllowed(s"Partition columns may not be specified in the schema: " +
+      if (badPartCols.isEmpty) {
+        operationNotAllowed(s"Partition columns must be specified in the schema: " +
                             badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]"), ctx)
       }
 
-      // Note: Hive requires partition columns to be distinct from the schema, so we need
-      // to include the partition columns here explicitly
-      val schema = cols ++ partitionCols
-
-      val fields = schema.map { col =>
+      val fields = cols.map { col =>
         val x = if (col.dataType.catalogString == "float") {
           '`' + col.name + '`' + " double"
         }
@@ -170,7 +169,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         convertDbNameToLowerCase(name.database),
         name.table.toLowerCase,
         fields,
-        Seq(),
+        partitionFields,
         tableProperties,
         bucketFields)
 

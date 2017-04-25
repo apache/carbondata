@@ -806,7 +806,7 @@ public final class CarbonCommonConstants {
   public static final String DICTIONARY_EXCLUDE = "dictionary_exclude";
   public static final String DICTIONARY_INCLUDE = "dictionary_include";
   public static final String SORT_COLUMNS = "sort_columns";
-  public static final String PARTITIONCLASS = "partitionclass";
+  public static final String PARTITIONING = "partitioning";
   public static final String PARTITIONCOUNT = "partitioncount";
   public static final String COLUMN_PROPERTIES = "columnproperties";
   // table block size in MB
