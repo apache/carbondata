@@ -162,8 +162,7 @@ excessive memory usage.
 1 million.
 
 
-# Configuration for Optimizing Data Loading performance for Massive Data
-
+## Configuration for Optimizing Data Loading performance for Massive Data
 
  CarbonData supports large data load, in this process sorting data while loading consumes a lot of memory and disk IO and
  this can result sometimes in "Out Of Memory" exception.
@@ -179,6 +178,7 @@ excessive memory usage.
 |carbon.merge.sort.reader.thread|Default: 3 |Specifies the number of cores used for temp file merging during data loading in CarbonData.|
 |carbon.merge.sort.prefetch|Default: true | You may want set this value to false if you have not enough memory|
 
+
 For example, if there are  10 million records ,and i have only 16 cores ,64GB memory, will be loaded to CarbonData table.
 Using the default configuration  always fail in sort step. Modify carbon.properties as suggested below
 
@@ -188,9 +188,9 @@ carbon.number.of.cores.block.sort=1
 carbon.merge.sort.reader.thread=1
 carbon.sort.size=5000
 carbon.sort.file.write.buffer.size=5000
+<<<<<<< HEAD
 carbon.merge.sort.prefetch=false
 ```
-
 
 ## Configurations for Optimizing CarbonData Performance
 
@@ -206,7 +206,6 @@ scenarios. After the completion of POC, some of the configurations impacting the
 | num-executors/executor-cores/executor-memory | spark/con/spark-defaults.conf | Querying | The number of executors, CPU cores, and memory used for CarbonData query. | In the bank scenario, we provide the 4 CPUs cores and 15 GB for each executor which can get good performance. This 2 value does not mean more the better. It needs to be configured properly in case of limited resources. For example, In the bank scenario, it has enough CPU 32 cores each node but less memory 64 GB each node. So we cannot give more CPU but less memory. For example, when 4 cores and 12GB for each executor. It sometimes happens GC during the query which impact the query performance very much from the 3 second to more than 15 seconds. In this scenario need to increase the memory or decrease the CPU cores. |
 | carbon.detail.batch.size | spark/carbonlib/carbon.properties | Data loading | The buffer size to store records, returned from the block scan. | In limit scenario this parameter is very important. For example your query limit is 1000. But if we set this value to 3000 that means we get 3000 records from scan but spark will only take 1000 rows. So the 2000 remaining are useless. In one Finance test case after we set it to 100, in the limit 1000 scenario the performance increase about 2 times in comparison to if we set this value to 12000. |
 | carbon.use.local.dir | spark/carbonlib/carbon.properties | Data loading | Whether use YARN local directories for multi-table load disk load balance | If this is set it to true CarbonData will use YARN local directories for multi-table load disk load balance, that will improve the data load performance. |
-
 
  Note: If your CarbonData instance is provided only for query, you may specify the conf 'spark.speculation=true' which is conf
  in spark.
