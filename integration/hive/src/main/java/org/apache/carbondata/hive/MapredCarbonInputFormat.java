@@ -87,14 +87,14 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
       List<CarbonDimension> carbonDimensionList =carbonTable.getAllDimensions();
       List<CarbonMeasure> carbonMeasureList = carbonTable.getAllMeasures();
 
-      for(int index =0 ; index<carbonDimensionList.size();index++) {
+      for (int index =0 ; index<carbonDimensionList.size();index++) {
         colNames = (colNames + (carbonDimensionList.get(index).getColName())) + ",";
       }
-      if(carbonMeasureList.size()<1) {
+      if (carbonMeasureList.size()<1) {
         colNames = colNames.substring(0, colNames.lastIndexOf(","));
       }
-      for(int index =0 ; index<carbonMeasureList.size();index++) {
-        if(!carbonMeasureList.get(index).getColName().equals("default_dummy_measure")) {
+      for (int index =0 ; index<carbonMeasureList.size();index++) {
+        if (!carbonMeasureList.get(index).getColName().equals("default_dummy_measure")) {
           if (index == carbonMeasureList.size() - 1) {
             colNames = (colNames + (carbonMeasureList.get(index).getColName()));
           } else {
