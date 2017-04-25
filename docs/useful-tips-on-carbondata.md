@@ -22,17 +22,19 @@ This tutorial guides you to create CarbonData Tables and optimize performance.
 The following sections will elaborate on the above topics :
 
 * [Suggestions to create CarbonData Table](#suggestions-to-create-carbondata-table)
-* [Configurations For Optimizing CarbonData Performance](#configurations-for-optimizing-carbondata-performance)
+* [Configuration for Optimizing Data Loading performance for Massive Data](#configuration-for-optimizing-data-loading-performance-for-massive-data)
+* [Optimizing Mass Data Loading](#optimizing-mass-data-loading)
+
 
 ## Suggestions to Create CarbonData Table
 
 Recently CarbonData was used to analyze performance of Telecommunication field.
 The results of the analysis for table creation with dimensions ranging from
-10 thousand to 10 billion rows and 100 to 300 columns have been summarized below.  
+10 thousand to 10 billion rows and 100 to 300 columns have been summarized below.
 
 The following table describes some of the columns from the table used.
- 
- 
+
+
 **Table Column Description**
 
 | Column Name | Data Type     | Cardinality | Attribution |
@@ -51,29 +53,29 @@ CarbonData has more than 50 test cases, on the basis of these we have following 
 
 * **Put the frequently-used column filter in the beginning**
 
-  For example, MSISDN filter is used in most of the query then we must put the MSISDN in the first column. 
+  For example, MSISDN filter is used in most of the query then we must put the MSISDN in the first column.
 The create table command can be modified as suggested below :
 
 ```
   create table carbondata_table(
   msisdn String,
   ...
-  )STORED BY 'org.apache.carbondata.format' 
+  )STORED BY 'org.apache.carbondata.format'
   TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,..',
   'DICTIONARY_INCLUDE'='...');
 ```
-  
+
   Now the query with MSISDN in the filter will be more efficient.
 
 
 * **Put the frequently-used columns in the order of low to high cardinality**
-  
+
   If the table in the specified query has multiple columns which are frequently used to filter the results, it is suggested to put
-  the columns in the order of cardinality low to high. This ordering of frequently used columns improves the compression ratio and 
+  the columns in the order of cardinality low to high. This ordering of frequently used columns improves the compression ratio and
   enhances the performance of queries with filter on these columns.
-  
-  For example if MSISDN, HOST and Dime_1 are frequently-used columns, then the column order of table is suggested as 
-  Dime_1>HOST>MSISDN as Dime_1 has the lowest cardinality. 
+
+  For example if MSISDN, HOST and Dime_1 are frequently-used columns, then the column order of table is suggested as
+  Dime_1>HOST>MSISDN as Dime_1 has the lowest cardinality.
   The create table command can be modified as suggested below :
 
 ```
@@ -82,7 +84,7 @@ The create table command can be modified as suggested below :
   HOST String,
   MSISDN String,
   ...
-  )STORED BY 'org.apache.carbondata.format' 
+  )STORED BY 'org.apache.carbondata.format'
   TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST..',
   'DICTIONARY_INCLUDE'='Dime_1..');
 ```
@@ -100,7 +102,7 @@ The create table command can be modified as below :
   HOST String,
   MSISDN String,
   ...
-  )STORED BY 'org.apache.carbondata.format' 
+  )STORED BY 'org.apache.carbondata.format'
   TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST,IMSI..',
   'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME..');
 ```
@@ -108,7 +110,7 @@ The create table command can be modified as below :
 
 * **For measure type columns with non high accuracy, replace Numeric(20,0) data type with Double data type**
 
-  For columns of measure type, not requiring high accuracy, it is suggested to replace Numeric data type with Double to enhance 
+  For columns of measure type, not requiring high accuracy, it is suggested to replace Numeric data type with Double to enhance
 query performance. The create table command can be modified as below :
 
 ```
@@ -121,17 +123,17 @@ query performance. The create table command can be modified as below :
   counter_2 double,
   ...
   counter_100 double
-  )STORED BY 'org.apache.carbondata.format' 
+  )STORED BY 'org.apache.carbondata.format'
   TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST,IMSI',
   'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME');
 ```
   The result of performance analysis of test-case shows reduction in query execution time from 15 to 3 seconds, thereby improving performance by nearly 5 times.
 
- 
+
 * **Columns of incremental character should be re-arranged at the end of dimensions**
 
   Consider the following scenario where data is loaded each day and the start_time is incremental for each load, it is
-suggested to put start_time at the end of dimensions. 
+suggested to put start_time at the end of dimensions.
 
   Incremental values are efficient in using min/max index. The create table command can be modified as below :
 
@@ -145,25 +147,56 @@ suggested to put start_time at the end of dimensions.
   BEGIN_TIME bigint,
   ...
   counter_100 double
-  )STORED BY 'org.apache.carbondata.format' 
+  )STORED BY 'org.apache.carbondata.format'
   TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST,IMSI',
-  'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME'); 
+  'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME');
 ```
 
 
 * **Avoid adding high cardinality columns to dictionary**
 
-  If the system has low memory configuration, then it is suggested to exclude high cardinality columns from the dictionary to 
-enhance load performance. Creation of  dictionary for high cardinality columns at time of load will degrade load performance due to 
-excessive memory usage. 
+  If the system has low memory configuration, then it is suggested to exclude high cardinality columns from the dictionary to
+enhance load performance. Creation of  dictionary for high cardinality columns at time of load will degrade load performance due to
+excessive memory usage.
 
   By default CarbonData determines the cardinality at the first data load and allows for dictionary creation only if the cardinality is less than
 1 million.
 
 
+
+## Configuration for Optimizing Data Loading performance for Massive Data
+
+
+ CarbonData supports large data load, in this process sorting data while loading consumes a lot of memory and disk IO and
+ this can result sometimes in "Out Of Memory" exception.
+ If you do not have much memory to use, then you may prefer to slow the speed of data loading instead of data load failure.
+ You can configure CarbonData by tuning following properties in carbon.properties file to get a better performance.:
+
+| Parameter | Default Value | Description/Tuning |
+|-----------|-------------|--------|
+|carbon.number.of.cores.while.loading|Default: 2.This value should be >= 2|Specifies the number of cores used for data processing during data loading in CarbonData. |
+|carbon.sort.size|Data loading|Default: 100000. The value should be >= 100.|Threshhold to write local file in sort step when loading data|
+|carbon.sort.file.write.buffer.size|Default:  50000.|DataOutputStream buffer. |
+|carbon.number.of.cores.block.sort|Default: 7 | If you have huge memory and cpus, increase it as you will|
+|carbon.merge.sort.reader.thread|Default: 3 |Specifies the number of cores used for temp file merging during data loading in CarbonData.|
+|carbon.merge.sort.prefetch|Default: true | You may want set this value to false if you have not enough memory|
+
+
+For example, if there are  10 million records ,and i have only 16 cores ,64GB memory, will be loaded to CarbonData table.
+Using the default configuration  always fail in sort step. Modify carbon.properties as suggested below
+
+
+```
+carbon.number.of.cores.block.sort=1
+carbon.merge.sort.reader.thread=1
+carbon.sort.size=5000
+carbon.sort.file.write.buffer.size=5000
+carbon.merge.sort.prefetch=false
+```
+
 ## Configurations for Optimizing CarbonData Performance
 
-Recently we did some performance POC on CarbonData for Finance and telecommunication Field. It involved detailed queries and aggregation 
+Recently we did some performance POC on CarbonData for Finance and telecommunication Field. It involved detailed queries and aggregation
 scenarios. After the completion of POC, some of the configurations impacting the performance have been identified and tabulated below :
 
 | Parameter | Location | Used For  | Description | Tuning |
@@ -176,5 +209,5 @@ scenarios. After the completion of POC, some of the configurations impacting the
 | carbon.detail.batch.size | spark/carbonlib/carbon.properties | Data loading | The buffer size to store records, returned from the block scan. | In limit scenario this parameter is very important. For example your query limit is 1000. But if we set this value to 3000 that means we get 3000 records from scan but spark will only take 1000 rows. So the 2000 remaining are useless. In one Finance test case after we set it to 100, in the limit 1000 scenario the performance increase about 2 times in comparison to if we set this value to 12000. |
 | carbon.use.local.dir | spark/carbonlib/carbon.properties | Data loading | Whether use YARN local directories for multi-table load disk load balance | If this is set it to true CarbonData will use YARN local directories for multi-table load disk load balance, that will improve the data load performance. |
 
-
- 
+Note: If your CarbonData instance is provided only for query, you may specify the conf 'spark.speculation=true' which is conf
+ in spark.
