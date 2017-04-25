@@ -22,6 +22,7 @@ This tutorial guides you to create CarbonData Tables and optimize performance.
 The following sections will elaborate on the above topics :
 
 * [Suggestions to create CarbonData Table](#suggestions-to-create-carbondata-table)
+* [Configuration for Optimizing Data Loading performance for Massive Data](#configuration-for-optimizing-data-loading-performance-for-massive-data)
 * [Configurations For Optimizing CarbonData Performance](#configurations-for-optimizing-carbondata-performance)
 
 ## Suggestions to Create CarbonData Table
@@ -161,6 +162,36 @@ excessive memory usage.
 1 million.
 
 
+## Configuration for Optimizing Data Loading performance for Massive Data
+
+ CarbonData supports large data load, in this process sorting data while loading consumes a lot of memory and disk IO and
+ this can result sometimes in "Out Of Memory" exception.
+ If you do not have much memory to use, then you may prefer to slow the speed of data loading instead of data load failure.
+ You can configure CarbonData by tuning following properties in carbon.properties file to get a better performance.:
+
+| Parameter | Default Value | Description/Tuning |
+|-----------|-------------|--------|
+|carbon.number.of.cores.while.loading|Default: 2.This value should be >= 2|Specifies the number of cores used for data processing during data loading in CarbonData. |
+|carbon.sort.size|Data loading|Default: 100000. The value should be >= 100.|Threshhold to write local file in sort step when loading data|
+|carbon.sort.file.write.buffer.size|Default:  50000.|DataOutputStream buffer. |
+|carbon.number.of.cores.block.sort|Default: 7 | If you have huge memory and cpus, increase it as you will|
+|carbon.merge.sort.reader.thread|Default: 3 |Specifies the number of cores used for temp file merging during data loading in CarbonData.|
+|carbon.merge.sort.prefetch|Default: true | You may want set this value to false if you have not enough memory|
+
+
+For example, if there are  10 million records ,and i have only 16 cores ,64GB memory, will be loaded to CarbonData table.
+Using the default configuration  always fail in sort step. Modify carbon.properties as suggested below
+
+
+```
+carbon.number.of.cores.block.sort=1
+carbon.merge.sort.reader.thread=1
+carbon.sort.size=5000
+carbon.sort.file.write.buffer.size=5000
+<<<<<<< HEAD
+carbon.merge.sort.prefetch=false
+```
+
 ## Configurations for Optimizing CarbonData Performance
 
 Recently we did some performance POC on CarbonData for Finance and telecommunication Field. It involved detailed queries and aggregation 
@@ -176,5 +207,5 @@ scenarios. After the completion of POC, some of the configurations impacting the
 | carbon.detail.batch.size | spark/carbonlib/carbon.properties | Data loading | The buffer size to store records, returned from the block scan. | In limit scenario this parameter is very important. For example your query limit is 1000. But if we set this value to 3000 that means we get 3000 records from scan but spark will only take 1000 rows. So the 2000 remaining are useless. In one Finance test case after we set it to 100, in the limit 1000 scenario the performance increase about 2 times in comparison to if we set this value to 12000. |
 | carbon.use.local.dir | spark/carbonlib/carbon.properties | Data loading | Whether use YARN local directories for multi-table load disk load balance | If this is set it to true CarbonData will use YARN local directories for multi-table load disk load balance, that will improve the data load performance. |
 
-
- 
+ Note: If your CarbonData instance is provided only for query, you may specify the conf 'spark.speculation=true' which is conf
+ in spark.
