@@ -161,7 +161,7 @@ object CommonUtil {
     val partitioning = tableProperties.get(CarbonCommonConstants.PARTITIONING)
     val partitioncount = tableProperties.get(CarbonCommonConstants.PARTITIONCOUNT)
 
-    //partition column and partitioning should be both exist or not exist
+    // partition column and partitioning should be both exist or not exist
     if (partitionCols.isEmpty ^ partitioning.isEmpty) {
       isValid = false
     } else if (partitionCols.nonEmpty) {
@@ -173,7 +173,7 @@ object CommonUtil {
         case _ => isValid = false
       }
     }
-    //only support one partition column for now
+    // only support one partition column for now
     if (partitionCols.length > 1) isValid = false
     isValid
   }
