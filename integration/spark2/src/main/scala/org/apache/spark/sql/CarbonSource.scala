@@ -213,11 +213,12 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       throw new MalformedCarbonCommandException("Table Name Should not have spaces ")
     }
     try {
-      CarbonEnv.get.carbonMetastore.lookupRelation(Option(dbName), tableName)(sparkSession)
-      CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
+      CarbonEnv.getInstance(sparkSession).carbonMetastore
+        .lookupRelation(Option(dbName), tableName)(sparkSession)
+      CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath + s"/$dbName/$tableName"
     } catch {
       case ex: Exception =>
-        throw new Exception(s"do not have $dbName and $tableName for carbon table", ex)
+        throw new Exception(s"Do not have $dbName and $tableName", ex)
     }
   }
 
