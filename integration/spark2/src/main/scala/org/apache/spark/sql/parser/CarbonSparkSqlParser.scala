@@ -105,11 +105,19 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
                             duplicateColumns.mkString("[", ",", "]"), ctx)
       }
 
-      // partition columns must be part of the schema
-      val badPartCols = partitionCols.map(_.name).toSet.intersect(colNames.toSet)
-      if (badPartCols.isEmpty) {
-        operationNotAllowed(s"Partition columns must be specified in the schema: " +
-                            badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]"), ctx)
+      val tableProperties = mutable.Map[String, String]()
+      properties.foreach(f => tableProperties.put(f._1, f._2.toLowerCase))
+
+      // validate partition clause
+      if (!CommonUtil.validatePartitionColumns(tableProperties, partitionCols)) {
+        operationNotAllowed("Invalid Partition definition", ctx)
+      } else if (partitionCols.nonEmpty) {
+        // partition columns must be part of the schema
+        val badPartCols = partitionCols.map(_.name).toSet.intersect(colNames.toSet)
+        if (badPartCols.isEmpty) {
+          operationNotAllowed(s"Partition columns must be specified in the schema: " +
+                              badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]"), ctx)
+        }
       }
 
       val fields = cols.map { col =>
@@ -162,8 +170,6 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         None
       }
 
-      val tableProperties = mutable.Map[String, String]()
-      properties.foreach(f => tableProperties.put(f._1, f._2.toLowerCase))
       // prepare table model of the collected tokens
       val tableModel: TableModel = parser.prepareTableModel(ifNotExists,
         convertDbNameToLowerCase(name.database),
