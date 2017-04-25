@@ -61,7 +61,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
   private CarbonObjectInspector objInspector;
 
   public CarbonHiveRecordReader(QueryModel queryModel, CarbonReadSupport<ArrayWritable> readSupport,
-                                InputSplit inputSplit, JobConf jobConf) throws IOException {
+      InputSplit inputSplit, JobConf jobConf) throws IOException {
     super(queryModel, readSupport);
     initialize(inputSplit, jobConf);
   }
@@ -78,22 +78,21 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     }
     List<TableBlockInfo> tableBlockInfoList = CarbonHiveInputSplit.createBlocks(splitList);
     queryModel.setTableBlockInfos(tableBlockInfoList);
-    readSupport.initialize(queryModel.getProjectionColumns(),
-        queryModel.getAbsoluteTableIdentifier());
+    readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());
     try {
       carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
     } catch (QueryExecutionException e) {
       throw new IOException(e.getMessage(), e.getCause());
     }
     if (valueObj == null) {
-      valueObj = new ArrayWritable(Writable.class,
-          new Writable[queryModel.getProjectionColumns().length]);
+      valueObj = new ArrayWritable(Writable.class, new Writable[queryModel.getProjectionColumns().length]);
     }
 
     final TypeInfo rowTypeInfo;
     final List<String> columnNames;
     List<TypeInfo> columnTypes;
     // Get column names and sort order
+    final String colIds = conf.get("hive.io.file.readcolumn.ids");
     final String columnNameProperty = conf.get("hive.io.file.readcolumn.names");
     final String columnTypeProperty = conf.get(serdeConstants.LIST_COLUMN_TYPES);
 
@@ -107,10 +106,21 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     } else {
       columnTypes = TypeInfoUtils.getTypeInfosFromTypeString(columnTypeProperty);
     }
-    columnTypes = columnTypes.subList(0, columnNames.size());
-    // Create row related objects
-    rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
-    this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
+  if(!colIds.equals("")) {
+  String[] arraySelectedColId = colIds.split(",");
+  List<TypeInfo> reqColTypes = new ArrayList<TypeInfo>();
+
+  for (String anArrayColId : arraySelectedColId) {
+    reqColTypes.add(columnTypes.get(Integer.parseInt(anArrayColId)));
+  }
+  // Create row related objects
+  rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, reqColTypes);
+  this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
+}
+else{
+  rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
+  this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
+}
   }
 
   @Override
@@ -132,10 +142,10 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
         } else {
           if (arrValue.length != arrCurrent.length) {
             throw new IOException("CarbonHiveInput : size of object differs. Value" +
-              " size :  " + arrValue.length + ", Current Object size : " + arrCurrent.length);
+                " size :  " + arrValue.length + ", Current Object size : " + arrCurrent.length);
           } else {
             throw new IOException("CarbonHiveInput can not support RecordReaders that" +
-              " don't return same key & value & value is null");
+                " don't return same key & value & value is null");
           }
         }
       }
@@ -183,7 +193,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
   }
 
   private ArrayWritable createArray(Object obj, ListObjectInspector inspector)
-    throws SerDeException {
+      throws SerDeException {
     List sourceArray = inspector.getList(obj);
     ObjectInspector subInspector = inspector.getListElementObjectInspector();
     List array = new ArrayList();
@@ -230,7 +240,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
         return new Text(obj.toString());
       case DECIMAL:
         return new HiveDecimalWritable(HiveDecimal.create(
-          ((org.apache.spark.sql.types.Decimal) obj).toJavaBigDecimal()));
+            ((org.apache.spark.sql.types.Decimal) obj).toJavaBigDecimal()));
     }
     throw new SerDeException("Unknown primitive : " + inspector.getPrimitiveCategory());
   }
