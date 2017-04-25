@@ -719,8 +719,9 @@ case class CarbonDropTableCommand(ifExistsSet: Boolean,
     val dbName = getDB.getDatabaseName(databaseNameOp, sparkSession)
     val identifier = TableIdentifier(tableName, Option(dbName))
     val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")
-    val carbonLock = CarbonLockFactory
-      .getCarbonLockObj(carbonTableIdentifier, LockUsage.DROP_TABLE_LOCK)
+    val carbonLock = CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier.getDatabaseName,
+        carbonTableIdentifier.getTableName + CarbonCommonConstants.UNDERSCORE +
+        LockUsage.DROP_TABLE_LOCK)
     val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val storePath = catalog.storePath
     var isLocked = false
