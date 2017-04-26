@@ -136,8 +136,6 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Range filter No Dictionary 1") {
-    sql("select * from NO_DICTIONARY_CARBON_6").show()
-    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno > '11' and empno < '15'").show()
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno > '11' and empno < '15'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where empno > '11' and empno < '15'")
@@ -198,7 +196,6 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Range filter No Dictionary outside Boundary 5") {
-    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno < '11' and empno > '20'").show()
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno < '11' and empno > '20'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where empno < '11' and empno > '20'")
@@ -249,7 +246,6 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Range filter No Dictionary Inside Boundary 12") {
-    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno >= '11' and empno > '12' and empno <= '20' and empno <= '15'").show()
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno >= '11' and empno > '12' and empno <= '20' and empno <= '15'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where empno >= '11' and empno > '12' and empno <= '20'  and empno <= '15'")
@@ -271,7 +267,6 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Range filter No Dictionary Inside Boundary 15") {
-    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno >= '11' or empno > '12' and empno <= '20'").show()
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno >= '11' or empno > '12' and empno <= '20'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where empno >= '11' or empno > '12' and empno <= '20'")
@@ -279,7 +274,6 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Range filter No Dictionary Inside Boundary 16") {
-    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno >= '11' and empno > '12' or empno <= '20'").show()
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno >= '11' and empno > '12' or empno <= '20'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where empno >= '11' and empno > '12' or empno <= '20'")
@@ -337,9 +331,6 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Range filter Dictionary 1") {
-    sql("select * from DICTIONARY_CARBON_6").show()
-    // sql("select * from NO_DICTIONARY_CARBON_6 where empno != '16'").show()
-    sql("select * from DICTIONARY_CARBON_6 where empno > '11' and workgroupcategory = '1' or workgroupcategoryname = 'developer' and empno < '15'").show()
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_6 where empno > '11' and empno < '15'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where empno > '11' and empno < '15'")

@@ -145,7 +145,7 @@ case class CreateTable(cm: TableModel) extends RunnableCommand {
 
     val tableInfo: TableInfo = TableNewProcessor(cm)
 
-    if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
+    if (tableInfo.getFactTable.getListOfColumns.isEmpty) {
       sys.error("No Dimensions found. Table should have at least one dimesnion !")
     }
 

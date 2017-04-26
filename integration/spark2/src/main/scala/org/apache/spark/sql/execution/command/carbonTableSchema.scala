@@ -268,7 +268,7 @@ object LoadTable {
 
     val catalog = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
 
-    // upate the schema modified time
+    // update the schema modified time
     catalog.updateSchemasUpdatedTime(catalog.touchSchemaFileSystemTime(
       carbonLoadModel.getDatabaseName,
       carbonLoadModel.getTableName))
@@ -362,7 +362,7 @@ case class LoadTable(
       )
     try {
       // take lock only in case of normal data load.
-      if (!updateModel.isDefined) {
+      if (updateModel.isEmpty) {
         if (carbonLock.lockWithRetries()) {
           LOGGER.info("Successfully able to get the table metadata file lock")
         } else {
@@ -399,7 +399,7 @@ case class LoadTable(
       val quoteChar = options.getOrElse("quotechar", "\"")
       val fileHeader = options.getOrElse("fileheader", "")
       val escapeChar = options.getOrElse("escapechar", "\\")
-      val commentchar = options.getOrElse("commentchar", "#")
+      val commentChar = options.getOrElse("commentchar", "#")
       val columnDict = options.getOrElse("columndict", null)
       val serializationNullFormat = options.getOrElse("serialization_null_format", "\\N")
       val badRecordsLoggerEnable = options.getOrElse("bad_records_logger_enable", "false")
@@ -416,7 +416,7 @@ case class LoadTable(
       val maxColumns = options.getOrElse("maxcolumns", null)
       carbonLoadModel.setEscapeChar(checkDefaultValue(escapeChar, "\\"))
       carbonLoadModel.setQuoteChar(checkDefaultValue(quoteChar, "\""))
-      carbonLoadModel.setCommentChar(checkDefaultValue(commentchar, "#"))
+      carbonLoadModel.setCommentChar(checkDefaultValue(commentChar, "#"))
       carbonLoadModel.setDateFormat(dateFormat)
       carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
         CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
@@ -735,9 +735,7 @@ case class CarbonDropTableCommand(ifExistsSet: Boolean,
         sys.error("Table is locked for deletion. Please try after some time")
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
-      val carbonTable = catalog
-        .getTableFromMetadata(dbName, tableName)
-        .map(_.carbonTable).getOrElse(null)
+      val carbonTable = catalog.getTableFromMetadata(dbName, tableName).map(_.carbonTable).orNull
       if (null != carbonTable) {
         // clear driver B-tree and dictionary cache
         ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
@@ -787,9 +785,8 @@ private[sql] case class DescribeCommandFormatted(
       val fieldName = field.name.toLowerCase
       val comment = if (dims.contains(fieldName)) {
         val dimension = relation.metaData.carbonTable.getDimensionByName(
-          relation.tableMeta.carbonTableIdentifier.getTableName,
-          fieldName)
-        if (null != dimension.getColumnProperties && dimension.getColumnProperties.size() > 0) {
+          relation.tableMeta.carbonTableIdentifier.getTableName, fieldName)
+        if (null != dimension.getColumnProperties && !dimension.getColumnProperties.isEmpty) {
           colProps.append(fieldName).append(".")
             .append(mapper.writeValueAsString(dimension.getColumnProperties))
             .append(",")

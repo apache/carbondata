@@ -148,7 +148,7 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
     val oldTable = relation("highcard").tableMeta.carbonTable
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table highcard")
     val newTable = relation("highcard").tableMeta.carbonTable
-    sql(s"select count(hc1) from highcard").show
+    sql(s"select count(hc1) from highcard")
 
     // check dictionary file
     checkDictFile(newTable)
@@ -160,7 +160,7 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
     val oldTable = relation("colgrp_highcard").tableMeta.carbonTable
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table colgrp_highcard")
     val newTable = relation("colgrp_highcard").tableMeta.carbonTable
-    sql(s"select hc1 from colgrp_highcard").show
+    sql(s"select hc1 from colgrp_highcard")
 
     // check dictionary file
     val tableIdentifier = new CarbonTableIdentifier(newTable.getDatabaseName,

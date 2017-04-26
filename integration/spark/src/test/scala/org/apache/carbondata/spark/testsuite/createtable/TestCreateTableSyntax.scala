@@ -37,7 +37,7 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
     sql("create table carbontable(id int, username struct<sur_name:string," +
         "actual_name:struct<first_name:string,last_name:string>>, country string, salary double)" +
         "STORED BY 'org.apache.carbondata.format'")
-    sql("describe carbontable").show
+    sql("describe carbontable")
   }
   
   test("Test table rename operation on carbon table and on hive table") {
@@ -128,10 +128,10 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
     sql("create table carbontable(id int, username struct<sur_name:string," +
         "actual_name:struct<first_name:string,last_name:string>>, country string, salary double)" +
         "STORED BY 'org.apache.carbondata.format'")
-    sql("describe formatted carbontable").show(50)
+    sql("describe formatted carbontable")
     sql("create table hivetable(id int, username struct<sur_name:string," +
         "actual_name:struct<first_name:string,last_name:string>>, country string, salary double)")
-    sql("describe formatted hivetable").show(50)
+    sql("describe formatted hivetable")
   }
 
   test("describe command carbon table for decimal scale and precision test") {

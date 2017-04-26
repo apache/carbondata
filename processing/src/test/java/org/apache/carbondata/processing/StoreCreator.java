@@ -120,9 +120,7 @@ public class StoreCreator {
    * Create store without any restructure
    */
   public static void createCarbonStore() {
-
     try {
-
       String factFilePath = new File("../hadoop/src/test/resources/data.csv").getCanonicalPath();
       File storeDir = new File(absoluteTableIdentifier.getStorePath());
       CarbonUtil.deleteFoldersAndFiles(storeDir);
@@ -133,7 +131,6 @@ public class StoreCreator {
       writeDictionary(factFilePath, table);
       CarbonDataLoadSchema schema = new CarbonDataLoadSchema(table);
       CarbonLoadModel loadModel = new CarbonLoadModel();
-      String partitionId = "0";
       loadModel.setCarbonDataLoadSchema(schema);
       loadModel.setDatabaseName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());
       loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
@@ -173,7 +170,6 @@ public class StoreCreator {
     } catch (Exception e) {
       e.printStackTrace();
     }
-
   }
 
   private static CarbonTable createTable() throws IOException {
@@ -378,8 +374,6 @@ public class StoreCreator {
     CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false");
     CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000");
 
-    String fileNamePrefix = "";
-
     String graphPath =
         outPutLoc + File.separator + loadModel.getDatabaseName() + File.separator + tableName
             + File.separator + 0 + File.separator + 1 + File.separator + tableName + ".ktr";
@@ -417,11 +411,6 @@ public class StoreCreator {
     info.setDatabaseName(databaseName);
     info.setTableName(tableName);
 
-//    DataGraphExecuter graphExecuter = new DataGraphExecuter(dataProcessTaskStatus);
-//    graphExecuter
-//        .executeGraph(graphPath, info, loadModel.getSchema());
-    //    LoadMetadataDetails[] loadDetails =
-    //        CarbonUtil.readLoadMetadata(loadModel.schema.getCarbonTable().getMetaDataFilepath());
     writeLoadMetadata(loadModel.getCarbonDataLoadSchema(), loadModel.getTableName(), loadModel.getTableName(),
         new ArrayList<LoadMetadataDetails>());
 
@@ -444,7 +433,6 @@ public class StoreCreator {
           break;
         }
       }
-      //      Files.copy(factFile.toPath(), file.toPath(), REPLACE_EXISTING);
       factFile.renameTo(new File(segLocation + "/" + factFile.getName()));
       CarbonUtil.deleteFoldersAndFiles(folder);
     }
