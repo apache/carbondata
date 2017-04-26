@@ -26,6 +26,7 @@ import java.nio.channels.OverlappingFileLockException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -149,8 +150,8 @@ public class LocalFileLock extends AbstractCarbonLock {
         try {
           fileOutputStream.close();
           // deleting the lock file after releasing the lock.
-          if (FileFactory.getCarbonFile(lockFilePath, FileFactory.getFileType(lockFilePath))
-              .delete()) {
+          CarbonFile carbonFile = FileFactory.getCarbonFile(lockFilePath, FileFactory.getFileType(lockFilePath));
+          if (!carbonFile.exists() || carbonFile.delete()) {
             LOGGER.info("Successfully deleted the lock file " + lockFilePath);
           } else {
             LOGGER.error("Not able to delete the lock file " + lockFilePath);
