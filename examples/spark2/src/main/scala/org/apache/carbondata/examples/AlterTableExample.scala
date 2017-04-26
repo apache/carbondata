@@ -24,21 +24,20 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.CarbonSession._
 import org.apache.spark.sql.SparkSession
 
-/**
-  * Created by erlu on 2017/4/25.
-  */
+
 object AlterTableExample {
 
   def main(args: Array[String]): Unit = {
 
     val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
+                            + "../../../..").getCanonicalPath
 
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
     val metastoredb = s"$rootPath/examples/spark2/target/metastore_db"
 
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
     val spark = SparkSession
       .builder()
@@ -47,7 +46,7 @@ object AlterTableExample {
       .config("spark.sql.warehouse.dir", warehouse)
       .getOrCreateCarbonSession(storeLocation, metastoredb)
 
-    spark.sparkContext.setLogLevel("INFO")
+    spark.sparkContext.setLogLevel("WARN")
 
     spark.sql("DROP TABLE IF EXISTS carbon_table")
     spark.sql("DROP TABLE IF EXISTS new_carbon_table")
@@ -74,22 +73,16 @@ object AlterTableExample {
     // Alter table change data type
     spark.sql("DESCRIBE FORMATTED carbon_table").show()
     spark.sql("ALTER TABLE carbon_table CHANGE intField intField bigint").show()
-    spark.sql("DESCRIBE FORMATTED carbon_table").show()
 
     // Alter table add columns
     spark.sql("DESCRIBE FORMATTED carbon_table").show()
     spark.sql("ALTER TABLE carbon_table ADD COLUMNS (newField String)" +
-      " TBLPROPERTIES ('DEFAULT.VALUE.newField'='def')").show()
-    spark.sql("DESCRIBE FORMATTED carbon_table").show()
+              " TBLPROPERTIES ('DEFAULT.VALUE.newField'='def')").show()
 
     // Alter table drop columns
     spark.sql("DESCRIBE FORMATTED carbon_table").show()
     spark.sql("ALTER TABLE carbon_table DROP COLUMNS (newField)").show()
     spark.sql("DESCRIBE FORMATTED carbon_table").show()
-
-    // Alter table compact
-    spark.sql("ALTER TABLE carbon_table COMPACT \"MINOR\"").show()
-    spark.sql("ALTER TABLE carbon_table COMPACT \"MAJOR\"").show()
 
     // Alter table rename table name
     spark.sql("SHOW TABLES").show()
