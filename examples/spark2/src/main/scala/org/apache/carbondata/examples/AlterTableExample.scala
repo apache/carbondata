@@ -19,10 +19,10 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.SparkSession
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 object AlterTableExample {
 
