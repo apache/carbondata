@@ -72,24 +72,28 @@ object AlterTableExample {
        """.stripMargin)
 
     // Alter table change data type
-    spark.sql("ALTER TABLE carbon_table CHANGE intField intField bigint")
-    spark.sql("DESCRIBE FORMATTED carbon_table")
+    spark.sql("DESCRIBE FORMATTED carbon_table").show()
+    spark.sql("ALTER TABLE carbon_table CHANGE intField intField bigint").show()
+    spark.sql("DESCRIBE FORMATTED carbon_table").show()
 
     // Alter table add columns
-    spark.sql("ALTER TABLE carbon_table ADD COLUMNS (newField String) TBLPROPERTIES ('DEFAULT.VALUE.newField'='def')")
-    spark.sql("DESCRIBE FORMATTED carbon_table")
+    spark.sql("DESCRIBE FORMATTED carbon_table").show()
+    spark.sql("ALTER TABLE carbon_table ADD COLUMNS (newField String) TBLPROPERTIES ('DEFAULT.VALUE.newField'='def')").show()
+    spark.sql("DESCRIBE FORMATTED carbon_table").show()
 
     // Alter table drop columns
-    spark.sql("ALTER TABLE carbon_table DROP COLUMNS (newField)")
+    spark.sql("DESCRIBE FORMATTED carbon_table").show()
+    spark.sql("ALTER TABLE carbon_table DROP COLUMNS (newField)").show()
     spark.sql("DESCRIBE FORMATTED carbon_table").show()
 
     // Alter table compact
-    spark.sql("ALTER TABLE carbon_table COMPACT \"MINOR\"")
-    spark.sql("ALTER TABLE carbon_table COMPACT \"MAJOR\"")
+    spark.sql("ALTER TABLE carbon_table COMPACT \"MINOR\"").show()
+    spark.sql("ALTER TABLE carbon_table COMPACT \"MAJOR\"").show()
 
     // Alter table rename table name
-    spark.sql("ALTER TABLE carbon_table RENAME TO new_carbon_table")
-    spark.sql("SHOW TABLES")
+    spark.sql("SHOW TABLES").show()
+    spark.sql("ALTER TABLE carbon_table RENAME TO new_carbon_table").show()
+    spark.sql("SHOW TABLES").show()
 
     spark.sql("DROP TABLE IF EXISTS carbon_table")
     spark.sql("DROP TABLE IF EXISTS new_carbon_table")
