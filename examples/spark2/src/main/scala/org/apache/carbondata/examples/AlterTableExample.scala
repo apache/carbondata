@@ -78,7 +78,8 @@ object AlterTableExample {
 
     // Alter table add columns
     spark.sql("DESCRIBE FORMATTED carbon_table").show()
-    spark.sql("ALTER TABLE carbon_table ADD COLUMNS (newField String) TBLPROPERTIES ('DEFAULT.VALUE.newField'='def')").show()
+    spark.sql("ALTER TABLE carbon_table ADD COLUMNS (newField String)" +
+      " TBLPROPERTIES ('DEFAULT.VALUE.newField'='def')").show()
     spark.sql("DESCRIBE FORMATTED carbon_table").show()
 
     // Alter table drop columns
