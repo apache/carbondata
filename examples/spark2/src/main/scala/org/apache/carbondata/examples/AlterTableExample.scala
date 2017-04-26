@@ -52,7 +52,6 @@ object AlterTableExample {
     spark.sql("DROP TABLE IF EXISTS carbon_table")
     spark.sql("DROP TABLE IF EXISTS new_carbon_table")
 
-
     spark.sql(
       s"""
          | CREATE TABLE carbon_table(
@@ -92,11 +91,8 @@ object AlterTableExample {
     spark.sql("ALTER TABLE carbon_table RENAME TO new_carbon_table")
     spark.sql("SHOW TABLES")
 
-
     spark.sql("DROP TABLE IF EXISTS carbon_table")
     spark.sql("DROP TABLE IF EXISTS new_carbon_table")
 
-
   }
-
 }
