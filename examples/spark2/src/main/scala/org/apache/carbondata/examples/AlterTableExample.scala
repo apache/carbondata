@@ -21,7 +21,6 @@ import java.io.File
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.CarbonSession._
 import org.apache.spark.sql.SparkSession
 
 
@@ -38,6 +37,8 @@ object AlterTableExample {
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+
+    import org.apache.spark.sql.CarbonSession._
 
     val spark = SparkSession
       .builder()
