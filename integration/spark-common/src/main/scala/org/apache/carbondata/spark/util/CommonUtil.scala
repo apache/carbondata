@@ -27,6 +27,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field}
+import org.apache.spark.sql.types.StructField
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -141,6 +142,39 @@ object CommonUtil {
           throw new MalformedCarbonCommandException(s"Invalid table properties ${ key }")
         }
     }
+    isValid
+  }
+
+  /**
+   * 1. If partition by clause exists, then partitioning should be defined
+   * 2. If partitioning is Hash, then partitioncount should be defined
+   * 3. If partitioning is List, then value list should be defined
+   * 4. If partitioning is Range, then boundary value list should be defined
+   * 5. Only support single level partition for now
+   * @param tableProperties
+   * @param partitionCols
+   * @return
+   */
+  def validatePartitionColumns(tableProperties: Map[String, String],
+      partitionCols: Seq[StructField]): Boolean = {
+    var isValid: Boolean = true
+    val partitioning = tableProperties.get(CarbonCommonConstants.PARTITIONING)
+    val partitioncount = tableProperties.get(CarbonCommonConstants.PARTITIONCOUNT)
+
+    // partition column and partitioning should be both exist or not exist
+    if (partitionCols.isEmpty ^ partitioning.isEmpty) {
+      isValid = false
+    } else if (partitionCols.nonEmpty) {
+      partitioning.get.toUpperCase() match {
+        case "HASH" => if (!partitioncount.isDefined) isValid = false
+        case "LIST" => isValid = false
+        case "RANGE" => isValid = false
+        case "RANGE_INTERVAL" => isValid = false
+        case _ => isValid = false
+      }
+    }
+    // only support one partition column for now
+    if (partitionCols.length > 1) isValid = false
     isValid
   }
 
