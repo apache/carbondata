@@ -53,26 +53,21 @@ object CarbonPreInsertionCasts extends Rule[LogicalPlan] {
         )
     }
     if (child.output.size >= relation.carbonRelation.output.size) {
-      var index = 0
-      val newChildOutput = child.output.map { column =>
-        index = index + 1
-        column match {
+      val newChildOutput = child.output.zipWithIndex.map { columnWithIndex =>
+        columnWithIndex._1 match {
           case attr: Alias =>
-            Alias(attr.child, s"col$index")(attr.exprId)
+            Alias(attr.child, s"col${ columnWithIndex._2 }")(attr.exprId)
           case attr: Attribute =>
-            Alias(attr, s"col$index")(NamedExpression.newExprId)
+            Alias(attr, s"col${ columnWithIndex._2 }")(NamedExpression.newExprId)
           case attr => attr
         }
       }
-      if (newChildOutput == child.output) {
-        InsertIntoCarbonTable(relation, p.partition, p.child, p.overwrite, p.ifNotExists)
+      val newChild: LogicalPlan = if (newChildOutput == child.output) {
+        p.child
       } else {
-        InsertIntoCarbonTable(relation,
-          p.partition,
-          Project(newChildOutput, child),
-          p.overwrite,
-          p.ifNotExists)
+        Project(newChildOutput, child)
       }
+      InsertIntoCarbonTable(relation, p.partition, newChild, p.overwrite, p.ifNotExists)
     } else {
       sys.error("Cannot insert into target table because column number are different")
     }
