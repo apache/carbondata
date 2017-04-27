@@ -105,6 +105,19 @@ class ChangeDataTypeTestCases extends QueryTest with BeforeAndAfterAll {
     afterAll
   }
 
+  test("test to change int datatype to long") {
+    beforeAll
+    sql(
+      "CREATE TABLE changedatatypetest(intField int,stringField string,charField string," +
+      "timestampField timestamp,decimalField decimal(6,2)) STORED BY 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE " +
+        s"changedatatypetest options('FILEHEADER'='intField,stringField,charField,timestampField," +
+        s"decimalField')")
+    sql("Alter table changedatatypetest change intField intField long")
+    checkAnswer(sql("select intField from changedatatypetest limit 1"), Row(100))
+    afterAll
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS changedatatypetest")
     sql("drop table if exists hivetable")
