@@ -45,18 +45,15 @@ public final class ByteUtil {
     if (buffer1 == buffer2) {
       return 0;
     }
-    // Bring WritableComparator code local
-    int i = 0;
-    int j = 0;
-    for (; i < buffer1.length && j < buffer2.length; i++, j++) {
-      int a = (buffer1[i] & 0xff);
-      int b = (buffer2[j] & 0xff);
-      if (a != b) {
-        return a - b;
-      }
-    }
-    return 0;
+    int len1 = buffer1.length;
+    int len2 = buffer2.length;
+    int offset1 = 0;
+    int offset2 = 0;
+    // Call UnsafeComparer compareTo for comparision.
+    return ByteUtil.UnsafeComparer.INSTANCE
+        .compareTo(buffer1, offset1, len1, buffer2, offset2, len2);
   }
+
 
   /**
    * covert the long[] to int[]

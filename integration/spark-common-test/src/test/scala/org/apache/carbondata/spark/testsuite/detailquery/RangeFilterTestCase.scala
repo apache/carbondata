@@ -40,6 +40,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists NO_DICTIONARY_CARBON_6")
     sql("drop table if exists DICTIONARY_CARBON_6")
     sql("drop table if exists NO_DICTIONARY_CARBON_7")
+    sql("drop table if exists NO_DICTIONARY_HIVE_8")
 
     sql("CREATE TABLE NO_DICTIONARY_HIVE_1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION " +
         "string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint," +
@@ -117,9 +118,25 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
         "TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno,empname,designation')"
     )
     sql(
-      s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE NO_DICTIONARY_CARBON_7 " +
+      s"LOAD DATA LOCAL INPATH '$resourcesPath/rangenodictionarycompare.csv' INTO TABLE NO_DICTIONARY_CARBON_7 " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
+
+    sql(
+      "create table NO_DICTIONARY_HIVE_8(empno string,empname string,designation string,doj " +
+      "Timestamp,workgroupcategory int, " +
+      "workgroupcategoryname string,deptno int, deptname string, projectcode int, " +
+      "projectjoindate Timestamp,projectenddate Timestamp,attendance int, "
+      + "utilization int,salary int) row format delimited fields terminated by ',' " +
+      "tblproperties(\"skip.header.line.count\"=\"1\") " +
+      ""
+    )
+
+    sql(
+      s"load data local inpath '$resourcesPath/rangenodictionarycompare.csv' into table " +
+      "NO_DICTIONARY_HIVE_8"
+    );
+
     sql("CREATE TABLE filtertestTable (ID string,date Timestamp, country String, " +
         "name String, phonetype String, serialname String, salary Int) " +
         "STORED BY 'org.apache.carbondata.format' " +  "TBLPROPERTIES('DICTIONARY_EXCLUDE'='ID')"
@@ -427,6 +444,67 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select s.empno, s.empname, t.empno, t.empname from DICTIONARY_CARBON_6 s, NO_DICTIONARY_CARBON_6 t where s.empno > '09' and t.empno < '30' and s.empname = t.empname"),
       sql("select s.empno, s.empname, t.empno, t.empname from NO_DICTIONARY_HIVE_6 s, NO_DICTIONARY_HIVE_7 t where s.empno > '09' and t.empno < '30' and s.empname = t.empname"))
+  }
+
+  test("Range with name comparision") {
+   checkAnswer(
+    sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '11' and empname < '12'"),
+    sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '11' and empname < '12'"))
+  }
+
+  test("Range with name comparision 1") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '10' and empname < '11'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '10' and empname < '11'"))
+  }
+
+  test("Range with name comparision 3") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '10' and empname <= '11'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '10' and empname <= '11'"))
+  }
+
+
+  test("Range with name comparision 4") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '10' and empno <= '11'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '10' and empno <= '11'"))
+  }
+
+  test("Range with name comparision 5") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '09' and empno <= '50'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '09' and empno <= '50'"))
+  }
+
+  test("Range with name comparision 6") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '03' and empno <= '09'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '03' and empno <= '09'"))
+  }
+
+  test("Range with name comparision 7") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '10' and empno <= '50'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '10' and empno <= '50'"))
+  }
+
+  test("Range with name comparision 8") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '10' and empno <= '50'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '10' and empno <= '50'"))
+  }
+
+  test("Range with name comparision 9") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '10' and empno <= '13'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '10' and empno <= '13'"))
+  }
+
+  test("Range with name comparision 10") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '10' and empno <= '14'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '10' and empno <= '14'"))
   }
 
 
