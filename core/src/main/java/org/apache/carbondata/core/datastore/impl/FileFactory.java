@@ -40,6 +40,8 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.BZip2Codec;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.io.compress.GzipCodec;
 
 public final class FileFactory {
@@ -131,11 +133,15 @@ public final class FileFactory {
         } else {
           stream = fs.open(pt, bufferSize);
         }
+        String codecName = null;
         if (gzip) {
-          GzipCodec codec = new GzipCodec();
-          stream = codec.createInputStream(stream);
+          codecName = GzipCodec.class.getName();
         } else if (bzip2) {
-          BZip2Codec codec = new BZip2Codec();
+          codecName = BZip2Codec.class.getName();
+        }
+        if (null != codecName) {
+          CompressionCodecFactory ccf = new CompressionCodecFactory(configuration);
+          CompressionCodec codec = ccf.getCodecByClassName(codecName);
           stream = codec.createInputStream(stream);
         }
         break;
