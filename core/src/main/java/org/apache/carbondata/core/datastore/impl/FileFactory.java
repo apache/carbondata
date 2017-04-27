@@ -139,7 +139,7 @@ public final class FileFactory {
         } else if (bzip2) {
           codecName = BZip2Codec.class.getName();
         }
-        if (null != codecName){
+        if (null != codecName) {
           CompressionCodecFactory ccf = new CompressionCodecFactory(configuration);
           CompressionCodec codec = ccf.getCodecByClassName(codecName);
           stream = codec.createInputStream(stream);
