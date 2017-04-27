@@ -48,10 +48,10 @@ object CarbonPartitionExample {
 
     spark.sparkContext.setLogLevel("WARN")
 
-    spark.sql("DROP TABLE IF EXISTS non_partition_table")
+    spark.sql("DROP TABLE IF EXISTS t1")
 
     spark.sql("""
-                | CREATE TABLE IF NOT EXISTS non_partition_table
+                | CREATE TABLE IF NOT EXISTS t1
                 | (
                 | vin String,
                 | logdate Timestamp,
@@ -62,10 +62,10 @@ object CarbonPartitionExample {
                 | STORED BY 'carbondata'
               """.stripMargin)
 
-    spark.sql("DROP TABLE IF EXISTS partition_table")
+    spark.sql("DROP TABLE IF EXISTS t3")
 
     spark.sql("""
-       | CREATE TABLE IF NOT EXISTS partition_table
+       | CREATE TABLE IF NOT EXISTS t3
        | (
        | vin String,
        | logdate Timestamp,
@@ -78,14 +78,16 @@ object CarbonPartitionExample {
        | TBLPROPERTIES('PARTITIONING'='HASH','PARTITIONCOUNT'='5')
        """.stripMargin)
 
-    //spark.sql(s"""
-    //   LOAD DATA LOCAL INPATH '$testData' into table rx5_tbox_parquet_all options('BAD_RECORDS_ACTION'='FORCE')
+    // spark.sql(s"""
+    //   LOAD DATA LOCAL INPATH '$testData' into table t3
+    // options('BAD_RECORDS_ACTION'='FORCE')
     //   """)
 
-    //spark.sql("select vin, count(*) from rx5_tbox_parquet_all group by vin order by count(*) desc").show(50)
+    // spark.sql("select vin, count(*) from t3 group by vin
+    // order by count(*) desc").show(50)
 
     // Drop table
-    //spark.sql("DROP TABLE IF EXISTS carbon_table")
+    // spark.sql("DROP TABLE IF EXISTS t3")
   }
 
 }
