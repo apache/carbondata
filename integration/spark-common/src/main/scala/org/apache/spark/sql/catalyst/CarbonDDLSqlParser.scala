@@ -237,8 +237,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       tableProperties: mutable.Map[String, String],
       bucketFields: Option[BucketFields], isAlterFlow: Boolean = false): TableModel = {
 
-    fields.zipWithIndex.foreach { x =>
-      x._1.schemaOrdinal = x._2
+    fields.zipWithIndex.foreach { case (field, index) =>
+      field.schemaOrdinal = index
     }
     val (dims: Seq[Field], noDictionaryDims: Seq[String]) = extractDimColsAndNoDictionaryFields(
       fields, tableProperties)
@@ -1049,7 +1049,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    */
   protected def parseDataType(dataType: String, values: Option[List[(Int, Int)]]): DataTypeInfo = {
     dataType match {
-      case "bigint" =>
+      case "bigint" | "long" =>
         if (values.isDefined) {
           throw new MalformedCarbonCommandException("Invalid data type")
         }
