@@ -24,7 +24,6 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-// scalastyle:off println
 object CarbonDataFrameExample {
 
   def main(args: Array[String]) {
@@ -84,6 +83,7 @@ object CarbonDataFrameExample {
     carbondf.filter($"number" > 31).show()
 
     spark.sql("DROP TABLE IF EXISTS carbon_table")
+
+    spark.stop()
   }
 }
-// scalastyle:on println
