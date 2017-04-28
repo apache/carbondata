@@ -69,15 +69,15 @@ public class RestructureUtilTest {
     List<CarbonDimension> tableBlockDimensions =
         Arrays.asList(tableBlockDimension1, tableBlockDimension2);
 
-    CarbonDimension tableComplexDimension1 = new CarbonDimension(columnSchema3, 4, 4, 4, 4);
-    CarbonDimension tableComplexDimension2 = new CarbonDimension(columnSchema4, 2, 2, 2, 2);
-    List<CarbonDimension> tableComplexDimensions =
+    QueryDimension tableComplexDimension1 = new QueryDimension(columnSchema3.getColumnName());
+    QueryDimension tableComplexDimension2 = new QueryDimension(columnSchema4.getColumnName());
+    List<QueryDimension> tableComplexDimensions =
         Arrays.asList(tableComplexDimension1, tableComplexDimension2);
 
     QueryDimension queryDimension1 = new QueryDimension("Id");
     queryDimension1.setDimension(tableBlockDimension1);
     QueryDimension queryDimension2 = new QueryDimension("Name");
-    queryDimension2.setDimension(tableComplexDimension2);
+    queryDimension2.setDimension(tableComplexDimension2.getDimension());
     QueryDimension queryDimension3 = new QueryDimension("Address");
     queryDimension3.setDimension(new CarbonDimension(columnSchema5, 3, 3, 3, 3));
 

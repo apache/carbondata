@@ -27,6 +27,7 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -214,10 +215,21 @@ public class QueryModel implements Serializable {
   /**
    * @return the queryDimension
    */
+
   public List<QueryDimension> getQueryDimension() {
     return queryDimension;
   }
 
+
+  public List<QueryDimension> getComplexQueryDimension(){
+    List<QueryDimension> complexQueryDimension = new ArrayList<>();
+    for (QueryDimension queryDimensionTemp : queryDimension) {
+      if (queryDimensionTemp.getDimension().getDataType()== DataType.ARRAY) {
+        complexQueryDimension.add(queryDimensionTemp);
+      }
+    }
+    return complexQueryDimension;
+  }
   /**
    * @param queryDimension the queryDimension to set
    */

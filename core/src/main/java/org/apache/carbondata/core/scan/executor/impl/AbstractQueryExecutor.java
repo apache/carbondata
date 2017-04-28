@@ -226,7 +226,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<QueryDimension> currentBlockQueryDimensions = RestructureUtil
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo,
             queryModel.getQueryDimension(), tableBlockDimensions,
-            segmentProperties.getComplexDimensions());
+            queryModel.getComplexQueryDimension());
     int tableFactPathLength = CarbonStorePath
         .getCarbonTablePath(queryModel.getAbsoluteTableIdentifier().getStorePath(),
             queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier()).getFactDir()

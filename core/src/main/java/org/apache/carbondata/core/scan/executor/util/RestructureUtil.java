@@ -61,7 +61,7 @@ public class RestructureUtil {
    */
   public static List<QueryDimension> createDimensionInfoAndGetCurrentBlockQueryDimension(
       BlockExecutionInfo blockExecutionInfo, List<QueryDimension> queryDimensions,
-      List<CarbonDimension> tableBlockDimensions, List<CarbonDimension> tableComplexDimension) {
+      List<CarbonDimension> tableBlockDimensions, List<QueryDimension> tableComplexDimension) {
     List<QueryDimension> presentDimension =
         new ArrayList<QueryDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     boolean[] isDimensionExists = new boolean[queryDimensions.size()];
@@ -100,12 +100,12 @@ public class RestructureUtil {
           dimIndex++;
           continue;
         }
-        for (CarbonDimension tableDimension : tableComplexDimension) {
-          if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
-            QueryDimension currentBlockDimension = new QueryDimension(tableDimension.getColName());
+        for (QueryDimension tableDimension : tableComplexDimension) {
+          if (tableDimension.getDimension().getColumnId().equals(queryDimension.getDimension().getColumnId())) {
+            QueryDimension currentBlockDimension = new QueryDimension(tableDimension.getDimension().getColName());
             // TODO: for complex dimension set scale and precision by traversing
             // the child dimensions
-            currentBlockDimension.setDimension(tableDimension);
+            currentBlockDimension.setDimension(tableDimension.getDimension());
             currentBlockDimension.setQueryOrder(queryDimension.getQueryOrder());
             presentDimension.add(currentBlockDimension);
             isDimensionExists[dimIndex] = true;
