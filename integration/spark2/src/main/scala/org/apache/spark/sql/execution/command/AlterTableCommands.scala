@@ -377,7 +377,7 @@ private[sql] case class AlterTableDataTypeChange(
       val carbonColumn = carbonColumns.filter(_.getColName.equalsIgnoreCase(columnName))
       if (carbonColumn.size == 1) {
         CarbonScalaUtil
-          .validateColumnDataType(alterTableDataTypeChangeModel.dataTypeInfo, carbonColumn(0))
+          .validateColumnDataType(alterTableDataTypeChangeModel.dataTypeInfo, carbonColumn(0),alterTableDataTypeChangeModel.listOfChildren.get(0).dataType.get)
       } else {
         LOGGER.audit(s"Alter table change data type request has failed. " +
                      s"Column $columnName is invalid")
@@ -393,14 +393,26 @@ private[sql] case class AlterTableDataTypeChange(
       var addColumnSchema: ColumnSchema = null
       var deletedColumnSchema: ColumnSchema = null
       val columnSchemaList = tableInfo.fact_table.table_columns.asScala.filter(!_.isInvisible)
+      val absoluteColumnname = (alterTableDataTypeChangeModel.dataTypeInfo.dataType
+              .toLowerCase match {
+              case "array" => alterTableDataTypeChangeModel.columnName + ".val"
+              case _ => alterTableDataTypeChangeModel.columnName
+            })
       columnSchemaList.foreach { columnSchema =>
-        if (columnSchema.column_name.equalsIgnoreCase(columnName)) {
-          deletedColumnSchema = columnSchema.deepCopy
-          columnSchema.setData_type(DataTypeConverterUtil
-            .convertToThriftDataType(alterTableDataTypeChangeModel.dataTypeInfo.dataType))
-          columnSchema.setPrecision(alterTableDataTypeChangeModel.dataTypeInfo.precision)
-          columnSchema.setScale(alterTableDataTypeChangeModel.dataTypeInfo.scale)
-          addColumnSchema = columnSchema
+        if (columnSchema.column_name.equalsIgnoreCase(absoluteColumnname)) {
+                      deletedColumnSchema = columnSchema.deepCopy
+                      if (alterTableDataTypeChangeModel.dataTypeInfo.dataType.toLowerCase.equals("array")) {
+                       columnSchema.setData_type(DataTypeConverterUtil
+                          .convertToThriftDataType(alterTableDataTypeChangeModel.listOfChildren.get(0).dataType.get))
+                      }
+                      else {
+                        columnSchema.setData_type(DataTypeConverterUtil
+                          .convertToThriftDataType(alterTableDataTypeChangeModel.dataTypeInfo.dataType))
+                      }
+                     columnSchema.setPrecision(alterTableDataTypeChangeModel.dataTypeInfo.precision)
+                      columnSchema.setScale(alterTableDataTypeChangeModel.dataTypeInfo.scale)
+                      addColumnSchema = columnSchema
+
         }
       }
       val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)

@@ -1047,19 +1047,29 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * @param values
    * @return
    */
-  protected def parseDataType(dataType: String, values: Option[List[(Int, Int)]]): DataTypeInfo = {
+  protected def parseDataType(dataType: String, values: Option[(Int, Int)],listOfChildren: Option[List[Field]]): DataTypeInfo = {
     dataType match {
       case "bigint" =>
-        if (values.isDefined) {
+        if (values.get._1>0) {
           throw new MalformedCarbonCommandException("Invalid data type")
         }
         DataTypeInfo(dataType)
+        case "array" =>
+            if (values.get._1>0) {
+              throw new MalformedCarbonCommandException("Invalid data type")
+            }
+            if (listOfChildren.get(0).dataType.get.equals("bigint")){
+              DataTypeInfo(dataType)
+            }
+            else {
+              throw new MalformedCarbonCommandException("Invalid data type")
+            }
       case "decimal" =>
         var precision: Int = 0
         var scale: Int = 0
-        if (values.isDefined) {
-          precision = values.get(0)._1
-          scale = values.get(0)._2
+        if (values.get._1>0) {
+          precision = values.get._1
+          scale = values.get._2
         } else {
           throw new MalformedCarbonCommandException("Decimal format provided is invalid")
         }

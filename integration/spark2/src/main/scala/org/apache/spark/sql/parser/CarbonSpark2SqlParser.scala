@@ -141,19 +141,20 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val alterTableModifyDataType: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ CHANGE ~ ident ~ ident ~
-    ident ~ opt("(" ~> rep1sep(valueOptions, ",") <~ ")") <~ opt(";") ^^ {
-      case dbName ~ table ~ change ~ columnName ~ columnNameCopy ~ dataType ~ values =>
+    nestedType <~ opt(";") ^^ {
+      case dbName ~ table ~ change ~ columnName ~ columnNameCopy ~ dataType  =>
         // both the column names should be same
         if (!columnName.equalsIgnoreCase(columnNameCopy)) {
           throw new MalformedCarbonCommandException(
             "Column names provided are different. Both the column names should be same")
         }
-        val alterTableChangeDataTypeModel =
-          AlterTableDataTypeChangeModel(parseDataType(dataType.toLowerCase, values),
+              val values :Option[(Int, Int)] = Some(dataType.precision,dataType.scale)
+      val alterTableChangeDataTypeModel =
+          AlterTableDataTypeChangeModel(parseDataType(dataType.dataType.get.toLowerCase,values,dataType.children ),
             convertDbNameToLowerCase(dbName),
             table.toLowerCase,
             columnName.toLowerCase,
-            columnNameCopy.toLowerCase)
+            columnNameCopy.toLowerCase,dataType.children)
         AlterTableDataTypeChange(alterTableChangeDataTypeModel)
     }
 
