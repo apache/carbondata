@@ -30,7 +30,7 @@ object SparkSessionExample {
 
   def main(args: Array[String]): Unit = {
     val rootPath = new File(this.getClass.getResource("/").getPath
-        + "../../../..").getCanonicalPath
+                            + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
     val metastoredb = s"$rootPath/examples/spark2/target/metastore_db"
@@ -44,14 +44,14 @@ object SparkSessionExample {
     }
 
     val spark = SparkSession
-        .builder()
-        .master("local")
-        .appName("SparkSessionExample")
-        .enableHiveSupport()
-        .config("spark.sql.warehouse.dir", warehouse)
-        .config("javax.jdo.option.ConnectionURL",
-          s"jdbc:derby:;databaseName=$metastoredb;create=true")
-        .getOrCreate()
+      .builder()
+      .master("local")
+      .appName("SparkSessionExample")
+      .enableHiveSupport()
+      .config("spark.sql.warehouse.dir", warehouse)
+      .config("javax.jdo.option.ConnectionURL",
+        s"jdbc:derby:;databaseName=$metastoredb;create=true")
+      .getOrCreate()
 
     CarbonProperties.getInstance()
       .addProperty("carbon.storelocation", storeLocation)
@@ -59,46 +59,43 @@ object SparkSessionExample {
     spark.sparkContext.setLogLevel("WARN")
 
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
-        .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
 
     // Create table
     spark.sql(
       s"""
          | CREATE TABLE carbon_table(
-         |    shortField short,
-         |    intField int,
-         |    bigintField long,
-         |    doubleField double,
-         |    stringField string,
-         |    timestampField timestamp,
-         |    decimalField decimal(18,2),
-         |    dateField date,
-         |    charField char(5)
+         | shortField SHORT,
+         | intField INT,
+         | bigintField LONG,
+         | doubleField DOUBLE,
+         | stringField STRING,
+         | timestampField TIMESTAMP,
+         | decimalField DECIMAL(18,2),
+         | dateField DATE,
+         | charField CHAR(5)
          | )
          | USING org.apache.spark.sql.CarbonSource
          | OPTIONS('DICTIONARY_INCLUDE'='dateField, charField',
-         |   'dbName'='default', 'tableName'='carbon_table')
+         | 'dbName'='default', 'tableName'='carbon_table')
        """.stripMargin)
 
-    // val prop = s"$rootPath/conf/dataload.properties.template"
-    // val tableName = "carbon_table"
     val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
-    // TableLoader.main(Array[String](prop, tableName, path))
 
     spark.sql(
       s"""
-         | CREATE TABLE csv_table
-         | (  shortField short,
-         |    intField int,
-         |    bigintField long,
-         |    doubleField double,
-         |    stringField string,
-         |    timestampField string,
-         |    decimalField decimal(18,2),
-         |    dateField string,
-         |    charField char(5))
-         |    ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+         | CREATE TABLE csv_table(
+         | shortField SHORT,
+         | intField INT,
+         | bigintField LONG,
+         | doubleField DOUBLE,
+         | stringField STRING,
+         | timestampField STRING,
+         | decimalField DECIMAL(18,2),
+         | dateField STRING,
+         | charField CHAR(5))
+         | ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
        """.stripMargin)
 
     spark.sql(
@@ -107,10 +104,7 @@ object SparkSessionExample {
          | INTO TABLE csv_table
        """.stripMargin)
 
-    spark.sql("""
-             SELECT *
-             FROM csv_table
-              """).show
+    spark.sql("SELECT * FROM csv_table").show()
 
     spark.sql(
       s"""
@@ -121,56 +115,60 @@ object SparkSessionExample {
          | FROM csv_table
        """.stripMargin)
 
-    spark.sql("""
-             SELECT *
-             FROM carbon_table
-             where stringfield = 'spark' and decimalField > 40
-              """).show
+    spark.sql(
+      s"""
+         | SELECT *
+         | FROM carbon_table
+         | WHERE stringfield = 'spark' AND decimalField > 40
+      """.stripMargin).show()
 
     // Shows with raw data's timestamp format
-    spark.sql("""
-             SELECT
-             stringField, date_format(timestampField, "yyyy/MM/dd HH:mm:ss") as timestampField
-             FROM carbon_table where length(stringField) = 5
-              """).show
-
-    spark.sql("""
-             SELECT *
-             FROM carbon_table where date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
-              """).show
-
-    spark.sql("""
-             select count(stringField) from carbon_table
-              """.stripMargin).show
-
-    spark.sql("""
-           SELECT sum(intField), stringField
-           FROM carbon_table
-           GROUP BY stringField
-           """).show
+    spark.sql(
+      s"""
+         | SELECT
+         | stringField, date_format(timestampField, "yyyy/MM/dd HH:mm:ss") AS
+         | timestampField
+         | FROM carbon_table WHERE length(stringField) = 5
+       """.stripMargin).show()
 
     spark.sql(
-      """
-        |select t1.*, t2.*
-        |from carbon_table t1, carbon_table t2
-        |where t1.stringField = t2.stringField
-      """.stripMargin).show
+      s"""
+         | SELECT *
+         | FROM carbon_table where date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
+       """.stripMargin).show()
+
+    spark.sql("SELECT count(stringField) FROM carbon_table").show()
 
     spark.sql(
-      """
-        |with t1 as (
-        |select * from carbon_table
-        |union all
-        |select * from carbon_table
-        |)
-        |select t1.*, t2.*
-        |from t1, carbon_table t2
-        |where t1.stringField = t2.stringField
-      """.stripMargin).show
+      s"""
+         | SELECT sum(intField), stringField
+         | FROM carbon_table
+         | GROUP BY stringField
+       """.stripMargin).show()
+
+    spark.sql(
+      s"""
+         | SELECT t1.*, t2.*
+         | FROM carbon_table t1, carbon_table t2
+         | WHERE t1.stringField = t2.stringField
+      """.stripMargin).show()
+
+    spark.sql(
+      s"""
+         | WITH t1 AS (
+         | SELECT * FROM carbon_table
+         | UNION ALL
+         | SELECT * FROM carbon_table
+         | )
+         | SELECT t1.*, t2.*
+         | FROM t1, carbon_table t2
+         | WHERE t1.stringField = t2.stringField
+      """.stripMargin).show()
 
     // Drop table
     spark.sql("DROP TABLE IF EXISTS carbon_table")
     spark.sql("DROP TABLE IF EXISTS csv_table")
+
     spark.stop()
   }
 }
