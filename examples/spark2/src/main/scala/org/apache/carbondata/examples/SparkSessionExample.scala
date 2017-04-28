@@ -66,15 +66,15 @@ object SparkSessionExample {
     spark.sql(
       s"""
          | CREATE TABLE carbon_table(
-         | shortField short,
-         | intField int,
-         | bigintField long,
-         | doubleField double,
-         | stringField string,
-         | timestampField timestamp,
-         | decimalField decimal(18,2),
-         | dateField date,
-         | charField char(5)
+         | shortField SHORT,
+         | intField INT,
+         | bigintField LONG,
+         | doubleField DOUBLE,
+         | stringField STRING,
+         | timestampField TIMESTAMP,
+         | decimalField DECIMAL(18,2),
+         | dateField DATE,
+         | charField CHAR(5)
          | )
          | USING org.apache.spark.sql.CarbonSource
          | OPTIONS('DICTIONARY_INCLUDE'='dateField, charField',
@@ -86,15 +86,15 @@ object SparkSessionExample {
     spark.sql(
       s"""
          | CREATE TABLE csv_table(
-         | shortField short,
-         | intField int,
-         | bigintField long,
-         | doubleField double,
-         | stringField string,
-         | timestampField string,
-         | decimalField decimal(18,2),
-         | dateField string,
-         | charField char(5))
+         | shortField SHORT,
+         | intField INT,
+         | bigintField LONG,
+         | doubleField DOUBLE,
+         | stringField STRING,
+         | timestampField STRING,
+         | decimalField DECIMAL(18,2),
+         | dateField STRING,
+         | charField CHAR(5))
          | ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
        """.stripMargin)
 

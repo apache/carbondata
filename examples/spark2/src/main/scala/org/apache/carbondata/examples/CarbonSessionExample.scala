@@ -53,17 +53,17 @@ object CarbonSessionExample {
     spark.sql(
       s"""
          | CREATE TABLE carbon_table(
-         | shortField short,
-         | intField int,
-         | bigintField long,
-         | doubleField double,
-         | stringField string,
-         | timestampField timestamp,
-         | decimalField decimal(18,2),
-         | dateField date,
-         | charField char(5),
-         | floatField float,
-         | complexData array<string>
+         | shortField SHORT,
+         | intField INT,
+         | bigintField LONG,
+         | doubleField DOUBLE,
+         | stringField STRING,
+         | timestampField TIMESTAMP,
+         | decimalField DECIMAL(18,2),
+         | dateField DATE,
+         | charField CHAR(5),
+         | floatField FLOAT,
+         | complexData ARRAY<STRING>
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')
