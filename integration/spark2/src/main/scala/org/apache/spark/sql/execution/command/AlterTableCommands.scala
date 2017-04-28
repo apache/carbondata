@@ -377,7 +377,7 @@ private[sql] case class AlterTableDataTypeChange(
       val carbonColumn = carbonColumns.filter(_.getColName.equalsIgnoreCase(columnName))
       if (carbonColumn.size == 1) {
         CarbonScalaUtil
-          .validateColumnDataType(alterTableDataTypeChangeModel.dataTypeInfo, carbonColumn(0),alterTableDataTypeChangeModel.listOfChildren.get(0).dataType.get)
+          .validateColumnDataType(alterTableDataTypeChangeModel.dataTypeInfo, carbonColumn(0))
       } else {
         LOGGER.audit(s"Alter table change data type request has failed. " +
                      s"Column $columnName is invalid")

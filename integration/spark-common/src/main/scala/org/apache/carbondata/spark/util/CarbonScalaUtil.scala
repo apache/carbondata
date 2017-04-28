@@ -148,7 +148,7 @@ object CarbonScalaUtil {
    * @param dataTypeInfo
    * @param carbonColumn
    */
-  def validateColumnDataType(dataTypeInfo: DataTypeInfo, carbonColumn: CarbonColumn,childrenDataType : String): Unit = {
+  def validateColumnDataType(dataTypeInfo: DataTypeInfo, carbonColumn: CarbonColumn): Unit = {
     carbonColumn.getDataType.getName match {
       case "INT" =>
         if (!dataTypeInfo.dataType.equals("bigint")) {
@@ -159,7 +159,7 @@ object CarbonScalaUtil {
             } cannot be modified. Int can only be changed to bigInt")
         }
       case "ARRAY" =>
-            if (!childrenDataType.equals("bigint")) {
+            if (!dataTypeInfo.dataType.equals("array")) {
               sys
                 .error(s"Given column ${ carbonColumn.getColName } with data type ${
                   carbonColumn
