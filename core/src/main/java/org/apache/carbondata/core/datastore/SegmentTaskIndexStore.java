@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -31,12 +32,14 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.SegmentTaskIndex;
 import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -67,6 +70,9 @@ public class SegmentTaskIndexStore
    * block can be loaded concurrently
    */
   private Map<String, Object> segmentLockMap;
+
+  private Map<SegmentPropertiesWrapper, SegmentProperties> segmentProperties =
+      new HashMap<SegmentPropertiesWrapper, SegmentProperties>();
 
   /**
    * constructor to initialize the SegmentTaskIndexStore
@@ -345,7 +351,26 @@ public class SegmentTaskIndexStore
     List<DataFileFooter> footerList = CarbonUtil
         .readCarbonIndexFile(taskBucketHolder.taskNo, taskBucketHolder.bucketNumber,
             tableBlockInfoList, tableIdentifier);
-    AbstractIndex segment = new SegmentTaskIndex();
+
+    // Reuse SegmentProperties object if tableIdentifier, columnsInTable and columnCardinality are
+    // the same.
+    List<ColumnSchema> columnsInTable = footerList.get(0).getColumnInTable();
+    int[] columnCardinality = footerList.get(0).getSegmentInfo().getColumnCardinality();
+    SegmentPropertiesWrapper segmentPropertiesWrapper =
+        new SegmentPropertiesWrapper(tableIdentifier, columnsInTable, columnCardinality);
+    SegmentProperties segmentProperties;
+    if (this.segmentProperties.containsKey(segmentPropertiesWrapper)) {
+      segmentProperties = this.segmentProperties.get(segmentPropertiesWrapper);
+    } else {
+      // create a metadata details
+      // this will be useful in query handling
+      // all the data file metadata will have common segment properties we
+      // can use first one to get create the segment properties
+      segmentProperties = new SegmentProperties(columnsInTable, columnCardinality);
+      this.segmentProperties.put(segmentPropertiesWrapper, segmentProperties);
+    }
+
+    AbstractIndex segment = new SegmentTaskIndex(segmentProperties);
     // file path of only first block is passed as it all table block info path of
     // same task id will be same
     segment.buildIndex(footerList);
@@ -394,6 +419,40 @@ public class SegmentTaskIndexStore
       int result = taskNo != null ? taskNo.hashCode() : 0;
       result = 31 * result + (bucketNumber != null ? bucketNumber.hashCode() : 0);
       return result;
+    }
+  }
+
+  /**
+   * This class wraps tableIdentifier, columnsInTable and columnCardinality as a key to determine
+   * whether the SegmentProperties object can be reused.
+   */
+  public static class SegmentPropertiesWrapper {
+    private AbsoluteTableIdentifier tableIdentifier;
+    private List<ColumnSchema> columnsInTable;
+    private int[] columnCardinality;
+
+    public SegmentPropertiesWrapper(AbsoluteTableIdentifier tableIdentifier,
+        List<ColumnSchema> columnsInTable, int[] columnCardinality) {
+      this.tableIdentifier = tableIdentifier;
+      this.columnsInTable = columnsInTable;
+      this.columnCardinality = columnCardinality;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (!(obj instanceof SegmentPropertiesWrapper)) {
+        return false;
+      }
+      SegmentPropertiesWrapper other = (SegmentPropertiesWrapper) obj;
+      return tableIdentifier.equals(other.tableIdentifier)
+        && columnsInTable.equals(other.columnsInTable)
+        && Arrays.equals(columnCardinality, other.columnCardinality);
+    }
+
+    @Override
+    public int hashCode() {
+      return tableIdentifier.hashCode()
+        + columnsInTable.hashCode() + Arrays.hashCode(columnCardinality);
     }
   }
 }
