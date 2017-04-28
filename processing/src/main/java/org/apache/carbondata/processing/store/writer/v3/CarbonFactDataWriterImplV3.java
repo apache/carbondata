@@ -324,7 +324,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
           isAdded = true;
           dataWriterHolder.addNodeHolder(holder);
         }
-        LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getSize());
+        LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getNumberOfPagesAdded()
+            + " :Rows Added: " + dataWriterHolder.getTotalRows());
         // write the data
         writeDataToFile(fileChannel);
       }
@@ -334,18 +335,10 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     } else {
       //for last blocklet check if the last page will exceed the blocklet size then write
       // existing pages and then last page
-      if (dataWriterHolder.getSize() + holder.getHolderSize() >= blockletSize
-          && dataWriterHolder.getNodeHolder().size() > 0) {
-        LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getSize());
-        writeDataToFile(fileChannel);
-        dataWriterHolder.addNodeHolder(holder);
-        LOGGER.info("Number of Pages for blocklet is: " + "1");
-        writeDataToFile(fileChannel);
-      } else {
-        dataWriterHolder.addNodeHolder(holder);
-        LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getSize());
-        writeDataToFile(fileChannel);
-      }
+      dataWriterHolder.addNodeHolder(holder);
+      LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getNumberOfPagesAdded()
+          + " :Rows Added: " + dataWriterHolder.getTotalRows());
+      writeDataToFile(fileChannel);
     }
   }
 
