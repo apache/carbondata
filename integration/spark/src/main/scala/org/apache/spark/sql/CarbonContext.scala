@@ -30,6 +30,7 @@ import org.apache.spark.sql.execution.ExtractPythonUDFs
 import org.apache.spark.sql.execution.datasources.{PreInsertCastAndRename, PreWriteCheck}
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.optimizer.CarbonOptimizer
+import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -38,20 +39,29 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFa
 
 class CarbonContext(
     val sc: SparkContext,
-    val storePath: String,
+    val storePathInParam: Option[String] = None,
     metaStorePath: String) extends HiveContext(sc) {
   self =>
 
+  val storePath = storePathInParam
+    .getOrElse(new File(CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
+
   def this(sc: SparkContext) = {
     this(sc,
-      new File(CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL).getCanonicalPath,
+      None,
       new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
   }
 
-  def this(sc: SparkContext, storePath: String) = {
+  def this(sc: SparkContext, storePathInParam: String) = {
     this(sc,
-      storePath,
+      Option(storePathInParam),
       new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
+  }
+
+  def this(sc: SparkContext, storePathInParam: String, metaStorePath: String) = {
+    this(sc,
+      Option(storePathInParam),
+      metaStorePath)
   }
 
   CarbonContext.addInstance(sc, this)
@@ -66,9 +76,10 @@ class CarbonContext(
 
   @transient
   override lazy val catalog = {
+    val highestPriorityStorePath = FileUtils.getHighestPriorityStorePath(storePathInParam)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
-    new CarbonMetastore(this, storePath, metadataHive, queryId) with OverrideCatalog
+      .addProperty(CarbonCommonConstants.STORE_LOCATION, highestPriorityStorePath)
+    new CarbonMetastore(this, highestPriorityStorePath, metadataHive, queryId) with OverrideCatalog
   }
 
   @transient

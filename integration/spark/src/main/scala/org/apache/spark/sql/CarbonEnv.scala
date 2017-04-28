@@ -17,8 +17,11 @@
 
 package org.apache.spark.sql
 
+import java.io.File
+
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.hive.{CarbonIUDAnalysisRule, CarbonMetastore}
+import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -39,7 +42,8 @@ object CarbonEnv {
   def init(sqlContext: SQLContext): Unit = {
     if (!initialized) {
       val cc = sqlContext.asInstanceOf[CarbonContext]
-      val catalog = new CarbonMetastore(cc, cc.storePath, cc.hiveClientInterface, "")
+      val highestPriorityStorePath = FileUtils.getHighestPriorityStorePath(cc.storePathInParam)
+      val catalog = new CarbonMetastore(cc, highestPriorityStorePath, cc.hiveClientInterface, "")
       carbonEnv = CarbonEnv(catalog)
       CarbonIUDAnalysisRule.init(sqlContext)
       initialized = true

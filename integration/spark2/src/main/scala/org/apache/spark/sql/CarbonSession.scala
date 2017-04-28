@@ -24,6 +24,7 @@ import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
 import org.apache.spark.sql.hive.CarbonSessionState
 import org.apache.spark.sql.internal.{SessionState, SharedState}
+import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -64,17 +65,23 @@ object CarbonSession {
 
     def getOrCreateCarbonSession(): SparkSession = {
       getOrCreateCarbonSession(
-        new File(CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL).getCanonicalPath,
+        None,
         new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
     }
 
     def getOrCreateCarbonSession(storePath: String): SparkSession = {
       getOrCreateCarbonSession(
-        storePath,
+        Option(storePath),
         new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
     }
 
-    def getOrCreateCarbonSession(storePath: String,
+    def getOrCreateCarbonSession(storePath: String, metaStorePath: String): SparkSession = {
+      getOrCreateCarbonSession(
+        Option(storePath),
+        metaStorePath)
+    }
+
+    def getOrCreateCarbonSession(storePath: Option[String],
         metaStorePath: String): SparkSession = synchronized {
       builder.enableHiveSupport()
       val options =
@@ -132,8 +139,9 @@ object CarbonSession {
           sc
         }
 
+        val highestPriorityStorePath = FileUtils.getHighestPriorityStorePath(storePath)
         CarbonProperties.getInstance()
-          .addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
+          .addProperty(CarbonCommonConstants.STORE_LOCATION, highestPriorityStorePath)
         session = new CarbonSession(sparkContext)
         val hadoopConf = session.sharedState.sparkContext.hadoopConfiguration
         if (options.get(CarbonCommonConstants.HIVE_CONNECTION_URL).isEmpty &&
