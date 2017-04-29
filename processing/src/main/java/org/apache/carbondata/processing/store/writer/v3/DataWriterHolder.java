@@ -50,7 +50,7 @@ public class DataWriterHolder {
 
   public int getTotalRows() {
     int rows = 0;
-    for(NodeHolder nh :  nodeHolder) {
+    for (NodeHolder nh : nodeHolder) {
       rows += nh.getEntryCount();
     }
     return rows;

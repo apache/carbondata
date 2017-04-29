@@ -335,10 +335,14 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     } else {
       //for last blocklet check if the last page will exceed the blocklet size then write
       // existing pages and then last page
-      dataWriterHolder.addNodeHolder(holder);
-      LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getNumberOfPagesAdded()
-          + " :Rows Added: " + dataWriterHolder.getTotalRows());
-      writeDataToFile(fileChannel);
+      if (holder.getEntryCount() > 0) {
+        dataWriterHolder.addNodeHolder(holder);
+      }
+      if (dataWriterHolder.getNumberOfPagesAdded() > 0) {
+        LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getNumberOfPagesAdded()
+            + " :Rows Added: " + dataWriterHolder.getTotalRows());
+        writeDataToFile(fileChannel);
+      }
     }
   }
 
