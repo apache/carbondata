@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql
+package org.apache.carbondata.spark
 
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression, ExprId, LeafExpression, NamedExpression}
@@ -26,6 +26,7 @@ import org.apache.spark.sql.types.DataType
 import org.apache.carbondata.core.scan.expression.ColumnExpression
 
 case class CastExpr(expr: Expression) extends Filter {
+  override def references: Array[String] = null
 }
 
 case class CarbonBoundReference(colExp: ColumnExpression, dataType: DataType, nullable: Boolean)
@@ -43,5 +44,8 @@ case class CarbonBoundReference(colExp: ColumnExpression, dataType: DataType, nu
 
   override def exprId: ExprId = throw new UnsupportedOperationException
 
-  override def qualifiers: Seq[String] = throw new UnsupportedOperationException
+  override def qualifier: Option[String] = null
+
+  override def newInstance(): NamedExpression = throw new UnsupportedOperationException
 }
+

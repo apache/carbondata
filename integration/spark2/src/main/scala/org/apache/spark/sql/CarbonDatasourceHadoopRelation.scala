@@ -75,4 +75,5 @@ case class CarbonDatasourceHadoopRelation(
     ", " + "Table name :" + carbonTable.getFactTableName + ", Schema :" + tableSchema + " ]"
   }
 
+   override def sizeInBytes: Long = carbonRelation.sizeInBytes
 }

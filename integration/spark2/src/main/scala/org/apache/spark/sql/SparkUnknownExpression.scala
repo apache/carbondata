@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql
+package org.apache.carbondata.spark
 
 import java.util.{ArrayList, List}
 
@@ -108,14 +108,28 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
   }
 
   def getColumnListFromExpressionTree(sparkCurrentExp: SparkExpression,
-      list: java.util.List[ColumnExpression]): Unit = {
-    sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, list))
+      lst: java.util.List[ColumnExpression]): Unit = {
+    sparkCurrentExp match {
+      case carbonBoundRef: CarbonBoundReference =>
+        val foundExp = lst.asScala
+          .find(p => p.getColumnName() == carbonBoundRef.colExp.getColumnName())
+        if (foundExp.isEmpty) {
+          carbonBoundRef.colExp.setColIndex(lst.size)
+          lst.add(carbonBoundRef.colExp)
+        } else {
+          carbonBoundRef.colExp.setColIndex(foundExp.get.getColIndex())
+        }
+      case _ => sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, lst))
+    }
   }
 
 
   def getAllColumnListFromExpressionTree(sparkCurrentExp: SparkExpression,
       list: List[ColumnExpression]): List[ColumnExpression] = {
-    sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, list))
+    sparkCurrentExp match {
+      case carbonBoundRef: CarbonBoundReference => list.add(carbonBoundRef.colExp)
+      case _ => sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, list))
+    }
     list
   }
 
@@ -128,4 +142,6 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
       false
     }
   }
+
+
 }

@@ -273,11 +273,11 @@ object CarbonFilters {
             )
           )
         case IsNotNull(child: Attribute) =>
-            Some(new NotEqualsExpression(transformExpression(child).get,
-             transformExpression(Literal(null)).get, true))
+          Some(new NotEqualsExpression(transformExpression(child).get,
+            transformExpression(Literal(null)).get, true))
         case IsNull(child: Attribute) =>
-            Some(new EqualToExpression(transformExpression(child).get,
-             transformExpression(Literal(null)).get, true))
+          Some(new EqualToExpression(transformExpression(child).get,
+            transformExpression(Literal(null)).get, true))
         case Not(In(a: Attribute, list))
           if !list.exists(!_.isInstanceOf[Literal]) =>
           if (list.exists(x => isNullLiteral(x.asInstanceOf[Literal]))) {

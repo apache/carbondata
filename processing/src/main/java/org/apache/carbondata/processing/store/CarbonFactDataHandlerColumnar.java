@@ -589,6 +589,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   /** generate the NodeHolder from the input rows */
   private NodeHolder processDataRows(List<Object[]> dataRows)
       throws CarbonDataWriterException {
+    if (dataRows.size() == 0) {
+      return new NodeHolder();
+    }
     // to store index of the measure columns which are null
     BitSet[] nullValueIndexBitSet = getMeasureNullValueIndexBitSet(measureCount);
     // statistics for one blocklet/page
@@ -859,12 +862,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   public void finish() throws CarbonDataWriterException {
     // still some data is present in stores if entryCount is more
     // than 0
-    if (this.entryCount > 0) {
-      producerExecutorServiceTaskList.add(producerExecutorService
-          .submit(new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter, true)));
-      blockletProcessingCount.incrementAndGet();
-      processedDataCount += entryCount;
-    }
+    producerExecutorServiceTaskList.add(producerExecutorService
+        .submit(new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter, true)));
+    blockletProcessingCount.incrementAndGet();
+    processedDataCount += entryCount;
     closeWriterExecutionService(producerExecutorService);
     processWriteTaskSubmitList(producerExecutorServiceTaskList);
     processingComplete = true;

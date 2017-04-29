@@ -48,6 +48,14 @@ public class DataWriterHolder {
     return nodeHolder.size();
   }
 
+  public int getTotalRows() {
+    int rows = 0;
+    for (NodeHolder nh : nodeHolder) {
+      rows += nh.getEntryCount();
+    }
+    return rows;
+  }
+
   public List<NodeHolder> getNodeHolder() {
     return nodeHolder;
   }
