@@ -178,7 +178,10 @@ public class RowConverterImpl implements RowConverter {
           client.shutDown();
         }
       }
-      executorService.shutdownNow();
+      if (executorService != null) {
+        executorService.shutdownNow();
+        executorService = null;
+      }
     }
   }
 

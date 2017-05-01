@@ -198,6 +198,9 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
   }
 
   @Override public void writeBlockletData(NodeHolder holder) throws CarbonDataWriterException {
+    if (holder.getEntryCount() == 0) {
+      return;
+    }
     int indexBlockSize = 0;
     for (int i = 0; i < holder.getKeyBlockIndexLength().length; i++) {
       indexBlockSize += holder.getKeyBlockIndexLength()[i] + CarbonCommonConstants.INT_SIZE_IN_BYTE;
