@@ -131,6 +131,7 @@ struct DataChunk2{
     10: optional BlockletMinMaxIndex min_max; 
     11: optional i32 numberOfRowsInpage;
     12: optional list<i32> bitmap_encoded_dictionaries;
+    13: optional list<i32> bitmap_data_pages_length;
  }
 
 
