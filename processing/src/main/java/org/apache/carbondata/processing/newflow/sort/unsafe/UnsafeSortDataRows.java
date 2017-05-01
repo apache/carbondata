@@ -317,6 +317,7 @@ public class UnsafeSortDataRows {
         } else {
           // add sort temp filename to and arrayList. When the list size reaches 20 then
           // intermediate merging of sort temp files will be triggered
+          page.getBuffer().loadToUnsafe();
           unsafeInMemoryIntermediateFileMerger.addDataChunkToMerge(page);
           LOGGER.info(
               "Time taken to sort row page with size" + page.getBuffer().getActualSize() + "is: "
