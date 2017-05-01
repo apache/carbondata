@@ -82,7 +82,7 @@ case class CarbonDatasourceHadoopRelation(
       sys.error("Maximum supported column by carbon is: " +
           CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS)
     }
-    if(data.logicalPlan.output.size >= carbonRelation.output.size) {
+    if (data.logicalPlan.output.size >= carbonRelation.output.size) {
       LoadTableByInsert(this, data.logicalPlan).run(sparkSession)
     } else {
       sys.error("Cannot insert into target table because column number are different")
