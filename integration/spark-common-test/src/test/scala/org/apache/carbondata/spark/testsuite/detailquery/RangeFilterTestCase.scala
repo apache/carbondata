@@ -89,7 +89,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
         "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
         "projectenddate Timestamp, designation String,attendance Int,utilization " +
         "Int,salary Int) STORED BY 'org.apache.carbondata.format' " +
-        "TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno, empname,designation')"
+        "TBLPROPERTIES('DICTIONARY_INCLUDE'='workgroupcategory','DICTIONARY_EXCLUDE'='empno, empname,designation')"
     )
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE NO_DICTIONARY_CARBON_6 " +
@@ -102,7 +102,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
         "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
         "projectenddate Timestamp, designation String,attendance Int,utilization " +
         "Int,salary Int) STORED BY 'org.apache.carbondata.format' " +
-        "TBLPROPERTIES('DICTIONARY_EXCLUDE'='empname,designation')"
+        "TBLPROPERTIES('DICTIONARY_INCLUDE'='workgroupcategory','DICTIONARY_EXCLUDE'='empname,designation')"
     )
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE DICTIONARY_CARBON_6 " +
