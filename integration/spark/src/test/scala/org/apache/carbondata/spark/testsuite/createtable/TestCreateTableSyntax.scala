@@ -22,6 +22,11 @@ import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.spark.sql.CarbonEnv
+import org.apache.spark.sql.CarbonRelation
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.metadata.encoder.Encoding
+
 
 /**
  * Test Class for validating create table syntax for carbontable
@@ -30,6 +35,29 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
   
   override def beforeAll {
+  }
+  test("test carbon table create with bitmap bitmapTable") {
+    try {
+      sql("drop table if exists carbontable")
+      sql("create table carbontable(id int, name string, dept string, mobile array<string>, "+
+          "country string, salary double) STORED BY 'org.apache.carbondata.format' " +
+          "TBLPROPERTIES ('BITMAP'='dept,name')")
+          val dataBaseName = "default"
+    val tableName = "carbontable"
+    val carbonRelation = CarbonEnv.get.carbonMetastore.lookupRelation1(Option(dataBaseName),
+        tableName)(sqlContext).asInstanceOf[CarbonRelation]
+    val carbonTable = carbonRelation.tableMeta.carbonTable
+    val dimensions = carbonTable.getDimensionByTableName(tableName.toLowerCase())
+      .toArray.map(_.asInstanceOf[CarbonDimension])
+    assert(dimensions(0).getColumnSchema.getColumnName.equals("name"))
+    assert(dimensions(1).getColumnSchema.getColumnName.equals("dept"))
+    assert(dimensions(0).getColumnSchema.hasEncoding(Encoding.BITMAP))
+    assert(dimensions(1).getColumnSchema.hasEncoding(Encoding.BITMAP))
+    } catch {
+      case e : MalformedCarbonCommandException => {
+        assert(e.getMessage.equals("DICTIONARY_EXCLUDE is unsupported for complex datatype column: mobile"))
+      }
+    }
   }
 
   test("Struct field with underscore and struct<struct> syntax check") {

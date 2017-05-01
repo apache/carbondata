@@ -307,6 +307,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return Encoding.BIT_PACKED;
       case DIRECT_DICTIONARY:
         return Encoding.DIRECT_DICTIONARY;
+      case BITMAP:
+        return Encoding.BITMAP;
       default:
         return Encoding.DICTIONARY;
     }
