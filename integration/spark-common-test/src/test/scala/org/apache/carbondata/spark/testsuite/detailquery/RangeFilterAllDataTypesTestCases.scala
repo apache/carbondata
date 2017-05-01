@@ -242,7 +242,6 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test range filter for direct dictionary"){
-    sql("select doj from directDictionaryTable where doj > cast('2016-03-14 15:00:17' as timestamp)").show(2000,false)
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > '2016-03-14 15:00:17'"),
       sql("select doj from directDictionaryTable_hive where doj > '2016-03-14 15:00:17'")
@@ -266,7 +265,6 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test range filter for direct dictionary not equality"){
-    sql("select doj from directDictionaryTable where doj != '2016-03-14 15:00:16'").show(2000, false)
     checkAnswer(
       sql("select doj from directDictionaryTable where doj != '2016-03-14 15:00:16'"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
@@ -277,12 +275,21 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
         Row(Timestamp.valueOf("2016-03-14 15:00:14.0")),
         Row(Timestamp.valueOf("2016-03-14 15:00:15.0")),
         Row(Timestamp.valueOf("2016-03-14 15:00:17.0")),
-        Row(Timestamp.valueOf("2016-03-14 15:00:18.0")))
+        Row(Timestamp.valueOf("2016-03-14 15:00:18.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:19.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:20.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:24.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:25.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:31.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:35.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:38.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:39.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:49.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:50.0")))
     )
   }
 
   test("test range filter for direct dictionary and with explicit casts"){
-    sql("select doj from directDictionaryTable where doj > cast ('2016-03-14 15:00:16' as timestamp) and doj < cast ('2016-03-14 15:00:18' as timestamp)").show(2000, false)
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > cast ('2016-03-14 15:00:16' as timestamp) and doj < cast ('2016-03-14 15:00:18' as timestamp)"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:17.0"))
@@ -336,8 +343,6 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test range filter for different Timestamp In format "){
-    sql("select doj from directDictionaryTable").show(200,false)
-    sql("select * from directDictionaryTable where doj in ('2016-03-14 15:00:18', '2016-03-14 15:00:17' )").show(200, false)
     checkAnswer(
       sql("select doj from directDictionaryTable where doj in ('2016-03-14 15:00:18', '2016-03-14 15:00:17')"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:17.0")),
