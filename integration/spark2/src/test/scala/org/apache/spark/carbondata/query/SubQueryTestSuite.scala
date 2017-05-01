@@ -19,6 +19,8 @@ package org.apache.spark.carbondata.query
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.execution.exchange.ShuffleExchange
+import org.apache.spark.sql.execution.joins.BroadcastHashJoinExec
 import org.scalatest.BeforeAndAfterAll
 
 class SubQueryTestSuite extends QueryTest with BeforeAndAfterAll {
@@ -36,6 +38,22 @@ class SubQueryTestSuite extends QueryTest with BeforeAndAfterAll {
       "select * from subquery where id in(select id from subquery where name in(select name from" +
       " subquery where rating=2.0))"),
       Seq(Row(2,"ghj",2.0), Row(3,"ghj",3.0)))
+  }
+
+  test("test to check Broad cast filter works") {
+    sql("drop table if exists anothertable")
+    sql("create table anothertable(id int, name string, rating float) stored by 'carbondata'")
+    sql(s"load data local inpath '$tempDirPath/data1.csv' into table anothertable")
+
+    val executedPlan =
+      sql("select * from subquery t1, anothertable t2 where t1.id=t2.id").
+        queryExecution.executedPlan
+    var broadCastExists = false
+    executedPlan.collect {
+      case s: BroadcastHashJoinExec => broadCastExists = true
+    }
+    assert(broadCastExists, "Broad cast join does not exist on small table")
+    sql("drop table if exists anothertable")
   }
 
   override def afterAll() {
