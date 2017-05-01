@@ -316,8 +316,7 @@ class TableNewProcessor(cm: TableModel) {
         val columnSchema: ColumnSchema = getColumnSchema(
           DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
           field.name.getOrElse(field.column), index,
-          isCol = true, encoders, isDimensionCol = true, rowGroup, field.precision, field.scale,
-          field.schemaOrdinal)
+          isCol = true, encoders, isDimensionCol = true, rowGroup, field, null)
         allColumns ++= Seq(columnSchema)
         index = index + 1
         rowGroup = rowGroup + 1
@@ -332,7 +331,16 @@ class TableNewProcessor(cm: TableModel) {
 
   def getColumnSchema(dataType: DataType, colName: String, index: Integer, isCol: Boolean,
       encoders: java.util.List[Encoding], isDimensionCol: Boolean,
-      colGroup: Integer, precision: Integer, scale: Integer, schemaOrdinal: Int): ColumnSchema = {
+      colGroup: Integer, field: Field,
+      bitmapCols: Array[String]): ColumnSchema = {
+    var precision = 0
+    var scale = 0
+    var schemaOrdinal = -1
+    if (field != null) {
+      precision = field.precision
+      scale = field.scale
+      schemaOrdinal = field.schemaOrdinal
+    }
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
@@ -356,6 +364,13 @@ class TableNewProcessor(cm: TableModel) {
     columnSchema.setScale(scale)
     columnSchema.setSchemaOrdinal(schemaOrdinal)
     columnSchema.setSortColumn(false)
+    if (bitmapCols != null && bitmapCols.contains(colName)) {
+      if (columnSchema.hasEncoding(Encoding.DICTIONARY)) {
+        columnSchema.getEncodingList.add(Encoding.BITMAP)
+      } else {
+        throw new Exception("bitmap encoding column must have dictionary encoding")
+      }
+    }
     // TODO: Need to fill RowGroupID, converted type
     // & Number of Children after DDL finalization
     columnSchema
@@ -366,6 +381,11 @@ class TableNewProcessor(cm: TableModel) {
     val LOGGER = LogServiceFactory.getLogService(TableNewProcessor.getClass.getName)
     var allColumns = Seq[ColumnSchema]()
     var index = 0
+    var bitmapOption = cm.tableProperties.get(CarbonCommonConstants.BITMAP_ENCODING)
+    var bitmapCols: Array[String] = new Array[String](0)
+    if (bitmapOption.isDefined) {
+       bitmapCols = bitmapOption.get.split(CarbonCommonConstants.COMMA)
+     }
     var measureCount = 0
 
     // Sort columns should be at the begin of all columns
@@ -381,9 +401,8 @@ class TableNewProcessor(cm: TableModel) {
         encoders,
         isDimensionCol = true,
         -1,
-        field.precision,
-        field.scale,
-        field.schemaOrdinal)
+        field,
+        bitmapCols)
       columnSchema.setSortColumn(true)
       allColumns :+= columnSchema
       index = index + 1
@@ -402,9 +421,8 @@ class TableNewProcessor(cm: TableModel) {
           encoders,
           isDimensionCol = true,
           -1,
-          field.precision,
-          field.scale,
-          field.schemaOrdinal)
+          field,
+          bitmapCols)
         allColumns :+= columnSchema
         index = index + 1
         if (field.children.isDefined && field.children.get != null) {
@@ -424,9 +442,7 @@ class TableNewProcessor(cm: TableModel) {
         encoders,
         isDimensionCol = false,
         -1,
-        field.precision,
-        field.scale,
-        field.schemaOrdinal)
+        field, null)
       allColumns :+= columnSchema
       index = index + 1
       measureCount += 1
@@ -456,7 +472,8 @@ class TableNewProcessor(cm: TableModel) {
       // When the column is measure or the specified no inverted index column in DDL,
       // set useInvertedIndex to false, otherwise true.
       if (noInvertedIndexCols.contains(column.getColumnName) ||
-          cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
+        cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))
+        || column.getEncodingList.contains(Encoding.BITMAP)) {
         column.setUseInvertedIndex(false)
       } else {
         column.setUseInvertedIndex(true)
@@ -472,7 +489,7 @@ class TableNewProcessor(cm: TableModel) {
         true,
         encoders,
         false,
-        -1, 0, 0, schemaOrdinal = -1)
+        -1, null, null)
       columnSchema.setInvisible(true)
       allColumns :+= columnSchema
     }

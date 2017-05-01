@@ -108,6 +108,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return org.apache.carbondata.format.Encoding.BIT_PACKED;
       case DIRECT_DICTIONARY:
         return org.apache.carbondata.format.Encoding.DIRECT_DICTIONARY;
+      case BITMAP:
+        return org.apache.carbondata.format.Encoding.BITMAP;
       default:
         return org.apache.carbondata.format.Encoding.DICTIONARY;
     }
@@ -305,6 +307,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return Encoding.BIT_PACKED;
       case DIRECT_DICTIONARY:
         return Encoding.DIRECT_DICTIONARY;
+      case BITMAP:
+        return Encoding.BITMAP;
       default:
         return Encoding.DICTIONARY;
     }
