@@ -17,7 +17,9 @@
 
 package org.apache.carbondata.processing.newflow.sort.unsafe;
 
+import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryBlock;
+import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 
 /**
  * Holds the pointers for rows.
@@ -32,6 +34,8 @@ public class IntPointerBuffer {
   private int[] pointerBlock;
 
   private MemoryBlock baseBlock;
+
+  private MemoryBlock pointerMemoryBlock;
 
   public IntPointerBuffer(MemoryBlock baseBlock) {
     // TODO can be configurable, it is initial size and it can grow automatically.
@@ -61,7 +65,21 @@ public class IntPointerBuffer {
   public int get(int index) {
     assert index >= 0 : "index (" + index + ") should >= 0";
     assert index < length : "index (" + index + ") should < length (" + length + ")";
+    if (pointerBlock == null) {
+      return CarbonUnsafe.unsafe.getInt(pointerMemoryBlock.getBaseObject(),
+          pointerMemoryBlock.getBaseOffset() + (index * 4));
+    }
     return pointerBlock[index];
+  }
+
+  public void loadToUnsafe() throws CarbonSortKeyAndGroupByException {
+    pointerMemoryBlock = UnsafeSortDataRows.getMemoryBlock(pointerBlock.length * 4);
+    for (int i = 0; i < pointerBlock.length; i++) {
+      CarbonUnsafe.unsafe
+          .putInt(pointerMemoryBlock.getBaseObject(), pointerMemoryBlock.getBaseOffset() + i * 4,
+              pointerBlock[i]);
+    }
+    pointerBlock = null;
   }
 
   public int getActualSize() {
@@ -89,6 +107,9 @@ public class IntPointerBuffer {
 
   public void freeMemory() {
     pointerBlock = null;
+    if (pointerMemoryBlock != null) {
+      UnsafeMemoryManager.INSTANCE.freeMemory(pointerMemoryBlock);
+    }
     if (baseBlock != null) {
       UnsafeMemoryManager.INSTANCE.freeMemory(baseBlock);
     }
