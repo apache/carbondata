@@ -83,8 +83,12 @@ public class CarbonHiveSerDe extends AbstractSerDe {
 
     final TypeInfo rowTypeInfo;
     final List<String> columnNames;
+    final List<String> reqColNames;
     final List<TypeInfo> columnTypes;
     // Get column names and sort order
+    assert configuration != null;
+    final String colIds = configuration.get("hive.io.file.readcolumn.ids");
+
     final String columnNameProperty = tbl.getProperty(serdeConstants.LIST_COLUMNS);
     final String columnTypeProperty = tbl.getProperty(serdeConstants.LIST_COLUMN_TYPES);
 
@@ -98,14 +102,29 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     } else {
       columnTypes = TypeInfoUtils.getTypeInfosFromTypeString(columnTypeProperty);
     }
-    // Create row related objects
-    rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
-    this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
+    if (colIds != null && !colIds.equals("")) {
+        reqColNames = new ArrayList<String>();
 
-    // Stats part
-    serializedSize = 0;
-    deserializedSize = 0;
-    status = LAST_OPERATION.UNKNOWN;
+        String[] arraySelectedColId = colIds.split(",");
+        List<TypeInfo> reqColTypes = new ArrayList<TypeInfo>();
+        for (String anArrayColId : arraySelectedColId) {
+          reqColNames.add(columnNames.get(Integer.parseInt(anArrayColId)));
+          reqColTypes.add(columnTypes.get(Integer.parseInt(anArrayColId)));
+        }
+        // Create row related objects
+        rowTypeInfo = TypeInfoFactory.getStructTypeInfo(reqColNames, reqColTypes);
+        this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
+      }
+    else {
+      // Create row related objects
+      rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
+      this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
+
+      // Stats part
+      serializedSize = 0;
+      deserializedSize = 0;
+      status = LAST_OPERATION.UNKNOWN;
+    }
   }
 
   @Override
@@ -117,7 +136,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
   public Writable serialize(Object obj, ObjectInspector objectInspector) throws SerDeException {
     if (!objInspector.getCategory().equals(ObjectInspector.Category.STRUCT)) {
       throw new SerDeException("Cannot serialize " + objInspector.getCategory()
-        + ". Can only serialize a struct");
+          + ". Can only serialize a struct");
     }
     serializedSize += ((StructObjectInspector) objInspector).getAllStructFieldRefs().size();
     status = LAST_OPERATION.SERIALIZE;
@@ -138,7 +157,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
   }
 
   private ArrayWritable createArray(Object obj, ListObjectInspector inspector)
-    throws SerDeException {
+      throws SerDeException {
     List sourceArray = inspector.getList(obj);
     ObjectInspector subInspector = inspector.getListElementObjectInspector();
     List array = new ArrayList();
@@ -162,7 +181,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
   }
 
   private Writable createPrimitive(Object obj, PrimitiveObjectInspector inspector)
-    throws SerDeException {
+      throws SerDeException {
     if (obj == null) {
       return null;
     }
