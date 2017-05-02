@@ -128,8 +128,7 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
       throws IOException {
     CarbonDictionaryReader dictionaryReader = getDictionaryReader(columnIdentifier);
     try {
-      Iterator<byte[]> columnDictionaryChunkWrapper = dictionaryReader.read(startOffset, endOffset);
-      return columnDictionaryChunkWrapper;
+      return dictionaryReader.read(startOffset, endOffset);
     } finally {
       dictionaryReader.close();
     }

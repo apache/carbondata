@@ -203,8 +203,7 @@ public final class CarbonDataProcessorUtil {
         CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTable.getCarbonTableIdentifier());
     String carbonDataDirectoryPath =
         carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId + "");
-    String localDataLoadFolderLocation = carbonDataDirectoryPath + File.separator + taskId;
-    return localDataLoadFolderLocation;
+    return carbonDataDirectoryPath + File.separator + taskId;
   }
 
   /**
