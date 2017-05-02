@@ -325,9 +325,8 @@ public class CarbonCompactionUtil {
     for (CarbonMeasure measure : masterSchemaMeasures) {
       updatedColumnSchemaList.add(measure.getColumnSchema());
     }
-    int[] updatedCardinality = ArrayUtils
+    return ArrayUtils
         .toPrimitive(updatedCardinalityList.toArray(new Integer[updatedCardinalityList.size()]));
-    return updatedCardinality;
   }
 
   /**

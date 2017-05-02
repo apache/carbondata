@@ -40,12 +40,11 @@ public class CarbonIndexFileReader {
    * @throws IOException if any problem  while reader the header
    */
   public IndexHeader readIndexHeader() throws IOException {
-    IndexHeader indexHeader = (IndexHeader) thriftReader.read(new ThriftReader.TBaseCreator() {
+    return (IndexHeader) thriftReader.read(new ThriftReader.TBaseCreator() {
       @Override public TBase create() {
         return new IndexHeader();
       }
     });
-    return indexHeader;
   }
 
   /**
@@ -62,12 +61,11 @@ public class CarbonIndexFileReader {
    * @throws IOException if problem while reading the block index
    */
   public BlockIndex readBlockIndexInfo() throws IOException {
-    BlockIndex blockInfo = (BlockIndex) thriftReader.read(new ThriftReader.TBaseCreator() {
+    return (BlockIndex) thriftReader.read(new ThriftReader.TBaseCreator() {
       @Override public TBase create() {
         return new BlockIndex();
       }
     });
-    return blockInfo;
   }
 
   /**

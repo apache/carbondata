@@ -84,7 +84,6 @@ public class DictionaryServerClientDictionary implements BiDictionary<Integer, O
 
   @Override public int size() {
     dictionaryMessage.setType(DictionaryMessageType.SIZE);
-    int size = client.getDictionary(dictionaryMessage).getDictionaryValue() + base;
-    return size;
+    return client.getDictionary(dictionaryMessage).getDictionaryValue() + base;
   }
 }
