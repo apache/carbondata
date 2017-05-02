@@ -32,6 +32,7 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
 
+import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -267,10 +268,27 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
           }
 
 
+
           // validate tblProperties
           if (!CommonUtil.validateTblProperties(tableProperties, fields)) {
             throw new MalformedCarbonCommandException("Invalid table properties")
           }
+
+          val bucketNumber: Int = tableProperties.getOrElse("bucketnumber", "0").toInt
+          val bucketColumns: String = tableProperties.getOrElse("bucketcolumns", "")
+          bucketFields = if (bucketNumber != 0 && bucketColumns != "") {
+            if (bucketNumber.toString.contains("-") ||
+                bucketNumber.toString.contains("+")) {
+              throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED")
+            } else {
+              Some(BucketFields(bucketColumns.toLowerCase.split(",").map(_.trim),
+                bucketNumber))
+            }
+          } else {
+            None
+          }
+
+
           // prepare table model of the collected tokens
           val tableModel: TableModel = prepareTableModel(ifNotExistPresent,
             dbName,
