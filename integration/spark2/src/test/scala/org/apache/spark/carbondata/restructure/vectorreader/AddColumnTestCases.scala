@@ -18,7 +18,7 @@
 package org.apache.spark.carbondata.restructure.vectorreader
 
 import java.math.{BigDecimal, RoundingMode}
-import java.sql.Timestamp
+import java.sql.{Date, Timestamp}
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
@@ -307,6 +307,28 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from alter_decimal_filter where n3 = 1.22"),
       Row("xx", 1, new BigDecimal(1.2200).setScale(4, RoundingMode.HALF_UP)))
     sql("DROP TABLE IF EXISTS alter_decimal_filter")
+  }
+
+  test("test add column with date") {
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql("CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField timestamp, decimalField decimal(6,2)) STORED BY 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(
+      "Alter table carbon_table add columns(newField date) TBLPROPERTIES" +
+      "('DEFAULT.VALUE.newField'='2017-01-01')")
+    checkAnswer(sql("select distinct(newField) from carbon_table"), Row(Date.valueOf("2017-01-01")))
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+  test("test add column with timestamp") {
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql("CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField timestamp, decimalField decimal(6,2)) STORED BY 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(
+      "Alter table carbon_table add columns(newField timestamp) TBLPROPERTIES" +
+      "('DEFAULT.VALUE.newField'='01-01-2017 00:00:00.0')")
+    checkAnswer(sql("select distinct(newField) from carbon_table"), Row(Timestamp.valueOf("2017-01-01 00:00:00.0")))
+    sql("DROP TABLE IF EXISTS carbon_table")
   }
 
   override def afterAll {
