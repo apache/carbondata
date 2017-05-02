@@ -78,11 +78,10 @@ public class TableBlockUniqueIdentifier {
     BlockInfo blockInfo = new BlockInfo(this.tableBlockInfo);
     CarbonTableIdentifier carbonTableIdentifier =
         this.absoluteTableIdentifier.getCarbonTableIdentifier();
-    String uniqueTableBlockName = carbonTableIdentifier.getDatabaseName()
+    return carbonTableIdentifier.getDatabaseName()
         + CarbonCommonConstants.FILE_SEPARATOR + carbonTableIdentifier
         .getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR
         + this.tableBlockInfo.getSegmentId()
         + CarbonCommonConstants.FILE_SEPARATOR + blockInfo.hashCode();
-    return uniqueTableBlockName;
   }
 }

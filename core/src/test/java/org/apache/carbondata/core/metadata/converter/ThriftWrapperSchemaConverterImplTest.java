@@ -105,8 +105,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public long getTime_stamp() {
-        long time = 1112745600000L;
-        return time;
+        return 1112745600000L;
       }
 
       @Mock public List<org.apache.carbondata.format.ColumnSchema> getAdded() {

@@ -404,8 +404,7 @@ public class NonDictionaryUtil {
       builder.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
     }
     int lastIndex = builder.lastIndexOf(CarbonCommonConstants.COMA_SPC_CHARACTER);
-    String str = -1 != lastIndex ? builder.substring(0, lastIndex) : builder.toString();
-    return str;
+    return -1 != lastIndex ? builder.substring(0, lastIndex) : builder.toString();
   }
 
   /**

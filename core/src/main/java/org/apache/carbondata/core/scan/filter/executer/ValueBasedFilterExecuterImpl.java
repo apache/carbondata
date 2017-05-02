@@ -28,13 +28,11 @@ public class ValueBasedFilterExecuterImpl implements FilterExecuter {
   @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
       throws FilterUnsupportedException, IOException {
 
-    BitSetGroup bitSetGroup = new BitSetGroup(0);
-    return bitSetGroup;
+    return new BitSetGroup(0);
   }
 
   @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
-    BitSet bitSet = new BitSet(1);
-    return bitSet;
+    return new BitSet(1);
   }
 
   @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {

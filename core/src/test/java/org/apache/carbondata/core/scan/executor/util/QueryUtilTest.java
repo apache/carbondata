@@ -149,8 +149,7 @@ public class QueryUtilTest extends TestCase {
     int ordinal = 0;
     new MockUp<SegmentProperties>() {
       @Mock public int[][] getColumnGroups() {
-        int columnGroups[][] = { { 1, 1 }, { 2, 2 }, { 3, 3 }, { 4, 4 }, { 5, 5 } };
-        return columnGroups;
+        return new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 }, { 4, 4 }, { 5, 5 } };
       }
     };
     int actualValue = QueryUtil.getColumnGroupId(segmentProperties, ordinal);
@@ -162,8 +161,7 @@ public class QueryUtilTest extends TestCase {
     int ordinal = 1;
     new MockUp<SegmentProperties>() {
       @Mock public int[][] getColumnGroups() {
-        int columnGroups[][] = { { 1, 1 }, { 2, 2 }, { 3, 3 }, { 4, 4 }, { 5, 5 } };
-        return columnGroups;
+        return new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 }, { 4, 4 }, { 5, 5 } };
       }
     };
     int actualValue = QueryUtil.getColumnGroupId(segmentProperties, ordinal);
@@ -175,8 +173,7 @@ public class QueryUtilTest extends TestCase {
     int ordinal = 1;
     new MockUp<SegmentProperties>() {
       @Mock public int[][] getColumnGroups() {
-        int columnGroups[][] = { { 1 } };
-        return columnGroups;
+        return new int[][] { { 1 } };
       }
     };
     int actualValue = QueryUtil.getColumnGroupId(segmentProperties, ordinal);

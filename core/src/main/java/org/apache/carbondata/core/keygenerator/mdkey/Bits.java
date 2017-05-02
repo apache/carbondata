@@ -89,9 +89,8 @@ public class Bits implements Serializable {
    * {start, end}
    */
   public int[] getKeyByteOffsets(int index) {
-    int prefixPaddingBits = length % 8 == 0 ? 0 : (8 - length % 8);
 
-    int priorLen = prefixPaddingBits;
+    int priorLen = length % 8 == 0 ? 0 : (8 - length % 8);
     int start = 0;
     int end = 0;
 

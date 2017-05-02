@@ -138,10 +138,9 @@ public class NumberCompressor {
   }
 
   public int[] unCompress(byte[] key, int offset, int length) {
-    int ls = length;
-    int arrayLength = (ls * BYTE_LENGTH) / bitsLength;
-    long[] words = new long[getWordsSizeFromBytesSize(ls)];
-    unCompressVal(key, ls, words, offset);
+    int arrayLength = (length * BYTE_LENGTH) / bitsLength;
+    long[] words = new long[getWordsSizeFromBytesSize(length)];
+    unCompressVal(key, length, words, offset);
     return getArray(words, arrayLength);
   }
 

@@ -83,9 +83,7 @@ public final class DataLoadProcessBuilder {
     AbstractDataLoadProcessorStep sortProcessorStep =
         new SortProcessorStepImpl(configuration, converterProcessorStep);
     // 4. Writes the sorted data in carbondata format.
-    AbstractDataLoadProcessorStep writerProcessorStep =
-        new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
-    return writerProcessorStep;
+    return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
   }
 
   private AbstractDataLoadProcessorStep buildInternalForNoSort(CarbonIterator[] inputIterators,
@@ -116,9 +114,7 @@ public final class DataLoadProcessBuilder {
     AbstractDataLoadProcessorStep sortProcessorStep =
         new SortProcessorStepImpl(configuration, converterProcessorStep);
     // 4. Writes the sorted data in carbondata format.
-    AbstractDataLoadProcessorStep writerProcessorStep =
-        new DataWriterBatchProcessorStepImpl(configuration, sortProcessorStep);
-    return writerProcessorStep;
+    return new DataWriterBatchProcessorStepImpl(configuration, sortProcessorStep);
   }
 
   private AbstractDataLoadProcessorStep buildInternalForBucketing(CarbonIterator[] inputIterators,
@@ -134,9 +130,7 @@ public final class DataLoadProcessBuilder {
     AbstractDataLoadProcessorStep sortProcessorStep =
         new SortProcessorStepImpl(configuration, converterProcessorStep);
     // 4. Writes the sorted data in carbondata format.
-    AbstractDataLoadProcessorStep writerProcessorStep =
-        new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
-    return writerProcessorStep;
+    return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
   }
 
   private CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel,

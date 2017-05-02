@@ -38,8 +38,7 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
   }
 
   @Override public BatchResult next() {
-    BatchResult batchResult = getBatchResult();
-    return batchResult;
+    return getBatchResult();
   }
 
   private BatchResult getBatchResult() {
