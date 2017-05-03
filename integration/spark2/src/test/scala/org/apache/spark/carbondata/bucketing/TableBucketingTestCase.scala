@@ -30,10 +30,13 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
 
+  var threshold: Int = _
+
   override def beforeAll {
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    threshold = sqlContext.getConf("spark.sql.autoBroadcastJoinThreshold").toInt
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", "-1")
     sql("DROP TABLE IF EXISTS t3")
     sql("DROP TABLE IF EXISTS t4")
@@ -212,5 +215,6 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t6")
     sql("DROP TABLE IF EXISTS t7")
     sql("DROP TABLE IF EXISTS t8")
+    sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", threshold.toString)
   }
 }
