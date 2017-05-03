@@ -219,6 +219,28 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     (Integer.parseInt(scaleAndPrecision(0).trim), Integer.parseInt(scaleAndPrecision(1).trim))
   }
 
+  def validateDecimalType(dataType: String): (Boolean, Int, Int) = {
+    val scaleAndPrecision: Option[(Int, Int)] = try {
+      Some(getScaleAndPrecision(dataType))
+    }
+    catch {
+      case ex: IllegalStateException => throw new MalformedCarbonCommandException(
+        "Invalid value for Scale and Precison")
+    }
+    val precision: Int = scaleAndPrecision.get._1
+    val scale: Int = scaleAndPrecision.get._2
+    if (precision < 1) {
+      throw new MalformedCarbonCommandException("Decimal format provided is invalid")
+    }
+    // precision should be > 0 and <= 38 and scale should be >= 0 and <= 38
+    if (precision < 1 || precision > 38) {
+      throw new MalformedCarbonCommandException("Invalid value for precision")
+    } else if (scale < 0 || scale > 38) {
+      throw new MalformedCarbonCommandException("Invalid value for scale")
+    }
+    (true, precision, scale)
+  }
+
   /**
    * This will prepate the Model from the Tree details.
    *
@@ -1056,28 +1078,26 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         if (listOfChildren.get(0).dataType.get.equals("bigint")) {
           DataTypeInfo(actualDataType)
         }
+        else if (listOfChildren.get(0).dataType.get.startsWith("decimal")) {
+          val validDataType = validateDecimalType(listOfChildren.get(0).dataType.get)
+          if (validDataType._1) {
+            DataTypeInfo(actualDataType, validDataType._2, validDataType._3)
+          }
+          else {
+            throw new MalformedCarbonCommandException("Invalid data type")
+          }
+        }
         else {
           throw new MalformedCarbonCommandException("Invalid data type")
         }
       case "decimal" =>
-        val scaleAndPrecision: Option[(Int, Int)] = try {
-          Some(getScaleAndPrecision(dataType))
+        val validDataType = validateDecimalType(dataType)
+        if (validDataType._1) {
+          DataTypeInfo(actualDataType, validDataType._2, validDataType._3)
         }
-        catch {
-          case ex:IllegalStateException=>throw new MalformedCarbonCommandException("Invalid value for Scale and Precison")
+        else {
+          throw new MalformedCarbonCommandException("Invalid data type")
         }
-          val precision: Int = scaleAndPrecision.get._1
-          val scale: Int = scaleAndPrecision.get._2
-          if (precision < 1) {
-            throw new MalformedCarbonCommandException("Decimal format provided is invalid")
-          }
-          // precision should be > 0 and <= 38 and scale should be >= 0 and <= 38
-          if (precision < 1 || precision > 38) {
-            throw new MalformedCarbonCommandException("Invalid value for precision")
-          } else if (scale < 0 || scale > 38) {
-            throw new MalformedCarbonCommandException("Invalid value for scale")
-          }
-          DataTypeInfo("decimal", precision, scale)
       case _ =>
         throw new MalformedCarbonCommandException("Data type provided is invalid.")
     }
