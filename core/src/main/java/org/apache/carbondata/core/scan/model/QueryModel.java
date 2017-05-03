@@ -220,19 +220,19 @@ public class QueryModel implements Serializable {
     return queryDimension;
   }
 
-
-  public List<QueryDimension> getComplexQueryDimension(){
+  public List<QueryDimension> getComplexQueryDimension() {
     List<QueryDimension> complexQueryDimension = new ArrayList<>();
     for (QueryDimension queryDimensionTemp : queryDimension) {
-      if (queryDimensionTemp.getDimension().getDataType()== DataType.ARRAY) {
+      if (queryDimensionTemp.getDimension().getDataType() == DataType.ARRAY) {
         complexQueryDimension.add(queryDimensionTemp);
       }
-      if (queryDimensionTemp.getDimension().getDataType()== DataType.STRUCT) {
+      if (queryDimensionTemp.getDimension().getDataType() == DataType.STRUCT) {
         complexQueryDimension.add(queryDimensionTemp);
       }
     }
     return complexQueryDimension;
   }
+
   /**
    * @param queryDimension the queryDimension to set
    */
@@ -366,13 +366,14 @@ public class QueryModel implements Serializable {
   public void setVectorReader(boolean vectorReader) {
     this.vectorReader = vectorReader;
   }
+
   public void setInvalidBlockForSegmentId(List<UpdateVO> invalidSegmentTimestampList) {
     for (UpdateVO anUpdateVO : invalidSegmentTimestampList) {
       this.invalidSegmentBlockIdMap.put(anUpdateVO.getSegmentId(), anUpdateVO);
     }
   }
 
-  public Map<String,UpdateVO>  getInvalidBlockVOForSegmentId() {
-    return  invalidSegmentBlockIdMap;
+  public Map<String, UpdateVO> getInvalidBlockVOForSegmentId() {
+    return invalidSegmentBlockIdMap;
   }
 }

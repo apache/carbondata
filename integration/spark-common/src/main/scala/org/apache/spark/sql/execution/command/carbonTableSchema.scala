@@ -32,9 +32,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.{BucketingInfo, SchemaEvolution, SchemaEvolutionEntry}
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
+import org.apache.carbondata.core.metadata.schema.{BucketingInfo, SchemaEvolution,
+SchemaEvolutionEntry}
 import org.apache.carbondata.core.service.CarbonCommonFactory
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.DataTypeUtil
@@ -43,8 +44,7 @@ import org.apache.carbondata.processing.merger.CompactionType
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.load.FailureCauses
-import org.apache.carbondata.spark.rdd.AlterTableAddColumnRDD
-import org.apache.carbondata.spark.util.{DataTypeConverterUtil, GlobalDictionaryUtil}
+import org.apache.carbondata.spark.util.DataTypeConverterUtil
 
 case class TableModel(
     ifNotExistsSet: Boolean,
@@ -58,7 +58,7 @@ case class TableModel(
     noInvertedIdxCols: Option[Seq[String]],
     columnGroups: Seq[String],
     colProps: Option[util.Map[String,
-    util.List[ColumnProperty]]] = None,
+      util.List[ColumnProperty]]] = None,
     bucketFields: Option[BucketFields])
 
 case class Field(column: String, var dataType: Option[String], name: Option[String],
@@ -82,7 +82,7 @@ case class BucketFields(bucketColumns: Seq[String], numberOfBuckets: Int)
 
 case class DataLoadTableFileMapping(table: String, loadPath: String)
 
-case class ExecutionErrors(var failureCauses: FailureCauses, var errorMsg: String )
+case class ExecutionErrors(var failureCauses: FailureCauses, var errorMsg: String)
 
 case class CarbonMergerMapping(storeLocation: String,
     hdfsStoreLocation: String,
@@ -102,15 +102,15 @@ case class CarbonMergerMapping(storeLocation: String,
 case class NodeInfo(TaskId: String, noOfBlocks: Int)
 
 case class AlterTableModel(dbName: Option[String],
-                           tableName: String,
-                           segmentUpdateStatusManager: Option[SegmentUpdateStatusManager],
-                           compactionType: String,
-                           factTimeStamp: Option[Long],
-                           var alterSql: String)
+    tableName: String,
+    segmentUpdateStatusManager: Option[SegmentUpdateStatusManager],
+    compactionType: String,
+    factTimeStamp: Option[Long],
+    var alterSql: String)
 
 case class UpdateTableModel(isUpdate: Boolean,
-                            updatedTimeStamp: Long,
-                            var executorErrors: ExecutionErrors)
+    updatedTimeStamp: Long,
+    var executorErrors: ExecutionErrors)
 
 case class CompactionModel(compactionSize: Long,
     compactionType: CompactionType,
@@ -133,7 +133,7 @@ case class AlterTableDataTypeChangeModel(dataTypeInfo: DataTypeInfo,
     databaseName: Option[String],
     tableName: String,
     columnName: String,
-    newColumnName: String,listOfChildren: Option[List[Field]])
+    newColumnName: String, listOfChildren: Option[List[Field]])
 
 case class AlterTableRenameModel(
     oldTableIdentifier: TableIdentifier,
@@ -207,14 +207,14 @@ class AlterTableColumnSchemaGenerator(
     // Its based on the dimension name and measure name
     allColumns.filter(x => !x.isInvisible).groupBy(_.getColumnName)
       .foreach(f => if (f._2.size > 1) {
-      val name = f._1
-      LOGGER.error(s"Duplicate column found with name: $name")
-      LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation " +
-        s"for ${ dbName }.${ alterTableModel.tableName }. " +
-        s"Duplicate column found with name: $name")
-      sys.error(s"Duplicate column found with name: $name")
-    })
+        val name = f._1
+        LOGGER.error(s"Duplicate column found with name: $name")
+        LOGGER.audit(
+          s"Validation failed for Create/Alter Table Operation " +
+          s"for ${ dbName }.${ alterTableModel.tableName }. " +
+          s"Duplicate column found with name: $name")
+        sys.error(s"Duplicate column found with name: $name")
+      })
 
     val columnValidator = CarbonSparkFactory.getCarbonColumnValidator()
     columnValidator.validateColumns(allColumns)
@@ -289,6 +289,7 @@ class AlterTableColumnSchemaGenerator(
     columnSchema
   }
 }
+
 object TableNewProcessor {
   def apply(cm: TableModel): TableInfo = {
     new TableNewProcessor(cm).process
@@ -406,8 +407,8 @@ class TableNewProcessor(cm: TableModel) {
       LOGGER.error(s"Duplicate column found with name: $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Table Operation " +
-            s"for ${ cm.databaseName }.${ cm.tableName }" +
-            s"Duplicate column found with name: $name")
+        s"for ${ cm.databaseName }.${ cm.tableName }" +
+        s"Duplicate column found with name: $name")
       sys.error(s"Duplicate dimensions found with name: $name")
     })
 
@@ -485,9 +486,9 @@ class TableNewProcessor(cm: TableModel) {
               colSchema
             } else {
               LOGGER.error(s"Bucket field must be dimension column and " +
-                           s"should not be measure or complex column: ${colSchema.getColumnName}")
+                           s"should not be measure or complex column: ${ colSchema.getColumnName }")
               sys.error(s"Bucket field must be dimension column and " +
-                        s"should not be measure or complex column: ${colSchema.getColumnName}")
+                        s"should not be measure or complex column: ${ colSchema.getColumnName }")
             }
           case _ =>
             LOGGER.error(s"Bucket field is not present in table columns")

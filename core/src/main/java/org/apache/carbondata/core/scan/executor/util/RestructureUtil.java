@@ -101,8 +101,10 @@ public class RestructureUtil {
           continue;
         }
         for (QueryDimension tableDimension : tableComplexDimension) {
-          if (tableDimension.getDimension().getColumnId().equals(queryDimension.getDimension().getColumnId())) {
-            QueryDimension currentBlockDimension = new QueryDimension(tableDimension.getDimension().getColName());
+          if (tableDimension.getDimension().getColumnId()
+              .equals(queryDimension.getDimension().getColumnId())) {
+            QueryDimension currentBlockDimension =
+                new QueryDimension(tableDimension.getDimension().getColName());
             // TODO: for complex dimension set scale and precision by traversing
             // the child dimensions
             currentBlockDimension.setDimension(tableDimension.getDimension());
@@ -280,8 +282,7 @@ public class RestructureUtil {
         case SHORT:
         case INT:
         case LONG:
-          value =
-              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
           measureDefaultValue = Long.parseLong(value);
           break;
         case DECIMAL:
@@ -292,8 +293,7 @@ public class RestructureUtil {
           measureDefaultValue = decimal;
           break;
         default:
-          value =
-              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
           Double parsedValue = Double.valueOf(value);
           if (!Double.isInfinite(parsedValue) && !Double.isNaN(parsedValue)) {
             measureDefaultValue = parsedValue;
@@ -317,18 +317,15 @@ public class RestructureUtil {
       String value = null;
       switch (columnSchema.getDataType()) {
         case SHORT:
-          value =
-              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
           measureDefaultValue = Short.parseShort(value);
           break;
         case INT:
-          value =
-              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
           measureDefaultValue = Integer.parseInt(value);
           break;
         case LONG:
-          value =
-              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
           measureDefaultValue = Long.parseLong(value);
           break;
         case DECIMAL:
@@ -339,8 +336,7 @@ public class RestructureUtil {
           measureDefaultValue = Decimal.apply(decimal);
           break;
         default:
-          value =
-              new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
           Double parsedValue = Double.valueOf(value);
           if (!Double.isInfinite(parsedValue) && !Double.isNaN(parsedValue)) {
             measureDefaultValue = parsedValue;

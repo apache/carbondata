@@ -119,7 +119,7 @@ object CarbonScalaUtil {
           val builder = new StringBuilder()
           s.foreach { x =>
             builder.append(getString(x, serializationNullFormat, delimiterLevel1,
-                delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
+              delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
           }
           builder.substring(0, builder.length - 1)
         case m: scala.collection.Map[Any, Any] =>
@@ -133,7 +133,7 @@ object CarbonScalaUtil {
           val builder = new StringBuilder()
           for (i <- 0 until r.length) {
             builder.append(getString(r(i), serializationNullFormat, delimiterLevel1,
-                delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
+              delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
           }
           builder.substring(0, builder.length - 1)
         case other => other.toString
@@ -159,13 +159,13 @@ object CarbonScalaUtil {
             } cannot be modified. Int can only be changed to bigInt")
         }
       case "ARRAY" =>
-            if (!dataTypeInfo.dataType.equals("array")) {
-              sys
-                .error(s"Given column ${ carbonColumn.getColName } with data type ${
-                  carbonColumn
-                    .getDataType.getName
-                } cannot be modified. Int can only be changed to bigInt")
-            }
+        if (!dataTypeInfo.dataType.equals("array")) {
+          sys
+            .error(s"Given column ${ carbonColumn.getColName } with data type ${
+              carbonColumn
+                .getDataType.getName
+            } cannot be modified. Int can only be changed to bigInt")
+        }
       case "DECIMAL" =>
         if (!dataTypeInfo.dataType.equals("decimal")) {
           sys
