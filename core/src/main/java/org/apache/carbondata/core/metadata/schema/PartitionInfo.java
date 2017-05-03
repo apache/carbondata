@@ -20,8 +20,8 @@ package org.apache.carbondata.core.metadata.schema;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.carbondata.core.metadata.schema.partition.Partitioning;
 import org.apache.carbondata.core.metadata.schema.partition.Partition;
+import org.apache.carbondata.core.metadata.schema.partition.Partitioning;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
