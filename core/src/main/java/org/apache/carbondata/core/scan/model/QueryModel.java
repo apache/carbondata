@@ -227,6 +227,9 @@ public class QueryModel implements Serializable {
       if (queryDimensionTemp.getDimension().getDataType()== DataType.ARRAY) {
         complexQueryDimension.add(queryDimensionTemp);
       }
+      if (queryDimensionTemp.getDimension().getDataType()== DataType.STRUCT) {
+        complexQueryDimension.add(queryDimensionTemp);
+      }
     }
     return complexQueryDimension;
   }
