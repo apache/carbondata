@@ -84,9 +84,7 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
 
   @Override public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
       throws CarbonDataLoadingException {
-    int inMemoryChunkSizeInMB = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB,
-            CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT));
+    int inMemoryChunkSizeInMB = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
     UnsafeSortDataRows sortDataRow =
         new UnsafeSortDataRows(sortParameters, unsafeIntermediateFileMerger, inMemoryChunkSizeInMB);
     final int batchSize = CarbonProperties.getInstance().getBatchSize();

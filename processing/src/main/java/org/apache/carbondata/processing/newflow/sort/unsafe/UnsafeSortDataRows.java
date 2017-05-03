@@ -84,7 +84,7 @@ public class UnsafeSortDataRows {
   private Semaphore semaphore;
 
   public UnsafeSortDataRows(SortParameters parameters,
-      UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger, int inMemoryChunkSizeInMB) {
+      UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger, int inMemoryChunkSize) {
     this.parameters = parameters;
 
     this.unsafeInMemoryIntermediateFileMerger = unsafeInMemoryIntermediateFileMerger;
@@ -92,7 +92,7 @@ public class UnsafeSortDataRows {
     // observer of writing file in thread
     this.threadStatusObserver = new ThreadStatusObserver();
 
-    this.inMemoryChunkSize = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
+    this.inMemoryChunkSize = inMemoryChunkSize;
     this.inMemoryChunkSize = this.inMemoryChunkSize * 1024 * 1024;
     enableInMemoryIntermediateMerge = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT,
@@ -206,8 +206,9 @@ public class UnsafeSortDataRows {
           unsafeInMemoryIntermediateFileMerger.startInmemoryMergingIfPossible();
         }
         unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
+        semaphore.acquire();
         dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
-        MemoryBlock memoryBlock = getMemoryBlock(inMemoryChunkSizeInMB * 1024 * 1024);
+        MemoryBlock memoryBlock = getMemoryBlock(inMemoryChunkSize);
         boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
         rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
             parameters.getDimColCount(), parameters.getMeasureColCount(),

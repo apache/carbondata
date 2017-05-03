@@ -82,9 +82,7 @@ public class UnsafeParallelReadMergeSorterWithBucketingImpl implements Sorter {
     UnsafeSortDataRows[] sortDataRows = new UnsafeSortDataRows[bucketingInfo.getNumberOfBuckets()];
     UnsafeIntermediateMerger[] intermediateFileMergers =
         new UnsafeIntermediateMerger[sortDataRows.length];
-    int inMemoryChunkSizeInMB = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB,
-            CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT));
+    int inMemoryChunkSizeInMB = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
     inMemoryChunkSizeInMB = inMemoryChunkSizeInMB / bucketingInfo.getNumberOfBuckets();
     if (inMemoryChunkSizeInMB < 5) {
       inMemoryChunkSizeInMB = 5;
