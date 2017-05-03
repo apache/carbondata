@@ -27,7 +27,7 @@ public class Partition implements Serializable {
   private int partitionId;
 
   /**
-   * boundary value list for multi-level partition
+   * boundary value list for partition
    */
   private List<String> boundaryValueList;
 
