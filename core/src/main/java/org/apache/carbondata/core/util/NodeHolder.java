@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.util;
 
 import java.util.BitSet;
+import java.util.List;
 
 import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 
@@ -154,6 +155,21 @@ public class NodeHolder {
    * data size this node holder is holding
    */
   private int holderSize;
+
+  /**
+   * dictArray for bitmap encode
+   */
+  private List[] dictArray;
+
+  /**
+   * bitmap encoded data page length
+   */
+  private List[] bitMapPagesLengthList;
+
+  /**
+   * isUseBitMap flg
+   */
+  private boolean[] isUseBitMap;
 
   /**
    * @return the keyArray
@@ -439,5 +455,29 @@ public class NodeHolder {
 
   public void setHolderSize(int holderSize) {
     this.holderSize = holderSize;
+  }
+
+  public List[] getDictArray() {
+    return dictArray;
+  }
+
+  public void setDictArray(List[] dictArray) {
+    this.dictArray = dictArray;
+  }
+
+  public List[] getBitMapPagesLengthList() {
+    return bitMapPagesLengthList;
+  }
+
+  public void setBitMapPagesLengthList(List[] bitMapPagesLengthList) {
+    this.bitMapPagesLengthList = bitMapPagesLengthList;
+  }
+
+  public boolean[] getIsUseBitMap() {
+    return isUseBitMap;
+  }
+
+  public void setIsUseBitMap(boolean[] isUseBitMap) {
+    this.isUseBitMap = isUseBitMap;
   }
 }

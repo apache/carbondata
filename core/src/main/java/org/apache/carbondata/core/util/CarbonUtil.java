@@ -479,13 +479,13 @@ public final class CarbonUtil {
   /**
    * search a specific key in sorted byte array
    *
-   * @param filterValues
+   * @param dataArrary
    * @param low
    * @param high
    * @param compareValue
    * @return the compareValue's index in the filterValues
    */
-  public static int binarySearch(byte[][] filterValues, int low, int high,
+  public static int binarySearch(byte[][] dataArrary, int low, int high,
       byte[] compareValue) {
 
     rangeCheck(low, high);
@@ -493,7 +493,7 @@ public final class CarbonUtil {
     while (low <= high) {
       int mid = (low + high) >>> 1;
 
-      int result = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[mid], compareValue);
+      int result = ByteUtil.UnsafeComparer.INSTANCE.compareTo(dataArrary[mid], compareValue);
 
       if (result < 0) {
         low = mid + 1;

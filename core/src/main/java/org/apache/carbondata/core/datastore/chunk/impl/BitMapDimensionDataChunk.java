@@ -16,9 +16,12 @@
  */
 package org.apache.carbondata.core.datastore.chunk.impl;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import java.util.BitSet;
+import java.util.List;
+
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory.DimensionStoreType;
+import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeBitMapDimensionDataChunkStore;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
@@ -26,8 +29,10 @@ import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 /**
  * This class is gives access to fixed length dimension data chunk store
  */
-public class FixedLengthDimensionDataChunk extends AbstractDimensionDataChunk {
+public class BitMapDimensionDataChunk extends AbstractDimensionDataChunk {
 
+  private List<Integer> bitmap_encoded_dictionaries;
+  private List<Integer> bitmap_data_pages_length;
   /**
    * Constructor
    *
@@ -37,15 +42,15 @@ public class FixedLengthDimensionDataChunk extends AbstractDimensionDataChunk {
    * @param numberOfRows         number of rows
    * @param columnValueSize      size of each column value
    */
-  public FixedLengthDimensionDataChunk(byte[] dataChunk, int[] invertedIndex,
-      int[] invertedIndexReverse, int numberOfRows, int columnValueSize) {
-    long totalSize = null != invertedIndex ?
-        dataChunk.length + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) :
-        dataChunk.length;
-    dataChunkStore = DimensionChunkStoreFactory.INSTANCE
-        .getDimensionChunkStore(columnValueSize, null != invertedIndex, numberOfRows, totalSize,
-            DimensionStoreType.FIXEDLENGTH, null, null);
-    dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunk);
+  public BitMapDimensionDataChunk(byte[] dataChunk, List<Integer> bitmap_encoded_dictionaries,
+      List<Integer> bitmap_data_pages_length, int numberOfRows, int columnValueSize) {
+    this.bitmap_encoded_dictionaries = bitmap_encoded_dictionaries;
+    this.bitmap_data_pages_length = bitmap_data_pages_length;
+    long totalSize = dataChunk.length;
+    dataChunkStore = DimensionChunkStoreFactory.INSTANCE.getDimensionChunkStore(columnValueSize,
+        false, bitmap_encoded_dictionaries.size(), totalSize, DimensionStoreType.BITMAP,
+        bitmap_encoded_dictionaries, bitmap_data_pages_length);
+    dataChunkStore.putArray(null, null, dataChunk);
   }
 
   /**
@@ -155,5 +160,9 @@ public class FixedLengthDimensionDataChunk extends AbstractDimensionDataChunk {
       }
     }
     return column + 1;
+  }
+  public BitSet applyIncludeFilter(byte[][] filterValues) {
+
+    return ((SafeBitMapDimensionDataChunkStore)dataChunkStore).applyIncludeFilter(filterValues);
   }
 }

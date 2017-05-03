@@ -152,6 +152,12 @@ public class CarbonColumn implements Serializable {
   public Boolean isUseInvertedIndex() {
     return columnSchema.isUseInvertedIndex();
   }
+  /**
+   * @return if column use bitmap return true, else false.
+   */
+  public Boolean isUseBitMap() {
+    return columnSchema.isUseBitMap();
+  }
   public ColumnSchema getColumnSchema() {
     return this.columnSchema;
   }

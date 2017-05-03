@@ -24,7 +24,7 @@ import java.util.BitSet;
  */
 public class BitSetGroup {
 
-  private BitSet[] bitSets;
+  protected BitSet[] bitSets;
 
   public BitSetGroup(int groupSize) {
     bitSets = new BitSet[groupSize];

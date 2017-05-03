@@ -44,6 +44,52 @@ public final class ByteUtil {
   }
 
   /**
+   * Converts byte[] to column dictionary integer value with specific columnSize
+   */
+  public static int convertByteArrayToInt(byte[] dictionary, int columnSize) {
+
+    int dict = 0;
+    for (int i = 0; i < columnSize; i++) {
+      dict <<= 8;
+      dict ^= dictionary[i] & 0xFF;
+    }
+    return dict;
+  }
+
+  /**
+   * Converts byte[] to column dictionary integer value
+   */
+  public static int convertByteArrayToInt(byte[] dictionary) {
+
+    int dict = 0;
+    for (int i = 0; i < dictionary.length; i++) {
+      dict <<= 8;
+      dict ^= dictionary[i] & 0xFF;
+    }
+    return dict;
+  }
+
+  /**
+   * change int to byte[]
+   *
+   * @param value
+   * @param size
+   * @return byte[]
+   */
+  public static byte[] convertIntToByteArray(int value, int size) {
+    byte[] targets = new byte[size];
+    for (int i = 0; i < size; i++) {
+      int data = value;
+      for (int j = i; j < size - 1; j++) {
+        data = data >> 8;
+      }
+      data = data & 0xFF;
+      targets[i] = (byte) (data & 0xFF);
+    }
+    return targets;
+  }
+
+  /**
    * Compare method for bytes
    *
    * @param buffer1

@@ -57,7 +57,7 @@ public class VariableLengthDimensionDataChunk extends AbstractDimensionDataChunk
         (dataChunks.length + (numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE));
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE
         .getDimensionChunkStore(0, null != invertedIndex, numberOfRows, totalSize,
-            DimensionStoreType.VARIABLELENGTH);
+            DimensionStoreType.VARIABLELENGTH, null, null);
     dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunks);
   }
 

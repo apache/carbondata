@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.BitMapDimensionDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.ColumnGroupDimensionDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
@@ -259,11 +260,18 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
           new VariableLengthDimensionDataChunk(dataPage, invertedIndexes, invertedIndexesReverse,
               dimensionRawColumnChunk.getRowCount()[pageNumber]);
     } else {
-      // to store fixed length column chunk values
-      columnDataChunk =
-          new FixedLengthDimensionDataChunk(dataPage, invertedIndexes, invertedIndexesReverse,
-              dimensionRawColumnChunk.getRowCount()[pageNumber],
-              eachColumnValueSize[dimensionRawColumnChunk.getBlockletId()]);
+      if (hasEncoding(dimensionColumnChunk.encoders, Encoding.BITMAP)) {
+        columnDataChunk = new BitMapDimensionDataChunk(dataPage,
+            dimensionColumnChunk.bitmap_encoded_dictionaries,
+            dimensionColumnChunk.getBitmap_data_pages_length(),
+            dimensionRawColumnChunk.getRowCount()[pageNumber],
+            eachColumnValueSize[dimensionRawColumnChunk.getBlockletId()]);
+      } else {
+        // to store fixed length column chunk values
+        columnDataChunk = new FixedLengthDimensionDataChunk(dataPage, invertedIndexes,
+            invertedIndexesReverse, dimensionRawColumnChunk.getRowCount()[pageNumber],
+            eachColumnValueSize[dimensionRawColumnChunk.getBlockletId()]);
+      }
     }
     return columnDataChunk;
   }

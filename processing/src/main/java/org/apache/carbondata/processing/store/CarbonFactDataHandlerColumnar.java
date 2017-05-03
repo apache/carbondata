@@ -42,6 +42,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForBitMapForShort;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForInt;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndex;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForShort;
@@ -66,6 +67,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.NodeHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.store.colgroup.ColGroupBlockStorage;
 import org.apache.carbondata.processing.store.colgroup.ColGroupDataHolder;
 import org.apache.carbondata.processing.store.colgroup.ColGroupMinMax;
@@ -184,6 +186,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private char[] type;
   private int[] completeDimLens;
   private boolean[] isUseInvertedIndex;
+  private boolean[] isUseBitMap;
   /**
    * data file attributes which will used for file construction
    */
@@ -290,12 +293,22 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.bucketNumber = carbonFactDataHandlerModel.getBucketId();
     this.taskExtension = carbonFactDataHandlerModel.getTaskExtension();
     this.isUseInvertedIndex = new boolean[columnStoreCount];
+    this.isUseBitMap = new boolean[columnStoreCount];
     if (null != carbonFactDataHandlerModel.getIsUseInvertedIndex()) {
       for (int i = 0; i < isUseInvertedIndex.length; i++) {
         if (i < carbonFactDataHandlerModel.getIsUseInvertedIndex().length) {
           isUseInvertedIndex[i] = carbonFactDataHandlerModel.getIsUseInvertedIndex()[i];
         } else {
           isUseInvertedIndex[i] = true;
+        }
+      }
+    }
+    if (null != carbonFactDataHandlerModel.getIsUseBitMap()) {
+      for (int i = 0; i < isUseBitMap.length; i++) {
+        if (i < carbonFactDataHandlerModel.getIsUseBitMap().length) {
+          isUseBitMap[i] = carbonFactDataHandlerModel.getIsUseBitMap()[i];
+        } else {
+          isUseBitMap[i] = false;
         }
       }
     }
@@ -786,7 +799,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         if (colGrpModel.isColumnar(dictionaryColumnCount)) {
           submit.add(executorService.submit(
               new BlockSortThread(i, dataHolders[dictionaryColumnCount].getData(), isSortColumn,
-                  isUseInvertedIndex[i] & isSortColumn)));
+                  isUseInvertedIndex[i] & isSortColumn, isUseBitMap[i])));
         } else {
           submit.add(
               executorService.submit(new ColGroupBlockStorage(dataHolders[dictionaryColumnCount])));
@@ -799,7 +812,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
     for (int k = 0; k < complexColCount; k++) {
       submit.add(executorService.submit(new BlockSortThread(i++,
-          colsAndValues.get(k).toArray(new byte[colsAndValues.get(k).size()][]), false, true)));
+          colsAndValues.get(k).toArray(new byte[colsAndValues.get(k).size()][]), false, true,
+          false)));
     }
     executorService.shutdown();
     try {
@@ -1143,6 +1157,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     System.arraycopy(blockKeySize, noOfColStore, keyBlockSize, noOfColStore,
         blockKeySize.length - noOfColStore);
     this.dataWriter = getFactDataWriter(keyBlockSize);
+    this.dataWriter.setIsUseBitMap(isUseBitMap);
     this.dataWriter.setIsNoDictionary(isNoDictionary);
     // initialize the channel;
     this.dataWriter.initializeWriter();
@@ -1445,16 +1460,18 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     private boolean isSortRequired;
     private boolean isCompressionReq;
     private boolean isUseInvertedIndex;
+    private boolean isUseBitMap;
 
     private boolean isNoDictionary;
 
     private BlockSortThread(int index, byte[][] data, boolean isSortRequired,
-        boolean isUseInvertedIndex) {
+        boolean isUseInvertedIndex, boolean isUseBitMap) {
       this.index = index;
       this.data = data;
       isCompressionReq = aggKeyBlock[this.index];
       this.isSortRequired = isSortRequired;
       this.isUseInvertedIndex = isUseInvertedIndex;
+      this.isUseBitMap = isUseBitMap;
     }
 
     public BlockSortThread(int index, byte[][] data, boolean b, boolean isNoDictionary,
@@ -1468,7 +1485,13 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
 
     @Override public IndexStorage call() throws Exception {
-      if (isUseInvertedIndex) {
+      if (isUseBitMap) {
+        if (version == ColumnarFormatVersion.V3) {
+          return new BlockIndexerStorageForBitMapForShort(this.data, isNoDictionary);
+        } else {
+          throw new CarbonDataLoadingException("BitMap is not support for version: " + version);
+        }
+      } else if (isUseInvertedIndex) {
         if (version == ColumnarFormatVersion.V3) {
           return new BlockIndexerStorageForShort(this.data, isCompressionReq, isNoDictionary,
               isSortRequired);

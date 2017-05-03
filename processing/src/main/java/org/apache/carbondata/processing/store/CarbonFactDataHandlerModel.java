@@ -107,6 +107,10 @@ public class CarbonFactDataHandlerModel {
    */
   private boolean[] isUseInvertedIndex;
   /**
+   * flag to check whether use bitmap
+   */
+  private boolean[] isUseBitMap;
+  /**
    * dimension cardinality
    */
   private int[] dimLens;
@@ -237,6 +241,8 @@ public class CarbonFactDataHandlerModel {
             carbonTable.getMeasureByTableName(identifier.getTableName()));
     int[] colCardinality =
         CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchema);
+    boolean[] isUseBitMap = CarbonDataProcessorUtil
+        .getIsUseBitMap(configuration.getDimensionFields(), colCardinality);
     SegmentProperties segmentProperties =
         new SegmentProperties(wrapperColumnSchema, colCardinality);
     // Actual primitive dimension used to generate start & end key
@@ -291,6 +297,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndex);
+    carbonFactDataHandlerModel.setIsUseBitMap(isUseBitMap);
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
     if (noDictionaryCount > 0 || complexDimensionCount > 0) {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount + 1);
@@ -353,9 +360,11 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     List<CarbonDimension> dimensionByTableName =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getDimensionByTableName(tableName);
+    // boolean[] isUseBitMap = new boolean[dimensionByTableName.size()];
     boolean[] isUseInvertedIndexes = new boolean[dimensionByTableName.size()];
     int index = 0;
     for (CarbonDimension dimension : dimensionByTableName) {
+      //isUseBitMap[index] = dimension.isUseBitMap();
       isUseInvertedIndexes[index++] = dimension.isUseInvertedIndex();
     }
     carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndexes);
@@ -539,6 +548,15 @@ public class CarbonFactDataHandlerModel {
   public void setIsUseInvertedIndex(boolean[] isUseInvertedIndex) {
     this.isUseInvertedIndex = isUseInvertedIndex;
   }
+
+  public boolean[] getIsUseBitMap() {
+    return isUseBitMap;
+  }
+
+  public void setIsUseBitMap(boolean[] isUseBitMap) {
+    this.isUseBitMap = isUseBitMap;
+  }
+
   /**
    *
    * @return segmentProperties

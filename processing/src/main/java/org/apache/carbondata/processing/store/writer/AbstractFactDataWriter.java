@@ -66,6 +66,7 @@ import org.apache.carbondata.core.writer.CarbonIndexFileWriter;
 import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.IndexHeader;
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.store.file.FileData;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
@@ -94,6 +95,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   protected List<BlockletInfoColumnar> blockletInfoList;
   protected boolean[] isNoDictionary;
+  protected boolean[] isUseBitMap;
   /**
    * The temp path of carbonData file used on executor
    */
@@ -610,11 +612,19 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
           }
         } else {
           if (dataWriterVo.getIsComplexType()[i]) {
+            if (this.isUseBitMap[i]) {
+              throw new CarbonDataLoadingException("bitmap encoded column can't be complex type");
+            }
             keyBlockData[i] = new byte[keyStorageArray[i].getKeyBlock().length * dataWriterVo
                 .getKeyBlockSize()[keyBlockSizePosition]];
           } else {
-            keyBlockData[i] =
-                new byte[entryCount * dataWriterVo.getKeyBlockSize()[keyBlockSizePosition]];
+            if (this.isUseBitMap[i]) {
+              // TODO
+              keyBlockData[i] = new byte[keyStorageArray[i].getTotalSize()];
+            } else {
+              keyBlockData[i] = new byte[entryCount
+                  * dataWriterVo.getKeyBlockSize()[keyBlockSizePosition]];
+            }
           }
           for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
             System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos,
@@ -696,5 +706,13 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       copyCarbonDataFileToCarbonStorePath(fileName);
       return null;
     }
+  }
+
+  public boolean[] getIsUseBitMap() {
+    return isUseBitMap;
+  }
+
+  public void setIsUseBitMap(boolean[] isUseBitMap) {
+    this.isUseBitMap = isUseBitMap;
   }
 }
