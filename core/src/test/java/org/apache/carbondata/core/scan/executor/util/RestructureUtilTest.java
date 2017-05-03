@@ -70,16 +70,21 @@ public class RestructureUtilTest {
         Arrays.asList(tableBlockDimension1, tableBlockDimension2);
 
     QueryDimension tableComplexDimension1 = new QueryDimension(columnSchema3.getColumnName());
+    tableComplexDimension1.setDimension(new CarbonDimension(columnSchema3,3,3,3,3));
     QueryDimension tableComplexDimension2 = new QueryDimension(columnSchema4.getColumnName());
+    tableComplexDimension2.setDimension(new CarbonDimension(columnSchema3,3,3,3,3));
+
     List<QueryDimension> tableComplexDimensions =
         Arrays.asList(tableComplexDimension1, tableComplexDimension2);
 
     QueryDimension queryDimension1 = new QueryDimension("Id");
     queryDimension1.setDimension(tableBlockDimension1);
+    queryDimension1.setDimension(new CarbonDimension(columnSchema1,3,3,3,3,3));
     QueryDimension queryDimension2 = new QueryDimension("Name");
     queryDimension2.setDimension(tableComplexDimension2.getDimension());
+    queryDimension2.setDimension(new CarbonDimension(columnSchema2,3,3,3,3,3));
     QueryDimension queryDimension3 = new QueryDimension("Address");
-    queryDimension3.setDimension(new CarbonDimension(columnSchema5, 3, 3, 3, 3));
+    queryDimension3.setDimension(new CarbonDimension(columnSchema3, 3, 3, 3,3, 3));
 
     List<QueryDimension> queryDimensions =
         Arrays.asList(queryDimension1, queryDimension2, queryDimension3);
@@ -93,9 +98,8 @@ public class RestructureUtilTest {
       resultDimension.add(queryDimension.getDimension());
     }
     assertThat(resultDimension,
-        is(equalTo(Arrays.asList(queryDimension1.getDimension(), queryDimension2.getDimension()))));
+        is(equalTo(Arrays.asList(queryDimension1.getDimension(), queryDimension2.getDimension(),queryDimension3.getDimension()))));
   }
-
   @Test public void testToGetAggregatorInfos() {
     ColumnSchema columnSchema1 = new ColumnSchema();
     columnSchema1.setColumnName("Id");
