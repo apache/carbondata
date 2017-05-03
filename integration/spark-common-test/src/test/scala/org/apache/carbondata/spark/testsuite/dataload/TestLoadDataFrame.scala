@@ -31,7 +31,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
 
   def buildTestData() = {
     import sqlContext.implicits._
-    df = sqlContext.sparkContext.parallelize(1 to 1000)
+    df = sqlContext.sparkContext.parallelize(1 to 32000)
       .map(x => ("a", "b", x))
       .toDF("c1", "c2", "c3")
 
@@ -62,6 +62,8 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     buildTestData
   }
 
+
+
   test("test load dataframe with saving compressed csv files") {
     // save dataframe to carbon file
     df.write
@@ -72,7 +74,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
     checkAnswer(
-      sql("select count(*) from carbon1 where c3 > 500"), Row(500)
+      sql("select count(*) from carbon1 where c3 > 500"), Row(31500)
     )
   }
 
@@ -86,7 +88,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
     checkAnswer(
-      sql("select count(*) from carbon2 where c3 > 500"), Row(500)
+      sql("select count(*) from carbon2 where c3 > 500"), Row(31500)
     )
   }
 
@@ -99,7 +101,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
     checkAnswer(
-      sql("select count(*) from carbon3 where c3 > 500"), Row(500)
+      sql("select count(*) from carbon3 where c3 > 500"), Row(31500)
     )
   }
 
@@ -113,6 +115,12 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("SELECT decimal FROM carbon4"),Seq(Row(BigDecimal.valueOf(10000.00)),Row(BigDecimal.valueOf(1234.44))))
   }
+
+  test("test loading data if the data count is multiple of page size"){
+    checkAnswer(
+      sql("SELECT count(*) FROM carbon2"),Seq(Row(32000)))
+  }
+
 
   override def afterAll {
     dropTable

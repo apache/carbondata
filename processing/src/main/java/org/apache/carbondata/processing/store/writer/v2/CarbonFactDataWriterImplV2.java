@@ -65,6 +65,9 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
    * @throws CarbonDataWriterException any problem in writing operation
    */
   @Override public void writeBlockletData(NodeHolder holder) throws CarbonDataWriterException {
+    if (holder.getEntryCount() == 0) {
+      return;
+    }
     // size to calculate the size of the blocklet
     int size = 0;
     // get the blocklet info object
