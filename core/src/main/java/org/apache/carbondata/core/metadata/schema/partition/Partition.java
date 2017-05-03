@@ -19,74 +19,46 @@ package org.apache.carbondata.core.metadata.schema.partition;
 import java.io.Serializable;
 import java.util.List;
 
-public class SinglePartition implements Serializable {
+/**
+ * One single partition
+ */
+public class Partition implements Serializable {
 
-  /**
-   * partition id
-   */
-  private int partition_id;
-
-  /**
-   * partition name
-   */
-  private String partition_name;
+  private int partitionId;
 
   /**
    * boundary value list for multi-level partition
    */
-  private List<String> boundary_value_list;
+  private List<String> boundaryValueList;
 
   /**
    *
-   * @param value_list
+   * @param valueList
    */
-  public SinglePartition(List<String> value_list) {
-    this.boundary_value_list = value_list;
+  public Partition(List<String> valueList) {
+    this.boundaryValueList = valueList;
   }
 
-  /**
-   *
-   * @param partition_name
-   * @param value_list
-   */
-  public SinglePartition(String partition_name, List<String> value_list) {
-    this(value_list);
-    this.partition_name = partition_name;
-  }
-
-  /**
-   * @param id
-   */
   public void setPartitionId(int id) {
-    this.partition_id = id;
+    this.partitionId = id;
   }
 
-  public int getPartition_id() {
-    return partition_id;
+  public int getPartitionId() {
+    return partitionId;
   }
 
   /**
-   * @param value_list
+   * @param valueList
    */
-  public void setBoundaryValue(List<String> value_list) {
-    this.boundary_value_list = value_list;
+  public void setBoundaryValue(List<String> valueList) {
+    this.boundaryValueList = valueList;
   }
 
   /**
    * @return boundary_value_list
    */
   public List<String> getBoundaryValue() {
-    return boundary_value_list;
+    return boundaryValueList;
   }
 
-  /**
-   * @param partitionName
-   */
-  public void setPartitionName(String partitionName) {
-    this.partition_name = partitionName;
-  }
-
-  public String getPartitionName() {
-    return partition_name;
-  }
 }

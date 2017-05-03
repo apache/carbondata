@@ -129,10 +129,9 @@ struct SchemaEvolution{
 /**
  * One partition in table
  */
-struct SinglePartition{
+struct Partition{
     1: optional i32 partition_id;
     2: required list<string> boundary_value_list;
-    3: optional string partition_name;
 }
 
 /**
@@ -141,7 +140,7 @@ struct SinglePartition{
 struct PartitionInfo{
     1: required list<ColumnSchema> partition_columns;
     2: required Partitioning partitioning;
-    3: optional list<SinglePartition> partition_list;
+    3: optional list<Partition> partition_list;
     4: optional i32 number_of_partitions;
 }
 

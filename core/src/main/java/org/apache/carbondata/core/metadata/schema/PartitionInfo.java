@@ -21,7 +21,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.schema.partition.Partitioning;
-import org.apache.carbondata.core.metadata.schema.partition.SinglePartition;
+import org.apache.carbondata.core.metadata.schema.partition.Partition;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
@@ -47,7 +47,7 @@ public class PartitionInfo implements Serializable {
   /**
    * Partition list
    */
-  private List<SinglePartition> partitionList;
+  private List<Partition> partitionList;
 
   /**
    * @param columnSchemaList
@@ -81,7 +81,7 @@ public class PartitionInfo implements Serializable {
     return  numberOfPartitions;
   }
 
-  public List<SinglePartition> getPartitionList() {
+  public List<Partition> getPartitionList() {
     return partitionList;
   }
 
