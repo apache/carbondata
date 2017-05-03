@@ -168,6 +168,13 @@ public class ColumnSchema implements Serializable {
   }
 
   /**
+   * the isUseBitMap
+   */
+  public boolean isUseBitMap() {
+    return this.hasEncoding(Encoding.BITMAP);
+  }
+
+  /**
    * the isUseInvertedIndex
    */
   public boolean isUseInvertedIndex() {

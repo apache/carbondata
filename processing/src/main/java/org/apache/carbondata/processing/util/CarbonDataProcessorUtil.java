@@ -263,6 +263,22 @@ public final class CarbonDataProcessorUtil {
         .toPrimitive(isUseInvertedIndexList.toArray(new Boolean[isUseInvertedIndexList.size()]));
   }
 
+  /**
+   * Preparing the boolean [] to map whether the dimension use bitmap or not.
+   */
+  public static boolean[] getIsUseBitMap(DataField[] dimFields, int[] colCardinality) {
+    boolean[] isUseBitMapArray = new boolean[dimFields.length];
+    for (int i = 0; i < dimFields.length; i++) {
+      if (dimFields[i].getColumn().isUseBitMap() && dimFields[i].getColumn().isDimesion()
+          && (colCardinality[i] - 1) <= CarbonCommonConstants.BITMAP_CARDINALITY_MAX_VALUE) {
+        isUseBitMapArray[i] = true;
+      } else if (dimFields[i].getColumn().isDimesion()) {
+        isUseBitMapArray[i] = false;
+      }
+    }
+    return isUseBitMapArray;
+  }
+
   private static String getComplexTypeString(DataField[] dataFields) {
     StringBuilder dimString = new StringBuilder();
     for (int i = 0; i < dataFields.length; i++) {

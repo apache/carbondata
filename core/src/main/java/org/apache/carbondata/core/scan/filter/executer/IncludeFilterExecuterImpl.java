@@ -21,6 +21,7 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.BitMapDimensionDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionDataChunk;
@@ -64,6 +65,8 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
           BitSet bitSet = getFilteredIndexes(dimensionRawColumnChunk.convertToDimColDataChunk(i),
               dimensionRawColumnChunk.getRowCount()[i]);
           bitSetGroup.setBitSet(bitSet, i);
+          // System.out.println(bitSet != null ? bitSet.toString() : "");
+          // System.out.println(bitSet.cardinality());
         }
       } else {
         BitSet bitSet = getFilteredIndexes(dimensionRawColumnChunk.convertToDimColDataChunk(i),
@@ -84,6 +87,9 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
         && dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
       return setFilterdIndexToBitSetWithColumnIndex(
           (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, numerOfRows);
+    } else if (dimensionColumnDataChunk instanceof BitMapDimensionDataChunk) {
+      return setFilterdIndexToBitSetWithColumnIndex(
+          (BitMapDimensionDataChunk) dimensionColumnDataChunk, numerOfRows);
     }
 
     return setFilterdIndexToBitSet(dimensionColumnDataChunk, numerOfRows);
@@ -131,6 +137,12 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       }
     }
     return bitSet;
+  }
+
+  private BitSet setFilterdIndexToBitSetWithColumnIndex(
+      BitMapDimensionDataChunk dimensionColumnDataChunk, int numerOfRows) {
+
+    return dimensionColumnDataChunk.applyIncludeFilter(dimColumnExecuterInfo.getFilterKeys());
   }
 
   private BitSet setFilterdIndexToBitSet(DimensionColumnDataChunk dimensionColumnDataChunk,

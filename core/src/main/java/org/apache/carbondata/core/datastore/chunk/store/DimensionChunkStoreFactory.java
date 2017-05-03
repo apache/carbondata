@@ -17,7 +17,10 @@
 
 package org.apache.carbondata.core.datastore.chunk.store;
 
+import java.util.List;
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeBitMapDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeFixedLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeVariableLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeFixedLengthDimensionDataChunkStore;
@@ -60,7 +63,8 @@ public class DimensionChunkStoreFactory {
    * @return dimension store type
    */
   public DimensionDataChunkStore getDimensionChunkStore(int columnValueSize,
-      boolean isInvertedIndex, int numberOfRows, long totalSize, DimensionStoreType storeType) {
+      boolean isInvertedIndex, int numberOfRows, long totalSize, DimensionStoreType storeType,
+      List<Integer> bitmap_encoded_dictionaries, List<Integer> bitmap_data_pages_length) {
 
     if (isUnsafe) {
       if (storeType == DimensionStoreType.FIXEDLENGTH) {
@@ -72,7 +76,10 @@ public class DimensionChunkStoreFactory {
       }
 
     } else {
-      if (storeType == DimensionStoreType.FIXEDLENGTH) {
+      if (storeType == DimensionStoreType.BITMAP) {
+        return new SafeBitMapDimensionDataChunkStore(bitmap_encoded_dictionaries,
+            bitmap_data_pages_length, columnValueSize);
+      } else if (storeType == DimensionStoreType.FIXEDLENGTH) {
         return new SafeFixedLengthDimensionDataChunkStore(isInvertedIndex, columnValueSize);
       } else {
         return new SafeVariableLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows);
@@ -84,6 +91,6 @@ public class DimensionChunkStoreFactory {
    * dimension store type enum
    */
   public enum DimensionStoreType {
-    FIXEDLENGTH, VARIABLELENGTH;
+    FIXEDLENGTH, VARIABLELENGTH, BITMAP;
   }
 }

@@ -744,28 +744,34 @@ public class CarbonMetadataUtil {
       dataChunk.setNumberOfRowsInpage(nodeHolder.getEntryCount());
       List<Encoding> encodings = new ArrayList<Encoding>();
       if (isDimensionColumn) {
+        dataChunk.setBitmap_encoded_dictionaries(nodeHolder.getDictArray()[index]);
+        dataChunk.setBitmap_data_pages_length(nodeHolder.getBitMapPagesLengthList()[index]);
         dataChunk.setData_page_length(nodeHolder.getKeyLengths()[index]);
         if (containsEncoding(index, Encoding.DICTIONARY, columnSchema, segmentProperties)) {
           encodings.add(Encoding.DICTIONARY);
+          if (containsEncoding(index, Encoding.BITMAP, columnSchenma, segmentProperties)) {
+            encodings.add(Encoding.BITMAP);
+          }
         }
         if (containsEncoding(index, Encoding.DIRECT_DICTIONARY, columnSchema, segmentProperties)) {
           encodings.add(Encoding.DIRECT_DICTIONARY);
         }
         dataChunk.setRowMajor(nodeHolder.getColGrpBlocks()[index]);
-        // TODO : Once schema PR is merged and information needs to be passed
-        // here.
-        if (nodeHolder.getAggBlocks()[index]) {
-          dataChunk.setRle_page_length(nodeHolder.getDataIndexMapLength()[index]);
-          encodings.add(Encoding.RLE);
+        if (!containsEncoding(index, Encoding.BITMAP, columnSchenma, segmentProperties)) {
+          // TODO : Once schema PR is merged and information needs to be passed
+          // here.
+          if (nodeHolder.getAggBlocks()[index]) {
+            dataChunk.setRle_page_length(nodeHolder.getDataIndexMapLength()[index]);
+            encodings.add(Encoding.RLE);
+          }
+          if (!nodeHolder.getIsSortedKeyBlock()[index]) {
+            dataChunk.setRowid_page_length(nodeHolder.getKeyBlockIndexLength()[index]);
+            encodings.add(Encoding.INVERTED_INDEX);
+          }
         }
         dataChunk.setSort_state(nodeHolder.getIsSortedKeyBlock()[index] ?
             SortState.SORT_EXPLICIT :
             SortState.SORT_NATIVE);
-
-        if (!nodeHolder.getIsSortedKeyBlock()[index]) {
-          dataChunk.setRowid_page_length(nodeHolder.getKeyBlockIndexLength()[index]);
-          encodings.add(Encoding.INVERTED_INDEX);
-        }
         dataChunk.min_max.addToMax_values(ByteBuffer.wrap(nodeHolder.getColumnMaxData()[index]));
         dataChunk.min_max.addToMin_values(ByteBuffer.wrap(nodeHolder.getColumnMinData()[index]));
       } else {
@@ -940,6 +946,9 @@ public class CarbonMetadataUtil {
     if (isDimensionColumn) {
       for (int i = 0; i < nodeHolder.getKeyArray().length; i++) {
         DataChunk2 dataChunk = new DataChunk2();
+        List<Integer> dictForBitMapEncoded = nodeHolder.getDictArray()[i];
+        dataChunk.setBitmap_encoded_dictionaries(dictForBitMapEncoded);
+        dataChunk.setBitmap_data_pages_length(nodeHolder.getBitMapPagesLengthList()[i]);
         dataChunk.min_max = new BlockletMinMaxIndex();
         dataChunk.setChunk_meta(getChunkCompressionMeta());
         dataChunk.setNumberOfRowsInpage(nodeHolder.getEntryCount());
@@ -947,6 +956,10 @@ public class CarbonMetadataUtil {
         dataChunk.setData_page_length(nodeHolder.getKeyLengths()[i]);
         if (containsEncoding(i, Encoding.DICTIONARY, columnSchema, segmentProperties)) {
           encodings.add(Encoding.DICTIONARY);
+          if (containsEncoding(i, Encoding.BITMAP, columnSchenma, segmentProperties)
+              && dictForBitMapEncoded != null && dictForBitMapEncoded.size() > 0) {
+            encodings.add(Encoding.BITMAP);
+          }
         }
         if (containsEncoding(i, Encoding.DIRECT_DICTIONARY, columnSchema, segmentProperties)) {
           encodings.add(Encoding.DIRECT_DICTIONARY);
@@ -960,7 +973,9 @@ public class CarbonMetadataUtil {
             nodeHolder.getIsSortedKeyBlock()[i] ? SortState.SORT_EXPLICIT : SortState.SORT_NATIVE);
         if (!nodeHolder.getIsSortedKeyBlock()[i]) {
           dataChunk.setRowid_page_length(nodeHolder.getKeyBlockIndexLength()[i]);
-          encodings.add(Encoding.INVERTED_INDEX);
+          if (!encodings.contains(Encoding.BITMAP)) {
+            encodings.add(Encoding.INVERTED_INDEX);
+          }
         }
         dataChunk.min_max.addToMax_values(ByteBuffer.wrap(nodeHolder.getColumnMaxData()[i]));
         dataChunk.min_max.addToMin_values(ByteBuffer.wrap(nodeHolder.getColumnMinData()[i]));

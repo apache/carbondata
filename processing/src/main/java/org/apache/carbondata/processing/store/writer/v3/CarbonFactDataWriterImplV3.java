@@ -27,6 +27,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
+import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForBitMapForShort;
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex;
@@ -112,6 +113,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
 
     byte[][] dimensionMinValue = new byte[keyStorageArray.length][];
     byte[][] dimensionMaxValue = new byte[keyStorageArray.length][];
+    List[] dictArray = new ArrayList[keyStorageArray.length];
+    List[] bitMapPagesLengthArray = new ArrayList[keyStorageArray.length];
 
     byte[][] measureMinValue = new byte[measureArray.length][];
     byte[][] measureMaxValue = new byte[measureArray.length][];
@@ -120,6 +123,13 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     boolean[] colGrpBlock = new boolean[keyStorageArray.length];
 
     for (int i = 0; i < keyLengths.length; i++) {
+      if (this.isUseBitMap[i]) {
+        dictArray[i] = ((BlockIndexerStorageForBitMapForShort) keyStorageArray[i]).getDictList();
+        bitMapPagesLengthArray[i] = ((BlockIndexerStorageForBitMapForShort) keyStorageArray[i])
+            .getBitMapPagesLengthList();
+      } else {
+        dictArray[i] = new ArrayList<Integer>(0);
+      }
       keyLengths[i] = keyBlockData[i].length;
       isSortedData[i] = keyStorageArray[i].isAlreadySorted();
       keyBlockSize++;
@@ -149,7 +159,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     byte[][] dataAfterCompression = new byte[keyBlockSize][];
     byte[][] indexMap = new byte[keyBlockSize][];
     for (int i = 0; i < isSortedData.length; i++) {
-      if (!isSortedData[i]) {
+      if (!isSortedData[i] && !isUseBitMap[i]) {
         dataAfterCompression[i] = getByteArray(keyStorageArray[i].getDataAfterComp());
         if (null != keyStorageArray[i].getIndexMap()
             && keyStorageArray[i].getIndexMap().length > 0) {
@@ -184,6 +194,9 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     NodeHolder holder = new NodeHolder();
     holder.setDataArray(measureArray);
     holder.setKeyArray(keyBlockData);
+    holder.setDictArray(dictArray);
+    holder.setIsUseBitMap(isUseBitMap);
+    holder.setBitMapPagesLengthList(bitMapPagesLengthArray);
     holder.setMeasureNullValueIndex(nullValueIndexBitSet);
     // end key format will be <length of dictionary key><length of no
     // dictionary key><DictionaryKey><No Dictionary key>
@@ -451,7 +464,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
               0);
           buffer = ByteBuffer.allocate(bufferSize);
           buffer.put(nodeHolder.getKeyArray()[i]);
-          if (!nodeHolder.getIsSortedKeyBlock()[i]) {
+          if (!nodeHolder.getIsSortedKeyBlock()[i] && !nodeHolder.getIsUseBitMap()[i]) {
             buffer.putInt(nodeHolder.getCompressedIndex()[i].length);
             buffer.put(nodeHolder.getCompressedIndex()[i]);
             if (nodeHolder.getCompressedIndexMap()[i].length > 0) {

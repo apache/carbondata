@@ -546,6 +546,9 @@ class TableNewProcessor(cm: TableModel) {
           allCols.foreach(eachCol => {
             if (eachCol.getColumnName.equalsIgnoreCase(colForGrouping.trim())) {
               found = true
+              if (eachCol.hasEncoding(Encoding.BITMAP)) {
+                throw new Exception("bitmap encoding column can't be a group column")
+              }
             }
           })
           // check for No Dicitonary dimensions

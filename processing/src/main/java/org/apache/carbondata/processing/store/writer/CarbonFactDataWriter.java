@@ -76,4 +76,9 @@ public interface CarbonFactDataWriter<T> {
    */
   void setIsNoDictionary(boolean[] isNoDictionary);
 
+  /**
+   * @param isUseBitMap
+   */
+  void setIsUseBitMap(boolean[] isUseBitMap);
+
 }

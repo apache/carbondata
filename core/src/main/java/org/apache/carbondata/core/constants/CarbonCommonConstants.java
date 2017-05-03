@@ -1187,7 +1187,11 @@ public final class CarbonCommonConstants {
   public static final String CARBON_BAD_RECORDS_ACTION = "carbon.bad.records.action";
 
   public static final String CARBON_BAD_RECORDS_ACTION_DEFAULT = "FORCE";
-
+  /**
+   * IS_INT_BASED_INDEXER_DEFAULTVALUE
+   */
+  public static final int BITMAP_CARDINALITY_MAX_VALUE = 16;
+  
   private CarbonCommonConstants() {
   }
 }
