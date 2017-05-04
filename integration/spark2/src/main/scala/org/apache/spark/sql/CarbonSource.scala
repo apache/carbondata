@@ -112,7 +112,17 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       dataSchema: StructType): BaseRelation = {
     CarbonEnv.getInstance(sqlContext.sparkSession)
     addLateDecodeOptimization(sqlContext.sparkSession)
-    val path = createTableIfNotExists(sqlContext.sparkSession, parameters, dataSchema)
+    val dbName: String = parameters.getOrElse("dbName",
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
+    val tableName: String = parameters.getOrElse("tableName", "default_table").toLowerCase
+
+    val path = if (sqlContext.sparkSession.sessionState.catalog.listTables(dbName)
+      .exists(_.table.equalsIgnoreCase(tableName))) {
+        getPathForTable(sqlContext.sparkSession, dbName, tableName)
+    } else {
+        createTableIfNotExists(sqlContext.sparkSession, parameters, dataSchema)
+    }
+
     CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(path), parameters,
       Option(dataSchema))
   }
@@ -183,6 +193,32 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
         CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath + s"/$dbName/$tableName"
       case ex: Exception =>
         throw new Exception("do not have dbname and tablename for carbon table", ex)
+    }
+  }
+
+  /**
+   * Returns the path of the table
+   * @param sparkSession
+   * @param dbName
+   * @param tableName
+   * @return
+   */
+  private def getPathForTable(sparkSession: SparkSession, dbName: String,
+      tableName : String): String = {
+
+    if (StringUtils.isBlank(tableName)) {
+      throw new MalformedCarbonCommandException("The Specified Table Name is Blank")
+    }
+    if (tableName.contains(" ")) {
+      throw new MalformedCarbonCommandException("Table Name Should not have spaces ")
+    }
+    try {
+      CarbonEnv.getInstance(sparkSession).carbonMetastore
+        .lookupRelation(Option(dbName), tableName)(sparkSession)
+      CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath + s"/$dbName/$tableName"
+    } catch {
+      case ex: Exception =>
+        throw new Exception(s"Do not have $dbName and $tableName", ex)
     }
   }
 
