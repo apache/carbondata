@@ -578,6 +578,14 @@ public class CarbonTable implements Serializable {
     return tableBucketMap.get(tableName);
   }
 
+  public PartitionInfo getPartitionInfo(String tableName) {
+    return tablePartitionMap.get(tableName);
+  }
+
+  public PartitionStatistic getPartitionStatistic() {
+    return partitionStatistic;
+  }
+
   /**
    * @return absolute table identifier
    */
