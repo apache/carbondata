@@ -30,8 +30,8 @@ import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeDouble
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeIntMeasureChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeLongMeasureChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeShortMeasureChunkStore;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
 /**
  * Factory class for getting the measure store type
@@ -67,33 +67,33 @@ public class MeasureChunkStoreFactory {
   public MeasureDataChunkStore getMeasureDataChunkStore(DataType dataType, int numberOfRows) {
     if (!isUnsafe) {
       switch (dataType) {
-        case DATA_BYTE:
+        case BYTE:
           return new SafeByteMeasureChunkStore(numberOfRows);
-        case DATA_SHORT:
+        case SHORT:
           return new SafeShortMeasureChunkStore(numberOfRows);
-        case DATA_INT:
+        case INT:
           return new SafeIntMeasureChunkStore(numberOfRows);
-        case DATA_LONG:
+        case LONG:
           return new SafeLongMeasureChunkStore(numberOfRows);
-        case DATA_BIGDECIMAL:
+        case DECIMAL:
           return new SafeBigDecimalMeasureChunkStore(numberOfRows);
-        case DATA_DOUBLE:
+        case DOUBLE:
         default:
           return new SafeDoubleMeasureChunkStore(numberOfRows);
       }
     } else {
       switch (dataType) {
-        case DATA_BYTE:
+        case BYTE:
           return new UnsafeByteMeasureChunkStore(numberOfRows);
-        case DATA_SHORT:
+        case SHORT:
           return new UnsafeShortMeasureChunkStore(numberOfRows);
-        case DATA_INT:
+        case INT:
           return new UnsafeIntMeasureChunkStore(numberOfRows);
-        case DATA_LONG:
+        case LONG:
           return new UnsafeLongMeasureChunkStore(numberOfRows);
-        case DATA_BIGDECIMAL:
+        case DECIMAL:
           return new UnsafeBigDecimalMeasureChunkStore(numberOfRows);
-        case DATA_DOUBLE:
+        case DOUBLE:
         default:
           return new UnsafeDoubleMeasureChunkStore(numberOfRows);
       }

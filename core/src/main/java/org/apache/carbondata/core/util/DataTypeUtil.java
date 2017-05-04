@@ -156,9 +156,6 @@ public final class DataTypeUtil {
     }
   }
 
-  // bytes of 0 in BigDecimal
-  public static final byte[] zeroBigDecimalBytes = bigDecimalToByte(BigDecimal.valueOf(0));
-
   /**
    * This method will convert a big decimal value to bytes
    *

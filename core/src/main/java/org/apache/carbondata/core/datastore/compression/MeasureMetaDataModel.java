@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.datastore.compression;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
+
 public class MeasureMetaDataModel {
   /**
    * maxValue
@@ -46,7 +48,7 @@ public class MeasureMetaDataModel {
   /**
    * type
    */
-  private char[] type;
+  private DataType[] type;
 
   /**
    * dataTypeSelected
@@ -54,7 +56,7 @@ public class MeasureMetaDataModel {
   private byte[] dataTypeSelected;
 
   public MeasureMetaDataModel(Object[] minValue, Object[] maxValue, int[] mantissa,
-      int measureCount, Object[] uniqueValue, char[] type, byte[] dataTypeSelected) {
+      int measureCount, Object[] uniqueValue, DataType[] type, byte[] dataTypeSelected) {
     this.minValue = minValue;
     this.maxValue = maxValue;
     this.mantissa = mantissa;
@@ -112,7 +114,7 @@ public class MeasureMetaDataModel {
   /**
    * @return the type
    */
-  public char[] getType() {
+  public DataType[] getType() {
     return type;
   }
 

@@ -105,10 +105,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     int[] keyLengths = new int[keyStorageArray.length];
 
     // below will calculate min and max value for each column
-    // for below 2d array, first index will be for column and second will be min
-    // max
+    // for below 2d array, first index will be for column and second will be min and max
     // value for same column
-    // byte[][] columnMinMaxData = new byte[keyStorageArray.length][];
 
     byte[][] dimensionMinValue = new byte[keyStorageArray.length][];
     byte[][] dimensionMaxValue = new byte[keyStorageArray.length][];

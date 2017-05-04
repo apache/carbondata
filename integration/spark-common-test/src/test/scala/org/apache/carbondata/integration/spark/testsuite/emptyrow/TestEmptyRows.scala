@@ -28,7 +28,7 @@ class TestEmptyRows extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("drop table if exists emptyRowCarbonTable")
     sql("drop table if exists emptyRowHiveTable")
-    //eid,ename,sal,presal,comm,deptno,Desc
+
     sql(
       "create table if not exists emptyRowCarbonTable (eid int,ename String,sal decimal,presal " +
         "decimal,comm decimal" +

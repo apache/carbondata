@@ -27,8 +27,8 @@ import org.apache.carbondata.core.datastore.chunk.store.MeasureDataChunkStore;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.compression.ValueCompressionHolder;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
-import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
 public class CompressionNoneInt extends ValueCompressionHolder<int[]> {
   /**
@@ -62,7 +62,7 @@ public class CompressionNoneInt extends ValueCompressionHolder<int[]> {
   }
 
   @Override public void compress() {
-    compressedValue = super.compress(compressor, DataType.DATA_INT, value);
+    compressedValue = super.compress(compressor, DataType.INT, value);
   }
 
   @Override
@@ -96,7 +96,7 @@ public class CompressionNoneInt extends ValueCompressionHolder<int[]> {
   @Override
   public void setValue(int[] data, int numberOfRows, Object maxValueObject, int decimalPlaces) {
     this.measureChunkStore =
-        MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.DATA_INT, numberOfRows);
+        MeasureChunkStoreFactory.INSTANCE.getMeasureDataChunkStore(DataType.INT, numberOfRows);
     this.measureChunkStore.putData(data);
   }
 }

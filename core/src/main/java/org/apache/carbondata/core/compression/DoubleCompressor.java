@@ -19,7 +19,7 @@ package org.apache.carbondata.core.compression;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.datastore.dataholder.CarbonWriteDataHolder;
-import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
  * Double compressor
@@ -33,7 +33,7 @@ public class DoubleCompressor extends ValueCompressor {
     BigDecimal max = BigDecimal.valueOf((double)maxValue);
     double[] value = dataHolder.getWritableDoubleValues();
     switch (convertedDataType) {
-      case DATA_BYTE:
+      case BYTE:
         byte[] result = new byte[value.length];
         for (int j = 0; j < value.length; j++) {
           BigDecimal val = BigDecimal.valueOf(value[j]);
@@ -42,7 +42,7 @@ public class DoubleCompressor extends ValueCompressor {
           i++;
         }
         return result;
-      case DATA_SHORT:
+      case SHORT:
         short[] shortResult = new short[value.length];
         for (int j = 0; j < value.length; j++) {
           BigDecimal val = BigDecimal.valueOf(value[j]);
@@ -51,7 +51,7 @@ public class DoubleCompressor extends ValueCompressor {
           i++;
         }
         return shortResult;
-      case DATA_INT:
+      case INT:
         int[] intResult = new int[value.length];
         for (int j = 0; j < value.length; j++) {
           BigDecimal val = BigDecimal.valueOf(value[j]);
@@ -60,7 +60,7 @@ public class DoubleCompressor extends ValueCompressor {
           i++;
         }
         return intResult;
-      case DATA_LONG:
+      case LONG:
         long[] longResult = new long[value.length];
         for (int j = 0; j < value.length; j++) {
           BigDecimal val = BigDecimal.valueOf(value[j]);
@@ -69,7 +69,7 @@ public class DoubleCompressor extends ValueCompressor {
           i++;
         }
         return longResult;
-      case DATA_FLOAT:
+      case FLOAT:
         float[] floatResult = new float[value.length];
         for (int j = 0; j < value.length; j++) {
           BigDecimal val = BigDecimal.valueOf(value[j]);
@@ -96,35 +96,35 @@ public class DoubleCompressor extends ValueCompressor {
     int i = 0;
     double[] value = dataHolder.getWritableDoubleValues();
     switch (convertedDataType) {
-      case DATA_BYTE:
+      case BYTE:
         byte[] result = new byte[value.length];
         for (int j = 0; j < value.length; j++) {
           result[i] = (byte) (Math.round(Math.pow(10, decimal) * value[j]));
           i++;
         }
         return result;
-      case DATA_SHORT:
+      case SHORT:
         short[] shortResult = new short[value.length];
         for (int j = 0; j < value.length; j++) {
           shortResult[i] = (short) (Math.round(Math.pow(10, decimal) * value[j]));
           i++;
         }
         return shortResult;
-      case DATA_INT:
+      case INT:
         int[] intResult = new int[value.length];
         for (int j = 0; j < value.length; j++) {
           intResult[i] = (int) (Math.round(Math.pow(10, decimal) * value[j]));
           i++;
         }
         return intResult;
-      case DATA_LONG:
+      case LONG:
         long[] longResult = new long[value.length];
         for (int j = 0; j < value.length; j++) {
           longResult[i] = Math.round(Math.pow(10, decimal) * value[j]);
           i++;
         }
         return longResult;
-      case DATA_FLOAT:
+      case FLOAT:
         float[] floatResult = new float[value.length];
         for (int j = 0; j < value.length; j++) {
           floatResult[i] = (float) (Math.round(Math.pow(10, decimal) * value[j]));
@@ -148,35 +148,35 @@ public class DoubleCompressor extends ValueCompressor {
     double[] value = dataHolder.getWritableDoubleValues();
     int i = 0;
     switch (convertedDataType) {
-      case DATA_BYTE:
+      case BYTE:
         byte[] result = new byte[value.length];
         for (int j = 0; j < value.length; j++) {
           result[i] = (byte) (maxValue - value[j]);
           i++;
         }
         return result;
-      case DATA_SHORT:
+      case SHORT:
         short[] shortResult = new short[value.length];
         for (int j = 0; j < value.length; j++) {
           shortResult[i] = (short) (maxValue - value[j]);
           i++;
         }
         return shortResult;
-      case DATA_INT:
+      case INT:
         int[] intResult = new int[value.length];
         for (int j = 0; j < value.length; j++) {
           intResult[i] = (int) (maxValue - value[j]);
           i++;
         }
         return intResult;
-      case DATA_LONG:
+      case LONG:
         long[] longResult = new long[value.length];
         for (int j = 0; j < value.length; j++) {
           longResult[i] = (long) (maxValue - value[j]);
           i++;
         }
         return longResult;
-      case DATA_FLOAT:
+      case FLOAT:
         float[] floatResult = new float[value.length];
         for (int j = 0; j < value.length; j++) {
           floatResult[i] = (float) (maxValue - value[j]);
@@ -198,36 +198,35 @@ public class DoubleCompressor extends ValueCompressor {
     double[] value = dataHolder.getWritableDoubleValues();
     int i = 0;
     switch (changedDataType) {
-      case DATA_BYTE:
+      case BYTE:
         byte[] result = new byte[value.length];
         for (int j = 0; j < value.length; j++) {
           result[i] = (byte) value[j];
           i++;
         }
         return result;
-      case DATA_SHORT:
+      case SHORT:
         short[] shortResult = new short[value.length];
         for (int j = 0; j < value.length; j++) {
           shortResult[i] = (short) value[j];
           i++;
         }
         return shortResult;
-      case DATA_INT:
+      case INT:
         int[] intResult = new int[value.length];
         for (int j = 0; j < value.length; j++) {
           intResult[i] = (int) value[j];
           i++;
         }
         return intResult;
-      case DATA_LONG:
-      case DATA_BIGINT:
+      case LONG:
         long[] longResult = new long[value.length];
         for (int j = 0; j < value.length; j++) {
           longResult[i] = (long) value[j];
           i++;
         }
         return longResult;
-      case DATA_FLOAT:
+      case FLOAT:
         float[] floatResult = new float[value.length];
         for (int j = 0; j < value.length; j++) {
           floatResult[i] = (float) value[j];
