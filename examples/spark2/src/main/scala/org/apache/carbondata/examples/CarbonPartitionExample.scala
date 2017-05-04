@@ -59,7 +59,9 @@ object CarbonPartitionExample {
                 | country String,
                 | area String
                 | )
+                | PARTITIONED BY (logdate Timestamp)
                 | STORED BY 'carbondata'
+                | TBLPROPERTIES('PARTITION_TYPE'='RANGE','RANGE_INFO'='20140101, 20150101 ,20160101 ')
               """.stripMargin)
 
     spark.sql("DROP TABLE IF EXISTS t3")
@@ -75,7 +77,7 @@ object CarbonPartitionExample {
        | )
        | PARTITIONED BY (vin String)
        | STORED BY 'carbondata'
-       | TBLPROPERTIES('PARTITIONING'='HASH','PARTITIONCOUNT'='5')
+       | TBLPROPERTIES('PARTITION_TYPE'='HASH','PARTITIONCOUNT'='5')
        """.stripMargin)
 
     // spark.sql(s"""

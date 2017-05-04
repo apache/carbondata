@@ -158,15 +158,15 @@ object CommonUtil {
   def validatePartitionColumns(tableProperties: Map[String, String],
       partitionCols: Seq[StructField]): Boolean = {
     var isValid: Boolean = true
-    val partitioning = tableProperties.get(CarbonCommonConstants.PARTITIONING)
-    val partitioncount = tableProperties.get(CarbonCommonConstants.PARTITIONCOUNT)
+    val partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE)
+    val hashNumber = tableProperties.get(CarbonCommonConstants.HASH_NUMBER)
 
     // partition column and partitioning should be both exist or not exist
-    if (partitionCols.isEmpty ^ partitioning.isEmpty) {
+    if (partitionCols.isEmpty ^ partitionType.isEmpty) {
       isValid = false
     } else if (partitionCols.nonEmpty) {
-      partitioning.get.toUpperCase() match {
-        case "HASH" => if (!partitioncount.isDefined) isValid = false
+      partitionType.get.toUpperCase() match {
+        case "HASH" => if (!hashNumber.isDefined) isValid = false
         case "LIST" => isValid = false
         case "RANGE" => isValid = false
         case "RANGE_INTERVAL" => isValid = false

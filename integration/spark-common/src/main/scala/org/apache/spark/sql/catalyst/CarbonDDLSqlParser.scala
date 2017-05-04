@@ -34,7 +34,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
-import org.apache.carbondata.core.metadata.schema.partition.Partitioning
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.constants.LoggerAction
@@ -358,14 +358,24 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    */
   protected def getPartitionInfo(partitionCols: Seq[PartitionerField],
       tableProperties: Map[String, String]): Option[PartitionInfo] = {
-    var partitioning: String = ""
-    var partition_count = 0
+    var partitionType: String = ""
+    var hashNumber = 0
+    var rangeInfo: List[String] = List[String]()
+    var listInfo: List[List[String]] = List[List[String]]()
 
-    if (tableProperties.get(CarbonCommonConstants.PARTITIONING).isDefined) {
-      partitioning = tableProperties.get(CarbonCommonConstants.PARTITIONING).get
+    if (tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).isDefined) {
+      partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).get
     }
-    if (tableProperties.get(CarbonCommonConstants.PARTITIONCOUNT).isDefined) {
-      partition_count = tableProperties.get(CarbonCommonConstants.PARTITIONCOUNT).get.toInt
+    if (tableProperties.get(CarbonCommonConstants.HASH_NUMBER).isDefined) {
+      hashNumber = tableProperties.get(CarbonCommonConstants.HASH_NUMBER).get.toInt
+    }
+    if (tableProperties.get(CarbonCommonConstants.RANGE_INFO).isDefined) {
+      rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO).get.replace(" ","")
+        .split(",").toList
+    }
+    if (tableProperties.get(CarbonCommonConstants.LIST_INFO).isDefined) {
+      rangeInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO).get.replace(" ","")
+        .split(",").toList
     }
     val cols : ArrayBuffer[ColumnSchema] = new ArrayBuffer[ColumnSchema]()
     partitionCols.foreach(partition_col => {
@@ -376,15 +386,21 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       cols += columnSchema
     })
 
-    val partitionInfo: Option[PartitionInfo] = partitioning.toUpperCase() match {
-      case "HASH" => Some(new PartitionInfo(cols.asJava,
-                              Partitioning.HASH, partition_count))
-      case "LIST" => None
-      case "RANGE" => None
-      case "RANGE_INTERVAL" => None
-      case _ => None
+    var partitionInfo : PartitionInfo = null
+    partitionType.toUpperCase() match {
+      case "HASH" => {
+        partitionInfo = new PartitionInfo(cols.asJava, PartitionType.HASH)
+        partitionInfo.setHashNumber(hashNumber)
+      }
+      case "RANGE" => {
+        partitionInfo = new PartitionInfo(cols.asJava, PartitionType.RANGE)
+        partitionInfo.setRangeInfo(rangeInfo.asJava)
+      }
+      case "LIST" => {
+        partitionInfo = new PartitionInfo(cols.asJava, PartitionType.LIST)
+      }
     }
-    partitionInfo
+    Some(partitionInfo)
   }
 
   protected def extractColumnProperties(fields: Seq[Field], tableProperties: Map[String, String]):
