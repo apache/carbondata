@@ -196,9 +196,12 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
     }
 
     private void createSortDataRows() {
-      this.finalMerger = new UnsafeSingleThreadFinalSortFilesMerger(sortParameters);
+      int inMemoryChunkSizeInMB = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
+      this.finalMerger = new UnsafeSingleThreadFinalSortFilesMerger(sortParameters,
+          sortParameters.getTempFileLocation());
       unsafeIntermediateFileMerger = new UnsafeIntermediateMerger(sortParameters);
-      sortDataRow = new UnsafeSortDataRows(sortParameters, unsafeIntermediateFileMerger);
+      sortDataRow = new UnsafeSortDataRows(sortParameters, unsafeIntermediateFileMerger,
+          inMemoryChunkSizeInMB);
 
       try {
         sortDataRow.initialize();
