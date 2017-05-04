@@ -19,16 +19,16 @@ package org.apache.carbondata.spark
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression, Literal, StartsWith, _}
 import org.apache.spark.sql.optimizer.AttributeReferenceWrapper
 import org.apache.spark.sql.sources
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
-import org.apache.carbondata.core.scan.expression.conditional._
+import org.apache.carbondata.core.scan.expression.conditional.{GreaterThanEqualToExpression, LessThanExpression, _}
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
@@ -100,7 +100,14 @@ object CarbonFilters {
           } yield {
             new OrExpression(lhsFilter, rhsFilter)
           }
-
+        case sources.StringStartsWith(name, value) if value.length > 0 =>
+          val l = new GreaterThanEqualToExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, value))
+          val maxValueLimit = value.substring(0, value.length - 1) +
+                              (value.charAt(value.length - 1).toInt + 1).toChar
+          val r = new LessThanExpression(
+            getCarbonExpression(name), getCarbonLiteralExpression(name, maxValueLimit))
+          Some(new AndExpression(l, r))
         case _ => None
       }
     }
@@ -197,6 +204,8 @@ object CarbonFilters {
           Some(sources.LessThanOrEqual(a.name, v))
         case LessThanOrEqual(Literal(v, t), a: Attribute) =>
           Some(sources.GreaterThanOrEqual(a.name, v))
+        case StartsWith(a: Attribute, Literal(v, t)) =>
+          Some(sources.StringStartsWith(a.name, v.toString))
 
         case others =>
           if (!or) {
@@ -211,13 +220,30 @@ object CarbonFilters {
     filters.flatMap(translate(_, false)).toArray
   }
 
+  def isCarbonSupportedDataTypes(expr: Expression): Boolean = {
+    expr.dataType match {
+      case StringType => true
+      case IntegerType => true
+      case LongType => true
+      case DoubleType => true
+      case FloatType => true
+      case BooleanType => true
+      case TimestampType => true
+      case ArrayType(_, _) => true
+      case StructType(_) => true
+      case DecimalType() => true
+      case _ => false
+    }
+  }
+
   def processExpression(exprs: Seq[Expression],
       attributesNeedToDecode: java.util.HashSet[AttributeReference],
       unprocessedExprs: ArrayBuffer[Expression],
       carbonTable: CarbonTable): Option[CarbonExpression] = {
     def transformExpression(expr: Expression, or: Boolean = false): Option[CarbonExpression] = {
       expr match {
-        case orFilter@ Or(left, right) =>
+        case orFilter@ Or(left, right)
+          if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) =>
           val leftFilter = transformExpression(left, or = true)
           val rightFilter = transformExpression(right, or = true)
           if (leftFilter.isDefined && rightFilter.isDefined) {
@@ -232,7 +258,8 @@ object CarbonFilters {
             None
           }
 
-        case And(left, right) =>
+        case And(left, right) if (isCarbonSupportedDataTypes(left) &&
+                                  isCarbonSupportedDataTypes(right)) =>
           val leftFilter = transformExpression(left, or)
           val rightFilter = transformExpression(right, or)
           if (or) {
@@ -246,14 +273,16 @@ object CarbonFilters {
           }
 
 
-        case EqualTo(a: Attribute, l@Literal(v, t)) =>
+        case EqualTo(a: Attribute, l@Literal(v, t)) if (isCarbonSupportedDataTypes(a) &&
+                                                        isCarbonSupportedDataTypes(l)) =>
           Some(
             new EqualToExpression(
               transformExpression(a).get,
               transformExpression(l).get
             )
           )
-        case EqualTo(l@Literal(v, t), a: Attribute) =>
+        case EqualTo(l@Literal(v, t), a: Attribute) if (isCarbonSupportedDataTypes(l) &&
+                                                        isCarbonSupportedDataTypes(a)) =>
           Some(
             new EqualToExpression(
               transformExpression(a).get,
@@ -261,59 +290,71 @@ object CarbonFilters {
             )
           )
 
-        case Not(EqualTo(a: Attribute, l@Literal(v, t))) =>
+        case Not(EqualTo(a: Attribute, l@Literal(v, t))) if (isCarbonSupportedDataTypes(a) &&
+                                                             isCarbonSupportedDataTypes(l)) =>
           Some(
             new NotEqualsExpression(
               transformExpression(a).get,
               transformExpression(l).get
             )
           )
-        case Not(EqualTo(l@Literal(v, t), a: Attribute)) =>
+        case Not(EqualTo(l@Literal(v, t), a: Attribute)) if (isCarbonSupportedDataTypes(l) &&
+                                                             isCarbonSupportedDataTypes(a)) =>
           Some(
             new NotEqualsExpression(
               transformExpression(a).get,
               transformExpression(l).get
             )
           )
-        case IsNotNull(child: Attribute) =>
+        case IsNotNull(child: Attribute) if (isCarbonSupportedDataTypes(child)) =>
           Some(new NotEqualsExpression(transformExpression(child).get,
             transformExpression(Literal(null)).get, true))
-        case IsNull(child: Attribute) =>
+        case IsNull(child: Attribute) if (isCarbonSupportedDataTypes(child)) =>
           Some(new EqualToExpression(transformExpression(child).get,
             transformExpression(Literal(null)).get, true))
         case Not(In(a: Attribute, list))
-          if !list.exists(!_.isInstanceOf[Literal]) =>
+          if !list.exists(!_.isInstanceOf[Literal]) && isCarbonSupportedDataTypes(a) =>
           if (list.exists(x => isNullLiteral(x.asInstanceOf[Literal]))) {
             Some(new FalseExpression(transformExpression(a).get))
           } else {
             Some(new NotInExpression(transformExpression(a).get,
               new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
           }
-        case In(a: Attribute, list) if !list.exists(!_.isInstanceOf[Literal]) =>
+        case In(a: Attribute, list) if !list.exists(!_.isInstanceOf[Literal]) &&
+                                       isCarbonSupportedDataTypes(a) =>
           Some(new InExpression(transformExpression(a).get,
-            new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
+            new ListExpression(convertToJavaList(list
+              .map(transformExpression(_).get)))))
 
-        case GreaterThan(a: Attribute, l@Literal(v, t)) =>
+        case GreaterThan(a: Attribute, l@Literal(v, t))
+          if (isCarbonSupportedDataTypes(a) && isCarbonSupportedDataTypes(l)) =>
           Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
-        case GreaterThan(l@Literal(v, t), a: Attribute) =>
+        case GreaterThan(l@Literal(v, t), a: Attribute)
+          if (isCarbonSupportedDataTypes(l) && isCarbonSupportedDataTypes(a)) =>
           Some(new LessThanExpression(transformExpression(a).get, transformExpression(l).get))
 
-        case LessThan(a: Attribute, l@Literal(v, t)) =>
+        case LessThan(a: Attribute, l@Literal(v, t))
+          if (isCarbonSupportedDataTypes(a) && isCarbonSupportedDataTypes(l)) =>
           Some(new LessThanExpression(transformExpression(a).get, transformExpression(l).get))
-        case LessThan(l@Literal(v, t), a: Attribute) =>
+        case LessThan(l@Literal(v, t), a: Attribute)
+          if (isCarbonSupportedDataTypes(l) && isCarbonSupportedDataTypes(a)) =>
           Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
 
-        case GreaterThanOrEqual(a: Attribute, l@Literal(v, t)) =>
+        case GreaterThanOrEqual(a: Attribute, l@Literal(v, t))
+          if (isCarbonSupportedDataTypes(a) && isCarbonSupportedDataTypes(l)) =>
           Some(new GreaterThanEqualToExpression(transformExpression(a).get,
             transformExpression(l).get))
-        case GreaterThanOrEqual(l@Literal(v, t), a: Attribute) =>
+        case GreaterThanOrEqual(l@Literal(v, t), a: Attribute)
+          if (isCarbonSupportedDataTypes(l) && isCarbonSupportedDataTypes(a)) =>
           Some(new LessThanEqualToExpression(transformExpression(a).get,
             transformExpression(l).get))
 
-        case LessThanOrEqual(a: Attribute, l@Literal(v, t)) =>
+        case LessThanOrEqual(a: Attribute, l@Literal(v, t))
+          if (isCarbonSupportedDataTypes(a) && isCarbonSupportedDataTypes(l)) =>
           Some(new LessThanEqualToExpression(transformExpression(a).get,
             transformExpression(l).get))
-        case LessThanOrEqual(l@Literal(v, t), a: Attribute) =>
+        case LessThanOrEqual(l@Literal(v, t), a: Attribute)
+          if (isCarbonSupportedDataTypes(l) && isCarbonSupportedDataTypes(a)) =>
           Some(new GreaterThanEqualToExpression(transformExpression(a).get,
             transformExpression(l).get))
 
@@ -323,6 +364,22 @@ object CarbonFilters {
               getActualCarbonDataType(name, carbonTable))))
         case Literal(name, dataType) => Some(new
             CarbonLiteralExpression(name, CarbonScalaUtil.convertSparkToCarbonDataType(dataType)))
+        case StartsWith(left : Attribute, right@Literal(pattern, dataType)) if
+        pattern.toString.size > 0 &&
+        isCarbonSupportedDataTypes
+        (left) &&
+        isCarbonSupportedDataTypes
+        (right) =>
+          val l = new GreaterThanEqualToExpression(transformExpression(left).get,
+            transformExpression(right).get)
+          val maxValueLimit = pattern.toString.substring(0, pattern.toString.length - 1) +
+                              (pattern.toString.charAt(pattern.toString.length - 1).toInt + 1)
+                                .toChar
+          val r = new LessThanExpression(
+            transformExpression(left).get,
+            new CarbonLiteralExpression(maxValueLimit,
+              CarbonScalaUtil.convertSparkToCarbonDataType(dataType)))
+          Some(new AndExpression(l, r))
         case others =>
           if (!or) {
             others.collect {
