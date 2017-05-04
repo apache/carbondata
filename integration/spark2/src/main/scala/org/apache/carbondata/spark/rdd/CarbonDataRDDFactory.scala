@@ -90,8 +90,7 @@ object CarbonDataRDDFactory {
           .setLoadMetadataDetails(alterTableModel.segmentUpdateStatusManager.get
             .getLoadMetadataDetails.toList.asJava)
       }
-    }
-    else {
+    } else {
       compactionType = CompactionType.MINOR_COMPACTION
     }
 
@@ -101,9 +100,6 @@ object CarbonDataRDDFactory {
     val tableCreationTime = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
         .getTableCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
 
-    if (null == carbonLoadModel.getLoadMetadataDetails) {
-      CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
-    }
     // reading the start time of data load.
     val loadStartTime : Long =
     if (alterTableModel.factTimeStamp.isEmpty) {
@@ -233,7 +229,8 @@ object CarbonDataRDDFactory {
       compactionLock: ICarbonLock): Unit = {
     val executor: ExecutorService = Executors.newFixedThreadPool(1)
     // update the updated table status.
-    if (compactionModel.compactionType != CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
+    if (null == carbonLoadModel.getLoadMetadataDetails ||
+        compactionModel.compactionType != CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
       // update the updated table status. For the case of Update Delta Compaction the Metadata
       // is filled in LoadModel, no need to refresh.
       CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
