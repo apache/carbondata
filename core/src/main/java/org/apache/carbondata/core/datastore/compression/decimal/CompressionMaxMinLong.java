@@ -27,8 +27,8 @@ import org.apache.carbondata.core.datastore.chunk.store.MeasureDataChunkStore;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.compression.ValueCompressionHolder;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
-import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
 public class CompressionMaxMinLong extends ValueCompressionHolder<long[]> {
   /**
@@ -57,7 +57,7 @@ public class CompressionMaxMinLong extends ValueCompressionHolder<long[]> {
   }
 
   @Override public void compress() {
-    compressedValue = super.compress(compressor, DataType.DATA_LONG, value);
+    compressedValue = super.compress(compressor, DataType.LONG, value);
   }
 
   @Override public void setValue(long[] value) {
@@ -102,7 +102,7 @@ public class CompressionMaxMinLong extends ValueCompressionHolder<long[]> {
   @Override
   public void setValue(long[] data, int numberOfRows, Object maxValueObject, int decimalPlaces) {
     this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
-        .getMeasureDataChunkStore(DataType.DATA_LONG, numberOfRows);
+        .getMeasureDataChunkStore(DataType.LONG, numberOfRows);
     this.measureChunkStore.putData(data);
     if (maxValueObject instanceof Long) {
       this.maxValue = (long) maxValueObject;

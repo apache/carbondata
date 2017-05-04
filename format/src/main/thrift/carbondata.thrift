@@ -114,8 +114,12 @@ struct DataChunk{
 }
 
 /**
- * Represents a chunk of data. The chunk can be a single column stored in Column Major format or a group of columns stored in Row Major Format.
- * For V2 format.
+ * Represents the metadata of a data chunk.
+ * The chunk can be a single column stored in Column Major format or a group of columns stored
+ * in Row Major format.
+ *
+ * For V3, one data chunk is one page data of 32K rows.
+ * For V2 & V1, one data chunk is one blocklet data.
  */
 struct DataChunk2{
     1: required ChunkCompressionMeta chunk_meta; // The metadata of a chunk

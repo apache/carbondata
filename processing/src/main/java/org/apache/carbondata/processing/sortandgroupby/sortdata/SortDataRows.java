@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -256,7 +257,7 @@ public class SortDataRows {
       stream.writeInt(entryCountLocal);
       int complexDimColCount = parameters.getComplexDimColCount();
       int dimColCount = parameters.getDimColCount() + complexDimColCount;
-      char[] aggType = parameters.getAggType();
+      DataType[] type = parameters.getMeasureDataType();
       boolean[] noDictionaryDimnesionMapping = parameters.getNoDictionaryDimnesionColumn();
       Object[] row = null;
       for (int i = 0; i < entryCountLocal; i++) {
@@ -285,17 +286,21 @@ public class SortDataRows {
           Object value = row[mesCount + dimColCount];
           if (null != value) {
             stream.write((byte) 1);
-            if (aggType[mesCount] == CarbonCommonConstants.DOUBLE_MEASURE) {
-              Double val = (Double) value;
-              stream.writeDouble(val);
-            } else if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {
-              Long val = (Long) value;
-              stream.writeLong(val);
-            } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-              BigDecimal val = (BigDecimal) value;
-              byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
-              stream.writeInt(bigDecimalInBytes.length);
-              stream.write(bigDecimalInBytes);
+            switch (type[mesCount]) {
+              case SHORT:
+              case INT:
+              case LONG:
+                stream.writeLong((Long) value);
+                break;
+              case DOUBLE:
+                stream.writeDouble((Double) value);
+                break;
+              case DECIMAL:
+                BigDecimal val = (BigDecimal) value;
+                byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
+                stream.writeInt(bigDecimalInBytes.length);
+                stream.write(bigDecimalInBytes);
+                break;
             }
           } else {
             stream.write((byte) 0);

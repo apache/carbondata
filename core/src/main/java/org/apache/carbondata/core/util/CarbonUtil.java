@@ -833,7 +833,7 @@ public final class CarbonUtil {
     Object[] minValue = new Object[encodeMetaList.size()];
     Object[] uniqueValue = new Object[encodeMetaList.size()];
     int[] decimal = new int[encodeMetaList.size()];
-    char[] type = new char[encodeMetaList.size()];
+    DataType[] type = new DataType[encodeMetaList.size()];
     byte[] dataTypeSelected = new byte[encodeMetaList.size()];
 
     /*

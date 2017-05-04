@@ -15,46 +15,28 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.metadata.datatype;
+package org.apache.carbondata.core.datastore.page;
 
-public enum DataType {
+import org.apache.carbondata.core.metadata.datatype.DataType;
 
-  STRING(0, "STRING"),
-  DATE(1, "DATE"),
-  TIMESTAMP(2, "TIMESTAMP"),
-  BOOLEAN(1, "BOOLEAN"),
-  SHORT(2, "SMALLINT"),
-  INT(3, "INT"),
-  FLOAT(4, "FLOAT"),
-  LONG(5, "BIGINT"),
-  DOUBLE(6, "DOUBLE"),
-  NULL(7, "NULL"),
-  DECIMAL(8, "DECIMAL"),
-  ARRAY(9, "ARRAY"),
-  STRUCT(10, "STRUCT"),
-  MAP(11, "MAP"),
-  BYTE(12, "BYTE"),
+// Represent a variable length columnar data in one page, e.g. for dictionary columns.
+public class VarLengthColumnPage extends ColumnPage {
 
-  // internal use only
-  BYTE_ARRAY(13, "BYTE ARRAY");
+  // TODO: further optimizite it, to store length and data separately
+  private byte[][] byteArrayData;
 
-  private int precedenceOrder;
-  private String name ;
-
-  DataType(int value ,String  name) {
-    this.precedenceOrder = value;
-    this.name = name;
+  public VarLengthColumnPage(int pageSize) {
+    super(DataType.BYTE_ARRAY, pageSize);
+    byteArrayData = new byte[pageSize][];
   }
 
-  public int getPrecedenceOrder() {
-    return precedenceOrder;
+  public void putByteArray(int rowId, byte[] value) {
+    byteArrayData[rowId] = value;
+    updateStatistics(value);
   }
 
-  public String getName() {
-    return name;
+  public byte[][] getByteArrayPage() {
+    return byteArrayData;
   }
 
-  public boolean isComplexType() {
-    return precedenceOrder >= 9 && precedenceOrder <= 11;
-  }
 }

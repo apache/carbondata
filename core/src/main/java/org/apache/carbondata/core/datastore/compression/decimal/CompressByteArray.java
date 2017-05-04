@@ -29,7 +29,7 @@ import org.apache.carbondata.core.datastore.chunk.store.MeasureDataChunkStore;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.compression.ValueCompressionHolder;
-import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 
 public class CompressByteArray extends ValueCompressionHolder<byte[]> {
 
@@ -101,7 +101,7 @@ public class CompressByteArray extends ValueCompressionHolder<byte[]> {
   @Override
   public void setValue(byte[] data, int numberOfRows, Object maxValueObject, int decimalPlaces) {
     this.measureChunkStore = MeasureChunkStoreFactory.INSTANCE
-        .getMeasureDataChunkStore(DataType.DATA_BIGDECIMAL, numberOfRows);
+        .getMeasureDataChunkStore(DataType.DECIMAL, numberOfRows);
     this.measureChunkStore.putData(data);
   }
 }
