@@ -131,7 +131,6 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       }
 
       val fields = parser.getFields(cols)
-
       val options = new CarbonOption(properties)
       // validate tblProperties
       val bucketFields = parser.getBucketFields(tableProperties, fields, options)

@@ -17,10 +17,9 @@
 package org.apache.carbondata.core.compression;
 
 import org.apache.carbondata.core.datastore.dataholder.CarbonWriteDataHolder;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CompressionFinder;
 import org.apache.carbondata.core.util.ValueCompressionUtil.COMPRESSION_TYPE;
-import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
-
 /**
  * Measure compressor
  */

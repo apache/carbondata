@@ -37,7 +37,7 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
   private byte[] min;
   private byte[] max;
 
-  public BlockIndexerStorageForNoInvertedIndex(byte[][] keyBlockInput, boolean isNoDictionary) {
+  public BlockIndexerStorageForNoInvertedIndex(byte[][] keyBlockInput) {
     this.keyBlock = keyBlockInput;
     min = keyBlock[0];
     max = keyBlock[0];

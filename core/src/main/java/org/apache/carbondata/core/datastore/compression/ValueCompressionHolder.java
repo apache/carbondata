@@ -19,7 +19,7 @@ package org.apache.carbondata.core.datastore.compression;
 
 import java.math.BigDecimal;
 
-import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
  * ValueCompressionHolder is the base class for handling
@@ -40,24 +40,23 @@ public abstract class ValueCompressionHolder<T> {
   protected void unCompress(Compressor compressor, DataType dataType, byte[] data, int offset,
       int length, int numberOfRows, Object maxValueObject, int decimalPlaces) {
     switch (dataType) {
-      case DATA_BYTE:
+      case BYTE:
         setValue((T) compressor.unCompressByte(data, offset, length), numberOfRows, maxValueObject,
             decimalPlaces);
         break;
-      case DATA_SHORT:
+      case SHORT:
         setValue((T) compressor.unCompressShort(data, offset, length), numberOfRows, maxValueObject,
             decimalPlaces);
         break;
-      case DATA_INT:
+      case INT:
         setValue((T) compressor.unCompressInt(data, offset, length), numberOfRows, maxValueObject,
             decimalPlaces);
         break;
-      case DATA_LONG:
-      case DATA_BIGINT:
+      case LONG:
         setValue((T) compressor.unCompressLong(data, offset, length), numberOfRows, maxValueObject,
             decimalPlaces);
         break;
-      case DATA_FLOAT:
+      case FLOAT:
         setValue((T) compressor.unCompressFloat(data, offset, length), numberOfRows, maxValueObject,
             decimalPlaces);
         break;
@@ -75,18 +74,17 @@ public abstract class ValueCompressionHolder<T> {
    */
   public byte[] compress(Compressor compressor, DataType dataType, Object data) {
     switch (dataType) {
-      case DATA_BYTE:
+      case BYTE:
         return compressor.compressByte((byte[]) data);
-      case DATA_SHORT:
+      case SHORT:
         return compressor.compressShort((short[]) data);
-      case DATA_INT:
+      case INT:
         return compressor.compressInt((int[]) data);
-      case DATA_LONG:
-      case DATA_BIGINT:
+      case LONG:
         return compressor.compressLong((long[]) data);
-      case DATA_FLOAT:
+      case FLOAT:
         return compressor.compressFloat((float[]) data);
-      case DATA_DOUBLE:
+      case DOUBLE:
       default:
         return compressor.compressDouble((double[]) data);
     }

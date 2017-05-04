@@ -39,6 +39,8 @@ public final class ByteUtil {
 
   public static final String UTF8_CSN = StandardCharsets.UTF_8.name();
 
+  public static final byte[] ZERO_IN_BYTES = toBytes(0);
+
   private ByteUtil() {
 
   }

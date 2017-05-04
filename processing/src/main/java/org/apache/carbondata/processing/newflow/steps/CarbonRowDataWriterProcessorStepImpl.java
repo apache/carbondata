@@ -26,11 +26,11 @@ import java.util.concurrent.Future;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
@@ -64,7 +64,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
   private boolean[] isNoDictionaryDimensionColumn;
 
-  private char[] aggType;
+  private DataType[] measureDataType;
 
   private int dimensionCount;
 
@@ -115,8 +115,8 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       dimensionCount = configuration.getDimensionCount() - noDictWithComplextCount;
       isNoDictionaryDimensionColumn =
           CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
-      aggType = CarbonDataProcessorUtil
-          .getAggType(configuration.getMeasureCount(), configuration.getMeasureFields());
+      measureDataType = CarbonDataProcessorUtil
+          .getMeasureDataType(configuration.getMeasureCount(), configuration.getMeasureFields());
 
       CarbonFactDataHandlerModel dataHandlerModel = CarbonFactDataHandlerModel
           .createCarbonFactDataHandlerModel(configuration,
@@ -266,7 +266,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     for (; l < this.measureCount; l++) {
       Object value = row.getObject(l + this.dimensionWithComplexCount);
       if (null != value) {
-        if (aggType[l] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
+        if (measureDataType[l] == DataType.DECIMAL) {
           BigDecimal val = (BigDecimal) value;
           outputRow[l] = DataTypeUtil.bigDecimalToByte(val);
         } else {

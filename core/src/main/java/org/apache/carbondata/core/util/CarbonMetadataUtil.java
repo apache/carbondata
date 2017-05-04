@@ -554,7 +554,7 @@ public class CarbonMetadataUtil {
     Object[] minValue = new Object[encoderMetas.length];
     int[] decimalLength = new int[encoderMetas.length];
     Object[] uniqueValue = new Object[encoderMetas.length];
-    char[] aggType = new char[encoderMetas.length];
+    DataType[] aggType = new DataType[encoderMetas.length];
     byte[] dataTypeSelected = new byte[encoderMetas.length];
     for (int i = 0; i < encoderMetas.length; i++) {
       maxValue[i] = encoderMetas[i].getMaxValue();
@@ -827,25 +827,29 @@ public class CarbonMetadataUtil {
 
   public static byte[] serializeEncodeMetaUsingByteBuffer(ValueEncoderMeta valueEncoderMeta) {
     ByteBuffer buffer = null;
-    if (valueEncoderMeta.getType() == CarbonCommonConstants.DOUBLE_MEASURE) {
-      buffer = ByteBuffer.allocate(
-          (CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
-              + 3);
-      buffer.putChar(valueEncoderMeta.getType());
-      buffer.putDouble((Double) valueEncoderMeta.getMaxValue());
-      buffer.putDouble((Double) valueEncoderMeta.getMinValue());
-      buffer.putDouble((Double) valueEncoderMeta.getUniqueValue());
-    } else if (valueEncoderMeta.getType() == CarbonCommonConstants.BIG_INT_MEASURE) {
-      buffer = ByteBuffer.allocate(
-          (CarbonCommonConstants.LONG_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
-              + 3);
-      buffer.putChar(valueEncoderMeta.getType());
-      buffer.putLong((Long) valueEncoderMeta.getMaxValue());
-      buffer.putLong((Long) valueEncoderMeta.getMinValue());
-      buffer.putLong((Long) valueEncoderMeta.getUniqueValue());
-    } else {
-      buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + 3);
-      buffer.putChar(valueEncoderMeta.getType());
+    switch (valueEncoderMeta.getType()) {
+      case LONG:
+        buffer = ByteBuffer.allocate(
+            (CarbonCommonConstants.LONG_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
+                + 3);
+        buffer.putChar(valueEncoderMeta.getTypeInChar());
+        buffer.putLong((Long) valueEncoderMeta.getMaxValue());
+        buffer.putLong((Long) valueEncoderMeta.getMinValue());
+        buffer.putLong((Long) valueEncoderMeta.getUniqueValue());
+        break;
+      case DOUBLE:
+        buffer = ByteBuffer.allocate(
+            (CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
+                + 3);
+        buffer.putChar(valueEncoderMeta.getTypeInChar());
+        buffer.putDouble((Double) valueEncoderMeta.getMaxValue());
+        buffer.putDouble((Double) valueEncoderMeta.getMinValue());
+        buffer.putDouble((Double) valueEncoderMeta.getUniqueValue());
+        break;
+      case DECIMAL:
+        buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + 3);
+        buffer.putChar(valueEncoderMeta.getTypeInChar());
+        break;
     }
     buffer.putInt(valueEncoderMeta.getDecimal());
     buffer.put(valueEncoderMeta.getDataTypeSelected());
