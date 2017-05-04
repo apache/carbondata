@@ -24,7 +24,7 @@ Apache CarbonData periodically declares and publishes releases.
 Each release is executed by a _Release Manager_, who is selected among the CarbonData committers.
  This document describes the process that the Release Manager follows to perform a release. Any 
  changes to this process should be discussed and adopted on the 
- [dev@ mailing list](mailto:dev@carbondata.incubator.apache.org).
+ [dev@ mailing list](mailto:dev@carbondata.apache.org).
  
 Please remember that publishing software has legal consequences. This guide complements the 
 foundation-wide [Product Release Policy](http://www.apache.org/dev/release.html) and [Release 
@@ -222,7 +222,7 @@ Copy the source release to dev repository on `dist.apache.org`.
 .apache.org` via Subversion. In a fresh directory:
 
 ```
-svn co https://dist.apache.org/repos/dist/dev/incubator/carbondata
+svn co https://dist.apache.org/repos/dist/dev/carbondata
 ```
 
 2. Make a directory for the new release:
@@ -244,7 +244,7 @@ svn add x.x.x
 svn commit
 ```
 
-5. Verify the files are [present](https://dist.apache.org/repos/dist/dev/incubator/carbondata).
+5. Verify the files are [present](https://dist.apache.org/repos/dist/dev/carbondata).
 
 ### Propose a pull request for website updates
 
@@ -260,7 +260,7 @@ _Checklist to proceed to the next step:_
 1. Maven artifacts deployed to the staging repository of 
 [repository.apache.org](https://repository.apache.org)
 2. Source distribution deployed to the dev repository of
-[dist.apache.org](https://dist.apache.org/repos/dist/dev/incubator/carbondata/)
+[dist.apache.org](https://dist.apache.org/repos/dist/dev/carbondata/)
 3. Website pull request to list the release.
 
 ## Vote on the release candidate
@@ -297,7 +297,7 @@ Release Manager
 
 [1] link
 [2] link
-[3] https://dist.apache.org/repos/dist/dist/incubator/carbondata/KEYS
+[3] https://dist.apache.org/repos/dist/dist/carbondata/KEYS
 [4] link
 [5] link
 [6] link
@@ -457,7 +457,7 @@ _Checklist to proceed to the next step:_
 1. Maven artifacts released and indexed in the
  [Maven Central repository](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.apache.carbondata%22)
 2. Source distribution available in the release repository of
- [dist.apache.org](https://dist.apache.org/repos/dist/release/incubator/carbondata/)
+ [dist.apache.org](https://dist.apache.org/repos/dist/release/carbondata/)
 3. Website pull request to list the release merged
 4. Release version finalized in Jira
 

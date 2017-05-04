@@ -19,10 +19,10 @@
 
 <img src="/docs/images/CarbonData_logo.png" width="200" height="40">
 
-Apache CarbonData(incubating) is an indexed columnar data format for fast analytics on big data platform, e.g.Apache Hadoop, Apache Spark, etc.
+Apache CarbonData is an indexed columnar data format for fast analytics on big data platform, e.g.Apache Hadoop, Apache Spark, etc.
 
 You can find the latest CarbonData document and learn more at:
-[http://carbondata.incubator.apache.org](http://carbondata.incubator.apache.org/)
+[http://carbondata.apache.org](http://carbondata.apache.org/)
 
 [CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA/)
 
@@ -61,7 +61,7 @@ This guide document introduce [how to contribute to CarbonData](https://github.c
 ## Contact us
 To get involved in CarbonData:
 
-* First join by emailing to [dev-subscribe@carbondata.incubator.apache.org](mailto:dev-subscribe@carbondata.incubator.apache.org),then you can discuss issues by emailing to [dev@carbondata.incubator.apache.org](mailto:dev@carbondata.incubator.apache.org) or visit http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com
+* First join by emailing to [dev-subscribe@carbondata.apache.org](mailto:dev-subscribe@carbondata.apache.org),then you can discuss issues by emailing to [dev@carbondata.incubator.apache.org](mailto:dev@carbondata.incubator.apache.org) or visit http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com
 * Report issues on [Apache Jira](https://issues.apache.org/jira/browse/CARBONDATA).
 
 ## About
