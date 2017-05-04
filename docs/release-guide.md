@@ -337,7 +337,7 @@ process as above. Start the review and vote thread on the `general@incubator.apa
 ```
 From: Release Manager
 To: general@incubator.apache.org
-Cc: dev@carbondata.incubator.apache.org
+Cc: dev@carbondata.apache.org
 Subject: [VOTE] Apache CarbonData release x.x.x-incubating
 
 Hi everyone,
@@ -376,7 +376,7 @@ If passed, close the voting and summarize the results:
 ```
 From: Release Manager
 To: general@incubator.apache.org
-Cc: dev@carbondata.incubator.apache.org
+Cc: dev@carbondata.apache.org
 Subject: [RESULT][VOTE] Apache CarbonData release x.x.x-incubating
 
 There are XXX approving votes, all of which are binding:
