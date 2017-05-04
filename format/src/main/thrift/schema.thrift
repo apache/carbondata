@@ -49,7 +49,7 @@ enum Encoding{
 	DIRECT_DICTIONARY = 5; // Identifies that a column is direct dictionary encoded
 }
 
-enum Partitioning{
+enum PartitionType{
   RANGE = 0;
   RANGE_INTERVAL = 1;
   LIST = 2;
@@ -139,9 +139,10 @@ struct Partition{
  */
 struct PartitionInfo{
     1: required list<ColumnSchema> partition_columns;
-    2: required Partitioning partitioning;
-    3: optional list<Partition> partition_list;
-    4: optional i32 number_of_partitions;
+    2: required PartitionType partition_type;
+    3: optional i32 hash_number;  // number of partitions defined in hash partition table
+    4: optional list<list<string>> list_info; // value list of list partition table
+    5: optional list<string> range_info;  // range value list of range partition table
 }
 
 /**

@@ -20,19 +20,13 @@ package org.apache.carbondata.core.metadata.schema;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.carbondata.core.metadata.schema.partition.Partition;
-import org.apache.carbondata.core.metadata.schema.partition.Partitioning;
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
- * Partition information
+ * Partition Information of carbon partition table
  */
 public class PartitionInfo implements Serializable {
-
-  /**
-   * Partition numbers
-   */
-  private int numberOfPartitions;
 
   /**
    * Partition columns
@@ -42,47 +36,63 @@ public class PartitionInfo implements Serializable {
   /**
    * partition type
    */
-  private Partitioning partitioning;
+  private PartitionType partitionType;
 
   /**
-   * Partition list
+   * Range Partition definition
    */
-  private List<Partition> partitionList;
+  private List<String> rangeInfo;
 
   /**
+   * List Partition definition
+   */
+  private List<List<String>> listInfo;
+
+  /**
+   * Hash Partition numbers
+   */
+  private int hashNumber;
+
+  /**
+   * For range partition table
    * @param columnSchemaList
-   * @param partitioning
+   * @param partitionType
    */
-  public PartitionInfo(List<ColumnSchema> columnSchemaList, Partitioning partitioning) {
+  public PartitionInfo(List<ColumnSchema> columnSchemaList, PartitionType partitionType) {
     this.columnSchemaList = columnSchemaList;
-    this.partitioning = partitioning;
-  }
-
-  /**
-   * @param columnSchemaList
-   * @param partitioning
-   * @param numberOfPartitions
-   */
-  public PartitionInfo(List<ColumnSchema> columnSchemaList, Partitioning partitioning,
-      int numberOfPartitions) {
-    this(columnSchemaList, partitioning);
-    this.numberOfPartitions = numberOfPartitions;
+    this.partitionType = partitionType;
   }
 
   public List<ColumnSchema> getColumnSchemaList() {
     return columnSchemaList;
   }
 
-  public Partitioning getPartitioning() {
-    return partitioning;
+  public PartitionType getPartitionType() {
+    return partitionType;
   }
 
-  public int getNumberOfPartitions() {
-    return  numberOfPartitions;
+  public void setHashNumber(int hashNumber) {
+    this.hashNumber = hashNumber;
   }
 
-  public List<Partition> getPartitionList() {
-    return partitionList;
+  public int getHashNumber() {
+    return hashNumber;
+  }
+
+  public void setRangeInfo(List<String> rangeInfo) {
+    this.rangeInfo = rangeInfo;
+  }
+
+  public List<String> getRangeInfo() {
+    return rangeInfo;
+  }
+
+  public void setListInfo(List<List<String>> listInfo) {
+    this.listInfo = listInfo;
+  }
+
+  public List<List<String>> getListInfo() {
+    return listInfo;
   }
 
 }

@@ -16,49 +16,21 @@
  */
 package org.apache.carbondata.core.metadata.schema.partition;
 
-import java.io.Serializable;
 import java.util.List;
 
-/**
- * One single partition
- */
-public class Partition implements Serializable {
-
-  private int partitionId;
+public class ListPartition extends AbstractPartition {
 
   /**
-   * boundary value list for partition
+   * value list for list partition table
    */
-  private List<String> boundaryValueList;
+  private List<String> listInfo;
 
-  /**
-   *
-   * @param valueList
-   */
-  public Partition(List<String> valueList) {
-    this.boundaryValueList = valueList;
-  }
-
-  public void setPartitionId(int id) {
+  public ListPartition(int id, List<String> listInfo) {
     this.partitionId = id;
+    this.listInfo = listInfo;
   }
 
-  public int getPartitionId() {
-    return partitionId;
+  public List<String> getListInfo() {
+    return listInfo;
   }
-
-  /**
-   * @param valueList
-   */
-  public void setBoundaryValue(List<String> valueList) {
-    this.boundaryValueList = valueList;
-  }
-
-  /**
-   * @return boundary_value_list
-   */
-  public List<String> getBoundaryValue() {
-    return boundaryValueList;
-  }
-
 }

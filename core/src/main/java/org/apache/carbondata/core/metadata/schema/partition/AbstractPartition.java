@@ -16,12 +16,27 @@
  */
 package org.apache.carbondata.core.metadata.schema.partition;
 
-/**
- * Partition type supported in carbon
- */
-public enum Partitioning {
-  RANGE,
-  RANGE_INTERVAL,
-  LIST,
-  HASH
+public abstract class AbstractPartition {
+
+  /**
+   * Partition unique identifier
+   */
+  protected int partitionId;
+
+  /**
+   * Total row count of this partition
+   */
+  protected int rowCount;
+
+  public int getPartitionId() {
+    return partitionId;
+  }
+
+  public void setRowCount(int count) {
+    this.rowCount = count;
+  }
+
+  public int getRowCount() {
+    return rowCount;
+  }
 }
