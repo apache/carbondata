@@ -20,7 +20,6 @@ package org.apache.carbondata.processing.util;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,7 +47,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datatypes.ArrayDataType;
@@ -406,31 +404,28 @@ public final class CarbonDataProcessorUtil {
     return columnNames;
   }
 
-  /**
-   * get agg type
-   */
-  public static char[] getAggType(int measureCount, String databaseName, String tableName) {
-    char[] aggType = new char[measureCount];
-    Arrays.fill(aggType, 'n');
+
+  public static DataType[] getMeasureDataType(int measureCount, String databaseName,
+      String tableName) {
+    DataType[] type = new DataType[measureCount];
+    for (int i = 0; i < type.length; i++) {
+      type[i] = DataType.DOUBLE;
+    }
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
         databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
-    for (int i = 0; i < aggType.length; i++) {
-      aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
+    for (int i = 0; i < type.length; i++) {
+      type[i] = measures.get(i).getDataType();
     }
-    return aggType;
+    return type;
   }
 
-  /**
-   * get agg type
-   */
-  public static char[] getAggType(int measureCount, DataField[] measureFields) {
-    char[] aggType = new char[measureCount];
-    Arrays.fill(aggType, 'n');
-    for (int i = 0; i < measureFields.length; i++) {
-      aggType[i] = DataTypeUtil.getAggType(measureFields[i].getColumn().getDataType());
+  public static DataType[] getMeasureDataType(int measureCount, DataField[] measureFields) {
+    DataType[] type = new DataType[measureCount];
+    for (int i = 0; i < type.length; i++) {
+      type[i] = measureFields[i].getColumn().getDataType();
     }
-    return aggType;
+    return type;
   }
 
   /**
@@ -509,16 +504,19 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
-   * initialise aggregation type for measures for their storage format
+   * initialise data type for measures for their storage format
    */
-  public static char[] initAggType(CarbonTable carbonTable, String tableName, int measureCount) {
-    char[] aggType = new char[measureCount];
-    Arrays.fill(aggType, 'n');
+  public static DataType[] initDataType(CarbonTable carbonTable, String tableName,
+      int measureCount) {
+    DataType[] type = new DataType[measureCount];
+    for (int i = 0; i < type.length; i++) {
+      type[i] = DataType.DOUBLE;
+    }
     List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
     for (int i = 0; i < measureCount; i++) {
-      aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
+      type[i] = measures.get(i).getDataType();
     }
-    return aggType;
+    return type;
   }
 
 }

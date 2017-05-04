@@ -142,7 +142,7 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
     return new SingleThreadFinalSortFilesMerger(dataFolderLocation, sortParameters.getTableName(),
             sortParameters.getDimColCount(), sortParameters.getComplexDimColCount(),
             sortParameters.getMeasureColCount(), sortParameters.getNoDictionaryCount(),
-            sortParameters.getAggType(), sortParameters.getNoDictionaryDimnesionColumn(),
+            sortParameters.getMeasureDataType(), sortParameters.getNoDictionaryDimnesionColumn(),
             this.sortParameters.getNoDictionarySortColumn());
   }
 

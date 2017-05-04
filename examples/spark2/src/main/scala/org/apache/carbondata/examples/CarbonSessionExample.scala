@@ -43,6 +43,7 @@ object CarbonSessionExample {
       .master("local")
       .appName("CarbonSessionExample")
       .config("spark.sql.warehouse.dir", warehouse)
+      .config("spark.driver.host", "localhost")
       .getOrCreateCarbonSession(storeLocation, metastoredb)
 
     spark.sparkContext.setLogLevel("WARN")

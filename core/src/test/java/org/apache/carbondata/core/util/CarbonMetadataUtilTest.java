@@ -28,6 +28,8 @@ import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.format.*;
 import org.apache.carbondata.format.BlockletMinMaxIndex;
 import org.apache.carbondata.format.ColumnSchema;
+import org.apache.carbondata.format.DataType;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -169,7 +171,12 @@ public class CarbonMetadataUtilTest {
     long[] longArr = { 1, 2, 3, 4, 5 };
     byte[][] maxByteArr = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 2, 4 }, { 1, 2 } };
     int[] cardinality = { 1, 2, 3, 4, 5 };
-    char[] charArr = { 'a', 's', 'd', 'g', 'h' };
+    org.apache.carbondata.core.metadata.datatype.DataType[] dataType = {
+        org.apache.carbondata.core.metadata.datatype.DataType.INT,
+        org.apache.carbondata.core.metadata.datatype.DataType.INT,
+        org.apache.carbondata.core.metadata.datatype.DataType.INT,
+        org.apache.carbondata.core.metadata.datatype.DataType.INT,
+        org.apache.carbondata.core.metadata.datatype.DataType.INT };
 
     org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema colSchema =
         new org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema();
@@ -191,7 +198,7 @@ public class CarbonMetadataUtilTest {
     writerCompressModel.setMinValue(objMinArr);
     writerCompressModel.setDataTypeSelected(byteArr);
     writerCompressModel.setMantissa(intArr);
-    writerCompressModel.setType(charArr);
+    writerCompressModel.setType(dataType);
     writerCompressModel.setUniqueValue(objMinArr);
 
     BlockletInfoColumnar blockletInfoColumnar = new BlockletInfoColumnar();
