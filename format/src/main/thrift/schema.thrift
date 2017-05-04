@@ -127,14 +127,6 @@ struct SchemaEvolution{
 }
 
 /**
- * One partition in table
- */
-struct Partition{
-    1: optional i32 partition_id;
-    2: required list<string> boundary_value_list;
-}
-
-/**
  * Partition information of table
  */
 struct PartitionInfo{
