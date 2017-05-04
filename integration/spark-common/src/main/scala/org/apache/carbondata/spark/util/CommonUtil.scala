@@ -146,10 +146,10 @@ object CommonUtil {
   }
 
   /**
-   * 1. If partition by clause exists, then partitioning should be defined
-   * 2. If partitioning is Hash, then partitioncount should be defined
-   * 3. If partitioning is List, then value list should be defined
-   * 4. If partitioning is Range, then boundary value list should be defined
+   * 1. If partitioned by clause exists, then partition_type should be defined
+   * 2. If partition_type is Hash, then hash_number should be defined
+   * 3. If partition_type is List, then list_info should be defined
+   * 4. If partition_type is Range, then range_info should be defined
    * 5. Only support single level partition for now
    * @param tableProperties
    * @param partitionCols
