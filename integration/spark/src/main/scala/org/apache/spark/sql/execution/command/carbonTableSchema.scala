@@ -691,8 +691,9 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val identifier = TableIdentifier(tableName, Option(dbName))
     val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")
-    val carbonLock = CarbonLockFactory
-      .getCarbonLockObj(carbonTableIdentifier, LockUsage.DROP_TABLE_LOCK)
+    val carbonLock = CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier.getDatabaseName,
+        carbonTableIdentifier.getTableName + CarbonCommonConstants.UNDERSCORE +
+        LockUsage.DROP_TABLE_LOCK)
     val storePath = CarbonEnv.get.carbonMetastore.storePath
     var isLocked = false
     try {
