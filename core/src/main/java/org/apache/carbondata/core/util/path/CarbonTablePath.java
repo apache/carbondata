@@ -525,6 +525,15 @@ public class CarbonTablePath extends Path {
     }
 
     /**
+     * get the taskId part from taskNo(include taskId + batchNo)
+     * @param taskNo
+     * @return
+     */
+    public static int getTaskIdFromTaskNo(String taskNo) {
+      return Integer.parseInt(taskNo.split(BATCH_PREFIX)[0]);
+    }
+
+    /**
      * Gets the file name from file path
      */
     private static String getFileName(String carbonDataFileName) {

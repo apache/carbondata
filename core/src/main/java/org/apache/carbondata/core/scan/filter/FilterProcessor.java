@@ -18,14 +18,17 @@
 package org.apache.carbondata.core.scan.filter;
 
 import java.io.IOException;
+import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+import org.apache.carbondata.core.scan.partition.Partitioner;
 
 public interface FilterProcessor {
 
@@ -52,4 +55,10 @@ public interface FilterProcessor {
   List<DataRefNode> getFilterredBlocks(DataRefNode dataRefNode, FilterResolverIntf filterResolver,
       AbstractIndex segmentIndexBuilder, AbsoluteTableIdentifier tableIdentifier);
 
+  /**
+   * This API will get the map of required partitions.
+   * @return BitSet the value "1" represent the required partition.
+   */
+  BitSet getFilteredPartitions(Expression expressionTree, PartitionInfo partitionInfo,
+      Partitioner partitioner);
 }
