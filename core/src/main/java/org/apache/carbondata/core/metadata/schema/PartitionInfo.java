@@ -33,9 +33,6 @@ public class PartitionInfo implements Serializable {
    */
   private List<ColumnSchema> columnSchemaList;
 
-  /**
-   * partition type
-   */
   private PartitionType partitionType;
 
   /**
@@ -54,7 +51,6 @@ public class PartitionInfo implements Serializable {
   private int hashNumber;
 
   /**
-   * For range partition table
    * @param columnSchemaList
    * @param partitionType
    */

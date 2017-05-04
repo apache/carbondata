@@ -119,7 +119,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
 
       // validate partition clause
       if (!CommonUtil.validatePartitionColumns(tableProperties, partitionCols)) {
-        operationNotAllowed("Invalid Partition definition", ctx)
+        throw new MalformedCarbonCommandException("Invalid partition definition")
       } else if (partitionCols.nonEmpty) {
         // partition columns must be part of the schema
         val badPartCols = partitionCols.map(_.name).toSet.intersect(colNames.toSet)

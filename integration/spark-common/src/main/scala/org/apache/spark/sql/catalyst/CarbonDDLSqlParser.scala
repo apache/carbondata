@@ -21,7 +21,7 @@ import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer, LinkedHashSet, Map}
+import scala.collection.mutable.{ArrayBuffer, LinkedHashSet, ListBuffer, Map}
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 
@@ -360,9 +360,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       tableProperties: Map[String, String]): Option[PartitionInfo] = {
     var partitionType: String = ""
     var hashNumber = 0
-    var rangeInfo: List[String] = List[String]()
-    var listInfo: List[List[String]] = List[List[String]]()
-
+    var rangeInfo = List[String]()
+    var listInfo = ListBuffer[List[String]]()
+    var templist = ListBuffer[String]()
     if (tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).isDefined) {
       partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).get
     }
@@ -370,12 +370,27 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       hashNumber = tableProperties.get(CarbonCommonConstants.HASH_NUMBER).get.toInt
     }
     if (tableProperties.get(CarbonCommonConstants.RANGE_INFO).isDefined) {
-      rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO).get.replace(" ","")
+      rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO).get.replace(" ", "")
         .split(",").toList
     }
     if (tableProperties.get(CarbonCommonConstants.LIST_INFO).isDefined) {
-      rangeInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO).get.replace(" ","")
-        .split(",").toList
+      val arr = tableProperties.get(CarbonCommonConstants.LIST_INFO).get
+                      .replace(" ", "").split(",")
+      val iter = arr.iterator
+      while(iter.hasNext) {
+        val value = iter.next()
+        if (value.startsWith("(")) {
+          templist += value.replace("(", "")
+        } else if (value.endsWith(")")) {
+          templist += value.replace(")", "")
+          listInfo += templist.toList
+          templist.clear()
+        } else {
+          templist += value
+          listInfo += templist.toList
+          templist.clear()
+        }
+      }
     }
     val cols : ArrayBuffer[ColumnSchema] = new ArrayBuffer[ColumnSchema]()
     partitionCols.foreach(partition_col => {
@@ -388,17 +403,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     var partitionInfo : PartitionInfo = null
     partitionType.toUpperCase() match {
-      case "HASH" => {
-        partitionInfo = new PartitionInfo(cols.asJava, PartitionType.HASH)
-        partitionInfo.setHashNumber(hashNumber)
-      }
-      case "RANGE" => {
-        partitionInfo = new PartitionInfo(cols.asJava, PartitionType.RANGE)
-        partitionInfo.setRangeInfo(rangeInfo.asJava)
-      }
-      case "LIST" => {
-        partitionInfo = new PartitionInfo(cols.asJava, PartitionType.LIST)
-      }
+      case "HASH" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.HASH)
+                     partitionInfo.setHashNumber(hashNumber)
+      case "RANGE" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.RANGE)
+                      partitionInfo.setRangeInfo(rangeInfo.asJava)
+      case "LIST" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.LIST)
+                     partitionInfo.setListInfo(listInfo.map(_.asJava).toList.asJava)
     }
     Some(partitionInfo)
   }

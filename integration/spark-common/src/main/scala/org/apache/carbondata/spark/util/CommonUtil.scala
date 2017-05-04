@@ -160,6 +160,8 @@ object CommonUtil {
     var isValid: Boolean = true
     val partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE)
     val hashNumber = tableProperties.get(CarbonCommonConstants.HASH_NUMBER)
+    val rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO)
+    val listInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO)
 
     // partition column and partitioning should be both exist or not exist
     if (partitionCols.isEmpty ^ partitionType.isEmpty) {
@@ -167,8 +169,8 @@ object CommonUtil {
     } else if (partitionCols.nonEmpty) {
       partitionType.get.toUpperCase() match {
         case "HASH" => if (!hashNumber.isDefined) isValid = false
-        case "LIST" => isValid = false
-        case "RANGE" => isValid = false
+        case "LIST" => if (!listInfo.isDefined) isValid = false
+        case "RANGE" => if (!rangeInfo.isDefined) isValid = false
         case "RANGE_INTERVAL" => isValid = false
         case _ => isValid = false
       }
