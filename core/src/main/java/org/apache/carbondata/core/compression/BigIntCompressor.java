@@ -17,7 +17,7 @@
 package org.apache.carbondata.core.compression;
 
 import org.apache.carbondata.core.datastore.dataholder.CarbonWriteDataHolder;
-import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
  * It compresses big int data
@@ -63,6 +63,7 @@ public class BigIntCompressor extends ValueCompressor {
    */
   @Override
   protected Object compressAdaptive(DataType convertedDataType, CarbonWriteDataHolder dataHolder) {
+
     long[] value = dataHolder.getWritableLongValues();
     return compressValue(convertedDataType, value, 0, false);
   }
@@ -82,7 +83,7 @@ public class BigIntCompressor extends ValueCompressor {
   protected Object compressValue(DataType convertedDataType, long[] value, long maxValue,
       boolean isMinMax) {
     switch (convertedDataType) {
-      case DATA_BYTE:
+      case BYTE:
         byte[] result = new byte[value.length];
         if (isMinMax) {
           for (int j = 0; j < value.length; j++) {
@@ -94,7 +95,7 @@ public class BigIntCompressor extends ValueCompressor {
           }
         }
         return result;
-      case DATA_SHORT:
+      case SHORT:
         short[] shortResult = new short[value.length];
         if (isMinMax) {
           for (int j = 0; j < value.length; j++) {
@@ -106,7 +107,7 @@ public class BigIntCompressor extends ValueCompressor {
           }
         }
         return shortResult;
-      case DATA_INT:
+      case INT:
         int[] intResult = new int[value.length];
         if (isMinMax) {
           for (int j = 0; j < value.length; j++) {

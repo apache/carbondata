@@ -647,12 +647,6 @@ public final class CarbonCommonConstants {
   public static final char BIG_INT_MEASURE = 'd';
 
   /**
-   * This determines the size of array to be processed in data load steps. one
-   * for dimensions , one of ignore dictionary dimensions , one for measures.
-   */
-  public static final int ARRAYSIZE = 3;
-
-  /**
    * CARBON_PREFETCH_BUFFERSIZE
    */
   public static final String CARBON_PREFETCH_BUFFERSIZE = "carbon.prefetch.buffersize";

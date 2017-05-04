@@ -31,6 +31,7 @@ import java.util.concurrent.Future;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -125,7 +126,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
 
   private int noDictionaryCount;
 
-  private char[] aggType;
+  private DataType[] aggType;
 
   /**
    * to store whether dimension is of dictionary type or not
@@ -150,7 +151,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    * @param isNoDictionaryDimensionColumn
    */
   public SortTempFileChunkHolder(File tempFile, int dimensionCount, int complexDimensionCount,
-      int measureCount, int fileBufferSize, int noDictionaryCount, char[] aggType,
+      int measureCount, int fileBufferSize, int noDictionaryCount, DataType[] aggType,
       boolean[] isNoDictionaryDimensionColumn, boolean[] isNoDictionarySortColumn) {
     // set temp file
     this.tempFile = tempFile;
@@ -338,15 +339,21 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
       // read measure values
       for (int i = 0; i < this.measureCount; i++) {
         if (stream.readByte() == 1) {
-          if (aggType[i] == CarbonCommonConstants.DOUBLE_MEASURE) {
-            measures[index++] = stream.readDouble();
-          } else if (aggType[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
-            measures[index++] = stream.readLong();
-          } else {
-            int len = stream.readInt();
-            byte[] buff = new byte[len];
-            stream.readFully(buff);
-            measures[index++] = buff;
+          switch (aggType[i]) {
+            case SHORT:
+            case INT:
+            case LONG:
+              measures[index++] = stream.readLong();
+              break;
+            case DOUBLE:
+              measures[index++] = stream.readDouble();
+              break;
+            case DECIMAL:
+              int len = stream.readInt();
+              byte[] buff = new byte[len];
+              stream.readFully(buff);
+              measures[index++] = buff;
+              break;
           }
         } else {
           measures[index++] = null;

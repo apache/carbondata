@@ -18,13 +18,13 @@
 package org.apache.carbondata.core.datastore.compression;
 
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
-import org.apache.carbondata.core.util.ValueCompressionUtil;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 
 // Used in read path for decompression preparation
 public class ReaderCompressModel {
   private ValueEncoderMeta valueEncoderMeta;
 
-  private ValueCompressionUtil.DataType convertedDataType;
+  private DataType convertedDataType;
 
   private ValueCompressionHolder valueHolder;
 
@@ -32,11 +32,11 @@ public class ReaderCompressModel {
     this.valueEncoderMeta = valueEncoderMeta;
   }
 
-  public ValueCompressionUtil.DataType getConvertedDataType() {
+  public DataType getConvertedDataType() {
     return convertedDataType;
   }
 
-  public void setConvertedDataType(ValueCompressionUtil.DataType convertedDataType) {
+  public void setConvertedDataType(DataType convertedDataType) {
     this.convertedDataType = convertedDataType;
   }
 

@@ -115,7 +115,7 @@ public class UnsafeSortDataRows {
     this.rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
         parameters.getNoDictionarySortColumn(),
         parameters.getDimColCount() + parameters.getComplexDimColCount(),
-        parameters.getMeasureColCount(), parameters.getAggType(), baseBlock,
+        parameters.getMeasureColCount(), parameters.getMeasureDataType(), baseBlock,
         !UnsafeMemoryManager.INSTANCE.isMemoryAvailable());
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
@@ -178,10 +178,14 @@ public class UnsafeSortDataRows {
             dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
             MemoryBlock memoryBlock = getMemoryBlock(inMemoryChunkSize);
             boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
-            rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
+            rowPage = new UnsafeCarbonRowPage(
+                parameters.getNoDictionaryDimnesionColumn(),
                 parameters.getNoDictionarySortColumn(),
                 parameters.getDimColCount() + parameters.getComplexDimColCount(),
-                parameters.getMeasureColCount(), parameters.getAggType(), memoryBlock, saveToDisk);
+                parameters.getMeasureColCount(),
+                parameters.getMeasureDataType(),
+                memoryBlock,
+                saveToDisk);
             bytesAdded += rowPage.addRow(rowBatch[i]);
           } catch (Exception e) {
             LOGGER.error(

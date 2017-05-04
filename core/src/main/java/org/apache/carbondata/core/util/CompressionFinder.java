@@ -16,8 +16,8 @@
  */
 package org.apache.carbondata.core.util;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ValueCompressionUtil.COMPRESSION_TYPE;
-import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
 
 /**
@@ -37,7 +37,7 @@ public class CompressionFinder implements Comparable<CompressionFinder> {
 
   private PRIORITY priority;
 
-  private char measureStoreType;
+  private DataType measureStoreType;
 
   /**
    * CompressionFinder constructor.
@@ -47,7 +47,7 @@ public class CompressionFinder implements Comparable<CompressionFinder> {
    * @param convertedDataType
    */
   CompressionFinder(COMPRESSION_TYPE compType, DataType actualDataType,
-      DataType convertedDataType, char measureStoreType) {
+      DataType convertedDataType, DataType measureStoreType) {
     super();
     this.compType = compType;
     this.actualDataType = actualDataType;
@@ -65,7 +65,7 @@ public class CompressionFinder implements Comparable<CompressionFinder> {
    */
 
   CompressionFinder(COMPRESSION_TYPE compType, DataType actualDataType, DataType convertedDataType,
-      PRIORITY priority, char measureStoreType) {
+      PRIORITY priority, DataType measureStoreType) {
     super();
     this.actualDataType = actualDataType;
     this.convertedDataType = convertedDataType;
@@ -155,7 +155,7 @@ public class CompressionFinder implements Comparable<CompressionFinder> {
     return priority;
   }
 
-  public char getMeasureStoreType() {
+  public DataType getMeasureStoreType() {
     return measureStoreType;
   }
 }

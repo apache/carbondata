@@ -31,7 +31,7 @@ import java.util.concurrent.Callable;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.newflow.sort.unsafe.holder.SortTempChunkHolder;
@@ -278,7 +278,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
   private void writeDataTofile(Object[] row) throws CarbonSortKeyAndGroupByException, IOException {
     int dimCount = 0;
     int size = 0;
-    char[] aggType = mergerParameters.getAggType();
+    DataType[] type = mergerParameters.getMeasureDataType();
     for (; dimCount < noDictionarycolumnMapping.length; dimCount++) {
       if (noDictionarycolumnMapping[dimCount]) {
         byte[] col = (byte[]) row[dimCount];
@@ -310,21 +310,25 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     for (int mesCount = 0; mesCount < measureSize; mesCount++) {
       Object value = row[mesCount + dimensionSize];
       if (null != value) {
-        if (aggType[mesCount] == CarbonCommonConstants.DOUBLE_MEASURE) {
-          Double val = (Double) value;
-          rowData.putDouble(size, val);
-          size += 8;
-        } else if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {
-          Long val = (Long) value;
-          rowData.putLong(size, val);
-          size += 8;
-        } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-          byte[] bigDecimalInBytes = (byte[]) value;
-          rowData.putShort(size, (short)bigDecimalInBytes.length);
-          size += 2;
-          for (int i = 0; i < bigDecimalInBytes.length; i++) {
-            rowData.put(size++, bigDecimalInBytes[i]);
-          }
+        switch (type[mesCount]) {
+          case SHORT:
+          case INT:
+          case LONG:
+            rowData.putLong(size, (Long) value);
+            size += 8;
+            break;
+          case DOUBLE:
+            rowData.putDouble(size, (Double) value);
+            size += 8;
+            break;
+          case DECIMAL:
+            byte[] bigDecimalInBytes = (byte[]) value;
+            rowData.putShort(size, (short)bigDecimalInBytes.length);
+            size += 2;
+            for (int i = 0; i < bigDecimalInBytes.length; i++) {
+              rowData.put(size++, bigDecimalInBytes[i]);
+            }
+            break;
         }
         UnsafeCarbonRowPage.set(nullSetWords, mesCount);
       } else {

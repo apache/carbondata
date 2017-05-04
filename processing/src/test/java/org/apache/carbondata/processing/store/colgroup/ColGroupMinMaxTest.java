@@ -33,6 +33,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -159,6 +160,7 @@ public class ColGroupMinMaxTest {
 		}
 	}
 
+	@Ignore
 	@Test
 	public void testRowStoreMinMax() throws KeyGenException {
 

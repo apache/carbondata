@@ -57,16 +57,6 @@ public class NodeHolder {
   private int[] keyLengths;
 
   /**
-   * dataAfterCompression
-   */
-  private short[][] dataAfterCompression;
-
-  /**
-   * indexMap
-   */
-  private short[][] indexMap;
-
-  /**
    * keyIndexBlockLenght
    */
   private int[] keyBlockIndexLength;
@@ -84,11 +74,6 @@ public class NodeHolder {
    * dataIndexMap
    */
   private int[] dataIndexMapLength;
-
-  /**
-   * dataIndexMap
-   */
-  private int[] dataIndexMapOffsets;
 
   /**
    * compressedDataIndex
@@ -120,19 +105,9 @@ public class NodeHolder {
   private boolean[] aggBlocks;
 
   /**
-   * all columns max value
-   */
-  private byte[][] allMaxValue;
-
-  /**
-   * all column max value
-   */
-  private byte[][] allMinValue;
-
-  /**
    * true if given index is colgroup block
    */
-  private boolean[] colGrpBlock;
+  private boolean[] colGrpBlocks;
 
   /**
    * bit set which will holds the measure
@@ -383,14 +358,14 @@ public class NodeHolder {
    * @return
    */
   public boolean[] getColGrpBlocks() {
-    return this.colGrpBlock;
+    return this.colGrpBlocks;
   }
 
   /**
    * @param colGrpBlock true if block is column group
    */
   public void setColGrpBlocks(boolean[] colGrpBlock) {
-    this.colGrpBlock = colGrpBlock;
+    this.colGrpBlocks = colGrpBlock;
   }
 
   /**

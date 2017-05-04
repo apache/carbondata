@@ -17,19 +17,24 @@
 
 package org.apache.carbondata.core.datastore.compression;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CompressionFinder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
+
+import static org.apache.carbondata.core.metadata.datatype.DataType.INT;
+import static org.apache.carbondata.core.metadata.datatype.DataType.SHORT;
 
 public class WriterCompressModel {
 
   /**
    * DataType[]  variable.
    */
-  private ValueCompressionUtil.DataType[] convertedDataType;
+  private DataType[] convertedDataType;
   /**
    * DataType[]  variable.
    */
-  private ValueCompressionUtil.DataType[] actualDataType;
+  private DataType[] actualDataType;
 
   /**
    * maxValue
@@ -52,7 +57,7 @@ public class WriterCompressModel {
   /**
    * aggType
    */
-  private char[] type;
+  private DataType[] type;
 
   /**
    * dataTypeSelected
@@ -68,28 +73,28 @@ public class WriterCompressModel {
   /**
    * @return the convertedDataType
    */
-  public ValueCompressionUtil.DataType[] getConvertedDataType() {
+  public DataType[] getConvertedDataType() {
     return convertedDataType;
   }
 
   /**
    * @param convertedDataType the convertedDataType to set
    */
-  public void setConvertedDataType(ValueCompressionUtil.DataType[] convertedDataType) {
+  public void setConvertedDataType(DataType[] convertedDataType) {
     this.convertedDataType = convertedDataType;
   }
 
   /**
    * @return the actualDataType
    */
-  public ValueCompressionUtil.DataType[] getActualDataType() {
+  public DataType[] getActualDataType() {
     return actualDataType;
   }
 
   /**
    * @param actualDataType
    */
-  public void setActualDataType(ValueCompressionUtil.DataType[] actualDataType) {
+  public void setActualDataType(DataType[] actualDataType) {
     this.actualDataType = actualDataType;
   }
 
@@ -159,13 +164,33 @@ public class WriterCompressModel {
    * @return the aggType
    */
   public char[] getType() {
+    char[] ret = new char[type.length];
+    for (int i = 0; i < ret.length; i++) {
+      switch (type[i]) {
+        case SHORT:
+        case INT:
+        case LONG:
+          ret[i] = CarbonCommonConstants.BIG_INT_MEASURE;
+          break;
+        case DOUBLE:
+          ret[i] = CarbonCommonConstants.DOUBLE_MEASURE;
+          break;
+        case DECIMAL:
+          ret[i] = CarbonCommonConstants.BIG_DECIMAL_MEASURE;
+          break;
+      }
+    }
+    return ret;
+  }
+
+  public DataType[] getDataType() {
     return type;
   }
 
   /**
    * @param type the type to set
    */
-  public void setType(char[] type) {
+  public void setType(DataType[] type) {
     this.type = type;
   }
 
