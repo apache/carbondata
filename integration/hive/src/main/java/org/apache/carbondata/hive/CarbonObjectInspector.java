@@ -81,7 +81,10 @@ public class CarbonObjectInspector extends SettableStructObjectInspector {
       return PrimitiveObjectInspectorFactory.writableTimestampObjectInspector;
     } else if (typeInfo.equals(TypeInfoFactory.dateTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableDateObjectInspector;
-    } else {
+    }   else if (typeInfo.equals(TypeInfoFactory.floatTypeInfo)) {
+      return PrimitiveObjectInspectorFactory.writableDoubleObjectInspector;
+    }
+    else {
       throw new UnsupportedOperationException("Unknown field type: " + typeInfo);
     }
   }

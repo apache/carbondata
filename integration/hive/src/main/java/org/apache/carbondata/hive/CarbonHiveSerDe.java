@@ -193,6 +193,8 @@ public class CarbonHiveSerDe extends AbstractSerDe {
         return new IntWritable(((IntObjectInspector) inspector).get(obj));
       case LONG:
         return new LongWritable(((LongObjectInspector) inspector).get(obj));
+      case FLOAT:
+        return new DoubleWritable(((DoubleObjectInspector) inspector).get(obj));
       case SHORT:
         return new ShortWritable(((ShortObjectInspector) inspector).get(obj));
       case TIMESTAMP:

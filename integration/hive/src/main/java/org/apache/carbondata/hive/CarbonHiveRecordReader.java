@@ -222,6 +222,8 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
         return null;
       case DOUBLE:
         return new DoubleWritable((double) obj);
+      case FLOAT:
+        return new DoubleWritable((double) obj);
       case INT:
         return new IntWritable((int) obj);
       case LONG:
