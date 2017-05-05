@@ -292,6 +292,7 @@ public class SegmentStatusManager {
       }
     } catch (IOException e) {
       LOG.error("IOException" + e.getMessage());
+      throw e;
     } finally {
       CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
       CarbonLockUtil.fileUnlock(carbonDeleteSegmentLock, LockUsage.DELETE_SEGMENT_LOCK);
@@ -377,6 +378,7 @@ public class SegmentStatusManager {
       }
     } catch (IOException e) {
       LOG.error("Error message: " + "IOException" + e.getMessage());
+      throw e;
     } finally {
       CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
       CarbonLockUtil.fileUnlock(carbonDeleteSegmentLock, LockUsage.DELETE_SEGMENT_LOCK);
@@ -410,6 +412,7 @@ public class SegmentStatusManager {
       brWriter.write(metadataInstance);
     } catch (IOException ioe) {
       LOG.error("Error message: " + ioe.getLocalizedMessage());
+      throw ioe;
     } finally {
       if (null != brWriter) {
         brWriter.flush();

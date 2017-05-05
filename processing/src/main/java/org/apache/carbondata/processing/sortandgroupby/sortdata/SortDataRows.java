@@ -158,6 +158,7 @@ public class SortDataRows {
           System.arraycopy(rowBatch, 0, recordHolderListLocal, entryCount, sizeLeft);
         }
         try {
+          semaphore.acquire();
           dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(recordHolderListLocal));
         } catch (Exception e) {
           LOGGER.error(

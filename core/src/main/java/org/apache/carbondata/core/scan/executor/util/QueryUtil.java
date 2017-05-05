@@ -520,7 +520,7 @@ public class QueryUtil {
 
     List<QueryDimension> dimensions = new ArrayList<QueryDimension>(origdimensions.size());
     dimensions.addAll(origdimensions);
-    /**
+    /*
      * sort based on column group id
      */
     Collections.sort(dimensions, new Comparator<QueryDimension>() {
@@ -607,7 +607,7 @@ public class QueryUtil {
    */
   public static void fillQueryDimensionsBlockIndexes(List<QueryDimension> queryDimensions,
       Map<Integer, Integer> columnOrdinalToBlockIndexMapping,
-      Set<Integer> dictionaryDimensionBlockIndex, Set<Integer> noDictionaryDimensionBlockIndex) {
+      Set<Integer> dictionaryDimensionBlockIndex, List<Integer> noDictionaryDimensionBlockIndex) {
     for (QueryDimension queryDimension : queryDimensions) {
       if (CarbonUtil.hasEncoding(queryDimension.getDimension().getEncoder(), Encoding.DICTIONARY)
           && queryDimension.getDimension().numberOfChild() == 0) {

@@ -19,13 +19,13 @@ package org.apache.carbondata.spark.rdd
 
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.execution.command.AlterTableAddColumnsModel
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.spark.util.GlobalDictionaryUtil
 
@@ -49,13 +49,15 @@ class AddColumnPartition(rddId: Int, idx: Int, schema: ColumnSchema) extends Par
  */
 class AlterTableAddColumnRDD[K, V](sc: SparkContext,
     @transient newColumns: Seq[ColumnSchema],
-    alterTableModel: AlterTableAddColumnsModel,
     carbonTableIdentifier: CarbonTableIdentifier,
     carbonStorePath: String) extends RDD[(Int, String)](sc, Nil) {
 
+  val lockType: String = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.LOCK_TYPE,
+    CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
+
   override def getPartitions: Array[Partition] = {
     newColumns.zipWithIndex.map { column =>
-      new DropColumnPartition(id, column._2, column._1)
+      new AddColumnPartition(id, column._2, column._1)
     }.toArray
   }
 
@@ -65,7 +67,7 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
     val status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
     val iter = new Iterator[(Int, String)] {
       try {
-        val columnSchema = split.asInstanceOf[DropColumnPartition].columnSchema
+        val columnSchema = split.asInstanceOf[AddColumnPartition].columnSchema
         // create dictionary file if it is a dictionary column
         if (columnSchema.hasEncoding(Encoding.DICTIONARY) &&
             !columnSchema.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
@@ -76,6 +78,7 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
             rawData = new String(columnSchema.getDefaultValue,
               CarbonCommonConstants.DEFAULT_CHARSET_CLASS)
           }
+          CarbonProperties.getInstance.addProperty(CarbonCommonConstants.LOCK_TYPE, lockType)
           GlobalDictionaryUtil
             .loadDefaultDictionaryValueForNewColumn(carbonTablePath,
               columnSchema,

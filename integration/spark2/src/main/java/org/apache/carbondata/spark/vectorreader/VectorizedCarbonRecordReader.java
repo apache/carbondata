@@ -38,12 +38,12 @@ import org.apache.carbondata.core.scan.result.iterator.AbstractDetailQueryResult
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.hadoop.AbstractRecordReader;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.spark.util.CarbonScalaUtil;
 
 import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.spark.memory.MemoryMode;
 import org.apache.spark.sql.execution.vectorized.ColumnarBatch;
@@ -55,7 +55,7 @@ import org.apache.spark.sql.types.StructType;
  * A specialized RecordReader that reads into InternalRows or ColumnarBatches directly using the
  * carbondata column APIs and fills the data directly into columns.
  */
-class VectorizedCarbonRecordReader extends RecordReader<Void, Object> {
+class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
 
   private int batchIdx = 0;
 
@@ -73,7 +73,7 @@ class VectorizedCarbonRecordReader extends RecordReader<Void, Object> {
   /**
    * The default config on whether columnarBatch should be offheap.
    */
-  private static final MemoryMode DEFAULT_MEMORY_MODE = MemoryMode.ON_HEAP;
+  private static final MemoryMode DEFAULT_MEMORY_MODE = MemoryMode.OFF_HEAP;
 
   private QueryModel queryModel;
 
@@ -116,6 +116,7 @@ class VectorizedCarbonRecordReader extends RecordReader<Void, Object> {
   }
 
   @Override public void close() throws IOException {
+    logStatistics(rowCount, queryModel.getStatisticsRecorder());
     if (columnarBatch != null) {
       columnarBatch.close();
       columnarBatch = null;
@@ -147,7 +148,11 @@ class VectorizedCarbonRecordReader extends RecordReader<Void, Object> {
   }
 
   @Override public Object getCurrentValue() throws IOException, InterruptedException {
-    if (returnColumnarBatch) return columnarBatch;
+    if (returnColumnarBatch) {
+      rowCount += columnarBatch.numValidRows();
+      return columnarBatch;
+    }
+    rowCount += 1;
     return columnarBatch.getRow(batchIdx - 1);
   }
 

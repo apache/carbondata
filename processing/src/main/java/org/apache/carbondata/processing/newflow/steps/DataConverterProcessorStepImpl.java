@@ -85,6 +85,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
         if (first) {
           first = false;
           localConverter = converters.get(0).createCopyForNewThread();
+          converters.add(localConverter);
         }
         return childIter.hasNext();
       }

@@ -24,7 +24,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
-import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -117,7 +116,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
    */
   private void ifDefaultValueMatchesFilter() {
     isDefaultValuePresentInFilter = false;
-    if (this.isDimensionPresentInCurrentBlock) {
+    if (!this.isDimensionPresentInCurrentBlock) {
       CarbonDimension dimension = this.dimColEvaluatorInfo.getDimension();
       byte[] defaultValue = dimension.getDefaultValue();
       if (null != defaultValue) {
@@ -354,8 +353,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
 
   private BitSet getFilteredIndexes(DimensionColumnDataChunk dimensionColumnDataChunk,
       int numerOfRows) {
-    if (dimensionColumnDataChunk.isExplicitSorted()
-        && dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
+    if (dimensionColumnDataChunk.isExplicitSorted()) {
       return setFilterdIndexToBitSetWithColumnIndex(dimensionColumnDataChunk, numerOfRows);
     }
     return setFilterdIndexToBitSet(dimensionColumnDataChunk, numerOfRows);
@@ -401,12 +399,8 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
         // Method will compare the tentative index value after binary search, this tentative
         // index needs to be compared by the filter member if its >= filter then from that
         // index the bitset will be considered for filtering process.
-        if ((greaterThanExp == true) && (ByteUtil.compare(filterValues[0], dimensionColumnDataChunk
+        if ((ByteUtil.compare(filterValues[0], dimensionColumnDataChunk
             .getChunkData(dimensionColumnDataChunk.getInvertedIndex(start)))) > 0) {
-          start = start + 1;
-        } else if ((greaterThanEqualExp == true) && (ByteUtil.compare(filterValues[0],
-            dimensionColumnDataChunk
-                .getChunkData(dimensionColumnDataChunk.getInvertedIndex(start)))) >= 0) {
           start = start + 1;
         }
       }
@@ -421,6 +415,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
       start = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
               filterValues[1], lessThanEqualExp);
+
       if (lessThanExp == true && start >= 0) {
         start =
             CarbonUtil.nextLesserValueToTarget(start, dimensionColumnDataChunk, filterValues[1]);
@@ -431,16 +426,11 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
         if (start == numerOfRows) {
           start = start - 1;
         }
-        // Method will compare the tentative index value after binary search, this tentative
-        // index needs to be compared by the filter member if its >= filter then from that
-        // index the bitset will be considered for filtering process.
-        if ((lessThanExp == true) && (ByteUtil.compare(filterValues[1],
+        // In case the start is less than 0, then positive value of start is pointing to the next
+        // value of the searched key. So move to the previous one.
+        if ((ByteUtil.compare(filterValues[1],
             dimensionColumnDataChunk.getChunkData(dimensionColumnDataChunk.getInvertedIndex(start)))
             < 0)) {
-          start = start - 1;
-        } else if ((lessThanEqualExp == true) && (ByteUtil.compare(filterValues[1],
-            dimensionColumnDataChunk.getChunkData(dimensionColumnDataChunk.getInvertedIndex(start)))
-            <= 0)) {
           start = start - 1;
         }
       }
@@ -511,13 +501,8 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
         // Method will compare the tentative index value after binary search, this tentative
         // index needs to be compared by the filter member if its >= filter then from that
         // index the bitset will be considered for filtering process.
-        if ((greaterThanExp == true)
-            && (ByteUtil.compare(filterValues[0], dimensionColumnDataChunk.getChunkData(start)))
+        if ((ByteUtil.compare(filterValues[0], dimensionColumnDataChunk.getChunkData(start)))
             > 0) {
-          start = start + 1;
-        } else if ((greaterThanEqualExp == true)
-            && (ByteUtil.compare(filterValues[0], dimensionColumnDataChunk.getChunkData(start)))
-            >= 0) {
           start = start + 1;
         }
       }
@@ -541,14 +526,10 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
         if (start == numerOfRows) {
           start = start - 1;
         }
-        // Method will compare the tentative index value after binary search, this tentative
-        // index needs to be compared by the filter member if its >= filter then from that
-        // index the bitset will be considered for filtering process.
-        if ((lessThanExp == true) && (
-            ByteUtil.compare(filterValues[1], dimensionColumnDataChunk.getChunkData(start)) < 0)) {
-          start = start - 1;
-        } else if ((lessThanEqualExp == true) && (
-            ByteUtil.compare(filterValues[1], dimensionColumnDataChunk.getChunkData(start)) <= 0)) {
+        // In case the start is less than 0, then positive value of start is pointing to the next
+        // value of the searched key. So move to the previous one.
+        if ((ByteUtil.compare(filterValues[1], dimensionColumnDataChunk.getChunkData(start))
+            < 0)) {
           start = start - 1;
         }
       }

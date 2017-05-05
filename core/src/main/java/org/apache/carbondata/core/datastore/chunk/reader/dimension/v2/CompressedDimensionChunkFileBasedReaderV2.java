@@ -66,9 +66,10 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
       long currentDimensionOffset = dimensionChunksOffset.get(blockletIndex);
       length = (int) (dimensionChunksOffset.get(blockletIndex + 1) - currentDimensionOffset);
     }
-    ByteBuffer buffer = ByteBuffer.allocateDirect(length);
+    ByteBuffer buffer = null;
     synchronized (fileReader) {
-      fileReader.readByteBuffer(filePath, buffer, dimensionChunksOffset.get(blockletIndex), length);
+      buffer =
+          fileReader.readByteBuffer(filePath, dimensionChunksOffset.get(blockletIndex), length);
     }
     DimensionRawColumnChunk rawColumnChunk =
         new DimensionRawColumnChunk(blockletIndex, buffer, 0, length, this);
@@ -92,10 +93,9 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
   protected DimensionRawColumnChunk[] readRawDimensionChunksInGroup(FileHolder fileReader,
       int startColumnBlockletIndex, int endColumnBlockletIndex) throws IOException {
     long currentDimensionOffset = dimensionChunksOffset.get(startColumnBlockletIndex);
-    ByteBuffer buffer = ByteBuffer.allocateDirect(
-        (int) (dimensionChunksOffset.get(endColumnBlockletIndex + 1) - currentDimensionOffset));
+    ByteBuffer buffer = null;
     synchronized (fileReader) {
-      fileReader.readByteBuffer(filePath, buffer, currentDimensionOffset,
+      buffer = fileReader.readByteBuffer(filePath, currentDimensionOffset,
           (int) (dimensionChunksOffset.get(endColumnBlockletIndex + 1) - currentDimensionOffset));
     }
     DimensionRawColumnChunk[] dataChunks =
@@ -132,8 +132,7 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
           dimensionColumnChunk.data_page_length + dimensionColumnChunk.rle_page_length
               + dimensionColumnChunk.rowid_page_length;
       synchronized (dimensionRawColumnChunk.getFileReader()) {
-        rawData = ByteBuffer.allocateDirect(totalDimensionDataLength);
-        dimensionRawColumnChunk.getFileReader().readByteBuffer(filePath, rawData,
+        rawData = dimensionRawColumnChunk.getFileReader().readByteBuffer(filePath,
             dimensionChunksOffset.get(blockIndex) + dimensionChunksLength.get(blockIndex),
             totalDimensionDataLength);
       }
@@ -143,11 +142,9 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
       copySourcePoint += dimensionChunksLength.get(blockIndex);
     }
 
-    byte[] data = new byte[dimensionColumnChunk.data_page_length];
-    rawData.position(copySourcePoint);
-    rawData.get(data);
     // first read the data and uncompressed it
-    dataPage = COMPRESSOR.unCompressByte(data, 0, dimensionColumnChunk.data_page_length);
+    dataPage = COMPRESSOR
+        .unCompressByte(rawData.array(), copySourcePoint, dimensionColumnChunk.data_page_length);
     copySourcePoint += dimensionColumnChunk.data_page_length;
     // if row id block is present then read the row id chunk and uncompress it
     if (hasEncoding(dimensionColumnChunk.encoders, Encoding.INVERTED_INDEX)) {

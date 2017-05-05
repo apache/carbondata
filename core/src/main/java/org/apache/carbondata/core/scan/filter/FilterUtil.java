@@ -1447,10 +1447,12 @@ public final class FilterUtil {
       bitSet.set(0, numberOfRows, defaultValue);
       bitSetGroup.setBitSet(bitSet, i);
     }
-    // create and fill bitset for the last page
-    BitSet bitSet = new BitSet(rowCountForLastPage);
-    bitSet.set(0, rowCountForLastPage, defaultValue);
-    bitSetGroup.setBitSet(bitSet, pagesTobeFullFilled);
+    // create and fill bitset for the last page if any records are left
+    if (rowCountForLastPage > 0) {
+      BitSet bitSet = new BitSet(rowCountForLastPage);
+      bitSet.set(0, rowCountForLastPage, defaultValue);
+      bitSetGroup.setBitSet(bitSet, pagesTobeFullFilled);
+    }
     return bitSetGroup;
   }
 

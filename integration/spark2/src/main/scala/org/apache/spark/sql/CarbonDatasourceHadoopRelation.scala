@@ -43,19 +43,14 @@ case class CarbonDatasourceHadoopRelation(
     parameters: Map[String, String],
     tableSchema: Option[StructType],
     isSubquery: ArrayBuffer[Boolean] = new ArrayBuffer[Boolean]())
-  extends BaseRelation {
+  extends BaseRelation with InsertableRelation {
 
   lazy val absIdentifier = AbsoluteTableIdentifier.fromTablePath(paths.head)
-  lazy val carbonTable = SchemaReader.readCarbonTableFromStore(absIdentifier)
-  lazy val carbonRelation: CarbonRelation = {
-    CarbonRelation(
-      carbonTable.getDatabaseName,
-      carbonTable.getFactTableName,
-      CarbonSparkUtil.createSparkMeta(carbonTable),
-      new TableMeta(carbonTable.getCarbonTableIdentifier, paths.head, carbonTable),
-      None
-    )
-  }
+  lazy val carbonTable = carbonRelation.tableMeta.carbonTable
+  lazy val carbonRelation: CarbonRelation = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    .lookupRelation(Some(absIdentifier.getCarbonTableIdentifier.getDatabaseName),
+      absIdentifier.getCarbonTableIdentifier.getTableName)(sparkSession)
+    .asInstanceOf[CarbonRelation]
 
   override def sqlContext: SQLContext = sparkSession.sqlContext
 
@@ -72,6 +67,26 @@ case class CarbonDatasourceHadoopRelation(
     new CarbonScanRDD(sqlContext.sparkContext, projection, filterExpression.orNull,
       absIdentifier, carbonTable)
   }
+
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)
+
+  override def toString: String = {
+    "CarbonDatasourceHadoopRelation [ " + "Database name :" + carbonTable.getDatabaseName +
+    ", " + "Table name :" + carbonTable.getFactTableName + ", Schema :" + tableSchema + " ]"
+  }
+
+  override def sizeInBytes: Long = carbonRelation.sizeInBytes
+
+  override def insert(data: DataFrame, overwrite: Boolean): Unit = {
+    if (carbonRelation.output.size > CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS) {
+      sys.error("Maximum supported column by carbon is: " +
+          CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS)
+    }
+    if (data.logicalPlan.output.size >= carbonRelation.output.size) {
+      LoadTableByInsert(this, data.logicalPlan).run(sparkSession)
+    } else {
+      sys.error("Cannot insert into target table because column number are different")
+    }
+  }
 
 }

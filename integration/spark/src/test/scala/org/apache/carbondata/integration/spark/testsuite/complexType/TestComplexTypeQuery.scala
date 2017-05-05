@@ -28,13 +28,13 @@ import org.scalatest.BeforeAndAfterAll
 class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
-    sql("drop table if exists complexcarbontable").show
-    sql("drop table if exists complexhivetable").show
-    sql("drop table if exists complex_filter").show
-    sql("drop table if exists structusingstructCarbon").show
-    sql("drop table if exists structusingstructHive").show
-    sql("drop table if exists structusingarraycarbon").show
-    sql("drop table if exists structusingarrayhive").show
+    sql("drop table if exists complexcarbontable")
+    sql("drop table if exists complexhivetable")
+    sql("drop table if exists complex_filter")
+    sql("drop table if exists structusingstructCarbon")
+    sql("drop table if exists structusingstructHive")
+    sql("drop table if exists structusingarraycarbon")
+    sql("drop table if exists structusingarrayhive")
     sql(
       "create table complexcarbontable(deviceInformationId int, channelsId string, ROMSize " +
       "string, ROMName String, purchasedate string, mobile struct<imei:string, imsi:string>, MAC " +
@@ -67,7 +67,7 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
         "/array1.csv'  INTO TABLE complex_filter options ('DELIMITER'=',', 'QUOTECHAR'='\"', " +
         "'COMPLEX_DELIMITER_LEVEL_1'='$', 'FILEHEADER'= 'test1,test2,test3,test4,test5,test6," +
         "test7')")
-      .show()
+      ()
 
     sql(
       "create table structusingarraycarbon (MAC struct<MAC1:array<string>," +
@@ -278,12 +278,12 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop table if exists complexcarbontable").show
-    sql("drop table if exists complexhivetable").show
-    sql("drop table if exists structusingstructCarbon").show
-    sql("drop table if exists structusingstructHive").show
-    sql("drop table if exists structusingarraycarbon").show
-    sql("drop table if exists structusingarrayhive").show
+    sql("drop table if exists complexcarbontable")
+    sql("drop table if exists complexhivetable")
+    sql("drop table if exists structusingstructCarbon")
+    sql("drop table if exists structusingstructHive")
+    sql("drop table if exists structusingarraycarbon")
+    sql("drop table if exists structusingarrayhive")
 
   }
 }

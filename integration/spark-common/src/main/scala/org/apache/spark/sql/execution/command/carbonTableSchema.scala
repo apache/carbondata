@@ -152,7 +152,7 @@ case class AlterTableDropColumnModel(databaseName: Option[String],
     tableName: String,
     columns: List[String])
 
-class AlterTableProcessor(
+class AlterTableColumnSchemaGenerator(
     alterTableModel: AlterTableAddColumnsModel,
     dbName: String,
     tableInfo: TableInfo,
@@ -253,12 +253,6 @@ class AlterTableProcessor(
         }
       }
     }
-    // generate dictionary files for the newly added columns
-    new AlterTableAddColumnRDD(sc,
-      newCols,
-      alterTableModel,
-      tableIdentifier,
-      storePath).collect()
     tableSchema.setListOfColumns(allColumns.asJava)
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
@@ -272,7 +266,7 @@ class AlterTableProcessor(
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
     if (alterTableModel.highCardinalityDims.contains(colName)) {
-      encoders.remove(encoders.remove(Encoding.DICTIONARY))
+      encoders.remove(Encoding.DICTIONARY)
     }
     if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
@@ -337,7 +331,7 @@ class TableNewProcessor(cm: TableModel) {
     columnSchema.setColumnName(colName)
     val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
     if (highCardinalityDims.contains(colName)) {
-      encoders.remove(encoders.remove(Encoding.DICTIONARY))
+      encoders.remove(Encoding.DICTIONARY)
     }
     if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
       encoders.add(Encoding.DIRECT_DICTIONARY)

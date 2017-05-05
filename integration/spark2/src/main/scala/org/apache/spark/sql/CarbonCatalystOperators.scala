@@ -21,7 +21,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.hive.{HiveContext, HiveSessionCatalog}
+import org.apache.spark.sql.hive.HiveSessionCatalog
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types.{StringType, TimestampType}
 
@@ -43,6 +43,10 @@ case class CarbonDictionaryCatalystDecoder(
         CarbonDictionaryDecoder.convertOutput(logicalOut, relations, profile, aliasMap)
       case Filter(cond, l: LogicalRelation) =>
         // If the child is logical plan then firts update all dictionary attr with IntegerType
+        val logicalOut =
+          CarbonDictionaryDecoder.updateAttributes(child.output, relations, aliasMap)
+        CarbonDictionaryDecoder.convertOutput(logicalOut, relations, profile, aliasMap)
+      case Join(l: LogicalRelation, r: LogicalRelation, _, _) =>
         val logicalOut =
           CarbonDictionaryDecoder.updateAttributes(child.output, relations, aliasMap)
         CarbonDictionaryDecoder.convertOutput(logicalOut, relations, profile, aliasMap)

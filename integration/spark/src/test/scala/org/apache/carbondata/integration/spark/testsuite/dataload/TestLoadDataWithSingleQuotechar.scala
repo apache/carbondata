@@ -36,7 +36,7 @@ class TestLoadDataWithSingleQuotechar extends QueryTest with BeforeAndAfterAll {
       sql(
         s"LOAD DATA LOCAL INPATH '$resourcesPath/dataWithSingleQuote.csv' INTO TABLE " +
           "carbontable OPTIONS('DELIMITER'= ',')")
-      sql("SELECT * from carbontable").show(100, false)
+      sql("SELECT * from carbontable")
       checkAnswer(
         sql("SELECT * from carbontable"),
         Seq(Row(1,"Tom"),

@@ -19,10 +19,10 @@
 
 <img src="/docs/images/CarbonData_logo.png" width="200" height="40">
 
-Apache CarbonData(incubating) is an indexed columnar data format for fast analytics on big data platform, e.g.Apache Hadoop, Apache Spark, etc.
+Apache CarbonData is an indexed columnar data format for fast analytics on big data platform, e.g.Apache Hadoop, Apache Spark, etc.
 
 You can find the latest CarbonData document and learn more at:
-[http://carbondata.incubator.apache.org](http://carbondata.incubator.apache.org/)
+[http://carbondata.apache.org](http://carbondata.apache.org/)
 
 [CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA/)
 
@@ -46,6 +46,7 @@ CarbonData is built using Apache Maven, to [build CarbonData](https://github.com
 * [DDL Operations on CarbonData](https://github.com/apache/incubator-carbondata/blob/master/docs/ddl-operation-on-carbondata.md) 
 * [DML Operations on CarbonData](https://github.com/apache/incubator-carbondata/blob/master/docs/dml-operation-on-carbondata.md)  
 * [Cluster Installation and Deployment](https://github.com/apache/incubator-carbondata/blob/master/docs/installation-guide.md)
+* [Configuring Carbondata](https://github.com/apache/incubator-carbondata/blob/master/docs/configuration-parameters.md)
 * [FAQ](https://github.com/apache/incubator-carbondata/blob/master/docs/faq.md)
 * [Trouble Shooting](https://github.com/apache/incubator-carbondata/blob/master/docs/troubleshooting.md)
 * [Useful Tips](https://github.com/apache/incubator-carbondata/blob/master/docs/useful-tips-on-carbondata.md)
@@ -60,7 +61,7 @@ This guide document introduce [how to contribute to CarbonData](https://github.c
 ## Contact us
 To get involved in CarbonData:
 
-* First join by emailing to [dev-subscribe@carbondata.incubator.apache.org](mailto:dev-subscribe@carbondata.incubator.apache.org),then you can discuss issues by emailing to [dev@carbondata.incubator.apache.org](mailto:dev@carbondata.incubator.apache.org) or visit http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com
+* First join by emailing to [dev-subscribe@carbondata.apache.org](mailto:dev-subscribe@carbondata.apache.org),then you can discuss issues by emailing to [dev@carbondata.apache.org](mailto:dev@carbondata.apache.org) or visit http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com
 * Report issues on [Apache Jira](https://issues.apache.org/jira/browse/CARBONDATA).
 
 ## About

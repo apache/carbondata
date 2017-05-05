@@ -1,3 +1,20 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.spark.carbondata.restructure.rowreader
 
 import java.math.{BigDecimal, RoundingMode}
@@ -112,6 +129,82 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data3.csv' INTO TABLE carbon_table " +
         s"options('FILEHEADER'='intField,stringField,timestampField,decimalField,charField')")
     sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+
+  test("test add column compaction") {
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql(
+      "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+      "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("Alter table carbon_table add columns(decimalField decimal(6,2))")
+
+    sql("Alter table carbon_table compact 'minor'")
+
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+  test("test to add column with char datatype") {
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql(
+      "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+      "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("Alter table carbon_table add columns(newfield char(10)) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='char')")
+    checkAnswer(sql("select distinct(newfield) from carbon_table"),Row("char"))
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+  test("test to check if exception is thrown with wrong char syntax") {
+    intercept[Exception] {
+      sql("DROP TABLE IF EXISTS carbon_table")
+      sql(
+        "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+
+        "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+        "('DICTIONARY_EXCLUDE'='charField')")
+      sql(
+        "Alter table carbon_table add columns(newfield char) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
+  }
+
+  test("test to add column with varchar datatype") {
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql(
+      "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+      "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("Alter table carbon_table add columns(newfield varchar(10)) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='char')")
+    checkAnswer(sql("select distinct(newfield) from carbon_table"),Row("char"))
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+  test("test to check if exception is thrown with wrong varchar syntax") {
+    intercept[Exception] {
+      sql("DROP TABLE IF EXISTS carbon_table")
+      sql(
+        "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+
+        "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+        "('DICTIONARY_EXCLUDE'='charField')")
+      sql(
+        "Alter table carbon_table add columns(newfield varchar) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
   }
 
   override def afterAll {

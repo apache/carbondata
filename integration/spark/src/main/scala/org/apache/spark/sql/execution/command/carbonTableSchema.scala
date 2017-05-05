@@ -145,7 +145,7 @@ case class CreateTable(cm: TableModel) extends RunnableCommand {
 
     val tableInfo: TableInfo = TableNewProcessor(cm)
 
-    if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
+    if (tableInfo.getFactTable.getListOfColumns.isEmpty) {
       sys.error("No Dimensions found. Table should have at least one dimesnion !")
     }
 
@@ -404,7 +404,6 @@ case class LoadTable(
       validateDateFormat(dateFormat, table)
       val maxColumns = options.getOrElse("maxcolumns", null)
 
-      carbonLoadModel.setMaxColumns(checkDefaultValue(maxColumns, null))
       carbonLoadModel.setEscapeChar(checkDefaultValue(escapeChar, "\\"))
       carbonLoadModel.setQuoteChar(checkDefaultValue(quoteChar, "\""))
       carbonLoadModel.setCommentChar(checkDefaultValue(commentchar, "#"))
@@ -474,6 +473,9 @@ case class LoadTable(
         carbonLoadModel.setColDictFilePath(columnDict)
         carbonLoadModel.setDirectLoad(true)
         carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
+        val validatedMaxColumns = CommonUtil.validateMaxColumns(carbonLoadModel.getCsvHeaderColumns,
+          maxColumns)
+        carbonLoadModel.setMaxColumns(validatedMaxColumns.toString)
         GlobalDictionaryUtil.updateTableMetadataFunc = updateTableMetadata
 
         if (carbonLoadModel.getUseOnePass) {
@@ -635,8 +637,15 @@ case class LoadTable(
     // write TableInfo
     CarbonMetastore.writeThriftTableToSchemaFile(schemaFilePath, tableInfo)
 
-    // update Metadata
+
     val catalog = CarbonEnv.get.carbonMetastore
+
+    // upate the schema modified time
+    catalog.updateSchemasUpdatedTime(catalog.touchSchemaFileSystemTime(
+      carbonLoadModel.getDatabaseName,
+      carbonLoadModel.getTableName))
+
+    // update Metadata
     catalog.updateMetadataByThriftTable(schemaFilePath, tableInfo,
       model.table.getDatabaseName, model.table.getTableName, carbonLoadModel.getStorePath)
 
@@ -682,8 +691,9 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val identifier = TableIdentifier(tableName, Option(dbName))
     val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")
-    val carbonLock = CarbonLockFactory
-      .getCarbonLockObj(carbonTableIdentifier, LockUsage.DROP_TABLE_LOCK)
+    val carbonLock = CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier.getDatabaseName,
+        carbonTableIdentifier.getTableName + CarbonCommonConstants.UNDERSCORE +
+        LockUsage.DROP_TABLE_LOCK)
     val storePath = CarbonEnv.get.carbonMetastore.storePath
     var isLocked = false
     try {

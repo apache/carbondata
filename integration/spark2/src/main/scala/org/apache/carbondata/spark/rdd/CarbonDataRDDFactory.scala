@@ -98,7 +98,7 @@ object CarbonDataRDDFactory {
     LOGGER.audit(s"Compaction request received for table " +
         s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    val tableCreationTime = CarbonEnv.get.carbonMetastore
+    val tableCreationTime = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
         .getTableCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
 
     if (null == carbonLoadModel.getLoadMetadataDetails) {
@@ -162,6 +162,7 @@ object CarbonDataRDDFactory {
           case e: Exception =>
             LOGGER.error(s"Exception in start compaction thread. ${ e.getMessage }")
             lock.unlock()
+            throw e
         }
       } else {
         LOGGER.audit("Not able to acquire the compaction lock for table " +
@@ -276,8 +277,9 @@ object CarbonDataRDDFactory {
             LOGGER.info("System level compaction lock is enabled.")
             val skipCompactionTables = ListBuffer[CarbonTableIdentifier]()
             var tableForCompaction = CarbonCompactionUtil
-                .getNextTableToCompact(CarbonEnv.get.carbonMetastore.metadata.tablesMeta.toArray,
-                  skipCompactionTables.toList.asJava)
+              .getNextTableToCompact(CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
+                .metadata.tablesMeta.toArray,
+                skipCompactionTables.toList.asJava)
             while (null != tableForCompaction) {
               LOGGER.info("Compaction request has been identified for table " +
                   s"${ tableForCompaction.carbonTable.getDatabaseName }." +
@@ -288,10 +290,10 @@ object CarbonDataRDDFactory {
 
               val newCarbonLoadModel = new CarbonLoadModel()
               DataManagementFunc.prepareCarbonLoadModel(storePath, table, newCarbonLoadModel)
-              val tableCreationTime = CarbonEnv.get.carbonMetastore
-                  .getTableCreationTime(newCarbonLoadModel.getDatabaseName,
-                    newCarbonLoadModel.getTableName
-                  )
+              val tableCreationTime = CarbonEnv.getInstance(sqlContext.sparkSession)
+                .carbonMetastore.getTableCreationTime(newCarbonLoadModel.getDatabaseName,
+                newCarbonLoadModel.getTableName
+              )
 
               val compactionSize = CarbonDataMergerUtil
                   .getCompactionSize(CompactionType.MAJOR_COMPACTION)
@@ -330,15 +332,16 @@ object CarbonDataRDDFactory {
               }
               // ********* check again for all the tables.
               tableForCompaction = CarbonCompactionUtil
-                  .getNextTableToCompact(CarbonEnv.get.carbonMetastore.metadata
-                      .tablesMeta.toArray, skipCompactionTables.asJava
-                  )
+                .getNextTableToCompact(CarbonEnv.getInstance(sqlContext.sparkSession)
+                  .carbonMetastore.metadata
+                  .tablesMeta.toArray, skipCompactionTables.asJava
+                )
             }
-            // giving the user his error for telling in the beeline if his triggered table
-            // compaction is failed.
-            if (!triggeredCompactionStatus) {
-              throw new Exception("Exception in compaction " + exception.getMessage)
-            }
+          }
+          // giving the user his error for telling in the beeline if his triggered table
+          // compaction is failed.
+          if (!triggeredCompactionStatus) {
+            throw new Exception("Exception in compaction " + exception.getMessage)
           }
         } finally {
           executor.shutdownNow()
@@ -486,9 +489,9 @@ object CarbonDataRDDFactory {
       // reading the start time of data load.
       val loadStartTime = CarbonUpdateUtil.readCurrentTime();
       carbonLoadModel.setFactTimeStamp(loadStartTime)
-      val tableCreationTime = CarbonEnv.get.carbonMetastore
+      val tableCreationTime = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
           .getTableCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
-      val schemaLastUpdatedTime = CarbonEnv.get.carbonMetastore
+      val schemaLastUpdatedTime = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
           .getSchemaLastUpdatedTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
 
       // get partition way from configuration
@@ -807,6 +810,17 @@ object CarbonDataRDDFactory {
         shutdownDictionaryServer(carbonLoadModel, result, false)
         throw new Exception(errorMessage)
       } else {
+        // if segment is empty then fail the data load
+        if (!CarbonLoaderUtil.isValidSegment(carbonLoadModel, currentLoadCount)) {
+          CarbonLoaderUtil.deleteSegment(carbonLoadModel, currentLoadCount)
+          LOGGER.info("********clean up done**********")
+          LOGGER.audit(s"Data load is failed for " +
+                       s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }" +
+                       " as there is no data to load")
+          LOGGER.warn("Cannot write load metadata file as data load failed")
+          shutdownDictionaryServer(carbonLoadModel, result, false)
+          throw new Exception("No Data to load")
+        }
         val metadataDetails = status(0)._2
         if (!isAgg) {
           val status = CarbonLoaderUtil.recordLoadMetadata(currentLoadCount, metadataDetails,

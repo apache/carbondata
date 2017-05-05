@@ -18,12 +18,14 @@
 package org.apache.spark.sql
 
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Attribute, ExprId, LeafExpression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression, ExprId, LeafExpression, NamedExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
+import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.types.DataType
 
 import org.apache.carbondata.core.scan.expression.ColumnExpression
 
+case class CastExpr(expr: Expression) extends Filter
 
 case class CarbonBoundReference(colExp: ColumnExpression, dataType: DataType, nullable: Boolean)
   extends LeafExpression with NamedExpression with CodegenFallback {
@@ -38,8 +40,7 @@ case class CarbonBoundReference(colExp: ColumnExpression, dataType: DataType, nu
 
   override def toAttribute: Attribute = throw new UnsupportedOperationException
 
-  override def qualifiers: Seq[String] = throw new UnsupportedOperationException
-
   override def exprId: ExprId = throw new UnsupportedOperationException
 
+  override def qualifiers: Seq[String] = throw new UnsupportedOperationException
 }

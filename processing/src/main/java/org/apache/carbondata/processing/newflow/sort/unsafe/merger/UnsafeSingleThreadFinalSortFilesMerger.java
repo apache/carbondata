@@ -80,7 +80,10 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
 
   private String tableName;
 
-  public UnsafeSingleThreadFinalSortFilesMerger(SortParameters parameters) {
+  private boolean isStopProcess;
+
+  public UnsafeSingleThreadFinalSortFilesMerger(SortParameters parameters,
+      String tempFileLocation) {
     this.parameters = parameters;
     // set measure and dimension count
     this.measureCount = parameters.getMeasureColCount();
@@ -89,7 +92,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
 
     this.noDictionaryCount = parameters.getNoDictionaryCount();
     this.isNoDictionaryDimensionColumn = parameters.getNoDictionaryDimnesionColumn();
-    this.tempFileLocation = parameters.getTempFileLocation();
+    this.tempFileLocation = tempFileLocation;
     this.tableName = parameters.getTableName();
   }
 
@@ -114,7 +117,10 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
     try {
       File[] filesToMergeSort = getFilesToMergeSort();
       this.fileCounter = rowPages.length + filesToMergeSort.length + merges.size();
-
+      if (fileCounter == 0) {
+        LOGGER.info("No files to merge sort");
+        return;
+      }
       LOGGER.info("Number of row pages: " + this.fileCounter);
 
       // create record holder heap
@@ -304,5 +310,13 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
       }
       recordHolderHeapLocal = null;
     }
+  }
+
+  public boolean isStopProcess() {
+    return isStopProcess;
+  }
+
+  public void setStopProcess(boolean stopProcess) {
+    isStopProcess = stopProcess;
   }
 }

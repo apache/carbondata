@@ -49,12 +49,8 @@ public interface MeasureColumnChunkReader {
 
   /**
    * Covert raw data to measure chunk
-   *
-   * @param fileReader
-   * @param blockIndex
-   * @param rawData
-   * @param offset
-   * @param length
+   * @param measureRawColumnChunk
+   * @param pageNumber
    * @return
    * @throws IOException
    */

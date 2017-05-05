@@ -40,9 +40,9 @@ and one for the git repo of the project(to push the changes).
   
 1. Add aliases for the remotes expected by the merge script:
  
-git remote add apache https://git-wip-us.apache.org/repos/asf/incubator-carbondata.git
+git remote add apache https://git-wip-us.apache.org/repos/asf/carbondata.git
  
-git remote add apache-github https://github.com/apache/incubator-carbondata.git
+git remote add apache-github https://github.com/apache/carbondata.git
  
 If you execute the script without doing any setup,
 the script will output the commands that you need to execute to setup these remotes. 

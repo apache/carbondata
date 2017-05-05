@@ -204,7 +204,7 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
    * it to a sort index file
    *
    * @param data
-   * @param columnIdentifier
+   * @param columnId
    * @throws IOException
    */
   private void writeSortIndexFile(List<String> data, String columnId) throws IOException {

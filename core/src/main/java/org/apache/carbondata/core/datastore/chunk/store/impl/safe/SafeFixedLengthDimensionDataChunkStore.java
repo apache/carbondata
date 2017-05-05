@@ -57,7 +57,7 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
    * Below method will be used to get the surrogate key of the based on the row
    * id passed
    *
-   * @param rowId row id
+   * @param index row id
    * @return surrogate key
    */
   @Override public int getSurrogate(int index) {
@@ -74,7 +74,7 @@ public class SafeFixedLengthDimensionDataChunkStore extends SafeAbsractDimension
    * Below method will be used to fill the row values to buffer array
    *
    * @param rowId  row id of the data to be filled
-   * @param data   buffer in which data will be filled
+   * @param buffer   buffer in which data will be filled
    * @param offset off the of the buffer
    */
   @Override public void fillRow(int rowId, byte[] buffer, int offset) {

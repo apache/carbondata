@@ -30,13 +30,13 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
     // DropHiveDB command will fail if cascade is false and one or more table exists in database
     val rows = command.run(sparkSession)
     if (command.cascade) {
-      val tablesInDB = CarbonEnv.get.carbonMetastore.getAllTables()
+      val tablesInDB = CarbonEnv.getInstance(sparkSession).carbonMetastore.getAllTables()
         .filterNot(_.database.exists(_.equalsIgnoreCase(dbName)))
       tablesInDB.foreach { tableName =>
         CarbonDropTableCommand(true, Some(dbName), tableName.table).run(sparkSession)
       }
     }
-    CarbonEnv.get.carbonMetastore.dropDatabaseDirectory(dbName)
+    CarbonEnv.getInstance(sparkSession).carbonMetastore.dropDatabaseDirectory(dbName)
     rows
   }
 }

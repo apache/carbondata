@@ -17,19 +17,15 @@
 
 package org.apache.carbondata.spark.util
 
-import java.io.File
 import java.text.SimpleDateFormat
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.execution.command.DataTypeInfo
 import org.apache.spark.sql.types._
 
-import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
-import org.apache.carbondata.core.util.CarbonProperties
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(
@@ -177,11 +173,11 @@ object CarbonScalaUtil {
             } cannot be modified. Specified precision value ${
               dataTypeInfo
                 .precision
-            } should be greater or equal to current precision value ${
+            } should be greater than current precision value ${
               carbonColumn.getColumnSchema
                 .getPrecision
             }")
-        } else if (dataTypeInfo.scale <= carbonColumn.getColumnSchema.getScale) {
+        } else if (dataTypeInfo.scale < carbonColumn.getColumnSchema.getScale) {
           sys
             .error(s"Given column ${
               carbonColumn

@@ -244,8 +244,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
   test("test range filter for direct dictionary"){
     checkAnswer(
       sql("select doj from directDictionaryTable where doj > '2016-03-14 15:00:17'"),
-      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:18.0"))
-      )
+      sql("select doj from directDictionaryTable_hive where doj > '2016-03-14 15:00:17'")
     )
   }
 
@@ -257,11 +256,151 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("test range filter for direct dictionary equality"){
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj = '2016-03-14 15:00:16'"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:16.0"))
+      )
+    )
+  }
+
+  test("test range filter for direct dictionary not equality"){
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj != '2016-03-14 15:00:16'"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:10.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:11.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:12.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:13.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:14.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:15.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:17.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:18.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:19.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:20.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:24.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:25.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:31.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:35.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:38.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:39.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:49.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:50.0")))
+    )
+  }
+
+  test("test range filter for direct dictionary and with explicit casts"){
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj > cast ('2016-03-14 15:00:16' as timestamp) and doj < cast ('2016-03-14 15:00:18' as timestamp)"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:17.0"))
+      )
+    )
+  }
+
+  /*
+  Commented this test case
+  test("test range filter for direct dictionary and with DirectVals as long") {
+    checkAnswer(
+      sql(
+        "select doj from directDictionaryTable where doj > cast (1457992816l as timestamp) and doj < cast (1457992818l as timestamp)"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:17.0"))
+      )
+    )
+  }
+  */
+
+
+  // Test of Cast Optimization
+  test("test range filter for different Timestamp formats"){
+    checkAnswer(
+      sql("select count(*) from directDictionaryTable where doj = '2016-03-14 15:00:180000000'"),
+      Seq(Row(0)
+      )
+    )
+  }
+
+  test("test range filter for different Timestamp formats1"){
+    checkAnswer(
+      sql("select count(*) from directDictionaryTable where doj = '03-03-14 15:00:18'"),
+      Seq(Row(0)
+      )
+    )
+  }
+
+  test("test range filter for different Timestamp formats2"){
+    checkAnswer(
+      sql("select count(*) from directDictionaryTable where doj = '2016-03-14'"),
+      Seq(Row(0)
+      )
+    )
+  }
+
+  test("test range filter for different Timestamp formats3"){
+    checkAnswer(
+      sql("select count(*) from directDictionaryTable where doj > '2016-03-14 15:00:18.000'"),
+      sql("select count(*) from directDictionaryTable_hive where doj > '2016-03-14 15:00:18.000'")
+      )
+  }
+
+  test("test range filter for different Timestamp In format "){
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj in ('2016-03-14 15:00:18', '2016-03-14 15:00:17')"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:17.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:18.0")))
+    )
+  }
+
+  /*
+  test("test range filter for different Timestamp Not In format 5"){
+    sql("select doj from directDictionaryTable where doj not in (null, '2016-03-14 15:00:18', '2016-03-14 15:00:17','2016-03-14 15:00:11', '2016-03-14 15:00:12')").show(200, false)
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj Not in (null, '2016-03-14 15:00:18', '2016-03-14 15:00:17','2016-03-14 15:00:11', '2016-03-14 15:00:12')"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:10.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:13.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:14.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:15.0")),
+        Row(Timestamp.valueOf("2016-03-14 15:00:16.0")))
+    )
+  }
+  */
+
+
   test("test range filter for direct dictionary and boundary"){
     checkAnswer(
       sql("select count(*) from directDictionaryTable where doj > '2016-03-14 15:00:18.0' and doj < '2016-03-14 15:00:09.0'"),
       Seq(Row(0)
       )
+    )
+  }
+
+  test("test range filter for direct dictionary and boundary 2"){
+    checkAnswer(
+      sql("select count(*) from directDictionaryTable where doj > '2016-03-14 15:00:23.0' and doj < '2016-03-14 15:00:60.0'"),
+      sql("select count(*) from directDictionaryTable_hive where doj > '2016-03-14 15:00:23.0' and doj < '2016-03-14 15:00:60.0'")
+    )
+  }
+
+
+  test("test range filter for direct dictionary and boundary 3"){
+    checkAnswer(
+      sql("select count(*) from directDictionaryTable where doj >= '2016-03-14 15:00:23.0' and doj < '2016-03-14 15:00:60.0'"),
+      sql("select count(*) from directDictionaryTable_hive where doj >= '2016-03-14 15:00:23.0' and doj < '2016-03-14 15:00:60.0'")
+    )
+  }
+
+
+  test("test range filter for direct dictionary and boundary 4"){
+    checkAnswer(
+      sql("select count(*) from directDictionaryTable where doj > '2016-03-14 15:00:23.0' and doj < '2016-03-14 15:00:40.0'"),
+      sql("select count(*) from directDictionaryTable_hive where doj > '2016-03-14 15:00:23.0' and doj < '2016-03-14 15:00:40.0'")
+    )
+  }
+
+  test("test range filter for direct dictionary and boundary 5"){
+    checkAnswer(
+      sql("select count(*) from directDictionaryTable where doj > '2016-03-14 15:00:23.0' and doj <= '2016-03-14 15:00:40.0'"),
+      sql("select count(*) from directDictionaryTable_hive where doj > '2016-03-14 15:00:23.0' and doj <= '2016-03-14 15:00:40.0'")
     )
   }
 
@@ -292,6 +431,89 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
       sql("select doj from directDictionaryTable_hive where doj > '2016-03-14 15:05:09' or doj > '2016-03-14 15:05:15' and doj < '2016-03-14 15:50:13'")
     )
   }
+
+  // use cast for range
+  test("test range filter for direct dictionary cast"){
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj > cast ('2016-03-14 15:00:17' as timestamp)"),
+      sql("select doj from directDictionaryTable_hive where doj > cast ('2016-03-14 15:00:17' as timestamp)")
+    )
+  }
+
+  test("test range filter for direct dictionary cast and"){
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj > cast ('2016-03-14 15:00:16' as timestamp) and doj < cast ('2016-03-14 15:00:18' as timestamp)"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:17.0"))
+      )
+    )
+  }
+
+  test("test range filter for direct dictionary and boundary cast "){
+    checkAnswer(
+      sql("select count(*) from directDictionaryTable where doj > cast ('2016-03-14 15:00:18.0' as timestamp) and doj < cast ('2016-03-14 15:00:09.0' as timestamp)"),
+      Seq(Row(0)
+      )
+    )
+  }
+
+  test("test range filter for direct dictionary and boundary 2 cast "){
+    checkAnswer(
+      sql("select count(*) from directDictionaryTable where doj > cast('2016-03-14 15:00:23.0' as timestamp) and doj < cast ('2016-03-14 15:00:60.0' as timestamp)"),
+      sql("select count(*) from directDictionaryTable_hive where doj > cast('2016-03-14 15:00:23.0' as timestamp) and doj < cast ('2016-03-14 15:00:60.0' as timestamp)")
+    )
+  }
+
+
+  test("test range filter for direct dictionary and boundary 3 cast"){
+    checkAnswer(
+      sql("select count(*) from directDictionaryTable where doj >= cast('2016-03-14 15:00:23.0' as timestamp) and doj < cast('2016-03-14 15:00:60.0' as timestamp)"),
+      sql("select count(*) from directDictionaryTable_hive where doj >= cast('2016-03-14 15:00:23.0' as timestamp) and doj < cast('2016-03-14 15:00:60.0' as timestamp)")
+    )
+  }
+
+
+  test("test range filter for direct dictionary and boundary 4 cast"){
+    checkAnswer(
+      sql("select count(*) from directDictionaryTable where doj > cast('2016-03-14 15:00:23.0' as timestamp) and doj < cast('2016-03-14 15:00:40.0' as timestamp)"),
+      sql("select count(*) from directDictionaryTable_hive where doj > cast('2016-03-14 15:00:23.0' as timestamp) and doj < cast('2016-03-14 15:00:40.0' as timestamp)")
+    )
+  }
+
+  test("test range filter for direct dictionary and boundary 5 cast "){
+    checkAnswer(
+      sql("select count(*) from directDictionaryTable where doj > cast('2016-03-14 15:00:23.0' as timestamp) and doj <= cast('2016-03-14 15:00:40.0' as timestamp)"),
+      sql("select count(*) from directDictionaryTable_hive where doj > cast('2016-03-14 15:00:23.0' as timestamp) and doj <= cast('2016-03-14 15:00:40.0' as timestamp)")
+    )
+  }
+
+  test("test range filter for direct dictionary more values after filter cast"){
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj > cast('2016-03-14 15:00:09' as timestamp)"),
+      sql("select doj from directDictionaryTable_hive where doj > cast('2016-03-14 15:00:09' as timestamp)")
+    )
+  }
+
+  test("test range filter for direct dictionary or condition cast"){
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj > cast('2016-03-14 15:00:09' as timestamp) or doj > cast('2016-03-14 15:00:15' as timestamp)"),
+      sql("select doj from directDictionaryTable_hive where doj > cast('2016-03-14 15:00:09' as timestamp) or doj > cast('2016-03-14 15:00:15' as timestamp)")
+    )
+  }
+
+  test("test range filter for direct dictionary or and condition cast"){
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj > cast('2016-03-14 15:00:09' as timestamp) or doj > cast('2016-03-14 15:00:15' as timestamp) and doj < cast('2016-03-14 15:00:13' as timestamp)"),
+      sql("select doj from directDictionaryTable_hive where doj > cast('2016-03-14 15:00:09' as timestamp) or doj > cast('2016-03-14 15:00:15' as timestamp) and doj < cast('2016-03-14 15:00:13' as timestamp)")
+    )
+  }
+
+  test("test range filter for direct dictionary with no data in csv cast"){
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj > cast('2016-03-14 15:05:09' as timestamp) or doj > cast('2016-03-14 15:05:15' as timestamp) and doj < cast('2016-03-14 15:50:13' as timestamp)"),
+      sql("select doj from directDictionaryTable_hive where doj > cast('2016-03-14 15:05:09' as timestamp) or doj > cast('2016-03-14 15:05:15' as timestamp) and doj < cast('2016-03-14 15:50:13' as timestamp)")
+    )
+  }
+
 
   test("test range filter for measure in dictionary include"){
     checkAnswer(
@@ -398,6 +620,13 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("test range filter No Dictionary Range"){
+    checkAnswer(
+      sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_8 where empno > '13' and empno < '17'"),
+      sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_8 where empno > '13' and empno < '17'")
+    )
+  }
+
   test("test range filter for more columns conditions"){
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_8 where empno > '13' and workgroupcategory < 3 and deptno > 12 and empno < '17'"),
@@ -419,25 +648,6 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  /*
-  test("test range filter with complex datatypes 1"){
-    sql("select proddate.productionDate from complexcarbontable where proddate.productionDate > '30-11-2015' and proddate.productionDate < '31-01-2016' ").show()
-    checkAnswer(
-      sql("select proddate.productionDate from complexcarbontable where proddate.productionDate > '30-11-2015' and proddate.productionDate < '31-01-2016'"),
-      Seq(Row("30-12-2015"))
-    )
-  }
-  */
-
-  /*
-  test("test range filter with complex datatypes 2"){
-    sql("select ROMSize,mobile.imei from complexcarbontable where proddate.productionDate > '30-11-2015' and proddate.productionDate < '31-01-2016' ").show()
-    checkAnswer(
-      sql("select ROMSize,mobile.imei from complexcarbontable where proddate.productionDate > '30-11-2015' and proddate.productionDate < '31-01-2016'"),
-      Seq(Row("8ROM size",""))
-    )
-  }
-  */
 
 
 

@@ -630,7 +630,7 @@ object GlobalDictionaryUtil {
     try {
       // read local dictionary file, and spilt (columnIndex, columnValue)
       val basicRdd = sqlContext.sparkContext.textFile(allDictionaryPath)
-        .map(x => parseRecord(x, accumulator, csvFileColumns)).persist()
+        .map(x => parseRecord(x, accumulator, csvFileColumns))
 
       // group by column index, and filter required columns
       val requireColumnsList = requireColumns.toList
@@ -830,9 +830,9 @@ object GlobalDictionaryUtil {
     val dictLock = CarbonLockFactory
       .getCarbonLockObj(carbonTablePath.getRelativeDictionaryDirectory,
         columnSchema.getColumnUniqueId + LockUsage.LOCK)
-
-    val isDictionaryLocked = dictLock.lockWithRetries()
+    var isDictionaryLocked = false
     try {
+      isDictionaryLocked = dictLock.lockWithRetries()
       if (isDictionaryLocked) {
         LOGGER.info(s"Successfully able to get the dictionary lock for ${
           columnSchema.getColumnName

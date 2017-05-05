@@ -45,18 +45,15 @@ public final class ByteUtil {
     if (buffer1 == buffer2) {
       return 0;
     }
-    // Bring WritableComparator code local
-    int i = 0;
-    int j = 0;
-    for (; i < buffer1.length && j < buffer2.length; i++, j++) {
-      int a = (buffer1[i] & 0xff);
-      int b = (buffer2[j] & 0xff);
-      if (a != b) {
-        return a - b;
-      }
-    }
-    return 0;
+    int len1 = buffer1.length;
+    int len2 = buffer2.length;
+    int offset1 = 0;
+    int offset2 = 0;
+    // Call UnsafeComparer compareTo for comparision.
+    return ByteUtil.UnsafeComparer.INSTANCE
+        .compareTo(buffer1, offset1, len1, buffer2, offset2, len2);
   }
+
 
   /**
    * covert the long[] to int[]
@@ -248,69 +245,6 @@ public final class ByteUtil {
       return len1 - len2;
     }
 
-    public int compareUnsafeTo(Object baseObject1, Object baseObject2, long address1, long address2,
-        int len1, int len2, int minLength) {
-
-      int minWords = 0;
-
-      /*
-       * Compare 8 bytes at a time. Benchmarking shows comparing 8 bytes
-       * at a time is no slower than comparing 4 bytes at a time even on
-       * 32-bit. On the other hand, it is substantially faster on 64-bit.
-       */
-      if (minLength > 7) {
-        minWords = minLength / SIZEOF_LONG;
-        for (int i = 0; i < minWords * SIZEOF_LONG; i += SIZEOF_LONG) {
-          long lw = CarbonUnsafe.unsafe
-              .getLong(baseObject1, CarbonUnsafe.BYTE_ARRAY_OFFSET + (long) i + address1);
-          long rw = CarbonUnsafe.unsafe
-              .getLong(baseObject2, CarbonUnsafe.BYTE_ARRAY_OFFSET + (long) i + address2);
-          long diff = lw ^ rw;
-
-          if (diff != 0) {
-            if (!CarbonUnsafe.ISLITTLEENDIAN) {
-              return lessThanUnsigned(lw, rw) ? -1 : 1;
-            }
-
-            // Use binary search
-            int k = 0;
-            int y;
-            int x = (int) diff;
-            if (x == 0) {
-              x = (int) (diff >>> 32);
-              k = 32;
-            }
-            y = x << 16;
-            if (y == 0) {
-              k += 16;
-            } else {
-              x = y;
-            }
-
-            y = x << 8;
-            if (y == 0) {
-              k += 8;
-            }
-            return (int) (((lw >>> k) & 0xFFL) - ((rw >>> k) & 0xFFL));
-          }
-        }
-      }
-
-      // The epilogue to cover the last (minLength % 8) elements.
-      for (int i = minWords * SIZEOF_LONG; i < minLength; i++) {
-        int a =
-            (CarbonUnsafe.unsafe.getByte(baseObject1, CarbonUnsafe.BYTE_ARRAY_OFFSET + i + address1)
-                & 0xff);
-        int b =
-            (CarbonUnsafe.unsafe.getByte(baseObject2, CarbonUnsafe.BYTE_ARRAY_OFFSET + i + address2)
-                & 0xff);
-        if (a != b) {
-          return a - b;
-        }
-      }
-      return len1 - len2;
-    }
-
     public boolean equals(byte[] buffer1, byte[] buffer2) {
       if (buffer1.length != buffer2.length) {
         return false;
@@ -330,6 +264,35 @@ public final class ByteUtil {
         for (int i = 0; i < len; i += 1) {
           long lw = CarbonUnsafe.unsafe.getByte(buffer1, currentOffset);
           long rw = CarbonUnsafe.unsafe.getByte(buffer2, currentOffset);
+          if (lw != rw) {
+            return false;
+          }
+          currentOffset += 1;
+        }
+      }
+      return true;
+    }
+
+    public boolean equals(byte[] buffer1, int offset1, int length1, byte[] buffer2, int offset2,
+        int length2) {
+      if (length1 != length2) {
+        return false;
+      }
+      int len = length1 / 8;
+      long currentOffset = CarbonUnsafe.BYTE_ARRAY_OFFSET;
+      for (int i = 0; i < len; i++) {
+        long lw = CarbonUnsafe.unsafe.getLong(buffer1, currentOffset + offset1);
+        long rw = CarbonUnsafe.unsafe.getLong(buffer2, currentOffset + offset2);
+        if (lw != rw) {
+          return false;
+        }
+        currentOffset += 8;
+      }
+      len = buffer1.length % 8;
+      if (len > 0) {
+        for (int i = 0; i < len; i += 1) {
+          long lw = CarbonUnsafe.unsafe.getByte(buffer1, currentOffset + offset1);
+          long rw = CarbonUnsafe.unsafe.getByte(buffer2, currentOffset + offset2);
           if (lw != rw) {
             return false;
           }

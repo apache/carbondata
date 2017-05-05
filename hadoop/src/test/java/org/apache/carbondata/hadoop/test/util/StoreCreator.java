@@ -166,6 +166,7 @@ public class StoreCreator {
       loadModel.setSegmentId("0");
       loadModel.setPartitionId("0");
       loadModel.setFactTimeStamp(System.currentTimeMillis());
+      loadModel.setMaxColumns("10");
 
       executeGraph(loadModel, absoluteTableIdentifier.getStorePath());
 
@@ -265,7 +266,6 @@ public class StoreCreator {
     tableInfo.setLastUpdatedTime(System.currentTimeMillis());
     tableInfo.setFactTable(tableSchema);
     tableInfo.setAggregateTableList(new ArrayList<TableSchema>());
-
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
@@ -399,6 +399,8 @@ public class StoreCreator {
     CSVInputFormat.setReadBufferSize(configuration, CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
             CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT));
+    CSVInputFormat.setNumberOfColumns(configuration, String.valueOf(loadModel.getCsvHeaderColumns().length));
+    CSVInputFormat.setMaxColumns(configuration, "10");
 
     TaskAttemptContextImpl hadoopAttemptContext = new TaskAttemptContextImpl(configuration, new TaskAttemptID("", 1, TaskType.MAP, 0, 0));
     CSVInputFormat format = new CSVInputFormat();

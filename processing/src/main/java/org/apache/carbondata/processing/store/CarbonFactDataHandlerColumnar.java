@@ -463,8 +463,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     if (this.entryCount == this.blockletSize) {
       try {
         semaphore.acquire();
-        producerExecutorServiceTaskList.add(producerExecutorService
-            .submit(new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter)));
+        producerExecutorServiceTaskList.add(producerExecutorService.submit(
+            new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter, false)));
         blockletProcessingCount.incrementAndGet();
         // set the entry count to zero
         processedDataCount += entryCount;
@@ -589,6 +589,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   /** generate the NodeHolder from the input rows */
   private NodeHolder processDataRows(List<Object[]> dataRows)
       throws CarbonDataWriterException {
+    if (dataRows.size() == 0) {
+      return new NodeHolder();
+    }
     // to store index of the measure columns which are null
     BitSet[] nullValueIndexBitSet = getMeasureNullValueIndexBitSet(measureCount);
     // statistics for one blocklet/page
@@ -859,12 +862,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   public void finish() throws CarbonDataWriterException {
     // still some data is present in stores if entryCount is more
     // than 0
-    if (this.entryCount > 0) {
-      producerExecutorServiceTaskList.add(producerExecutorService
-          .submit(new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter)));
-      blockletProcessingCount.incrementAndGet();
-      processedDataCount += entryCount;
-    }
+    producerExecutorServiceTaskList.add(producerExecutorService
+        .submit(new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter, true)));
+    blockletProcessingCount.incrementAndGet();
+    processedDataCount += entryCount;
     closeWriterExecutionService(producerExecutorService);
     processWriteTaskSubmitList(producerExecutorServiceTaskList);
     processingComplete = true;
@@ -1330,12 +1331,14 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     private BlockletDataHolder blockletDataHolder;
     private List<Object[]> dataRows;
     private int sequenceNumber;
+    private boolean isWriteAll;
 
     private Producer(BlockletDataHolder blockletDataHolder, List<Object[]> dataRows,
-        int sequenceNumber) {
+        int sequenceNumber, boolean isWriteAll) {
       this.blockletDataHolder = blockletDataHolder;
       this.dataRows = dataRows;
       this.sequenceNumber = sequenceNumber;
+      this.isWriteAll = isWriteAll;
     }
 
     /**
@@ -1347,6 +1350,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     @Override public Void call() throws Exception {
       try {
         NodeHolder nodeHolder = processDataRows(dataRows);
+        nodeHolder.setWriteAll(isWriteAll);
         // insert the object in array according to sequence number
         int indexInNodeHolderArray = (sequenceNumber - 1) % numberOfCores;
         blockletDataHolder.put(nodeHolder, indexInNodeHolderArray);

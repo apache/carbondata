@@ -128,8 +128,9 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
     CarbonRowBatch newBatch = new CarbonRowBatch(rowBatch.getSize());
     while (rowBatch.hasNext()) {
       CarbonRow next = rowBatch.next();
+      short bucketNumber = (short) partitioner.getPartition(next.getData());
       CarbonRow convertRow = localConverter.convert(next);
-      convertRow.bucketNumber = (short) partitioner.getPartition(next.getData());
+      convertRow.bucketNumber = bucketNumber;
       newBatch.addRow(convertRow);
     }
     rowCounter.getAndAdd(newBatch.getSize());
@@ -179,9 +180,10 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
         configuration.getTableIdentifier().getCarbonTableIdentifier();
     BadRecordsLogger badRecordsLogger = new BadRecordsLogger(identifier.getBadRecordLoggerKey(),
         identifier.getTableName() + '_' + System.currentTimeMillis(), getBadLogStoreLocation(
-        identifier.getDatabaseName() + File.separator + identifier.getTableName() + File.separator
-            + configuration.getTaskNo()), badRecordsLogRedirect, badRecordsLoggerEnable,
-        badRecordConvertNullDisable, isDataLoadFail);
+        identifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + identifier
+            .getTableName() + CarbonCommonConstants.FILE_SEPARATOR + configuration.getSegmentId()
+            + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo()),
+        badRecordsLogRedirect, badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail);
     return badRecordsLogger;
   }
 

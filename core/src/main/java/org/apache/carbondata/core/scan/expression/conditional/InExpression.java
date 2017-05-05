@@ -82,7 +82,19 @@ public class InExpression extends BinaryConditionalExpression {
         setOfExprResult.add(val);
       }
     }
-    leftRsult.set(DataType.BOOLEAN, setOfExprResult.contains(leftRsult));
+    // Only left result needs to be checked for null because InExpression is basically
+    // an OR Operation on the list of predicates that are provided.
+    // Example: x in (1,2,null) would be converted to x=1 OR x=2 OR x=null.
+    // If any of the predicates is null then the result is unknown thus we will return false
+    // for x=null.
+    // Left check will cover both the cases when left and right is null therefore no need
+    // for a check on the right result.
+    // Example: (null==null) -> Left null return false, (1==null) would automatically be false.
+    if (leftRsult.isNull()) {
+      leftRsult.set(DataType.BOOLEAN, false);
+    } else {
+      leftRsult.set(DataType.BOOLEAN, setOfExprResult.contains(leftRsult));
+    }
     return leftRsult;
   }
 

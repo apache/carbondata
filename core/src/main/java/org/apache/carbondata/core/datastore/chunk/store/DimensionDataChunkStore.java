@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.datastore.chunk.store;
 
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+
 /**
  * Interface responsibility is to store dimension data in memory.
  * storage can be on heap or offheap.
@@ -36,16 +38,23 @@ public interface DimensionDataChunkStore {
    * Below method will be used to get the row
    * based on row id passed
    *
-   * @param index
+   * @param rowId
    * @return row
    */
   byte[] getRow(int rowId);
 
   /**
+   * Below method will be used to fill the row to vector
+   * based on row id passed
+   *
+   */
+  void fillRow(int rowId, CarbonColumnVector vector, int vectorRow);
+
+  /**
    * Below method will be used to fill the row values to buffer array
    *
    * @param rowId  row id of the data to be filled
-   * @param data   buffer in which data will be filled
+   * @param buffer   buffer in which data will be filled
    * @param offset off the of the buffer
    */
   void fillRow(int rowId, byte[] buffer, int offset);

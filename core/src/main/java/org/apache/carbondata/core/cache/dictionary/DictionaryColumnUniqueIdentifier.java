@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.cache.dictionary;
 
+import java.io.Serializable;
+
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -24,7 +26,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 /**
  * dictionary column identifier which includes table identifier and column identifier
  */
-public class DictionaryColumnUniqueIdentifier {
+public class DictionaryColumnUniqueIdentifier implements Serializable {
 
   /**
    * table fully qualified name

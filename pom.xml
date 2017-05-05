@@ -28,14 +28,14 @@
   <groupId>org.apache.carbondata</groupId>
   <artifactId>carbondata-parent</artifactId>
   <name>Apache CarbonData :: Parent</name>
-  <description>Apache CarbonData(incubating) is an indexed columnar data format for fast analytics
+  <description>Apache CarbonData is an indexed columnar data format for fast analytics
     on big data platform, e.g.Apache Hadoop, Apache Spark, etc.
   </description>
-  <url>http://carbondata.incubator.apache.org</url>
+  <url>http://carbondata.apache.org</url>
   <inceptionYear>2016</inceptionYear>
   <packaging>pom</packaging>
 
-  <version>1.1.0-incubating-SNAPSHOT</version>
+  <version>1.1.0-SNAPSHOT</version>
 
   <licenses>
     <license>
@@ -46,9 +46,9 @@
   </licenses>
 
   <scm>
-    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-carbondata.git</connection>
-    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-carbondata.git</developerConnection>
-    <url>https://git-wip-us.apache.org/repos/asf/incubator-carbondata.git</url>
+    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/carbondata.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/carbondata.git</developerConnection>
+    <url>https://git-wip-us.apache.org/repos/asf/carbondata.git</url>
     <tag>HEAD</tag>
   </scm>
 
@@ -60,32 +60,35 @@
   <mailingLists>
     <mailingList>
       <name>CarbonData Dev</name>
-      <subscribe>dev-subscribe@carbondata.incubator.apache.org</subscribe>
-      <unsubscribe>dev-unsubscribe@carbondata.incubator.apache.org</unsubscribe>
-      <post>dev@carbondata.incubator.apache.org</post>
-      <archive>http://www.mail-archive.com/dev%carbondata.incubator.apache.org</archive>
+      <subscribe>dev-subscribe@carbondata.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@carbondata.apache.org</unsubscribe>
+      <post>dev@carbondata.apache.org</post>
+    </mailingList>
+    <mailingList>
+      <name>CarbonData Issues</name>
+      <subscribe>issues-subscribe@carbondata.apache.org</subscribe>
+      <unsubscribe>issues-unsubscribe@carbondata.apache.org</unsubscribe>
+      <post>issues@carbondata.apache.org</post>
     </mailingList>
     <mailingList>
       <name>CarbonData User</name>
-      <subscribe>user-subscribe@carbondata.incubator.apache.org</subscribe>
-      <unsubscribe>user-unsubscribe@carbondata.incubator.apache.org</unsubscribe>
-      <post>user@carbondata.incubator.apache.org</post>
-      <archive>http://www.mail-archive.com/user%carbondata.incubator.apache.org</archive>
+      <subscribe>user-subscribe@carbondata.apache.org</subscribe>
+      <unsubscribe>user-unsubscribe@carbondata.apache.org</unsubscribe>
+      <post>user@carbondata.apache.org</post>
     </mailingList>
     <mailingList>
       <name>CarbonData Commits</name>
-      <subscribe>commits-subscribe@carbondata.incubator.apache.org</subscribe>
-      <unsubscribe>commits-unsubscribe@carbondata.incubator.apache.org</unsubscribe>
-      <post>commits@carbondata.incubator.apache.org</post>
-      <archive>http://www.mail-archive.com/commits%carbondata.incubator.apache.org</archive>
+      <subscribe>commits-subscribe@carbondata.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@carbondata.apache.org</unsubscribe>
+      <post>commits@carbondata.apache.org</post>
     </mailingList>
   </mailingLists>
 
   <developers>
     <developer>
       <name>The Apache CarbonData Team</name>
-      <email>dev@carbondata.incubator.apache.org</email>
-      <url>http://carbondata.incubator.apache.org</url>
+      <email>dev@carbondata.apache.org</email>
+      <url>http://carbondata.apache.org</url>
       <organization>Apache Software Foundation</organization>
       <organizationUrl>http://www.apache.org</organizationUrl>
     </developer>

@@ -23,7 +23,7 @@ import org.apache.carbondata.format.{DataType => ThriftDataType}
 object DataTypeConverterUtil {
   def convertToCarbonType(dataType: String): DataType = {
     dataType.toLowerCase match {
-      case "string" | "char" => DataType.STRING
+      case "string" => DataType.STRING
       case "int" => DataType.INT
       case "integer" => DataType.INT
       case "tinyint" => DataType.SHORT
@@ -62,6 +62,10 @@ object DataTypeConverterUtil {
           DataType.ARRAY
         } else if (others != null && others.startsWith("structtype")) {
           DataType.STRUCT
+        } else if (others != null && others.startsWith("char")) {
+          DataType.STRING
+        } else if (others != null && others.startsWith("varchar")) {
+          DataType.STRING
         } else {
           sys.error(s"Unsupported data type: $dataType")
         }

@@ -83,13 +83,12 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
       s"LOAD DATA LOCAL INPATH '$resourcesPath/data2.csv' INTO TABLE filtertestTable OPTIONS"+
         s"('DELIMITER'= ',', " +
         s"'FILEHEADER'= '')"
-    );
+    )
 
   }
 
   test("Count (*) with filter") {
-    // sql("select * from NO_DICTIONARY_CARBON_6 where empno != '16'").show()
-    sql("select * from NO_DICTIONARY_CARBON_6 where empno > '11' and empno <= '30'").show()
+    sql("select * from NO_DICTIONARY_CARBON_6 where empno > '11' and empno <= '30'")
     checkAnswer(
       sql("select count(*) from NO_DICTIONARY_CARBON_6 where empno='11'"),
       Seq(Row(1))

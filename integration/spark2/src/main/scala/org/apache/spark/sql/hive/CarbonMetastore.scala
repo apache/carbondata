@@ -315,12 +315,12 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
       carbonStorePath: String)
     (sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
+    thriftTableInfo.fact_table.schema_evolution.schema_evolution_history.add(schemaEvolutionEntry)
     val wrapperTableInfo = schemaConverter
       .fromExternalToWrapperTableInfo(thriftTableInfo,
-        carbonTableIdentifier.getDatabaseName,
-        carbonTableIdentifier.getTableName,
-        carbonStorePath)
-    thriftTableInfo.fact_table.schema_evolution.schema_evolution_history.add(schemaEvolutionEntry)
+          carbonTableIdentifier.getDatabaseName,
+          carbonTableIdentifier.getTableName,
+          carbonStorePath)
     createSchemaThriftFile(wrapperTableInfo,
       thriftTableInfo,
       carbonTableIdentifier.getDatabaseName,

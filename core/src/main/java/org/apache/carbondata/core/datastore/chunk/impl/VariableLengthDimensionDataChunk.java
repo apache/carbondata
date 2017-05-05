@@ -16,8 +16,6 @@
  */
 package org.apache.carbondata.core.datastore.chunk.impl;
 
-import java.util.Arrays;
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory.DimensionStoreType;
@@ -32,9 +30,10 @@ public class VariableLengthDimensionDataChunk extends AbstractDimensionDataChunk
 
   /**
    * Constructor for this class
-   *
-   * @param dataChunkStore  data chunk
-   * @param chunkAttributes chunk attributes
+   * @param dataChunks
+   * @param invertedIndex
+   * @param invertedIndexReverse
+   * @param numberOfRows
    */
   public VariableLengthDimensionDataChunk(byte[] dataChunks, int[] invertedIndex,
       int[] invertedIndexReverse, int numberOfRows) {
@@ -108,14 +107,9 @@ public class VariableLengthDimensionDataChunk extends AbstractDimensionDataChunk
     int vectorOffset = columnVectorInfo.vectorOffset;
     int len = offset + columnVectorInfo.size;
     for (int i = offset; i < len; i++) {
-      byte[] value = dataChunkStore.getRow(i);
       // Considering only String case now as we support only
       // string in no dictionary case at present.
-      if (value == null || Arrays.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, value)) {
-        vector.putNull(vectorOffset++);
-      } else {
-        vector.putBytes(vectorOffset++, value);
-      }
+      dataChunkStore.fillRow(i, vector, vectorOffset++);
     }
     return column + 1;
   }
@@ -137,14 +131,9 @@ public class VariableLengthDimensionDataChunk extends AbstractDimensionDataChunk
     int vectorOffset = columnVectorInfo.vectorOffset;
     int len = offset + columnVectorInfo.size;
     for (int i = offset; i < len; i++) {
-      byte[] value = dataChunkStore.getRow(rowMapping[i]);
       // Considering only String case now as we support only
       // string in no dictionary case at present.
-      if (value == null || Arrays.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, value)) {
-        vector.putNull(vectorOffset++);
-      } else {
-        vector.putBytes(vectorOffset++, value);
-      }
+      dataChunkStore.fillRow(rowMapping[i], vector, vectorOffset++);
     }
     return column + 1;
   }

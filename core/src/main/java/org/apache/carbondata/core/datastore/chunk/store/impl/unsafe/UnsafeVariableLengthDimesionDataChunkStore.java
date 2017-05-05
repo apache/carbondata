@@ -21,6 +21,8 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.util.ByteUtil;
 
 /**
  * Below class is responsible to store variable length dimension data chunk in
@@ -118,7 +120,7 @@ public class UnsafeVariableLengthDimesionDataChunkStore
   /**
    * Below method will be used to get the row based on row id passed
    *
-   * @param index
+   * @param rowId
    * @return row
    */
   @Override public byte[] getRow(int rowId) {
@@ -156,10 +158,20 @@ public class UnsafeVariableLengthDimesionDataChunkStore
     return data;
   }
 
+  @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+    byte[] value = getRow(rowId);
+    if (ByteUtil.UnsafeComparer.INSTANCE
+        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, value)) {
+      vector.putNull(vectorRow);
+    } else {
+      vector.putBytes(vectorRow, value);
+    }
+  }
+
   /**
    * to compare the two byte array
    *
-   * @param index        index of first byte array
+   * @param index index of first byte array
    * @param compareValue value of to be compared
    * @return compare result
    */
@@ -187,20 +199,20 @@ public class UnsafeVariableLengthDimesionDataChunkStore
     }
     // as this class handles this variable length data, so filter value can be
     // smaller or bigger than than actual data, so we need to take the smaller length
-    int compareResult = 0;
-    int compareLength = length < compareValue.length ? length : compareValue.length;
+    int compareResult;
+    int compareLength = Math.min(length , compareValue.length);
     for (int i = 0; i < compareLength; i++) {
       compareResult = (CarbonUnsafe.unsafe.getByte(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + currentDataOffset) & 0xff) - (compareValue[i]
           & 0xff);
       // if compare result is not equal we can break
       if (compareResult != 0) {
-        break;
+        return compareResult;
       }
       // increment the offset by one as comparison is done byte by byte
       currentDataOffset++;
     }
-    return compareResult;
+    return length - compareValue.length;
   }
 
 }

@@ -40,6 +40,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists NO_DICTIONARY_CARBON_6")
     sql("drop table if exists DICTIONARY_CARBON_6")
     sql("drop table if exists NO_DICTIONARY_CARBON_7")
+    sql("drop table if exists NO_DICTIONARY_HIVE_8")
 
     sql("CREATE TABLE NO_DICTIONARY_HIVE_1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION " +
         "string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint," +
@@ -88,7 +89,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
         "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
         "projectenddate Timestamp, designation String,attendance Int,utilization " +
         "Int,salary Int) STORED BY 'org.apache.carbondata.format' " +
-        "TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno, empname,designation')"
+        "TBLPROPERTIES('DICTIONARY_INCLUDE'='workgroupcategory','DICTIONARY_EXCLUDE'='empno, empname,designation')"
     )
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE NO_DICTIONARY_CARBON_6 " +
@@ -101,7 +102,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
         "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
         "projectenddate Timestamp, designation String,attendance Int,utilization " +
         "Int,salary Int) STORED BY 'org.apache.carbondata.format' " +
-        "TBLPROPERTIES('DICTIONARY_EXCLUDE'='empname,designation')"
+        "TBLPROPERTIES('DICTIONARY_INCLUDE'='workgroupcategory','DICTIONARY_EXCLUDE'='empname,designation')"
     )
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE DICTIONARY_CARBON_6 " +
@@ -117,9 +118,25 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
         "TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno,empname,designation')"
     )
     sql(
-      s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE NO_DICTIONARY_CARBON_7 " +
+      s"LOAD DATA LOCAL INPATH '$resourcesPath/rangenodictionarycompare.csv' INTO TABLE NO_DICTIONARY_CARBON_7 " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
+
+    sql(
+      "create table NO_DICTIONARY_HIVE_8(empno string,empname string,designation string,doj " +
+      "Timestamp,workgroupcategory int, " +
+      "workgroupcategoryname string,deptno int, deptname string, projectcode int, " +
+      "projectjoindate Timestamp,projectenddate Timestamp,attendance int, "
+      + "utilization int,salary int) row format delimited fields terminated by ',' " +
+      "tblproperties(\"skip.header.line.count\"=\"1\") " +
+      ""
+    )
+
+    sql(
+      s"load data local inpath '$resourcesPath/rangenodictionarycompare.csv' into table " +
+      "NO_DICTIONARY_HIVE_8"
+    );
+
     sql("CREATE TABLE filtertestTable (ID string,date Timestamp, country String, " +
         "name String, phonetype String, serialname String, salary Int) " +
         "STORED BY 'org.apache.carbondata.format' " +  "TBLPROPERTIES('DICTIONARY_EXCLUDE'='ID')"
@@ -136,8 +153,6 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Range filter No Dictionary 1") {
-    sql("select * from NO_DICTIONARY_CARBON_6").show()
-    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno > '11' and empno < '15'").show()
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno > '11' and empno < '15'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where empno > '11' and empno < '15'")
@@ -198,7 +213,6 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Range filter No Dictionary outside Boundary 5") {
-    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno < '11' and empno > '20'").show()
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno < '11' and empno > '20'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where empno < '11' and empno > '20'")
@@ -249,7 +263,6 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Range filter No Dictionary Inside Boundary 12") {
-    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno >= '11' and empno > '12' and empno <= '20' and empno <= '15'").show()
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno >= '11' and empno > '12' and empno <= '20' and empno <= '15'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where empno >= '11' and empno > '12' and empno <= '20'  and empno <= '15'")
@@ -271,7 +284,6 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Range filter No Dictionary Inside Boundary 15") {
-    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno >= '11' or empno > '12' and empno <= '20'").show()
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno >= '11' or empno > '12' and empno <= '20'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where empno >= '11' or empno > '12' and empno <= '20'")
@@ -279,7 +291,6 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Range filter No Dictionary Inside Boundary 16") {
-    sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno >= '11' and empno > '12' or empno <= '20'").show()
     checkAnswer(
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno >= '11' and empno > '12' or empno <= '20'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where empno >= '11' and empno > '12' or empno <= '20'")
@@ -337,9 +348,6 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Range filter Dictionary 1") {
-    sql("select * from DICTIONARY_CARBON_6").show()
-    // sql("select * from NO_DICTIONARY_CARBON_6 where empno != '16'").show()
-    sql("select * from DICTIONARY_CARBON_6 where empno > '11' and workgroupcategory = '1' or workgroupcategoryname = 'developer' and empno < '15'").show()
     checkAnswer(
       sql("select empno,empname,workgroupcategory from DICTIONARY_CARBON_6 where empno > '11' and empno < '15'"),
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where empno > '11' and empno < '15'")
@@ -436,6 +444,67 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select s.empno, s.empname, t.empno, t.empname from DICTIONARY_CARBON_6 s, NO_DICTIONARY_CARBON_6 t where s.empno > '09' and t.empno < '30' and s.empname = t.empname"),
       sql("select s.empno, s.empname, t.empno, t.empname from NO_DICTIONARY_HIVE_6 s, NO_DICTIONARY_HIVE_7 t where s.empno > '09' and t.empno < '30' and s.empname = t.empname"))
+  }
+
+  test("Range with name comparision") {
+   checkAnswer(
+    sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '11' and empname < '12'"),
+    sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '11' and empname < '12'"))
+  }
+
+  test("Range with name comparision 1") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '10' and empname < '11'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '10' and empname < '11'"))
+  }
+
+  test("Range with name comparision 3") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '10' and empname <= '11'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '10' and empname <= '11'"))
+  }
+
+
+  test("Range with name comparision 4") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '10' and empno <= '11'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '10' and empno <= '11'"))
+  }
+
+  test("Range with name comparision 5") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '09' and empno <= '50'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '09' and empno <= '50'"))
+  }
+
+  test("Range with name comparision 6") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '03' and empno <= '09'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '03' and empno <= '09'"))
+  }
+
+  test("Range with name comparision 7") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname >= '10' and empno <= '50'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname >= '10' and empno <= '50'"))
+  }
+
+  test("Range with name comparision 8") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '10' and empno <= '50'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '10' and empno <= '50'"))
+  }
+
+  test("Range with name comparision 9") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '10' and empno <= '13'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '10' and empno <= '13'"))
+  }
+
+  test("Range with name comparision 10") {
+    checkAnswer(
+      sql("select empname from NO_DICTIONARY_CARBON_7 where empname > '10' and empno <= '14'"),
+      sql("select empname from NO_DICTIONARY_HIVE_8 where empname > '10' and empno <= '14'"))
   }
 
 

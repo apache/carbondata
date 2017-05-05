@@ -16,9 +16,9 @@
  */
 package org.apache.carbondata.core.scan.collector.impl;
 
-import java.math.BigDecimal;
 import java.util.List;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -36,10 +36,13 @@ import org.apache.spark.sql.types.Decimal;
  */
 public class RestructureBasedVectorResultCollector extends DictionaryBasedVectorResultCollector {
 
+  private Object[] measureDefaultValues = null;
+
   public RestructureBasedVectorResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
     queryDimensions = tableBlockExecutionInfos.getActualQueryDimensions();
     queryMeasures = tableBlockExecutionInfos.getActualQueryMeasures();
+    measureDefaultValues = new Object[queryMeasures.length];
     allColumnInfo = new ColumnVectorInfo[queryDimensions.length + queryMeasures.length];
     createVectorForNewlyAddedDimensions();
     createVectorForNewlyAddedMeasures();
@@ -68,9 +71,22 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
         // add a dummy column vector result collector object
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
         allColumnInfo[queryMeasures[i].getQueryOrder()] = columnVectorInfo;
+        measureDefaultValues[i] = getMeasureDefaultValue(queryMeasures[i].getMeasure());
       }
     }
   }
+
+  /**
+   * Gets the default value for each CarbonMeasure
+   * @param carbonMeasure
+   * @return
+   */
+  private Object getMeasureDefaultValue(CarbonMeasure carbonMeasure) {
+    return RestructureUtil.getMeasureDefaultValueByType(carbonMeasure.getColumnSchema(),
+        carbonMeasure.getDefaultValue());
+  }
+
+
 
   @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
     throw new UnsupportedOperationException("collectData is not supported here");
@@ -149,7 +165,11 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
   private void fillDirectDictionaryData(CarbonColumnVector vector,
       ColumnVectorInfo columnVectorInfo, Object defaultValue) {
     if (null != defaultValue) {
-      vector.putLongs(columnVectorInfo.vectorOffset, columnVectorInfo.size, (long) defaultValue);
+      if (columnVectorInfo.directDictionaryGenerator.getReturnType().equals(DataType.INT)) {
+        vector.putInts(columnVectorInfo.vectorOffset, columnVectorInfo.size, (int) defaultValue);
+      } else {
+        vector.putLongs(columnVectorInfo.vectorOffset, columnVectorInfo.size, (long) defaultValue);
+      }
     } else {
       vector.putNulls(columnVectorInfo.vectorOffset, columnVectorInfo.size);
     }
@@ -177,11 +197,11 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
   private void fillDataForNonExistingMeasures() {
     for (int i = 0; i < tableBlockExecutionInfos.getActualQueryMeasures().length; i++) {
       if (!measureInfo.getMeasureExists()[i]) {
+        int queryOrder = tableBlockExecutionInfos.getActualQueryMeasures()[i].getQueryOrder();
         CarbonMeasure measure = tableBlockExecutionInfos.getActualQueryMeasures()[i].getMeasure();
-        ColumnVectorInfo columnVectorInfo = allColumnInfo[i];
-        CarbonColumnVector vector = allColumnInfo[i].vector;
-        Object defaultValue = RestructureUtil
-            .getMeasureDefaultValue(measure.getColumnSchema(), measure.getDefaultValue());
+        ColumnVectorInfo columnVectorInfo = allColumnInfo[queryOrder];
+        CarbonColumnVector vector = columnVectorInfo.vector;
+        Object defaultValue = measureDefaultValues[i];
         if (null == defaultValue) {
           vector.putNulls(columnVectorInfo.vectorOffset, columnVectorInfo.size);
         } else {
@@ -199,9 +219,8 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
                   (long) defaultValue);
               break;
             case DECIMAL:
-              Decimal convertToSparkType = Decimal.apply((BigDecimal) defaultValue);
               vector.putDecimals(columnVectorInfo.vectorOffset, columnVectorInfo.size,
-                  convertToSparkType, measure.getPrecision());
+                  (Decimal) defaultValue, measure.getPrecision());
               break;
             default:
               vector.putDoubles(columnVectorInfo.vectorOffset, columnVectorInfo.size,

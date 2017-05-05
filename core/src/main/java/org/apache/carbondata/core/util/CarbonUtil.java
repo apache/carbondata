@@ -819,7 +819,7 @@ public final class CarbonUtil {
     char[] type = new char[encodeMetaList.size()];
     byte[] dataTypeSelected = new byte[encodeMetaList.size()];
 
-    /**
+    /*
      * to fill the meta data required for value compression model
      */
     for (int i = 0; i < dataTypeSelected.length; i++) {  // always 1
@@ -990,7 +990,9 @@ public final class CarbonUtil {
     //TODO need to pass proper partition number when partiton will be supported
     String carbonIndexFilePath = carbonTablePath
         .getCarbonIndexFilePath(taskId, "0", tableBlockInfoList.get(0).getSegmentId(),
-            bucketNumber);
+            bucketNumber, CarbonTablePath.DataFileUtil
+                .getTimeStampFromFileName(tableBlockInfoList.get(0).getFilePath()),
+            tableBlockInfoList.get(0).getVersion());
     CarbonFile carbonFile = FileFactory
         .getCarbonFile(carbonIndexFilePath, FileFactory.getFileType(carbonIndexFilePath));
     // in case of carbonIndex file whole file is meta only so reading complete file.
@@ -1232,7 +1234,9 @@ public final class CarbonUtil {
     //TODO need to pass proper partition number when partiton will be supported
     String carbonIndexFilePath = carbonTablePath
         .getCarbonIndexFilePath(taskId, "0", tableBlockInfoList.get(0).getSegmentId(),
-            bucketNumber);
+            bucketNumber, CarbonTablePath.DataFileUtil
+                .getTimeStampFromFileName(tableBlockInfoList.get(0).getFilePath()),
+            tableBlockInfoList.get(0).getVersion());
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
     // read the index info and return
     return fileFooterConverter.getIndexInfo(carbonIndexFilePath, tableBlockInfoList);
@@ -1351,26 +1355,22 @@ public final class CarbonUtil {
 
   public static DataChunk3 readDataChunk3(ByteBuffer dataChunkBuffer, int offset, int length)
       throws IOException {
-    byte[] data = new byte[length];
-    dataChunkBuffer.position(offset);
-    dataChunkBuffer.get(data);
+    byte[] data = dataChunkBuffer.array();
     return (DataChunk3) read(data, new ThriftReader.TBaseCreator() {
       @Override public TBase create() {
         return new DataChunk3();
       }
-    }, 0, length);
+    }, offset, length);
   }
 
   public static DataChunk2 readDataChunk(ByteBuffer dataChunkBuffer, int offset, int length)
       throws IOException {
-    byte[] data = new byte[length];
-    dataChunkBuffer.position(offset);
-    dataChunkBuffer.get(data);
+    byte[] data = dataChunkBuffer.array();
     return (DataChunk2) read(data, new ThriftReader.TBaseCreator() {
       @Override public TBase create() {
         return new DataChunk2();
       }
-    }, 0, length);
+    }, offset, length);
   }
 
   /**

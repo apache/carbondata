@@ -29,17 +29,15 @@ import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
  */
 public class SegmentTaskIndex extends AbstractIndex {
 
+  public SegmentTaskIndex(SegmentProperties segmentProperties) {
+    this.segmentProperties = segmentProperties;
+  }
+
   /**
    * Below method is store the blocks in some data structure
    *
    */
   public void buildIndex(List<DataFileFooter> footerList) {
-    // create a metadata details
-    // this will be useful in query handling
-    // all the data file metadata will have common segment properties we
-    // can use first one to get create the segment properties
-    segmentProperties = new SegmentProperties(footerList.get(0).getColumnInTable(),
-        footerList.get(0).getSegmentInfo().getColumnCardinality());
     // create a segment builder info
     // in case of segment create we do not need any file path and each column value size
     // as Btree will be build as per min max and start key

@@ -58,7 +58,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
    */
   private def loadTempCSV(options: CarbonOption): Unit = {
     // temporary solution: write to csv file, then load the csv into carbon
-    val storePath = CarbonEnv.get.carbonMetastore.storePath
+    val storePath = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.storePath
     val tempCSVFolder = new StringBuilder(storePath).append(CarbonCommonConstants.FILE_SEPARATOR)
       .append("tempCSV")
       .append(CarbonCommonConstants.UNDERSCORE).append(options.dbName)
@@ -162,7 +162,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
     val carbonSchema = schema.map { field =>
       s"${ field.name } ${ convertToCarbonType(field.dataType) }"
     }
-    val property = new StringBuilder
+    var property = new StringBuilder
     property.append(
       if (options.dictionaryInclude.isDefined) {
         s"'DICTIONARY_INCLUDE' = '${options.dictionaryInclude.get}' ,"
@@ -171,11 +171,20 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       }
     ).append(
       if (options.dictionaryExclude.isDefined) {
-        s"'DICTIONARY_EXCLUDE' = '${options.dictionaryExclude.get}'"
+        s"'DICTIONARY_EXCLUDE' = '${options.dictionaryExclude.get}' ,"
+      } else {
+        ""
+      }
+    ).append(
+      if (options.tableBlockSize.isDefined) {
+        s"'table_blocksize' = '${options.tableBlockSize.get}'"
       } else {
         ""
       }
     )
+    if (property.nonEmpty && property.charAt(property.length-1) == ',') {
+      property = property.replace(property.length - 1, property.length, "")
+    }
 
     s"""
        | CREATE TABLE IF NOT EXISTS ${options.dbName}.${options.tableName}

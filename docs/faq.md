@@ -26,6 +26,7 @@
 * [How to specify store location while creating carbon session?](#how-to-specify-store-location-while-creating-carbon-session)
 * [What is Carbon Lock Type?](#what-is-carbon-lock-type)
 * [How to resolve Abstract Method Error?](#how-to-resolve-abstract-method-error)
+* [How Carbon will behave when execute insert operation in abnormal scenarios?](#how-carbon-will-behave-when-execute-insert-operation-in-abnormal-scenarios)
 
 ## What are Bad Records?
 Records that fail to get loaded into the CarbonData due to data type incompatibility or are empty or have incompatible format are classified as Bad Records.
@@ -73,5 +74,59 @@ The property carbon.lock.type configuration specifies the type of lock to be acq
 
 ## How to resolve Abstract Method Error?
 In order to build CarbonData project it is necessary to specify the spark profile. The spark profile sets the Spark Version. You need to specify the ``spark version`` while using Maven to build project.
+
+## How Carbon will behave when execute insert operation in abnormal scenarios?
+Carbon support insert operation, you can refer to the syntax mentioned in [DML Operations on CarbonData](http://carbondata.apache.org/dml-operation-on-carbondata).
+First, create a soucre table in spark-sql and load data into this created table. 
+```
+CREATE TABLE source_table(
+id String,
+name String,
+city String)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ",";
+```
+```
+SELECT * FROM source_table;
+id  name    city
+1   jack    beijing
+2   erlu    hangzhou
+3   davi    shenzhen
+```
+**Scenario 1** :
+
+Suppose, the column order in carbon table is different from source table, use script "SELECT * FROM carbon table" to query, will get the column order similar as source table, rather than in carbon table's column order as expected. 
+```
+CREATE TABLE IF NOT EXISTS carbon_table(
+id String,
+city String,
+name String)
+STORED BY 'carbondata';
+```
+```
+INSERT INTO TABLE carbon_table SELECT * FROM source_table;
+```
+```
+SELECT * FROM carbon_table;
+id  city    name
+1   jack    beijing
+2   erlu    hangzhou
+3   davi    shenzhen
+```
+As result shows, the second column is city in carbon table, but what inside is name, such as jack. This phenomenon is same with insert data into hive table.
+
+If you want to insert data into corresponding column in carbon table, you have to specify the column order same in insert statment. 
+```
+INSERT INTO TABLE carbon_table SELECT id, city, name FROM source_table;
+```
+
+**Scenario 2** :
+
+Insert operation will be failed when the number of column in carbon table is different from the column specified in select statement. The following insert operation will be failed.
+```
+INSERT INTO TABLE carbon_table SELECT id, city FROM source_table;
+```
+**Scenario 3** :
+
+When the column type in carbon table is different from from the column specified in select statement. The insert operation will still success, but you may get NULL in result, because NULL will be substitute value when conversion type failed.
 
 

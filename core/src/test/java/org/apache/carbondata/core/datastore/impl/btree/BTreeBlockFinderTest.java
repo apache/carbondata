@@ -146,13 +146,12 @@ public class BTreeBlockFinderTest extends TestCase {
     assertEquals(0, findLastBlock.nodeNumber());
   }
 
-  @Test
   /**
    * Below method will test when key which is not present and key which is
    * more than
    * last node key is passes for searching it should give first block
    */
-  public void testBtreeSearchIsWorkingAndGivingPorperBlockletWithDictionaryKey()
+  @Test public void testBtreeSearchIsWorkingAndGivingPorperBlockletWithDictionaryKey()
       throws KeyGenException {
     BtreeBuilder builder = new BlockBTreeBuilder();
     List<DataFileFooter> footerList = getFileFooterListWithOnlyDictionaryKey();

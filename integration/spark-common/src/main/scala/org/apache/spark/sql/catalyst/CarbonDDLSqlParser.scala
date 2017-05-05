@@ -146,16 +146,17 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val TIMESTAMP = carbonKeyWord("TIMESTAMP")
   protected val DATE = carbonKeyWord("DATE")
   protected val CHAR = carbonKeyWord("CHAR")
+  protected val VARCHAR = carbonKeyWord("VARCHAR")
   protected val NUMERIC = carbonKeyWord("NUMERIC")
   protected val DECIMAL = carbonKeyWord("DECIMAL")
   protected val DOUBLE = carbonKeyWord("DOUBLE")
   protected val FLOAT = carbonKeyWord("FLOAT")
-  protected val SHORT = carbonKeyWord("SMALLINT")
+  protected val SHORT = carbonKeyWord("SHORT")
   protected val INT = carbonKeyWord("INT")
   protected val BIGINT = carbonKeyWord("BIGINT")
   protected val ARRAY = carbonKeyWord("ARRAY")
   protected val STRUCT = carbonKeyWord("STRUCT")
-
+  protected val SMALLINT = carbonKeyWord("SMALLINT")
   protected val CHANGE = carbonKeyWord("CHANGE")
   protected val TBLPROPERTIES = carbonKeyWord("TBLPROPERTIES")
 
@@ -582,7 +583,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    */
   def isDetectAsDimentionDatatype(dimensionDatatype: String): Boolean = {
     val dimensionType = Array("string", "array", "struct", "timestamp", "date", "char")
-    dimensionType.exists(x => x.equalsIgnoreCase(dimensionDatatype))
+    dimensionType.exists(x => dimensionDatatype.toLowerCase.contains(x))
   }
 
   /**
@@ -856,7 +857,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected lazy val primitiveTypes =
     STRING ^^^ "string" | INTEGER ^^^ "integer" |
     TIMESTAMP ^^^ "timestamp" | NUMERIC ^^^ "numeric" |
-    BIGINT ^^^ "bigint" | SHORT ^^^ "smallint" |
+    BIGINT ^^^ "bigint" | (SHORT | SMALLINT) ^^^ "smallint" |
     INT ^^^ "int" | DOUBLE ^^^ "double" | FLOAT ^^^ "double" | decimalType |
     DATE ^^^ "date" | charType
 
@@ -864,7 +865,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * Matching the decimal(10,0) data type and returning the same.
    */
   private lazy val charType =
-    CHAR ~ ("(" ~>numericLit <~ ")").? ^^ {
+    (CHAR | VARCHAR ) ~ ("(" ~>numericLit <~ ")") ^^ {
       case char ~ digit =>
         s"$char($digit)"
     }

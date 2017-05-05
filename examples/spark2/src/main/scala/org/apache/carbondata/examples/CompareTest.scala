@@ -70,7 +70,7 @@ object CompareTest {
     val rdd = spark.sparkContext
         .parallelize(1 to 10 * 1000 * 1000, 4)
         .map { x =>
-          ("city" + x % 8, "country" + x % 1103, "planet" + x % 10007, x.toString,
+          ("city" + x % 8, "country" + x % 1103, "planet" + x % 10007, "IDENTIFIER" + x.toString,
           (x % 16).toShort, x / 2, (x << 1).toLong, x.toDouble / 13, x.toDouble / 11)
         }.map { x =>
           Row(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9)
@@ -266,6 +266,7 @@ object CompareTest {
           .option("tempCSV", "false")
           .option("single_pass", "true")
           .option("dictionary_exclude", "id") // id is high cardinality column
+          .option("table_blocksize", "32")
           .mode(SaveMode.Overwrite)
           .save()
     }
@@ -278,6 +279,7 @@ object CompareTest {
     val loadParquetTime = loadParquetTable(spark, df)
     val loadCarbonV3Time = loadCarbonTable(spark, df, version = "3")
     println(s"load completed, time: $loadParquetTime, $loadCarbonV3Time")
+    df.unpersist()
     spark.read.parquet(parquetTableName).registerTempTable(parquetTableName)
   }
 
@@ -306,6 +308,8 @@ object CompareTest {
     // do GC and sleep for some time before running next table
     System.gc()
     Thread.sleep(1000)
+    System.gc()
+    Thread.sleep(1000)
     val carbonResult: Array[(Double, Int)] = runQueries(spark, carbonTableName("3"))
     // check result by comparing output from parquet and carbon
     parquetResult.zipWithIndex.foreach { case (result, index) =>
@@ -323,7 +327,6 @@ object CompareTest {
           s""""fetched":${parquetResult(index)._2}, """ +
           s""""type":"${query.queryType}", """ +
           s""""desc":"${query.desc}",  """ +
-          s""""timestamp": "$timestamp" """ +
           s""""date": "${formatter.format(date)}" """ +
           "}"
       )
@@ -334,6 +337,7 @@ object CompareTest {
     CarbonProperties.getInstance()
         .addProperty("carbon.enable.vector.reader", "true")
         .addProperty("enable.unsafe.sort", "true")
+        .addProperty("carbon.blockletgroup.size.in.mb", "32")
     import org.apache.spark.sql.CarbonSession._
     val rootPath = new File(this.getClass.getResource("/").getPath
         + "../../../..").getCanonicalPath

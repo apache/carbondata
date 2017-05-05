@@ -34,7 +34,7 @@ import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
-import org.apache.carbondata.processing.newflow.sort.Sorter;
+import org.apache.carbondata.processing.newflow.sort.AbstractMergeSorter;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeSortDataRows;
 import org.apache.carbondata.processing.newflow.sort.unsafe.merger.UnsafeIntermediateMerger;
@@ -49,7 +49,7 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
  * First it sorts the data and write to temp files. These temp files will be merge sorted to get
  * final merge sort result.
  */
-public class UnsafeParallelReadMergeSorterImpl implements Sorter {
+public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(UnsafeParallelReadMergeSorterImpl.class.getName());
@@ -78,13 +78,15 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
     // Set the data file location
     String dataFolderLocation =
         storeLocation + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
-    finalMerger = new UnsafeSingleThreadFinalSortFilesMerger(sortParameters);
+    finalMerger = new UnsafeSingleThreadFinalSortFilesMerger(sortParameters,
+        sortParameters.getTempFileLocation());
   }
 
   @Override public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
       throws CarbonDataLoadingException {
+    int inMemoryChunkSizeInMB = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
     UnsafeSortDataRows sortDataRow =
-        new UnsafeSortDataRows(sortParameters, unsafeIntermediateFileMerger);
+        new UnsafeSortDataRows(sortParameters, unsafeIntermediateFileMerger, inMemoryChunkSizeInMB);
     final int batchSize = CarbonProperties.getInstance().getBatchSize();
     try {
       sortDataRow.initialize();
@@ -92,18 +94,22 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
       throw new CarbonDataLoadingException(e);
     }
     this.executorService = Executors.newFixedThreadPool(iterators.length);
+    this.threadStatusObserver = new ThreadStatusObserver(this.executorService);
 
     try {
       for (int i = 0; i < iterators.length; i++) {
-        executorService
-            .submit(new SortIteratorThread(iterators[i], sortDataRow, batchSize, rowCounter));
+        executorService.submit(
+            new SortIteratorThread(iterators[i], sortDataRow, batchSize, rowCounter,
+                this.threadStatusObserver));
       }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
       processRowToNextStep(sortDataRow, sortParameters);
     } catch (Exception e) {
+      checkError();
       throw new CarbonDataLoadingException("Problem while shutdown the server ", e);
     }
+    checkError();
     try {
       unsafeIntermediateFileMerger.finish();
       List<UnsafeCarbonRowPage> rowPages = unsafeIntermediateFileMerger.getRowPages();
@@ -182,12 +188,16 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
 
     private AtomicLong rowCounter;
 
+    private ThreadStatusObserver threadStatusObserver;
+
     public SortIteratorThread(Iterator<CarbonRowBatch> iterator,
-        UnsafeSortDataRows sortDataRows, int batchSize, AtomicLong rowCounter) {
+        UnsafeSortDataRows sortDataRows, int batchSize, AtomicLong rowCounter,
+        ThreadStatusObserver threadStatusObserver) {
       this.iterator = iterator;
       this.sortDataRows = sortDataRows;
       this.buffer = new Object[batchSize][];
       this.rowCounter = rowCounter;
+      this.threadStatusObserver = threadStatusObserver;
     }
 
     @Override public Void call() throws CarbonDataLoadingException {
@@ -208,6 +218,7 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
         }
       } catch (Exception e) {
         LOGGER.error(e);
+        this.threadStatusObserver.notifyFailed(e);
         throw new CarbonDataLoadingException(e);
       }
       return null;

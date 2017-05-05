@@ -90,8 +90,9 @@ public class AbsoluteTableIdentifier implements Serializable {
 
     String tableName = names[names.length - 1];
     String dbName = names[names.length - 2];
-    String storePath = formattedTablePath.substring(0, formattedTablePath.lastIndexOf(dbName +
-            CarbonCommonConstants.FILE_SEPARATOR + tableName));
+    String storePath = formattedTablePath.substring(0,
+        formattedTablePath.lastIndexOf(dbName + CarbonCommonConstants.FILE_SEPARATOR + tableName)
+            - 1);
 
     CarbonTableIdentifier identifier =
         new CarbonTableIdentifier(dbName, tableName, Long.toString(System.currentTimeMillis()));

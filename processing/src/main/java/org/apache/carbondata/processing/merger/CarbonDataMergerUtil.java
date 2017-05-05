@@ -383,6 +383,7 @@ public final class CarbonDataMergerUtil {
           tableStatusUpdationStatus = true;
         } catch (IOException e) {
           LOGGER.error("Error while writing metadata");
+          tableStatusUpdationStatus = false;
         }
       } else {
         LOGGER.error(
@@ -893,8 +894,8 @@ public final class CarbonDataMergerUtil {
   /**
    * method to identify the segments qualified for merging in case of IUD Compaction.
    *
+   * @param segments
    * @param carbonLoadModel
-   * @param compactionType
    * @return
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnIUD(

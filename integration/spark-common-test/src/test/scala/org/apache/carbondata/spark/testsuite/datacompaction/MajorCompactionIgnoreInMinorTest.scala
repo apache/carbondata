@@ -35,6 +35,10 @@ import org.apache.carbondata.hadoop.CacheClient
   */
 class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll {
 
+  val csvFilePath1 = s"$resourcesPath/compaction/compaction1.csv"
+  val csvFilePath2 = s"$resourcesPath/compaction/compaction2.csv"
+  val csvFilePath3 = s"$resourcesPath/compaction/compaction3.csv"
+
   override def beforeAll {
     CarbonProperties.getInstance().addProperty("carbon.compaction.level.threshold", "2,2")
     sql("drop table if exists  ignoremajor")
@@ -46,12 +50,6 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
         "phonetype String, serialname String, salary Int) STORED BY 'org.apache.carbondata" +
         ".format'"
     )
-
-
-    val csvFilePath1 = s"$resourcesPath/compaction/compaction1.csv"
-    val csvFilePath2 = s"$resourcesPath/compaction/compaction2.csv"
-    val csvFilePath3 = s"$resourcesPath/compaction/compaction3.csv"
-
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE ignoremajor OPTIONS" +
       "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
@@ -149,8 +147,51 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
 
   }
 
+  /**
+   * Execute two major compactions sequentially
+   */
+  test("Execute two major compactions sequentially") {
+    sql("drop table if exists testmajor")
+    sql(
+      "CREATE TABLE IF NOT EXISTS testmajor (country String, ID Int, date Timestamp, name " +
+      "String, " +
+      "phonetype String, serialname String, salary Int) STORED BY 'org.apache.carbondata" +
+      ".format'"
+    )
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE testmajor OPTIONS" +
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+    )
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE testmajor  OPTIONS" +
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+    )
+    // compaction will happen here.
+    sql("alter table testmajor compact 'major'")
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE testmajor OPTIONS" +
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+    )
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE testmajor  OPTIONS" +
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+    )
+    sql("alter table testmajor compact 'major'")
+    val identifier = new AbsoluteTableIdentifier(
+      CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
+      new CarbonTableIdentifier(
+        CarbonCommonConstants.DATABASE_DEFAULT_NAME, "testmajor", "ttt")
+    )
+    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+
+    // merged segment should not be there
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
+    assert(!segments.contains("0.1"))
+    assert(segments.contains("0.2"))
+    assert(!segments.contains("2"))
+    assert(!segments.contains("3"))
+
+  }
+
   override def afterAll {
     sql("drop table if exists  ignoremajor")
+    sql("drop table if exists  testmajor")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }

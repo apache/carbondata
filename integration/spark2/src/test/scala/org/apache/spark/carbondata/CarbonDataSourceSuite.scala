@@ -120,7 +120,7 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
     sql(s"select city, sum(m1) from testBigData " +
-        s"where country='country12' group by city order by city").show()
+        s"where country='country12' group by city order by city")
     checkAnswer(
       sql(s"select city, sum(m1) from testBigData " +
           s"where country='country12' group by city order by city"),
@@ -171,7 +171,7 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
       case e =>
         println(e.getMessage)
     }
-    checkAnswer(sql("select * from testdb.test1"), Seq(Row("xx", 1), Row("xx", 11)))
+    checkAnswer(sql("select count(*) from testdb.test1"), Seq(Row(2)))
     sql("drop table testdb.test1")
     sql("drop database testdb")
   }

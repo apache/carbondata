@@ -30,10 +30,13 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
 
+  var threshold: Int = _
+
   override def beforeAll {
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    threshold = sqlContext.getConf("spark.sql.autoBroadcastJoinThreshold").toInt
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", "-1")
     sql("DROP TABLE IF EXISTS t3")
     sql("DROP TABLE IF EXISTS t4")
@@ -42,6 +45,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t7")
     sql("DROP TABLE IF EXISTS t8")
     sql("DROP TABLE IF EXISTS t9")
+    sql("DROP TABLE IF EXISTS t10")
   }
 
   test("test create table with buckets") {
@@ -57,6 +61,27 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
       Map()).run(sqlContext.sparkSession)
     val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_t4")
     if (table != null && table.getBucketingInfo("t4") != null) {
+      assert(true)
+    } else {
+      assert(false, "Bucketing info does not exist")
+    }
+  }
+
+  test("test create table with buckets unsafe") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "true")
+    sql(
+      """
+           CREATE TABLE t10
+           (ID Int, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int)
+           USING org.apache.spark.sql.CarbonSource
+           OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t10")
+      """)
+    LoadTable(Some("default"), "t10", s"$resourcesPath/source.csv", Nil,
+      Map(("use_kettle", "false"))).run(sqlContext.sparkSession)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
+    val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_t10")
+    if (table != null && table.getBucketingInfo("t10") != null) {
       assert(true)
     } else {
       assert(false, "Bucketing info does not exist")
@@ -212,5 +237,8 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t6")
     sql("DROP TABLE IF EXISTS t7")
     sql("DROP TABLE IF EXISTS t8")
+    sql("DROP TABLE IF EXISTS t9")
+    sql("DROP TABLE IF EXISTS t10")
+    sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", threshold.toString)
   }
 }

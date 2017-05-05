@@ -119,8 +119,10 @@ public class CarbonMetadataUtil {
    * Below method prepares the file footer object for carbon data file version 3
    *
    * @param infoList
-   * @param numCols
+   * @param blockletIndexs
    * @param cardinalities
+   * @param numberOfColumns
+   * @param segmentProperties
    * @return FileFooter
    */
   public static FileFooter3 convertFileFooterVersion3(List<BlockletInfo3> infoList,
@@ -137,8 +139,9 @@ public class CarbonMetadataUtil {
    * Below method will be used to get the file footer object
    *
    * @param infoList         blocklet info
+   * @param blockletIndexs
    * @param cardinalities    cardinlaity of dimension columns
-   * @param columnSchemaList column schema list
+   * @param numberOfColumns
    * @return file footer
    */
   private static FileFooter3 getFileFooter3(List<BlockletInfo3> infoList,
@@ -321,7 +324,7 @@ public class CarbonMetadataUtil {
   }
 
   private static BlockletInfo getBlockletInfo(BlockletInfoColumnar blockletInfoColumnar,
-      List<ColumnSchema> columnSchenma, SegmentProperties segmentProperties) throws IOException {
+      List<ColumnSchema> columnSchema, SegmentProperties segmentProperties) throws IOException {
 
     BlockletInfo blockletInfo = new BlockletInfo();
     blockletInfo.setNum_rows(blockletInfoColumnar.getNumberOfKeys());
@@ -336,10 +339,10 @@ public class CarbonMetadataUtil {
       DataChunk dataChunk = new DataChunk();
       dataChunk.setChunk_meta(getChunkCompressionMeta());
       List<Encoding> encodings = new ArrayList<Encoding>();
-      if (containsEncoding(i, Encoding.DICTIONARY, columnSchenma, segmentProperties)) {
+      if (containsEncoding(i, Encoding.DICTIONARY, columnSchema, segmentProperties)) {
         encodings.add(Encoding.DICTIONARY);
       }
-      if (containsEncoding(i, Encoding.DIRECT_DICTIONARY, columnSchenma, segmentProperties)) {
+      if (containsEncoding(i, Encoding.DIRECT_DICTIONARY, columnSchema, segmentProperties)) {
         encodings.add(Encoding.DIRECT_DICTIONARY);
       }
       dataChunk.setRowMajor(colGrpblock[i]);
@@ -639,13 +642,13 @@ public class CarbonMetadataUtil {
    * Below method will be used to get the data chunk object for all the columns
    *
    * @param blockletInfoColumnar blocklet info
-   * @param columnSchenma        list of columns
+   * @param columnSchema        list of columns
    * @param segmentProperties    segment properties
    * @return list of data chunks
    * @throws IOException
    */
   public static List<DataChunk2> getDatachunk2(BlockletInfoColumnar blockletInfoColumnar,
-      List<ColumnSchema> columnSchenma, SegmentProperties segmentProperties) throws IOException {
+      List<ColumnSchema> columnSchema, SegmentProperties segmentProperties) throws IOException {
     List<DataChunk2> colDataChunks = new ArrayList<DataChunk2>();
     int rowIdIndex = 0;
     int aggregateIndex = 0;
@@ -656,10 +659,10 @@ public class CarbonMetadataUtil {
       DataChunk2 dataChunk = new DataChunk2();
       dataChunk.setChunk_meta(getChunkCompressionMeta());
       List<Encoding> encodings = new ArrayList<Encoding>();
-      if (containsEncoding(i, Encoding.DICTIONARY, columnSchenma, segmentProperties)) {
+      if (containsEncoding(i, Encoding.DICTIONARY, columnSchema, segmentProperties)) {
         encodings.add(Encoding.DICTIONARY);
       }
-      if (containsEncoding(i, Encoding.DIRECT_DICTIONARY, columnSchenma, segmentProperties)) {
+      if (containsEncoding(i, Encoding.DIRECT_DICTIONARY, columnSchema, segmentProperties)) {
         encodings.add(Encoding.DIRECT_DICTIONARY);
       }
       dataChunk.setRowMajor(colGrpblock[i]);
@@ -721,14 +724,14 @@ public class CarbonMetadataUtil {
   /**
    * Below method will be used to get the data chunk object for all the columns
    *
-   * @param blockletInfoColumnar blocklet info
-   * @param columnSchenma        list of columns
+   * @param nodeHolderList       blocklet info
+   * @param columnSchema        list of columns
    * @param segmentProperties    segment properties
    * @return list of data chunks
    * @throws IOException
    */
   private static List<DataChunk2> getDatachunk2(List<NodeHolder> nodeHolderList,
-      List<ColumnSchema> columnSchenma, SegmentProperties segmentProperties, int index,
+      List<ColumnSchema> columnSchema, SegmentProperties segmentProperties, int index,
       boolean isDimensionColumn) throws IOException {
     List<DataChunk2> colDataChunks = new ArrayList<DataChunk2>();
     DataChunk2 dataChunk = null;
@@ -742,10 +745,10 @@ public class CarbonMetadataUtil {
       List<Encoding> encodings = new ArrayList<Encoding>();
       if (isDimensionColumn) {
         dataChunk.setData_page_length(nodeHolder.getKeyLengths()[index]);
-        if (containsEncoding(index, Encoding.DICTIONARY, columnSchenma, segmentProperties)) {
+        if (containsEncoding(index, Encoding.DICTIONARY, columnSchema, segmentProperties)) {
           encodings.add(Encoding.DICTIONARY);
         }
-        if (containsEncoding(index, Encoding.DIRECT_DICTIONARY, columnSchenma, segmentProperties)) {
+        if (containsEncoding(index, Encoding.DIRECT_DICTIONARY, columnSchema, segmentProperties)) {
           encodings.add(Encoding.DIRECT_DICTIONARY);
         }
         dataChunk.setRowMajor(nodeHolder.getColGrpBlocks()[index]);
@@ -799,10 +802,10 @@ public class CarbonMetadataUtil {
   }
 
   public static DataChunk3 getDataChunk3(List<NodeHolder> nodeHolderList,
-      List<ColumnSchema> columnSchenma, SegmentProperties segmentProperties, int index,
+      List<ColumnSchema> columnSchema, SegmentProperties segmentProperties, int index,
       boolean isDimensionColumn) throws IOException {
     List<DataChunk2> dataChunksList =
-        getDatachunk2(nodeHolderList, columnSchenma, segmentProperties, index, isDimensionColumn);
+        getDatachunk2(nodeHolderList, columnSchema, segmentProperties, index, isDimensionColumn);
     int offset = 0;
     DataChunk3 dataChunk = new DataChunk3();
     List<Integer> pageOffsets = new ArrayList<>();
@@ -925,13 +928,13 @@ public class CarbonMetadataUtil {
    * Below method will be used to get the data chunk2 serialize object list
    *
    * @param nodeHolder        node holder
-   * @param columnSchenma     table columns
+   * @param columnSchema     table columns
    * @param segmentProperties segment properties
    * @param isDimensionColumn to get the list of dimension column or measure column
    * @return list of data chunk2
    * @throws IOException
    */
-  public static List<byte[]> getDataChunk2(NodeHolder nodeHolder, List<ColumnSchema> columnSchenma,
+  public static List<byte[]> getDataChunk2(NodeHolder nodeHolder, List<ColumnSchema> columnSchema,
       SegmentProperties segmentProperties, boolean isDimensionColumn) throws IOException {
     List<byte[]> dataChunkBuffer = new ArrayList<>();
     if (isDimensionColumn) {
@@ -942,10 +945,10 @@ public class CarbonMetadataUtil {
         dataChunk.setNumberOfRowsInpage(nodeHolder.getEntryCount());
         List<Encoding> encodings = new ArrayList<Encoding>();
         dataChunk.setData_page_length(nodeHolder.getKeyLengths()[i]);
-        if (containsEncoding(i, Encoding.DICTIONARY, columnSchenma, segmentProperties)) {
+        if (containsEncoding(i, Encoding.DICTIONARY, columnSchema, segmentProperties)) {
           encodings.add(Encoding.DICTIONARY);
         }
-        if (containsEncoding(i, Encoding.DIRECT_DICTIONARY, columnSchenma, segmentProperties)) {
+        if (containsEncoding(i, Encoding.DIRECT_DICTIONARY, columnSchema, segmentProperties)) {
           encodings.add(Encoding.DIRECT_DICTIONARY);
         }
         dataChunk.setRowMajor(nodeHolder.getColGrpBlocks()[i]);

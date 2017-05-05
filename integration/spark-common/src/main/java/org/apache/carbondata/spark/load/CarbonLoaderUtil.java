@@ -73,6 +73,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.merger.NodeBlockRelation;
 import org.apache.carbondata.processing.merger.NodeMultiBlockRelation;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import com.google.gson.Gson;
 import org.apache.spark.SparkConf;
@@ -99,6 +100,48 @@ public final class CarbonLoaderUtil {
     }
   }
 
+  /**
+   * the method returns true if the segment has carbondata file else returns false.
+   *
+   * @param loadModel
+   * @param currentLoad
+   * @return
+   */
+  public static boolean isValidSegment(CarbonLoadModel loadModel,
+      int currentLoad) {
+    CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema()
+        .getCarbonTable();
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(
+        loadModel.getStorePath(), carbonTable.getCarbonTableIdentifier());
+
+    int fileCount = 0;
+    int partitionCount = carbonTable.getPartitionCount();
+    for (int i = 0; i < partitionCount; i++) {
+      String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(i + "",
+          currentLoad + "");
+      CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath,
+          FileFactory.getFileType(segmentPath));
+      CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
+
+        @Override
+        public boolean accept(CarbonFile file) {
+          return file.getName().endsWith(
+              CarbonTablePath.getCarbonIndexExtension())
+              || file.getName().endsWith(
+              CarbonTablePath.getCarbonDataExtension());
+        }
+
+      });
+      fileCount += files.length;
+      if (files.length > 0) {
+        return true;
+      }
+    }
+    if (fileCount == 0) {
+      return false;
+    }
+    return true;
+  }
   public static void deletePartialLoadDataIfExist(CarbonLoadModel loadModel,
       final boolean isCompactionFlow) throws IOException {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
@@ -168,11 +211,8 @@ public final class CarbonLoaderUtil {
       boolean isCompactionFlow) {
     String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
-    String tempLocationKey = databaseName + CarbonCommonConstants.UNDERSCORE + tableName
-        + CarbonCommonConstants.UNDERSCORE + loadModel.getTaskNo();
-    if (isCompactionFlow) {
-      tempLocationKey = CarbonCommonConstants.COMPACTION_KEY_WORD + '_' + tempLocationKey;
-    }
+    String tempLocationKey = CarbonDataProcessorUtil
+        .getTempStoreLocationKey(databaseName, tableName, loadModel.getTaskNo(), isCompactionFlow);
     // form local store location
     final String localStoreLocation = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
@@ -184,7 +224,7 @@ public final class CarbonLoaderUtil {
           try {
             long startTime = System.currentTimeMillis();
             File file = new File(localStoreLocation);
-            CarbonUtil.deleteFoldersAndFiles(file.getParentFile());
+            CarbonUtil.deleteFoldersAndFiles(file);
             LOGGER.info(
                 "Deleted the local store location" + localStoreLocation + " : TIme taken: " + (
                     System.currentTimeMillis() - startTime));
