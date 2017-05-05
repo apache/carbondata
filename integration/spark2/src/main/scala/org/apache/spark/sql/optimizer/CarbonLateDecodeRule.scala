@@ -60,11 +60,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     if (relations.nonEmpty && !isOptimized(plan)) {
       // In case scalar subquery skip the transformation and update the flag.
       if (relations.exists(_.carbonRelation.isSubquery.nonEmpty)) {
-        relations.foreach{carbonDecoderRelation =>
-          if (carbonDecoderRelation.carbonRelation.isSubquery.nonEmpty) {
-            carbonDecoderRelation.carbonRelation.isSubquery.remove(0)
-          }
-        }
+        relations.foreach(p => p.carbonRelation.isSubquery.remove(0))
         LOGGER.info("Skip CarbonOptimizer for scalar/predicate sub query")
         return plan
       }
@@ -337,7 +333,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
 
           val leftCondAttrs = new util.HashSet[AttributeReferenceWrapper]
           val rightCondAttrs = new util.HashSet[AttributeReferenceWrapper]
-          if (attrsOnJoin.size() > 0) {
+          val join = if (attrsOnJoin.size() > 0) {
 
             attrsOnJoin.asScala.map { attr =>
               if (qualifierPresence(j.left, attr)) {
@@ -361,18 +357,20 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
                 new util.HashSet[AttributeReferenceWrapper](),
                 j.right)
             }
-            if (!decoder) {
-              decoder = true
-              CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
-                new util.HashSet[AttributeReferenceWrapper](),
-                Join(leftPlan, rightPlan, j.joinType, j.condition),
-                isOuter = true)
-            } else {
-              Join(leftPlan, rightPlan, j.joinType, j.condition)
-            }
+            Join(leftPlan, rightPlan, j.joinType, j.condition)
           } else {
             j
           }
+          if (!decoder) {
+            decoder = true
+            CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
+              new util.HashSet[AttributeReferenceWrapper](),
+              join,
+              isOuter = true)
+          } else {
+            join
+          }
+
 
         case p: Project
           if relations.nonEmpty && !p.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
@@ -472,7 +470,6 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
 
         case others => others
       }
-
     }
 
     val transFormedPlan =
