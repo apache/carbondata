@@ -97,11 +97,13 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
   @Override public void convert(CarbonRow row, BadRecordLogHolder logHolder)
       throws CarbonDataLoadingException {
     try {
+      String parsedValue = null;
       String dimensionValue = row.getString(index);
       if (dimensionValue == null || dimensionValue.equals(nullFormat)) {
-        dimensionValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
+        parsedValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
+      } else {
+        parsedValue = DataTypeUtil.parseValue(dimensionValue, carbonDimension);
       }
-      String parsedValue = DataTypeUtil.parseValue(dimensionValue, carbonDimension);
       if (null == parsedValue) {
         if ((dimensionValue.length() > 0) || (dimensionValue.length() == 0 && isEmptyBadRecord)) {
           String dataType = carbonDimension.getDataType().getName();
