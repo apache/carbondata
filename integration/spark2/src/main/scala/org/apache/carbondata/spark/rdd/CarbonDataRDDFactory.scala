@@ -660,8 +660,7 @@ object CarbonDataRDDFactory {
       try {
         if (dataFrame.isDefined) {
           loadDataFrame()
-        }
-        else {
+        } else {
           loadDataFile()
         }
         if (updateModel.isDefined) {
@@ -674,16 +673,14 @@ object CarbonDataRDDFactory {
                 if (resultOfBlock._2._2.failureCauses == FailureCauses.NONE) {
                   updateModel.get.executorErrors.failureCauses = FailureCauses.EXECUTOR_FAILURE
                   updateModel.get.executorErrors.errorMsg = "Failure in the Executor."
-                }
-                else {
+                } else {
                   updateModel.get.executorErrors = resultOfBlock._2._2
                 }
               }
             }
           ))
 
-        }
-        else {
+        } else {
         val newStatusMap = scala.collection.mutable.Map.empty[String, String]
         if (status.nonEmpty) {
           status.foreach { eachLoadStatus =>
@@ -747,8 +744,7 @@ object CarbonDataRDDFactory {
             updateModel.get.executorErrors.errorMsg = "Update failed as the data load has failed."
           }
           return
-        }
-        else {
+        } else {
           // in success case handle updation of the table status file.
           // success case.
           val segmentDetails = new util.HashSet[String]()
@@ -781,8 +777,7 @@ object CarbonDataRDDFactory {
                 new util.ArrayList[String](0))) {
             LOGGER.audit("Data update is successful for " +
                          s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-          }
-          else {
+          } else {
             val errorMessage = "Data update failed due to failure in table status updation."
             LOGGER.audit("Data update is failed for " +
                          s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
