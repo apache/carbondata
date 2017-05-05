@@ -32,8 +32,8 @@ We use a review-then-commit workflow in CarbonData for all contributions.
 
 ### Mailing list(s)
 
-We discuss design and implementation issues on dev@carbondata.incubator.apache.org Join by
-emailing dev-subscribe@carbondata.incubator.apache.org
+We discuss design and implementation issues on dev@carbondata.apache.org Join by
+emailing dev-subscribe@carbondata.apache.org
 
 ### Apache JIRA
 
@@ -46,7 +46,7 @@ If you do not already have an Apache JIRA account, sign up [here](https://issues
 
 If a quick search doesn’t turn up an existing JIRA issue for the work you want to contribute,
 create it. Please discuss your proposal with a committer or the component lead in JIRA or,
-alternatively, on the developer mailing list(dev@carbondata.incubator.apache.org).
+alternatively, on the developer mailing list(dev@carbondata.apache.org).
 
 If there’s an existing JIRA issue for your intended contribution, please comment about your
 intended work. Once the work is understood, a committer will assign the issue to you.
