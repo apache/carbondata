@@ -406,14 +406,15 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
   /**
    * Tries to translate a Catalyst [[Expression]] into data source [[Filter]].
+   *
    * @return a `Some[Filter]` if the input [[Expression]] is convertible, otherwise a `None`.
    */
-  protected[sql] def translateFilter(predicate: Expression): Option[Filter] = {
+  protected[sql] def translateFilter(predicate: Expression, or: Boolean = false): Option[Filter] = {
     predicate match {
       case or@Or(left, right) =>
 
-        val leftFilter = translateFilter(left)
-        val rightFilter = translateFilter(right)
+        val leftFilter = translateFilter(left, true)
+        val rightFilter = translateFilter(right, true)
         if (leftFilter.isDefined && rightFilter.isDefined) {
           Some(sources.Or(leftFilter.get, rightFilter.get))
         } else {
@@ -421,7 +422,17 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         }
 
       case And(left, right) =>
-        (translateFilter(left) ++ translateFilter(right)).reduceOption(sources.And)
+        val leftFilter = translateFilter(left, or)
+        val rightFilter = translateFilter(right, or)
+        if (or) {
+          if (leftFilter.isDefined && rightFilter.isDefined) {
+            (translateFilter(left) ++ translateFilter(right)).reduceOption(sources.And)
+          } else {
+            None
+          }
+        } else {
+          (translateFilter(left) ++ translateFilter(right)).reduceOption(sources.And)
+        }
       case EqualTo(a: Attribute, Literal(v, t)) =>
         Some(sources.EqualTo(a.name, v))
       case EqualTo(l@Literal(v, t), a: Attribute) =>

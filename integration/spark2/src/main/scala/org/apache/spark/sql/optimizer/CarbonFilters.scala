@@ -152,7 +152,17 @@ object CarbonFilters {
             None
           }
         case And(left, right) =>
-          (translate(left) ++ translate(right)).reduceOption(sources.And)
+          val leftFilter = translate(left, or)
+          val rightFilter = translate(right, or)
+          if (or) {
+            if (leftFilter.isDefined && rightFilter.isDefined) {
+              (leftFilter ++ rightFilter).reduceOption(sources.And)
+            } else {
+              None
+            }
+          } else {
+            (leftFilter ++ rightFilter).reduceOption(sources.And)
+          }
         case EqualTo(a: Attribute, Literal(v, t)) =>
           Some(sources.EqualTo(a.name, v))
         case EqualTo(l@Literal(v, t), a: Attribute) =>
