@@ -19,17 +19,17 @@ package org.apache.spark.sql.execution
 
 import java.text.{ParseException, SimpleDateFormat}
 import java.util
-import java.util.{Date, Locale, TimeZone}
+import java.util.{Locale, TimeZone}
 
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Cast, EmptyRow, EqualTo, Expression, GreaterThan, GreaterThanOrEqual, In, LessThan, LessThanOrEqual, Literal, Not}
+import org.apache.spark.sql.CastExpr
 import org.apache.spark.sql.sources
 import org.apache.spark.sql.types.{DoubleType, IntegerType, StringType, TimestampType}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.CastExpr
 
 object CastExpressionOptimization {
 
@@ -113,274 +113,260 @@ object CastExpressionOptimization {
   def checkIfCastCanBeRemove(expr: Expression): Option[sources.Filter] = {
     expr match {
       case c@EqualTo(Cast(a: Attribute, _), Literal(v, t)) =>
-        if ((a.dataType.isInstanceOf[TimestampType]) && (t.sameType(StringType))) {
-          val value = typeCastStringToLong(v)
-          if (!value.equals(v)) {
-            Some(sources.EqualTo(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else if ((a.dataType.isInstanceOf[IntegerType]) && (t.sameType(DoubleType))) {
-          val value = v.asInstanceOf[Double].toInt
-          if (value.toDouble.equals(v)) {
-            Some(sources.EqualTo(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else {
-          Some(CastExpr(c))
+        a.dataType match {
+          case ts: TimestampType if t.sameType(StringType) =>
+            val value = typeCastStringToLong(v)
+            if (!value.equals(v)) {
+              Some(sources.EqualTo(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case i: IntegerType if t.sameType(DoubleType) =>
+            val value = v.asInstanceOf[Double].toInt
+            if (value.toDouble.equals(v)) {
+              Some(sources.EqualTo(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case _ => Some(CastExpr(c))
         }
-
       case c@EqualTo(Literal(v, t), Cast(a: Attribute, _)) =>
-        if ((a.dataType.isInstanceOf[TimestampType]) && (t.sameType(StringType))) {
-          val value = typeCastStringToLong(v)
-          if (!value.equals(v)) {
-            Some(sources.EqualTo(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else if ((a.dataType.isInstanceOf[IntegerType]) && (t.sameType(DoubleType))) {
-          val value = v.asInstanceOf[Double].toInt
-          if (value.toDouble.equals(v)) {
-            Some(sources.EqualTo(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else {
-          Some(CastExpr(c))
+        a.dataType match {
+          case ts: TimestampType if t.sameType(StringType) =>
+            val value = typeCastStringToLong(v)
+            if (!value.equals(v)) {
+              Some(sources.EqualTo(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case i: IntegerType if t.sameType(DoubleType) =>
+            val value = v.asInstanceOf[Double].toInt
+            if (value.toDouble.equals(v)) {
+              Some(sources.EqualTo(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case _ => Some(CastExpr(c))
         }
-
       case c@Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) =>
-        if (a.dataType.isInstanceOf[TimestampType] && t.sameType(StringType)) {
-          val value = typeCastStringToLong(v)
-          if (!value.equals(v)) {
-            Some(sources.Not(sources.EqualTo(a.name, value)))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else if ((a.dataType.isInstanceOf[IntegerType]) && (t.sameType(DoubleType))) {
-          val value = v.asInstanceOf[Double].toInt
-          if (value.toDouble.equals(v)) {
-            Some(sources.Not(sources.EqualTo(a.name, value)))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else {
-          Some(CastExpr(c))
+        a.dataType match {
+          case ts: TimestampType if t.sameType(StringType) =>
+            val value = typeCastStringToLong(v)
+            if (!value.equals(v)) {
+              Some(sources.Not(sources.EqualTo(a.name, value)))
+            } else {
+              Some(CastExpr(c))
+            }
+          case i: IntegerType if t.sameType(DoubleType) =>
+            val value = v.asInstanceOf[Double].toInt
+            if (value.toDouble.equals(v)) {
+              Some(sources.Not(sources.EqualTo(a.name, value)))
+            } else {
+              Some(CastExpr(c))
+            }
+          case _ => Some(CastExpr(c))
         }
       case c@Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) =>
-        if (a.dataType.isInstanceOf[TimestampType] && t.sameType(StringType)) {
-          val value = typeCastStringToLong(v)
-          if (!value.equals(v)) {
-            Some(sources.Not(sources.EqualTo(a.name, value)))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else if ((a.dataType.isInstanceOf[IntegerType]) && (t.sameType(DoubleType))) {
-          val value = v.asInstanceOf[Double].toInt
-          if (value.toDouble.equals(v)) {
-            Some(sources.Not(sources.EqualTo(a.name, value)))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else {
-          Some(CastExpr(c))
+        a.dataType match {
+          case ts: TimestampType if t.sameType(StringType) =>
+            val value = typeCastStringToLong(v)
+            if (!value.equals(v)) {
+              Some(sources.Not(sources.EqualTo(a.name, value)))
+            } else {
+              Some(CastExpr(c))
+            }
+          case i: IntegerType if t.sameType(DoubleType) =>
+            val value = v.asInstanceOf[Double].toInt
+            if (value.toDouble.equals(v)) {
+              Some(sources.Not(sources.EqualTo(a.name, value)))
+            } else {
+              Some(CastExpr(c))
+            }
+          case _ => Some(CastExpr(c))
         }
       case c@Not(In(Cast(a: Attribute, _), list)) =>
-        if ((a.dataType.isInstanceOf[TimestampType]) && (list(0).dataType.sameType(StringType))) {
-          val value = typeCastStringToLongList(list)
-          if (!value.equals(list)) {
-            val hSet = value.map(e => e.eval(EmptyRow))
-            Some(sources.Not(sources.In(a.name, hSet.toArray)))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else if ((a.dataType.isInstanceOf[IntegerType]) &&
-                   (list(0).dataType.sameType(DoubleType))) {
-          val value = typeCastDoubleToIntList(list)
-          if (!value.equals(list)) {
-            val hSet = value.map(e => e.eval(EmptyRow))
-            Some(sources.Not(sources.In(a.name, hSet.toArray)))
-          } else {
-            Some(CastExpr(c))
-          }
-        }
-        else {
-          Some(CastExpr(c))
+        a.dataType match {
+          case ts: TimestampType if list.head.dataType.sameType(StringType) =>
+            val value = typeCastStringToLongList(list)
+            if (!value.equals(list)) {
+              val hSet = value.map(e => e.eval(EmptyRow))
+              Some(sources.Not(sources.In(a.name, hSet.toArray)))
+            } else {
+              Some(CastExpr(c))
+            }
+          case i: IntegerType if list.head.dataType.sameType(DoubleType) =>
+            val value = typeCastDoubleToIntList(list)
+            if (!value.equals(list)) {
+              val hSet = value.map(e => e.eval(EmptyRow))
+              Some(sources.Not(sources.In(a.name, hSet.toArray)))
+            } else {
+              Some(CastExpr(c))
+            }
+          case _ => Some(CastExpr(c))
         }
       case c@In(Cast(a: Attribute, _), list) =>
-        if ((a.dataType.isInstanceOf[TimestampType]) && (list(0).dataType.sameType(StringType))) {
-          val value = typeCastStringToLongList(list)
-          if (!value.equals(list)) {
-            val hSet = value.map(e => e.eval(EmptyRow))
-            Some(sources.In(a.name, hSet.toArray))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else if ((a.dataType.isInstanceOf[IntegerType]) &&
-                   (list(0).dataType.sameType(DoubleType))) {
-          val value = typeCastDoubleToIntList(list)
-          if (!value.equals(list)) {
-            val hSet = value.map(e => e.eval(EmptyRow))
-            Some(sources.In(a.name, hSet.toArray))
-          } else {
-            Some(CastExpr(c))
-          }
-        }
-        else {
-          Some(CastExpr(c))
+        a.dataType match {
+          case ts: TimestampType if list.head.dataType.sameType(StringType) =>
+            val value = typeCastStringToLongList(list)
+            if (!value.equals(list)) {
+              val hSet = value.map(e => e.eval(EmptyRow))
+              Some(sources.In(a.name, hSet.toArray))
+            } else {
+              Some(CastExpr(c))
+            }
+          case i: IntegerType if list.head.dataType.sameType(DoubleType) =>
+            val value = typeCastDoubleToIntList(list)
+            if (!value.equals(list)) {
+              val hSet = value.map(e => e.eval(EmptyRow))
+              Some(sources.In(a.name, hSet.toArray))
+            } else {
+              Some(CastExpr(c))
+            }
+          case _ => Some(CastExpr(c))
         }
       case c@GreaterThan(Cast(a: Attribute, _), Literal(v, t)) =>
-        if (a.dataType.isInstanceOf[TimestampType] && t.sameType(StringType)) {
-          val value = typeCastStringToLong(v)
-          if (!value.equals(v)) {
-            Some(sources.GreaterThan(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else if ((a.dataType.isInstanceOf[IntegerType]) && (t.sameType(DoubleType))) {
-          val value = v.asInstanceOf[Double].toInt
-          if (value.toDouble.equals(v)) {
-            Some(sources.GreaterThan(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        }
-        else {
-          Some(CastExpr(c))
+        a.dataType match {
+          case ts: TimestampType if t.sameType(StringType) =>
+            val value = typeCastStringToLong(v)
+            if (!value.equals(v)) {
+              Some(sources.GreaterThan(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case i: IntegerType if t.sameType(DoubleType) =>
+            val value = v.asInstanceOf[Double].toInt
+            if (value.toDouble.equals(v)) {
+              Some(sources.GreaterThan(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case _ => Some(CastExpr(c))
         }
       case c@GreaterThan(Literal(v, t), Cast(a: Attribute, _)) =>
-        if (a.dataType.isInstanceOf[TimestampType] && t.sameType(StringType)) {
-          val value = typeCastStringToLong(v)
-          if (!value.equals(v)) {
-            Some(sources.LessThan(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else if ((a.dataType.isInstanceOf[IntegerType]) && (t.sameType(DoubleType))) {
-          val value = v.asInstanceOf[Double].toInt
-          if (value.toDouble.equals(v)) {
-            Some(sources.LessThan(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        }
-        else {
-          Some(CastExpr(c))
+        a.dataType match {
+          case ts: TimestampType if t.sameType(StringType) =>
+            val value = typeCastStringToLong(v)
+            if (!value.equals(v)) {
+              Some(sources.LessThan(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case i: IntegerType if t.sameType(DoubleType) =>
+            val value = v.asInstanceOf[Double].toInt
+            if (value.toDouble.equals(v)) {
+              Some(sources.LessThan(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case _ => Some(CastExpr(c))
         }
       case c@LessThan(Cast(a: Attribute, _), Literal(v, t)) =>
-        if (a.dataType.isInstanceOf[TimestampType] && t.sameType(StringType)) {
-          val value = typeCastStringToLong(v)
-          if (!value.equals(v)) {
-            Some(sources.LessThan(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else if ((a.dataType.isInstanceOf[IntegerType]) && (t.sameType(DoubleType))) {
-          val value = v.asInstanceOf[Double].toInt
-          if (value.toDouble.equals(v)) {
-            Some(sources.LessThan(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        }
-        else {
-          Some(CastExpr(c))
+        a.dataType match {
+          case ts: TimestampType if t.sameType(StringType) =>
+            val value = typeCastStringToLong(v)
+            if (!value.equals(v)) {
+              Some(sources.LessThan(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case i: IntegerType if t.sameType(DoubleType) =>
+            val value = v.asInstanceOf[Double].toInt
+            if (value.toDouble.equals(v)) {
+              Some(sources.LessThan(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case _ => Some(CastExpr(c))
         }
       case c@LessThan(Literal(v, t), Cast(a: Attribute, _)) =>
-        if (a.dataType.isInstanceOf[TimestampType] && t.sameType(StringType)) {
-          val value = typeCastStringToLong(v)
-          if (!value.equals(v)) {
-            Some(sources.GreaterThan(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else if ((a.dataType.isInstanceOf[IntegerType]) && (t.sameType(DoubleType))) {
-          val value = v.asInstanceOf[Double].toInt
-          if (value.toDouble.equals(v)) {
-            Some(sources.GreaterThan(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        }
-        else {
-          Some(CastExpr(c))
+        a.dataType match {
+          case ts: TimestampType if t.sameType(StringType) =>
+            val value = typeCastStringToLong(v)
+            if (!value.equals(v)) {
+              Some(sources.GreaterThan(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case i: IntegerType if t.sameType(DoubleType) =>
+            val value = v.asInstanceOf[Double].toInt
+            if (value.toDouble.equals(v)) {
+              Some(sources.GreaterThan(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case _ => Some(CastExpr(c))
         }
       case c@GreaterThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
-        if (a.dataType.isInstanceOf[TimestampType] && t.sameType(StringType)) {
-          val value = typeCastStringToLong(v)
-          if (!value.equals(v)) {
-            Some(sources.GreaterThanOrEqual(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else if ((a.dataType.isInstanceOf[IntegerType]) && (t.sameType(DoubleType))) {
-          val value = v.asInstanceOf[Double].toInt
-          if (value.toDouble.equals(v)) {
-            Some(sources.GreaterThanOrEqual(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        }
-        else {
-          Some(CastExpr(c))
+        a.dataType match {
+          case ts: TimestampType if t.sameType(StringType) =>
+            val value = typeCastStringToLong(v)
+            if (!value.equals(v)) {
+              Some(sources.GreaterThanOrEqual(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case i: IntegerType if t.sameType(DoubleType) =>
+            val value = v.asInstanceOf[Double].toInt
+            if (value.toDouble.equals(v)) {
+              Some(sources.GreaterThanOrEqual(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case _ => Some(CastExpr(c))
         }
       case c@GreaterThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
-        if (a.dataType.isInstanceOf[TimestampType] && t.sameType(StringType)) {
-          val value = typeCastStringToLong(v)
-          if (!value.equals(v)) {
-            Some(sources.LessThanOrEqual(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else if ((a.dataType.isInstanceOf[IntegerType]) && (t.sameType(DoubleType))) {
-          val value = v.asInstanceOf[Double].toInt
-          if (value.toDouble.equals(v)) {
-            Some(sources.LessThanOrEqual(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        }
-        else {
-          Some(CastExpr(c))
+        a.dataType match {
+          case ts: TimestampType if t.sameType(StringType) =>
+            val value = typeCastStringToLong(v)
+            if (!value.equals(v)) {
+              Some(sources.LessThanOrEqual(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case i: IntegerType if t.sameType(DoubleType) =>
+            val value = v.asInstanceOf[Double].toInt
+            if (value.toDouble.equals(v)) {
+              Some(sources.LessThanOrEqual(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case _ => Some(CastExpr(c))
         }
       case c@LessThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
-        if (a.dataType.isInstanceOf[TimestampType] && t.sameType(StringType)) {
-          val value = typeCastStringToLong(v)
-          if (!value.equals(v)) {
-            Some(sources.LessThanOrEqual(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else if ((a.dataType.isInstanceOf[IntegerType]) && (t.sameType(DoubleType))) {
-          val value = v.asInstanceOf[Double].toInt
-          if (value.toDouble.equals(v)) {
-            Some(sources.LessThanOrEqual(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        }
-        else {
-          Some(CastExpr(c))
+        a.dataType match {
+          case ts: TimestampType if t.sameType(StringType) =>
+            val value = typeCastStringToLong(v)
+            if (!value.equals(v)) {
+              Some(sources.LessThanOrEqual(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case i: IntegerType if t.sameType(DoubleType) =>
+            val value = v.asInstanceOf[Double].toInt
+            if (value.toDouble.equals(v)) {
+              Some(sources.LessThanOrEqual(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case _ => Some(CastExpr(c))
         }
       case c@LessThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
-        if (a.dataType.isInstanceOf[TimestampType] && t.sameType(StringType)) {
-          val value = typeCastStringToLong(v)
-          if (!value.equals(v)) {
-            Some(sources.GreaterThanOrEqual(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        } else if ((a.dataType.isInstanceOf[IntegerType]) && (t.sameType(DoubleType))) {
-          val value = v.asInstanceOf[Double].toInt
-          if (value.toDouble.equals(v)) {
-            Some(sources.GreaterThanOrEqual(a.name, value))
-          } else {
-            Some(CastExpr(c))
-          }
-        }
-        else {
-          Some(CastExpr(c))
+        a.dataType match {
+          case ts: TimestampType if t.sameType(StringType) =>
+            val value = typeCastStringToLong(v)
+            if (!value.equals(v)) {
+              Some(sources.GreaterThanOrEqual(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case i: IntegerType if t.sameType(DoubleType) =>
+            val value = v.asInstanceOf[Double].toInt
+            if (value.toDouble.equals(v)) {
+              Some(sources.GreaterThanOrEqual(a.name, value))
+            } else {
+              Some(CastExpr(c))
+            }
+          case _ => Some(CastExpr(c))
         }
     }
   }

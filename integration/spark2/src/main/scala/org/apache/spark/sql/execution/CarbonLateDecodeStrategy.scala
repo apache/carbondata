@@ -41,7 +41,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeSt
 import org.apache.carbondata.core.metadata.schema.BucketingInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.{CarbonAliasDecoderRelation, CastExpr}
+import org.apache.carbondata.spark.{CarbonAliasDecoderRelation}
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
@@ -353,9 +353,6 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     } else {
       UnknownPartitioning(0)
     }
-  }
-  case class CastExpr1(expr: Expression) extends Filter {
-    override def references: Array[String] = null
   }
 
   protected[sql] def selectFilters(

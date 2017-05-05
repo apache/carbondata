@@ -21,6 +21,7 @@ import java.util.{ArrayList, List}
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.sql.CarbonBoundReference
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericInternalRow}
 
@@ -122,6 +123,8 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
       case _ => sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, lst))
     }
   }
+
+
 
 
   def getAllColumnListFromExpressionTree(sparkCurrentExp: SparkExpression,

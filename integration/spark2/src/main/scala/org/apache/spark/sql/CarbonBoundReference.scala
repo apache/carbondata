@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark
+package org.apache.spark.sql
 
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression, ExprId, LeafExpression, NamedExpression}

@@ -17,21 +17,14 @@
 
 package org.apache.carbondata.spark
 
-import java.text.SimpleDateFormat
-import java.util.Date
-
-import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.execution.CastExpressionOptimization
 import org.apache.spark.sql.optimizer.AttributeReferenceWrapper
+import org.apache.spark.sql.CarbonBoundReference
+import org.apache.spark.sql.CastExpr
 import org.apache.spark.sql.sources
-import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.types._
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampDirectDictionaryGenerator
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
@@ -133,6 +126,9 @@ object CarbonFilters {
 
   // Check out which filters can be pushed down to carbon, remaining can be handled in spark layer.
   // Mostly dimension filters are only pushed down since it is faster in carbon.
+  // TODO - The Filters are first converted Intermediate sources filters expression and then these
+  // expressions are again converted back to CarbonExpression. Instead of two step process of
+  // evaluating the filters it can be merged into a single one.
   def selectFilters(filters: Seq[Expression],
       attrList: java.util.HashSet[AttributeReferenceWrapper],
       aliasMap: CarbonAliasDecoderRelation): Unit = {
@@ -262,7 +258,7 @@ object CarbonFilters {
         if (isCarbonSupportedDataTypes(child)) => new
           EqualToExpression(transformExpression(child), transformExpression(Literal(null)), true)
       case Not(In(left, right)) if (isCarbonSupportedDataTypes(left)) =>
-        if (right.exists(_ == null)) {
+        if (right.contains(null)) {
           new FalseExpression(transformExpression(left))
         }
         else {
@@ -282,7 +278,7 @@ object CarbonFilters {
         new InExpression(transformExpression(left),
           new ListExpression(convertToJavaList(validData)))
       case Not(InSet(left, right)) if (isCarbonSupportedDataTypes(left)) =>
-        if (right.exists(_ == null)) {
+        if (right.contains(null)) {
           new FalseExpression(transformExpression(left))
         }
         else {
