@@ -99,7 +99,26 @@ class NumericDimensionBadRecordTest extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-   test("select count(*) from intDataType") {
+  test("insert into numeric dictionary col having null values") {
+    sql("drop table if exists num_dic")
+    sql("drop table if exists num_dicc")
+    sql("create table num_dic(cust_name string, cust_id int) " +
+        "row format delimited fields terminated by ','")
+    sql("""insert into num_dic select 'sam','\N'""")
+    sql("select * from num_dic").show()
+    sql("create table num_dicc(cust_name string, cust_id int) stored by 'carbondata'" +
+              " TBLPROPERTIES('DICTIONARY_INCLUDE'='cust_id')")
+    try {
+      sql("insert into table num_dicc select * from num_dic")
+    } catch {
+      case x : Throwable => {
+        System.out.println(x)
+        assert(false)
+      }
+    }
+  }
+
+  test("select count(*) from intDataType") {
     checkAnswer(
       sql("select count(*) from intDataType"),
       Seq(Row(2)
@@ -155,6 +174,8 @@ class NumericDimensionBadRecordTest extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS floatDataType")
     sql("drop table IF EXISTS bigDecimalDataType")
     sql("drop table IF EXISTS stringDataType")
+    sql("drop table if exists num_dic")
+    sql("drop table if exists num_dicc")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
