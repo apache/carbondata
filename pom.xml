@@ -65,6 +65,12 @@
       <post>dev@carbondata.apache.org</post>
     </mailingList>
     <mailingList>
+      <name>CarbonData Issues</name>
+      <subscribe>issues-subscribe@carbondata.apache.org</subscribe>
+      <unsubscribe>issues-unsubscribe@carbondata.apache.org</unsubscribe>
+      <post>issues@carbondata.apache.org</post>
+    </mailingList>
+    <mailingList>
       <name>CarbonData User</name>
       <subscribe>user-subscribe@carbondata.apache.org</subscribe>
       <unsubscribe>user-unsubscribe@carbondata.apache.org</unsubscribe>
