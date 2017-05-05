@@ -163,7 +163,7 @@ object CommonUtil {
     val rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO)
     val listInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO)
 
-    // partition column and partitioning should be both exist or not exist
+    // partition column and partition_type should be both exist or not exist
     if (partitionCols.isEmpty ^ partitionType.isEmpty) {
       isValid = false
     } else if (partitionCols.nonEmpty) {
@@ -174,9 +174,9 @@ object CommonUtil {
         case "RANGE_INTERVAL" => isValid = false
         case _ => isValid = false
       }
+      // only support one partition column for now
+      if (partitionCols.length > 1) isValid = false
     }
-    // only support one partition column for now
-    if (partitionCols.length > 1) isValid = false
     isValid
   }
 

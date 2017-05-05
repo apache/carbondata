@@ -48,6 +48,21 @@ object CarbonPartitionExample {
 
     spark.sparkContext.setLogLevel("WARN")
 
+    // none partition table
+    spark.sql("DROP TABLE IF EXISTS t0")
+
+    spark.sql("""
+                | CREATE TABLE IF NOT EXISTS t0
+                | (
+                | vin String,
+                | logdate Timestamp,
+                | phonenumber Long,
+                | country String,
+                | area String
+                | )
+                | STORED BY 'carbondata'
+              """.stripMargin)
+
     // range partition
     spark.sql("DROP TABLE IF EXISTS t1")
 

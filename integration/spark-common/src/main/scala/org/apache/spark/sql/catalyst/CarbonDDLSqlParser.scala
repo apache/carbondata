@@ -262,7 +262,11 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     // get no inverted index columns from table properties.
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
     // get partitionInfo
-    val partitionInfo = getPartitionInfo(partitionCols, tableProperties)
+    var partitionInfo: Option[PartitionInfo] = None
+
+    if (!(partitionCols.length < 1)) {
+      partitionInfo = getPartitionInfo(partitionCols, tableProperties)
+    }
     // validate the tableBlockSize from table properties
     CommonUtil.validateTableBlockSize(tableProperties)
 
