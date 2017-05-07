@@ -461,9 +461,18 @@ public final class FileFactory {
       case LOCAL:
       default:
         if (filePath != null && !filePath.isEmpty()) {
-          Path pathWithoutSchemeAndAuthority =
-              Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
-          return pathWithoutSchemeAndAuthority.toString();
+          // If the store path is relative then convert to absolute path.
+          if (filePath.startsWith("./")) {
+            try {
+              return new File(filePath).getCanonicalPath();
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          } else {
+            Path pathWithoutSchemeAndAuthority =
+                Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
+            return pathWithoutSchemeAndAuthority.toString();
+          }
         } else {
           return filePath;
         }
