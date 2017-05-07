@@ -113,7 +113,7 @@ object CarbonPartitionExample {
        | PARTITIONED BY (country string)
        | STORED BY 'carbondata'
        | TBLPROPERTIES('PARTITION_TYPE'='LIST',
-       | 'LIST_INFO'='(china,usa),uk,japan,(canada,russia), korea ')
+       | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea ')
        """.stripMargin)
 
     // spark.sql(s"""

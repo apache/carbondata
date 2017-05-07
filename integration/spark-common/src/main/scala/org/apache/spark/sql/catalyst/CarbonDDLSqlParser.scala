@@ -374,19 +374,19 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       hashNumber = tableProperties.get(CarbonCommonConstants.HASH_NUMBER).get.toInt
     }
     if (tableProperties.get(CarbonCommonConstants.RANGE_INFO).isDefined) {
-      rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO).get.replace(" ", "")
-        .split(",").toList
+      rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO).get.split(",")
+        .map(_.trim()).toList
     }
     if (tableProperties.get(CarbonCommonConstants.LIST_INFO).isDefined) {
-      val arr = tableProperties.get(CarbonCommonConstants.LIST_INFO).get
-                      .replace(" ", "").split(",")
+      val arr = tableProperties.get(CarbonCommonConstants.LIST_INFO).get.split(",")
+        .map(_.trim())
       val iter = arr.iterator
       while(iter.hasNext) {
         val value = iter.next()
         if (value.startsWith("(")) {
-          templist += value.replace("(", "")
+          templist += value.replace("(", "").trim()
         } else if (value.endsWith(")")) {
-          templist += value.replace(")", "")
+          templist += value.replace(")", "").trim()
           listInfo += templist.toList
           templist.clear()
         } else {
