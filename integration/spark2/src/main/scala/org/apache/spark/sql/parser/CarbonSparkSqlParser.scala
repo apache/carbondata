@@ -16,7 +16,6 @@
  */
 package org.apache.spark.sql.parser
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, ParseException, SqlBaseParser}
@@ -97,9 +96,10 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       if (ctx.bucketSpec != null) {
         operationNotAllowed("CREATE TABLE ... CLUSTERED BY", ctx)
       }
-      val partitionerFields = Option(ctx.partitionColumns).toSeq.flatMap(visitColTypeList)
-        .map( structField =>
-            PartitionerField(structField.name, Some(structField.dataType.toString), null))
+      val partitionByStructFields = Option(ctx.partitionColumns).toSeq.flatMap(visitColTypeList)
+      val partitionerFields = partitionByStructFields.map { structField =>
+        PartitionerField(structField.name, Some(structField.dataType.toString), null)
+      }
       val cols = Option(ctx.columns).toSeq.flatMap(visitColTypeList)
       val properties = Option(ctx.tablePropertyList).map(visitPropertyKeyValues)
         .getOrElse(Map.empty)
@@ -122,15 +122,14 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         if (!CommonUtil.validatePartitionColumns(tableProperties, partitionerFields)) {
           throw new MalformedCarbonCommandException("Invalid partition definition")
         }
-        // partition columns must be part of the schema
+        // partition columns should not be part of the schema
         val badPartCols = partitionerFields.map(_.partitionColumn).toSet.intersect(colNames.toSet)
-        if (badPartCols.isEmpty) {
-          operationNotAllowed(s"Partition columns must be specified in the schema: " +
+        if (badPartCols.nonEmpty) {
+          operationNotAllowed(s"Partition columns should not be specified in the schema: " +
                               badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]"), ctx)
         }
       }
-
-      val fields = parser.getFields(cols)
+      val fields = parser.getFields(cols ++ partitionByStructFields)
       val options = new CarbonOption(properties)
       // validate tblProperties
       val bucketFields = parser.getBucketFields(tableProperties, fields, options)
