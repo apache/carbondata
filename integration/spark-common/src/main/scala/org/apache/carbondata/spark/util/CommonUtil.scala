@@ -159,7 +159,7 @@ object CommonUtil {
       partitionerFields: Seq[PartitionerField]): Boolean = {
     var isValid: Boolean = true
     val partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE)
-    val numberOfPartitions = tableProperties.get(CarbonCommonConstants.NUMBER_OF_PARTITIONS)
+    val numPartitions = tableProperties.get(CarbonCommonConstants.NUM_PARTITIONS)
     val rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO)
     val listInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO)
 
@@ -167,7 +167,7 @@ object CommonUtil {
       isValid = false
     } else {
       partitionType.get.toUpperCase() match {
-        case "HASH" => if (!numberOfPartitions.isDefined) isValid = false
+        case "HASH" => if (!numPartitions.isDefined) isValid = false
         case "LIST" => if (!listInfo.isDefined) isValid = false
         case "RANGE" => if (!rangeInfo.isDefined) isValid = false
         case "RANGE_INTERVAL" => isValid = false

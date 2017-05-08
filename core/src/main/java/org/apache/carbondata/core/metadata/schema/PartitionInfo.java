@@ -43,9 +43,9 @@ public class PartitionInfo implements Serializable {
   private List<List<String>> listInfo;
 
   /**
-   * hash partition numbers
+   * number of partitions
    */
-  private int numberOfPartitions;
+  private int numPartitions;
 
   public PartitionInfo(List<ColumnSchema> columnSchemaList, PartitionType partitionType) {
     this.columnSchemaList = columnSchemaList;
@@ -60,12 +60,12 @@ public class PartitionInfo implements Serializable {
     return partitionType;
   }
 
-  public void setNumberOfPartitions(int numberOfPartitions) {
-    this.numberOfPartitions = numberOfPartitions;
+  public void setNumPartitions(int numPartitions) {
+    this.numPartitions = numPartitions;
   }
 
-  public int getNumberOfPartitions() {
-    return numberOfPartitions;
+  public int getNumPartitions() {
+    return numPartitions;
   }
 
   public void setRangeInfo(List<String> rangeInfo) {
