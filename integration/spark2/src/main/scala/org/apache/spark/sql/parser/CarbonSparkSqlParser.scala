@@ -97,9 +97,9 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       if (ctx.bucketSpec != null) {
         operationNotAllowed("CREATE TABLE ... CLUSTERED BY", ctx)
       }
-      val partitionCols = Option(ctx.partitionColumns).toSeq.flatMap(visitColTypeList)
-      val partitionFields = partitionCols.map(x =>
-                              PartitionerField(x.name, Some(x.dataType.toString), null))
+      val partitionerFields = Option(ctx.partitionColumns).toSeq.flatMap(visitColTypeList)
+        .map( structField =>
+            PartitionerField(structField.name, Some(structField.dataType.toString), null))
       val cols = Option(ctx.columns).toSeq.flatMap(visitColTypeList)
       val properties = Option(ctx.tablePropertyList).map(visitPropertyKeyValues)
         .getOrElse(Map.empty)
@@ -115,14 +115,15 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       }
 
       val tableProperties = mutable.Map[String, String]()
-      properties.foreach(f => tableProperties.put(f._1, f._2.toLowerCase))
+      properties.foreach{property => tableProperties.put(property._1, property._2.toLowerCase)}
 
       // validate partition clause
-      if (!CommonUtil.validatePartitionColumns(tableProperties, partitionCols)) {
-        throw new MalformedCarbonCommandException("Invalid partition definition")
-      } else if (partitionCols.nonEmpty) {
+      if (partitionerFields.nonEmpty) {
+        if (!CommonUtil.validatePartitionColumns(tableProperties, partitionerFields)) {
+          throw new MalformedCarbonCommandException("Invalid partition definition")
+        }
         // partition columns must be part of the schema
-        val badPartCols = partitionCols.map(_.name).toSet.intersect(colNames.toSet)
+        val badPartCols = partitionerFields.map(_.partitionColumn).toSet.intersect(colNames.toSet)
         if (badPartCols.isEmpty) {
           operationNotAllowed(s"Partition columns must be specified in the schema: " +
                               badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]"), ctx)
@@ -184,7 +185,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         convertDbNameToLowerCase(name.database),
         name.table.toLowerCase,
         fields,
-        partitionFields,
+        partitionerFields,
         tableProperties,
         bucketFields)
 

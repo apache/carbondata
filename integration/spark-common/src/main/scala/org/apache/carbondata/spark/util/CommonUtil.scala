@@ -26,7 +26,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.execution.command.{ColumnProperty, Field}
+import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.util.FileUtils
 
@@ -152,21 +152,20 @@ object CommonUtil {
    * 4. If partition_type is Range, then range_info should be defined
    * 5. Only support single level partition for now
    * @param tableProperties
-   * @param partitionCols
-   * @return
+   * @param partitionerFields
+   * @return partition clause and definition in tblproperties are valid or not
    */
   def validatePartitionColumns(tableProperties: Map[String, String],
-      partitionCols: Seq[StructField]): Boolean = {
+      partitionerFields: Seq[PartitionerField]): Boolean = {
     var isValid: Boolean = true
     val partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE)
     val hashNumber = tableProperties.get(CarbonCommonConstants.HASH_NUMBER)
     val rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO)
     val listInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO)
 
-    // partition column and partition_type should be both exist or not exist
-    if (partitionCols.isEmpty ^ partitionType.isEmpty) {
+    if (partitionType.isEmpty) {
       isValid = false
-    } else if (partitionCols.nonEmpty) {
+    } else {
       partitionType.get.toUpperCase() match {
         case "HASH" => if (!hashNumber.isDefined) isValid = false
         case "LIST" => if (!listInfo.isDefined) isValid = false
@@ -175,7 +174,7 @@ object CommonUtil {
         case _ => isValid = false
       }
       // only support one partition column for now
-      if (partitionCols.length > 1) isValid = false
+      if (partitionerFields.length > 1) isValid = false
     }
     isValid
   }

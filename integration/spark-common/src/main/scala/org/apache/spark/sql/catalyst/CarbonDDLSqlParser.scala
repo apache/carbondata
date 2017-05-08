@@ -262,11 +262,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     // get no inverted index columns from table properties.
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
     // get partitionInfo
-    var partitionInfo: Option[PartitionInfo] = None
+    val partitionInfo = getPartitionInfo(partitionCols, tableProperties)
 
-    if (!(partitionCols.length < 1)) {
-      partitionInfo = getPartitionInfo(partitionCols, tableProperties)
-    }
     // validate the tableBlockSize from table properties
     CommonUtil.validateTableBlockSize(tableProperties)
 
@@ -356,65 +353,68 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * get partition info
    * @param partitionCols
    * @param tableProperties
    */
   protected def getPartitionInfo(partitionCols: Seq[PartitionerField],
       tableProperties: Map[String, String]): Option[PartitionInfo] = {
-    var partitionType: String = ""
-    var hashNumber = 0
-    var rangeInfo = List[String]()
-    var listInfo = ListBuffer[List[String]]()
-    var templist = ListBuffer[String]()
-    if (tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).isDefined) {
-      partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).get
-    }
-    if (tableProperties.get(CarbonCommonConstants.HASH_NUMBER).isDefined) {
-      hashNumber = tableProperties.get(CarbonCommonConstants.HASH_NUMBER).get.toInt
-    }
-    if (tableProperties.get(CarbonCommonConstants.RANGE_INFO).isDefined) {
-      rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO).get.split(",")
-        .map(_.trim()).toList
-    }
-    if (tableProperties.get(CarbonCommonConstants.LIST_INFO).isDefined) {
-      val arr = tableProperties.get(CarbonCommonConstants.LIST_INFO).get.split(",")
-        .map(_.trim())
-      val iter = arr.iterator
-      while(iter.hasNext) {
-        val value = iter.next()
-        if (value.startsWith("(")) {
-          templist += value.replace("(", "").trim()
-        } else if (value.endsWith(")")) {
-          templist += value.replace(")", "").trim()
-          listInfo += templist.toList
-          templist.clear()
-        } else {
-          templist += value
-          listInfo += templist.toList
-          templist.clear()
+    if (partitionCols.isEmpty) {
+      None
+    } else {
+      var partitionType: String = ""
+      var hashNumber = 0
+      var rangeInfo = List[String]()
+      var listInfo = ListBuffer[List[String]]()
+      var templist = ListBuffer[String]()
+      if (tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).isDefined) {
+        partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).get
+      }
+      if (tableProperties.get(CarbonCommonConstants.HASH_NUMBER).isDefined) {
+        hashNumber = tableProperties.get(CarbonCommonConstants.HASH_NUMBER).get.toInt
+      }
+      if (tableProperties.get(CarbonCommonConstants.RANGE_INFO).isDefined) {
+        rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO).get.split(",")
+          .map(_.trim()).toList
+      }
+      if (tableProperties.get(CarbonCommonConstants.LIST_INFO).isDefined) {
+        val arr = tableProperties.get(CarbonCommonConstants.LIST_INFO).get.split(",")
+          .map(_.trim())
+        val iter = arr.iterator
+        while (iter.hasNext) {
+          val value = iter.next()
+          if (value.startsWith("(")) {
+            templist += value.replace("(", "").trim()
+          } else if (value.endsWith(")")) {
+            templist += value.replace(")", "").trim()
+            listInfo += templist.toList
+            templist.clear()
+          } else {
+            templist += value
+            listInfo += templist.toList
+            templist.clear()
+          }
         }
       }
-    }
-    val cols : ArrayBuffer[ColumnSchema] = new ArrayBuffer[ColumnSchema]()
-    partitionCols.foreach(partition_col => {
-      val columnSchema = new ColumnSchema
-      columnSchema.setDataType(DataTypeConverterUtil.
-        convertToCarbonType(partition_col.dataType.get))
-      columnSchema.setColumnName(partition_col.partitionColumn)
-      cols += columnSchema
-    })
+      val cols : ArrayBuffer[ColumnSchema] = new ArrayBuffer[ColumnSchema]()
+      partitionCols.foreach(partition_col => {
+        val columnSchema = new ColumnSchema
+        columnSchema.setDataType(DataTypeConverterUtil.
+          convertToCarbonType(partition_col.dataType.get))
+        columnSchema.setColumnName(partition_col.partitionColumn)
+        cols += columnSchema
+      })
 
-    var partitionInfo : PartitionInfo = null
-    partitionType.toUpperCase() match {
-      case "HASH" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.HASH)
-                     partitionInfo.setHashNumber(hashNumber)
-      case "RANGE" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.RANGE)
-                      partitionInfo.setRangeInfo(rangeInfo.asJava)
-      case "LIST" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.LIST)
-                     partitionInfo.setListInfo(listInfo.map(_.asJava).toList.asJava)
+      var partitionInfo : PartitionInfo = null
+      partitionType.toUpperCase() match {
+        case "HASH" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.HASH)
+          partitionInfo.setHashNumber(hashNumber)
+        case "RANGE" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.RANGE)
+          partitionInfo.setRangeInfo(rangeInfo.asJava)
+        case "LIST" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.LIST)
+          partitionInfo.setListInfo(listInfo.map(_.asJava).toList.asJava)
+      }
+      Some(partitionInfo)
     }
-    Some(partitionInfo)
   }
 
   protected def extractColumnProperties(fields: Seq[Field], tableProperties: Map[String, String]):
