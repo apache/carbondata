@@ -24,7 +24,7 @@ import org.apache.carbondata.examples.util.ExampleUtils
 object CarbonBitMapEncodingExample {
 
   def main(args: Array[String]) {
-    val cc = ExampleUtils.createCarbonContext("CarbonExample")
+    val cc = ExampleUtils.createCarbonContext("CarbonBitMapEncodingExample")
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
 
     // Specify date format based on raw data

@@ -39,9 +39,13 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
   test("test carbon table create with bitmap column") {
 
     sql("drop table if exists carbontable")
-    sql("create table carbontable(id int, name string, dept string, mobile array<string>, " +
-      "country string, salary double) STORED BY 'org.apache.carbondata.format' " +
-      "TBLPROPERTIES ('BITMAP'='dept,name')")
+      sql("""
+           CREATE TABLE IF NOT EXISTS carbontable
+           (ID Int, date Date, country String,
+           name String, phonetype String, serialname char(10), salary Int)
+           STORED BY 'carbondata'
+           TBLPROPERTIES ('BITMAP'='name,country')
+           """)
     val dataBaseName = "default"
     val tableName = "carbontable"
     val carbonRelation = CarbonEnv.get.carbonMetastore.lookupRelation1(Option(dataBaseName),
@@ -49,8 +53,8 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
     val carbonTable = carbonRelation.tableMeta.carbonTable
     val dimensions = carbonTable.getDimensionByTableName(tableName.toLowerCase())
       .toArray.map(_.asInstanceOf[CarbonDimension])
-    assert(dimensions(0).getColumnSchema.getColumnName.equals("name"))
-    assert(dimensions(1).getColumnSchema.getColumnName.equals("dept"))
+    assert(dimensions(0).getColumnSchema.getColumnName.equals("country"))
+    assert(dimensions(1).getColumnSchema.getColumnName.equals("name"))
     assert(dimensions(0).getColumnSchema.hasEncoding(Encoding.BITMAP))
     assert(dimensions(1).getColumnSchema.hasEncoding(Encoding.BITMAP))
 
