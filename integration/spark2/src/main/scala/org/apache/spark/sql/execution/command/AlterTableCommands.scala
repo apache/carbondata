@@ -403,8 +403,7 @@ private[sql] case class AlterTableDataTypeChange(
           deletedColumnSchema = columnSchema.deepCopy
           if (alterTableDataTypeChangeModel.dataTypeInfo.dataType.toLowerCase.equals("array")) {
             columnSchema.setData_type(DataTypeConverterUtil
-              .convertToThriftDataType(alterTableDataTypeChangeModel.listOfChildren.get(0).dataType
-                .get))
+              .convertToThriftDataType(alterTableDataTypeChangeModel.childrenDataType.get.dataType))
           }
           else {
             columnSchema.setData_type(DataTypeConverterUtil

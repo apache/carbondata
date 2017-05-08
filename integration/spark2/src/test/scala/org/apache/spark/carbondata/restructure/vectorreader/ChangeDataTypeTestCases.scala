@@ -105,6 +105,64 @@ class ChangeDataTypeTestCases extends QueryTest with BeforeAndAfterAll {
     afterAll
   }
 
+//Array data type test case
+  test("test datatype change and filter for array datatype") {
+    beforeAll
+    sql(
+      "CREATE TABLE changedatatypetest(intField int,stringField string,charField string," +
+      "timestampField timestamp,decimalField decimal(6,2),arrayField array<int>) STORED BY 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/arrayData.csv' INTO TABLE " +
+        s"changedatatypetest options('FILEHEADER'='intField,stringField,charField,timestampField," +
+        s"decimalField,arrayField','COMPLEX_DELIMITER_LEVEL_1'='#')")
+    sql("Alter table changedatatypetest change arrayField arrayField array<bigint>")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/arrayData.csv' INTO TABLE " +
+        s"changedatatypetest options('FILEHEADER'='intField,stringField,charField,timestampField," +
+        s"decimalField,arrayField','COMPLEX_DELIMITER_LEVEL_1'='#')")
+    sql(
+      "CREATE TABLE hivetable(intField int,stringField string,charField string," +
+      "timestampField timestamp,decimalField decimal(6,2),arrayField array<int>,arrayField2 array<decimal(3,2)>) row format delimited fields terminated by ',' collection items terminated by '#'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/arrayData.csv' INTO TABLE " +
+        s"hivetable")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/arrayData.csv' INTO TABLE " +
+        s"hivetable")
+
+    checkAnswer(sql("select charField from changedatatypetest where intField > 99"),
+      sql("select charField from hivetable where intField > 99"))
+    checkAnswer(sql("select charField from changedatatypetest where intField < 99"), Seq())
+    checkAnswer(sql("select charField from changedatatypetest where intField = 100"),
+      sql("select charField from hivetable where intField = 100"))
+    afterAll
+  }
+
+  test("test datatype change and filter for array<decimal> datatype") {
+    beforeAll
+    sql(
+      "CREATE TABLE changedatatypetest(intField int,stringField string,charField string," +
+      "timestampField timestamp,decimalField decimal(6,2),arrayField array<int>,arrayField2 array<decimal(3,2)>) STORED BY 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/arrayData.csv' INTO TABLE " +
+        s"changedatatypetest options('FILEHEADER'='intField,stringField,charField,timestampField," +
+        s"decimalField,arrayField,arrayField2','COMPLEX_DELIMITER_LEVEL_1'='#')")
+    sql("Alter table changedatatypetest change arrayField2 arrayField2 array<decimal(4,2)>")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/arrayData.csv' INTO TABLE " +
+        s"changedatatypetest options('FILEHEADER'='intField,stringField,charField,timestampField," +
+        s"decimalField,arrayField,arrayField2','COMPLEX_DELIMITER_LEVEL_1'='#')")
+
+    sql(
+      "CREATE TABLE hivetable(intField int,stringField string,charField string," +
+      "timestampField timestamp,decimalField decimal(6,2),arrayField array<int>,arrayField2 array<decimal(3,2)>) row format delimited fields terminated by ',' collection items terminated by '#'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/arrayData.csv' INTO TABLE " +
+        s"hivetable")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/arrayData.csv' INTO TABLE " +
+        s"hivetable")
+    checkAnswer(sql("select arrayField2 from changedatatypetest where intField > 99"),
+      sql("select arrayField2 from hivetable where intField > 99"))
+    checkAnswer(sql("select charField from changedatatypetest where intField < 99"), Seq())
+    checkAnswer(sql("select charField from changedatatypetest where intField = 100"),
+      sql("select charField from hivetable where intField = 100"))
+    afterAll
+  }
+
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS changedatatypetest")
     sql("drop table if exists hivetable")
