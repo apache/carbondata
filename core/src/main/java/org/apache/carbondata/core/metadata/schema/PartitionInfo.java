@@ -33,17 +33,17 @@ public class PartitionInfo implements Serializable {
   private PartitionType partitionType;
 
   /**
-   * range information defined for range partition table
+   * Range information defined for range partition table
    */
   private List<String> rangeInfo;
 
   /**
-   * value list defined for list partition table
+   * Value list defined for list partition table
    */
   private List<List<String>> listInfo;
 
   /**
-   * number of partitions
+   * Number of partitions
    */
   private int numPartitions;
 
