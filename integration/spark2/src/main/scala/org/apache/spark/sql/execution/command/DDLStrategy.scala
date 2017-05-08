@@ -39,11 +39,13 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         ExecutedCommandExec(LoadTable(identifier.database, identifier.table.toLowerCase, path,
           Seq(), Map(), isOverwrite)) :: Nil
       case alter@AlterTableRenameCommand(oldTableIdentifier, newTableIdentifier, _) =>
+        val dbOption = oldTableIdentifier.database.map(_.toLowerCase)
+        val tableIdentifier = TableIdentifier(oldTableIdentifier.table.toLowerCase(), dbOption)
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
-          .tableExists(oldTableIdentifier)(
+          .tableExists(tableIdentifier)(
             sparkSession)
         if (isCarbonTable) {
-          val renameModel = AlterTableRenameModel(oldTableIdentifier, newTableIdentifier)
+          val renameModel = AlterTableRenameModel(tableIdentifier, newTableIdentifier)
           ExecutedCommandExec(AlterTableRenameTable(renameModel)) :: Nil
         } else {
           ExecutedCommandExec(alter) :: Nil

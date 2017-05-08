@@ -416,6 +416,14 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
       .exists())
   }
 
+  test("table rename with dbname in Camel Case") {
+    sql("drop table if exists uniqdata")
+    sql("""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String) STORED BY 'org.apache.carbondata.format'""")
+    sql("""insert into table uniqdata values(1,"hello")""")
+    sql("alter table Default.uniqdata rename to uniqdata1")
+    checkAnswer(sql("select * from Default.uniqdata1"), Row(1,"hello"))
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS restructure")
     sql("DROP TABLE IF EXISTS restructure_new")
@@ -423,5 +431,6 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS restructure_bad")
     sql("DROP TABLE IF EXISTS restructure_badnew")
     sql("DROP TABLE IF EXISTS lock_rename")
+    sql("drop table if exists uniqdata")
   }
 }
