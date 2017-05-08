@@ -1,0 +1,54 @@
+
+
+-------------------------DATE/TIME:Fri May 05 18:26:52 IST 2017 -----------------------------
+
+|QUERY : select count(*) from uniq_data
+|			ORC EXECUTION TIME :3.782
+|			CARBON EXECUTION TIME :23.938
+|QUERY : select count(distinct col1) from uniq_data
+|			ORC EXECUTION TIME :0.645
+|			CARBON EXECUTION TIME :0.226
+|QUERY : select sum(col31)+10 as a ,col1 from uniq_data group by col1 order by col1
+|			ORC EXECUTION TIME :1.19
+|			CARBON EXECUTION TIME :0.782
+|QUERY : select col9, count(col9) a from uniq_data group by col9 order by col9
+|			ORC EXECUTION TIME :0.244
+|			CARBON EXECUTION TIME :0.276
+|QUERY : select col2 from uniq_data where (col31 =  1000002 ) and (col2='cust_name_21000002')
+|			ORC EXECUTION TIME :1.373
+|			CARBON EXECUTION TIME :8.459
+|QUERY : select col6,count(col6) count from uniq_data group by col6 order by col6 limit 1000
+|			ORC EXECUTION TIME :0.289
+|			CARBON EXECUTION TIME :0.396
+|QUERY : select col2 from uniq_data where col2 !='cust_name_21000002' order by col2
+|			ORC EXECUTION TIME :0.4
+|			CARBON EXECUTION TIME :0.956
+|QUERY : select col6 from uniq_data where col2 >'cust_name_21000002' order by col6
+|			ORC EXECUTION TIME :0.176
+|			CARBON EXECUTION TIME :16.149
+|QUERY : Select count(col4),min(col35) from uniq_data
+|			ORC EXECUTION TIME :0.183
+|			CARBON EXECUTION TIME :0.404
+|QUERY : select max(col36),min(col40),count(col1) from uniq_data
+|			ORC EXECUTION TIME :0.223
+|			CARBON EXECUTION TIME :0.632
+|QUERY : select sum(col37)+10101 as a ,col3  from uniq_data group by col3
+|			ORC EXECUTION TIME :0.256
+|			CARBON EXECUTION TIME :1.71
+|QUERY : select min(col33), max(col39+27) Total from uniq_data group by col2 order by Total
+|			ORC EXECUTION TIME :0.294
+|			CARBON EXECUTION TIME :5.744
+
+
+-------------------------DATE/TIME:Mon May 08 10:16:24 IST 2017 -----------------------------
+
+|QUERY : select count(*) from uniq_data
+|			ORC EXECUTION TIME :2.136
+|			CARBON EXECUTION TIME :2.821
+
+
+-------------------------DATE/TIME:Mon May 08 10:21:46 IST 2017 -----------------------------
+
+|QUERY : select count(*) from uniq_data
+|			ORC EXECUTION TIME :1.906
+|			CARBON EXECUTION TIME :1.281
