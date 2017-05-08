@@ -42,6 +42,7 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
          |    decimalField decimal(13, 0),
          |    timestampField string)
          | USING org.apache.spark.sql.CarbonSource
+         | OPTIONS('tableName'='carbon_testtable')
        """.stripMargin)
 
     sql(
@@ -174,6 +175,57 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select count(*) from testdb.test1"), Seq(Row(2)))
     sql("drop table testdb.test1")
     sql("drop database testdb")
+  }
+
+  test("test create table with dictionary exclude") {
+    sql("drop table if exists carbon_test")
+    sql(
+      s"""
+         | CREATE TABLE carbon_test(
+         |    stringField string,
+         |    intField int)
+         | USING org.apache.spark.sql.CarbonSource
+         | OPTIONS('DICTIONARY_EXCLUDE'='stringField', 'tableName'='carbon_test')
+       """.stripMargin)
+    sql("insert into carbon_test values ('kunal',1)")
+    checkAnswer(sql("select * from carbon_test"), Row("kunal",1))
+    sql("drop table if exists carbon_test")
+  }
+
+  test("test create table without tableName in options") {
+    sql("drop table if exists carbon_test")
+    val exception = intercept[RuntimeException] {
+      sql(
+        s"""
+        | CREATE TABLE carbon_test(
+        |    stringField string,
+        |    intField int)
+        | USING org.apache.spark.sql.CarbonSource
+        | OPTIONS('DICTIONARY_EXCLUDE'='stringField')
+      """.
+        stripMargin
+      )
+    }.getMessage
+    sql("drop table if exists carbon_test")
+    assert(exception.eq("Table creation failed. Table name is not specified"))
+  }
+
+  test("test create table with space in tableName") {
+    sql("drop table if exists carbon_test")
+    val exception = intercept[RuntimeException] {
+      sql(
+        s"""
+           | CREATE TABLE carbon_test(
+           |    stringField string,
+           |    intField int)
+           | USING org.apache.spark.sql.CarbonSource
+           | OPTIONS('DICTIONARY_EXCLUDE'='stringField', 'tableName'='carbon test')
+      """.
+          stripMargin
+      )
+    }.getMessage
+    sql("drop table if exists carbon_test")
+    assert(exception.eq("Table creation failed. Table name cannot contain blank space"))
   }
 
 }
