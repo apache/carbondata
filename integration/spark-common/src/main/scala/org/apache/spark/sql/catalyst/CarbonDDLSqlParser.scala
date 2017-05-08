@@ -21,7 +21,7 @@ import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.collection.mutable.{LinkedHashSet, Map}
+import scala.collection.mutable.{ArrayBuffer, LinkedHashSet, ListBuffer, Map}
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 
@@ -33,10 +33,13 @@ import org.apache.spark.sql.execution.command._
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.schema.PartitionInfo
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.constants.LoggerAction
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CommonUtil, DataTypeConverterUtil}
 
 /**
  * TODO remove the duplicate code and add the common methods to common class.
@@ -258,6 +261,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     // get no inverted index columns from table properties.
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
+    // get partitionInfo
+    val partitionInfo = getPartitionInfo(partitionCols, tableProperties)
 
     // validate the tableBlockSize from table properties
     CommonUtil.validateTableBlockSize(tableProperties)
@@ -275,7 +280,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       Option(noInvertedIdxCols),
       groupCols,
       Some(colProps),
-      bucketFields: Option[BucketFields])
+      bucketFields: Option[BucketFields],
+      partitionInfo)
   }
 
   /**
@@ -347,43 +353,69 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * For getting the partitioner Object
-   *
    * @param partitionCols
    * @param tableProperties
-   * @return
    */
-  protected def getPartitionerObject(partitionCols: Seq[PartitionerField],
-      tableProperties: Map[String, String]):
-  Option[Partitioner] = {
-
-    // by default setting partition class empty.
-    // later in table schema it is setting to default value.
-    var partitionClass: String = ""
-    var partitionCount: Int = 1
-    var partitionColNames: Array[String] = Array[String]()
-    if (tableProperties.get(CarbonCommonConstants.PARTITIONCLASS).isDefined) {
-      partitionClass = tableProperties.get(CarbonCommonConstants.PARTITIONCLASS).get
-    }
-
-    if (tableProperties.get(CarbonCommonConstants.PARTITIONCOUNT).isDefined) {
-      try {
-        partitionCount = tableProperties.get(CarbonCommonConstants.PARTITIONCOUNT).get.toInt
-      } catch {
-        case e: Exception => // no need to do anything.
+  protected def getPartitionInfo(partitionCols: Seq[PartitionerField],
+      tableProperties: Map[String, String]): Option[PartitionInfo] = {
+    if (partitionCols.isEmpty) {
+      None
+    } else {
+      var partitionType: String = ""
+      var numPartitions = 0
+      var rangeInfo = List[String]()
+      var listInfo = ListBuffer[List[String]]()
+      var templist = ListBuffer[String]()
+      if (tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).isDefined) {
+        partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).get
       }
-    }
+      if (tableProperties.get(CarbonCommonConstants.NUM_PARTITIONS).isDefined) {
+        numPartitions = tableProperties.get(CarbonCommonConstants.NUM_PARTITIONS).get
+          .toInt
+      }
+      if (tableProperties.get(CarbonCommonConstants.RANGE_INFO).isDefined) {
+        rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO).get.split(",")
+          .map(_.trim()).toList
+      }
+      if (tableProperties.get(CarbonCommonConstants.LIST_INFO).isDefined) {
+        val arr = tableProperties.get(CarbonCommonConstants.LIST_INFO).get.split(",")
+          .map(_.trim())
+        val iter = arr.iterator
+        while (iter.hasNext) {
+          val value = iter.next()
+          if (value.startsWith("(")) {
+            templist += value.replace("(", "").trim()
+          } else if (value.endsWith(")")) {
+            templist += value.replace(")", "").trim()
+            listInfo += templist.toList
+            templist.clear()
+          } else {
+            templist += value
+            listInfo += templist.toList
+            templist.clear()
+          }
+        }
+      }
+      val cols : ArrayBuffer[ColumnSchema] = new ArrayBuffer[ColumnSchema]()
+      partitionCols.foreach(partition_col => {
+        val columnSchema = new ColumnSchema
+        columnSchema.setDataType(DataTypeConverterUtil.
+          convertToCarbonType(partition_col.dataType.get))
+        columnSchema.setColumnName(partition_col.partitionColumn)
+        cols += columnSchema
+      })
 
-    partitionCols.foreach(col =>
-      partitionColNames :+= col.partitionColumn
-    )
-
-    // this means user has given partition cols list
-    if (!partitionColNames.isEmpty) {
-      return Option(Partitioner(partitionClass, partitionColNames, partitionCount, null))
+      var partitionInfo : PartitionInfo = null
+      partitionType.toUpperCase() match {
+        case "HASH" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.HASH)
+          partitionInfo.setNumPartitions(numPartitions)
+        case "RANGE" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.RANGE)
+          partitionInfo.setRangeInfo(rangeInfo.asJava)
+        case "LIST" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.LIST)
+          partitionInfo.setListInfo(listInfo.map(_.asJava).toList.asJava)
+      }
+      Some(partitionInfo)
     }
-    // if partition cols are not given then no need to do partition.
-    None
   }
 
   protected def extractColumnProperties(fields: Seq[Field], tableProperties: Map[String, String]):
