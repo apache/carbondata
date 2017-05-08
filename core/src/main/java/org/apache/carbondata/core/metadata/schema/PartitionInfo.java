@@ -56,6 +56,10 @@ public class PartitionInfo implements Serializable {
     return columnSchemaList;
   }
 
+  public void setColumnSchemaList(List<ColumnSchema> columnSchemaList) {
+    this.columnSchemaList = columnSchemaList;
+  }
+
   public PartitionType getPartitionType() {
     return partitionType;
   }
