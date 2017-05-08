@@ -321,7 +321,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
             Filter(filter.condition, child)
           }
 
-        case j: Join
+         case j: Join
           if !(j.left.isInstanceOf[CarbonDictionaryTempDecoder] ||
                j.right.isInstanceOf[CarbonDictionaryTempDecoder]) =>
           val attrsOnJoin = new util.HashSet[Attribute]
@@ -337,7 +337,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
 
           val leftCondAttrs = new util.HashSet[AttributeReferenceWrapper]
           val rightCondAttrs = new util.HashSet[AttributeReferenceWrapper]
-          if (attrsOnJoin.size() > 0) {
+          val join = if (attrsOnJoin.size() > 0) {
 
             attrsOnJoin.asScala.map { attr =>
               if (qualifierPresence(j.left, attr)) {
@@ -361,17 +361,18 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
                 new util.HashSet[AttributeReferenceWrapper](),
                 j.right)
             }
-            if (!decoder) {
-              decoder = true
-              CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
-                new util.HashSet[AttributeReferenceWrapper](),
-                Join(leftPlan, rightPlan, j.joinType, j.condition),
-                isOuter = true)
-            } else {
-              Join(leftPlan, rightPlan, j.joinType, j.condition)
-            }
+            Join(leftPlan, rightPlan, j.joinType, j.condition)
           } else {
             j
+          }
+          if (!decoder) {
+            decoder = true
+            CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
+              new util.HashSet[AttributeReferenceWrapper](),
+              join,
+              isOuter = true)
+          } else {
+            join
           }
 
         case p: Project
