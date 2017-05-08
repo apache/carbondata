@@ -148,10 +148,12 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
             "Column names provided are different. Both the column names should be same")
         }
 
-        val childrenType :Option[DataTypeInfo]= if (nestedDataType.children.get != null)
-          Some(parseDataType(nestedDataType.children.get(0).dataType.get,nestedDataType.children))
-        else
+        val childrenType: Option[DataTypeInfo] = if (nestedDataType.children.get != null) {
+          Some(parseDataType(nestedDataType.children.get(0).dataType.get, nestedDataType.children))
+        }
+        else {
           None
+        }
         val alterTableChangeDataTypeModel =
           AlterTableDataTypeChangeModel(parseDataType(nestedDataType.dataType.get.toLowerCase,
             nestedDataType.children),
