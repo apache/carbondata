@@ -147,7 +147,7 @@ object CommonUtil {
 
   /**
    * 1. If partitioned by clause exists, then partition_type should be defined
-   * 2. If partition_type is Hash, then hash_number should be defined
+   * 2. If partition_type is Hash, then number_of_partitions should be defined
    * 3. If partition_type is List, then list_info should be defined
    * 4. If partition_type is Range, then range_info should be defined
    * 5. Only support single level partition for now
@@ -159,7 +159,7 @@ object CommonUtil {
       partitionerFields: Seq[PartitionerField]): Boolean = {
     var isValid: Boolean = true
     val partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE)
-    val hashNumber = tableProperties.get(CarbonCommonConstants.HASH_NUMBER)
+    val numberOfPartitions = tableProperties.get(CarbonCommonConstants.NUMBER_OF_PARTITIONS)
     val rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO)
     val listInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO)
 
@@ -167,7 +167,7 @@ object CommonUtil {
       isValid = false
     } else {
       partitionType.get.toUpperCase() match {
-        case "HASH" => if (!hashNumber.isDefined) isValid = false
+        case "HASH" => if (!numberOfPartitions.isDefined) isValid = false
         case "LIST" => if (!listInfo.isDefined) isValid = false
         case "RANGE" => if (!rangeInfo.isDefined) isValid = false
         case "RANGE_INTERVAL" => isValid = false

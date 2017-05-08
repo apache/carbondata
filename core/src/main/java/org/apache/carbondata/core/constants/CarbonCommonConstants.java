@@ -807,7 +807,7 @@ public final class CarbonCommonConstants {
   public static final String DICTIONARY_INCLUDE = "dictionary_include";
   public static final String SORT_COLUMNS = "sort_columns";
   public static final String PARTITION_TYPE = "partition_type";
-  public static final String HASH_NUMBER = "hash_number";
+  public static final String NUMBER_OF_PARTITIONS = "number_of_partitions";
   public static final String RANGE_INFO = "range_info";
   public static final String LIST_INFO = "list_info";
   public static final String COLUMN_PROPERTIES = "columnproperties";

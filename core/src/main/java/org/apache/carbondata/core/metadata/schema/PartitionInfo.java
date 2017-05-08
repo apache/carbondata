@@ -23,17 +23,29 @@ import java.util.List;
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
+/**
+ * Partition information of carbon partition table
+ */
 public class PartitionInfo implements Serializable {
 
   private List<ColumnSchema> columnSchemaList;
 
   private PartitionType partitionType;
 
+  /**
+   * range infomation defined for range partition table
+   */
   private List<String> rangeInfo;
 
+  /**
+   * value list defined for list partition table
+   */
   private List<List<String>> listInfo;
 
-  private int hashNumber;
+  /**
+   * hash partition numbers
+   */
+  private int numberOfPartitions;
 
   public PartitionInfo(List<ColumnSchema> columnSchemaList, PartitionType partitionType) {
     this.columnSchemaList = columnSchemaList;
@@ -48,12 +60,12 @@ public class PartitionInfo implements Serializable {
     return partitionType;
   }
 
-  public void setHashNumber(int hashNumber) {
-    this.hashNumber = hashNumber;
+  public void setNumberOfPartitions(int numberOfPartitions) {
+    this.numberOfPartitions = numberOfPartitions;
   }
 
-  public int getHashNumber() {
-    return hashNumber;
+  public int getNumberOfPartitions() {
+    return numberOfPartitions;
   }
 
   public void setRangeInfo(List<String> rangeInfo) {

@@ -362,15 +362,16 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       None
     } else {
       var partitionType: String = ""
-      var hashNumber = 0
+      var numberOfPartitions = 0
       var rangeInfo = List[String]()
       var listInfo = ListBuffer[List[String]]()
       var templist = ListBuffer[String]()
       if (tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).isDefined) {
         partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).get
       }
-      if (tableProperties.get(CarbonCommonConstants.HASH_NUMBER).isDefined) {
-        hashNumber = tableProperties.get(CarbonCommonConstants.HASH_NUMBER).get.toInt
+      if (tableProperties.get(CarbonCommonConstants.NUMBER_OF_PARTITIONS).isDefined) {
+        numberOfPartitions = tableProperties.get(CarbonCommonConstants.NUMBER_OF_PARTITIONS).get
+          .toInt
       }
       if (tableProperties.get(CarbonCommonConstants.RANGE_INFO).isDefined) {
         rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO).get.split(",")
@@ -407,7 +408,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       var partitionInfo : PartitionInfo = null
       partitionType.toUpperCase() match {
         case "HASH" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.HASH)
-          partitionInfo.setHashNumber(hashNumber)
+          partitionInfo.setNumberOfPartitions(numberOfPartitions)
         case "RANGE" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.RANGE)
           partitionInfo.setRangeInfo(rangeInfo.asJava)
         case "LIST" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.LIST)

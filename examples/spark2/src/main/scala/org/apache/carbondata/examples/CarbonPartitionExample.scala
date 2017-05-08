@@ -95,7 +95,7 @@ object CarbonPartitionExample {
                 | )
                 | PARTITIONED BY (vin String)
                 | STORED BY 'carbondata'
-                | TBLPROPERTIES('PARTITION_TYPE'='HASH','HASH_NUMBER'='5')
+                | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUMBER_OF_PARTITIONS'='5')
                 """.stripMargin)
 
     // list partition
