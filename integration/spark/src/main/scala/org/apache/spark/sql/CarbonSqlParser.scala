@@ -31,6 +31,7 @@ import org.apache.spark.sql.execution.ExplainCommand
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
+import org.apache.spark.sql.types.StructField
 
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
@@ -153,6 +154,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
         var fields: Seq[Field] = Seq[Field]()
         var tableComment: String = ""
         var tableProperties = Map[String, String]()
+        var partitionByFields: Seq[Field] = Seq[Field]()
         var partitionCols: Seq[PartitionerField] = Seq[PartitionerField]()
         var likeTableName: String = ""
         var storedBy: String = ""
@@ -239,8 +241,27 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
                   val columnName = col.getName()
                   val dataType = Option(col.getType)
                   val comment = col.getComment
+                  val x = '`' + col.getName + '`' + ' ' + col.getType
+                  val f = Field(columnName, dataType, Some(columnName), None)
+
+                  // the data type of the decimal type will be like decimal(10,0)
+                  // so checking the start of the string and taking the precision and scale.
+                  // resetting the data type with decimal
+                  if (f.dataType.getOrElse("").startsWith("decimal")) {
+                    val (precision, scale) = getScaleAndPrecision(col.getType)
+                    f.precision = precision
+                    f.scale = scale
+                    f.dataType = Some("decimal")
+                  }
+                  if (f.dataType.getOrElse("").startsWith("char")) {
+                    f.dataType = Some("char")
+                  } else if (f.dataType.getOrElse("").startsWith("float")) {
+                    f.dataType = Some("float")
+                  }
+                  f.rawSchema = x
                   val partitionCol = new PartitionerField(columnName, dataType, comment)
                   partitionCols ++= Seq(partitionCol)
+                  partitionByFields ++= Seq(f)
                 }
               }
             case Token("TOK_TABLEPROPERTIES", list :: Nil) =>
@@ -266,11 +287,26 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             case _ => // Unsupport features
           }
 
-
           // validate tblProperties
           if (!CommonUtil.validateTblProperties(tableProperties, fields)) {
             throw new MalformedCarbonCommandException("Invalid table properties")
           }
+
+          if (partitionCols.nonEmpty) {
+            if (!CommonUtil.validatePartitionColumns(tableProperties, partitionCols)) {
+              throw new MalformedCarbonCommandException("Invalid table properties")
+            }
+            // partition columns can't be part of the schema
+            val colNames = fields.map(_.column)
+            val badPartCols = partitionCols.map(_.partitionColumn).toSet.intersect(colNames.toSet)
+            if (badPartCols.nonEmpty) {
+              throw new MalformedCarbonCommandException(
+                "Partition columns can't be specified in the schema: " +
+                badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]"))
+            }
+            fields ++= partitionByFields
+          }
+
           // prepare table model of the collected tokens
           val tableModel: TableModel = prepareTableModel(ifNotExistPresent,
             dbName,

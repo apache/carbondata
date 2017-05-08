@@ -97,8 +97,8 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       if (ctx.bucketSpec != null) {
         operationNotAllowed("CREATE TABLE ... CLUSTERED BY", ctx)
       }
-      val partitionerFields = Option(ctx.partitionColumns).toSeq.flatMap(visitColTypeList)
-        .map( structField =>
+      val partitionByStructField = Option(ctx.partitionColumns).toSeq.flatMap(visitColTypeList)
+      val partitionerFields = partitionByStructField.map( structField =>
             PartitionerField(structField.name, Some(structField.dataType.toString), null))
       val cols = Option(ctx.columns).toSeq.flatMap(visitColTypeList)
       val properties = Option(ctx.tablePropertyList).map(visitPropertyKeyValues)
@@ -122,15 +122,15 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         if (!CommonUtil.validatePartitionColumns(tableProperties, partitionerFields)) {
           throw new MalformedCarbonCommandException("Invalid partition definition")
         }
-        // partition columns must be part of the schema
+        // partition columns can't be part of the schema
         val badPartCols = partitionerFields.map(_.partitionColumn).toSet.intersect(colNames.toSet)
-        if (badPartCols.isEmpty) {
-          operationNotAllowed(s"Partition columns must be specified in the schema: " +
+        if (badPartCols.nonEmpty) {
+          operationNotAllowed(s"Partition columns can't be specified in the schema: " +
                               badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]"), ctx)
         }
       }
-
-      val fields = cols.map { col =>
+      val schema = cols ++ partitionByStructField
+      val fields = schema.map { col =>
         val x = if (col.dataType.catalogString == "float") {
           '`' + col.name + '`' + " double"
         }
