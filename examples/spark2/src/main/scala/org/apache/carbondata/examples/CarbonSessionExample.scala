@@ -28,7 +28,7 @@ object CarbonSessionExample {
 
   def main(args: Array[String]) {
     val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
+      + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
     val metastoredb = s"$rootPath/examples/spark2/target"
