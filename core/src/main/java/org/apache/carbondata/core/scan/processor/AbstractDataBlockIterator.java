@@ -197,8 +197,10 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
       @Override public BlocksChunkHolder call() throws Exception {
         if (dataBlockIterator.hasNext()) {
           BlocksChunkHolder blocksChunkHolder = getBlocksChunkHolder();
-          if (blocksChunkHolder != null) {
+          if (blocksChunkHolder != null && blockletScanner.isReadRequired(blocksChunkHolder)) {
+            // long start = System.currentTimeMillis();
             blockletScanner.readBlocklet(blocksChunkHolder);
+            // System.out.println("readBlocklet time: " + (System.currentTimeMillis() -start));
             return blocksChunkHolder;
           }
         }

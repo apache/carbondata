@@ -62,7 +62,7 @@ import org.apache.carbondata.core.util.BitSetGroup;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
-public class RowLevelFilterExecuterImpl implements FilterExecuter {
+public class RowLevelFilterExecuterImpl extends AbstractFilterExecuter {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(RowLevelFilterExecuterImpl.class.getName());

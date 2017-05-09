@@ -23,7 +23,7 @@ import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedExc
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.core.util.BitSetGroup;
 
-public class OrFilterExecuterImpl implements FilterExecuter {
+public class OrFilterExecuterImpl extends AbstractFilterExecuter {
 
   private FilterExecuter leftExecuter;
   private FilterExecuter rightExecuter;

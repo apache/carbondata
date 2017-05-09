@@ -113,6 +113,13 @@ public class FilterScanner extends AbstractBlockletScanner {
     return true;
   }
 
+  @Override public boolean isReadRequired(BlocksChunkHolder blocksChunkHolder) throws IOException {
+    if (blocksChunkHolder == null) {
+      return false;
+    }
+    return this.filterExecuter.isReadRequired(blocksChunkHolder);
+  }
+
   @Override public void readBlocklet(BlocksChunkHolder blocksChunkHolder) throws IOException {
     long startTime = System.currentTimeMillis();
     this.filterExecuter.readBlocks(blocksChunkHolder);

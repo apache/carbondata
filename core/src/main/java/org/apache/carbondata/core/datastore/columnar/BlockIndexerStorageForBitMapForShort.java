@@ -60,8 +60,8 @@ public class BlockIndexerStorageForBitMapForShort implements IndexStorage<short[
       int dictKey = ByteUtil.convertByteArrayToInt(keyBlockInput[i]);
       dictBitSet = dictMap.get(dictKey);
       if (dictBitSet == null) {
-        System.out.println("keyBlockInput.length: " + keyBlockInput.length);
-        System.out.println("sizeInBitSet: " + sizeInBitSet);
+        // System.out.println("keyBlockInput.length: " + keyBlockInput.length);
+        // System.out.println("sizeInBitSet: " + sizeInBitSet);
         dictBitSet = new BitSet(sizeInBitSet);
         dictMap.put(dictKey, dictBitSet);
       }
@@ -84,12 +84,12 @@ public class BlockIndexerStorageForBitMapForShort implements IndexStorage<short[
     for (Integer dictKey : dictMap.keySet()) {
       dictBitSet = dictMap.get(dictKey);
       int byteArrayLength = dictBitSet.toByteArray().length;
-      bitMapPagesLengthList.add(byteArrayLength);
       // for (int i = dictBitSet.size(); i < sizeInBitSet; i++) {
       // dictBitSet.set(i, false);
       // }
       // System.out.println("byteArrayLength: " + byteArrayLength);
       // System.out.println("dictBitSet.toByteArray().length: " + byteArrayLength);
+      bitMapPagesLengthList.add(totalSize);
       totalSize = totalSize + byteArrayLength;
       // System.out.println("totalSize: " + totalSize);
       // byte[] byteArr = dictBitSet.toByteArray();
@@ -97,11 +97,11 @@ public class BlockIndexerStorageForBitMapForShort implements IndexStorage<short[
       // destPos = destPos + byteArr.length;
       dictList.add(dictKey);
       keyBlock[index++] = dictBitSet.toByteArray();
-      System.out.println("dictBitSet.cardinality(): " + dictBitSet.cardinality());
+      // System.out.println("dictBitSet.cardinality(): " + dictBitSet.cardinality());
 
-//      BitSet bit = new BitSet();
-//      bit.valueOf(dictBitSet.toByteArray());
-//      System.out.println("bit.get(sizeInBitSet): " + bit.get(sizeInBitSet));
+      // BitSet bit = new BitSet();
+      // bit.valueOf(dictBitSet.toByteArray());
+      // System.out.println("bit.get(sizeInBitSet): " + bit.get(sizeInBitSet));
 
     }
   }

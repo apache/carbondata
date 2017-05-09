@@ -1191,7 +1191,7 @@ public final class CarbonCommonConstants {
    * IS_INT_BASED_INDEXER_DEFAULTVALUE
    */
   public static final int BITMAP_CARDINALITY_MAX_VALUE = 16;
-  
+
   private CarbonCommonConstants() {
   }
 }

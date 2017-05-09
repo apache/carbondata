@@ -20,12 +20,13 @@ package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 import java.util.BitSet;
 import java.util.List;
 
+import org.apache.carbondata.core.scan.filter.executer.AbstractFilterExecuter.FilterOperator;
 import org.apache.carbondata.core.util.BitMapEncodedBitSetGroup;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
- * Below class will be used to store fixed length dimension data
+ * Below class will be used to store bitmap dimension data
  */
 public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataChunkStore {
 
@@ -34,8 +35,9 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
    */
   private int columnValueSize;
   private byte[][] bitmap_encoded_dictionaries;
-  private int[] bitmap_data_pages_length;
+  private int[] bitmap_data_pages_offset;
   private BitMapEncodedBitSetGroup bitSetGroup;
+  private boolean isGeneratedBitSetFlg = false;
 
   public SafeBitMapDimensionDataChunkStore(List<Integer> bitmap_encoded_dictionaries,
       List<Integer> bitmap_data_pages_length, int columnValueSize) {
@@ -43,11 +45,11 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
     this.columnValueSize = columnValueSize;
     int arraySize = bitmap_encoded_dictionaries.size();
     this.bitmap_encoded_dictionaries = new byte[arraySize][];
-    this.bitmap_data_pages_length = new int[arraySize];
+    this.bitmap_data_pages_offset = new int[arraySize];
     for (int i = 0; i < arraySize; i++) {
       this.bitmap_encoded_dictionaries[i] = ByteUtil
           .convertIntToByteArray(bitmap_encoded_dictionaries.get(i), columnValueSize);
-      this.bitmap_data_pages_length[i] = bitmap_data_pages_length.get(i);
+      this.bitmap_data_pages_offset[i] = bitmap_data_pages_length.get(i);
     }
 
   }
@@ -67,23 +69,12 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
       final byte[] data) {
     this.data = data;
     bitSetGroup = new BitMapEncodedBitSetGroup(bitmap_encoded_dictionaries.length);
-    int pageOffSet = 0;
-    for (int i = 0; i < bitmap_encoded_dictionaries.length; i++) {
-      int pageLength = bitmap_data_pages_length[i];
-      // BitSet bitSet = new BitSet(pageLength);
-      byte[] bitSetData = new byte[pageLength];
-      // System.out.println("this.data.length: "+this.data.length);
-      // System.out.println("pageOffSet: "+pageOffSet);
-      // System.out.println("pageLength: "+pageLength);
-      System.arraycopy(this.data, pageOffSet, bitSetData, 0, pageLength);
-      BitSet bitSet = BitSet.valueOf(bitSetData);
-      bitSetGroup.setBitSet(bitSet, i);
-      pageOffSet += pageLength;
-    }
+
+    // loadAllBitSets();
   }
 
   /**
-   * Below method will be used to get the row based inverted index
+   * Below method will be used to get the row data
    *
    * @param rowId
    *          Inverted index
@@ -104,6 +95,7 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
   @Override
   public int getSurrogate(int index) {
     // bitSetGroup.getBitSetIndex(index);
+    loadAllBitSets();
     return ByteUtil
         .convertByteArrayToInt(this.bitmap_encoded_dictionaries[bitSetGroup.getBitSetIndex(index)]);
   }
@@ -150,25 +142,61 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
   }
 
   /**
-   * apply Include Filter
+   * apply Filter
    *
    * @param filterValues
-   *          index of first byte array
+   * @param operator
    * @return BitSet
    */
-  public BitSet applyIncludeFilter(byte[][] filterValues) {
+  public BitSet applyFilter(byte[][] filterValues, FilterOperator operator, int numerOfRows) {
     BitSet bitSet = null;
     for (int i = 0; i < filterValues.length; i++) {
       int index = CarbonUtil.binarySearch(bitmap_encoded_dictionaries, 0,
           bitmap_encoded_dictionaries.length - 1, filterValues[i]);
       if (index >= 0) {
         if (bitSet == null) {
-          bitSet = this.bitSetGroup.getBitSet(index);
+          bitSet = loadBitSet(index);
         } else {
-          bitSet.or(this.bitSetGroup.getBitSet(index));
+          bitSet.or(loadBitSet(index));
         }
       }
     }
+    isGeneratedBitSetFlg = true;
+    if (FilterOperator.NOT_IN.equals(operator)) {
+      if (bitSet == null) {
+        bitSet = new BitSet(numerOfRows);
+      }
+      // System.out.println("bitSet.size(): " + bitSet.size());
+      // System.out.println("bitSet.length(): " + bitSet.length());
+      bitSet.flip(0, numerOfRows);
+      // System.out.println("bitSet2: " + bitSet.cardinality());
+    }
+    return bitSet;
+  }
+
+  private void loadAllBitSets() {
+
+    if (isGeneratedBitSetFlg) {
+      return;
+    }
+    for (int i = 0; i < bitmap_encoded_dictionaries.length; i++) {
+      bitSetGroup.setBitSet(loadBitSet(i), i);
+    }
+    isGeneratedBitSetFlg = true;
+  }
+  private BitSet loadBitSet(int index) {
+    BitSet bitSet = this.bitSetGroup.getBitSet(index);
+    if (bitSet != null) {
+      return bitSet;
+    }
+    int pageOffSet = bitmap_data_pages_offset[index];
+    int pageLength = (index == bitmap_encoded_dictionaries.length - 1 ? this.data.length
+        : bitmap_data_pages_offset[index + 1]) - bitmap_data_pages_offset[index];
+    // System.out.println("pageLength: " + pageLength);
+    byte[] bitSetData = new byte[pageLength];
+    System.arraycopy(this.data, pageOffSet, bitSetData, 0, pageLength);
+    bitSet = BitSet.valueOf(bitSetData);
+    bitSetGroup.setBitSet(bitSet, index);
     return bitSet;
   }
 }

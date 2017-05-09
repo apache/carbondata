@@ -30,7 +30,7 @@ import org.apache.carbondata.core.util.ByteUtil;
 /**
  * Abstract class for restructure
  */
-public abstract class RestructureEvaluatorImpl implements FilterExecuter {
+public abstract class RestructureEvaluatorImpl extends AbstractFilterExecuter {
 
   /**
    * This method will check whether a default value for the non-existing column is present

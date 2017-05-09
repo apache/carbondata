@@ -130,8 +130,8 @@ struct DataChunk2{
     9: optional list<binary> encoder_meta; // Extra information required by encoders
     10: optional BlockletMinMaxIndex min_max; 
     11: optional i32 numberOfRowsInpage;
-    12: optional list<i32> bitmap_encoded_dictionaries;
-    13: optional list<i32> bitmap_data_pages_length;
+    12: optional list<i32> bitmap_encoded_dictionary_list;
+    13: optional list<i32> bitmap_encoded_page_offset_list;
  }
 
 
@@ -143,7 +143,6 @@ struct DataChunk3{
     1: required list<DataChunk2> data_chunk_list; // List of data chunk
     2: optional list<i32> page_offset; // Offset of each chunk
     3: optional list<i32> page_length; // Length of each chunk
-   
  }
 /**
  * Information about a blocklet for V1 format
@@ -172,8 +171,11 @@ struct BlockletInfo3{
     4: required i64 dimension_offsets;
     5: required i64 measure_offsets;
     6: required i32 number_number_of_pages; // This is rquired for alter table, in case of alter table when filter is only selected on new added column this will help
+    7: optional list<BitMapEncodedDictionariesInfo> bitmap_encoded_dictionaries_info_list;
   }
-
+struct BitMapEncodedDictionariesInfo {
+	1: list<i32> bitmap_encoded_dictionary_list; // dictionaries
+}
 /**
  * Footer for indexed carbon file
  */

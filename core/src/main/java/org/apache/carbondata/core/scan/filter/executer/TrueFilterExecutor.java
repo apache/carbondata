@@ -24,7 +24,7 @@ import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedExc
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.core.util.BitSetGroup;
 
-public class TrueFilterExecutor implements FilterExecuter {
+public class TrueFilterExecutor extends AbstractFilterExecuter {
 
   /**
    * API will apply filter based on resolver instance

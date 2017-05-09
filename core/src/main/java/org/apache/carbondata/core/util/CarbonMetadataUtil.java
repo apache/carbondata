@@ -744,12 +744,12 @@ public class CarbonMetadataUtil {
       dataChunk.setNumberOfRowsInpage(nodeHolder.getEntryCount());
       List<Encoding> encodings = new ArrayList<Encoding>();
       if (isDimensionColumn) {
-        dataChunk.setBitmap_encoded_dictionaries(nodeHolder.getDictArray()[index]);
-        dataChunk.setBitmap_data_pages_length(nodeHolder.getBitMapPagesLengthList()[index]);
+        dataChunk.setBitmap_encoded_dictionary_list(nodeHolder.getBitMapDictArray()[index]);
+        dataChunk.setBitmap_encoded_page_offset_list(nodeHolder.getBitMapPagesLengthArray()[index]);
         dataChunk.setData_page_length(nodeHolder.getKeyLengths()[index]);
         if (containsEncoding(index, Encoding.DICTIONARY, columnSchema, segmentProperties)) {
           encodings.add(Encoding.DICTIONARY);
-          if (containsEncoding(index, Encoding.BITMAP, columnSchenma, segmentProperties)) {
+          if (containsEncoding(index, Encoding.BITMAP, columnSchema, segmentProperties)) {
             encodings.add(Encoding.BITMAP);
           }
         }
@@ -757,7 +757,7 @@ public class CarbonMetadataUtil {
           encodings.add(Encoding.DIRECT_DICTIONARY);
         }
         dataChunk.setRowMajor(nodeHolder.getColGrpBlocks()[index]);
-        if (!containsEncoding(index, Encoding.BITMAP, columnSchenma, segmentProperties)) {
+        if (!containsEncoding(index, Encoding.BITMAP, columnSchema, segmentProperties)) {
           // TODO : Once schema PR is merged and information needs to be passed
           // here.
           if (nodeHolder.getAggBlocks()[index]) {
@@ -809,7 +809,7 @@ public class CarbonMetadataUtil {
 
   public static DataChunk3 getDataChunk3(List<NodeHolder> nodeHolderList,
       List<ColumnSchema> columnSchema, SegmentProperties segmentProperties, int index,
-      boolean isDimensionColumn) throws IOException {
+      boolean isDimensionColumn, Set<Integer> bitMapEncodedDictionariesSet) throws IOException {
     List<DataChunk2> dataChunksList =
         getDatachunk2(nodeHolderList, columnSchema, segmentProperties, index, isDimensionColumn);
     int offset = 0;
@@ -818,6 +818,10 @@ public class CarbonMetadataUtil {
     List<Integer> pageLengths = new ArrayList<>();
     int length = 0;
     for (int i = 0; i < dataChunksList.size(); i++) {
+      if (isDimensionColumn && nodeHolderList.get(i).getIsUseBitMap()[index]) {
+        bitMapEncodedDictionariesSet
+            .addAll(dataChunksList.get(i).getBitmap_encoded_dictionary_list());
+      }
       pageOffsets.add(offset);
       length =
           dataChunksList.get(i).getData_page_length() + dataChunksList.get(i).getRle_page_length()
@@ -946,9 +950,9 @@ public class CarbonMetadataUtil {
     if (isDimensionColumn) {
       for (int i = 0; i < nodeHolder.getKeyArray().length; i++) {
         DataChunk2 dataChunk = new DataChunk2();
-        List<Integer> dictForBitMapEncoded = nodeHolder.getDictArray()[i];
-        dataChunk.setBitmap_encoded_dictionaries(dictForBitMapEncoded);
-        dataChunk.setBitmap_data_pages_length(nodeHolder.getBitMapPagesLengthList()[i]);
+        List<Integer> dictForBitMapEncoded = nodeHolder.getBitMapDictArray()[i];
+        dataChunk.setBitmap_encoded_dictionary_list(dictForBitMapEncoded);
+        dataChunk.setBitmap_encoded_page_offset_list(nodeHolder.getBitMapPagesLengthArray()[i]);
         dataChunk.min_max = new BlockletMinMaxIndex();
         dataChunk.setChunk_meta(getChunkCompressionMeta());
         dataChunk.setNumberOfRowsInpage(nodeHolder.getEntryCount());
@@ -956,7 +960,7 @@ public class CarbonMetadataUtil {
         dataChunk.setData_page_length(nodeHolder.getKeyLengths()[i]);
         if (containsEncoding(i, Encoding.DICTIONARY, columnSchema, segmentProperties)) {
           encodings.add(Encoding.DICTIONARY);
-          if (containsEncoding(i, Encoding.BITMAP, columnSchenma, segmentProperties)
+          if (containsEncoding(i, Encoding.BITMAP, columnSchema, segmentProperties)
               && dictForBitMapEncoded != null && dictForBitMapEncoded.size() > 0) {
             encodings.add(Encoding.BITMAP);
           }

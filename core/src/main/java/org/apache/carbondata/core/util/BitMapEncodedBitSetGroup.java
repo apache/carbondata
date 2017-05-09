@@ -31,7 +31,7 @@ public class BitMapEncodedBitSetGroup extends BitSetGroup {
    */
   public int getBitSetIndex(int rowId) {
     for (int bitSetIndex = 0; bitSetIndex < bitSets.length; bitSetIndex++) {
-      if (bitSets[bitSetIndex].get(rowId)) {
+      if (bitSets[bitSetIndex] != null && bitSets[bitSetIndex].get(rowId)) {
         return bitSetIndex;
       }
     }

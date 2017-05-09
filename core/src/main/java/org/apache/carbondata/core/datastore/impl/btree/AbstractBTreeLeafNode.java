@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.datastore.impl.btree;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.datastore.DataRefNode;
@@ -24,6 +25,7 @@ import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.format.BitMapEncodedDictionariesInfo;
 
 /**
  * Non leaf node abstract class
@@ -36,6 +38,8 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
    * @param blockInfo block detail
    */
   protected BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache;
+
+  protected List<BitMapEncodedDictionariesInfo> bitMapEncodedDictionariesInfoList;
 
   /**
    * number of keys in a btree
@@ -239,4 +243,12 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
   public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
     return deleteDeltaDataCache;
   }
+
+  /**
+   * @return the BitMap Encoded Dictionaries Info
+   */
+  @Override public List<BitMapEncodedDictionariesInfo> getBitMapEncodedDictionariesInfoList() {
+    return bitMapEncodedDictionariesInfoList;
+  }
+
 }

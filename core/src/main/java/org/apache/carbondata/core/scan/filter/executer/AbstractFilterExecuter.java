@@ -16,25 +16,14 @@
  */
 package org.apache.carbondata.core.scan.filter.executer;
 
-import java.io.IOException;
-import java.util.BitSet;
-
-import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
-import org.apache.carbondata.core.util.BitSetGroup;
 
-public class ValueBasedFilterExecuterImpl extends AbstractFilterExecuter {
+public abstract class AbstractFilterExecuter implements FilterExecuter {
 
-  @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
-      throws FilterUnsupportedException, IOException {
-
-    return new BitSetGroup(0);
+  @Override public boolean isReadRequired(BlocksChunkHolder blockChunkHolder) {
+    return true;
   }
-
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
-    return new BitSet(1);
-  }
-
-  @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
+  public enum FilterOperator {
+    IN, NOT_IN
   }
 }

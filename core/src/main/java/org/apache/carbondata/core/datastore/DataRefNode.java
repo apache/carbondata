@@ -17,10 +17,12 @@
 package org.apache.carbondata.core.datastore;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.format.BitMapEncodedDictionariesInfo;
 
 /**
  * Interface data block reference
@@ -128,4 +130,5 @@ public interface DataRefNode {
    * @return
    */
   int numberOfPages();
+  List<BitMapEncodedDictionariesInfo> getBitMapEncodedDictionariesInfoList();
 }

@@ -18,9 +18,12 @@ package org.apache.carbondata.core.scan.filter.executer;
 
 import java.io.IOException;
 import java.util.BitSet;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.datastore.chunk.impl.BitMapDimensionDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionDataChunk;
@@ -28,9 +31,10 @@ import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.core.util.BitSetGroup;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 
-public class ExcludeFilterExecuterImpl implements FilterExecuter {
+public class ExcludeFilterExecuterImpl extends AbstractFilterExecuter {
 
   protected DimColumnResolvedFilterInfo dimColEvaluatorInfo;
   protected DimColumnExecuterFilterInfo dimColumnExecuterInfo;
@@ -80,6 +84,10 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       return setFilterdIndexToBitSetWithColumnIndex(
           (FixedLengthDimensionDataChunk) dimColumnDataChunk, numerOfRows);
     }
+    if (dimColumnDataChunk instanceof BitMapDimensionDataChunk) {
+      return setFilterdIndexToBitSetWithColumnIndex((BitMapDimensionDataChunk) dimColumnDataChunk,
+          numerOfRows);
+    }
     return setFilterdIndexToBitSet((FixedLengthDimensionDataChunk) dimColumnDataChunk, numerOfRows);
   }
 
@@ -108,6 +116,12 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
 
   }
 
+  private BitSet setFilterdIndexToBitSetWithColumnIndex(
+      BitMapDimensionDataChunk dimensionColumnDataChunk, int numerOfRows) {
+
+    return dimensionColumnDataChunk.applyFilter(dimColumnExecuterInfo.getFilterKeys(),
+        FilterOperator.NOT_IN, numerOfRows);
+  }
   private BitSet setFilterdIndexToBitSetWithColumnIndex(
       FixedLengthDimensionDataChunk dimColumnDataChunk, int numerOfRows) {
     int startKey = 0;
@@ -168,6 +182,31 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
       blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
           .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
+    }
+  }
+  @Override public boolean isReadRequired(BlocksChunkHolder blockChunkHolder) {
+    int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
+        .get(dimColEvaluatorInfo.getColumnIndex());
+    List<Integer> bitMapEncodedDictionaries = blockChunkHolder.getDataBlock()
+        .getBitMapEncodedDictionariesInfoList().get(blockIndex).getBitmap_encoded_dictionary_list();
+    byte[][] filterKeys = dimColumnExecuterInfo.getFilterKeys();
+    return isReadRequired(bitMapEncodedDictionaries, filterKeys);
+  }
+
+  private boolean isReadRequired(List<Integer> bitMapEncodedDictionaries, byte[][] filterKeys) {
+    if (bitMapEncodedDictionaries != null && bitMapEncodedDictionaries.size() > 0) {
+      boolean result = false;
+      for (Integer dict : bitMapEncodedDictionaries) {
+        int index = CarbonUtil.binarySearch(filterKeys, 0, filterKeys.length - 1,
+            ByteUtil.convertIntToByteArray(dict, filterKeys[0].length));
+        if (index < 0) {
+          result = true;
+          break;
+        }
+      }
+      return result;
+    } else {
+      return true;
     }
   }
 }

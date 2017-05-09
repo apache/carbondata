@@ -258,8 +258,8 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     } else {
       if (hasEncoding(dimensionColumnChunk.encoders, Encoding.BITMAP)) {
         columnDataChunk = new BitMapDimensionDataChunk(dataPage,
-            dimensionColumnChunk.bitmap_encoded_dictionaries,
-            dimensionColumnChunk.getBitmap_data_pages_length(),
+            dimensionColumnChunk.getBitmap_encoded_dictionary_list(),
+            dimensionColumnChunk.getBitmap_encoded_page_offset_list(),
             dimensionRawColumnChunk.getRowCount()[pageNumber],
             eachColumnValueSize[dimensionRawColumnChunk.getBlockletId()]);
       } else {

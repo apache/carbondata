@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.format.BitMapEncodedDictionariesInfo;
 
 /**
  * No leaf node of a b+tree class which will keep the matadata(start key) of the
@@ -251,6 +252,12 @@ public class BTreeNonLeafNode implements BTreeNode {
    */
   @Override
   public int numberOfPages() {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unsupported operation");
+  }
+
+  @Override
+  public List<BitMapEncodedDictionariesInfo> getBitMapEncodedDictionariesInfoList() {
     // TODO Auto-generated method stub
     throw new UnsupportedOperationException("Unsupported operation");
   }

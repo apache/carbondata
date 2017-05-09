@@ -167,4 +167,8 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     // For non filter it is always true
     return true;
   }
+  @Override public boolean isReadRequired(BlocksChunkHolder blocksChunkHolder) throws IOException {
+    // default it is true;
+    return true;
+  }
 }

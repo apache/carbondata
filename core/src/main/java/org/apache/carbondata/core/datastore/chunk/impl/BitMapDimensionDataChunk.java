@@ -23,6 +23,7 @@ import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFacto
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory.DimensionStoreType;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeBitMapDimensionDataChunkStore;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
+import org.apache.carbondata.core.scan.filter.executer.AbstractFilterExecuter.FilterOperator;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
@@ -31,8 +32,8 @@ import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
  */
 public class BitMapDimensionDataChunk extends AbstractDimensionDataChunk {
 
-  private List<Integer> bitmap_encoded_dictionaries;
-  private List<Integer> bitmap_data_pages_length;
+  // private List<Integer> bitmap_encoded_dictionaries;
+  // private List<Integer> bitmap_data_pages_length;
   /**
    * Constructor
    *
@@ -44,8 +45,8 @@ public class BitMapDimensionDataChunk extends AbstractDimensionDataChunk {
    */
   public BitMapDimensionDataChunk(byte[] dataChunk, List<Integer> bitmap_encoded_dictionaries,
       List<Integer> bitmap_data_pages_length, int numberOfRows, int columnValueSize) {
-    this.bitmap_encoded_dictionaries = bitmap_encoded_dictionaries;
-    this.bitmap_data_pages_length = bitmap_data_pages_length;
+    // this.bitmap_encoded_dictionaries = bitmap_encoded_dictionaries;
+    // this.bitmap_data_pages_length = bitmap_data_pages_length;
     long totalSize = dataChunk.length;
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE.getDimensionChunkStore(columnValueSize,
         false, bitmap_encoded_dictionaries.size(), totalSize, DimensionStoreType.BITMAP,
@@ -161,8 +162,10 @@ public class BitMapDimensionDataChunk extends AbstractDimensionDataChunk {
     }
     return column + 1;
   }
-  public BitSet applyIncludeFilter(byte[][] filterValues) {
 
-    return ((SafeBitMapDimensionDataChunkStore)dataChunkStore).applyIncludeFilter(filterValues);
+  public BitSet applyFilter(final byte[][] filterValues, final FilterOperator operator,
+      int numerOfRows) {
+    return ((SafeBitMapDimensionDataChunkStore) dataChunkStore).applyFilter(filterValues, operator,
+        numerOfRows);
   }
 }

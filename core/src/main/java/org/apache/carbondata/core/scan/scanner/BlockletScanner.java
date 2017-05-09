@@ -37,6 +37,16 @@ public interface BlockletScanner {
   boolean isScanRequired(BlocksChunkHolder blocksChunkHolder) throws IOException;
 
   /**
+   * Checks whether this blocklet required to read or not based on bitmap
+   * encoded dictionary of each blocklet.
+   *
+   * @param blocksChunkHolder
+   * @return
+   * @throws IOException
+   */
+  boolean isReadRequired(BlocksChunkHolder blocksChunkHolder) throws IOException;
+
+  /**
    * Below method will used to process the block data and get the scanned result
    *
    * @param blocksChunkHolder block chunk which holds the block data

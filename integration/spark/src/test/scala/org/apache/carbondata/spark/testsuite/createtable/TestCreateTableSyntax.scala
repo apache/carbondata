@@ -53,10 +53,10 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
     val carbonTable = carbonRelation.tableMeta.carbonTable
     val dimensions = carbonTable.getDimensionByTableName(tableName.toLowerCase())
       .toArray.map(_.asInstanceOf[CarbonDimension])
-    assert(dimensions(0).getColumnSchema.getColumnName.equals("country"))
-    assert(dimensions(1).getColumnSchema.getColumnName.equals("name"))
-    assert(dimensions(0).getColumnSchema.hasEncoding(Encoding.BITMAP))
+    assert(dimensions(1).getColumnSchema.getColumnName.equals("country"))
+    assert(dimensions(2).getColumnSchema.getColumnName.equals("name"))
     assert(dimensions(1).getColumnSchema.hasEncoding(Encoding.BITMAP))
+    assert(dimensions(2).getColumnSchema.hasEncoding(Encoding.BITMAP))
 
   }
   test("test carbon table create with bitmap group column") {

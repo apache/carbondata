@@ -113,6 +113,8 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     blockletInfo.setDimensionOffset(blockletInfoThrift.getDimension_offsets());
     blockletInfo.setMeasureOffsets(blockletInfoThrift.getMeasure_offsets());
     blockletInfo.setNumberOfPages(blockletInfoThrift.getNumber_number_of_pages());
+    blockletInfo.setBitMapEncodedDictionariesInfoList(
+        blockletInfoThrift.getBitmap_encoded_dictionaries_info_list());
     return blockletInfo;
   }
 

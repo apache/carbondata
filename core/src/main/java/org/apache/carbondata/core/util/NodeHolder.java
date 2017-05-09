@@ -163,14 +163,14 @@ public class NodeHolder {
   private boolean writeAll;
 
   /**
-   * dictArray for bitmap encode
+   * dictArray for bitMap encode
    */
-  private List[] bitmapDictArray;
+  private List<Integer>[] bitMapDictArray;
 
   /**
-   * bitmap encoded data page length
+   * bitMap encoded data page length
    */
-  private List[] bitMapPagesLengthList;
+  private List<Integer>[] bitMapPagesLengthArray;
 
   /**
    * isUseBitMap flg
@@ -470,20 +470,20 @@ public class NodeHolder {
     return this.writeAll;
   }
 
-  public List[] getBitmapDictArray() {
-    return bitmapDictArray;
+  public List<Integer>[] getBitMapDictArray() {
+    return bitMapDictArray;
   }
 
-  public void setBitmapDictArray(List[] bitmapDictArray) {
-    this.bitmapDictArray = bitmapDictArray;
+  public void setBitMapDictArray(List<Integer>[] bitMapDictArray) {
+    this.bitMapDictArray = bitMapDictArray;
   }
 
-  public List[] getBitMapPagesLengthList() {
-    return bitMapPagesLengthList;
+  public List<Integer>[] getBitMapPagesLengthArray() {
+    return bitMapPagesLengthArray;
   }
 
-  public void setBitMapPagesLengthList(List[] bitMapPagesLengthList) {
-    this.bitMapPagesLengthList = bitMapPagesLengthList;
+  public void setBitMapPagesLengthArray(List<Integer>[] bitMapPagesLengthArray) {
+    this.bitMapPagesLengthArray = bitMapPagesLengthArray;
   }
 
   public boolean[] getIsUseBitMap() {

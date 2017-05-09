@@ -22,6 +22,8 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -38,6 +40,7 @@ import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.NodeHolder;
+import org.apache.carbondata.format.BitMapEncodedDictionariesInfo;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.processing.store.colgroup.ColGroupBlockStorage;
@@ -113,8 +116,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
 
     byte[][] dimensionMinValue = new byte[keyStorageArray.length][];
     byte[][] dimensionMaxValue = new byte[keyStorageArray.length][];
-    List[] dictArray = new ArrayList[keyStorageArray.length];
-    List[] bitMapPagesLengthArray = new ArrayList[keyStorageArray.length];
+    List<Integer>[] dictArray = new ArrayList[keyStorageArray.length];
+    List<Integer>[] bitMapPagesLengthArray = new ArrayList[keyStorageArray.length];
 
     byte[][] measureMinValue = new byte[measureArray.length][];
     byte[][] measureMaxValue = new byte[measureArray.length][];
@@ -194,9 +197,9 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     NodeHolder holder = new NodeHolder();
     holder.setDataArray(measureArray);
     holder.setKeyArray(keyBlockData);
-    holder.setDictArray(dictArray);
+    holder.setBitMapDictArray(dictArray);
     holder.setIsUseBitMap(isUseBitMap);
-    holder.setBitMapPagesLengthList(bitMapPagesLengthArray);
+    holder.setBitMapPagesLengthArray(bitMapPagesLengthArray);
     holder.setMeasureNullValueIndex(nullValueIndexBitSet);
     // end key format will be <length of dictionary key><length of no
     // dictionary key><DictionaryKey><No Dictionary key>
@@ -371,18 +374,28 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
         new byte[nodeHolderList.get(0).getKeyArray().length + nodeHolderList.get(0)
             .getDataArray().length][];
     int measureStartIndex = nodeHolderList.get(0).getKeyArray().length;
+    List<BitMapEncodedDictionariesInfo> bitMapEncodedDictionariesInfoList = new ArrayList<>(
+        isUseBitMap.length);
+
     // calculate the size of data chunks
     try {
       for (int i = 0; i < nodeHolderList.get(0).getKeyArray().length; i++) {
-        dataChunkBytes[i] = CarbonUtil.getByteArray(CarbonMetadataUtil
-            .getDataChunk3(nodeHolderList, thriftColumnSchemaList,
-                dataWriterVo.getSegmentProperties(), i, true));
+        Set<Integer> bitMapEncodedDictionariesSet = new TreeSet<Integer>();
+        dataChunkBytes[i] = CarbonUtil
+            .getByteArray(CarbonMetadataUtil.getDataChunk3(nodeHolderList, thriftColumnSchemaList,
+                dataWriterVo.getSegmentProperties(), i, true, bitMapEncodedDictionariesSet));
+        if (bitMapEncodedDictionariesSet.size() > 0) {
+          bitMapEncodedDictionariesInfoList.add(new BitMapEncodedDictionariesInfo(
+              new ArrayList<Integer>(bitMapEncodedDictionariesSet)));
+        } else {
+          bitMapEncodedDictionariesInfoList.add(new BitMapEncodedDictionariesInfo());
+        }
         blockletDataSize += dataChunkBytes[i].length;
       }
       for (int i = 0; i < nodeHolderList.get(0).getDataArray().length; i++) {
         dataChunkBytes[measureStartIndex] = CarbonUtil.getByteArray(CarbonMetadataUtil
             .getDataChunk3(nodeHolderList, thriftColumnSchemaList,
-                dataWriterVo.getSegmentProperties(), i, false));
+                dataWriterVo.getSegmentProperties(), i, false, null));
         blockletDataSize += dataChunkBytes[measureStartIndex].length;
         measureStartIndex++;
       }
@@ -394,7 +407,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     // to check if data size will exceed the block size then create a new file
     updateBlockletFileChannel(blockletDataSize);
     // write data to file
-    writeDataToFile(fileChannel, dataChunkBytes);
+    writeDataToFile(fileChannel, dataChunkBytes, bitMapEncodedDictionariesInfoList);
     // clear the data holder
     dataWriterHolder.clear();
   }
@@ -411,7 +424,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
    * @param channel
    * @param dataChunkBytes
    */
-  private void writeDataToFile(FileChannel channel, byte[][] dataChunkBytes) {
+  private void writeDataToFile(FileChannel channel, byte[][] dataChunkBytes,
+      List<BitMapEncodedDictionariesInfo> bitMapEncodedDictionariesInfoList) {
     long offset = 0;
     // write the header
     try {
@@ -510,6 +524,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     BlockletInfo3 blockletInfo3 =
         new BlockletInfo3(numberOfRows, currentDataChunksOffset, currentDataChunksLength,
             dimensionOffset, measureOffset, dataWriterHolder.getNodeHolder().size());
+    blockletInfo3.setBitmap_encoded_dictionaries_info_list(bitMapEncodedDictionariesInfoList);
     blockletMetadata.add(blockletInfo3);
   }
 

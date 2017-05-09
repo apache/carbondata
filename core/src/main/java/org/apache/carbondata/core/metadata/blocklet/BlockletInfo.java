@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
+import org.apache.carbondata.format.BitMapEncodedDictionariesInfo;
 
 /**
  * class to store the information about the blocklet
@@ -55,6 +56,8 @@ public class BlockletInfo implements Serializable {
   private List<Long> measureChunkOffsets;
 
   private List<Integer> measureChunksLength;
+
+  private List<BitMapEncodedDictionariesInfo> bitMapEncodedDictionariesInfoList;
 
   /**
    * to store the index like min max and start and end key of each column of the blocklet
@@ -187,6 +190,15 @@ public class BlockletInfo implements Serializable {
 
   public void setNumberOfPages(int numberOfPages) {
     this.numberOfPages = numberOfPages;
+  }
+
+  public List<BitMapEncodedDictionariesInfo> getBitMapEncodedDictionariesInfoList() {
+    return bitMapEncodedDictionariesInfoList;
+  }
+
+  public void setBitMapEncodedDictionariesInfoList(
+      List<BitMapEncodedDictionariesInfo> bitMapEncodedDictionariesInfoList) {
+    this.bitMapEncodedDictionariesInfoList = bitMapEncodedDictionariesInfoList;
   }
 
 }

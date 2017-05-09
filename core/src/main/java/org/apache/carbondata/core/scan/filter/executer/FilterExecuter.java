@@ -49,4 +49,11 @@ public interface FilterExecuter {
    * @param blockChunkHolder
    */
   void readBlocks(BlocksChunkHolder blockChunkHolder)throws IOException;
+  /**
+   * API will verify whether need to read the blocklet
+   *
+   * @param blockChunkHolder
+   * @return boolean
+   */
+  boolean isReadRequired(BlocksChunkHolder blockChunkHolder);
 }
