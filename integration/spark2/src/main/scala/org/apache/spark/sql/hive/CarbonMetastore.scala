@@ -871,8 +871,6 @@ case class CarbonRelation(
       .map(x => AttributeReference(x.getColName, CarbonMetastoreTypes.toDataType(
         metaData.carbonTable.getMeasureByName(factTable, x.getColName).getDataType.toString
           .toLowerCase match {
-          case "int" => "int"
-          case "short" => "short"
           case "decimal" => "decimal(" + x.getPrecision + "," + x.getScale + ")"
           case others => others
         }),

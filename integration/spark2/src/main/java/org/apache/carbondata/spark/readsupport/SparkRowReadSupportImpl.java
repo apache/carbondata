@@ -42,18 +42,6 @@ public class SparkRowReadSupportImpl extends DictionaryDecodeReadSupport<Interna
   }
 
   @Override public InternalRow readRow(Object[] data) {
-    for (int i = 0; i < isMeasure.length; i++) {
-      if (data[i] == null) {
-        continue;
-      }
-      if (isMeasure[i]) {
-        if (dataTypes[i].equals(DataType.INT)) {
-          data[i] = ((Long)(data[i])).intValue();
-        } else if (dataTypes[i].equals(DataType.SHORT)) {
-          data[i] = ((Long)(data[i])).shortValue();
-        }
-      }
-    }
     return new GenericInternalRow(data);
   }
 }

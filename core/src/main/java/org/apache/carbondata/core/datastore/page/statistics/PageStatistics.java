@@ -68,7 +68,15 @@ public class PageStatistics {
   public void update(Object value) {
     switch (dataType) {
       case SHORT:
+        max = ((long) max > ((Short) value).longValue()) ? max : ((Short) value).longValue();
+        min = ((long) min < ((Short) value).longValue()) ? min : ((Short) value).longValue();
+        uniqueValue = (long) min - 1;
+        break;
       case INT:
+        max = ((long) max > ((Integer) value).longValue()) ? max : ((Integer) value).longValue();
+        min = ((long) min  < ((Integer) value).longValue()) ? min : ((Integer) value).longValue();
+        uniqueValue = (long) min - 1;
+        break;
       case LONG:
         max = ((long) max > (long) value) ? max : value;
         min = ((long) min < (long) value) ? min : value;

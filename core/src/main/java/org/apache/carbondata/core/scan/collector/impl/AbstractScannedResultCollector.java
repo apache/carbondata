@@ -91,12 +91,14 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
     }
   }
 
-  private Object getMeasureData(MeasureColumnDataChunk dataChunk, int index,
+  protected Object getMeasureData(MeasureColumnDataChunk dataChunk, int index,
       CarbonMeasure carbonMeasure) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
       switch (carbonMeasure.getDataType()) {
         case SHORT:
+          return (short)dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
         case INT:
+          return (int)dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
         case LONG:
           return dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
         case DECIMAL:

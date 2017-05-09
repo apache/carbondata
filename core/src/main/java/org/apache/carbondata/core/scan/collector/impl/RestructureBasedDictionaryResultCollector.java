@@ -22,7 +22,9 @@ import java.util.Map;
 
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
+import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
+import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
 
 /**
@@ -30,13 +32,30 @@ import org.apache.carbondata.core.scan.result.AbstractScannedResult;
  */
 public class RestructureBasedDictionaryResultCollector extends DictionaryBasedResultCollector {
 
+  private Object[] measureDefaultValues = null;
+
   public RestructureBasedDictionaryResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
     queryDimensions = tableBlockExecutionInfos.getActualQueryDimensions();
     queryMeasures = tableBlockExecutionInfos.getActualQueryMeasures();
+    measureDefaultValues = new Object[queryMeasures.length];
+    fillMeasureDefaultValues();
     initDimensionAndMeasureIndexesForFillingData();
     initDimensionAndMeasureIndexesForFillingData();
     isDimensionExists = queryDimensions.length > 0;
+  }
+
+  /**
+   * Fill measure default measure columns
+   */
+  private void fillMeasureDefaultValues() {
+    for (int i = 0; i < queryMeasures.length; i++) {
+      if (!measureInfo.getMeasureExists()[i]) {
+        measureDefaultValues[i] = RestructureUtil
+            .getMeasureDefaultValueByType(queryMeasures[i].getMeasure().getColumnSchema(),
+                queryMeasures[i].getMeasure().getDefaultValue());
+      }
+    }
   }
 
   /**
@@ -89,6 +108,25 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
       rowCounter++;
     }
     return listBasedResult;
+  }
+
+  protected void fillMeasureData(Object[] msrValues, int offset,
+      AbstractScannedResult scannedResult) {
+    int measureExistIndex = 0;
+    for (short i = 0; i < measureInfo.getMeasureDataTypes().length; i++) {
+      // if measure exists is block then pass measure column
+      // data chunk to the collector
+      if (measureInfo.getMeasureExists()[i]) {
+        QueryMeasure queryMeasure = tableBlockExecutionInfos.getQueryMeasures()[measureExistIndex];
+        msrValues[i + offset] = getMeasureData(
+            scannedResult.getMeasureChunk(measureInfo.getMeasureOrdinals()[measureExistIndex]),
+            scannedResult.getCurrentRowId(), queryMeasure.getMeasure());
+        measureExistIndex++;
+      } else {
+        // if not then get the default value
+        msrValues[i + offset] = measureDefaultValues[i];
+      }
+    }
   }
 
 }
