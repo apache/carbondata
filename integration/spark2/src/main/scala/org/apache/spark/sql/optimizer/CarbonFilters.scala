@@ -97,6 +97,14 @@ object CarbonFilters {
           } yield {
             new OrExpression(lhsFilter, rhsFilter)
           }
+        case sources.StringStartsWith(name, value) if value.length > 0 =>
+          val l = new GreaterThanEqualToExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, value))
+          val maxValueLimit = value.substring(0, value.length - 1) +
+                              (value.charAt(value.length - 1).toInt + 1).toChar
+          val r = new LessThanExpression(
+            getCarbonExpression(name), getCarbonLiteralExpression(name, maxValueLimit))
+          Some(new AndExpression(l, r))
         case CastExpr(expr: Expression) =>
           Some(transformExpression(expr))
         case _ => None
@@ -221,6 +229,8 @@ object CarbonFilters {
           CastExpressionOptimization.checkIfCastCanBeRemove(c)
         case c@LessThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
           CastExpressionOptimization.checkIfCastCanBeRemove(c)
+        case StartsWith(a: Attribute, Literal(v, t)) =>
+          Some(sources.StringStartsWith(a.name, v.toString))
         case c@Cast(a: Attribute, _) =>
           Some(CastExpr(c))
         case others =>
@@ -310,6 +320,20 @@ object CarbonFilters {
           CarbonScalaUtil.convertSparkToCarbonDataType(dataType))
       case Literal(name, dataType) => new
           CarbonLiteralExpression(name, CarbonScalaUtil.convertSparkToCarbonDataType(dataType))
+      case StartsWith(left, right@Literal(pattern, dataType)) if pattern.toString.size > 0 &&
+                                                                 isCarbonSupportedDataTypes(left) &&
+                                                                 isCarbonSupportedDataTypes
+                                                                 (right) =>
+        val l = new GreaterThanEqualToExpression(transformExpression(left),
+          transformExpression(right))
+        val maxValueLimit = pattern.toString.substring(0, pattern.toString.length - 1) +
+                            (pattern.toString.charAt(pattern.toString.length - 1).toInt + 1)
+                              .toChar
+        val r = new LessThanExpression(
+          transformExpression(left),
+          new CarbonLiteralExpression(maxValueLimit,
+            CarbonScalaUtil.convertSparkToCarbonDataType(dataType)))
+        new AndExpression(l, r)
       case StringTrim(child) => transformExpression(child)
       case _ =>
         new SparkUnknownExpression(expr.transform {

@@ -23,7 +23,6 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
-import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -116,11 +115,8 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
           .createBitSetGroupWithDefaultValue(blockChunkHolder.getDataBlock().numberOfPages(),
               numberOfRows, true);
     }
-    if (!dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
-      return super.applyFilter(blockChunkHolder);
-    }
-    int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
-        .get(dimensionBlocksIndex[0]);
+    int blockIndex =
+        segmentProperties.getDimensionOrdinalToBlockMapping().get(dimensionBlocksIndex[0]);
     if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
       blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
           .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
@@ -154,10 +150,8 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
 
   private BitSet getFilteredIndexes(DimensionColumnDataChunk dimensionColumnDataChunk,
       int numerOfRows) {
-    if (dimensionColumnDataChunk.isExplicitSorted()
-        && dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
-      return setFilterdIndexToBitSetWithColumnIndex(
-          (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, numerOfRows);
+    if (dimensionColumnDataChunk.isExplicitSorted()) {
+      return setFilterdIndexToBitSetWithColumnIndex(dimensionColumnDataChunk, numerOfRows);
     }
     return setFilterdIndexToBitSet(dimensionColumnDataChunk, numerOfRows);
   }
@@ -173,7 +167,7 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
    * @return BitSet.
    */
   private BitSet setFilterdIndexToBitSetWithColumnIndex(
-      FixedLengthDimensionDataChunk dimensionColumnDataChunk, int numerOfRows) {
+      DimensionColumnDataChunk dimensionColumnDataChunk, int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
     int start = 0;
     int last = 0;
@@ -234,41 +228,39 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
   private BitSet setFilterdIndexToBitSet(DimensionColumnDataChunk dimensionColumnDataChunk,
       int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
-    if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
-      int start = 0;
-      int last = 0;
-      int startIndex = 0;
-      byte[][] filterValues = this.filterRangeValues;
-      for (int k = 0; k < filterValues.length; k++) {
-        start = CarbonUtil.getFirstIndexUsingBinarySearch(
-            (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-            filterValues[k], true);
-        if (start >= 0) {
-          start = CarbonUtil.nextGreaterValueToTarget(start,
-              (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, filterValues[k],
-              numerOfRows);
+    int start = 0;
+    int last = 0;
+    int startIndex = 0;
+    byte[][] filterValues = this.filterRangeValues;
+    for (int k = 0; k < filterValues.length; k++) {
+      start = CarbonUtil
+          .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
+              filterValues[k], true);
+      if (start >= 0) {
+        start = CarbonUtil
+            .nextGreaterValueToTarget(start, dimensionColumnDataChunk, filterValues[k],
+                numerOfRows);
+      }
+      if (start < 0) {
+        start = -(start + 1);
+        if (start == numerOfRows) {
+          start = start - 1;
         }
-        if (start < 0) {
-          start = -(start + 1);
-          if (start == numerOfRows) {
-            start = start - 1;
-          }
-          // Method will compare the tentative index value after binary search, this tentative
-          // index needs to be compared by the filter member if its > filter then from that
-          // index the bitset will be considered for filtering process.
-          if (ByteUtil.compare(filterValues[k], dimensionColumnDataChunk.getChunkData(start)) > 0) {
-            start = start + 1;
-          }
+        // Method will compare the tentative index value after binary search, this tentative
+        // index needs to be compared by the filter member if its > filter then from that
+        // index the bitset will be considered for filtering process.
+        if (ByteUtil.compare(filterValues[k], dimensionColumnDataChunk.getChunkData(start)) > 0) {
+          start = start + 1;
         }
-        last = start;
-        for (int j = start; j < numerOfRows; j++) {
-          bitSet.set(j);
-          last++;
-        }
-        startIndex = last;
-        if (startIndex >= numerOfRows) {
-          break;
-        }
+      }
+      last = start;
+      for (int j = start; j < numerOfRows; j++) {
+        bitSet.set(j);
+        last++;
+      }
+      startIndex = last;
+      if (startIndex >= numerOfRows) {
+        break;
       }
     }
     return bitSet;
