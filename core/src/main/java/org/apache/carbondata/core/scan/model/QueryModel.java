@@ -27,6 +27,7 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -214,8 +215,22 @@ public class QueryModel implements Serializable {
   /**
    * @return the queryDimension
    */
+
   public List<QueryDimension> getQueryDimension() {
     return queryDimension;
+  }
+
+  public List<QueryDimension> getComplexQueryDimension() {
+    List<QueryDimension> complexQueryDimension = new ArrayList<>();
+    for (QueryDimension queryDimensionTemp : queryDimension) {
+      if (queryDimensionTemp.getDimension().getDataType() == DataType.ARRAY) {
+        complexQueryDimension.add(queryDimensionTemp);
+      }
+      if (queryDimensionTemp.getDimension().getDataType() == DataType.STRUCT) {
+        complexQueryDimension.add(queryDimensionTemp);
+      }
+    }
+    return complexQueryDimension;
   }
 
   /**
@@ -351,13 +366,14 @@ public class QueryModel implements Serializable {
   public void setVectorReader(boolean vectorReader) {
     this.vectorReader = vectorReader;
   }
+
   public void setInvalidBlockForSegmentId(List<UpdateVO> invalidSegmentTimestampList) {
     for (UpdateVO anUpdateVO : invalidSegmentTimestampList) {
       this.invalidSegmentBlockIdMap.put(anUpdateVO.getSegmentId(), anUpdateVO);
     }
   }
 
-  public Map<String,UpdateVO>  getInvalidBlockVOForSegmentId() {
-    return  invalidSegmentBlockIdMap;
+  public Map<String, UpdateVO> getInvalidBlockVOForSegmentId() {
+    return invalidSegmentBlockIdMap;
   }
 }

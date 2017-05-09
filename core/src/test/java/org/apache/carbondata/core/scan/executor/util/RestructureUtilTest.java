@@ -16,6 +16,11 @@
  */
 package org.apache.carbondata.core.scan.executor.util;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -31,11 +36,6 @@ import org.junit.Test;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
 
 public class RestructureUtilTest {
 
@@ -69,17 +69,22 @@ public class RestructureUtilTest {
     List<CarbonDimension> tableBlockDimensions =
         Arrays.asList(tableBlockDimension1, tableBlockDimension2);
 
-    CarbonDimension tableComplexDimension1 = new CarbonDimension(columnSchema3, 4, 4, 4, 4);
-    CarbonDimension tableComplexDimension2 = new CarbonDimension(columnSchema4, 2, 2, 2, 2);
-    List<CarbonDimension> tableComplexDimensions =
+    QueryDimension tableComplexDimension1 = new QueryDimension(columnSchema3.getColumnName());
+    tableComplexDimension1.setDimension(new CarbonDimension(columnSchema3, 3, 3, 3, 3));
+    QueryDimension tableComplexDimension2 = new QueryDimension(columnSchema4.getColumnName());
+    tableComplexDimension2.setDimension(new CarbonDimension(columnSchema3, 3, 3, 3, 3));
+
+    List<QueryDimension> tableComplexDimensions =
         Arrays.asList(tableComplexDimension1, tableComplexDimension2);
 
     QueryDimension queryDimension1 = new QueryDimension("Id");
     queryDimension1.setDimension(tableBlockDimension1);
+    queryDimension1.setDimension(new CarbonDimension(columnSchema1, 3, 3, 3, 3, 3));
     QueryDimension queryDimension2 = new QueryDimension("Name");
-    queryDimension2.setDimension(tableComplexDimension2);
+    queryDimension2.setDimension(tableComplexDimension2.getDimension());
+    queryDimension2.setDimension(new CarbonDimension(columnSchema2, 3, 3, 3, 3, 3));
     QueryDimension queryDimension3 = new QueryDimension("Address");
-    queryDimension3.setDimension(new CarbonDimension(columnSchema5, 3, 3, 3, 3));
+    queryDimension3.setDimension(new CarbonDimension(columnSchema3, 3, 3, 3, 3, 3));
 
     List<QueryDimension> queryDimensions =
         Arrays.asList(queryDimension1, queryDimension2, queryDimension3);
@@ -92,8 +97,9 @@ public class RestructureUtilTest {
     for (QueryDimension queryDimension : result) {
       resultDimension.add(queryDimension.getDimension());
     }
-    assertThat(resultDimension,
-        is(equalTo(Arrays.asList(queryDimension1.getDimension(), queryDimension2.getDimension()))));
+    assertThat(resultDimension, is(equalTo(Arrays
+        .asList(queryDimension1.getDimension(), queryDimension2.getDimension(),
+            queryDimension3.getDimension()))));
   }
 
   @Test public void testToGetAggregatorInfos() {
@@ -124,8 +130,9 @@ public class RestructureUtilTest {
     queryMeasure3.setMeasure(carbonMeasure3);
     List<QueryMeasure> queryMeasures = Arrays.asList(queryMeasure1, queryMeasure2, queryMeasure3);
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
-    RestructureUtil.createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo, queryMeasures,
-        currentBlockMeasures);
+    RestructureUtil
+        .createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo, queryMeasures,
+            currentBlockMeasures);
     MeasureInfo measureInfo = blockExecutionInfo.getMeasureInfo();
     boolean[] measuresExist = { true, true, false };
     assertThat(measureInfo.getMeasureExists(), is(equalTo(measuresExist)));

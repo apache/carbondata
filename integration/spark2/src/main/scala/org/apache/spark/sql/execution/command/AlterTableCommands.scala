@@ -29,7 +29,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.util.CarbonUtil
@@ -107,7 +107,7 @@ private[sql] case class AlterTableAddColumns(
             carbonTable.getStorePath).collect()
           AlterTableUtil.revertAddColumnChanges(dbName, tableName, lastUpdatedTime)(sparkSession)
         }
-        sys.error(s"Alter table add operation failed: ${e.getMessage}")
+        sys.error(s"Alter table add operation failed: ${ e.getMessage }")
     } finally {
       // release lock after command execution completion
       AlterTableUtil.releaseLocks(locks)
@@ -161,7 +161,7 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
       lastUpdatedTime = carbonTable.getTableLastUpdatedTime
       locks = AlterTableUtil
         .validateTableAndAcquireLock(oldDatabaseName, oldTableName, locksToBeAcquired)(
-            sparkSession)
+          sparkSession)
       // get the latest carbon table and check for column existence
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
         carbonTable.getCarbonTableIdentifier)
@@ -213,7 +213,7 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
             lastUpdatedTime)(
             sparkSession)
         renameBadRecords(newTableName, oldTableName, oldDatabaseName)
-        sys.error(s"Alter table rename table operation failed: ${e.getMessage}")
+        sys.error(s"Alter table rename table operation failed: ${ e.getMessage }")
     } finally {
       // release lock after command execution completion
       AlterTableUtil.releaseLocks(locks)
@@ -337,7 +337,7 @@ private[sql] case class AlterTableDropColumns(
       case e: Exception => LOGGER
         .error("Alter table drop columns failed : " + e.getMessage)
         AlterTableUtil.revertDropColumnChanges(dbName, tableName, lastUpdatedTime)(sparkSession)
-        sys.error(s"Alter table drop column operation failed: ${e.getMessage}")
+        sys.error(s"Alter table drop column operation failed: ${ e.getMessage }")
     } finally {
       // release lock after command execution completion
       AlterTableUtil.releaseLocks(locks)
@@ -393,14 +393,26 @@ private[sql] case class AlterTableDataTypeChange(
       var addColumnSchema: ColumnSchema = null
       var deletedColumnSchema: ColumnSchema = null
       val columnSchemaList = tableInfo.fact_table.table_columns.asScala.filter(!_.isInvisible)
+      val absoluteColumnname = (alterTableDataTypeChangeModel.dataTypeInfo.dataType
+        .toLowerCase match {
+        case "array" => alterTableDataTypeChangeModel.columnName + ".val"
+        case _ => alterTableDataTypeChangeModel.columnName
+      })
       columnSchemaList.foreach { columnSchema =>
-        if (columnSchema.column_name.equalsIgnoreCase(columnName)) {
+        if (columnSchema.column_name.equalsIgnoreCase(absoluteColumnname)) {
           deletedColumnSchema = columnSchema.deepCopy
-          columnSchema.setData_type(DataTypeConverterUtil
-            .convertToThriftDataType(alterTableDataTypeChangeModel.dataTypeInfo.dataType))
+          if (alterTableDataTypeChangeModel.dataTypeInfo.dataType.toLowerCase.equals("array")) {
+            columnSchema.setData_type(DataTypeConverterUtil
+              .convertToThriftDataType(alterTableDataTypeChangeModel.childrenDataType.get.dataType))
+          }
+          else {
+            columnSchema.setData_type(DataTypeConverterUtil
+              .convertToThriftDataType(alterTableDataTypeChangeModel.dataTypeInfo.dataType))
+          }
           columnSchema.setPrecision(alterTableDataTypeChangeModel.dataTypeInfo.precision)
           columnSchema.setScale(alterTableDataTypeChangeModel.dataTypeInfo.scale)
           addColumnSchema = columnSchema
+
         }
       }
       val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
@@ -419,7 +431,7 @@ private[sql] case class AlterTableDataTypeChange(
       case e: Exception => LOGGER
         .error("Alter table change datatype failed : " + e.getMessage)
         AlterTableUtil.revertDataTypeChanges(dbName, tableName, lastUpdatedTime)(sparkSession)
-        sys.error(s"Alter table data type change operation failed: ${e.getMessage}")
+        sys.error(s"Alter table data type change operation failed: ${ e.getMessage }")
     } finally {
       // release lock after command execution completion
       AlterTableUtil.releaseLocks(locks)

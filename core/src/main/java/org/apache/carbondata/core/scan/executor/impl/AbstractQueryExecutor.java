@@ -226,7 +226,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<QueryDimension> currentBlockQueryDimensions = RestructureUtil
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo,
             queryModel.getQueryDimension(), tableBlockDimensions,
-            segmentProperties.getComplexDimensions());
+            queryModel.getComplexQueryDimension());
     int tableFactPathLength = CarbonStorePath
         .getCarbonTablePath(queryModel.getAbsoluteTableIdentifier().getStorePath(),
             queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier()).getFactDir()
@@ -393,8 +393,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @param blockMetadataInfo block metadata info
    * @return key size
    */
-  private int getKeySize(List<QueryDimension> queryDimension,
-      SegmentProperties blockMetadataInfo) {
+  private int getKeySize(List<QueryDimension> queryDimension, SegmentProperties blockMetadataInfo) {
     // add the dimension block ordinal for each dictionary column
     // existing in the current block dimensions. Set is used because in case of column groups
     // ordinal of columns in a column group will be same

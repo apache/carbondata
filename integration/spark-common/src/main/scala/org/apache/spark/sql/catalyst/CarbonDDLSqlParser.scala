@@ -211,13 +211,34 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
 
-
   def getScaleAndPrecision(dataType: String): (Int, Int) = {
     val m: Matcher = Pattern.compile("^decimal\\(([^)]+)\\)").matcher(dataType)
     m.find()
     val matchedString: String = m.group(1)
     val scaleAndPrecision = matchedString.split(",")
     (Integer.parseInt(scaleAndPrecision(0).trim), Integer.parseInt(scaleAndPrecision(1).trim))
+  }
+
+  def validateDecimalType(dataType: String): (Boolean, Int, Int) = {
+    val scaleAndPrecision: Option[(Int, Int)] = try {
+      Some(getScaleAndPrecision(dataType))
+    }
+    catch {
+      case ex: IllegalStateException => throw new MalformedCarbonCommandException(
+        "Invalid value for Scale and Precison")
+    }
+    val precision: Int = scaleAndPrecision.get._1
+    val scale: Int = scaleAndPrecision.get._2
+    if (precision < 1) {
+      throw new MalformedCarbonCommandException("Decimal format provided is invalid")
+    }
+    // precision should be > 0 and <= 38 and scale should be >= 0 and <= 38
+    if (precision < 1 || precision > 38) {
+      throw new MalformedCarbonCommandException("Invalid value for precision")
+    } else if (scale < 0 || scale > 38) {
+      throw new MalformedCarbonCommandException("Invalid value for scale")
+    }
+    (true, precision, scale)
   }
 
   /**
@@ -458,12 +479,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       noInvertedIdxColsProps =
         tableProperties.get(CarbonCommonConstants.NO_INVERTED_INDEX).get.split(',').map(_.trim)
       noInvertedIdxColsProps.foreach { noInvertedIdxColProp =>
-          if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
-            val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
-                           " does not exist in table. Please check create table statement."
-            throw new MalformedCarbonCommandException(errormsg)
-          }
+        if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
+          val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
+                         " does not exist in table. Please check create table statement."
+          throw new MalformedCarbonCommandException(errormsg)
         }
+      }
     }
     // check duplicate columns and only 1 col left
     val distinctCols = noInvertedIdxColsProps.toSet
@@ -865,10 +886,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * Matching the decimal(10,0) data type and returning the same.
    */
   private lazy val charType =
-    (CHAR | VARCHAR ) ~ ("(" ~>numericLit <~ ")") ^^ {
-      case char ~ digit =>
-        s"$char($digit)"
-    }
+  (CHAR | VARCHAR) ~ ("(" ~> numericLit <~ ")") ^^ {
+    case char ~ digit =>
+      s"$char($digit)"
+  }
 
   /**
    * Matching the decimal(10,0) data type and returning the same.
@@ -923,8 +944,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     dataType match {
       case "string" =>
         Field(field.column, Some("String"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
-      )
+          field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
+        )
       case "smallint" =>
         Field(field.column, Some("SmallInt"), field.name, Some(null),
           field.parent, field.storeType, field.schemaOrdinal,
@@ -1044,32 +1065,39 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * This method will parse the given data type and validate against the allowed data types
    *
    * @param dataType
-   * @param values
    * @return
    */
-  protected def parseDataType(dataType: String, values: Option[List[(Int, Int)]]): DataTypeInfo = {
-    dataType match {
+  protected def parseDataType(dataType: String,
+      listOfChildren: Option[List[Field]]): DataTypeInfo = {
+    val actualDataType: String = dataType.split("[(]")(0)
+
+    actualDataType match {
       case "bigint" =>
-        if (values.isDefined) {
+        DataTypeInfo(actualDataType)
+      case "array" =>
+        if (listOfChildren.get(0).dataType.get.equals("bigint")) {
+          DataTypeInfo(actualDataType)
+        }
+        else if (listOfChildren.get(0).dataType.get.startsWith("decimal")) {
+          val validDataType = validateDecimalType(listOfChildren.get(0).dataType.get)
+          if (validDataType._1) {
+            DataTypeInfo(actualDataType, validDataType._2, validDataType._3)
+          }
+          else {
+            throw new MalformedCarbonCommandException("Invalid data type")
+          }
+        }
+        else {
           throw new MalformedCarbonCommandException("Invalid data type")
         }
-        DataTypeInfo(dataType)
       case "decimal" =>
-        var precision: Int = 0
-        var scale: Int = 0
-        if (values.isDefined) {
-          precision = values.get(0)._1
-          scale = values.get(0)._2
-        } else {
-          throw new MalformedCarbonCommandException("Decimal format provided is invalid")
+        val validDataType = validateDecimalType(dataType)
+        if (validDataType._1) {
+          DataTypeInfo(actualDataType, validDataType._2, validDataType._3)
         }
-        // precision should be > 0 and <= 38 and scale should be >= 0 and <= 38
-        if (precision < 1 || precision > 38) {
-          throw new MalformedCarbonCommandException("Invalid value for precision")
-        } else if (scale < 0 || scale > 38) {
-          throw new MalformedCarbonCommandException("Invalid value for scale")
+        else {
+          throw new MalformedCarbonCommandException("Invalid data type")
         }
-        DataTypeInfo("decimal", precision, scale)
       case _ =>
         throw new MalformedCarbonCommandException("Data type provided is invalid.")
     }
