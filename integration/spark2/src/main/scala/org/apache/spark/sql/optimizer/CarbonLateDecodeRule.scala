@@ -60,7 +60,11 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     if (relations.nonEmpty && !isOptimized(plan)) {
       // In case scalar subquery skip the transformation and update the flag.
       if (relations.exists(_.carbonRelation.isSubquery.nonEmpty)) {
-        relations.foreach(p => p.carbonRelation.isSubquery.remove(0))
+        relations.foreach{carbonDecoderRelation =>
+          if (carbonDecoderRelation.carbonRelation.isSubquery.nonEmpty) {
+            carbonDecoderRelation.carbonRelation.isSubquery.remove(0)
+          }
+        }
         LOGGER.info("Skip CarbonOptimizer for scalar/predicate sub query")
         return plan
       }
@@ -317,7 +321,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
             Filter(filter.condition, child)
           }
 
-        case j: Join
+         case j: Join
           if !(j.left.isInstanceOf[CarbonDictionaryTempDecoder] ||
                j.right.isInstanceOf[CarbonDictionaryTempDecoder]) =>
           val attrsOnJoin = new util.HashSet[Attribute]
@@ -370,7 +374,6 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
           } else {
             join
           }
-
 
         case p: Project
           if relations.nonEmpty && !p.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
@@ -470,6 +473,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
 
         case others => others
       }
+
     }
 
     val transFormedPlan =
