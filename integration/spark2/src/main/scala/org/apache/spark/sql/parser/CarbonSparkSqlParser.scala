@@ -122,58 +122,15 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       // to include the partition columns here explicitly
       val schema = cols ++ partitionCols
 
-      val fields = schema.map { col =>
-        val x = if (col.dataType.catalogString == "float") {
-          '`' + col.name + '`' + " double"
-        }
-        else {
-          '`' + col.name + '`' + ' ' + col.dataType.catalogString
-        }
-        val f: Field = parser.anyFieldDef(new parser.lexical.Scanner(x.toLowerCase))
-        match {
-          case parser.Success(field, _) => field.asInstanceOf[Field]
-          case failureOrError => throw new MalformedCarbonCommandException(
-            s"Unsupported data type: $col.getType")
-        }
-        // the data type of the decimal type will be like decimal(10,0)
-        // so checking the start of the string and taking the precision and scale.
-        // resetting the data type with decimal
-        if (f.dataType.getOrElse("").startsWith("decimal")) {
-          val (precision, scale) = parser.getScaleAndPrecision(col.dataType.catalogString)
-          f.precision = precision
-          f.scale = scale
-          f.dataType = Some("decimal")
-        }
-        if (f.dataType.getOrElse("").startsWith("char")) {
-          f.dataType = Some("char")
-        }
-        else if (f.dataType.getOrElse("").startsWith("float")) {
-          f.dataType = Some("double")
-        }
-        f.rawSchema = x
-        f
-      }
-
-      // validate tblProperties
-      if (!CommonUtil.validateTblProperties(properties.asJava.asScala, fields)) {
-        throw new MalformedCarbonCommandException("Invalid table properties")
-      }
-      val options = new CarbonOption(properties)
-      val bucketFields = if (options.isBucketingEnabled) {
-        if (options.bucketNumber.toString.contains("-") ||
-            options.bucketNumber.toString.contains("+")) {
-          throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED")
-        }
-        else {
-          Some(BucketFields(options.bucketColumns.toLowerCase.split(",").map(_.trim),
-            options.bucketNumber))
-        }
-      } else {
-        None
-      }
+      val fields = parser.getFields(schema)
 
       val tableProperties = mutable.Map[String, String]()
       properties.foreach(f => tableProperties.put(f._1, f._2.toLowerCase))
+
+      val options = new CarbonOption(properties)
+      // validate tblProperties
+      val bucketFields = parser.getBucketFields(tableProperties, fields, options)
+
       // prepare table model of the collected tokens
       val tableModel: TableModel = parser.prepareTableModel(ifNotExists,
         convertDbNameToLowerCase(name.database),
@@ -216,5 +173,6 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       (key.toLowerCase, value.toLowerCase)
     }
   }
+
 
 }
