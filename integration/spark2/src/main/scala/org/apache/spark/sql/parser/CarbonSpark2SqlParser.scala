@@ -17,14 +17,17 @@
 
 package org.apache.spark.sql.parser
 
+import scala.collection.mutable
 import scala.language.implicitConversions
 
 import org.apache.spark.sql.ShowLoadsCommand
 import org.apache.spark.sql.catalyst.CarbonDDLSqlParser
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.types.StructField
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -238,4 +241,59 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           values.map(_.toLowerCase))
         AlterTableDropColumns(alterTableDropColumnModel)
     }
+
+  def getFields(schema: Seq[StructField]): Seq[Field] = {
+    schema.map { col =>
+      val x = if (col.dataType.catalogString == "float") {
+        '`' + col.name + '`' + " double"
+      }
+      else {
+        '`' + col.name + '`' + ' ' + col.dataType.catalogString
+      }
+      val f: Field = anyFieldDef(new lexical.Scanner(x.toLowerCase))
+      match {
+        case Success(field, _) => field.asInstanceOf[Field]
+        case failureOrError => throw new MalformedCarbonCommandException(
+          s"Unsupported data type: $col.getType")
+      }
+      // the data type of the decimal type will be like decimal(10,0)
+      // so checking the start of the string and taking the precision and scale.
+      // resetting the data type with decimal
+      if (f.dataType.getOrElse("").startsWith("decimal")) {
+        val (precision, scale) = getScaleAndPrecision(col.dataType.catalogString)
+        f.precision = precision
+        f.scale = scale
+        f.dataType = Some("decimal")
+      }
+      if (f.dataType.getOrElse("").startsWith("char")) {
+        f.dataType = Some("char")
+      }
+      else if (f.dataType.getOrElse("").startsWith("float")) {
+        f.dataType = Some("double")
+      }
+      f.rawSchema = x
+      f
+    }
+  }
+
+  def getBucketFields(properties: mutable.Map[String, String],
+      fields: Seq[Field],
+      options: CarbonOption): Option[BucketFields] = {
+    if (!CommonUtil.validateTblProperties(properties,
+      fields)) {
+      throw new MalformedCarbonCommandException("Invalid table properties")
+    }
+    if (options.isBucketingEnabled) {
+      if (options.bucketNumber.toString.contains("-") ||
+          options.bucketNumber.toString.contains("+")) {
+        throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED")
+      }
+      else {
+        Some(BucketFields(options.bucketColumns.toLowerCase.split(",").map(_.trim),
+          options.bucketNumber))
+      }
+    } else {
+      None
+    }
+  }
 }
