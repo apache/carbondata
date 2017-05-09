@@ -114,8 +114,14 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     addLateDecodeOptimization(sqlContext.sparkSession)
     val dbName: String = parameters.getOrElse("dbName",
       CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
-    val tableName: String = parameters.getOrElse("tableName", "default_table").toLowerCase
-
+    val tableOption: Option[String] = parameters.get("tableName")
+    if (tableOption.isEmpty) {
+      sys.error("Table creation failed. Table name is not specified")
+    }
+    val tableName = tableOption.get.toLowerCase()
+    if (tableName.contains(" ")) {
+      sys.error("Table creation failed. Table name cannot contain blank space")
+    }
     val path = if (sqlContext.sparkSession.sessionState.catalog.listTables(dbName)
       .exists(_.table.equalsIgnoreCase(tableName))) {
         getPathForTable(sqlContext.sparkSession, dbName, tableName)
@@ -140,13 +146,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
     val dbName: String = parameters.getOrElse("dbName",
       CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
-    val tableName: String = parameters.getOrElse("tableName", "default_table").toLowerCase
-    if (StringUtils.isBlank(tableName)) {
-      throw new MalformedCarbonCommandException("The Specified Table Name is Blank")
-    }
-    if (tableName.contains(" ")) {
-      throw new MalformedCarbonCommandException("Table Name Should not have spaces ")
-    }
+    val tableName: String = parameters.getOrElse("tableName", "").toLowerCase
     val options = new CarbonOption(parameters)
     try {
       CarbonEnv.getInstance(sparkSession).carbonMetastore

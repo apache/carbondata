@@ -67,7 +67,6 @@ class DataRetentionConcurrencyTestCase extends QueryTest with BeforeAndAfterAll 
   }
 
   test("DataRetention_Concurrency_load_date") {
-
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE concurrent " +
       "OPTIONS('DELIMITER' =  ',')")

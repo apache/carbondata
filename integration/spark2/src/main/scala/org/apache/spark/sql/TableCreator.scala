@@ -39,7 +39,7 @@ object TableCreator {
 
   // detects whether datatype is part of dictionary_exclude
   def isDataTypeSupportedForDictionary_Exclude(columnDataType: String): Boolean = {
-    val dataTypes = Array("string")
+    val dataTypes = Array("stringtype")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 
