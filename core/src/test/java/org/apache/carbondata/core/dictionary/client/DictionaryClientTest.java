@@ -19,6 +19,8 @@ package org.apache.carbondata.core.dictionary.client;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
@@ -26,12 +28,14 @@ import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType
 import org.apache.carbondata.core.dictionary.server.DictionaryServer;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.format.AlterOperation;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -76,6 +80,9 @@ public class DictionaryClientTest {
     tableSchema = new TableSchema();
     tableSchema.setTableName("TestTable");
     tableSchema.setListOfColumns(Arrays.asList(empColumnSchema, ageColumnSchema));
+    SchemaEvolution schemaEvolution = new SchemaEvolution();
+    schemaEvolution.setOperationsMap(new HashMap<Long, List<AlterOperation>>());
+    tableSchema.setSchemaEvalution(schemaEvolution);
     CarbonMetadata metadata = CarbonMetadata.getInstance();
 
     tableInfo = new TableInfo();
@@ -84,6 +91,7 @@ public class DictionaryClientTest {
     tableInfo.setDatabaseName("test");
     storePath = System.getProperty("java.io.tmpdir") + "/tmp";
     tableInfo.setStorePath(storePath);
+
     CarbonTable carbonTable = new CarbonTable();
     carbonTable.loadCarbonTable(tableInfo);
 

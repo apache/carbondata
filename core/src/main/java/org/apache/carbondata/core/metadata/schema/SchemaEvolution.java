@@ -18,6 +18,9 @@ package org.apache.carbondata.core.metadata.schema;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
+
+import org.apache.carbondata.format.AlterOperation;
 
 /**
  * Persisting schema restructuring information;
@@ -35,6 +38,11 @@ public class SchemaEvolution implements Serializable {
   private List<SchemaEvolutionEntry> schemaEvolutionEntryList;
 
   /**
+   * Map of the time on which Operation was performed and the Operation Type.
+   */
+  private Map<Long, List<AlterOperation>> operationsMap;
+
+  /**
    * @return the schemaEvolutionEntryList
    */
   public List<SchemaEvolutionEntry> getSchemaEvolutionEntryList() {
@@ -47,4 +55,21 @@ public class SchemaEvolution implements Serializable {
   public void setSchemaEvolutionEntryList(List<SchemaEvolutionEntry> schemaEvolutionEntryList) {
     this.schemaEvolutionEntryList = schemaEvolutionEntryList;
   }
+
+  /**
+   * return the operationMap
+   * @return
+   */
+  public Map<Long, List<AlterOperation>> getOperationsMap() {
+    return operationsMap;
+  }
+
+  /**
+   * @param operationsMap the operations map to set
+   */
+  public void setOperationsMap(Map<Long, List<AlterOperation>> operationsMap) {
+    this.operationsMap = operationsMap;
+  }
+
+
 }

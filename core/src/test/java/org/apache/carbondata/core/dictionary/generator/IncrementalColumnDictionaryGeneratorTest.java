@@ -19,15 +19,19 @@ package org.apache.carbondata.core.dictionary.generator;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.format.AlterOperation;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -155,6 +159,9 @@ public class IncrementalColumnDictionaryGeneratorTest {
     TableSchema tableSchema = new TableSchema();
     tableSchema.setTableName("TestTable");
     tableSchema.setListOfColumns(Arrays.asList(columnSchema));
+    SchemaEvolution schemaEvolution = new SchemaEvolution();
+    schemaEvolution.setOperationsMap(new HashMap<Long, List<AlterOperation>>());
+    tableSchema.setSchemaEvalution(schemaEvolution);
     CarbonMetadata metadata = CarbonMetadata.getInstance();
     TableInfo tableInfo = new TableInfo();
     tableInfo.setFactTable(tableSchema);

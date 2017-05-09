@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -37,6 +38,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.format.AlterOperation;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -46,7 +48,7 @@ import org.apache.commons.lang3.ArrayUtils;
 public class CarbonCompactionUtil {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(CarbonCompactionExecutor.class.getName());
+      LogServiceFactory.getLogService(CarbonCompactionUtil.class.getName());
 
   /**
    * To create a mapping of Segment Id and TableBlockInfo.
@@ -357,11 +359,11 @@ public class CarbonCompactionUtil {
    *
    * @param segmentMapping
    * @param dataFileMetadataSegMapping
-   * @param tableLastUpdatedTime
+   * @param carbonTable
    * @return
    */
   public static boolean checkIfAnyRestructuredBlockExists(Map<String, TaskBlockInfo> segmentMapping,
-      Map<String, List<DataFileFooter>> dataFileMetadataSegMapping, long tableLastUpdatedTime) {
+      Map<String, List<DataFileFooter>> dataFileMetadataSegMapping, CarbonTable carbonTable) {
     boolean restructuredBlockExists = false;
     for (Map.Entry<String, TaskBlockInfo> taskMap : segmentMapping.entrySet()) {
       String segmentId = taskMap.getKey();
@@ -369,7 +371,9 @@ public class CarbonCompactionUtil {
       for (DataFileFooter dataFileFooter : listMetadata) {
         // if schema modified timestamp is greater than footer stored schema timestamp,
         // it indicates it is a restructured block
-        if (tableLastUpdatedTime > dataFileFooter.getSchemaUpdatedTimeStamp()) {
+
+        if (checkIfSortingIsRequired(dataFileFooter.getSchemaUpdatedTimeStamp(),
+            carbonTable.getOperationsMap())) {
           restructuredBlockExists = true;
           break;
         }
@@ -380,4 +384,21 @@ public class CarbonCompactionUtil {
     }
     return restructuredBlockExists;
   }
+
+  private static boolean checkIfSortingIsRequired(Long timeStamp,
+      Map<Long, List<AlterOperation>> operationsMap) {
+    Set<Long> keys = operationsMap.keySet();
+    for (Long key : keys) {
+      if (key > timeStamp) {
+        List<AlterOperation> alterOperations = operationsMap.get(key);
+        if (alterOperations.contains(AlterOperation.AddColumn) || alterOperations
+            .contains(AlterOperation.RemoveColumn)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+
 }

@@ -17,24 +17,26 @@
 
 package org.apache.spark.sql.execution.command
 
+import java.util
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.hive.{CarbonRelation, HiveExternalCatalog}
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.format.{ColumnSchema, SchemaEvolutionEntry, TableInfo}
+import org.apache.carbondata.format.{AlterOperation, ColumnSchema, SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.{AlterTableAddColumnRDD, AlterTableDropColumnRDD}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil}
@@ -89,6 +91,8 @@ private[sql] case class AlterTableAddColumns(
       schemaEvolutionEntry.setAdded(newCols.toList.asJava)
       val thriftTable = schemaConverter
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
+      val listOfOperations = List(AlterOperation.AddColumn)
+        thriftTable.fact_table.schema_evolution.operation_history.put(schemaEvolutionEntry.getTimeStamp, listOfOperations.asJava)
       AlterTableUtil
         .updateSchemaInfo(carbonTable,
           schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
@@ -171,6 +175,9 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
       val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
       schemaEvolutionEntry.setTableName(newTableName)
       schemaEvolutionEntry.setTime_stamp(System.currentTimeMillis())
+      val listOfOperations = List(AlterOperation.RenameTable)
+      tableInfo.fact_table.schema_evolution.operation_history
+        .put(schemaEvolutionEntry.time_stamp, listOfOperations.asJava)
       renameBadRecords(oldTableName, newTableName, oldDatabaseName)
       val fileType = FileFactory.getFileType(tableMetadataFile)
       if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
@@ -320,6 +327,9 @@ private[sql] case class AlterTableDropColumns(
       // add deleted columns to schema evolution history and update the schema
       val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
       schemaEvolutionEntry.setRemoved(deletedColumnSchema.toList.asJava)
+      val listOfOperations = List(AlterOperation.RemoveColumn)
+      tableInfo.fact_table.schema_evolution.operation_history
+        .put(schemaEvolutionEntry.time_stamp, listOfOperations.asJava)
       AlterTableUtil
         .updateSchemaInfo(carbonTable,
           schemaEvolutionEntry,
@@ -406,8 +416,9 @@ private[sql] case class AlterTableDataTypeChange(
       val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
       schemaEvolutionEntry.setAdded(List(addColumnSchema).asJava)
       schemaEvolutionEntry.setRemoved(List(deletedColumnSchema).asJava)
-      tableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
-        .setTime_stamp(System.currentTimeMillis)
+      val listOfOperations = List(AlterOperation.DataTypeChange)
+      tableInfo.fact_table.schema_evolution.operation_history
+        .put(schemaEvolutionEntry.time_stamp, listOfOperations.asJava)
       AlterTableUtil
         .updateSchemaInfo(carbonTable,
           schemaEvolutionEntry,

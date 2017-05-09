@@ -17,17 +17,20 @@
 package org.apache.carbondata.core.metadata;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.format.AlterOperation;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -146,6 +149,9 @@ public class CarbonMetadataTest {
     tableSchema.setListOfColumns(columnSchemaList);
     tableSchema.setTableId(UUID.randomUUID().toString());
     tableSchema.setTableName("carbonTestTable");
+    SchemaEvolution schemaEvolution = new SchemaEvolution();
+    schemaEvolution.setOperationsMap(new HashMap<Long, List<AlterOperation>>());
+    tableSchema.setSchemaEvalution(schemaEvolution);
     return tableSchema;
   }
 
