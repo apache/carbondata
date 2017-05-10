@@ -310,8 +310,7 @@ WHERE[DATE_FIELD]BEFORE [DATE_VALUE]
 ```
 
 ## Update CarbonData Table
-This command will allow to update the carbon table based on the column expression and optional filter conditions. 
-Spark 2.x don't support update table operation currently and may support later.
+This command will allow to update the carbon table based on the column expression and optional filter conditions.
 
 ### Syntax
 
@@ -340,6 +339,8 @@ SET (column_name1, column_name2,) =
 | column_name | The destination columns to be updated. |
 | sourceColumn | The source table column values to be updated in destination table. |
 | sourceTable | The table from which the records are updated into destination Carbon table. |
+
+NOTE: This functionality is currently not supported in Spark 2.x and may support in future.
 
 ### Usage Guidelines
 The following conditions must be met for successful updation :
@@ -400,8 +401,7 @@ and EXISTS( SELECT * FROM table3 o WHERE o.column2 > 1);
 
 
 ## Delete Records from CarbonData Table
-This command allows us to delete records from CarbonData table. 
-Spark 2.x don't support delete records operation currently and may support later.
+This command allows us to delete records from CarbonData table.
 
 ### Syntax
 
@@ -415,6 +415,7 @@ DELETE FROM table_name [WHERE expression];
 |--------------|-----------------------------------------------------------------------|
 | table_name | The name of the Carbon table in which you want to perform the delete. |
 
+NOTE: This functionality is currently not supported in Spark 2.x and may support in future.
 
 ### Examples
 
