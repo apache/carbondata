@@ -340,7 +340,7 @@ SET (column_name1, column_name2,) =
 | sourceColumn | The source table column values to be updated in destination table. |
 | sourceTable | The table from which the records are updated into destination Carbon table. |
 
-NOTE: This functionality is currently not supported in Spark 2.x and may support in future.
+NOTE: This functionality is currently not supported in Spark 2.x and may support in future. 
 
 ### Usage Guidelines
 The following conditions must be met for successful updation :
@@ -415,7 +415,7 @@ DELETE FROM table_name [WHERE expression];
 |--------------|-----------------------------------------------------------------------|
 | table_name | The name of the Carbon table in which you want to perform the delete. |
 
-NOTE: This functionality is currently not supported in Spark 2.x and may support in future.
+NOTE: This functionality is currently not supported in Spark 2.x and may support in future. 
 
 ### Examples
 
