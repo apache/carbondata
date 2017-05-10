@@ -826,7 +826,11 @@ object CarbonDataRDDFactory {
       // updateModel.get.executorErrors.errorMsg = errorMessage
           if (updateModel.get.executorErrors.failureCauses == FailureCauses.NONE) {
             updateModel.get.executorErrors.failureCauses = FailureCauses.EXECUTOR_FAILURE
-            updateModel.get.executorErrors.errorMsg = "Update failed as the data load has failed."
+            if (null != executorMessage && !executorMessage.isEmpty) {
+              updateModel.get.executorErrors.errorMsg = executorMessage
+            } else {
+              updateModel.get.executorErrors.errorMsg = "Update failed as the data load has failed."
+            }
           }
           return
         }
