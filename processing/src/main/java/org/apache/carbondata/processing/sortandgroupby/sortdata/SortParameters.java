@@ -22,6 +22,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.schema.metadata.SortObserver;
@@ -88,7 +89,7 @@ public class SortParameters {
 
   private String tableName;
 
-  private char[] aggType;
+  private DataType[] measureDataType;
 
   /**
    * To know how many columns are of high cardinality.
@@ -137,7 +138,7 @@ public class SortParameters {
     parameters.bufferSize = bufferSize;
     parameters.databaseName = databaseName;
     parameters.tableName = tableName;
-    parameters.aggType = aggType;
+    parameters.measureDataType = measureDataType;
     parameters.noDictionaryCount = noDictionaryCount;
     parameters.partitionID = partitionID;
     parameters.segmentId = segmentId;
@@ -270,12 +271,12 @@ public class SortParameters {
     this.tableName = tableName;
   }
 
-  public char[] getAggType() {
-    return aggType;
+  public DataType[] getMeasureDataType() {
+    return measureDataType;
   }
 
-  public void setAggType(char[] aggType) {
-    this.aggType = aggType;
+  public void setMeasureDataType(DataType[] measureDataType) {
+    this.measureDataType = measureDataType;
   }
 
   public int getNoDictionaryCount() {
@@ -458,9 +459,9 @@ public class SortParameters {
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
 
-    char[] aggType = CarbonDataProcessorUtil
-        .getAggType(configuration.getMeasureCount(), configuration.getMeasureFields());
-    parameters.setAggType(aggType);
+    DataType[] measureDataType = CarbonDataProcessorUtil
+        .getMeasureDataType(configuration.getMeasureCount(), configuration.getMeasureFields());
+    parameters.setMeasureDataType(measureDataType);
     return parameters;
   }
 
@@ -560,10 +561,10 @@ public class SortParameters {
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
 
-    char[] aggType = CarbonDataProcessorUtil
-        .getAggType(parameters.getMeasureColCount(), parameters.getDatabaseName(),
+    DataType[] type = CarbonDataProcessorUtil
+        .getMeasureDataType(parameters.getMeasureColCount(), parameters.getDatabaseName(),
             parameters.getTableName());
-    parameters.setAggType(aggType);
+    parameters.setMeasureDataType(type);
     return parameters;
   }
 

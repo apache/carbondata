@@ -28,7 +28,7 @@ import org.scalatest.BeforeAndAfterAll
 class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("DROP TABLE IF EXISTS nomeasureTest_sd")
+    sql("DROP TABLE IF EXISTS nomeasureTest")
     sql(
       "CREATE TABLE nomeasureTest (empno String, doj String) STORED BY 'org.apache.carbondata" +
         ".format'"
@@ -106,8 +106,8 @@ class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop table nomeasureTest")
-    sql("drop table nomeasureTest_sd")
-    sql("drop table nomeasureTest_scd")
+    sql("drop table if exists nomeasureTest")
+    sql("drop table if exists nomeasureTest_sd")
+    sql("drop table if exists nomeasureTest_scd")
   }
 }

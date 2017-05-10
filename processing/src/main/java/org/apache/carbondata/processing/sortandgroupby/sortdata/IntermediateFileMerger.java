@@ -29,7 +29,7 @@ import java.util.concurrent.Callable;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.util.NonDictionaryUtil;
@@ -251,7 +251,8 @@ public class IntermediateFileMerger implements Callable<Void> {
           new SortTempFileChunkHolder(tempFile, mergerParameters.getDimColCount(),
               mergerParameters.getComplexDimColCount(), mergerParameters.getMeasureColCount(),
               mergerParameters.getFileBufferSize(), mergerParameters.getNoDictionaryCount(),
-              mergerParameters.getAggType(), mergerParameters.getNoDictionaryDimnesionColumn(),
+              mergerParameters.getMeasureDataType(),
+              mergerParameters.getNoDictionaryDimnesionColumn(),
               mergerParameters.getNoDictionarySortColumn());
 
       // initialize
@@ -319,7 +320,7 @@ public class IntermediateFileMerger implements Callable<Void> {
       return;
     }
     try {
-      char[] aggType = mergerParameters.getAggType();
+      DataType[] aggType = mergerParameters.getMeasureDataType();
       int[] mdkArray = (int[]) row[0];
       byte[][] nonDictArray = (byte[][]) row[1];
       int mdkIndex = 0;
@@ -339,27 +340,27 @@ public class IntermediateFileMerger implements Callable<Void> {
       for (int counter = 0; counter < mergerParameters.getMeasureColCount(); counter++) {
         if (null != NonDictionaryUtil.getMeasure(fieldIndex, row)) {
           stream.write((byte) 1);
-          if (aggType[counter] == CarbonCommonConstants.BYTE_VALUE_MEASURE) {
-            Double val = (Double) NonDictionaryUtil.getMeasure(fieldIndex, row);
-            stream.writeDouble(val);
-          } else if (aggType[counter] == CarbonCommonConstants.DOUBLE_MEASURE) {
-            Double val = (Double) NonDictionaryUtil.getMeasure(fieldIndex, row);
-            stream.writeDouble(val);
-          } else if (aggType[counter] == CarbonCommonConstants.BIG_INT_MEASURE) {
-            Long val = (Long) NonDictionaryUtil.getMeasure(fieldIndex, row);
-            stream.writeLong(val);
-          } else if (aggType[counter] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-            byte[] bigDecimalInBytes = (byte[]) NonDictionaryUtil.getMeasure(fieldIndex, row);
-            stream.writeInt(bigDecimalInBytes.length);
-            stream.write(bigDecimalInBytes);
+          switch (aggType[counter]) {
+            case SHORT:
+            case INT:
+            case LONG:
+              Long val = (Long) NonDictionaryUtil.getMeasure(fieldIndex, row);
+              stream.writeLong(val);
+              break;
+            case DOUBLE:
+              stream.writeDouble((Double) NonDictionaryUtil.getMeasure(fieldIndex, row));
+              break;
+            case DECIMAL:
+              byte[] bigDecimalInBytes = (byte[]) NonDictionaryUtil.getMeasure(fieldIndex, row);
+              stream.writeInt(bigDecimalInBytes.length);
+              stream.write(bigDecimalInBytes);
+              break;
           }
         } else {
           stream.write((byte) 0);
         }
-
         fieldIndex++;
       }
-
     } catch (IOException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while writing the file", e);
     }

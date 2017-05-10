@@ -34,36 +34,14 @@ public class CarbonWriteDataHolder {
   private byte[][] byteValues;
 
   /**
-   * byteValues for no dictionary.
-   */
-  private byte[][][] byteValuesForNonDictionary;
-
-  /**
-   * byteValues
-   */
-  private byte[][][] columnByteValues;
-
-  /**
    * size
    */
   private int size;
 
   /**
-   * totalSize
+   * total size of the data in bytes added
    */
   private int totalSize;
-
-  /**
-   * Method to initialise double array
-   *
-   * @param size
-   */
-  public void initialiseDoubleValues(int size) {
-    if (size < 1) {
-      throw new IllegalArgumentException("Invalid array size");
-    }
-    doubleValues = new double[size];
-  }
 
   public void reset() {
     size = 0;
@@ -71,100 +49,42 @@ public class CarbonWriteDataHolder {
   }
 
   /**
-   * Method to initialise double array
-   *
-   * @param size
+   * set long data type columnar data
+   * @param values
    */
-  public void initialiseByteArrayValues(int size) {
-    if (size < 1) {
-      throw new IllegalArgumentException("Invalid array size");
+  public void setWritableLongPage(long[] values) {
+    if (values != null) {
+      longValues = values;
+      size += values.length;
+      totalSize += values.length;
     }
-
-    byteValues = new byte[size][];
-    columnByteValues = new byte[size][][];
   }
 
   /**
-   * Method to initialise byte array
-   *
-   * @param size
+   * set double data type columnar data
+   * @param values
    */
-  public void initialiseByteArrayValuesForKey(int size) {
-    if (size < 1) {
-      throw new IllegalArgumentException("Invalid array size");
+  public void setWritableDoublePage(double[] values) {
+    if (values != null) {
+      doubleValues = values;
+      size += values.length;
+      totalSize += values.length;
     }
-
-    byteValues = new byte[size][];
-  }
-
-  public void initialiseByteArrayValuesForNonDictionary(int size) {
-    if (size < 1) {
-      throw new IllegalArgumentException("Invalid array size");
-    }
-
-    byteValuesForNonDictionary = new byte[size][][];
   }
 
   /**
-   * Method to initialise long array
-   *
-   * @param size
+   * set decimal data type columnar data
+   * @param values
    */
-  public void initialiseLongValues(int size) {
-    if (size < 1) {
-      throw new IllegalArgumentException("Invalid array size");
-    }
-    longValues = new long[size];
-  }
-
-  /**
-   * set double value by index
-   *
-   * @param index
-   * @param value
-   */
-  public void setWritableDoubleValueByIndex(int index, Object value) {
-    doubleValues[index] = (Double) value;
-    size++;
-  }
-
-  /**
-   * set double value by index
-   *
-   * @param index
-   * @param value
-   */
-  public void setWritableLongValueByIndex(int index, Object value) {
-    longValues[index] = (Long) value;
-    size++;
-  }
-
-  /**
-   * set byte array value by index
-   *
-   * @param index
-   * @param value
-   */
-  public void setWritableByteArrayValueByIndex(int index, byte[] value) {
-    byteValues[index] = value;
-    size++;
-    if (null != value) totalSize += value.length;
-  }
-
-  public void setWritableNonDictByteArrayValueByIndex(int index, byte[][] value) {
-    byteValuesForNonDictionary[index] = value;
-    size++;
-    if (null != value) totalSize += value.length;
-  }
-
-  /**
-   * set byte array value by index
-   */
-  public void setWritableByteArrayValueByIndex(int index, int mdKeyIndex, Object[] columnData) {
-    int l = 0;
-    columnByteValues[index] = new byte[columnData.length - (mdKeyIndex + 1)][];
-    for (int i = mdKeyIndex + 1; i < columnData.length; i++) {
-      columnByteValues[index][l++] = (byte[]) columnData[i];
+  public void setWritableDecimalPage(byte[][] values) {
+    if (values != null) {
+      byteValues = values;
+      size += values.length;
+      for (int i = 0; i < values.length; i++) {
+        if (values[i] != null) {
+          totalSize += values[i].length;
+        }
+      }
     }
   }
 
@@ -187,28 +107,12 @@ public class CarbonWriteDataHolder {
     byte[] temp = new byte[totalSize];
     int startIndexToCopy = 0;
     for (int i = 0; i < size; i++) {
-      System.arraycopy(byteValues[i], 0, temp, startIndexToCopy, byteValues[i].length);
-      startIndexToCopy += byteValues[i].length;
+      if (byteValues[i] != null) {
+        System.arraycopy(byteValues[i], 0, temp, startIndexToCopy, byteValues[i].length);
+        startIndexToCopy += byteValues[i].length;
+      }
     }
     return temp;
-  }
-
-  public byte[][] getByteArrayValues() {
-    if (size < byteValues.length) {
-      byte[][] temp = new byte[size][];
-      System.arraycopy(byteValues, 0, temp, 0, size);
-      byteValues = temp;
-    }
-    return byteValues;
-  }
-
-  public byte[][][] getNonDictByteArrayValues() {
-    if (size < byteValuesForNonDictionary.length) {
-      byte[][][] temp = new byte[size][][];
-      System.arraycopy(byteValuesForNonDictionary, 0, temp, 0, size);
-      byteValuesForNonDictionary = temp;
-    }
-    return byteValuesForNonDictionary;
   }
 
   /**

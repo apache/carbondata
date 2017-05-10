@@ -141,7 +141,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         match {
           case parser.Success(field, _) => field.asInstanceOf[Field]
           case failureOrError => throw new MalformedCarbonCommandException(
-            s"Unsupported data type: $col.getType")
+            s"Unsupported data type: $col.getDataType")
         }
         // the data type of the decimal type will be like decimal(10,0)
         // so checking the start of the string and taking the precision and scale.
