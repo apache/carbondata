@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
@@ -46,7 +47,6 @@ public class BlockIndexerStorageForBitMapForShort implements IndexStorage<short[
   List<Integer> bitMapPagesLengthList;
 
   public BlockIndexerStorageForBitMapForShort(byte[][] keyBlockInput, boolean isNoDictionary) {
-    this.keyBlock = keyBlockInput;
     dictMap = new TreeMap<Integer, BitSet>();
     min = keyBlockInput[0];
     max = keyBlockInput[0];
@@ -77,33 +77,30 @@ public class BlockIndexerStorageForBitMapForShort implements IndexStorage<short[
       }
     }
 
-    keyBlock = new byte[dictMap.size()][];
+    keyBlock = new byte[dictMap.size() + 1][];
     dictList = new ArrayList<Integer>(dictMap.size());
     bitMapPagesLengthList = new ArrayList<Integer>(dictMap.size());
     int index = 0;
+    byte[] dictIndex = new byte[CarbonCommonConstants.BITMAP_CARDINALITY_MAX_VALUE];
+    byte count = 0;
     for (Integer dictKey : dictMap.keySet()) {
+      dictIndex[dictKey] = count++;
       dictBitSet = dictMap.get(dictKey);
       int byteArrayLength = dictBitSet.toByteArray().length;
-      // for (int i = dictBitSet.size(); i < sizeInBitSet; i++) {
-      // dictBitSet.set(i, false);
-      // }
-      // System.out.println("byteArrayLength: " + byteArrayLength);
-      // System.out.println("dictBitSet.toByteArray().length: " + byteArrayLength);
       bitMapPagesLengthList.add(totalSize);
       totalSize = totalSize + byteArrayLength;
-      // System.out.println("totalSize: " + totalSize);
-      // byte[] byteArr = dictBitSet.toByteArray();
-      // System.arraycopy(byteArr, 0, keyBlock, destPos, byteArr.length);
-      // destPos = destPos + byteArr.length;
       dictList.add(dictKey);
       keyBlock[index++] = dictBitSet.toByteArray();
-      // System.out.println("dictBitSet.cardinality(): " + dictBitSet.cardinality());
-
-      // BitSet bit = new BitSet();
-      // bit.valueOf(dictBitSet.toByteArray());
-      // System.out.println("bit.get(sizeInBitSet): " + bit.get(sizeInBitSet));
-
     }
+    // generate dictionary index data page
+    byte[] dictIndexPage = new byte[keyBlockInput.length];
+    for (int i = 0; i < keyBlockInput.length; i++) {
+      int dictKey = ByteUtil.convertByteArrayToInt(keyBlockInput[i]);
+      dictIndexPage[i] = dictIndex[dictKey];
+    }
+    keyBlock[index] = dictIndexPage;
+    bitMapPagesLengthList.add(totalSize);
+    totalSize = totalSize + dictIndexPage.length;
   }
 
   @Override

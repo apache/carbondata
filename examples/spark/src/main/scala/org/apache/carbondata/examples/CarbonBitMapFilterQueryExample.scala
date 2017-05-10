@@ -38,7 +38,7 @@ object CarbonBitMapFilterQueryExample {
     var start = System.currentTimeMillis()
     for (index <- 1 to 1) {
       cc.sql("""
-           SELECT serialname, phonetype, salary, name, id
+           SELECT country, serialname, phonetype, salary, name, id
            FROM t3
            WHERE country <> 'china'
            """).show(10)
@@ -48,7 +48,7 @@ object CarbonBitMapFilterQueryExample {
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
       cc.sql("""
-           SELECT serialname, phonetype, salary, name, id
+           SELECT country, serialname, phonetype, salary, name, id
            FROM t3
            WHERE country = 'china'
            """).show(10)
@@ -58,7 +58,7 @@ object CarbonBitMapFilterQueryExample {
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
       cc.sql("""
-           SELECT serialname, phonetype, salary, name, id
+           SELECT country, serialname, phonetype, salary, name, id
            FROM t3
            WHERE country <> 'france'
            """).show(10)
@@ -68,7 +68,7 @@ object CarbonBitMapFilterQueryExample {
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
       cc.sql("""
-           SELECT serialname, phonetype, salary, name, id
+           SELECT country, serialname, phonetype, salary, name, id
            FROM t3
            WHERE country = 'france'
            """).show(10)
@@ -77,7 +77,7 @@ object CarbonBitMapFilterQueryExample {
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
       cc.sql("""
-           SELECT serialname, phonetype, salary, name, id
+           SELECT country, serialname, phonetype, salary, name, id
            FROM t3
            WHERE country IN ('france')
            """).show(10)
@@ -88,7 +88,7 @@ object CarbonBitMapFilterQueryExample {
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
       cc.sql("""
-           SELECT serialname, phonetype, salary, name, id
+           SELECT country, serialname, phonetype, salary, name, id
            FROM t3
            WHERE country <> 'china' and country <> 'canada' and country <> 'indian'
            and country <> 'uk'
@@ -98,7 +98,7 @@ object CarbonBitMapFilterQueryExample {
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
       cc.sql("""
-           SELECT serialname, phonetype, salary, name, id
+           SELECT country, serialname, phonetype, salary, name, id
            FROM t3
            WHERE country not in ('china','canada','indian','usa','uk')
            """).show(10)
@@ -108,7 +108,7 @@ object CarbonBitMapFilterQueryExample {
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
       cc.sql("""
-           SELECT serialname, phonetype, salary, name, id
+           SELECT country, serialname, phonetype, salary, name, id
            FROM t3
            WHERE country IN ('china','usa','uk')
            """).show(10)
@@ -118,7 +118,7 @@ object CarbonBitMapFilterQueryExample {
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
       cc.sql("""
-           SELECT serialname, phonetype, salary, name, id
+           SELECT country, serialname, phonetype, salary, name, id
            FROM t3
            WHERE country = 'china' or country = 'indian' or country = 'usa'
            """).show(10)
@@ -128,7 +128,7 @@ object CarbonBitMapFilterQueryExample {
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
       cc.sql("""
-           SELECT count(serialname)
+           SELECT count(country)
            FROM t3
            WHERE country = 'china' or country = 'indian' or country = 'uk'
            """).show(10)
@@ -138,7 +138,7 @@ object CarbonBitMapFilterQueryExample {
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
       cc.sql("""
-           SELECT count(serialname)
+           SELECT count(country)
            FROM t3
            WHERE country <> 'china' and country <> 'indian'
            """).show(10)
