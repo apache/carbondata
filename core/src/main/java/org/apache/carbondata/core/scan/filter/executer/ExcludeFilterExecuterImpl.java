@@ -18,7 +18,6 @@ package org.apache.carbondata.core.scan.filter.executer;
 
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
