@@ -171,8 +171,7 @@ object DataManagementFunc {
             loadsToMerge.size() == 1)) {
       deletePartialLoadsInCompaction(carbonLoadModel)
       val futureList: util.List[Future[Void]] = new util.ArrayList[Future[Void]](
-        CarbonCommonConstants
-            .DEFAULT_COLLECTION_SIZE
+        CarbonCommonConstants.DEFAULT_COLLECTION_SIZE
       )
 
       scanSegmentsAndSubmitJob(futureList,
@@ -256,9 +255,7 @@ object DataManagementFunc {
     )
 
     val future: Future[Void] = executor
-        .submit(new CompactionCallable(compactionCallableModel
-        )
-        )
+        .submit(new CompactionCallable(compactionCallableModel))
     futureList.add(future)
   }
 
