@@ -31,6 +31,7 @@ import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.mutate.UpdateVO;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.internal.index.Block;
@@ -84,7 +85,11 @@ public class CarbonInputSplit extends FileSplit
       ColumnarFormatVersion version) {
     super(path, start, length, locations);
     this.segmentId = segmentId;
-    this.taskId = CarbonTablePath.DataFileUtil.getTaskNo(path.getName());
+    String taskNo = CarbonTablePath.DataFileUtil.getTaskNo(path.getName());
+    if (taskNo.contains("_")) {
+      taskNo = taskNo.split("_")[0];
+    }
+    this.taskId = taskNo;
     this.bucketId = CarbonTablePath.DataFileUtil.getBucketNo(path.getName());
     this.invalidSegments = new ArrayList<>();
     this.version = version;
@@ -237,12 +242,11 @@ public class CarbonInputSplit extends FileSplit
     String filePath1 = this.getPath().getName();
     String filePath2 = other.getPath().getName();
     if (CarbonTablePath.isCarbonDataFile(filePath1)) {
-      int firstTaskId =
-          Integer.parseInt(CarbonTablePath.DataFileUtil.getTaskNo(filePath1).split("_")[0]);
-      int otherTaskId =
-          Integer.parseInt(CarbonTablePath.DataFileUtil.getTaskNo(filePath2).split("_")[0]);
-      if (firstTaskId != otherTaskId) {
-        return firstTaskId - otherTaskId;
+      byte[] firstTaskId = CarbonTablePath.DataFileUtil.getTaskNo(filePath1).getBytes();
+      byte[] otherTaskId = CarbonTablePath.DataFileUtil.getTaskNo(filePath2).getBytes();
+      int compare = ByteUtil.compare(firstTaskId, otherTaskId);
+      if (compare != 0) {
+        return compare;
       }
 
       int firstBucketNo = Integer.parseInt(CarbonTablePath.DataFileUtil.getBucketNo(filePath1));

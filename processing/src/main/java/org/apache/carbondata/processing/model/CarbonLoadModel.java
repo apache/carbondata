@@ -171,7 +171,15 @@ public class CarbonLoadModel implements Serializable {
    */
   private boolean preFetch;
 
-  private String numberOfcolumns;
+  /**
+   * Batch sort should be enabled or not
+   */
+  private String batchSort;
+
+  /**
+   * Batch sort size in mb.
+   */
+  private String batchSortSizeInMb;
   /**
    * get escape char
    *
@@ -391,6 +399,8 @@ public class CarbonLoadModel implements Serializable {
     copy.dictionaryServerPort = dictionaryServerPort;
     copy.preFetch = preFetch;
     copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
+    copy.batchSort = batchSort;
+    copy.batchSortSizeInMb = batchSortSizeInMb;
     return copy;
   }
 
@@ -442,6 +452,8 @@ public class CarbonLoadModel implements Serializable {
     copyObj.dictionaryServerPort = dictionaryServerPort;
     copyObj.preFetch = preFetch;
     copyObj.isEmptyDataBadRecord = isEmptyDataBadRecord;
+    copyObj.batchSort = batchSort;
+    copyObj.batchSortSizeInMb = batchSortSizeInMb;
     return copyObj;
   }
 
@@ -772,5 +784,21 @@ public class CarbonLoadModel implements Serializable {
 
   public void setIsEmptyDataBadRecord(String isEmptyDataBadRecord) {
     this.isEmptyDataBadRecord = isEmptyDataBadRecord;
+  }
+
+  public String getBatchSort() {
+    return batchSort;
+  }
+
+  public void setBatchSort(String batchSort) {
+    this.batchSort = batchSort;
+  }
+
+  public String getBatchSortSizeInMb() {
+    return batchSortSizeInMb;
+  }
+
+  public void setBatchSortSizeInMb(String batchSortSizeInMb) {
+    this.batchSortSizeInMb = batchSortSizeInMb;
   }
 }

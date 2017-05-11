@@ -54,14 +54,13 @@ public final class DataLoadProcessBuilder {
 
   public AbstractDataLoadProcessorStep build(CarbonLoadModel loadModel, String storeLocation,
       CarbonIterator[] inputIterators) throws Exception {
-    boolean batchSort = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT,
-            CarbonCommonConstants.LOAD_USE_BATCH_SORT_DEFAULT));
     CarbonDataLoadConfiguration configuration =
         createConfiguration(loadModel, storeLocation);
+    boolean batchSort = CarbonDataProcessorUtil.isBatchSortEnabled(configuration);
     if (!configuration.isSortTable()) {
       return buildInternalForNoSort(inputIterators, configuration);
     } else if (configuration.getBucketingInfo() != null) {
+    if (configuration.getBucketingInfo() != null) {
       return buildInternalForBucketing(inputIterators, configuration);
     } else if (batchSort) {
       return buildInternalForBatchSort(inputIterators, configuration);
@@ -170,6 +169,10 @@ public final class DataLoadProcessBuilder {
         loadModel.getIsEmptyDataBadRecord().split(",")[1]);
     configuration.setDataLoadProperty(DataLoadProcessorConstants.FACT_FILE_PATH,
         loadModel.getFactFilePath());
+    configuration
+        .setDataLoadProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT, loadModel.getBatchSort());
+    configuration.setDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
+        loadModel.getBatchSortSizeInMb());
     CarbonMetadata.getInstance().addCarbonTable(carbonTable);
     List<CarbonDimension> dimensions =
         carbonTable.getDimensionByTableName(carbonTable.getFactTableName());

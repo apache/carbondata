@@ -54,6 +54,7 @@ import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
 import org.apache.carbondata.processing.datatypes.StructDataType;
 import org.apache.carbondata.processing.model.CarbonDataLoadSchema;
+import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
@@ -517,6 +518,55 @@ public final class CarbonDataProcessorUtil {
       type[i] = measures.get(i).getDataType();
     }
     return type;
+  }
+
+  /**
+   * Check whether batch sort is enabled or not.
+   * @param configuration
+   * @return
+   */
+  public static boolean isBatchSortEnabled(CarbonDataLoadConfiguration configuration) {
+    boolean batchSort;
+    try {
+      // first check whether user input it from ddl, otherwise get from carbon properties
+      if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT) == null) {
+        batchSort = Boolean.parseBoolean(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT,
+                CarbonCommonConstants.LOAD_USE_BATCH_SORT_DEFAULT));
+      } else {
+        batchSort = Boolean.parseBoolean(
+            configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT)
+                .toString());
+      }
+    } catch (Exception e) {
+      batchSort = Boolean.parseBoolean(CarbonCommonConstants.LOAD_USE_BATCH_SORT_DEFAULT);
+      LOGGER.warn("Batch sort is set to " + batchSort);
+    }
+    return batchSort;
+  }
+
+  /**
+   * Get the batch sort size
+   * @param configuration
+   * @return
+   */
+  public static int getBatchSortSizeinMb(CarbonDataLoadConfiguration configuration) {
+    int batchSortSizeInMb;
+    try {
+      // First try get from user input from ddl , otherwise get from carbon properties.
+      if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB)
+          == null) {
+        batchSortSizeInMb = Integer.parseInt(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB, "0"));
+      } else {
+        batchSortSizeInMb = Integer.parseInt(
+            configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB)
+                .toString());
+      }
+    } catch (Exception e) {
+      batchSortSizeInMb = 0;
+    }
+    return batchSortSizeInMb;
   }
 
 }
