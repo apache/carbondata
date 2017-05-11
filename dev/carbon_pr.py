@@ -38,7 +38,7 @@ try:
 except ImportError:
     JIRA_IMPORTED = False
 
-PROJECT_NAME = "incubator-carbondata"
+PROJECT_NAME = "carbondata"
 
 CAPITALIZED_PROJECT_NAME = "carbondata".upper()
 
@@ -387,12 +387,12 @@ def assert_remotes():
     status = 0
     if "apache" not in remotes:
         print "You don't have remote 'apache' configured. Please run this command:\n" + \
-        "git remote add apache https://git-wip-us.apache.org/repos/asf/incubator-carbondata.git\n"
+        "git remote add apache https://git-wip-us.apache.org/repos/asf/carbondata.git\n"
         status = -1
 
     if "apache-github" not in remotes:
         print "You don't have remote 'apache-github' configured. Please run this command:\n" + \
-        "git remote add apache-github https://github.com/apache/incubator-carbondata.git\n"
+        "git remote add apache-github https://github.com/apache/carbondata.git\n"
         status = -1
 
     if status != 0:

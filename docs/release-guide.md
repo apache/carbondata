@@ -218,7 +218,7 @@ x.x.x release".
 
 Copy the source release to dev repository on `dist.apache.org`.
 
-1. If you have not already, check out the Incubator section of the `dev` repository on `dist
+1. If you have not already, check out the section of the `dev` repository on `dist
 .apache.org` via Subversion. In a fresh directory:
 
 ```
@@ -274,7 +274,7 @@ adjust as you see fit:
 
 ```
 From: Release Manager
-To: dev@carbondata.incubator.apache.org
+To: dev@carbondata.apache.org
 Subject: [VOTE] Apache CarbonData Release x.x.x
 
 Hi everyone,
@@ -315,7 +315,7 @@ separate email. Here’s an email template; please adjust as you see fit.
 
 ```
 From: Release Manager
-To: dev@carbondata.incubator.apache.org
+To: dev@carbondata.apache.org
 Subject: [RESULT][VOTE] Apache CarbonData Release x.x.x
 
 I'm happy to announce that we have unanimously approved this release.
@@ -334,63 +334,6 @@ Thanks everyone!
 While in incubation, the Apache Incubator PMC must also vote on each release, using the same 
 process as above. Start the review and vote thread on the `general@incubator.apache.org` list.
 
-```
-From: Release Manager
-To: general@incubator.apache.org
-Cc: dev@carbondata.apache.org
-Subject: [VOTE] Apache CarbonData release x.x.x-incubating
-
-Hi everyone,
-Please review and vote on the release candidate for the Apache CarbonData version x.x.x-incubating,
- as follows:
- 
-[ ] +1, Approve the release
-[ ] -1, Do not approve the release (please provide specific comments)
-
-The complete staging area is available for your review, which includes:
-* JIRA release notes [1],
-* the official Apache source release to be deployed to dist.apache.org [2],
-* all artifacts to be deployed to the Maven Central Repository [3],
-* source code tag "x.x.x" [4],
-* website pull request listing the release [5].
-
-The Apache CarbonData community has unanimously approved this release [6].
-
-As customary, the vote will be open for at least 72 hours. It is adopted by
-a majority approval with at least three PMC affirmative votes. If approved,
-we will proceed with the release.
-
-Thanks!
-
-[1] link
-[2] link
-[3] link
-[4] link
-[5] link
-[6] lists.apache.org permalink to the vote result thread, e.g.,  https://lists.apache.org/thread
-.html/32c991987e0abf2a09cd8afad472cf02e482af02ac35418ee8731940@%3Cdev.carbondata.apache.org%3E
-```
-
-If passed, close the voting and summarize the results:
- 
-```
-From: Release Manager
-To: general@incubator.apache.org
-Cc: dev@carbondata.apache.org
-Subject: [RESULT][VOTE] Apache CarbonData release x.x.x-incubating
-
-There are XXX approving votes, all of which are binding:
-* approver 1
-* approver 2
-* approver 3
-* approver 4
-
-There are no disapproving votes.
-
-We'll proceed with this release as staged.
-
-Thanks everyone!
-```
 
 _Checklist to proceed to the final step:_
 
