@@ -127,6 +127,6 @@ INSERT INTO TABLE carbon_table SELECT id, city FROM source_table;
 ```
 **Scenario 3** :
 
-When the column type in carbon table is different from from the column specified in select statement. The insert operation will still success, but you may get NULL in result, because NULL will be substitute value when conversion type failed.
+When the column type in carbon table is different from the column specified in select statement. The insert operation will still success, but you may get NULL in result, because NULL will be substitute value when conversion type failed.
 
 
