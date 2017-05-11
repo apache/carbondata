@@ -116,9 +116,9 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT, "true");
+        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "batch_sort")
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL");
+        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL")
       sql("create table data_bm(name String, dob long, weight int) " +
           "STORED BY 'org.apache.carbondata.format'")
       val testData = s"$resourcesPath/badrecords/dummy.csv"
@@ -132,7 +132,8 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
     }
     finally {
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT, "false");
+        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+          CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
           CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT);
@@ -148,9 +149,9 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT, "true");
+        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "BATCH_SORT")
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE");
+        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
       sql("create table data_bmf(name String, dob long, weight int) " +
           "STORED BY 'org.apache.carbondata.format'")
       val testData = s"$resourcesPath/badrecords/dummy.csv"
@@ -166,10 +167,11 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
     }
     finally {
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT, "false");
+        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+          CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-          CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT);
+          CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
     }
   }
 
@@ -182,7 +184,7 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT, "true");
+        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "BATCH_SORT")
       sql("create table data_bm_no_good_data(name String, dob long, weight int) " +
           "STORED BY 'org.apache.carbondata.format'")
       val testData = s"$resourcesPath/badrecords/dummy2.csv"
@@ -198,10 +200,11 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
     }
     finally {
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT, "false");
+        .addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+          CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-          CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT);
+          CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
     }
   }
 
@@ -214,7 +217,7 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL");
+        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL")
       sql("create table data_tbm(name String, dob long, weight int) " +
           "USING org.apache.spark.sql.CarbonSource OPTIONS('bucketnumber'='4', " +
           "'bucketcolumns'='name', 'tableName'='data_tbm')")
@@ -232,7 +235,7 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
     finally {
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-          CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT);
+          CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
     }
   }
 
