@@ -38,7 +38,7 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
   private int[] bitmap_data_pages_offset;
   private BitSetGroup bitSetGroup;
   private boolean isGeneratedBitSetFlg = false;
-  private byte[] dictIndex;
+  private byte[] dictionaryData;
 
   public SafeBitMapDimensionDataChunkStore(List<Integer> bitmap_encoded_dictionaries,
       List<Integer> bitmap_data_pages_length, int columnValueSize) {
@@ -84,7 +84,9 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
    */
   @Override
   public byte[] getRow(int rowId) {
-    return this.bitmap_encoded_dictionaries[(int)dictIndex[rowId]];
+    byte[] data = new byte[1];
+    data[0] = dictionaryData[rowId];
+    return data;
   }
 
   /**
@@ -98,8 +100,7 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
   @Override
   public int getSurrogate(int index) {
     loadAllBitSets();
-    return ByteUtil
-        .convertByteArrayToInt(this.bitmap_encoded_dictionaries[dictIndex[index]]);
+    return dictionaryData[index];
   }
 
   /**
@@ -115,7 +116,7 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
   @Override
   public void fillRow(int rowId, byte[] buffer, int offset) {
 
-    System.arraycopy(this.bitmap_encoded_dictionaries[(int)dictIndex[rowId]], 0, buffer,
+    System.arraycopy(dictionaryData[rowId], 0, buffer,
         offset, columnValueSize);
   }
 
@@ -139,7 +140,7 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
   @Override
   public int compareTo(int index, byte[] compareValue) {
     return ByteUtil.UnsafeComparer.INSTANCE.compareTo(
-        this.bitmap_encoded_dictionaries[(int)dictIndex[index]], 0, columnValueSize,
+        this.bitmap_encoded_dictionaries[(int)dictionaryData[index]], 0, columnValueSize,
         compareValue, 0, columnValueSize);
   }
 
@@ -204,8 +205,8 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
 
     int pageOffSet = bitmap_data_pages_offset[bitmap_data_pages_offset.length - 1];
     int pageLength = this.data.length - pageOffSet;
-    dictIndex = new byte[pageLength];
-    System.arraycopy(this.data, pageOffSet, dictIndex, 0, pageLength);
+    dictionaryData = new byte[pageLength];
+    System.arraycopy(this.data, pageOffSet, dictionaryData, 0, pageLength);
     // System.out.println("dictIndex.toString(): " + dictIndex);
     // System.out.println("dictIndex.length(): " + dictIndex.length);
   }

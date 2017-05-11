@@ -94,7 +94,8 @@ object CarbonBitMapFilterQueryExample {
            and country <> 'uk'
            """).show(10)
     }
-    print("country <> 'china' and country <> 'canada' and country <> 'indian' and country <> 'uk': " + (System.currentTimeMillis() - start))
+    print("country <> 'china' and country <> 'canada' and country <> 'indian' and country <> 'uk': "
+        + (System.currentTimeMillis() - start))
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
       cc.sql("""
@@ -103,7 +104,8 @@ object CarbonBitMapFilterQueryExample {
            WHERE country not in ('china','canada','indian','usa','uk')
            """).show(10)
     }
-    print("country not in ('china','canada','indian','usa','uk'): " + (System.currentTimeMillis() - start))
+    print("country not in ('china','canada','indian','usa','uk'): "
+        + (System.currentTimeMillis() - start))
 
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
@@ -123,7 +125,8 @@ object CarbonBitMapFilterQueryExample {
            WHERE country = 'china' or country = 'indian' or country = 'usa'
            """).show(10)
     }
-    print("country = 'china' or country = 'indian' or country = 'usa': " + (System.currentTimeMillis() - start))
+    print("country = 'china' or country = 'indian' or country = 'usa': "
+        + (System.currentTimeMillis() - start))
 
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
@@ -133,7 +136,8 @@ object CarbonBitMapFilterQueryExample {
            WHERE country = 'china' or country = 'indian' or country = 'uk'
            """).show(10)
     }
-    print("country = 'china' or country = 'indian' or country = 'uk' count: " + (System.currentTimeMillis() - start))
+    print("country = 'china' or country = 'indian' or country = 'uk' count: "
+        + (System.currentTimeMillis() - start))
 
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
@@ -143,6 +147,7 @@ object CarbonBitMapFilterQueryExample {
            WHERE country <> 'china' and country <> 'indian'
            """).show(10)
     }
-    print("country <> 'china' and country <> 'indian' count: " + (System.currentTimeMillis() - start))
+    print("country <> 'china' and country <> 'indian' count: "
+        + (System.currentTimeMillis() - start))
   }
 }
