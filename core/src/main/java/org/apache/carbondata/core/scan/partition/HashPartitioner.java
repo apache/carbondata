@@ -22,20 +22,20 @@ package org.apache.carbondata.core.scan.partition;
  */
 public class HashPartitioner implements Partitioner {
 
-  private int partitions = 0;
+  private int numPartitions = 0;
 
   public HashPartitioner(int numPartitions) {
-    this.partitions = numPartitions;
+    this.numPartitions = numPartitions;
   }
 
   @Override public int numPartitions() {
-    return partitions;
+    return numPartitions;
   }
 
   @Override public int getPartition(Object key) {
     if (key == null) {
       return 0;
     }
-    return (key.hashCode() & Integer.MAX_VALUE) % partitions;
+    return (key.hashCode() & Integer.MAX_VALUE) % numPartitions;
   }
 }

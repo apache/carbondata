@@ -740,7 +740,7 @@ object CarbonDataRDDFactory {
       def loadDataForPartitionTable(): Unit = {
         try {
           val rdd = repartitionInputData(sqlContext, dataFrame, carbonLoadModel)
-          status = new DataLoaderForPartitionTableRDD(sqlContext.sparkContext,
+          status = new PartitionTableDataLoaderRDD(sqlContext.sparkContext,
             new DataLoadResultImpl(),
             carbonLoadModel,
             currentLoadCount,
@@ -996,7 +996,7 @@ object CarbonDataRDDFactory {
           delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat), row)
       }
     } else {
-      // input data from files
+      // input data from csv files
       val hadoopConfiguration = new Configuration()
       CommonUtil.configureCSVInputFormat(hadoopConfiguration, carbonLoadModel)
       hadoopConfiguration.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
@@ -1006,26 +1006,28 @@ object CarbonDataRDDFactory {
         classOf[CSVInputFormat],
         classOf[NullWritable],
         classOf[StringArrayWritable],
-        hadoopConfiguration)
-        .map { currentRow =>
-          val row = new StringArrayRow(new Array[String](columnCount))
-          (currentRow._2.get()(partitionColumnIndex), row.setValues(currentRow._2.get()))
-        }
+        hadoopConfiguration
+      ).map { currentRow =>
+        val row = new StringArrayRow(new Array[String](columnCount))
+        (currentRow._2.get()(partitionColumnIndex), row.setValues(currentRow._2.get()))
+      }
     }
+
+    val partitioner = PartitionFactory.getPartitioner(partitionInfo)
     if (partitionColumnDataType == DataType.STRING) {
       if (partitionInfo.getPartitionType == PartitionType.RANGE) {
         inputRDD.map { row => (ByteUtil.toBytes(row._1), row._2) }
-          .partitionBy(PartitionFactory.getPartitioner(partitionInfo))
+          .partitionBy(partitioner)
           .map(_._2)
       } else {
-        inputRDD.partitionBy(PartitionFactory.getPartitioner(partitionInfo))
+        inputRDD.partitionBy(partitioner)
           .map(_._2)
       }
     } else {
       inputRDD.map { row =>
         (PartitionUtil.getDataBasedOnDataType(row._1, partitionColumnDataType), row._2)
       }
-        .partitionBy(PartitionFactory.getPartitioner(partitionInfo))
+        .partitionBy(partitioner)
         .map(_._2)
     }
   }

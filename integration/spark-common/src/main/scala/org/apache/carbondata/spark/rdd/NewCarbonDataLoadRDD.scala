@@ -571,7 +571,7 @@ class LazyRddIterator(serializer: SerializerInstance,
  *  It loads the data  to carbon from DataFrom for partition table
  *  @see org.apache.carbondata.processing.newflow.DataLoadExecutor
  */
-class DataLoaderForPartitionTableRDD[K, V](
+class PartitionTableDataLoaderRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,

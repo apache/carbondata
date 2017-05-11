@@ -60,7 +60,8 @@ public class PartitionUtil {
       case RANGE:
         return new RangePartitioner(partitionInfo);
       default:
-        return null;
+        throw new UnsupportedOperationException(
+            "unsupport partition type: " + partitionInfo.getPartitionType().name());
     }
   }
 

@@ -28,29 +28,37 @@ import org.apache.carbondata.core.metadata.schema.PartitionInfo;
  */
 public class ListPartitioner implements Partitioner {
 
+  /**
+   * map the value of ListPartition to partition id.
+   */
   private Map<Object, Integer> map = new java.util.HashMap<Object, Integer>();
 
-  private int partitions;
+  private int numPartitions;
 
   public ListPartitioner(PartitionInfo partitionInfo) {
     List<List<String>> values = partitionInfo.getListInfo();
     DataType partitionColumnDataType = partitionInfo.getColumnSchemaList().get(0).getDataType();
-    partitions = values.size();
-    for (int i = 0; i < partitions; i++) {
+    numPartitions = values.size();
+    for (int i = 0; i < numPartitions; i++) {
       for (String value : values.get(i)) {
         map.put(PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType), i);
       }
     }
   }
 
+  /**
+   * number of partitions
+   * add extra default partition
+   * @return
+   */
   @Override public int numPartitions() {
-    return partitions + 1;
+    return numPartitions + 1;
   }
 
   @Override public int getPartition(Object key) {
     Integer partition = map.get(key);
     if (partition == null) {
-      return partitions;
+      return numPartitions;
     }
     return partition;
   }
