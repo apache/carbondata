@@ -131,6 +131,7 @@ public class BitMapDimensionDataChunk extends AbstractDimensionDataChunk {
   @Override public int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo,
       int column, KeyStructureInfo restructuringInfo) {
 
+    // current there is no rowMapping for bitmap encoded column
     return fillConvertedChunkData(vectorInfo, column, restructuringInfo);
   }
 
