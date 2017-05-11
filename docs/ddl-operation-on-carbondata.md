@@ -89,7 +89,7 @@ TBLPROPERTIES ('COLUMN_GROUPS'='(column1, column2),
 
    - **Inverted Index Configuration**
 
-      Inverted index is very useful to improve compression ratio and query speed, especially for those low-cardinality columns who are in reward position.
+      Inverted index is very useful to improve compression ratio and query speed, especially for those low-cardinality columns which are in reward position.
       By default inverted index is enabled. The user can disable the inverted index creation for some columns.
 ```
        TBLPROPERTIES ('NO_INVERTED_INDEX'='column1, column3')
@@ -286,7 +286,7 @@ This command is used to change the data type from INT to BIGINT or decimal preci
 - Change of decimal data type from lower precision to higher precision will only be supported for cases where there is no data loss.
 
 #### Valid Scenarios
-- Invalid scenario - Change of decimal precision from (10,2) to (10,5) is not valid as in this case only scale is increased but total number of digits remain the same.
+- Invalid scenario - Change of decimal precision from (10,2) to (10,5) is invalid as in this case only scale is increased but total number of digits remains the same.
 
 - Valid scenario - Change of decimal precision from (10,2) to (12,3) is valid as the total number of digits are increased by 2 but scale is increased only by 1 which will not lead to any data loss.
 
@@ -353,7 +353,7 @@ ALTER TABLE table_name COMPACT 'MAJOR';
 
 Bucketing feature can be used to distribute/organize the table/partition data into multiple files such
 that similar records are present in the same file. While creating a table, a user needs to specify the
-columns to be used for bucketing and the number of buckets. For the selction of bucket the Hash value
+columns to be used for bucketing and the number of buckets. For the selection of bucket the Hash value
 of columns is used.
 
 ```
@@ -380,7 +380,7 @@ of columns is used.
 - Columns in the BUCKETCOLUMN parameter must be only dimension. The BUCKETCOLUMN parameter can not be a measure or a combination of measures and dimensions.
 
 
-### Example :
+### Example:
 
 ```
  CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
