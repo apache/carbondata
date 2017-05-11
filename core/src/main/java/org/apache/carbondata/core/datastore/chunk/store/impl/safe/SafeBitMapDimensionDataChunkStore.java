@@ -53,7 +53,6 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
       this.bitmap_data_pages_offset[i] = bitmap_data_pages_length.get(i);
     }
     this.bitmap_data_pages_offset[arraySize] = bitmap_data_pages_length.get(arraySize);
-
   }
 
   /**
@@ -72,8 +71,6 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
     this.data = data;
     loadDictionaryDataIndex();
     bitSetGroup = new BitSetGroup(bitmap_encoded_dictionaries.length);
-
-    // loadAllBitSets();
   }
 
   /**
@@ -169,10 +166,7 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
       if (bitSet == null) {
         bitSet = new BitSet(numerOfRows);
       }
-      // System.out.println("bitSet.size(): " + bitSet.size());
-      // System.out.println("bitSet.length(): " + bitSet.length());
       bitSet.flip(0, numerOfRows);
-      // System.out.println("bitSet2: " + bitSet.cardinality());
     }
     return bitSet;
   }
@@ -193,7 +187,6 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
     }
     int pageOffSet = bitmap_data_pages_offset[index];
     int pageLength =  bitmap_data_pages_offset[index + 1] - bitmap_data_pages_offset[index];
-    // System.out.println("pageLength: " + pageLength);
     byte[] bitSetData = new byte[pageLength];
     System.arraycopy(this.data, pageOffSet, bitSetData, 0, pageLength);
     bitSet = BitSet.valueOf(bitSetData);
@@ -202,12 +195,9 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
   }
 
   private void loadDictionaryDataIndex() {
-
     int pageOffSet = bitmap_data_pages_offset[bitmap_data_pages_offset.length - 1];
     int pageLength = this.data.length - pageOffSet;
     dictionaryData = new byte[pageLength];
     System.arraycopy(this.data, pageOffSet, dictionaryData, 0, pageLength);
-    // System.out.println("dictIndex.toString(): " + dictIndex);
-    // System.out.println("dictIndex.length(): " + dictIndex.length);
   }
 }

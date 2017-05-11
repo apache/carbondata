@@ -23,13 +23,24 @@ import org.apache.carbondata.examples.util.ExampleUtils
 
 object CarbonBitMapFilterQueryExample {
   def main(args: Array[String]) {
-    val cc = ExampleUtils.createCarbonContext("CarbonExample")
+    val cc = ExampleUtils.createCarbonContext("CarbonBitMapFilterQueryExample")
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
 
     // Specify timestamp format based on raw data
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    cc.sql("DROP TABLE IF EXISTS t3")
+
+    // Create table, 6 dimensions, 2 measure
     cc.sql("""
+           CREATE TABLE IF NOT EXISTS t3
+           (ID Int, date Date, country String,
+           name String, phonetype String, serialname char(10), salary Int)
+           STORED BY 'carbondata'
+           TBLPROPERTIES ('BITMAP'='country')
+           """)
+
+      cc.sql("""
            SELECT date
            FROM t3
            limit 100
@@ -63,7 +74,7 @@ object CarbonBitMapFilterQueryExample {
            WHERE country <> 'france'
            """).show(10)
     }
-    print("country <> 'france': " + (System.currentTimeMillis() - start))
+    print("country <> 'france' query time: " + (System.currentTimeMillis() - start))
 
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
@@ -73,7 +84,7 @@ object CarbonBitMapFilterQueryExample {
            WHERE country = 'france'
            """).show(10)
     }
-    print("country = 'france': " + (System.currentTimeMillis() - start))
+    print("country = 'france' query time: " + (System.currentTimeMillis() - start))
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
       cc.sql("""
@@ -82,7 +93,7 @@ object CarbonBitMapFilterQueryExample {
            WHERE country IN ('france')
            """).show(10)
     }
-    print("country IN ('france'): " + (System.currentTimeMillis() - start))
+    print("country IN ('france') query time: " + (System.currentTimeMillis() - start))
 
 
     start = System.currentTimeMillis()
@@ -94,8 +105,9 @@ object CarbonBitMapFilterQueryExample {
            and country <> 'uk'
            """).show(10)
     }
-    print("country <> 'china' and country <> 'canada' and country <> 'indian' and country <> 'uk': "
-        + (System.currentTimeMillis() - start))
+    print("country <> 'china' and country <> 'canada' and country <> 'indian'"
+      + "and country <> 'uk' query time query time: "
+      + (System.currentTimeMillis() - start))
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
       cc.sql("""
@@ -104,7 +116,7 @@ object CarbonBitMapFilterQueryExample {
            WHERE country not in ('china','canada','indian','usa','uk')
            """).show(10)
     }
-    print("country not in ('china','canada','indian','usa','uk'): "
+    print("country not in ('china','canada','indian','usa','uk') query time: "
         + (System.currentTimeMillis() - start))
 
     start = System.currentTimeMillis()
@@ -115,7 +127,7 @@ object CarbonBitMapFilterQueryExample {
            WHERE country IN ('china','usa','uk')
            """).show(10)
     }
-    print("country IN ('china','usa','uk'): " + (System.currentTimeMillis() - start))
+    print("country IN ('china','usa','uk') query time: " + (System.currentTimeMillis() - start))
 
     start = System.currentTimeMillis()
     for (index <- 1 to 1) {
@@ -125,7 +137,7 @@ object CarbonBitMapFilterQueryExample {
            WHERE country = 'china' or country = 'indian' or country = 'usa'
            """).show(10)
     }
-    print("country = 'china' or country = 'indian' or country = 'usa': "
+    print("country = 'china' or country = 'indian' or country = 'usa' query time: "
         + (System.currentTimeMillis() - start))
 
     start = System.currentTimeMillis()
@@ -136,7 +148,7 @@ object CarbonBitMapFilterQueryExample {
            WHERE country = 'china' or country = 'indian' or country = 'uk'
            """).show(10)
     }
-    print("country = 'china' or country = 'indian' or country = 'uk' count: "
+    print("country = 'china' or country = 'indian' or country = 'uk' count query time: "
         + (System.currentTimeMillis() - start))
 
     start = System.currentTimeMillis()
@@ -147,7 +159,10 @@ object CarbonBitMapFilterQueryExample {
            WHERE country <> 'china' and country <> 'indian'
            """).show(10)
     }
-    print("country <> 'china' and country <> 'indian' count: "
+    print("country <> 'china' and country <> 'indian' count query time: "
         + (System.currentTimeMillis() - start))
+
+    // Drop table
+    cc.sql("DROP TABLE IF EXISTS t3")
   }
 }

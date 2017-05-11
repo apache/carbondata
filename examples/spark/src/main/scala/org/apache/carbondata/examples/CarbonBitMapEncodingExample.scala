@@ -33,7 +33,7 @@ object CarbonBitMapEncodingExample {
 
     cc.sql("DROP TABLE IF EXISTS bitmapTable")
 
-    // Create BITMAP table, 6 dimensions, 1 measure
+    // Create BITMAP table, 6 dimensions, 2 measure
     cc.sql("""
            CREATE TABLE IF NOT EXISTS bitmapTable
            (ID Int, date Date, country String,

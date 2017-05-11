@@ -28,12 +28,10 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
- * This class is gives access to fixed length dimension data chunk store
+ * This class is gives access to bitmap encoded dimension data chunk store
  */
 public class BitMapDimensionDataChunk extends AbstractDimensionDataChunk {
 
-  // private List<Integer> bitmap_encoded_dictionaries;
-  // private List<Integer> bitmap_data_pages_length;
   /**
    * Constructor
    *
@@ -45,8 +43,6 @@ public class BitMapDimensionDataChunk extends AbstractDimensionDataChunk {
    */
   public BitMapDimensionDataChunk(byte[] dataChunk, List<Integer> bitmap_encoded_dictionaries,
       List<Integer> bitmap_data_pages_length, int numberOfRows, int columnValueSize) {
-    // this.bitmap_encoded_dictionaries = bitmap_encoded_dictionaries;
-    // this.bitmap_data_pages_length = bitmap_data_pages_length;
     long totalSize = dataChunk.length;
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE.getDimensionChunkStore(columnValueSize,
         false, bitmap_encoded_dictionaries.size(), totalSize, DimensionStoreType.BITMAP,
@@ -134,33 +130,8 @@ public class BitMapDimensionDataChunk extends AbstractDimensionDataChunk {
    */
   @Override public int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo,
       int column, KeyStructureInfo restructuringInfo) {
-    ColumnVectorInfo columnVectorInfo = vectorInfo[column];
-    int offset = columnVectorInfo.offset;
-    int vectorOffset = columnVectorInfo.vectorOffset;
-    int len = columnVectorInfo.size + offset;
-    CarbonColumnVector vector = columnVectorInfo.vector;
-    for (int j = offset; j < len; j++) {
-      int dict = dataChunkStore.getSurrogate(rowMapping[j]);
-      if (columnVectorInfo.directDictionaryGenerator == null) {
-        vector.putInt(vectorOffset++, dict);
-      } else {
-        Object valueFromSurrogate =
-            columnVectorInfo.directDictionaryGenerator.getValueFromSurrogate(dict);
-        if (valueFromSurrogate == null) {
-          vector.putNull(vectorOffset++);
-        } else {
-          switch (columnVectorInfo.directDictionaryGenerator.getReturnType()) {
-            case INT:
-              vector.putInt(vectorOffset++, (int) valueFromSurrogate);
-              break;
-            case LONG:
-              vector.putLong(vectorOffset++, (long) valueFromSurrogate);
-              break;
-          }
-        }
-      }
-    }
-    return column + 1;
+
+    return fillConvertedChunkData(vectorInfo, column, restructuringInfo);
   }
 
   public BitSet applyFilter(final byte[][] filterValues, final FilterOperator operator,

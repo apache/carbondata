@@ -25,7 +25,7 @@ import java.util.TreeMap;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
- * Below class will be used to for no inverted index
+ * Below class will be used to for bitmap encoded column
  */
 public class BlockIndexerStorageForBitMapForShort implements IndexStorage<short[]> {
 
@@ -49,7 +49,6 @@ public class BlockIndexerStorageForBitMapForShort implements IndexStorage<short[
     dictMap = new TreeMap<Integer, BitSet>();
     min = keyBlockInput[0];
     max = keyBlockInput[0];
-    // totalSize += keyBlockInput[0].length;
     int minCompare = 0;
     int maxCompare = 0;
     BitSet dictBitSet = null;
@@ -62,13 +61,10 @@ public class BlockIndexerStorageForBitMapForShort implements IndexStorage<short[
       int dictKey = dictionaryDataPage[i];
       dictBitSet = dictMap.get(dictKey);
       if (dictBitSet == null) {
-        // System.out.println("keyBlockInput.length: " + keyBlockInput.length);
-        // System.out.println("sizeInBitSet: " + sizeInBitSet);
         dictBitSet = new BitSet(sizeInBitSet);
         dictMap.put(dictKey, dictBitSet);
       }
       dictBitSet.set(i, true);
-      // totalSize += keyBlockInput[i].length;
       minCompare = ByteUtil.compare(min, keyBlockInput[i]);
       maxCompare = ByteUtil.compare(max, keyBlockInput[i]);
       if (minCompare > 0) {
@@ -83,10 +79,7 @@ public class BlockIndexerStorageForBitMapForShort implements IndexStorage<short[
     dictList = new ArrayList<Integer>(dictMap.size());
     bitMapPagesLengthList = new ArrayList<Integer>(dictMap.size());
     int index = 0;
-    // byte[] dictIndex = new byte[CarbonCommonConstants.BITMAP_CARDINALITY_MAX_VALUE];
-    byte count = 0;
     for (Integer dictKey : dictMap.keySet()) {
-      // dictIndex[dictKey] = count++;
       dictBitSet = dictMap.get(dictKey);
       int byteArrayLength = dictBitSet.toByteArray().length;
       bitMapPagesLengthList.add(totalSize);

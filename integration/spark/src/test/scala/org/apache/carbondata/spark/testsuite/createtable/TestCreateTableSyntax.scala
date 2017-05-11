@@ -39,7 +39,7 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
   test("test carbon table create with bitmap column") {
 
     sql("drop table if exists carbontable")
-      sql("""
+    sql("""
            CREATE TABLE IF NOT EXISTS carbontable
            (ID Int, date Date, country String,
            name String, phonetype String, serialname char(10), salary Int)
@@ -77,6 +77,7 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
   }
   test("test carbon table create with no dictionary bitmap column") {
     try {
+      sql("drop table if exists carbontable")
       sql("""
            CREATE TABLE IF NOT EXISTS carbontable
            (ID Int, date Date, country String,

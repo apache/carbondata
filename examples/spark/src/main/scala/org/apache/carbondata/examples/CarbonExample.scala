@@ -33,7 +33,7 @@ object CarbonExample {
 
     cc.sql("DROP TABLE IF EXISTS t3")
 
-    // Create table, 6 dimensions, 1 measure
+    // Create table, 6 dimensions, 2 measure
     cc.sql("""
            CREATE TABLE IF NOT EXISTS t3
            (ID Int, date Date, country String,
@@ -67,7 +67,7 @@ object CarbonExample {
            """).show(1000000)
     print("query time: " + (System.currentTimeMillis() - start))
     // Drop table
-    // cc.sql("DROP TABLE IF EXISTS t3")
+    cc.sql("DROP TABLE IF EXISTS t3")
   }
 
 }

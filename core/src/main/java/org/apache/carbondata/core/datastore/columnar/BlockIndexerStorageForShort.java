@@ -33,7 +33,6 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
 
   private byte[][] keyBlock;
 
-  // for RLE
   private short[] dataIndexMap;
 
   private int totalSize;
