@@ -241,7 +241,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
                   val columnName = col.getName()
                   val dataType = Option(col.getType)
                   val comment = col.getComment
-                  val x = '`' + col.getName + '`' + ' ' + col.getType
+                  val rawSchema = '`' + col.getName + '`' + ' ' + col.getType
                   val f = Field(columnName, dataType, Some(columnName), None)
 
                   // the data type of the decimal type will be like decimal(10,0)
@@ -258,7 +258,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
                   } else if (f.dataType.getOrElse("").startsWith("float")) {
                     f.dataType = Some("float")
                   }
-                  f.rawSchema = x
+                  f.rawSchema = rawSchema
                   val partitionCol = new PartitionerField(columnName, dataType, comment)
                   partitionCols ++= Seq(partitionCol)
                   partitionByFields ++= Seq(f)
@@ -296,12 +296,12 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             if (!CommonUtil.validatePartitionColumns(tableProperties, partitionCols)) {
               throw new MalformedCarbonCommandException("Invalid table properties")
             }
-            // partition columns can't be part of the schema
+            // partition columns should not be part of the schema
             val colNames = fields.map(_.column)
             val badPartCols = partitionCols.map(_.partitionColumn).toSet.intersect(colNames.toSet)
             if (badPartCols.nonEmpty) {
               throw new MalformedCarbonCommandException(
-                "Partition columns can't be specified in the schema: " +
+                "Partition columns should not be specified in the schema: " +
                 badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]"))
             }
             fields ++= partitionByFields

@@ -508,8 +508,9 @@ class TableNewProcessor(cm: TableModel) {
     }
     if (cm.partitionInfo.isDefined) {
       val partitionInfo = cm.partitionInfo.get
-      val partitionCols = partitionInfo.getColumnSchemaList.asScala.map { columnSchema =>
-        allColumns.find(_.getColumnName.equalsIgnoreCase(columnSchema.getColumnName)).get
+      val PartitionColumnSchema = partitionInfo.getColumnSchemaList.asScala
+      val partitionCols = allColumns.filter { column =>
+        PartitionColumnSchema.exists(_.getColumnName.equalsIgnoreCase(column.getColumnName))
       }.asJava
       partitionInfo.setColumnSchemaList(partitionCols)
       tableSchema.setPartitionInfo(partitionInfo)
