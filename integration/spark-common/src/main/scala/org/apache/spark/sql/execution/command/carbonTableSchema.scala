@@ -506,6 +506,15 @@ class TableNewProcessor(cm: TableModel) {
       tableSchema.setBucketingInfo(
         new BucketingInfo(bucketCols.asJava, cm.bucketFields.get.numberOfBuckets))
     }
+    if (cm.partitionInfo.isDefined) {
+      val partitionInfo = cm.partitionInfo.get
+      val PartitionColumnSchema = partitionInfo.getColumnSchemaList.asScala
+      val partitionCols = allColumns.filter { column =>
+        PartitionColumnSchema.exists(_.getColumnName.equalsIgnoreCase(column.getColumnName))
+      }.asJava
+      partitionInfo.setColumnSchemaList(partitionCols)
+      tableSchema.setPartitionInfo(partitionInfo)
+    }
     tableSchema.setTableName(cm.tableName)
     tableSchema.setListOfColumns(allColumns.asJava)
     tableSchema.setSchemaEvalution(schemaEvol)

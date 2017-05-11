@@ -195,7 +195,7 @@ public class TableSchema implements Serializable {
     return partitionInfo;
   }
 
-  public void setpartitionInfo(PartitionInfo partitionInfo) {
+  public void setPartitionInfo(PartitionInfo partitionInfo) {
     this.partitionInfo = partitionInfo;
   }
 }
