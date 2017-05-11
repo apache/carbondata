@@ -26,15 +26,15 @@ The file footer can be read once to build the indices in memory, which can be ut
 ### Understanding CarbonData File Structure
 * Block : It would be as same as HDFS block, CarbonData creates one file for each data block, user can specify TABLE_BLOCKSIZE during creation table. Each file contains File Header, Blocklets and File Footer. 
 
-![CarbonData File Structure](../docs/images/carbon_data_file_structure_new.png?raw=true)
+![CarbonData File Structure](https://github.com/apache/carbondata/tree/master/docs/images/carbon_data_file_structure_new.png?raw=true)
 
 * File Header : It contains CarbonData file version number, list of column schema and schema updation timestamp.
 * File Footer : it contains Number of rows, segmentinfo ,all blocklets’ info and index, you can find the detail from the below diagram.
 * Blocklet : Rows are grouped to form a blocklet, the size of the blocklet is configurable and default size is 64MB, Blocklet contains Column Page groups for each column.
-* Column Page Group : Data of one column and it is further divided to pages, it is guaranteed to be contiguous in file.
+* Column Page Group : Data of one column and it is further divided into pages, it is guaranteed to be contiguous in file.
 * Page : It has the data of one column and the number of row is fixed to 32000 size. 
 
-![CarbonData File Format](../docs/images/carbon_data_format_new.png?raw=true)
+![CarbonData File Format](https://github.com/apache/carbondata/tree/master/docs/images/carbon_data_format_new.png?raw=true)
 
 ### Each page contains three types of data
 * Data Page: Contains the encoded data of a column of columns.
