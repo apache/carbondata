@@ -29,6 +29,7 @@ import org.apache.carbondata.processing.newflow.sort.impl.ParallelReadMergeSorte
 import org.apache.carbondata.processing.newflow.sort.impl.UnsafeBatchParallelReadMergeSorterImpl;
 import org.apache.carbondata.processing.newflow.sort.impl.UnsafeParallelReadMergeSorterImpl;
 import org.apache.carbondata.processing.newflow.sort.impl.UnsafeParallelReadMergeSorterWithBucketingImpl;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class SorterFactory {
 
@@ -39,9 +40,7 @@ public class SorterFactory {
     boolean offheapsort = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
             CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT));
-    boolean batchSort = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT,
-            CarbonCommonConstants.LOAD_USE_BATCH_SORT_DEFAULT));
+    SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     Sorter sorter;
     if (offheapsort) {
       if (configuration.getBucketingInfo() != null) {
@@ -58,7 +57,7 @@ public class SorterFactory {
         sorter = new ParallelReadMergeSorterImpl(counter);
       }
     }
-    if (batchSort) {
+    if (sortScope.equals(SortScopeOptions.SortScope.BATCH_SORT)) {
       if (configuration.getBucketingInfo() == null) {
         sorter = new UnsafeBatchParallelReadMergeSorterImpl(counter);
       } else {

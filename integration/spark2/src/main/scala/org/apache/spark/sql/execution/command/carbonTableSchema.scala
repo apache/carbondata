@@ -417,6 +417,8 @@ case class LoadTable(
       val dateFormat = options.getOrElse("dateformat", null)
       validateDateFormat(dateFormat, table)
       val maxColumns = options.getOrElse("maxcolumns", null)
+      val sortScope = options.getOrElse("sort_scope", null)
+      val batchSortSizeInMB = options.getOrElse("batch_sort_size_inmb", null)
       carbonLoadModel.setEscapeChar(checkDefaultValue(escapeChar, "\\"))
       carbonLoadModel.setQuoteChar(checkDefaultValue(quoteChar, "\""))
       carbonLoadModel.setCommentChar(checkDefaultValue(commentChar, "#"))
@@ -439,6 +441,8 @@ case class LoadTable(
       carbonLoadModel
         .setIsEmptyDataBadRecord(
           DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + "," + isEmptyDataBadRecord)
+      carbonLoadModel.setSortScope(sortScope)
+      carbonLoadModel.setBatchSortSizeInMb(batchSortSizeInMB)
       val useOnePass = options.getOrElse("single_pass", "false").trim.toLowerCase match {
         case "true" =>
           true

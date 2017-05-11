@@ -98,9 +98,10 @@ public class UnsafeSortDataRows {
         .getProperty(CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT,
             CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT_DEFAULT));
 
-    this.maxSizeAllowed = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB, "0"));
+    this.maxSizeAllowed = parameters.getBatchSortSizeinMb();
     if (maxSizeAllowed <= 0) {
+      // If user does not input any memory size, then take half the size of usable memory configured
+      // in sort memory size.
       this.maxSizeAllowed = UnsafeMemoryManager.INSTANCE.getUsableMemory() / 2;
     } else {
       this.maxSizeAllowed = this.maxSizeAllowed * 1024 * 1024;
