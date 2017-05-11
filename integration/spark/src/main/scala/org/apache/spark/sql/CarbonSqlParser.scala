@@ -242,26 +242,26 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
                   val dataType = Option(col.getType)
                   val comment = col.getComment
                   val rawSchema = '`' + col.getName + '`' + ' ' + col.getType
-                  val f = Field(columnName, dataType, Some(columnName), None)
+                  val field = Field(columnName, dataType, Some(columnName), None)
 
                   // the data type of the decimal type will be like decimal(10,0)
                   // so checking the start of the string and taking the precision and scale.
                   // resetting the data type with decimal
-                  if (f.dataType.getOrElse("").startsWith("decimal")) {
+                  if (field.dataType.getOrElse("").startsWith("decimal")) {
                     val (precision, scale) = getScaleAndPrecision(col.getType)
-                    f.precision = precision
-                    f.scale = scale
-                    f.dataType = Some("decimal")
+                    field.precision = precision
+                    field.scale = scale
+                    field.dataType = Some("decimal")
                   }
-                  if (f.dataType.getOrElse("").startsWith("char")) {
-                    f.dataType = Some("char")
-                  } else if (f.dataType.getOrElse("").startsWith("float")) {
-                    f.dataType = Some("float")
+                  if (field.dataType.getOrElse("").startsWith("char")) {
+                    field.dataType = Some("char")
+                  } else if (field.dataType.getOrElse("").startsWith("float")) {
+                    field.dataType = Some("float")
                   }
-                  f.rawSchema = rawSchema
+                  field.rawSchema = rawSchema
                   val partitionCol = new PartitionerField(columnName, dataType, comment)
                   partitionCols ++= Seq(partitionCol)
-                  partitionByFields ++= Seq(f)
+                  partitionByFields ++= Seq(field)
                 }
               }
             case Token("TOK_TABLEPROPERTIES", list :: Nil) =>
