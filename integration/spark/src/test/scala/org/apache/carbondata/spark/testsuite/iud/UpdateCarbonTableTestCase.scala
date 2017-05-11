@@ -365,6 +365,24 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("Failure of update operation due to bad record with proper error message") {
+    try {
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL")
+      val errorMessage = intercept[Exception] {
+        sql("drop table if exists update_with_bad_record")
+        sql("create table update_with_bad_record(item int, name String) stored by 'carbondata'")
+        sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/IUD/bad_record.csv' into table " +
+            s"update_with_bad_record")
+        sql("update update_with_bad_record set (item)=(3.45)").show()
+        sql("drop table if exists update_with_bad_record")
+      }
+      assert(errorMessage.getMessage.contains("Data load failed due to bad record"))
+    } finally {
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
+    }
+  }
 
   override def afterAll {
     sql("use default")
