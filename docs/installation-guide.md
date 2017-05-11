@@ -180,7 +180,7 @@ hdfs://<host_name>:port/user/hive/warehouse/carbon.store
 
 ```
      cd $SPARK_HOME
-     ./bin/beeline jdbc:hive2://<thrftserver_host>:port
+     ./bin/beeline jdbc:hive2://<thriftserver_host>:port
 
      Example
      ./bin/beeline jdbc:hive2://10.10.10.10:10000
