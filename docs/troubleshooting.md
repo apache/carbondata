@@ -132,7 +132,7 @@ who are building, deploying, and using CarbonData.
 
   Ensure that the Hiveuser in mysql must allow its access to the external processes.
 
-## Failure to read the metastore db during table creation.
+## Failed to read the metastore db during table creation.
 
   **Symptom**
 
