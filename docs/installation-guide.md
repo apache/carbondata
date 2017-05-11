@@ -40,7 +40,7 @@ followed by :
 
 ### Procedure
 
-1. [Build the CarbonData](https://github.com/apache/incubator-carbondata/blob/master/build/README.md) project and get the assembly jar from `./assembly/target/scala-2.1x/carbondata_xxx.jar`. 
+1. [Build the CarbonData](https://github.com/apache/carbondata/blob/master/build/README.md) project and get the assembly jar from `./assembly/target/scala-2.1x/carbondata_xxx.jar`. 
 
 2. Copy `./assembly/target/scala-2.1x/carbondata_xxx.jar` to `$SPARK_HOME/carbonlib` folder.
 
@@ -90,7 +90,7 @@ To get started with CarbonData : [Quick Start](quick-start-guide.md), [DDL Opera
 
    The following steps are only for Driver Nodes. (Driver nodes are the one which starts the spark context.)
 
-1. [Build the CarbonData](https://github.com/apache/incubator-carbondata/blob/master/build/README.md) project and get the assembly jar from `./assembly/target/scala-2.1x/carbondata_xxx.jar` and copy to `$SPARK_HOME/carbonlib` folder.
+1. [Build the CarbonData](https://github.com/apache/carbondata/blob/master/build/README.md) project and get the assembly jar from `./assembly/target/scala-2.1x/carbondata_xxx.jar` and copy to `$SPARK_HOME/carbonlib` folder.
 
     **NOTE**: Create the carbonlib folder if it does not exists inside `$SPARK_HOME` path.
 

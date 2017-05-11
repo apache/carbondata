@@ -81,7 +81,7 @@ $ git config --global user.name "Your Name"
 
 #### Fork the repository on GitHub
 
-Go to the [Apache CarbonData GitHub mirror](https://github.com/apache/incubator-carbondata) and
+Go to the [Apache CarbonData GitHub mirror](https://github.com/apache/carbondata) and
 fork the repository to your own private account.
 This will be your private workspace for staging changes.
 
@@ -90,12 +90,12 @@ This will be your private workspace for staging changes.
 You are now ready to create the development environment on your local machine.
 Clone CarbonData’s read-only GitHub mirror.
 ```
-$ git clone https://github.com/apache/incubator-carbondata.git
-$ cd incubator-carbondata
+$ git clone https://github.com/apache/carbondata.git
+$ cd carbondata
 ```
 Add your forked repository as an additional Git remote, where you’ll push your changes.
 ```
-$ git remote add <GitHub_user> https://github.com/<GitHub_user>/incubator-carbondata.git
+$ git remote add <GitHub_user> https://github.com/<GitHub_user>/carbondata.git
 ```
 You are now ready to start developing!
 
