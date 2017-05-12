@@ -568,7 +568,7 @@ class LazyRddIterator(serializer: SerializerInstance,
 }
 
 /*
- *  It loads the data  to carbon from DataFrom for partition table
+ *  It loads the data  to carbon from RDD for partition table
  *  @see org.apache.carbondata.processing.newflow.DataLoadExecutor
  */
 class PartitionTableDataLoaderRDD[K, V](
