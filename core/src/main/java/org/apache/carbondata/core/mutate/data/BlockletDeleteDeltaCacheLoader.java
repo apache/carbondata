@@ -57,7 +57,9 @@ public class BlockletDeleteDeltaCacheLoader implements DeleteDeltaCacheLoaderInt
         deleteDeltaDataCache = new BlockletLevelDeleteDeltaDataCache(deleteDeltaFileData,
             segmentUpdateStatusManager.getTimestampForRefreshCache(blockletID, null));
       } catch (Exception e) {
-        LOGGER.debug("Unable to retrieve delete delta files");
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Unable to retrieve delete delta files");
+        }
       }
     } else {
       deleteDeltaDataCache = blockletNode.getDeleteDeltaDataCache();
@@ -71,7 +73,9 @@ public class BlockletDeleteDeltaCacheLoader implements DeleteDeltaCacheLoaderInt
           deleteDeltaDataCache = new BlockletLevelDeleteDeltaDataCache(deleteDeltaFileData,
               segmentUpdateStatusManager.getTimestampForRefreshCache(blockletID, cacheTimeStamp));
         } catch (Exception e) {
-          LOGGER.debug("Unable to retrieve delete delta files");
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Unable to retrieve delete delta files");
+          }
         }
       }
     }

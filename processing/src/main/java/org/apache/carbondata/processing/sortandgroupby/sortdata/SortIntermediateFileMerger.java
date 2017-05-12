@@ -71,7 +71,9 @@ public class SortIntermediateFileMerger {
         fileList = procFiles.toArray(new File[procFiles.size()]);
         this.procFiles = new ArrayList<File>();
       }
-      LOGGER.debug("Sumitting request for intermediate merging no of files: " + fileList.length);
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Sumitting request for intermediate merging no of files: " + fileList.length);
+      }
       startIntermediateMerging(fileList);
     }
   }

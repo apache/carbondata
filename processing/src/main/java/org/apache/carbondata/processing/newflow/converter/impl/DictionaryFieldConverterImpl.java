@@ -40,6 +40,7 @@ import org.apache.carbondata.processing.newflow.dictionary.DictionaryServerClien
 import org.apache.carbondata.processing.newflow.dictionary.PreCreatedDictionary;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConverterImpl {
 
@@ -106,11 +107,12 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
       }
       if (null == parsedValue) {
         if ((dimensionValue.length() > 0) || (dimensionValue.length() == 0 && isEmptyBadRecord)) {
-          String dataType = carbonDimension.getDataType().getName();
-          logHolder.setReason(
-              "The value " + " \"" + dimensionValue + "\"" + " with column name " + carbonDimension
-                  .getColName() + " and column data type " + dataType + " is not a valid "
-                  + dataType + " type.");
+          String message = logHolder.getColumnMessageMap().get(carbonDimension.getColName());
+          if (null == message) {
+            message = CarbonDataProcessorUtil
+                .prepareFailureReason(carbonDimension.getColName(), carbonDimension.getDataType());
+            logHolder.getColumnMessageMap().put(carbonDimension.getColName(), message);
+          } logHolder.setReason(message);
         }
         row.update(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY, index);
       } else {

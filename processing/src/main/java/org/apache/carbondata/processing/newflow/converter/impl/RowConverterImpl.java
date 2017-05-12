@@ -156,11 +156,12 @@ public class RowConverterImpl implements RowConverter {
     for (int i = 0; i < fieldConverters.length; i++) {
       fieldConverters[i].convert(row, logHolder);
       if (!logHolder.isLogged() && logHolder.isBadRecordNotAdded()) {
+        badRecordLogger.addBadRecordsToBuilder(copy.getData(), logHolder.getReason());
         if (badRecordLogger.isDataLoadFail()) {
-          String error = "Data load failed due to bad record: " + logHolder.getReason();
+          String error = "Data load failed due to bad record: " + logHolder.getReason() +
+              "Please enable bad record logger to know the detail reason.";
           throw new BadRecordFoundException(error);
         }
-        badRecordLogger.addBadRecordsToBuilder(copy.getData(), logHolder.getReason());
         logHolder.clear();
         logHolder.setLogged(true);
         if (badRecordLogger.isBadRecordConvertNullDisable()) {
@@ -179,6 +180,9 @@ public class RowConverterImpl implements RowConverter {
         if (client != null) {
           client.shutDown();
         }
+      }
+      if (null != logHolder) {
+        logHolder.finish();
       }
       if (executorService != null) {
         executorService.shutdownNow();
