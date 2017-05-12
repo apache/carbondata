@@ -588,11 +588,6 @@ case class LoadTable(
         // Once the data load is successful delete the unwanted partition files
         try {
 
-          // shutdown dictionary server thread
-          if (carbonLoadModel.getUseOnePass) {
-            executorService.shutdownNow()
-          }
-
           val fileType = FileFactory.getFileType(partitionLocation)
           if (FileFactory.isFileExist(partitionLocation, fileType)) {
             val file = FileFactory
