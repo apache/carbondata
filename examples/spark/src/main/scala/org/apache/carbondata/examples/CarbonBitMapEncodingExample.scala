@@ -21,7 +21,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.util.ExampleUtils
 
-object CarbonExample {
+object CarbonBitMapEncodingExample {
 
   def main(args: Array[String]) {
     val cc = ExampleUtils.createCarbonContext("CarbonExample")
@@ -31,32 +31,54 @@ object CarbonExample {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
 
-    cc.sql("DROP TABLE IF EXISTS t3")
+    cc.sql("DROP TABLE IF EXISTS bitmapTable")
+    cc.sql("DROP TABLE IF EXISTS noBitmapTable")
 
-    // Create table, 6 dimensions, 1 measure
+    // Create BITMAP table, 6 dimensions, 1 measure
     cc.sql("""
-           CREATE TABLE IF NOT EXISTS t3
+           CREATE TABLE IF NOT EXISTS bitmapTable
            (ID Int, date Date, country String,
            name String, phonetype String, serialname char(10), salary Int)
            STORED BY 'carbondata'
            TBLPROPERTIES ('BITMAP'='country,name')
            """)
 
+    // Create no BITMAP table, 6 dimensions, 1 measure
+    cc.sql("""
+           CREATE TABLE IF NOT EXISTS noBitmapTable
+           (ID Int, date Date, country String,
+           name String, phonetype String, serialname char(10), salary Int)
+           STORED BY 'carbondata'
+           """)
+
+    // Currently there are two data loading flows in CarbonData, one uses Kettle as ETL tool
+    // in each node to do data loading, another uses a multi-thread framework without Kettle (See
+    // AbstractDataLoadProcessorStep)
     // Load data
     cc.sql(s"""
-           LOAD DATA LOCAL INPATH '$testData' into table t3
+           LOAD DATA LOCAL INPATH '$testData' into table bitmapTable
+           """)
+    cc.sql(s"""
+           LOAD DATA LOCAL INPATH '$testData' into table noBitmapTable
            """)
 
     // Perform a query
     cc.sql("""
            SELECT country, count(salary) AS amount
-           FROM t3
+           FROM bitmapTable
+           WHERE country IN ('china','france')
+           GROUP BY country
+           """).show()
+    cc.sql("""
+           SELECT country, count(salary) AS amount
+           FROM noBitmapTable
            WHERE country IN ('china','france')
            GROUP BY country
            """).show()
 
     // Drop table
-    cc.sql("DROP TABLE IF EXISTS t3")
+    cc.sql("DROP TABLE IF EXISTS bitmapTable")
+    cc.sql("DROP TABLE IF EXISTS noBitmapTable")
   }
 
 }

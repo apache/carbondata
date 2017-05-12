@@ -813,6 +813,9 @@ public final class CarbonCommonConstants {
   // set in column level to disable inverted index
   public static final String NO_INVERTED_INDEX = "no_inverted_index";
 
+  // bitmap encoding
+  public static final String BITMAP_ENCODING = "bitmap";
+
   /**
    * this variable is to enable/disable identify high cardinality during first data loading
    */
