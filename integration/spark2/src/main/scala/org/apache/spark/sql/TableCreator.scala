@@ -484,6 +484,8 @@ object TableCreator {
     // get no inverted index columns from table properties.
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
 
+    val partitionInfo = None
+
     // validate the tableBlockSize from table properties
     CommonUtil.validateTableBlockSize(tableProperties)
 
@@ -500,7 +502,8 @@ object TableCreator {
       Option(noInvertedIdxCols),
       groupCols,
       Some(colProps),
-      bucketFields: Option[BucketFields])
+      bucketFields: Option[BucketFields],
+      partitionInfo)
   }
 
 }
