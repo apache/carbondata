@@ -33,6 +33,7 @@ The following DDL operations are supported in CarbonData :
 * [DROP TABLE](#drop-table)
 * [COMPACTION](#compaction)
 * [BUCKETING](#bucketing)
+* [TABLE RENAME](#table-rename)
 
 
 ## CREATE TABLE
@@ -399,5 +400,33 @@ of columns is used.
                   'NO_INVERTED_INDEX'='productBatch',
                   'BUCKETNUMBER'='4',
                   'BUCKETCOLUMNS'='productName')
+```
+
+## TABLE RENAME
+  This command is used to rename the existing table.
+
+### Syntax
+```
+   ALTER TABLE [db_name.]table_name RENAME TO new_table_name;
+```
+
+### Parameter Description
+
+| Parameter | Description | 
+|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| db_name | Name of the database. If this parameter is left unspecified, the current database is selected. | 
+| table_name | Name of the existing table.|
+|new_table_name | New table name for the existing table. | 
+
+### Usage Guidelines
+Following conditions must be met for successful rename operation:
+* Queries running in parallel which requires the formation of path using the table name for reading carbon store files might fail during this operation.
+* Secondary index table rename is not permitted.
+
+### Example:
+```
+    ALTER TABLE carbon RENAME TO carbondata;
+
+   ALTER TABLE test_db.carbon RENAME TO test_db.carbondata;
 ```
 
