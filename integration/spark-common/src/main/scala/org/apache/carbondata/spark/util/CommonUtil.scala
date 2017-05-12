@@ -45,27 +45,29 @@ object CommonUtil {
   def validateColumnGroup(colGroup: String, noDictionaryDims: Seq[String],
       msrs: Seq[Field], retrievedColGrps: Seq[String], dims: Seq[Field]) {
     val colGrpCols = colGroup.split(',').map(_.trim)
-    colGrpCols.foreach { x =>
+    colGrpCols.foreach { col =>
       // if column is no dictionary
-      if (noDictionaryDims.contains(x)) {
+      if (noDictionaryDims.map(_.toLowerCase).contains(col)) {
         throw new MalformedCarbonCommandException(
-          "Column group is not supported for no dictionary columns:" + x)
-      } else if (msrs.exists(msr => msr.column.equals(x))) {
+          "Column group is not supported for no dictionary columns:" + col)
+      } else if (msrs.exists(msr => msr.column.equals(col))) {
         // if column is measure
-        throw new MalformedCarbonCommandException("Column group is not supported for measures:" + x)
-      } else if (foundIndExistingColGrp(x)) {
-        throw new MalformedCarbonCommandException("Column is available in other column group:" + x)
-      } else if (isComplex(x, dims)) {
         throw new MalformedCarbonCommandException(
-          "Column group doesn't support Complex column:" + x)
-      } else if (isTimeStampColumn(x, dims)) {
+          "Column group is not supported for measures:" + col)
+      } else if (foundIndExistingColGrp(col)) {
         throw new MalformedCarbonCommandException(
-          "Column group doesn't support Timestamp datatype:" + x)
-      }// if invalid column is
-      else if (!dims.exists(dim => dim.column.equalsIgnoreCase(x))) {
+          "Column is available in other column group:" + col)
+      } else if (isComplex(col, dims)) {
+        throw new MalformedCarbonCommandException(
+          "Column group doesn't support Complex column:" + col)
+      } else if (isTimeStampColumn(col, dims)) {
+        throw new MalformedCarbonCommandException(
+          "Column group doesn't support Timestamp datatype:" + col)
+      } // if invalid column is
+      else if (!dims.exists(dim => dim.column.equalsIgnoreCase(col))) {
         // present
         throw new MalformedCarbonCommandException(
-          "column in column group is not a valid column: " + x
+          "column in column group is not a valid column: " + col
         )
       }
     }
@@ -95,14 +97,14 @@ object CommonUtil {
   }
 
   def isComplex(colName: String, dims: Seq[Field]): Boolean = {
-    dims.foreach { x =>
-      if (x.children.isDefined && null != x.children.get && x.children.get.nonEmpty) {
-        val children = x.children.get
-        if (x.column.equals(colName)) {
+    dims.foreach { dim =>
+      if (dim.children.isDefined && null != dim.children.get && dim.children.get.nonEmpty) {
+        val children = dim.children.get
+        if (dim.column.equals(colName)) {
           return true
         } else {
           children.foreach { child =>
-            val fieldName = x.column + "." + child.column
+            val fieldName = dim.column + "." + child.column
             if (fieldName.equalsIgnoreCase(colName)) {
               return true
             }
@@ -329,7 +331,7 @@ object CommonUtil {
     }
 
     if (!CarbonDataProcessorUtil.isHeaderValid(carbonLoadModel.getTableName, csvColumns,
-        carbonLoadModel.getCarbonDataLoadSchema)) {
+      carbonLoadModel.getCarbonDataLoadSchema)) {
       if (csvFile == null) {
         LOGGER.error("CSV header in DDL is not proper."
                      + " Column names in schema and CSV header are not the same.")

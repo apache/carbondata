@@ -20,6 +20,8 @@ package org.apache.carbondata.spark.testsuite.detailquery
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+
 /**
  * Test Class for aggregate query on multiple datatypes
  *
@@ -27,53 +29,126 @@ import org.scalatest.BeforeAndAfterAll
 class ColumnGroupDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("create table colgrp (column1 string,column2 string,column3 string,column4 string,column5 string,column6 string,column7 string,column8 string,column9 string,column10 string,measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES (\"COLUMN_GROUPS\"=\"(column2,column3,column4),(column7,column8,column9)\")")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/10dim_4msr.csv' INTO table colgrp options('FILEHEADER'='column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
-    sql("create table normal (column1 string,column2 string,column3 string,column4 string,column5 string,column6 string,column7 string,column8 string,column9 string,column10 string,measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache.carbondata.format'")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/10dim_4msr.csv' INTO table normal options('FILEHEADER'='column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
+    sql(
+      "create table colgrp (column1 string,column2 string,column3 string,column4 string,column5 " +
+      "string,column6 string,column7 string,column8 string,column9 string,column10 string," +
+      "measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache.carbondata" +
+      ".format' TBLPROPERTIES (\"COLUMN_GROUPS\"=\"(column2,column3,column4),(column7,column8," +
+      "column9)\")")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/10dim_4msr.csv' INTO table colgrp options" +
+        s"('FILEHEADER'='column1,column2,column3,column4,column5,column6,column7,column8,column9," +
+        s"column10,measure1,measure2,measure3,measure4')");
+    sql(
+      "create table normal (column1 string,column2 string,column3 string,column4 string,column5 " +
+      "string,column6 string,column7 string,column8 string,column9 string,column10 string," +
+      "measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache.carbondata" +
+      ".format'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/10dim_4msr.csv' INTO table normal options" +
+        s"('FILEHEADER'='column1,column2,column3,column4,column5,column6,column7,column8,column9," +
+        s"column10,measure1,measure2,measure3,measure4')");
     //column group with dictionary exclude before column group
-    sql("create table colgrp_dictexclude_before (column1 string,column2 string,column3 string,column4 string,column5 string,column6 string,column7 string,column8 string,column9 string,column10 string,measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ('DICTIONARY_EXCLUDE'='column1',\"COLUMN_GROUPS\"=\"(column2,column3,column4),(column7,column8,column9)\")")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/10dim_4msr.csv' INTO table colgrp_dictexclude_before options('FILEHEADER'='column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
+    sql(
+      "create table colgrp_dictexclude_before (column1 string,column2 string,column3 string," +
+      "column4 string,column5 string,column6 string,column7 string,column8 string,column9 string," +
+      "column10 string,measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache" +
+      ".carbondata.format' TBLPROPERTIES ('DICTIONARY_EXCLUDE'='column1',\"COLUMN_GROUPS\"=\"" +
+      "(column2,column3,column4),(column7,column8,column9)\")")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/10dim_4msr.csv' INTO table " +
+        s"colgrp_dictexclude_before options('FILEHEADER'='column1,column2,column3,column4," +
+        s"column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
     //column group with dictionary exclude after column group
-    sql("create table colgrp_dictexclude_after (column1 string,column2 string,column3 string,column4 string,column5 string,column6 string,column7 string,column8 string,column9 string,column10 string,measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ('DICTIONARY_EXCLUDE'='column10',\"COLUMN_GROUPS\"=\"(column2,column3,column4),(column7,column8,column9)\")")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/10dim_4msr.csv' INTO table colgrp_dictexclude_after options('FILEHEADER'='column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
-    
+    sql(
+      "create table colgrp_dictexclude_after (column1 string,column2 string,column3 string," +
+      "column4 string,column5 string,column6 string,column7 string,column8 string,column9 string," +
+      "column10 string,measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache" +
+      ".carbondata.format' TBLPROPERTIES ('DICTIONARY_EXCLUDE'='column10',\"COLUMN_GROUPS\"=\"" +
+      "(column2,column3,column4),(column7,column8,column9)\")")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/10dim_4msr.csv' INTO table " +
+        s"colgrp_dictexclude_after options('FILEHEADER'='column1,column2,column3,column4,column5," +
+        s"column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
+
+  }
+
+  test("column group can not be included in dictionary_exclude") {
+
+    try {
+      sql("DROP TABLE IF EXISTS productSalesTable")
+      sql(
+        """CREATE TABLE IF NOT EXISTS productSalesTable ( productNumber Int, productName
+          |String, storeCity String, storeProvince String, productCategory String, productBatch
+          | String, saleQuantity Int, revenue Int) STORED BY 'carbondata' TBLPROPERTIES
+          | ('COLUMN_GROUPS'='(productName,productNumber)', 'DICTIONARY_EXCLUDE'='productName',
+          |  'DICTIONARY_INCLUDE'='productNumber', 'NO_INVERTED_INDEX'='productBatch')"""
+          .stripMargin)
+
+        .show
+    }
+    catch {
+      case malformedCarbonCommandException: MalformedCarbonCommandException =>assert(true)
+    }
   }
 
   test("select all dimension query") {
     checkAnswer(
-      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp"),
-      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal"))
+      sql(
+        "select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 " +
+        "from colgrp"),
+      sql(
+        "select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 " +
+        "from normal"))
   }
 
   test("select all dimension query with filter on columnar") {
     checkAnswer(
-      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp where column1='column1666'"),
-      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal where column1='column1666'"))
+      sql(
+        "select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 " +
+        "from colgrp where column1='column1666'"),
+      sql(
+        "select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 " +
+        "from normal where column1='column1666'"))
   }
 
   test("select all dimension query with filter on column group dimension") {
     checkAnswer(
-      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp where column3='column311'"),
-      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal where column3='column311'"))
+      sql(
+        "select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 " +
+        "from colgrp where column3='column311'"),
+      sql(
+        "select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 " +
+        "from normal where column3='column311'"))
   }
 
   test("select all dimension query with filter on two dimension from different column group") {
     checkAnswer(
-      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp where column3='column311' and column7='column74' "),
-      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal where column3='column311' and column7='column74'"))
+      sql(
+        "select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 " +
+        "from colgrp where column3='column311' and column7='column74' "),
+      sql(
+        "select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 " +
+        "from normal where column3='column311' and column7='column74'"))
   }
 
   test("select all dimension query with filter on two dimension from same column group") {
     checkAnswer(
-      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp where column3='column311' and column4='column42' "),
-      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal where column3='column311' and column4='column42'"))
+      sql(
+        "select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 " +
+        "from colgrp where column3='column311' and column4='column42' "),
+      sql(
+        "select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 " +
+        "from normal where column3='column311' and column4='column42'"))
   }
 
-  test("select all dimension query with filter on two dimension one from column group other from columnar") {
+  test(
+    "select all dimension query with filter on two dimension one from column group other from " +
+    "columnar")
+  {
     checkAnswer(
-      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp where column3='column311' and column5='column516' "),
-      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal where column3='column311' and column5='column516'"))
+      sql(
+        "select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 " +
+        "from colgrp where column3='column311' and column5='column516' "),
+      sql(
+        "select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 " +
+        "from normal where column3='column311' and column5='column516'"))
   }
 
   test("select few dimension") {
@@ -87,24 +162,39 @@ class ColumnGroupDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select count(column2) from colgrp"),
       sql("select count(column2) from normal"))
   }
-   test("##ColumnGroup_DictionaryExcludeBefore select all dimension on column group and dictionary exclude table") {
+  test(
+    "##ColumnGroup_DictionaryExcludeBefore select all dimension on column group and dictionary " +
+    "exclude table")
+  {
     checkAnswer(
       sql("select * from colgrp_dictexclude_before"),
       sql("select * from normal"))
   }
-  test("##ColumnGroup_DictionaryExcludeBefore select all dimension query with filter on two dimension from same column group") {
+  test(
+    "##ColumnGroup_DictionaryExcludeBefore select all dimension query with filter on two " +
+    "dimension from same column group")
+  {
     checkAnswer(
-      sql("select * from colgrp_dictexclude_before where column3='column311' and column4='column42' "),
+      sql(
+        "select * from colgrp_dictexclude_before where column3='column311' and column4='column42'" +
+        " "),
       sql("select * from normal where column3='column311' and column4='column42'"))
   }
-  test("##ColumnGroup_DictionaryExcludeAfter select all dimension on column group and dictionary exclude table") {
+  test(
+    "##ColumnGroup_DictionaryExcludeAfter select all dimension on column group and dictionary " +
+    "exclude table")
+  {
     checkAnswer(
       sql("select * from colgrp_dictexclude_after"),
       sql("select * from normal"))
   }
-  test("##ColumnGroup_DictionaryExcludeAfter select all dimension query with filter on two dimension from same column group") {
+  test(
+    "##ColumnGroup_DictionaryExcludeAfter select all dimension query with filter on two dimension" +
+    " from same column group")
+  {
     checkAnswer(
-      sql("select * from colgrp_dictexclude_after where column3='column311' and column4='column42' "),
+      sql("select * from colgrp_dictexclude_after where column3='column311' and " +
+          "column4='column42' "),
       sql("select * from normal where column3='column311' and column4='column42'"))
   }
   test("ExcludeFilter") {
@@ -126,16 +216,24 @@ class ColumnGroupDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Column Group not in order with schema") {
-      //Add column group in order different then schema
+    //Add column group in order different then schema
     try {
-      sql("create table colgrp_disorder (column1 string,column2 string,column3 string,column4 string,column5 string,column6 string,column7 string,column8 string,column9 string,column10 string,measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES (\"COLUMN_GROUPS\"=\"(column7,column8),(column2,column3,column4)\")")
-      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/10dim_4msr.csv' INTO table colgrp_disorder options('FILEHEADER'='column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
+      sql(
+        "create table colgrp_disorder (column1 string,column2 string,column3 string,column4 " +
+        "string,column5 string,column6 string,column7 string,column8 string,column9 string," +
+        "column10 string,measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org" +
+        ".apache.carbondata.format' TBLPROPERTIES (\"COLUMN_GROUPS\"=\"(column7,column8)," +
+        "(column2,column3,column4)\")")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/10dim_4msr.csv' INTO table colgrp_disorder " +
+          s"options('FILEHEADER'='column1,column2,column3,column4,column5,column6,column7," +
+          s"column8,column9,column10,measure1,measure2,measure3,measure4')");
       assert(true)
     } catch {
       case ex: Exception => assert(false)
     }
 
   }
+
   override def afterAll {
     sql("drop table colgrp")
     sql("drop table normal")
