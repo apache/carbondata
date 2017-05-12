@@ -32,19 +32,37 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.scan.expression.BinaryExpression;
+import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.BinaryConditionalExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpression;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.GreaterThanEqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.GreaterThanExpression;
+import org.apache.carbondata.core.scan.expression.conditional.InExpression;
+import org.apache.carbondata.core.scan.expression.conditional.LessThanEqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.LessThanExpression;
+import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
+import org.apache.carbondata.core.scan.filter.partition.AndFilterImpl;
+import org.apache.carbondata.core.scan.filter.partition.DefaultPartitionFilterImpl;
+import org.apache.carbondata.core.scan.filter.partition.EqualToFilterImpl;
+import org.apache.carbondata.core.scan.filter.partition.InFilterImpl;
+import org.apache.carbondata.core.scan.filter.partition.OrFilterImpl;
+import org.apache.carbondata.core.scan.filter.partition.PartitionFilterIntf;
+import org.apache.carbondata.core.scan.filter.partition.RangeFilterImpl;
 import org.apache.carbondata.core.scan.filter.resolver.ConditionalFilterResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.filter.resolver.LogicalFilterResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelFilterResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelRangeFilterResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.TrueConditionalResolverImpl;
+import org.apache.carbondata.core.scan.partition.Partitioner;
 
 public class FilterExpressionProcessor implements FilterProcessor {
 
@@ -134,6 +152,119 @@ public class FilterExpressionProcessor implements FilterProcessor {
         .size());
 
     return listOfDataBlocksToScan;
+  }
+
+  /**
+   * Get the map of required partitions
+   * The value of "1" in BitSet represent the required partition
+   * @param expressionTree
+   * @param partitionInfo
+   * @param partitioner
+   * @return
+   */
+  @Override public BitSet getFilteredPartitions(Expression expressionTree,
+      PartitionInfo partitionInfo, Partitioner partitioner) {
+    return createPartitionFilterTree(expressionTree, partitionInfo).applyFilter(partitioner);
+  }
+
+  /**
+   * create partition filter by basing on pushed-down filter
+   * @param expressionTree
+   * @param partitionInfo
+   * @return
+   */
+  public PartitionFilterIntf createPartitionFilterTree(Expression expressionTree,
+      PartitionInfo partitionInfo) {
+    ExpressionType filterExpressionType = expressionTree.getFilterExpressionType();
+    String partitionColumnName = partitionInfo.getColumnSchemaList().get(0).getColumnName();
+    BinaryExpression currentExpression = null;
+    ColumnExpression left = null;
+    switch (filterExpressionType) {
+      case OR:
+        currentExpression = (BinaryExpression) expressionTree;
+        return new OrFilterImpl(
+            createPartitionFilterTree(currentExpression.getLeft(), partitionInfo),
+            createPartitionFilterTree(currentExpression.getRight(), partitionInfo));
+      case RANGE:
+      case AND:
+        currentExpression = (BinaryExpression) expressionTree;
+        return new AndFilterImpl(
+            createPartitionFilterTree(currentExpression.getLeft(), partitionInfo),
+            createPartitionFilterTree(currentExpression.getRight(), partitionInfo));
+      case EQUALS:
+        EqualToExpression equalTo = (EqualToExpression) expressionTree;
+        if (equalTo.getLeft() instanceof ColumnExpression &&
+            equalTo.getRight() instanceof LiteralExpression) {
+          left = (ColumnExpression) equalTo.getLeft();
+          if (partitionColumnName.equals(left.getCarbonColumn().getColName())) {
+            return new EqualToFilterImpl(equalTo, partitionInfo);
+          }
+        }
+        return new DefaultPartitionFilterImpl(true);
+      case IN:
+        InExpression in = (InExpression) expressionTree;
+        if (in.getLeft() instanceof ColumnExpression &&
+            in.getRight() instanceof ListExpression) {
+          left = (ColumnExpression) in.getLeft();
+          if (partitionColumnName.equals(left.getCarbonColumn().getColName())) {
+            return new InFilterImpl(in, partitionInfo);
+          }
+        }
+        return new DefaultPartitionFilterImpl(true);
+      case FALSE:
+        return new DefaultPartitionFilterImpl(false);
+      case TRUE:
+        return new DefaultPartitionFilterImpl(true);
+      case GREATERTHAN:
+        GreaterThanExpression greaterThan = (GreaterThanExpression) expressionTree;
+        if (greaterThan.getLeft() instanceof ColumnExpression &&
+            greaterThan.getRight() instanceof LiteralExpression) {
+          left = (ColumnExpression) greaterThan.getLeft();
+          if (partitionColumnName.equals(left.getCarbonColumn().getColName())) {
+            return new RangeFilterImpl((LiteralExpression) greaterThan.getRight(), true, false,
+                partitionInfo);
+          }
+        }
+        return new DefaultPartitionFilterImpl(true);
+      case GREATERTHAN_EQUALTO:
+        GreaterThanEqualToExpression greaterThanEqualTo =
+            (GreaterThanEqualToExpression) expressionTree;
+        if (greaterThanEqualTo.getLeft() instanceof ColumnExpression &&
+            greaterThanEqualTo.getRight() instanceof LiteralExpression) {
+          left = (ColumnExpression) greaterThanEqualTo.getLeft();
+          if (partitionColumnName.equals(left.getCarbonColumn().getColName())) {
+            return new RangeFilterImpl((LiteralExpression) greaterThanEqualTo.getRight(), true,
+                true, partitionInfo);
+          }
+        }
+        return new DefaultPartitionFilterImpl(true);
+      case LESSTHAN:
+        LessThanExpression lessThan = (LessThanExpression) expressionTree;
+        if (lessThan.getLeft() instanceof ColumnExpression &&
+            lessThan.getRight() instanceof LiteralExpression) {
+          left = (ColumnExpression) lessThan.getLeft();
+          if (partitionColumnName.equals(left.getCarbonColumn().getColName())) {
+            return new RangeFilterImpl((LiteralExpression) lessThan.getRight(), false, false,
+                partitionInfo);
+          }
+        }
+        return new DefaultPartitionFilterImpl(true);
+      case LESSTHAN_EQUALTO:
+        LessThanEqualToExpression lessThanEqualTo = (LessThanEqualToExpression) expressionTree;
+        if (lessThanEqualTo.getLeft() instanceof ColumnExpression &&
+            lessThanEqualTo.getRight() instanceof LiteralExpression) {
+          left = (ColumnExpression) lessThanEqualTo.getLeft();
+          if (partitionColumnName.equals(left.getCarbonColumn().getColName())) {
+            return new RangeFilterImpl((LiteralExpression) lessThanEqualTo.getRight(), false, true,
+                partitionInfo);
+          }
+        }
+        return new DefaultPartitionFilterImpl(true);
+      case NOT_IN:
+      case NOT_EQUALS:
+      default:
+        return new DefaultPartitionFilterImpl(true);
+    }
   }
 
   /**

@@ -98,6 +98,50 @@ public class PartitionUtil {
     }
   }
 
+  /**
+   * convert the string value of partition filter to the Object
+   * @param data
+   * @param actualDataType
+   * @return
+   */
+  public static Object getDataBasedOnDataTypeForFilter(String data, DataType actualDataType) {
+    if (data == null) {
+      return null;
+    }
+    if (actualDataType != DataType.STRING && StringUtils.isEmpty(data)) {
+      return null;
+    }
+    try {
+      switch (actualDataType) {
+        case STRING:
+          return data;
+        case INT:
+          return Integer.parseInt(data);
+        case SHORT:
+          return Short.parseShort(data);
+        case DOUBLE:
+          return Double.parseDouble(data);
+        case LONG:
+          return Long.parseLong(data);
+        case DATE:
+        case TIMESTAMP:
+          return Long.parseLong(data) / 1000;
+        case DECIMAL:
+          return new BigDecimal(data);
+        default:
+          return data;
+      }
+    } catch (Exception ex) {
+      return null;
+    }
+  }
+
+  /**
+   * generate a BitSet by size
+   * @param size
+   * @param isContainAll true: set all bits to true
+   * @return
+   */
   public static BitSet generateBitSetBySize(int size, boolean isContainAll) {
     BitSet bitSet = new BitSet(size);
     if (isContainAll) {
