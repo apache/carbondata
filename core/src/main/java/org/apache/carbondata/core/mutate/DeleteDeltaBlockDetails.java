@@ -86,7 +86,9 @@ public class DeleteDeltaBlockDetails implements Serializable {
       blocklet.addDeletedRow(CarbonUpdateUtil.getIntegerValue(offset));
       return addBlockletDetails(blocklet);
     } catch (Exception e) {
-      LOGGER.debug(e.getMessage());
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug(e.getMessage());
+      }
       throw e;
     }
 

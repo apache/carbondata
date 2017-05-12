@@ -475,4 +475,16 @@ public final class CarbonDataProcessorUtil {
     return batchSortSizeInMb;
   }
 
+  /**
+   * the method prepares and return the message mentioning the reason of badrecord
+   *
+   * @param columnName
+   * @param dataType
+   * @return
+   */
+  public static String prepareFailureReason(String columnName, DataType dataType) {
+    return "The value with column name " + columnName + " and column data type " + dataType
+        .getName() + " is not a valid " + dataType + " type.";
+  }
+
 }
