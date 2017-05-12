@@ -566,3 +566,82 @@ class LazyRddIterator(serializer: SerializerInstance,
   }
 
 }
+
+/*
+ *  It loads the data  to carbon from RDD for partition table
+ *  @see org.apache.carbondata.processing.newflow.DataLoadExecutor
+ */
+class PartitionTableDataLoaderRDD[K, V](
+    sc: SparkContext,
+    result: DataLoadResult[K, V],
+    carbonLoadModel: CarbonLoadModel,
+    loadCount: Integer,
+    tableCreationTime: Long,
+    schemaLastUpdatedTime: Long,
+    prev: RDD[Row]) extends RDD[(K, V)](prev) {
+
+
+  override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    val iter = new Iterator[(K, V)] {
+      val partitionID = "0"
+      val loadMetadataDetails = new LoadMetadataDetails()
+      val model: CarbonLoadModel = carbonLoadModel
+      val uniqueLoadStatusId =
+        carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
+      try {
+
+        loadMetadataDetails.setPartitionCount(partitionID)
+        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+        carbonLoadModel.setPartitionId(partitionID)
+        carbonLoadModel.setSegmentId(String.valueOf(loadCount))
+        carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
+        carbonLoadModel.setPreFetch(false)
+
+        val recordReaders = Array[CarbonIterator[Array[AnyRef]]] {
+          new NewRddIterator(firstParent[Row].iterator(theSplit, context), carbonLoadModel, context)
+        }
+
+        val loader = new SparkPartitionLoader(model,
+          theSplit.index,
+          null,
+          String.valueOf(loadCount),
+          loadMetadataDetails)
+        // Intialize to set carbon properties
+        loader.initialize()
+        new DataLoadExecutor().execute(model, loader.storeLocation, recordReaders)
+      } catch {
+        case e: BadRecordFoundException =>
+          loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+          logInfo("Bad Record Found")
+        case e: Exception =>
+          loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
+          logInfo("DataLoad For Partition Table failure", e)
+          LOGGER.error(e)
+          throw e
+      } finally {
+        // clean up the folders and files created locally for data load operation
+        CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false)
+        // in case of failure the same operation will be re-tried several times.
+        // So print the data load statistics only in case of non failure case
+        if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
+          .equals(loadMetadataDetails.getLoadStatus)) {
+          CarbonTimeStatisticsFactory.getLoadStatisticsInstance
+            .printStatisticsInfo(model.getPartitionId)
+        }
+      }
+      var finished = false
+
+      override def hasNext: Boolean = !finished
+
+      override def next(): (K, V) = {
+        finished = true
+        result.getKey(uniqueLoadStatusId, loadMetadataDetails)
+      }
+    }
+    iter
+  }
+
+  override protected def getPartitions: Array[Partition] = firstParent[Row].partitions
+
+}
