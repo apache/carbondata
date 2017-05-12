@@ -26,7 +26,8 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.execution.command.{ColumnProperty, Field}
+import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
+import org.apache.spark.sql.types.StructField
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -140,6 +141,40 @@ object CommonUtil {
           isValid = false
           throw new MalformedCarbonCommandException(s"Invalid table properties ${ key }")
         }
+    }
+    isValid
+  }
+
+  /**
+   * 1. If partitioned by clause exists, then partition_type should be defined
+   * 2. If partition_type is Hash, then number_of_partitions should be defined
+   * 3. If partition_type is List, then list_info should be defined
+   * 4. If partition_type is Range, then range_info should be defined
+   * 5. Only support single level partition for now
+   * @param tableProperties
+   * @param partitionerFields
+   * @return partition clause and definition in tblproperties are valid or not
+   */
+  def validatePartitionColumns(tableProperties: Map[String, String],
+      partitionerFields: Seq[PartitionerField]): Boolean = {
+    var isValid: Boolean = true
+    val partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE)
+    val numPartitions = tableProperties.get(CarbonCommonConstants.NUM_PARTITIONS)
+    val rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO)
+    val listInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO)
+
+    if (partitionType.isEmpty) {
+      isValid = false
+    } else {
+      partitionType.get.toUpperCase() match {
+        case "HASH" => if (!numPartitions.isDefined) isValid = false
+        case "LIST" => if (!listInfo.isDefined) isValid = false
+        case "RANGE" => if (!rangeInfo.isDefined) isValid = false
+        case "RANGE_INTERVAL" => isValid = false
+        case _ => isValid = false
+      }
+      // only support one partition column for now
+      if (partitionerFields.length > 1) isValid = false
     }
     isValid
   }
