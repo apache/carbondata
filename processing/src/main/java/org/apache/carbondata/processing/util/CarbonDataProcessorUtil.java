@@ -57,6 +57,7 @@ import org.apache.carbondata.processing.model.CarbonDataLoadSchema;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
+import org.apache.carbondata.processing.newflow.sort.SortScopeOptions;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -525,24 +526,24 @@ public final class CarbonDataProcessorUtil {
    * @param configuration
    * @return
    */
-  public static boolean isBatchSortEnabled(CarbonDataLoadConfiguration configuration) {
-    boolean batchSort;
+  public static SortScopeOptions.SortScope getSortScope(CarbonDataLoadConfiguration configuration) {
+    SortScopeOptions.SortScope sortScope;
     try {
       // first check whether user input it from ddl, otherwise get from carbon properties
-      if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT) == null) {
-        batchSort = Boolean.parseBoolean(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT,
-                CarbonCommonConstants.LOAD_USE_BATCH_SORT_DEFAULT));
+      if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE) == null) {
+        sortScope = SortScopeOptions.getSortScope(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+                CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT));
       } else {
-        batchSort = Boolean.parseBoolean(
-            configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT)
+        sortScope = SortScopeOptions.getSortScope(
+            configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
                 .toString());
       }
     } catch (Exception e) {
-      batchSort = Boolean.parseBoolean(CarbonCommonConstants.LOAD_USE_BATCH_SORT_DEFAULT);
-      LOGGER.warn("Batch sort is set to " + batchSort);
+      sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
+      LOGGER.warn("sort scope is set to " + sortScope);
     }
-    return batchSort;
+    return sortScope;
   }
 
   /**

@@ -82,7 +82,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load1 " +
-        s"OPTIONS('batch_sort'='true', 'batch_sort_size_inmb'='1')")
+        s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1')")
 
     checkAnswer(sql("select count(*) from carbon_load1"), Seq(Row(200000)))
 
@@ -108,13 +108,13 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
   test("test batch sort load by passing option and compaction") {
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load1 " +
-        s"OPTIONS('batch_sort'='true', 'batch_sort_size_inmb'='1')")
+        s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1')")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load1 " +
-        s"OPTIONS('batch_sort'='true', 'batch_sort_size_inmb'='1')")
+        s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1')")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load1 " +
-        s"OPTIONS('batch_sort'='true', 'batch_sort_size_inmb'='1')")
+        s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1')")
     sql("alter table carbon_load1 compact 'major'")
-
+    Thread.sleep(4000)
     checkAnswer(sql("select count(*) from carbon_load1"), Seq(Row(800000)))
 
     assert(getIndexfileCount("carbon_load1", "0.1") == 1, "Something wrong in compaction after batch sort")
@@ -131,10 +131,10 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load5 " +
-        s"OPTIONS('batch_sort'='true', 'batch_sort_size_inmb'='1')")
+        s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1')")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load5 ")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load5 " +
-        s"OPTIONS('batch_sort'='true', 'batch_sort_size_inmb'='1')")
+        s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1')")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load5 ")
 
     checkAnswer(sql("select count(*) from carbon_load5"), Seq(Row(800000)))
@@ -142,9 +142,11 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from carbon_load1 where c1='a1' order by c1"),
       sql("select * from carbon_load5 where c1='a1' order by c1"))
 
-    sql("alter table carbon_load5 compact 'minor'")
+    sql("alter table carbon_load5 compact 'major'")
+    Thread.sleep(4000)
 
-    assert(getIndexfileCount("carbon_load5", "0.1") == 1, "Something wrong in compaction after batch sort")
+    assert(getIndexfileCount("carbon_load5", "0.1") == 1,
+      "Something wrong in compaction after batch sort")
 
     checkAnswer(sql("select * from carbon_load1 where c1='a1' order by c1"),
       sql("select * from carbon_load5 where c1='a1' order by c1"))
@@ -161,7 +163,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load3 " +
-        s"OPTIONS('batch_sort'='true', 'batch_sort_size_inmb'='1', 'single_pass'='true')")
+        s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1', 'single_pass'='true')")
 
     checkAnswer(sql("select count(*) from carbon_load3"), Seq(Row(200000)))
 
@@ -173,7 +175,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test batch sort load by with out passing option but through carbon properties") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT, "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "BATCH_SORT")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB, "1")
     sql(
       """
@@ -188,13 +190,13 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
 
     assert(getIndexfileCount("carbon_load4") == 12, "Something wrong in batch sort")
     CarbonProperties.getInstance().
-      addProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT,
-        CarbonCommonConstants.LOAD_USE_BATCH_SORT_DEFAULT)
+      addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB, "0")
   }
 
   test("test batch sort load by with out passing option but through carbon properties with default size") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT, "true")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "BATCH_SORT")
     sql(
       """
         | CREATE TABLE carbon_load6(c1 string, c2 string, c3 string, c4 string, c5 string,
@@ -208,8 +210,8 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
 
     assert(getIndexfileCount("carbon_load6") == 1, "Something wrong in batch sort")
     CarbonProperties.getInstance().
-      addProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT,
-        CarbonCommonConstants.LOAD_USE_BATCH_SORT_DEFAULT)
+      addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
   }
 
   def getIndexfileCount(tableName: String, segmentNo: String = "0"): Int = {

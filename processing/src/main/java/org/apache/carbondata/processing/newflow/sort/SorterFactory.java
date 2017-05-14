@@ -40,7 +40,7 @@ public class SorterFactory {
     boolean offheapsort = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
             CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT));
-    boolean batchSort = CarbonDataProcessorUtil.isBatchSortEnabled(configuration);
+    SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     Sorter sorter;
     if (offheapsort) {
       if (configuration.getBucketingInfo() != null) {
@@ -57,7 +57,7 @@ public class SorterFactory {
         sorter = new ParallelReadMergeSorterImpl(counter);
       }
     }
-    if (batchSort) {
+    if (sortScope.equals(SortScopeOptions.SortScope.BATCH_SORT)) {
       if (configuration.getBucketingInfo() == null) {
         sorter = new UnsafeBatchParallelReadMergeSorterImpl(counter);
       } else {

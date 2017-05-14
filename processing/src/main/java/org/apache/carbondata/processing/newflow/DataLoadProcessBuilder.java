@@ -35,6 +35,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
+import org.apache.carbondata.processing.newflow.sort.SortScopeOptions;
 import org.apache.carbondata.processing.newflow.steps.CarbonRowDataWriterProcessorStepImpl;
 import org.apache.carbondata.processing.newflow.steps.DataConverterProcessorStepImpl;
 import org.apache.carbondata.processing.newflow.steps.DataConverterProcessorWithBucketingStepImpl;
@@ -56,13 +57,13 @@ public final class DataLoadProcessBuilder {
       CarbonIterator[] inputIterators) throws Exception {
     CarbonDataLoadConfiguration configuration =
         createConfiguration(loadModel, storeLocation);
-    boolean batchSort = CarbonDataProcessorUtil.isBatchSortEnabled(configuration);
+    SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     if (!configuration.isSortTable()) {
       return buildInternalForNoSort(inputIterators, configuration);
     } else if (configuration.getBucketingInfo() != null) {
     if (configuration.getBucketingInfo() != null) {
       return buildInternalForBucketing(inputIterators, configuration);
-    } else if (batchSort) {
+    } else if (sortScope.equals(SortScopeOptions.SortScope.BATCH_SORT)) {
       return buildInternalForBatchSort(inputIterators, configuration);
     } else {
       return buildInternal(inputIterators, configuration);
@@ -170,7 +171,7 @@ public final class DataLoadProcessBuilder {
     configuration.setDataLoadProperty(DataLoadProcessorConstants.FACT_FILE_PATH,
         loadModel.getFactFilePath());
     configuration
-        .setDataLoadProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT, loadModel.getBatchSort());
+        .setDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, loadModel.getSortScope());
     configuration.setDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
         loadModel.getBatchSortSizeInMb());
     CarbonMetadata.getInstance().addCarbonTable(carbonTable);
