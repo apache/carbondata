@@ -216,9 +216,11 @@ public class UnsafeSortDataRows {
         dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
         MemoryBlock memoryBlock = getMemoryBlock(inMemoryChunkSize);
         boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
-        rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
+        rowPage = new UnsafeCarbonRowPage(
+            parameters.getNoDictionaryDimnesionColumn(),
+            parameters.getNoDictionarySortColumn(),
             parameters.getDimColCount(), parameters.getMeasureColCount(),
-            parameters.getAggType(), memoryBlock,
+            parameters.getMeasureDataType(), memoryBlock,
             saveToDisk);
         rowPage.addRow(row);
       } catch (Exception e) {
