@@ -1194,6 +1194,10 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_BAD_RECORDS_ACTION_DEFAULT = "FORCE";
 
+  public static final String CARBON_QUERY_PREFETCH_BLOCKLET = "carbon.query.prefetch.blocklet";
+
+  public static final String CARBON_QUERY_PREFETCH_BLOCKLET_DEFAULT = "false";
+
   private CarbonCommonConstants() {
   }
 }

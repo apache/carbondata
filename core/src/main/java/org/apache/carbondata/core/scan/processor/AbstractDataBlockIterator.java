@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.scan.collector.ResultCollectorFactory;
@@ -38,6 +39,7 @@ import org.apache.carbondata.core.scan.scanner.BlockletScanner;
 import org.apache.carbondata.core.scan.scanner.impl.FilterScanner;
 import org.apache.carbondata.core.scan.scanner.impl.NonFilterScanner;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * This abstract class provides a skeletal implementation of the
@@ -85,6 +87,8 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
 
   private AtomicBoolean nextRead;
 
+  private boolean prefetch;
+
   public AbstractDataBlockIterator(BlockExecutionInfo blockExecutionInfo, FileHolder fileReader,
       int batchSize, QueryStatisticsModel queryStatisticsModel, ExecutorService executorService) {
     this.blockExecutionInfo = blockExecutionInfo;
@@ -102,6 +106,9 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     this.executorService = executorService;
     this.nextBlock = new AtomicBoolean(false);
     this.nextRead = new AtomicBoolean(false);
+    this.prefetch = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_QUERY_PREFETCH_BLOCKLET,
+            CarbonCommonConstants.CARBON_QUERY_PREFETCH_BLOCKLET_DEFAULT));
   }
 
   public boolean hasNext() {
@@ -138,15 +145,24 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
 
   private AbstractScannedResult getNextScannedResult() throws Exception {
     AbstractScannedResult result = null;
-    if (dataBlockIterator.hasNext() || nextBlock.get() || nextRead.get()) {
-      if (future == null) {
-        future = execute();
+    if (prefetch) {
+      if (dataBlockIterator.hasNext() || nextBlock.get() || nextRead.get()) {
+        if (future == null) {
+          future = execute();
+        }
+        result = future.get();
+        nextBlock.set(false);
+        if (dataBlockIterator.hasNext() || nextRead.get()) {
+          nextBlock.set(true);
+          future = execute();
+        }
       }
-      result = future.get();
-      nextBlock.set(false);
-      if (dataBlockIterator.hasNext() || nextRead.get()) {
-        nextBlock.set(true);
-        future = execute();
+    } else {
+      if (dataBlockIterator.hasNext()) {
+        BlocksChunkHolder blocksChunkHolder = getBlocksChunkHolder();
+        if (blocksChunkHolder != null) {
+          result = blockletScanner.scanBlocklet(blocksChunkHolder);
+        }
       }
     }
     return result;
