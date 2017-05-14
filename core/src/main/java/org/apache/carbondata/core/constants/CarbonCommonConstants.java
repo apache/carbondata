@@ -700,6 +700,16 @@ public final class CarbonCommonConstants {
   public static final String DICTIONARY_ONE_CHUNK_SIZE = "carbon.dictionary.chunk.size";
 
   /**
+   *  Dictionary Server Worker Threads
+   */
+  public static final String DICTIONARY_WORKER_THREADS = "dictionary.worker.threads";
+
+  /**
+   *  Dictionary Server Worker Threads
+   */
+  public static final String DICTIONARY_WORKER_THREADS_DEFAULT = "1";
+
+  /**
    * dictionary chunk default size
    */
   public static final String DICTIONARY_ONE_CHUNK_SIZE_DEFAULT = "10000";

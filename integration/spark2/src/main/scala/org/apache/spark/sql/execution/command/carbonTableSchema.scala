@@ -18,10 +18,8 @@
 package org.apache.spark.sql.execution.command
 
 import java.io.File
-import java.util.concurrent.{Callable, Executors, ExecutorService, Future}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.commons.lang3.StringUtils
@@ -468,9 +466,6 @@ case class LoadTable(
       carbonLoadModel.setAllDictPath(allDictionaryPath)
 
       val partitionStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
-      var result: Future[DictionaryServer] = null
-      var executorService: ExecutorService = null
-
       try {
         // First system has to partition the data first and then call the load data
         LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
@@ -506,27 +501,19 @@ case class LoadTable(
           val dictionaryServerPort = CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.DICTIONARY_SERVER_PORT,
               CarbonCommonConstants.DICTIONARY_SERVER_PORT_DEFAULT)
-          carbonLoadModel.setDictionaryServerPort(Integer.parseInt(dictionaryServerPort))
           val sparkDriverHost = sparkSession.sqlContext.sparkContext.
             getConf.get("spark.driver.host")
           carbonLoadModel.setDictionaryServerHost(sparkDriverHost)
           // start dictionary server when use one pass load.
-          executorService = Executors.newFixedThreadPool(1)
-          result = executorService.submit(new Callable[DictionaryServer]() {
-            @throws[Exception]
-            def call: DictionaryServer = {
-              Thread.currentThread().setName("Dictionary server")
-              val server: DictionaryServer = new DictionaryServer
-              server.startServer(dictionaryServerPort.toInt)
-              server
-            }
-          })
+          val server: DictionaryServer = DictionaryServer
+            .getInstance(dictionaryServerPort.toInt)
+          carbonLoadModel.setDictionaryServerPort(server.getPort)
           CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
             carbonLoadModel,
             relation.tableMeta.storePath,
             columnar,
             partitionStatus,
-            result,
+            Some(server),
             dataFrame,
             updateModel)
         }
@@ -575,7 +562,7 @@ case class LoadTable(
             relation.tableMeta.storePath,
             columnar,
             partitionStatus,
-            result,
+            None,
             loadDataFrame,
             updateModel)
         }
@@ -587,12 +574,6 @@ case class LoadTable(
       } finally {
         // Once the data load is successful delete the unwanted partition files
         try {
-
-          // shutdown dictionary server thread
-          if (carbonLoadModel.getUseOnePass) {
-            executorService.shutdownNow()
-          }
-
           val fileType = FileFactory.getFileType(partitionLocation)
           if (FileFactory.isFileExist(partitionLocation, fileType)) {
             val file = FileFactory
