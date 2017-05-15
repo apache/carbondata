@@ -61,7 +61,6 @@ public final class DataLoadProcessBuilder {
     if (!configuration.isSortTable()) {
       return buildInternalForNoSort(inputIterators, configuration);
     } else if (configuration.getBucketingInfo() != null) {
-    if (configuration.getBucketingInfo() != null) {
       return buildInternalForBucketing(inputIterators, configuration);
     } else if (sortScope.equals(SortScopeOptions.SortScope.BATCH_SORT)) {
       return buildInternalForBatchSort(inputIterators, configuration);
