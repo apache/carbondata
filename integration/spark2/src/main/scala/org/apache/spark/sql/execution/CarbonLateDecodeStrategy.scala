@@ -239,9 +239,20 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         updateRequestedColumns.asInstanceOf[Seq[Attribute]])
       filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan)
     } else {
+
+      var newProjectList: Seq[Attribute] = Seq.empty
+      val updatedProjects = projects.map {
+          case a@Alias(s: ScalaUDF, name)
+            if name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
+                name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
+            val reference = AttributeReference(name, StringType, true)().withExprId(a.exprId)
+            newProjectList :+= reference
+            reference
+          case other => other
+      }
       // Don't request columns that are only referenced by pushed filters.
       val requestedColumns =
-      (projectSet ++ filterSet -- handledSet).map(relation.attributeMap).toSeq
+      (projectSet ++ filterSet -- handledSet).map(relation.attributeMap).toSeq ++ newProjectList
       val updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
       val scan = getDataSourceScan(relation,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]],
@@ -252,7 +263,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         needDecoder,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]])
       execution.ProjectExec(
-        updateRequestedColumnsFunc(projects, table, needDecoder).asInstanceOf[Seq[NamedExpression]],
+        updateRequestedColumnsFunc(updatedProjects, table,
+          needDecoder).asInstanceOf[Seq[NamedExpression]],
         filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan))
     }
   }
