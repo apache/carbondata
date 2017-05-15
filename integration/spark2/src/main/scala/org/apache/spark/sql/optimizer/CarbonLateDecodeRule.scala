@@ -20,7 +20,6 @@ package org.apache.spark.sql.optimizer
 import java.util
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql._
@@ -30,9 +29,10 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
+import org.apache.spark.sql.types.{IntegerType, StringType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.stats.QueryStatistic
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.apache.carbondata.spark.{CarbonAliasDecoderRelation, CarbonFilters}
@@ -69,9 +69,10 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         return plan
       }
       LOGGER.info("Starting to optimize plan")
+      val udfTransformedPlan = pushDownUDFToJoinLeftRelation(plan)
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("")
       val queryStatistic = new QueryStatistic()
-      val result = transformCarbonPlan(plan, relations)
+      val result = transformCarbonPlan(udfTransformedPlan, relations)
       queryStatistic.addStatistics("Time taken for Carbon Optimizer to optimize: ",
         System.currentTimeMillis)
       recorder.recordStatistics(queryStatistic)
@@ -81,6 +82,35 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
       LOGGER.info("Skip CarbonOptimizer")
       plan
     }
+  }
+
+  private def pushDownUDFToJoinLeftRelation(plan: LogicalPlan): LogicalPlan = {
+    val output = plan match {
+      case proj@Project(cols, Join(
+      left, right, jointype: org.apache.spark.sql.catalyst.plans.JoinType, condition)) =>
+        var projectionToBeAdded: Seq[org.apache.spark.sql.catalyst.expressions.Alias] = Seq.empty
+        val newCols = cols.map { col =>
+          col match {
+            case a@Alias(s: ScalaUDF, name)
+              if (name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
+                  name.equalsIgnoreCase(
+                    CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)) =>
+              projectionToBeAdded :+= a
+              AttributeReference(name, StringType, true)().withExprId(a.exprId)
+            case other => other
+          }
+        }
+        val newLeft = left match {
+          case Project(columns, logicalPlan) =>
+            Project(columns ++ projectionToBeAdded, logicalPlan)
+          case filter: Filter =>
+            Project(filter.output ++ projectionToBeAdded, filter)
+          case other => other
+        }
+        Project(newCols, Join(newLeft, right, jointype, condition))
+      case other => other
+    }
+    output
   }
 
   def isOptimized(plan: LogicalPlan): Boolean = {
