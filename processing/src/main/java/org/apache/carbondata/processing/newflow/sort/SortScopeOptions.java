@@ -33,8 +33,8 @@ public class SortScopeOptions {
         return SortScope.BATCH_SORT;
       case "LOCAL_SORT":
         return SortScope.LOCAL_SORT;
-      case "GLOBAL_SORT":
-        return SortScope.GLOBAL_SORT;
+      case "NO_SORT":
+        return SortScope.NO_SORT;
       default:
         return SortScope.LOCAL_SORT;
     }
@@ -49,7 +49,7 @@ public class SortScopeOptions {
         return true;
       case "LOCAL_SORT":
         return true;
-      case "GLOBAL_SORT":
+      case "NO_SORT":
         return true;
       default:
         return false;
@@ -57,7 +57,7 @@ public class SortScopeOptions {
   }
 
   public enum SortScope {
-    BATCH_SORT, LOCAL_SORT, GLOBAL_SORT;
+    NO_SORT, BATCH_SORT, LOCAL_SORT;
   }
 }
 
