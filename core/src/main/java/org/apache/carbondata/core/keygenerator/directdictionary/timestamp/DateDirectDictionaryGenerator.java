@@ -152,8 +152,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
 
   private int generateKey(long timeValue) {
     long milli = timeValue + threadLocalLocalTimeZone.get().getOffset(timeValue);
-    int key = (int) Math.floor((double) milli / MILLIS_PER_DAY) + cutOffDate;
-    return key;
+    return (int) Math.floor((double) milli / MILLIS_PER_DAY) + cutOffDate;
   }
 
   public void initialize() {

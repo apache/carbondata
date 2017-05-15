@@ -19,6 +19,9 @@ package org.apache.carbondata.core.metadata;
 
 import java.io.Serializable;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+
 /**
  * DO NOT MODIFY THIS CLASS AND PACKAGE NAME, BECAUSE
  * IT IS SERIALIZE TO STORE
@@ -78,7 +81,20 @@ public class ValueEncoderMeta implements Serializable {
     this.decimal = decimal;
   }
 
-  public char getType() {
+  public DataType getType() {
+    switch (type) {
+      case CarbonCommonConstants.BIG_INT_MEASURE:
+        return DataType.LONG;
+      case CarbonCommonConstants.DOUBLE_MEASURE:
+        return DataType.DOUBLE;
+      case CarbonCommonConstants.BIG_DECIMAL_MEASURE:
+        return DataType.DECIMAL;
+      default:
+        throw new RuntimeException("Unexpected type: " + type);
+    }
+  }
+
+  public char getTypeInChar() {
     return type;
   }
 

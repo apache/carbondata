@@ -647,12 +647,6 @@ public final class CarbonCommonConstants {
   public static final char BIG_INT_MEASURE = 'd';
 
   /**
-   * This determines the size of array to be processed in data load steps. one
-   * for dimensions , one of ignore dictionary dimensions , one for measures.
-   */
-  public static final int ARRAYSIZE = 3;
-
-  /**
    * CARBON_PREFETCH_BUFFERSIZE
    */
   public static final String CARBON_PREFETCH_BUFFERSIZE = "carbon.prefetch.buffersize";
@@ -815,8 +809,11 @@ public final class CarbonCommonConstants {
   public static final String COLUMN_GROUPS = "column_groups";
   public static final String DICTIONARY_EXCLUDE = "dictionary_exclude";
   public static final String DICTIONARY_INCLUDE = "dictionary_include";
-  public static final String PARTITIONCLASS = "partitionclass";
-  public static final String PARTITIONCOUNT = "partitioncount";
+  public static final String SORT_COLUMNS = "sort_columns";
+  public static final String PARTITION_TYPE = "partition_type";
+  public static final String NUM_PARTITIONS = "num_partitions";
+  public static final String RANGE_INFO = "range_info";
+  public static final String LIST_INFO = "list_info";
   public static final String COLUMN_PROPERTIES = "columnproperties";
   // table block size in MB
   public static final String TABLE_BLOCKSIZE = "table_blocksize";

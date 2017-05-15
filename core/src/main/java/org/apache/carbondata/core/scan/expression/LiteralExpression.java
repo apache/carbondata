@@ -37,13 +37,11 @@ public class LiteralExpression extends LeafExpression {
   }
 
   @Override public ExpressionResult evaluate(RowIntf value) {
-    ExpressionResult expressionResult = new ExpressionResult(dataType, this.value, true);
-    return expressionResult;
+    return new ExpressionResult(dataType, this.value, true);
   }
 
   public ExpressionResult getExpressionResult() {
-    ExpressionResult expressionResult = new ExpressionResult(dataType, this.value, true);
-    return expressionResult;
+    return new ExpressionResult(dataType, this.value, true);
   }
 
   @Override public ExpressionType getFilterExpressionType() {

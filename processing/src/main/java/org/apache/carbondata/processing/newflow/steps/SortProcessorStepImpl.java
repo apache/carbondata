@@ -58,8 +58,7 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
   @Override
   public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
     final Iterator<CarbonRowBatch>[] iterators = child.execute();
-    Iterator<CarbonRowBatch>[] sortedIterators = sorter.sort(iterators);
-    return sortedIterators;
+    return sorter.sort(iterators);
   }
 
   @Override

@@ -49,6 +49,12 @@ enum Encoding{
 	DIRECT_DICTIONARY = 5; // Identifies that a column is direct dictionary encoded
 }
 
+enum PartitionType{
+  RANGE = 0;
+  RANGE_INTERVAL = 1;
+  LIST = 2;
+  HASH = 3;
+}
 
 /**
  * Description of a Column for both dimension and measure
@@ -121,6 +127,17 @@ struct SchemaEvolution{
 }
 
 /**
+ * Partition information of table
+ */
+struct PartitionInfo{
+    1: required list<ColumnSchema> partition_columns;
+    2: required PartitionType partition_type;
+    3: optional i32 num_partitions;  // number of partitions defined in hash partition table
+    4: optional list<list<string>> list_info; // value list of list partition table
+    5: optional list<string> range_info;  // range value list of range partition table
+}
+
+/**
  * Bucketing information of fields on table
  */
 struct BucketingInfo{
@@ -137,6 +154,7 @@ struct TableSchema{
 	3: required SchemaEvolution schema_evolution; // History of schema evolution of this table
   4: optional map<string,string> tableProperties; // Table properties configured by the user
   5: optional BucketingInfo bucketingInfo; // Bucketing information
+  6: optional PartitionInfo partitionInfo; // Partition information
 }
 
 struct TableInfo{

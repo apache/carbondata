@@ -156,9 +156,6 @@ public final class DataTypeUtil {
     }
   }
 
-  // bytes of 0 in BigDecimal
-  public static final byte[] zeroBigDecimalBytes = bigDecimalToByte(BigDecimal.valueOf(0));
-
   /**
    * This method will convert a big decimal value to bytes
    *
@@ -322,6 +319,76 @@ public final class DataTypeUtil {
     }
 
   }
+
+  public static byte[] getBytesBasedOnDataTypeForNoDictionaryColumn(String dimensionValue,
+      DataType actualDataType) {
+    switch (actualDataType) {
+      case STRING:
+        return ByteUtil.toBytes(dimensionValue);
+      case BOOLEAN:
+        return ByteUtil.toBytes(Boolean.parseBoolean(dimensionValue));
+      case SHORT:
+        return ByteUtil.toBytes(Short.parseShort(dimensionValue));
+      case INT:
+        return ByteUtil.toBytes(Integer.parseInt(dimensionValue));
+      case FLOAT:
+        return ByteUtil.toBytes(Float.parseFloat(dimensionValue));
+      case LONG:
+        return ByteUtil.toBytes(Long.parseLong(dimensionValue));
+      case DOUBLE:
+        return ByteUtil.toBytes(Double.parseDouble(dimensionValue));
+      case DECIMAL:
+        return ByteUtil.toBytes(new BigDecimal(dimensionValue));
+      default:
+        return ByteUtil.toBytes(dimensionValue);
+    }
+  }
+
+
+  /**
+   * Below method will be used to convert the data passed to its actual data
+   * type
+   *
+   * @param dataInBytes    data
+   * @param actualDataType actual data type
+   * @return actual data after conversion
+   */
+  public static Object getDataBasedOnDataTypeForNoDictionaryColumn(byte[] dataInBytes,
+      DataType actualDataType) {
+    if (null == dataInBytes || Arrays
+        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, dataInBytes)) {
+      return null;
+    }
+    try {
+      switch (actualDataType) {
+        case STRING:
+          return UTF8String.fromBytes(dataInBytes);
+        case BOOLEAN:
+          return ByteUtil.toBoolean(dataInBytes);
+        case SHORT:
+          return ByteUtil.toShort(dataInBytes, 0, dataInBytes.length);
+        case INT:
+          return ByteUtil.toInt(dataInBytes, 0, dataInBytes.length);
+        case FLOAT:
+          return ByteUtil.toFloat(dataInBytes, 0);
+        case LONG:
+          return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length);
+        case DOUBLE:
+          return ByteUtil.toDouble(dataInBytes, 0);
+        case DECIMAL:
+          return ByteUtil.toBigDecimal(dataInBytes, 0, dataInBytes.length);
+        default:
+          return ByteUtil.toString(dataInBytes, 0, dataInBytes.length);
+      }
+    } catch (Throwable ex) {
+      String data = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+      LOGGER.error("Cannot convert" + data + " to " + actualDataType.getName() + " type value" + ex
+          .getMessage());
+      LOGGER.error("Problem while converting data type" + data);
+      return null;
+    }
+  }
+
 
   /**
    * Below method will be used to convert the data passed to its actual data

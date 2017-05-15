@@ -749,5 +749,4 @@ public final class CarbonProperties {
     }
     return numberOfDeltaFilesThreshold;
   }
-
 }

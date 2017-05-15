@@ -89,8 +89,7 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
     for (final DictionaryColumnUniqueIdentifier uniqueIdent : dictionaryColumnUniqueIdentifiers) {
       taskSubmitList.add(executorService.submit(new Callable<Dictionary>() {
         @Override public Dictionary call() throws IOException {
-          Dictionary dictionary = getDictionary(uniqueIdent);
-          return dictionary;
+          return getDictionary(uniqueIdent);
         }
       }));
     }

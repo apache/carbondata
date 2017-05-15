@@ -254,7 +254,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
               memberBytes = null;
             }
             record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
-                .getDataBasedOnDataType(memberBytes, dimColumnEvaluatorInfo.getDimension());
+                .getDataBasedOnDataTypeForNoDictionaryColumn(memberBytes,
+                    dimColumnEvaluatorInfo.getDimension().getDataType());
           } else {
             continue;
           }
@@ -430,8 +431,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     if (dimColumnEvaluatorInfo.getDimension().isColumnar()) {
       byte[] rawData = dataChunk.getChunkData(index);
       ByteBuffer byteBuffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE);
-      int dictionaryValue = CarbonUtil.getSurrogateKey(rawData, byteBuffer);
-      return dictionaryValue;
+      return CarbonUtil.getSurrogateKey(rawData, byteBuffer);
     } else {
       return readSurrogatesFromColumnGroupBlock(dataChunk, index, dimColumnEvaluatorInfo);
     }
@@ -452,9 +452,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       long[] result = keyStructureInfo.getKeyGenerator().getKeyArray(colData);
       int colGroupId =
           QueryUtil.getColumnGroupId(segmentProperties, dimensionBlocksIndex[0]);
-      int dictionaryValue = (int) result[segmentProperties
+      return (int) result[segmentProperties
           .getColumnGroupMdKeyOrdinal(colGroupId, dimensionBlocksIndex[0])];
-      return dictionaryValue;
     } catch (KeyGenException e) {
       LOGGER.error(e);
     }

@@ -294,8 +294,7 @@ public class LocalCarbonFileTest {
             @Mock
             public File[] listFiles(FileFilter filter) {
 
-                File[] file = new File[]{dir};
-                return file;
+                return new File[]{dir};
             }
 
 

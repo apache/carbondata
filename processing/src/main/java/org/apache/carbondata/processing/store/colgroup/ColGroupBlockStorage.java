@@ -14,10 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.processing.store.colgroup;
 
 import java.util.concurrent.Callable;
 
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 
 /**
@@ -25,8 +27,22 @@ import org.apache.carbondata.core.datastore.columnar.IndexStorage;
  */
 public class ColGroupBlockStorage implements IndexStorage, Callable<IndexStorage> {
 
+  private byte[][] data;
+
+  private ColGroupMinMax colGrpMinMax;
+
+  public ColGroupBlockStorage(SegmentProperties segmentProperties, int colGrpIndex, byte[][] data) {
+    colGrpMinMax = new ColGroupMinMax(segmentProperties, colGrpIndex);
+    this.data = data;
+    for (int i = 0; i < data.length; i++) {
+      colGrpMinMax.add(data[i]);
+    }
+  }
+
+  @Deprecated
   private ColGroupDataHolder colGrpDataHolder;
 
+  @Deprecated
   public ColGroupBlockStorage(DataHolder colGrpDataHolder) {
     this.colGrpDataHolder = (ColGroupDataHolder) colGrpDataHolder;
   }
@@ -58,7 +74,7 @@ public class ColGroupBlockStorage implements IndexStorage, Callable<IndexStorage
    * for column group storage its not required
    */
   @Override public byte[][] getKeyBlock() {
-    return colGrpDataHolder.getData();
+    return data;
   }
 
   /**
@@ -73,22 +89,19 @@ public class ColGroupBlockStorage implements IndexStorage, Callable<IndexStorage
    * for column group storage its not required
    */
   @Override public int getTotalSize() {
-    return colGrpDataHolder.getTotalSize();
+    return data.length;
   }
 
-  /**
-   * Get min max of column group storage
-   */
   @Override public byte[] getMin() {
-    return colGrpDataHolder.getMin();
+    return colGrpMinMax.getMin();
   }
 
   @Override public byte[] getMax() {
-    return colGrpDataHolder.getMax();
+    return colGrpMinMax.getMax();
   }
 
   /**
-   * return
+   * return self
    */
   @Override public IndexStorage call() throws Exception {
     return this;

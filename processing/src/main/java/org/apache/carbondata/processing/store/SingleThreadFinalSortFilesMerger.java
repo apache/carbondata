@@ -30,6 +30,7 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortTempFileChunkHolder;
@@ -93,7 +94,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    */
   private String tempFileLocation;
 
-  private char[] aggType;
+  private DataType[] measureDataType;
 
   /**
    * below code is to check whether dimension
@@ -101,17 +102,20 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    */
   private boolean[] isNoDictionaryColumn;
 
+  private boolean[] isNoDictionarySortColumn;
+
   public SingleThreadFinalSortFilesMerger(String tempFileLocation, String tableName,
       int dimensionCount, int complexDimensionCount, int measureCount, int noDictionaryCount,
-      char[] aggType, boolean[] isNoDictionaryColumn) {
+      DataType[] type, boolean[] isNoDictionaryColumn, boolean[] isNoDictionarySortColumn) {
     this.tempFileLocation = tempFileLocation;
     this.tableName = tableName;
     this.dimensionCount = dimensionCount;
     this.complexDimensionCount = complexDimensionCount;
     this.measureCount = measureCount;
-    this.aggType = aggType;
+    this.measureDataType = type;
     this.noDictionaryCount = noDictionaryCount;
     this.isNoDictionaryColumn = isNoDictionaryColumn;
+    this.isNoDictionarySortColumn = isNoDictionarySortColumn;
   }
 
   /**
@@ -180,7 +184,8 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
           // create chunk holder
           SortTempFileChunkHolder sortTempFileChunkHolder =
               new SortTempFileChunkHolder(tempFile, dimensionCount, complexDimensionCount,
-                  measureCount, fileBufferSize, noDictionaryCount, aggType, isNoDictionaryColumn);
+                  measureCount, fileBufferSize, noDictionaryCount, measureDataType,
+                  isNoDictionaryColumn, isNoDictionarySortColumn);
 
           // initialize
           sortTempFileChunkHolder.initialize();

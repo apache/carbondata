@@ -17,13 +17,18 @@
 package org.apache.carbondata.core.metadata.converter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
+import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -172,7 +177,49 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     thriftColumnSchema.setInvisible(wrapperColumnSchema.isInvisible());
     thriftColumnSchema.setColumnReferenceId(wrapperColumnSchema.getColumnReferenceId());
     thriftColumnSchema.setSchemaOrdinal(wrapperColumnSchema.getSchemaOrdinal());
+
+    if (wrapperColumnSchema.isSortColumn()) {
+      Map<String, String> properties = new HashMap<String, String>();
+      properties.put(CarbonCommonConstants.SORT_COLUMNS, "true");
+      thriftColumnSchema.setColumnProperties(properties);
+    }
+
     return thriftColumnSchema;
+  }
+
+  private org.apache.carbondata.format.PartitionType fromWrapperToExternalPartitionType(
+      PartitionType wrapperPartitionType) {
+    if (null == wrapperPartitionType) {
+      return null;
+    }
+    switch (wrapperPartitionType) {
+      case HASH:
+        return org.apache.carbondata.format.PartitionType.HASH;
+      case LIST:
+        return org.apache.carbondata.format.PartitionType.LIST;
+      case RANGE:
+        return org.apache.carbondata.format.PartitionType.RANGE;
+      case RANGE_INTERVAL:
+        return org.apache.carbondata.format.PartitionType.RANGE_INTERVAL;
+      default:
+        return org.apache.carbondata.format.PartitionType.HASH;
+    }
+  }
+
+  private org.apache.carbondata.format.PartitionInfo fromWrapperToExternalPartitionInfo(
+      PartitionInfo wrapperPartitionInfo) {
+    List<org.apache.carbondata.format.ColumnSchema> thriftColumnSchema =
+        new ArrayList<org.apache.carbondata.format.ColumnSchema>();
+    for (ColumnSchema wrapperColumnSchema : wrapperPartitionInfo.getColumnSchemaList()) {
+      thriftColumnSchema.add(fromWrapperToExternalColumnSchema(wrapperColumnSchema));
+    }
+    org.apache.carbondata.format.PartitionInfo externalPartitionInfo =
+        new org.apache.carbondata.format.PartitionInfo(thriftColumnSchema,
+            fromWrapperToExternalPartitionType(wrapperPartitionInfo.getPartitionType()));
+    externalPartitionInfo.setList_info(wrapperPartitionInfo.getListInfo());
+    externalPartitionInfo.setRange_info(wrapperPartitionInfo.getRangeInfo());
+    externalPartitionInfo.setNum_partitions(wrapperPartitionInfo.getNumPartitions());
+    return externalPartitionInfo;
   }
 
   /* (non-Javadoc)
@@ -195,6 +242,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     if (wrapperTableSchema.getBucketingInfo() != null) {
       externalTableSchema.setBucketingInfo(
           fromWrapperToExternalBucketingInfo(wrapperTableSchema.getBucketingInfo()));
+    }
+    if (wrapperTableSchema.getPartitionInfo() != null) {
+      externalTableSchema.setPartitionInfo(
+          fromWrapperToExternalPartitionInfo(wrapperTableSchema.getPartitionInfo()));
     }
     return externalTableSchema;
   }
@@ -360,7 +411,49 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperColumnSchema.setInvisible(externalColumnSchema.isInvisible());
     wrapperColumnSchema.setColumnReferenceId(externalColumnSchema.getColumnReferenceId());
     wrapperColumnSchema.setSchemaOrdinal(externalColumnSchema.getSchemaOrdinal());
+    wrapperColumnSchema.setSortColumn(false);
+    Map<String, String> properties = externalColumnSchema.getColumnProperties();
+    if (properties != null) {
+      String sortColumns = properties.get(CarbonCommonConstants.SORT_COLUMNS);
+      if (sortColumns != null) {
+        wrapperColumnSchema.setSortColumn(true);
+      }
+    }
     return wrapperColumnSchema;
+  }
+
+  private PartitionType fromExternalToWrapperPartitionType(
+      org.apache.carbondata.format.PartitionType externalPartitionType) {
+    if (null == externalPartitionType) {
+      return null;
+    }
+    switch (externalPartitionType) {
+      case HASH:
+        return PartitionType.HASH;
+      case LIST:
+        return PartitionType.LIST;
+      case RANGE:
+        return PartitionType.RANGE;
+      case RANGE_INTERVAL:
+        return PartitionType.RANGE_INTERVAL;
+      default:
+        return PartitionType.HASH;
+    }
+  }
+
+  private PartitionInfo fromExternalToWrapperPartitionInfo(
+      org.apache.carbondata.format.PartitionInfo externalPartitionInfo) {
+    List<ColumnSchema> wrapperColumnSchema = new ArrayList<ColumnSchema>();
+    for (org.apache.carbondata.format.ColumnSchema columnSchema :
+        externalPartitionInfo.getPartition_columns()) {
+      wrapperColumnSchema.add(fromExternalToWrapperColumnSchema(columnSchema));
+    }
+    PartitionInfo wrapperPartitionInfo = new PartitionInfo(wrapperColumnSchema,
+        fromExternalToWrapperPartitionType(externalPartitionInfo.getPartition_type()));
+    wrapperPartitionInfo.setListInfo(externalPartitionInfo.getList_info());
+    wrapperPartitionInfo.setRangeInfo(externalPartitionInfo.getRange_info());
+    wrapperPartitionInfo.setNumPartitions(externalPartitionInfo.getNum_partitions());
+    return wrapperPartitionInfo;
   }
 
   /* (non-Javadoc)
@@ -383,6 +476,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     if (externalTableSchema.isSetBucketingInfo()) {
       wrapperTableSchema.setBucketingInfo(
           fromExternalToWarpperBucketingInfo(externalTableSchema.bucketingInfo));
+    }
+    if (externalTableSchema.getPartitionInfo() != null) {
+      wrapperTableSchema.setPartitionInfo(
+          fromExternalToWrapperPartitionInfo(externalTableSchema.getPartitionInfo()));
     }
     return wrapperTableSchema;
   }

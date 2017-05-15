@@ -24,6 +24,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -42,6 +43,8 @@ import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
 import org.apache.carbondata.processing.store.SingleThreadFinalSortFilesMerger;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+
+import org.apache.spark.sql.types.Decimal;
 
 /**
  * This class will process the query result and convert the data
@@ -89,7 +92,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   /**
    * agg type defined for measures
    */
-  private char[] aggType;
+  private DataType[] aggType;
   /**
    * segment id
    */
@@ -243,14 +246,14 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * This method will convert the spark decimal to java big decimal type
    *
    * @param value
-   * @param aggType
+   * @param type
    * @return
    */
-  private Object getConvertedMeasureValue(Object value, char aggType) {
-    switch (aggType) {
-      case CarbonCommonConstants.BIG_DECIMAL_MEASURE:
+  private Object getConvertedMeasureValue(Object value, DataType type) {
+    switch (type) {
+      case DECIMAL:
         if (value != null) {
-          value = ((org.apache.spark.sql.types.Decimal) value).toJavaBigDecimal();
+          value = ((Decimal) value).toJavaBigDecimal();
         }
         return value;
       default:
@@ -344,12 +347,11 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * @return
    */
   private SortParameters createSortParameters() {
-    SortParameters parameters = SortParameters
+    return SortParameters
         .createSortParameters(carbonLoadModel.getDatabaseName(), tableName, dimensionColumnCount,
             segmentProperties.getComplexDimensions().size(), measureCount, noDictionaryCount,
             carbonLoadModel.getPartitionId(), segmentId, carbonLoadModel.getTaskNo(),
             noDictionaryColMapping, true);
-    return parameters;
   }
 
   /**
@@ -359,10 +361,18 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   private void initializeFinalThreadMergerForMergeSort() {
     String sortTempFileLocation = tempStoreLocation + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
+    boolean[] noDictionarySortColumnMapping = null;
+    if (noDictionaryColMapping.length == this.segmentProperties.getNumberOfSortColumns()) {
+      noDictionarySortColumnMapping = noDictionaryColMapping;
+    } else {
+      noDictionarySortColumnMapping = new boolean[this.segmentProperties.getNumberOfSortColumns()];
+      System.arraycopy(noDictionaryColMapping, 0,
+          noDictionarySortColumnMapping, 0, noDictionarySortColumnMapping.length);
+    }
     finalMerger =
         new SingleThreadFinalSortFilesMerger(sortTempFileLocation, tableName, dimensionColumnCount,
             segmentProperties.getComplexDimensions().size(), measureCount, noDictionaryCount,
-            aggType, noDictionaryColMapping);
+            aggType, noDictionaryColMapping, noDictionarySortColumnMapping);
   }
 
   /**
@@ -397,6 +407,6 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * initialise aggregation type for measures for their storage format
    */
   private void initAggType() {
-    aggType = CarbonDataProcessorUtil.initAggType(carbonTable, tableName, measureCount);
+    aggType = CarbonDataProcessorUtil.initDataType(carbonTable, tableName, measureCount);
   }
 }

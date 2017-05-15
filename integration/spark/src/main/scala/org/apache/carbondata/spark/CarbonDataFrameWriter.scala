@@ -174,6 +174,10 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
   }
 
   private def makeCreateTableString(schema: StructType, options: CarbonOption): String = {
+    val properties = Map(
+      "DICTIONARY_INCLUDE" -> options.dictionaryInclude,
+      "DICTIONARY_EXCLUDE" -> options.dictionaryExclude
+    ).filter(_._2.isDefined).map(p => s"'${p._1}' = '${p._2.get}'").mkString(",")
     val carbonSchema = schema.map { field =>
       s"${ field.name } ${ convertToCarbonType(field.dataType) }"
     }
@@ -181,6 +185,7 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
           CREATE TABLE IF NOT EXISTS ${options.dbName}.${options.tableName}
           (${ carbonSchema.mkString(", ") })
           STORED BY '${ CarbonContext.datasourceName }'
+          ${ if (properties.nonEmpty) " TBLPROPERTIES (" + properties + ")" else ""}
       """
   }
 
@@ -188,7 +193,8 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
     s"""
           LOAD DATA INPATH '$csvFolder'
           INTO TABLE ${options.dbName}.${options.tableName}
-          OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}')
+          OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}',
+          'SINGLE_PASS' = '${options.singlePass}')
       """
   }
 

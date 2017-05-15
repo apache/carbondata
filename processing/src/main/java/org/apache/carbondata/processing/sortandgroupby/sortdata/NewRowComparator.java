@@ -24,15 +24,15 @@ import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 public class NewRowComparator implements Comparator<Object[]> {
 
   /**
-   * noDictionaryColMaping mapping of dictionary dimensions and no dictionary dimensions.
+   * mapping of dictionary dimensions and no dictionary of sort_column.
    */
-  private boolean[] noDictionaryColMaping;
+  private boolean[] noDictionarySortColumnMaping;
 
   /**
-   * @param noDictionaryColMaping
+   * @param noDictionarySortColumnMaping
    */
-  public NewRowComparator(boolean[] noDictionaryColMaping) {
-    this.noDictionaryColMaping = noDictionaryColMaping;
+  public NewRowComparator(boolean[] noDictionarySortColumnMaping) {
+    this.noDictionarySortColumnMaping = noDictionarySortColumnMaping;
   }
 
   /**
@@ -43,7 +43,7 @@ public class NewRowComparator implements Comparator<Object[]> {
 
     int index = 0;
 
-    for (boolean isNoDictionary : noDictionaryColMaping) {
+    for (boolean isNoDictionary : noDictionarySortColumnMaping) {
 
       if (isNoDictionary) {
         byte[] byteArr1 = (byte[]) rowA[index];

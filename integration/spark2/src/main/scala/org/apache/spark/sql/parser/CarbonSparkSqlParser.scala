@@ -16,7 +16,6 @@
  */
 package org.apache.spark.sql.parser
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, ParseException, SqlBaseParser}
@@ -25,7 +24,8 @@ import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{CreateTableContext,
 TablePropertyListContext}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
-import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field, TableModel}
+import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field,
+PartitionerField, TableModel}
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
 
 import org.apache.carbondata.spark.CarbonOption
@@ -96,7 +96,10 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       if (ctx.bucketSpec != null) {
         operationNotAllowed("CREATE TABLE ... CLUSTERED BY", ctx)
       }
-      val partitionCols = Option(ctx.partitionColumns).toSeq.flatMap(visitColTypeList)
+      val partitionByStructFields = Option(ctx.partitionColumns).toSeq.flatMap(visitColTypeList)
+      val partitionerFields = partitionByStructFields.map { structField =>
+        PartitionerField(structField.name, Some(structField.dataType.toString), null)
+      }
       val cols = Option(ctx.columns).toSeq.flatMap(visitColTypeList)
       val properties = Option(ctx.tablePropertyList).map(visitPropertyKeyValues)
         .getOrElse(Map.empty)
@@ -111,22 +114,22 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
                             duplicateColumns.mkString("[", ",", "]"), ctx)
       }
 
-      // For Hive tables, partition columns must not be part of the schema
-      val badPartCols = partitionCols.map(_.name).toSet.intersect(colNames.toSet)
-      if (badPartCols.nonEmpty) {
-        operationNotAllowed(s"Partition columns may not be specified in the schema: " +
-                            badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]"), ctx)
-      }
-
-      // Note: Hive requires partition columns to be distinct from the schema, so we need
-      // to include the partition columns here explicitly
-      val schema = cols ++ partitionCols
-
-      val fields = parser.getFields(schema)
-
       val tableProperties = mutable.Map[String, String]()
-      properties.foreach(f => tableProperties.put(f._1, f._2.toLowerCase))
+      properties.foreach{property => tableProperties.put(property._1, property._2.toLowerCase)}
 
+      // validate partition clause
+      if (partitionerFields.nonEmpty) {
+        if (!CommonUtil.validatePartitionColumns(tableProperties, partitionerFields)) {
+          throw new MalformedCarbonCommandException("Invalid partition definition")
+        }
+        // partition columns should not be part of the schema
+        val badPartCols = partitionerFields.map(_.partitionColumn).toSet.intersect(colNames.toSet)
+        if (badPartCols.nonEmpty) {
+          operationNotAllowed(s"Partition columns should not be specified in the schema: " +
+                              badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]"), ctx)
+        }
+      }
+      val fields = parser.getFields(cols ++ partitionByStructFields)
       val options = new CarbonOption(properties)
       // validate tblProperties
       val bucketFields = parser.getBucketFields(tableProperties, fields, options)
@@ -136,7 +139,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         convertDbNameToLowerCase(name.database),
         name.table.toLowerCase,
         fields,
-        Seq(),
+        partitionerFields,
         tableProperties,
         bucketFields)
 

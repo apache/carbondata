@@ -113,8 +113,9 @@ public class UnsafeSortDataRows {
   public void initialize() throws CarbonSortKeyAndGroupByException {
     MemoryBlock baseBlock = getMemoryBlock(inMemoryChunkSize);
     this.rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
+        parameters.getNoDictionarySortColumn(),
         parameters.getDimColCount() + parameters.getComplexDimColCount(),
-        parameters.getMeasureColCount(), parameters.getAggType(), baseBlock,
+        parameters.getMeasureColCount(), parameters.getMeasureDataType(), baseBlock,
         !UnsafeMemoryManager.INSTANCE.isMemoryAvailable());
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
@@ -177,9 +178,14 @@ public class UnsafeSortDataRows {
             dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
             MemoryBlock memoryBlock = getMemoryBlock(inMemoryChunkSize);
             boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
-            rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
+            rowPage = new UnsafeCarbonRowPage(
+                parameters.getNoDictionaryDimnesionColumn(),
+                parameters.getNoDictionarySortColumn(),
                 parameters.getDimColCount() + parameters.getComplexDimColCount(),
-                parameters.getMeasureColCount(), parameters.getAggType(), memoryBlock, saveToDisk);
+                parameters.getMeasureColCount(),
+                parameters.getMeasureDataType(),
+                memoryBlock,
+                saveToDisk);
             bytesAdded += rowPage.addRow(rowBatch[i]);
           } catch (Exception e) {
             LOGGER.error(
@@ -210,9 +216,11 @@ public class UnsafeSortDataRows {
         dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
         MemoryBlock memoryBlock = getMemoryBlock(inMemoryChunkSize);
         boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
-        rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
+        rowPage = new UnsafeCarbonRowPage(
+            parameters.getNoDictionaryDimnesionColumn(),
+            parameters.getNoDictionarySortColumn(),
             parameters.getDimColCount(), parameters.getMeasureColCount(),
-            parameters.getAggType(), memoryBlock,
+            parameters.getMeasureDataType(), memoryBlock,
             saveToDisk);
         rowPage.addRow(row);
       } catch (Exception e) {
@@ -237,12 +245,12 @@ public class UnsafeSortDataRows {
     if (this.rowPage.getUsedSize() > 0) {
       TimSort<UnsafeCarbonRow, IntPointerBuffer> timSort = new TimSort<>(
           new UnsafeIntSortDataFormat(rowPage));
-      if (parameters.getNoDictionaryCount() > 0) {
+      if (parameters.getNumberOfNoDictSortColumns() > 0) {
         timSort.sort(rowPage.getBuffer(), 0, rowPage.getBuffer().getActualSize(),
             new UnsafeRowComparator(rowPage));
       } else {
         timSort.sort(rowPage.getBuffer(), 0, rowPage.getBuffer().getActualSize(),
-            new UnsafeRowComparatorForNormalDIms(parameters.getDimColCount(), rowPage));
+            new UnsafeRowComparatorForNormalDIms(rowPage));
       }
       unsafeInMemoryIntermediateFileMerger.addDataChunkToMerge(rowPage);
     } else {
@@ -327,12 +335,13 @@ public class UnsafeSortDataRows {
         long startTime = System.currentTimeMillis();
         TimSort<UnsafeCarbonRow, IntPointerBuffer> timSort = new TimSort<>(
             new UnsafeIntSortDataFormat(page));
-        if (parameters.getNoDictionaryCount() > 0) {
+        // if sort_columns is not none, sort by sort_columns
+        if (parameters.getNumberOfNoDictSortColumns() > 0) {
           timSort.sort(page.getBuffer(), 0, page.getBuffer().getActualSize(),
               new UnsafeRowComparator(page));
         } else {
           timSort.sort(page.getBuffer(), 0, page.getBuffer().getActualSize(),
-              new UnsafeRowComparatorForNormalDIms(parameters.getDimColCount(), page));
+              new UnsafeRowComparatorForNormalDIms(page));
         }
         if (rowPage.isSaveToDisk()) {
           // create a new file every time

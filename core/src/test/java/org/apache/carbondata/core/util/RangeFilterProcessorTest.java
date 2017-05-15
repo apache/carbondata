@@ -94,8 +94,7 @@ public class RangeFilterProcessorTest {
     colb.setDimension(empDimension);
     Expression lessThan =
         new LessThanEqualToExpression(colb, new LiteralExpression("20", DataType.STRING));
-    Expression andExp = new AndExpression(greaterThan, lessThan);
-    inputFilter = andExp;
+    inputFilter = new AndExpression(greaterThan, lessThan);
 
     Expression output = new AndExpression(new RangeExpression(
         new GreaterThanEqualToExpression(new ColumnExpression("a", DataType.STRING),
@@ -136,8 +135,7 @@ public class RangeFilterProcessorTest {
     colb.setDimension(empDimension);
     Expression lessThan =
         new LessThanEqualToExpression(colb, new LiteralExpression("05", DataType.STRING));
-    Expression andExp = new AndExpression(greaterThan, lessThan);
-    inputFilter = andExp;
+    inputFilter = new AndExpression(greaterThan, lessThan);
 
     Expression output = new AndExpression(
         new GreaterThanEqualToExpression(new ColumnExpression("a", DataType.STRING),
@@ -195,8 +193,7 @@ public class RangeFilterProcessorTest {
     Expression And1 = new AndExpression(new NotEqualsExpression(null, null), greaterThan2);
     Expression And2 = new AndExpression(And1, greaterThan1);
     Expression And3 = new AndExpression(And2, lessThan2);
-    Expression And4 = new AndExpression(And3, lessThan1);
-    inputFilter = And4;
+    inputFilter = new AndExpression(And3, lessThan1);
 
     // Build The output
 
@@ -219,14 +216,11 @@ public class RangeFilterProcessorTest {
 
     Expression Andb2 = new AndExpression(Andb1, new RangeExpression(greaterThanb1, lessThanb1));
     Expression Andb3 = new AndExpression(Andb2, new TrueExpression(null));
-    Expression Andb4 = new AndExpression(Andb3, new TrueExpression(null));
-
-    Expression output = Andb4;
 
     FilterOptimizer rangeFilterOptimizer =
         new RangeFilterOptmizer(new FilterOptimizerBasic(), inputFilter);
     rangeFilterOptimizer.optimizeFilter();
-    result = checkBothTrees(inputFilter, output);
+    result = checkBothTrees(inputFilter, new AndExpression(Andb3, new TrueExpression(null)));
     // no change
     Assert.assertTrue(result);
   }
@@ -274,8 +268,7 @@ public class RangeFilterProcessorTest {
     Expression Or1 = new OrExpression(new NotEqualsExpression(null, null), greaterThan2);
     Expression Or2 = new OrExpression(Or1, greaterThan1);
     Expression Or3 = new OrExpression(Or2, lessThan2);
-    Expression Or4 = new OrExpression(Or3, lessThan1);
-    inputFilter = Or4;
+    inputFilter = new OrExpression(Or3, lessThan1);
 
     // Build The output
 
@@ -307,13 +300,11 @@ public class RangeFilterProcessorTest {
     Expression Orb1 = new OrExpression(new NotEqualsExpression(null, null), greaterThanb2);
     Expression Orb2 = new OrExpression(Orb1, greaterThanb1);
     Expression Orb3 = new OrExpression(Orb2, lessThanb2);
-    Expression Orb4 = new OrExpression(Orb3, lessThanb1);
-    Expression output = Orb4;
 
     FilterOptimizer rangeFilterOptimizer =
         new RangeFilterOptmizer(new FilterOptimizerBasic(), inputFilter);
     rangeFilterOptimizer.optimizeFilter();
-    result = checkBothTrees(inputFilter, output);
+    result = checkBothTrees(inputFilter, new OrExpression(Orb3, lessThanb1));
     // no change
     Assert.assertTrue(result);
   }

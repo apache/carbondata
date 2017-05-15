@@ -32,7 +32,11 @@ public enum DataType {
   DECIMAL(8, "DECIMAL"),
   ARRAY(9, "ARRAY"),
   STRUCT(10, "STRUCT"),
-  MAP(11, "MAP");
+  MAP(11, "MAP"),
+  BYTE(12, "BYTE"),
+
+  // internal use only
+  BYTE_ARRAY(13, "BYTE ARRAY");
 
   private int precedenceOrder;
   private String name ;

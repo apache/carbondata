@@ -21,7 +21,7 @@ import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.collection.mutable.{LinkedHashSet, Map}
+import scala.collection.mutable.{ArrayBuffer, LinkedHashSet, ListBuffer, Map}
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 
@@ -33,10 +33,13 @@ import org.apache.spark.sql.execution.command._
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataType
-import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.metadata.schema.PartitionInfo
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.constants.LoggerAction
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CommonUtil, DataTypeConverterUtil}
 
 /**
  * TODO remove the duplicate code and add the common methods to common class.
@@ -240,21 +243,15 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     fields.zipWithIndex.foreach { case (field, index) =>
       field.schemaOrdinal = index
     }
-    val (dims: Seq[Field], noDictionaryDims: Seq[String]) = extractDimColsAndNoDictionaryFields(
+    val (dims, msrs, noDictionaryDims, sortKeyDims) = extractDimAndMsrFields(
       fields, tableProperties)
     if (dims.isEmpty && !isAlterFlow) {
-      throw new MalformedCarbonCommandException(s"Table ${
-        dbName.getOrElse(
-          CarbonCommonConstants.DATABASE_DEFAULT_NAME)
-      }.$tableName"
-                                                +
-                                                " can not be created without key columns. Please " +
-                                                "use DICTIONARY_INCLUDE or " +
-                                                "DICTIONARY_EXCLUDE to set at least one key " +
-                                                "column " +
-                                                "if all specified columns are numeric types")
+      throw new MalformedCarbonCommandException(
+        s"Table ${dbName.getOrElse(CarbonCommonConstants.DATABASE_DEFAULT_NAME)}.$tableName " +
+        "can not be created without key columns. Please use DICTIONARY_INCLUDE or " +
+        "DICTIONARY_EXCLUDE to set at least one key column " +
+        "if all specified columns are numeric types")
     }
-    val msrs: Seq[Field] = extractMsrColsFromFields(fields, tableProperties)
 
     // column properties
     val colProps = extractColumnProperties(fields, tableProperties)
@@ -264,6 +261,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     // get no inverted index columns from table properties.
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
+    // get partitionInfo
+    val partitionInfo = getPartitionInfo(partitionCols, tableProperties)
 
     // validate the tableBlockSize from table properties
     CommonUtil.validateTableBlockSize(tableProperties)
@@ -276,11 +275,13 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       tableProperties,
       reorderDimensions(dims.map(f => normalizeType(f)).map(f => addParent(f))),
       msrs.map(f => normalizeType(f)),
+      Option(sortKeyDims),
       Option(noDictionaryDims),
       Option(noInvertedIdxCols),
       groupCols,
       Some(colProps),
-      bucketFields: Option[BucketFields])
+      bucketFields: Option[BucketFields],
+      partitionInfo)
   }
 
   /**
@@ -352,43 +353,69 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * For getting the partitioner Object
-   *
    * @param partitionCols
    * @param tableProperties
-   * @return
    */
-  protected def getPartitionerObject(partitionCols: Seq[PartitionerField],
-      tableProperties: Map[String, String]):
-  Option[Partitioner] = {
-
-    // by default setting partition class empty.
-    // later in table schema it is setting to default value.
-    var partitionClass: String = ""
-    var partitionCount: Int = 1
-    var partitionColNames: Array[String] = Array[String]()
-    if (tableProperties.get(CarbonCommonConstants.PARTITIONCLASS).isDefined) {
-      partitionClass = tableProperties.get(CarbonCommonConstants.PARTITIONCLASS).get
-    }
-
-    if (tableProperties.get(CarbonCommonConstants.PARTITIONCOUNT).isDefined) {
-      try {
-        partitionCount = tableProperties.get(CarbonCommonConstants.PARTITIONCOUNT).get.toInt
-      } catch {
-        case e: Exception => // no need to do anything.
+  protected def getPartitionInfo(partitionCols: Seq[PartitionerField],
+      tableProperties: Map[String, String]): Option[PartitionInfo] = {
+    if (partitionCols.isEmpty) {
+      None
+    } else {
+      var partitionType: String = ""
+      var numPartitions = 0
+      var rangeInfo = List[String]()
+      var listInfo = ListBuffer[List[String]]()
+      var templist = ListBuffer[String]()
+      if (tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).isDefined) {
+        partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).get
       }
-    }
+      if (tableProperties.get(CarbonCommonConstants.NUM_PARTITIONS).isDefined) {
+        numPartitions = tableProperties.get(CarbonCommonConstants.NUM_PARTITIONS).get
+          .toInt
+      }
+      if (tableProperties.get(CarbonCommonConstants.RANGE_INFO).isDefined) {
+        rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO).get.split(",")
+          .map(_.trim()).toList
+      }
+      if (tableProperties.get(CarbonCommonConstants.LIST_INFO).isDefined) {
+        val arr = tableProperties.get(CarbonCommonConstants.LIST_INFO).get.split(",")
+          .map(_.trim())
+        val iter = arr.iterator
+        while (iter.hasNext) {
+          val value = iter.next()
+          if (value.startsWith("(")) {
+            templist += value.replace("(", "").trim()
+          } else if (value.endsWith(")")) {
+            templist += value.replace(")", "").trim()
+            listInfo += templist.toList
+            templist.clear()
+          } else {
+            templist += value
+            listInfo += templist.toList
+            templist.clear()
+          }
+        }
+      }
+      val cols : ArrayBuffer[ColumnSchema] = new ArrayBuffer[ColumnSchema]()
+      partitionCols.foreach(partition_col => {
+        val columnSchema = new ColumnSchema
+        columnSchema.setDataType(DataTypeConverterUtil.
+          convertToCarbonType(partition_col.dataType.get))
+        columnSchema.setColumnName(partition_col.partitionColumn)
+        cols += columnSchema
+      })
 
-    partitionCols.foreach(col =>
-      partitionColNames :+= col.partitionColumn
-    )
-
-    // this means user has given partition cols list
-    if (!partitionColNames.isEmpty) {
-      return Option(Partitioner(partitionClass, partitionColNames, partitionCount, null))
+      var partitionInfo : PartitionInfo = null
+      partitionType.toUpperCase() match {
+        case "HASH" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.HASH)
+          partitionInfo.setNumPartitions(numPartitions)
+        case "RANGE" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.RANGE)
+          partitionInfo.setRangeInfo(rangeInfo.asJava)
+        case "LIST" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.LIST)
+          partitionInfo.setListInfo(listInfo.map(_.asJava).toList.asJava)
+      }
+      Some(partitionInfo)
     }
-    // if partition cols are not given then no need to do partition.
-    None
   }
 
   protected def extractColumnProperties(fields: Seq[Field], tableProperties: Map[String, String]):
@@ -485,13 +512,49 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * @param tableProperties
    * @return
    */
-  protected def extractDimColsAndNoDictionaryFields(fields: Seq[Field],
-      tableProperties: Map[String, String]):
-  (Seq[Field], Seq[String]) = {
+  protected def extractDimAndMsrFields(fields: Seq[Field],
+      tableProperties: Map[String, String]): (Seq[Field], Seq[Field], Seq[String], Seq[String]) = {
     var dimFields: LinkedHashSet[Field] = LinkedHashSet[Field]()
+    var msrFields: Seq[Field] = Seq[Field]()
     var dictExcludeCols: Array[String] = Array[String]()
     var noDictionaryDims: Seq[String] = Seq[String]()
     var dictIncludeCols: Seq[String] = Seq[String]()
+
+    // All columns in sortkey should be there in create table cols
+    val sortKeyOption = tableProperties.get(CarbonCommonConstants.SORT_COLUMNS)
+    var sortKeyDimsTmp: Seq[String] = Seq[String]()
+    val sortKeyString: String = if (sortKeyOption.isDefined) {
+      CarbonUtil.unquoteChar(sortKeyOption.get) trim
+    } else {
+      ""
+    }
+    if (!sortKeyString.isEmpty) {
+      val sortKey = sortKeyString.split(',').map(_.trim)
+      sortKey.foreach { column =>
+        if (!fields.exists(x => x.column.equalsIgnoreCase(column))) {
+          val errormsg = "sort_columns: " + column +
+            " does not exist in table. Please check create table statement."
+          throw new MalformedCarbonCommandException(errormsg)
+        } else {
+          val dataType = fields.find(x =>
+            x.column.equalsIgnoreCase(column)).get.dataType.get
+          if (isComplexDimDictionaryExclude(dataType)) {
+            val errormsg = "sort_columns is unsupported for complex datatype column: " + column
+            throw new MalformedCarbonCommandException(errormsg)
+          }
+        }
+      }
+
+      sortKey.foreach { dimension =>
+        if (!sortKeyDimsTmp.exists(dimension.equalsIgnoreCase(_))) {
+          fields.foreach { field =>
+            if (field.column.equalsIgnoreCase(dimension)) {
+              sortKeyDimsTmp :+= field.column
+            }
+          }
+        }
+      }
+    }
 
     // All excluded cols should be there in create table cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
@@ -531,7 +594,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       }
     }
 
-    // include cols should contain exclude cols
+    // include cols should not contain exclude cols
     dictExcludeCols.foreach { dicExcludeCol =>
       if (dictIncludeCols.exists(x => x.equalsIgnoreCase(dicExcludeCol))) {
         val errormsg = "DICTIONARY_EXCLUDE can not contain the same column: " + dicExcludeCol +
@@ -553,10 +616,30 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         dimFields += field
       } else if (isDetectAsDimentionDatatype(field.dataType.get)) {
         dimFields += field
+      } else if (sortKeyDimsTmp.exists(x => x.equalsIgnoreCase(field.column))) {
+        noDictionaryDims :+= field.column
+        dimFields += field
+      } else {
+        msrFields :+= field
       }
     }
 
-    (dimFields.toSeq, noDictionaryDims)
+    var sortKeyDims = sortKeyDimsTmp
+    if (sortKeyOption.isEmpty) {
+      // if SORT_COLUMNS was not defined, add all dimension to SORT_COLUMNS.
+      dimFields.foreach { field =>
+        if (!isComplexDimDictionaryExclude(field.dataType.get)) {
+          sortKeyDims :+= field.column
+        }
+      }
+    }
+    if (sortKeyDims.isEmpty) {
+      // no SORT_COLUMNS
+      tableProperties.put(CarbonCommonConstants.SORT_COLUMNS, "")
+    } else {
+      tableProperties.put(CarbonCommonConstants.SORT_COLUMNS, sortKeyDims.mkString(","))
+    }
+    (dimFields.toSeq, msrFields, noDictionaryDims, sortKeyDims)
   }
 
   /**
@@ -600,44 +683,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   def isDataTypeSupportedForDictionary_Exclude(columnDataType: String): Boolean = {
     val dataTypes = Array("string")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
-  }
-
-  /**
-   * Extract the Measure Cols fields. By default all non string cols will be measures.
-   *
-   * @param fields
-   * @param tableProperties
-   * @return
-   */
-  protected def extractMsrColsFromFields(fields: Seq[Field],
-      tableProperties: Map[String, String]): Seq[Field] = {
-    var msrFields: Seq[Field] = Seq[Field]()
-    var dictIncludedCols: Array[String] = Array[String]()
-    var dictExcludedCols: Array[String] = Array[String]()
-
-    // get all included cols
-    if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
-      dictIncludedCols =
-        tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).get.split(',').map(_.trim)
-    }
-
-    // get all excluded cols
-    if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
-      dictExcludedCols =
-        tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
-    }
-
-    // by default consider all non string cols as msrs. consider all include/ exclude cols as dims
-    fields.foreach(field => {
-      if (!isDetectAsDimentionDatatype(field.dataType.get)) {
-        if (!dictIncludedCols.exists(x => x.equalsIgnoreCase(field.column)) &&
-            !dictExcludedCols.exists(x => x.equalsIgnoreCase(field.column))) {
-          msrFields :+= field
-        }
-      }
-    })
-
-    msrFields
   }
 
   /**

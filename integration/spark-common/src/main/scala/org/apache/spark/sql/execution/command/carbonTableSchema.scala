@@ -32,7 +32,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.{BucketingInfo, SchemaEvolution, SchemaEvolutionEntry}
+import org.apache.carbondata.core.metadata.schema._
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.service.CarbonCommonFactory
@@ -54,12 +54,14 @@ case class TableModel(
     tableProperties: Map[String, String],
     dimCols: Seq[Field],
     msrCols: Seq[Field],
+    sortKeyDims: Option[Seq[String]],
     highcardinalitydims: Option[Seq[String]],
     noInvertedIdxCols: Option[Seq[String]],
     columnGroups: Seq[String],
     colProps: Option[util.Map[String,
     util.List[ColumnProperty]]] = None,
-    bucketFields: Option[BucketFields])
+    bucketFields: Option[BucketFields],
+    partitionInfo: Option[PartitionInfo])
 
 case class Field(column: String, var dataType: Option[String], name: Option[String],
     children: Option[List[Field]], parent: String = null,
@@ -348,6 +350,7 @@ class TableNewProcessor(cm: TableModel) {
     columnSchema.setPrecision(precision)
     columnSchema.setScale(scale)
     columnSchema.setSchemaOrdinal(schemaOrdinal)
+    columnSchema.setSortColumn(false)
     // TODO: Need to fill RowGroupID, converted type
     // & Number of Children after DDL finalization
     columnSchema
@@ -358,7 +361,11 @@ class TableNewProcessor(cm: TableModel) {
     val LOGGER = LogServiceFactory.getLogService(TableNewProcessor.getClass.getName)
     var allColumns = Seq[ColumnSchema]()
     var index = 0
-    cm.dimCols.foreach(field => {
+    var measureCount = 0
+
+    // Sort columns should be at the begin of all columns
+    cm.sortKeyDims.get.foreach { keyDim =>
+      val field = cm.dimCols.find(keyDim equals _.column).get
       val encoders = new java.util.ArrayList[Encoding]()
       encoders.add(Encoding.DICTIONARY)
       val columnSchema: ColumnSchema = getColumnSchema(
@@ -372,11 +379,33 @@ class TableNewProcessor(cm: TableModel) {
         field.precision,
         field.scale,
         field.schemaOrdinal)
-      allColumns ++= Seq(columnSchema)
+      columnSchema.setSortColumn(true)
+      allColumns :+= columnSchema
       index = index + 1
-      if (field.children.isDefined && field.children.get != null) {
-        columnSchema.setNumberOfChild(field.children.get.size)
-        allColumns ++= getAllChildren(field.children)
+    }
+
+    cm.dimCols.foreach(field => {
+      val sortField = cm.sortKeyDims.get.find(field.column equals _)
+      if (sortField.isEmpty) {
+        val encoders = new java.util.ArrayList[Encoding]()
+        encoders.add(Encoding.DICTIONARY)
+        val columnSchema: ColumnSchema = getColumnSchema(
+          DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
+          field.name.getOrElse(field.column),
+          index,
+          isCol = true,
+          encoders,
+          isDimensionCol = true,
+          -1,
+          field.precision,
+          field.scale,
+          field.schemaOrdinal)
+        allColumns :+= columnSchema
+        index = index + 1
+        if (field.children.isDefined && field.children.get != null) {
+          columnSchema.setNumberOfChild(field.children.get.size)
+          allColumns ++= getAllChildren(field.children)
+        }
       }
     })
 
@@ -393,10 +422,9 @@ class TableNewProcessor(cm: TableModel) {
         field.precision,
         field.scale,
         field.schemaOrdinal)
-      val measureCol = columnSchema
-
-      allColumns ++= Seq(measureCol)
+      allColumns :+= columnSchema
       index = index + 1
+      measureCount += 1
     })
 
     // Check if there is any duplicate measures or dimensions.
@@ -417,22 +445,6 @@ class TableNewProcessor(cm: TableModel) {
 
     updateColumnGroupsInFields(cm.columnGroups, allColumns)
 
-    var newOrderedDims = scala.collection.mutable.ListBuffer[ColumnSchema]()
-    val complexDims = scala.collection.mutable.ListBuffer[ColumnSchema]()
-    val measures = scala.collection.mutable.ListBuffer[ColumnSchema]()
-    for (column <- allColumns) {
-      if (highCardinalityDims.contains(column.getColumnName)) {
-        newOrderedDims += column
-      } else if (column.isComplex) {
-        complexDims += column
-      } else if (column.isDimensionColumn) {
-        newOrderedDims += column
-      } else {
-        measures += column
-      }
-
-    }
-
     // Setting the boolean value of useInvertedIndex in column schema
     val noInvertedIndexCols = cm.noInvertedIdxCols.getOrElse(Seq())
     for (column <- allColumns) {
@@ -447,7 +459,7 @@ class TableNewProcessor(cm: TableModel) {
     }
 
     // Adding dummy measure if no measure is provided
-    if (measures.size < 1) {
+    if (measureCount == 0) {
       val encoders = new java.util.ArrayList[Encoding]()
       val columnSchema: ColumnSchema = getColumnSchema(DataType.DOUBLE,
         CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
@@ -457,13 +469,10 @@ class TableNewProcessor(cm: TableModel) {
         false,
         -1, 0, 0, schemaOrdinal = -1)
       columnSchema.setInvisible(true)
-      val measureColumn = columnSchema
-      measures += measureColumn
-      allColumns = allColumns ++ measures
+      allColumns :+= columnSchema
     }
     val columnValidator = CarbonSparkFactory.getCarbonColumnValidator()
     columnValidator.validateColumns(allColumns)
-    newOrderedDims = newOrderedDims ++ complexDims ++ measures
 
     val tableInfo = new TableInfo()
     val tableSchema = new TableSchema()
@@ -496,6 +505,15 @@ class TableNewProcessor(cm: TableModel) {
       }
       tableSchema.setBucketingInfo(
         new BucketingInfo(bucketCols.asJava, cm.bucketFields.get.numberOfBuckets))
+    }
+    if (cm.partitionInfo.isDefined) {
+      val partitionInfo = cm.partitionInfo.get
+      val PartitionColumnSchema = partitionInfo.getColumnSchemaList.asScala
+      val partitionCols = allColumns.filter { column =>
+        PartitionColumnSchema.exists(_.getColumnName.equalsIgnoreCase(column.getColumnName))
+      }.asJava
+      partitionInfo.setColumnSchemaList(partitionCols)
+      tableSchema.setPartitionInfo(partitionInfo)
     }
     tableSchema.setTableName(cm.tableName)
     tableSchema.setListOfColumns(allColumns.asJava)

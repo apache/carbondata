@@ -27,11 +27,13 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
+import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.stats.PartitionStatistic;
 
 /**
  * Mapping class for Carbon actual table
@@ -92,6 +94,15 @@ public class CarbonTable implements Serializable {
   private Map<String, BucketingInfo> tableBucketMap;
 
   /**
+   * table partition info
+   */
+  private Map<String, PartitionInfo> tablePartitionMap;
+
+  /**
+   * statistic information of partition table
+   */
+  private PartitionStatistic partitionStatistic;
+  /**
    * tableUniqueName
    */
   private String tableUniqueName;
@@ -116,11 +127,22 @@ public class CarbonTable implements Serializable {
    */
   private int blockSize;
 
+  /**
+   * the number of columns in SORT_COLUMNS
+   */
+  private int numberOfSortColumns;
+
+  /**
+   * the number of no dictionary columns in SORT_COLUMNS
+   */
+  private int numberOfNoDictSortColumns;
+
   public CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableImplicitDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableMeasuresMap = new HashMap<String, List<CarbonMeasure>>();
     this.tableBucketMap = new HashMap<>();
+    this.tablePartitionMap = new HashMap<>();
     this.aggregateTablesName = new ArrayList<String>();
     this.createOrderColumn = new HashMap<String, List<CarbonColumn>>();
     this.tablePrimitiveDimensionsMap = new HashMap<String, List<CarbonDimension>>();
@@ -148,9 +170,12 @@ public class CarbonTable implements Serializable {
       this.aggregateTablesName.add(aggTable.getTableName());
       fillDimensionsAndMeasuresForTables(aggTable);
       tableBucketMap.put(aggTable.getTableName(), aggTable.getBucketingInfo());
+      tablePartitionMap.put(aggTable.getTableName(), aggTable.getPartitionInfo());
     }
     tableBucketMap.put(tableInfo.getFactTable().getTableName(),
         tableInfo.getFactTable().getBucketingInfo());
+    tablePartitionMap.put(tableInfo.getFactTable().getTableName(),
+        tableInfo.getFactTable().getPartitionInfo());
   }
 
   /**
@@ -238,10 +263,16 @@ public class CarbonTable implements Serializable {
           i = dimensionOrdinal - 1;
           complexTypeOrdinal = assignComplexOrdinal(complexDimension, complexTypeOrdinal);
         } else {
+          if (!columnSchema.isInvisible() && columnSchema.isSortColumn()) {
+            this.numberOfSortColumns++;
+          }
           if (!columnSchema.getEncodingList().contains(Encoding.DICTIONARY)) {
             CarbonDimension dimension =
                     new CarbonDimension(columnSchema, dimensionOrdinal++,
                             columnSchema.getSchemaOrdinal(), -1, -1, -1);
+            if (!columnSchema.isInvisible() && columnSchema.isSortColumn()) {
+              this.numberOfNoDictSortColumns++;
+            }
             allDimensions.add(dimension);
             primitiveDimensions.add(dimension);
           } else if (columnSchema.getEncodingList().contains(Encoding.DICTIONARY)
@@ -550,6 +581,14 @@ public class CarbonTable implements Serializable {
     return tableBucketMap.get(tableName);
   }
 
+  public PartitionInfo getPartitionInfo(String tableName) {
+    return tablePartitionMap.get(tableName);
+  }
+
+  public PartitionStatistic getPartitionStatistic() {
+    return partitionStatistic;
+  }
+
   /**
    * @return absolute table identifier
    */
@@ -638,5 +677,13 @@ public class CarbonTable implements Serializable {
       }
     }
     tableMeasuresMap.put(tableName, visibleMeasures);
+  }
+
+  public int getNumberOfSortColumns() {
+    return numberOfSortColumns;
+  }
+
+  public int getNumberOfNoDictSortColumns() {
+    return numberOfNoDictSortColumns;
   }
 }

@@ -41,11 +41,12 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
 
   private int columnSize;
 
-  public UnsafeInmemoryHolder(UnsafeCarbonRowPage rowPage, int columnSize) {
+  public UnsafeInmemoryHolder(UnsafeCarbonRowPage rowPage, int columnSize,
+      int numberOfSortColumns) {
     this.actualSize = rowPage.getBuffer().getActualSize();
     this.rowPage = rowPage;
     LOGGER.audit("Processing unsafe inmemory rows page with size : " + actualSize);
-    this.comparator = new NewRowComparator(rowPage.getNoDictionaryDimensionMapping());
+    this.comparator = new NewRowComparator(rowPage.getNoDictionarySortColumnMapping());
     this.columnSize = columnSize;
   }
 

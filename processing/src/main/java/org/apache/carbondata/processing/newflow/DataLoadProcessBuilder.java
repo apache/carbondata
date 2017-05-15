@@ -35,6 +35,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
+import org.apache.carbondata.processing.newflow.steps.CarbonRowDataWriterProcessorStepImpl;
 import org.apache.carbondata.processing.newflow.steps.DataConverterProcessorStepImpl;
 import org.apache.carbondata.processing.newflow.steps.DataConverterProcessorWithBucketingStepImpl;
 import org.apache.carbondata.processing.newflow.steps.DataWriterBatchProcessorStepImpl;
@@ -58,7 +59,9 @@ public final class DataLoadProcessBuilder {
             CarbonCommonConstants.LOAD_USE_BATCH_SORT_DEFAULT));
     CarbonDataLoadConfiguration configuration =
         createConfiguration(loadModel, storeLocation);
-    if (configuration.getBucketingInfo() != null) {
+    if (!configuration.isSortTable()) {
+      return buildInternalForNoSort(inputIterators, configuration);
+    } else if (configuration.getBucketingInfo() != null) {
       return buildInternalForBucketing(inputIterators, configuration);
     } else if (batchSort) {
       return buildInternalForBatchSort(inputIterators, configuration);
@@ -76,12 +79,25 @@ public final class DataLoadProcessBuilder {
     // data types and configurations.
     AbstractDataLoadProcessorStep converterProcessorStep =
         new DataConverterProcessorStepImpl(configuration, inputProcessorStep);
-    // 3. Sorts the data which are part of key (all dimensions except complex types)
+    // 3. Sorts the data by SortColumn
     AbstractDataLoadProcessorStep sortProcessorStep =
         new SortProcessorStepImpl(configuration, converterProcessorStep);
     // 4. Writes the sorted data in carbondata format.
+    return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
+  }
+
+  private AbstractDataLoadProcessorStep buildInternalForNoSort(CarbonIterator[] inputIterators,
+      CarbonDataLoadConfiguration configuration) {
+    // 1. Reads the data input iterators and parses the data.
+    AbstractDataLoadProcessorStep inputProcessorStep =
+        new InputProcessorStepImpl(configuration, inputIterators);
+    // 2. Converts the data like dictionary or non dictionary or complex objects depends on
+    // data types and configurations.
+    AbstractDataLoadProcessorStep converterProcessorStep =
+        new DataConverterProcessorStepImpl(configuration, inputProcessorStep);
+    // 3. Writes the sorted data in carbondata format.
     AbstractDataLoadProcessorStep writerProcessorStep =
-        new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
+        new CarbonRowDataWriterProcessorStepImpl(configuration, converterProcessorStep);
     return writerProcessorStep;
   }
 
@@ -94,13 +110,11 @@ public final class DataLoadProcessBuilder {
     // data types and configurations.
     AbstractDataLoadProcessorStep converterProcessorStep =
         new DataConverterProcessorStepImpl(configuration, inputProcessorStep);
-    // 3. Sorts the data which are part of key (all dimensions except complex types)
+    // 3. Sorts the data by SortColumn or not
     AbstractDataLoadProcessorStep sortProcessorStep =
         new SortProcessorStepImpl(configuration, converterProcessorStep);
     // 4. Writes the sorted data in carbondata format.
-    AbstractDataLoadProcessorStep writerProcessorStep =
-        new DataWriterBatchProcessorStepImpl(configuration, sortProcessorStep);
-    return writerProcessorStep;
+    return new DataWriterBatchProcessorStepImpl(configuration, sortProcessorStep);
   }
 
   private AbstractDataLoadProcessorStep buildInternalForBucketing(CarbonIterator[] inputIterators,
@@ -112,13 +126,11 @@ public final class DataLoadProcessBuilder {
     // data types and configurations.
     AbstractDataLoadProcessorStep converterProcessorStep =
         new DataConverterProcessorWithBucketingStepImpl(configuration, inputProcessorStep);
-    // 3. Sorts the data which are part of key (all dimensions except complex types)
+    // 3. Sorts the data by SortColumn or not
     AbstractDataLoadProcessorStep sortProcessorStep =
         new SortProcessorStepImpl(configuration, converterProcessorStep);
     // 4. Writes the sorted data in carbondata format.
-    AbstractDataLoadProcessorStep writerProcessorStep =
-        new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
-    return writerProcessorStep;
+    return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
   }
 
   private CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel,
@@ -193,6 +205,8 @@ public final class DataLoadProcessBuilder {
     configuration.setDictionaryServerHost(loadModel.getDictionaryServerHost());
     configuration.setDictionaryServerPort(loadModel.getDictionaryServerPort());
     configuration.setPreFetch(loadModel.isPreFetch());
+    configuration.setNumberOfSortColumns(carbonTable.getNumberOfSortColumns());
+    configuration.setNumberOfNoDictSortColumns(carbonTable.getNumberOfNoDictSortColumns());
 
     return configuration;
   }

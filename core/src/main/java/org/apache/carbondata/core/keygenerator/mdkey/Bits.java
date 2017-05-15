@@ -89,9 +89,8 @@ public class Bits implements Serializable {
    * {start, end}
    */
   public int[] getKeyByteOffsets(int index) {
-    int prefixPaddingBits = length % 8 == 0 ? 0 : (8 - length % 8);
 
-    int priorLen = prefixPaddingBits;
+    int priorLen = length % 8 == 0 ? 0 : (8 - length % 8);
     int start = 0;
     int end = 0;
 
@@ -119,7 +118,8 @@ public class Bits implements Serializable {
   protected long[] get(long[] keys) {
     long[] words = new long[wsize];
     int ll = 0;
-    for (int i = lens.length - 1; i >= 0; i--) {
+    int minLength = Math.min(lens.length, keys.length);
+    for (int i = minLength - 1; i >= 0; i--) {
 
       long val = keys[i];
 
@@ -155,7 +155,8 @@ public class Bits implements Serializable {
   protected long[] get(int[] keys) {
     long[] words = new long[wsize];
     int ll = 0;
-    for (int i = lens.length - 1; i >= 0; i--) {
+    int minLength = Math.min(lens.length, keys.length);
+    for (int i = minLength - 1; i >= 0; i--) {
 
       long val = keys[i];
 

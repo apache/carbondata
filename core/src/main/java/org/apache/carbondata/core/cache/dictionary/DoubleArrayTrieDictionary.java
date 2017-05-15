@@ -223,11 +223,10 @@ public class DoubleArrayTrieDictionary {
    */
   private int conflict(int start, int bKey) {
     int from = start;
-    int newKey = bKey;
     TreeSet<Integer> children = getChildren(from);
-    children.add(new Integer(newKey));
+    children.add(new Integer(bKey));
     int newBasePos = findFreeRoom(children);
-    children.remove(new Integer(newKey));
+    children.remove(new Integer(bKey));
 
     int oldBasePos = base[start];
     base[start] = newBasePos;

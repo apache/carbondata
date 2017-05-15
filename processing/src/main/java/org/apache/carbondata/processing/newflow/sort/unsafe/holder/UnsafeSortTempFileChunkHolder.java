@@ -32,6 +32,7 @@ import java.util.concurrent.Future;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
@@ -122,7 +123,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
 
   private int noDictionaryCount;
 
-  private char[] aggType;
+  private DataType[] measureDataType;
 
   private int numberOfObjectRead;
   /**
@@ -150,10 +151,10 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
     // set mdkey length
     this.fileBufferSize = parameters.getFileBufferSize();
     this.executorService = Executors.newFixedThreadPool(1);
-    this.aggType = parameters.getAggType();
+    this.measureDataType = parameters.getMeasureDataType();
     this.isNoDictionaryDimensionColumn = parameters.getNoDictionaryDimnesionColumn();
     this.nullSetWordsLength = ((measureCount - 1) >> 6) + 1;
-    comparator = new NewRowComparator(isNoDictionaryDimensionColumn);
+    comparator = new NewRowComparator(parameters.getNoDictionarySortColumn());
     initialize();
   }
 
@@ -255,8 +256,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
       prefetchRecordsProceesed++;
       returnRow = currentBuffer[bufferRowCounter++];
     } else {
-      Object[] outRow = getRowFromStream();
-      this.returnRow = outRow;
+      this.returnRow = getRowFromStream();
     }
   }
 
@@ -324,15 +324,21 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
 
       for (int mesCount = 0; mesCount < measureCount; mesCount++) {
         if (UnsafeCarbonRowPage.isSet(words, mesCount)) {
-          if (aggType[mesCount] == CarbonCommonConstants.DOUBLE_MEASURE) {
-            row[dimensionCount + mesCount] = stream.readDouble();
-          } else if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {
-            row[dimensionCount + mesCount] = stream.readLong();
-          } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-            short aShort = stream.readShort();
-            byte[] bigDecimalInBytes = new byte[aShort];
-            stream.readFully(bigDecimalInBytes);
-            row[dimensionCount + mesCount] = bigDecimalInBytes;
+          switch (measureDataType[mesCount]) {
+            case SHORT:
+            case INT:
+            case LONG:
+              row[dimensionCount + mesCount] = stream.readLong();
+              break;
+            case DOUBLE:
+              row[dimensionCount + mesCount] = stream.readDouble();
+              break;
+            case DECIMAL:
+              short aShort = stream.readShort();
+              byte[] bigDecimalInBytes = new byte[aShort];
+              stream.readFully(bigDecimalInBytes);
+              row[dimensionCount + mesCount] = bigDecimalInBytes;
+              break;
           }
         }
       }

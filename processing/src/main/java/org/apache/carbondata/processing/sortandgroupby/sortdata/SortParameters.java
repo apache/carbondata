@@ -22,6 +22,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.schema.metadata.SortObserver;
@@ -88,7 +89,7 @@ public class SortParameters {
 
   private String tableName;
 
-  private char[] aggType;
+  private DataType[] measureDataType;
 
   /**
    * To know how many columns are of high cardinality.
@@ -112,6 +113,12 @@ public class SortParameters {
    */
   private boolean[] noDictionaryDimnesionColumn;
 
+  private boolean[] noDictionarySortColumn;
+
+  private int numberOfSortColumns;
+
+  private int numberOfNoDictSortColumns;
+
   private int numberOfCores;
 
   public SortParameters getCopy() {
@@ -131,12 +138,15 @@ public class SortParameters {
     parameters.bufferSize = bufferSize;
     parameters.databaseName = databaseName;
     parameters.tableName = tableName;
-    parameters.aggType = aggType;
+    parameters.measureDataType = measureDataType;
     parameters.noDictionaryCount = noDictionaryCount;
     parameters.partitionID = partitionID;
     parameters.segmentId = segmentId;
     parameters.taskNo = taskNo;
     parameters.noDictionaryDimnesionColumn = noDictionaryDimnesionColumn;
+    parameters.noDictionarySortColumn = noDictionarySortColumn;
+    parameters.numberOfSortColumns = numberOfSortColumns;
+    parameters.numberOfNoDictSortColumns = numberOfNoDictSortColumns;
     parameters.numberOfCores = numberOfCores;
     return parameters;
   }
@@ -261,12 +271,12 @@ public class SortParameters {
     this.tableName = tableName;
   }
 
-  public char[] getAggType() {
-    return aggType;
+  public DataType[] getMeasureDataType() {
+    return measureDataType;
   }
 
-  public void setAggType(char[] aggType) {
-    this.aggType = aggType;
+  public void setMeasureDataType(DataType[] measureDataType) {
+    this.measureDataType = measureDataType;
   }
 
   public int getNoDictionaryCount() {
@@ -317,6 +327,30 @@ public class SortParameters {
     this.numberOfCores = numberOfCores;
   }
 
+  public int getNumberOfSortColumns() {
+    return numberOfSortColumns;
+  }
+
+  public void setNumberOfSortColumns(int numberOfSortColumns) {
+    this.numberOfSortColumns = Math.min(numberOfSortColumns, this.dimColCount);
+  }
+
+  public boolean[] getNoDictionarySortColumn() {
+    return noDictionarySortColumn;
+  }
+
+  public void setNoDictionarySortColumn(boolean[] noDictionarySortColumn) {
+    this.noDictionarySortColumn = noDictionarySortColumn;
+  }
+
+  public int getNumberOfNoDictSortColumns() {
+    return numberOfNoDictSortColumns;
+  }
+
+  public void setNumberOfNoDictSortColumns(int numberOfNoDictSortColumns) {
+    this.numberOfNoDictSortColumns = Math.min(numberOfNoDictSortColumns, noDictionaryCount);
+  }
+
   public static SortParameters createSortParameters(CarbonDataLoadConfiguration configuration) {
     SortParameters parameters = new SortParameters();
     CarbonTableIdentifier tableIdentifier =
@@ -334,6 +368,16 @@ public class SortParameters {
     parameters.setComplexDimColCount(configuration.getComplexDimensionCount());
     parameters.setNoDictionaryDimnesionColumn(
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields()));
+    parameters.setNumberOfSortColumns(configuration.getNumberOfSortColumns());
+    parameters.setNumberOfNoDictSortColumns(configuration.getNumberOfNoDictSortColumns());
+    if (parameters.getNumberOfSortColumns() == parameters.getNoDictionaryDimnesionColumn().length) {
+      parameters.setNoDictionarySortColumn(parameters.getNoDictionaryDimnesionColumn());
+    } else {
+      boolean[] noDictionarySortColumnTemp = new boolean[parameters.getNumberOfSortColumns()];
+      System.arraycopy(parameters.getNoDictionaryDimnesionColumn(), 0,
+          noDictionarySortColumnTemp, 0, parameters.getNumberOfSortColumns());
+      parameters.setNoDictionarySortColumn(noDictionarySortColumnTemp);
+    }
     parameters.setObserver(new SortObserver());
     // get sort buffer size
     parameters.setSortBufferSize(Integer.parseInt(carbonProperties
@@ -415,9 +459,9 @@ public class SortParameters {
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
 
-    char[] aggType = CarbonDataProcessorUtil
-        .getAggType(configuration.getMeasureCount(), configuration.getMeasureFields());
-    parameters.setAggType(aggType);
+    DataType[] measureDataType = CarbonDataProcessorUtil
+        .getMeasureDataType(configuration.getMeasureCount(), configuration.getMeasureFields());
+    parameters.setMeasureDataType(measureDataType);
     return parameters;
   }
 
@@ -517,10 +561,10 @@ public class SortParameters {
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
 
-    char[] aggType = CarbonDataProcessorUtil
-        .getAggType(parameters.getMeasureColCount(), parameters.getDatabaseName(),
+    DataType[] type = CarbonDataProcessorUtil
+        .getMeasureDataType(parameters.getMeasureColCount(), parameters.getDatabaseName(),
             parameters.getTableName());
-    parameters.setAggType(aggType);
+    parameters.setMeasureDataType(type);
     return parameters;
   }
 

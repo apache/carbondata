@@ -641,6 +641,24 @@ public final class CarbonUtil {
   }
 
   /**
+   * remove the quote char for a string, e.g. "abc" => abc, 'abc' => abc
+   * @param parseStr
+   * @return
+   */
+  public static String unquoteChar(String parseStr) {
+    if (parseStr == null) {
+      return null;
+    }
+    if (parseStr.startsWith("'") && parseStr.endsWith("'")) {
+      return parseStr.substring(1, parseStr.length() - 1);
+    } else if (parseStr.startsWith("\"") && parseStr.endsWith("\"")) {
+      return parseStr.substring(1, parseStr.length() - 1);
+    } else {
+      return parseStr;
+    }
+  }
+
+  /**
    * special char delimiter Converter
    *
    * @param delimiter
@@ -704,9 +722,8 @@ public final class CarbonUtil {
     if (null == prop) {
       return null;
     }
-    String basePath = prop.getProperty(CarbonCommonConstants.STORE_LOCATION,
+    return prop.getProperty(CarbonCommonConstants.STORE_LOCATION,
         CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    return basePath;
   }
 
   /**
@@ -816,7 +833,7 @@ public final class CarbonUtil {
     Object[] minValue = new Object[encodeMetaList.size()];
     Object[] uniqueValue = new Object[encodeMetaList.size()];
     int[] decimal = new int[encodeMetaList.size()];
-    char[] type = new char[encodeMetaList.size()];
+    DataType[] type = new DataType[encodeMetaList.size()];
     byte[] dataTypeSelected = new byte[encodeMetaList.size()];
 
     /*
@@ -1039,9 +1056,8 @@ public final class CarbonUtil {
         isDictionaryDimensions.add(false);
       }
     }
-    boolean[] primitive = ArrayUtils
+    return ArrayUtils
         .toPrimitive(isDictionaryDimensions.toArray(new Boolean[isDictionaryDimensions.size()]));
-    return primitive;
   }
 
   /**
@@ -1576,14 +1592,13 @@ public final class CarbonUtil {
       return true;
     }
 
-    UpdateVO updatedVODetails = invalidBlockVOForSegmentId;
-    if (null != updatedVODetails) {
+    if (null != invalidBlockVOForSegmentId) {
       Long blockTimeStamp = Long.parseLong(tableInfo.getFilePath()
           .substring(tableInfo.getFilePath().lastIndexOf('-') + 1,
               tableInfo.getFilePath().lastIndexOf('.')));
-      if ((blockTimeStamp > updatedVODetails.getFactTimestamp() && (
-          updatedVODetails.getUpdateDeltaStartTimestamp() != null
-              && blockTimeStamp < updatedVODetails.getUpdateDeltaStartTimestamp()))) {
+      if ((blockTimeStamp > invalidBlockVOForSegmentId.getFactTimestamp() && (
+          invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp() != null
+              && blockTimeStamp < invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp()))) {
         return true;
       }
     }
