@@ -39,7 +39,6 @@ object CarbonExample {
            (ID Int, date Date, country String,
            name String, phonetype String, serialname char(10), salary Int)
            STORED BY 'carbondata'
-           TBLPROPERTIES ('BITMAP'='country')
            """)
 
     // Load data
@@ -49,23 +48,12 @@ object CarbonExample {
 
     // Perform a query
     cc.sql("""
-           SELECT country, id, phonetype AS amount
-           FROM t3
-           WHERE country IN ('china','france')
-           """).show(100)
-    cc.sql("""
            SELECT country, count(salary) AS amount
            FROM t3
            WHERE country IN ('china','france')
            GROUP BY country
            """).show()
-    var start = System.currentTimeMillis()
-    cc.sql("""
-           SELECT country, id, phonetype AS amount
-           FROM t3
-           WHERE country IN ('france')
-           """).show(1000000)
-    print("query time: " + (System.currentTimeMillis() - start))
+
     // Drop table
     cc.sql("DROP TABLE IF EXISTS t3")
   }
