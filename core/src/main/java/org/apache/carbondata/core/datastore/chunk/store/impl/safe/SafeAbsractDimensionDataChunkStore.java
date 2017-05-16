@@ -17,7 +17,10 @@
 
 package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
 
+import java.util.BitSet;
+
 import org.apache.carbondata.core.datastore.chunk.store.DimensionDataChunkStore;
+import org.apache.carbondata.core.scan.filter.executer.AbstractFilterExecuter.FilterOperator;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 
 /**
@@ -123,5 +126,16 @@ public abstract class SafeAbsractDimensionDataChunkStore implements DimensionDat
 
   @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
     throw new UnsupportedOperationException("Operation not supported");
+  }
+
+  /**
+   * apply Filter
+   *
+   * @param filterValues
+   * @param operator
+   * @return BitSet
+   */
+  public BitSet applyFilter(byte[][] filterValues, FilterOperator operator, int numerOfRows) {
+    throw new UnsupportedOperationException("unsupport the apply Filter");
   }
 }

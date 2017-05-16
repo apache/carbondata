@@ -38,21 +38,21 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
   private int[] bitmap_data_pages_offset;
   private BitSetGroup bitSetGroup;
   private boolean isGeneratedBitSetFlg = false;
-  private byte[] dictionaryData;
+  private byte[] dictData;
 
   public SafeBitMapDimensionDataChunkStore(List<Integer> bitmap_encoded_dictionaries,
-      List<Integer> bitmap_data_pages_length, int columnValueSize) {
+      List<Integer> bitmap_data_pages_offset, int columnValueSize) {
     super(false);
     this.columnValueSize = columnValueSize;
     int arraySize = bitmap_encoded_dictionaries.size();
     this.bitmap_encoded_dictionaries = new byte[arraySize][];
-    this.bitmap_data_pages_offset = new int[bitmap_data_pages_length.size()];
+    this.bitmap_data_pages_offset = new int[bitmap_data_pages_offset.size()];
     for (int i = 0; i < arraySize; i++) {
       this.bitmap_encoded_dictionaries[i] = ByteUtil
           .convertIntToByteArray(bitmap_encoded_dictionaries.get(i), columnValueSize);
-      this.bitmap_data_pages_offset[i] = bitmap_data_pages_length.get(i);
+      this.bitmap_data_pages_offset[i] = bitmap_data_pages_offset.get(i);
     }
-    this.bitmap_data_pages_offset[arraySize] = bitmap_data_pages_length.get(arraySize);
+    this.bitmap_data_pages_offset[arraySize] = bitmap_data_pages_offset.get(arraySize);
   }
 
   /**
@@ -82,7 +82,7 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
   @Override
   public byte[] getRow(int rowId) {
     byte[] data = new byte[1];
-    data[0] = dictionaryData[rowId];
+    data[0] = dictData[rowId];
     return data;
   }
 
@@ -97,7 +97,7 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
   @Override
   public int getSurrogate(int index) {
     loadAllBitSets();
-    return dictionaryData[index];
+    return dictData[index];
   }
 
   /**
@@ -113,7 +113,7 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
   @Override
   public void fillRow(int rowId, byte[] buffer, int offset) {
 
-    System.arraycopy(dictionaryData[rowId], 0, buffer,
+    System.arraycopy(dictData[rowId], 0, buffer,
         offset, columnValueSize);
   }
 
@@ -137,7 +137,7 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
   @Override
   public int compareTo(int index, byte[] compareValue) {
     return ByteUtil.UnsafeComparer.INSTANCE.compareTo(
-        this.bitmap_encoded_dictionaries[(int)dictionaryData[index]], 0, columnValueSize,
+        this.bitmap_encoded_dictionaries[(int)dictData[index]], 0, columnValueSize,
         compareValue, 0, columnValueSize);
   }
 
@@ -180,13 +180,20 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
     }
     isGeneratedBitSetFlg = true;
   }
+
   private BitSet loadBitSet(int index) {
     BitSet bitSet = this.bitSetGroup.getBitSet(index);
     if (bitSet != null) {
       return bitSet;
     }
-    int pageOffSet = bitmap_data_pages_offset[index];
-    int pageLength =  bitmap_data_pages_offset[index + 1] - bitmap_data_pages_offset[index];
+    int tempIndex = index + 1;
+    int pageOffSet = bitmap_data_pages_offset[tempIndex];
+    int pageLength;
+    if (tempIndex + 1 == bitmap_data_pages_offset.length) {
+      pageLength = data.length - pageOffSet;
+    } else {
+      pageLength = bitmap_data_pages_offset[tempIndex + 1] - bitmap_data_pages_offset[tempIndex];
+    }
     byte[] bitSetData = new byte[pageLength];
     System.arraycopy(this.data, pageOffSet, bitSetData, 0, pageLength);
     bitSet = BitSet.valueOf(bitSetData);
@@ -195,9 +202,9 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
   }
 
   private void loadDictionaryDataIndex() {
-    int pageOffSet = bitmap_data_pages_offset[bitmap_data_pages_offset.length - 1];
-    int pageLength = this.data.length - pageOffSet;
-    dictionaryData = new byte[pageLength];
-    System.arraycopy(this.data, pageOffSet, dictionaryData, 0, pageLength);
+    int pageOffSet = 0;
+    int pageLength = bitmap_data_pages_offset[1];
+    dictData = new byte[pageLength];
+    System.arraycopy(this.data, pageOffSet, dictData, 0, pageLength);
   }
 }

@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory.DimensionStoreType;
-import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeBitMapDimensionDataChunkStore;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.filter.executer.AbstractFilterExecuter.FilterOperator;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
@@ -135,9 +134,15 @@ public class BitMapDimensionDataChunk extends AbstractDimensionDataChunk {
     return fillConvertedChunkData(vectorInfo, column, restructuringInfo);
   }
 
+  /**
+   * apply Filter
+   *
+   * @param filterValues
+   * @param operator
+   * @return BitSet
+   */
   public BitSet applyFilter(final byte[][] filterValues, final FilterOperator operator,
       int numerOfRows) {
-    return ((SafeBitMapDimensionDataChunkStore) dataChunkStore).applyFilter(filterValues, operator,
-        numerOfRows);
+    return dataChunkStore.applyFilter(filterValues, operator, numerOfRows);
   }
 }

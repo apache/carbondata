@@ -43,7 +43,7 @@ public class BlockIndexerStorageForBitMapForShort implements IndexStorage<short[
   private byte[] max;
   private Map<Integer, BitSet> dictMap;
   List<Integer> dictList;
-  List<Integer> bitMapPagesLengthList;
+  List<Integer> bitMapPagesOffsetList;
 
   public BlockIndexerStorageForBitMapForShort(byte[][] keyBlockInput, boolean isNoDictionary) {
     dictMap = new TreeMap<Integer, BitSet>();
@@ -74,23 +74,21 @@ public class BlockIndexerStorageForBitMapForShort implements IndexStorage<short[
         max = keyBlockInput[i];
       }
     }
-
-    keyBlock = new byte[dictMap.size() + 1][];
     dictList = new ArrayList<Integer>(dictMap.size());
-    bitMapPagesLengthList = new ArrayList<Integer>(dictMap.size());
-    int index = 0;
+    bitMapPagesOffsetList = new ArrayList<Integer>(dictMap.size());
+    keyBlock = new byte[dictMap.size() + 1][];
+    keyBlock[0] = dictionaryDataPage;
+    bitMapPagesOffsetList.add(totalSize);
+    totalSize = dictionaryDataPage.length;
+    int index = 1;
     for (Integer dictKey : dictMap.keySet()) {
       dictBitSet = dictMap.get(dictKey);
       int byteArrayLength = dictBitSet.toByteArray().length;
-      bitMapPagesLengthList.add(totalSize);
+      bitMapPagesOffsetList.add(totalSize);
       totalSize = totalSize + byteArrayLength;
       dictList.add(dictKey);
       keyBlock[index++] = dictBitSet.toByteArray();
     }
-
-    keyBlock[index] = dictionaryDataPage;
-    bitMapPagesLengthList.add(totalSize);
-    totalSize = totalSize + dictionaryDataPage.length;
   }
 
   @Override
@@ -153,12 +151,12 @@ public class BlockIndexerStorageForBitMapForShort implements IndexStorage<short[
     this.dictList = dictList;
   }
 
-  public List<Integer> getBitMapPagesLengthList() {
-    return bitMapPagesLengthList;
+  public List<Integer> getBitMapPagesOffsetList() {
+    return bitMapPagesOffsetList;
   }
 
-  public void setBitMapPagesLengthList(List<Integer> bitMapPagesLengthList) {
-    this.bitMapPagesLengthList = bitMapPagesLengthList;
+  public void setBitMapPagesOffsetList(List<Integer> bitMapPagesLengthList) {
+    this.bitMapPagesOffsetList = bitMapPagesLengthList;
   }
 
 }

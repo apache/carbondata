@@ -23,6 +23,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeBitMapDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeFixedLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeVariableLengthDimensionDataChunkStore;
+import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeBitMapDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeFixedLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeVariableLengthDimesionDataChunkStore;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -64,23 +65,27 @@ public class DimensionChunkStoreFactory {
    */
   public DimensionDataChunkStore getDimensionChunkStore(int columnValueSize,
       boolean isInvertedIndex, int numberOfRows, long totalSize, DimensionStoreType storeType,
-      List<Integer> bitmap_encoded_dictionaries, List<Integer> bitmap_data_pages_length) {
+      List<Integer> bitmap_encoded_dictionaries, List<Integer> bitmap_data_pages_offset) {
 
     if (isUnsafe) {
       if (storeType == DimensionStoreType.FIXEDLENGTH) {
         return new UnsafeFixedLengthDimensionDataChunkStore(totalSize, columnValueSize,
             isInvertedIndex, numberOfRows);
+      } else if (storeType == DimensionStoreType.BITMAP) {
+        return new UnsafeBitMapDimensionDataChunkStore(bitmap_encoded_dictionaries,
+            bitmap_data_pages_offset, bitmap_data_pages_offset.get(1), columnValueSize,
+            numberOfRows);
       } else {
         return new UnsafeVariableLengthDimesionDataChunkStore(totalSize, isInvertedIndex,
             numberOfRows);
       }
 
     } else {
-      if (storeType == DimensionStoreType.BITMAP) {
-        return new SafeBitMapDimensionDataChunkStore(bitmap_encoded_dictionaries,
-            bitmap_data_pages_length, columnValueSize);
-      } else if (storeType == DimensionStoreType.FIXEDLENGTH) {
+      if (storeType == DimensionStoreType.FIXEDLENGTH) {
         return new SafeFixedLengthDimensionDataChunkStore(isInvertedIndex, columnValueSize);
+      } else if (storeType == DimensionStoreType.BITMAP) {
+        return new SafeBitMapDimensionDataChunkStore(bitmap_encoded_dictionaries,
+            bitmap_data_pages_offset, columnValueSize);
       } else {
         return new SafeVariableLengthDimensionDataChunkStore(isInvertedIndex, numberOfRows);
       }

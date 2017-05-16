@@ -129,7 +129,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
       if (this.isUseBitMap[i]) {
         dictArray[i] = ((BlockIndexerStorageForBitMapForShort) keyStorageArray[i]).getDictList();
         bitMapPagesLengthArray[i] = ((BlockIndexerStorageForBitMapForShort) keyStorageArray[i])
-            .getBitMapPagesLengthList();
+            .getBitMapPagesOffsetList();
       } else {
         dictArray[i] = new ArrayList<Integer>(0);
       }
