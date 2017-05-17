@@ -96,7 +96,9 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
       switch (carbonMeasure.getDataType()) {
         case SHORT:
+          return (short)dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
         case INT:
+          return (int)dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
         case LONG:
           return dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
         case DECIMAL:
