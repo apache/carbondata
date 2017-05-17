@@ -331,6 +331,32 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table")
   }
 
+  test("test compaction with all dictionary columns") {
+    sql("DROP TABLE IF EXISTS alter_dict")
+    sql("CREATE TABLE alter_dict(stringField string,charField string) STORED BY 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' INTO TABLE alter_dict options('FILEHEADER'='stringField,charField')")
+    sql("Alter table alter_dict drop columns(charField)")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' INTO TABLE alter_dict options('FILEHEADER'='stringField')")
+    sql("Alter table alter_dict compact 'major'")
+    checkExistence(sql("show segments for table alter_dict"), true, "0Compacted")
+    checkExistence(sql("show segments for table alter_dict"), true, "1Compacted")
+    checkExistence(sql("show segments for table alter_dict"), true, "0.1Success")
+    sql("DROP TABLE IF EXISTS alter_dict")
+  }
+
+  test("test compaction with all no dictionary columns") {
+    sql("DROP TABLE IF EXISTS alter_no_dict")
+    sql("CREATE TABLE alter_no_dict(stringField string,charField string) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_EXCLUDE'='stringField,charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' INTO TABLE alter_no_dict options('FILEHEADER'='stringField,charField')")
+    sql("Alter table alter_no_dict drop columns(charField)")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' INTO TABLE alter_no_dict options('FILEHEADER'='stringField')")
+    sql("Alter table alter_no_dict compact 'major'")
+    checkExistence(sql("show segments for table alter_no_dict"), true, "0Compacted")
+    checkExistence(sql("show segments for table alter_no_dict"), true, "1Compacted")
+    checkExistence(sql("show segments for table alter_no_dict"), true, "0.1Success")
+    sql("DROP TABLE IF EXISTS alter_no_dict")
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS addcolumntest")
     sql("drop table if exists hivetable")
