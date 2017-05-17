@@ -29,6 +29,7 @@ import org.apache.spark.sql.types.TimestampType
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.DataManagementFunc
@@ -39,11 +40,9 @@ object CarbonStore {
   def showSegments(
       dbName: String,
       tableName: String,
-      limit: Option[String]): Seq[Row] = {
-    val tableUniqueName = dbName + "_" + tableName
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
-    val path = carbonTable.getMetaDataFilepath
-    val loadMetadataDetailsArray = SegmentStatusManager.readLoadMetadata(path)
+      limit: Option[String],
+      tableFolderPath: String): Seq[Row] = {
+    val loadMetadataDetailsArray = SegmentStatusManager.readLoadMetadata(tableFolderPath)
     if (loadMetadataDetailsArray.nonEmpty) {
       val parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)
       var loadMetadataDetailsSortedArray = loadMetadataDetailsArray.sortWith { (l1, l2) =>
@@ -79,10 +78,11 @@ object CarbonStore {
   def cleanFiles(
       dbName: String,
       tableName: String,
-      storePath: String): Unit = {
+      storePath: String,
+      carbonTable: CarbonTable): Unit = {
     LOGGER.audit(s"The clean files request has been received for $dbName.$tableName")
     try {
-      DataManagementFunc.cleanFiles(dbName, tableName, storePath)
+      DataManagementFunc.cleanFiles(dbName, tableName, storePath, carbonTable)
       LOGGER.audit(s"Clean files operation is success for $dbName.$tableName.")
     } catch {
       case ex: Exception =>
@@ -102,12 +102,12 @@ object CarbonStore {
   def deleteLoadById(
       loadids: Seq[String],
       dbName: String,
-      tableName: String): Unit = {
+      tableName: String,
+      carbonTable: CarbonTable): Unit = {
 
     LOGGER.audit(s"Delete segment by Id request has been received for $dbName.$tableName")
     validateLoadIds(loadids)
 
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(dbName + '_' + tableName)
     val path = carbonTable.getMetaDataFilepath
 
     try {
@@ -128,11 +128,11 @@ object CarbonStore {
   def deleteLoadByDate(
       timestamp: String,
       dbName: String,
-      tableName: String): Unit = {
+      tableName: String,
+      carbonTable: CarbonTable): Unit = {
     LOGGER.audit(s"Delete segment by Id request has been received for $dbName.$tableName")
 
     val time = validateTimeFormat(timestamp)
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(dbName + '_' + tableName)
     val path = carbonTable.getMetaDataFilepath
 
     try {

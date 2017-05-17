@@ -196,10 +196,13 @@ private[sql] case class DeleteLoadsById(
 
   def run(sqlContext: SQLContext): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sqlContext)
+    val carbonTable = CarbonEnv.get.carbonMetastore.lookupRelation1(databaseNameOp,
+      tableName)(sqlContext).asInstanceOf[CarbonRelation].tableMeta.carbonTable
     CarbonStore.deleteLoadById(
       loadids,
       getDB.getDatabaseName(databaseNameOp, sqlContext),
-      tableName
+      tableName,
+      carbonTable
     )
     Seq.empty
 
@@ -225,10 +228,13 @@ private[sql] case class DeleteLoadsByLoadDate(
 
   def run(sqlContext: SQLContext): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sqlContext)
+    val carbonTable = CarbonEnv.get.carbonMetastore.lookupRelation1(databaseNameOp,
+      tableName)(sqlContext).asInstanceOf[CarbonRelation].tableMeta.carbonTable
     CarbonStore.deleteLoadByDate(
       loadDate,
       getDB.getDatabaseName(databaseNameOp, sqlContext),
-      tableName
+      tableName,
+      carbonTable
     )
     Seq.empty
 
@@ -723,10 +729,13 @@ private[sql] case class ShowLoads(
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sqlContext)
+    val carbonTable = CarbonEnv.get.carbonMetastore.lookupRelation1(databaseNameOp,
+      tableName)(sqlContext).asInstanceOf[CarbonRelation].tableMeta.carbonTable
     CarbonStore.showSegments(
       getDB.getDatabaseName(databaseNameOp, sqlContext),
       tableName,
-      limit
+      limit,
+      carbonTable.getMetaDataFilepath
     )
   }
 }
@@ -865,10 +874,13 @@ private[sql] case class CleanFiles(
 
   def run(sqlContext: SQLContext): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sqlContext)
+    val carbonTable = CarbonEnv.get.carbonMetastore.lookupRelation1(databaseNameOp,
+      tableName)(sqlContext).asInstanceOf[CarbonRelation].tableMeta.carbonTable
     CarbonStore.cleanFiles(
       getDB.getDatabaseName(databaseNameOp, sqlContext),
       tableName,
-      sqlContext.asInstanceOf[CarbonContext].storePath
+      sqlContext.asInstanceOf[CarbonContext].storePath,
+      carbonTable
     )
     Seq.empty
   }

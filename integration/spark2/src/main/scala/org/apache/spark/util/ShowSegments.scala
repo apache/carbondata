@@ -29,9 +29,10 @@ object ShowSegments {
 
   def showSegments(spark: SparkSession, dbName: String, tableName: String,
       limit: Option[String]): Seq[Row] = {
-    //val databaseName = dbName.getOrElse(spark.catalog.currentDatabase)
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
-    CarbonStore.showSegments(dbName, tableName, limit)
+    val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore
+      .getTableFromMetadata(dbName, tableName).map(_.carbonTable).getOrElse(null)
+    CarbonStore.showSegments(dbName, tableName, limit, carbonTable.getMetaDataFilepath)
   }
 
   def showString(rows: Seq[Row]): String = {
