@@ -97,6 +97,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
     this.blockExecutionInfos = infos;
     this.fileReader = FileFactory.getFileHolder(
         FileFactory.getFileType(queryModel.getAbsoluteTableIdentifier().getStorePath()));
+    this.fileReader.setQueryId(queryModel.getQueryId());
     this.execService = execService;
     intialiseInfos();
     initQueryStatiticsModel();
@@ -146,7 +147,6 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
     if (blockExecutionInfos.size() > 0) {
       BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
       blockExecutionInfos.remove(executionInfo);
-      queryStatisticsModel.setRecorder(recorder);
       return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize, queryStatisticsModel,
           execService);
     }
@@ -155,24 +155,41 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
 
   protected void initQueryStatiticsModel() {
     this.queryStatisticsModel = new QueryStatisticsModel();
+    this.queryStatisticsModel.setRecorder(recorder);
     QueryStatistic queryStatisticTotalBlocklet = new QueryStatistic();
     queryStatisticsModel.getStatisticsTypeAndObjMap()
         .put(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM, queryStatisticTotalBlocklet);
+    queryStatisticsModel.getRecorder().recordStatistics(queryStatisticTotalBlocklet);
+
     QueryStatistic queryStatisticValidScanBlocklet = new QueryStatistic();
     queryStatisticsModel.getStatisticsTypeAndObjMap()
         .put(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM, queryStatisticValidScanBlocklet);
+    queryStatisticsModel.getRecorder().recordStatistics(queryStatisticValidScanBlocklet);
+
     QueryStatistic totalNumberOfPages = new QueryStatistic();
     queryStatisticsModel.getStatisticsTypeAndObjMap()
         .put(QueryStatisticsConstants.TOTAL_PAGE_SCANNED, totalNumberOfPages);
+    queryStatisticsModel.getRecorder().recordStatistics(totalNumberOfPages);
+
     QueryStatistic validPages = new QueryStatistic();
     queryStatisticsModel.getStatisticsTypeAndObjMap()
         .put(QueryStatisticsConstants.VALID_PAGE_SCANNED, validPages);
+    queryStatisticsModel.getRecorder().recordStatistics(validPages);
+
+    QueryStatistic scannedPages = new QueryStatistic();
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.PAGE_SCANNED, scannedPages);
+    queryStatisticsModel.getRecorder().recordStatistics(scannedPages);
+
     QueryStatistic scanTime = new QueryStatistic();
     queryStatisticsModel.getStatisticsTypeAndObjMap()
         .put(QueryStatisticsConstants.SCAN_BLOCKlET_TIME, scanTime);
+    queryStatisticsModel.getRecorder().recordStatistics(scanTime);
+
     QueryStatistic readTime = new QueryStatistic();
     queryStatisticsModel.getStatisticsTypeAndObjMap()
         .put(QueryStatisticsConstants.READ_BLOCKlET_TIME, readTime);
+    queryStatisticsModel.getRecorder().recordStatistics(readTime);
   }
 
   public void processNextBatch(CarbonColumnarBatch columnarBatch) {

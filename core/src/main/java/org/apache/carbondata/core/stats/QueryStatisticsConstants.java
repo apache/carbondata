@@ -24,7 +24,8 @@ public interface QueryStatisticsConstants {
 
   String LOAD_META = "Time taken to load meta data In Driver Side";
 
-  String LOAD_BLOCKS_DRIVER = "Time taken to load the Block(s) In Driver Side";
+  String LOAD_BLOCKS_DRIVER = "Time taken to load the Block(s) In Driver Side "
+      + "with Block count ";
 
   String BLOCK_ALLOCATION = "Total Time taken in block(s) allocation";
 
@@ -54,6 +55,8 @@ public interface QueryStatisticsConstants {
   String VALID_PAGE_SCANNED = "The number of valid page scanned";
 
   String TOTAL_PAGE_SCANNED = "The number of total page scanned";
+
+  String PAGE_SCANNED = "The number of page scanned";
 
   // clear no-use statistics timeout
   long CLEAR_STATISTICS_TIMEOUT = 60 * 1000 * 1000000L;

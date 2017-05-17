@@ -98,6 +98,7 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
     long valid_pages_blocklet = 0;
     long total_pages = 0;
     long readTime = 0;
+    long scannedPages = 0;
     try {
       for (QueryStatistic statistic : queryStatistics) {
         switch (statistic.getMessage()) {
@@ -134,6 +135,9 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
           case QueryStatisticsConstants.READ_BLOCKlET_TIME:
             readTime = statistic.getCount();
             break;
+          case QueryStatisticsConstants.PAGE_SCANNED:
+            scannedPages = statistic.getCount();
+            break;
           default:
             break;
         }
@@ -141,7 +145,7 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
       String headers =
           "task_id,load_blocks_time,load_dictionary_time,carbon_scan_time,carbon_IO_time, "
               + "total_executor_time,scan_blocks_num,total_blocklets,"
-              + "valid_blocklets,total_pages,valid_pages,result_size";
+              + "valid_blocklets,total_pages,scanned_pages,valid_pages,result_size";
       List<String> values = new ArrayList<String>();
       values.add(queryIWthTask);
       values.add(load_blocks_time + "ms");
@@ -153,6 +157,7 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
       values.add(String.valueOf(total_blocklet));
       values.add(String.valueOf(valid_scan_blocklet));
       values.add(String.valueOf(total_pages));
+      values.add(String.valueOf(scannedPages));
       values.add(String.valueOf(valid_pages_blocklet));
       values.add(String.valueOf(result_size));
       StringBuilder tableInfo = new StringBuilder();
@@ -174,6 +179,7 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
       tableInfo.append(line).append("+").append("\n");
       return "Print query statistic for each task id:" + "\n" + tableInfo.toString();
     } catch (Exception ex) {
+      LOGGER.error(ex);
       return "Put statistics into table failed, catch exception: " + ex.getMessage();
     }
   }

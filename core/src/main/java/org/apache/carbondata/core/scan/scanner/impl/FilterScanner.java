@@ -98,7 +98,6 @@ public class FilterScanner extends AbstractBlockletScanner {
         .get(QueryStatisticsConstants.TOTAL_PAGE_SCANNED);
     totalPagesScanned.addCountStatistic(QueryStatisticsConstants.TOTAL_PAGE_SCANNED,
         totalPagesScanned.getCount() + blocksChunkHolder.getDataBlock().numberOfPages());
-    queryStatisticsModel.getRecorder().recordStatistics(totalPagesScanned);
     // apply min max
     if (isMinMaxEnabled) {
       BitSet bitSet = this.filterExecuter
@@ -121,7 +120,6 @@ public class FilterScanner extends AbstractBlockletScanner {
         .get(QueryStatisticsConstants.READ_BLOCKlET_TIME);
     readTime.addCountStatistic(QueryStatisticsConstants.READ_BLOCKlET_TIME,
         readTime.getCount() + (System.currentTimeMillis() - startTime));
-    queryStatisticsModel.getRecorder().recordStatistics(readTime);
   }
 
   /**
@@ -143,12 +141,26 @@ public class FilterScanner extends AbstractBlockletScanner {
   private AbstractScannedResult fillScannedResult(BlocksChunkHolder blocksChunkHolder)
       throws FilterUnsupportedException, IOException {
     long startTime = System.currentTimeMillis();
+    QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);
+    totalBlockletStatistic.addCountStatistic(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM,
+        totalBlockletStatistic.getCount() + 1);
     // apply filter on actual data
     BitSetGroup bitSetGroup = this.filterExecuter.applyFilter(blocksChunkHolder);
     // if indexes is empty then return with empty result
     if (bitSetGroup.isEmpty()) {
       CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),
           blocksChunkHolder.getMeasureRawDataChunk());
+
+      QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
+          .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
+      scanTime.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKlET_TIME,
+          scanTime.getCount() + (System.currentTimeMillis() - startTime));
+
+      QueryStatistic scannedPages = queryStatisticsModel.getStatisticsTypeAndObjMap()
+          .get(QueryStatisticsConstants.PAGE_SCANNED);
+      scannedPages.addCountStatistic(QueryStatisticsConstants.PAGE_SCANNED,
+          scannedPages.getCount() + bitSetGroup.getScannedPages());
       return createEmptyResult();
     }
 
@@ -162,18 +174,15 @@ public class FilterScanner extends AbstractBlockletScanner {
     validScannedBlockletStatistic
         .addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM,
             validScannedBlockletStatistic.getCount() + 1);
-    queryStatisticsModel.getRecorder().recordStatistics(validScannedBlockletStatistic);
     // adding statistics for valid number of pages
     QueryStatistic validPages = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.VALID_PAGE_SCANNED);
     validPages.addCountStatistic(QueryStatisticsConstants.VALID_PAGE_SCANNED,
         validPages.getCount() + bitSetGroup.getValidPages());
-    queryStatisticsModel.getRecorder().recordStatistics(validPages);
-    QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
-        .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);
-    totalBlockletStatistic.addCountStatistic(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM,
-        totalBlockletStatistic.getCount() + 1);
-    queryStatisticsModel.getRecorder().recordStatistics(totalBlockletStatistic);
+    QueryStatistic scannedPages = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.PAGE_SCANNED);
+    scannedPages.addCountStatistic(QueryStatisticsConstants.PAGE_SCANNED,
+        scannedPages.getCount() + bitSetGroup.getScannedPages());
     int[] rowCount = new int[bitSetGroup.getNumberOfPages()];
     // get the row indexes from bot set
     int[][] indexesGroup = new int[bitSetGroup.getNumberOfPages()][];
@@ -199,8 +208,11 @@ public class FilterScanner extends AbstractBlockletScanner {
     FileHolder fileReader = blocksChunkHolder.getFileReader();
     int[][] allSelectedDimensionBlocksIndexes =
         blockExecutionInfo.getAllSelectedDimensionBlocksIndexes();
+
+    long dimensionReadTime = System.currentTimeMillis();
     DimensionRawColumnChunk[] projectionListDimensionChunk = blocksChunkHolder.getDataBlock()
         .getDimensionChunks(fileReader, allSelectedDimensionBlocksIndexes);
+    dimensionReadTime = System.currentTimeMillis() - dimensionReadTime;
 
     DimensionRawColumnChunk[] dimensionRawColumnChunks =
         new DimensionRawColumnChunk[blockExecutionInfo.getTotalNumberDimensionBlock()];
@@ -216,8 +228,8 @@ public class FilterScanner extends AbstractBlockletScanner {
         dimensionRawColumnChunks[j] = projectionListDimensionChunk[j];
       }
     }
-
-    /*
+    long dimensionReadTime1 = System.currentTimeMillis();
+    /**
      * in case projection if the projected dimension are not loaded in the dimensionColumnDataChunk
      * then loading them
      */
@@ -230,12 +242,15 @@ public class FilterScanner extends AbstractBlockletScanner {
                 .getDimensionChunk(fileReader, projectionListDimensionIndexes[i]);
       }
     }
+    dimensionReadTime += (System.currentTimeMillis() - dimensionReadTime1);
+    dimensionReadTime1 = System.currentTimeMillis();
     MeasureRawColumnChunk[] measureRawColumnChunks =
         new MeasureRawColumnChunk[blockExecutionInfo.getTotalNumberOfMeasureBlock()];
     int[][] allSelectedMeasureBlocksIndexes =
         blockExecutionInfo.getAllSelectedMeasureBlocksIndexes();
     MeasureRawColumnChunk[] projectionListMeasureChunk = blocksChunkHolder.getDataBlock()
         .getMeasureChunks(fileReader, allSelectedMeasureBlocksIndexes);
+    dimensionReadTime += System.currentTimeMillis() - dimensionReadTime1;
     // read the measure chunk blocks which is not present
     for (int i = 0; i < measureRawColumnChunks.length; i++) {
       if (null != blocksChunkHolder.getMeasureRawDataChunk()[i]) {
@@ -248,9 +263,10 @@ public class FilterScanner extends AbstractBlockletScanner {
         measureRawColumnChunks[j] = projectionListMeasureChunk[j];
       }
     }
-    /*
-      in case projection if the projected measure are not loaded in the measureColumnDataChunk
-      then loading them
+    dimensionReadTime1 = System.currentTimeMillis();
+    /**
+     * in case projection if the projected measure are not loaded in the measureColumnDataChunk
+     * then loading them
      */
     int[] projectionListMeasureIndexes = blockExecutionInfo.getProjectionListMeasureIndexes();
     int projectionListMeasureIndexesLength = projectionListMeasureIndexes.length;
@@ -260,6 +276,7 @@ public class FilterScanner extends AbstractBlockletScanner {
             .getMeasureChunk(fileReader, projectionListMeasureIndexes[i]);
       }
     }
+    dimensionReadTime += System.currentTimeMillis() - dimensionReadTime1;
     DimensionColumnDataChunk[][] dimensionColumnDataChunks =
         new DimensionColumnDataChunk[dimensionRawColumnChunks.length][indexesGroup.length];
     MeasureColumnDataChunk[][] measureColumnDataChunks =
@@ -287,9 +304,11 @@ public class FilterScanner extends AbstractBlockletScanner {
     QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.SCAN_BLOCKlET_TIME);
     scanTime.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKlET_TIME,
-        scanTime.getCount() + (System.currentTimeMillis() - startTime));
-    queryStatisticsModel.getRecorder().recordStatistics(scanTime);
-
+        scanTime.getCount() + (System.currentTimeMillis() - startTime - dimensionReadTime));
+    QueryStatistic readTime = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.READ_BLOCKlET_TIME);
+    readTime.addCountStatistic(QueryStatisticsConstants.READ_BLOCKlET_TIME,
+        readTime.getCount() + dimensionReadTime);
     return scannedResult;
   }
 }
