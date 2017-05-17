@@ -205,10 +205,14 @@ case class DeleteLoadsById(
   def run(sparkSession: SparkSession): Seq[Row] = {
 
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
+    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      .getTableFromMetadata(getDB.getDatabaseName(databaseNameOp, sparkSession), tableName)
+      .map(_.carbonTable).getOrElse(null)
     CarbonStore.deleteLoadById(
       loadids,
       getDB.getDatabaseName(databaseNameOp, sparkSession),
-      tableName
+      tableName,
+      carbonTable
     )
     Seq.empty
 
@@ -226,10 +230,14 @@ case class DeleteLoadsByLoadDate(
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
+    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      .getTableFromMetadata(getDB.getDatabaseName(databaseNameOp, sparkSession), tableName)
+      .map(_.carbonTable).getOrElse(null)
     CarbonStore.deleteLoadByDate(
       loadDate,
       getDB.getDatabaseName(databaseNameOp, sparkSession),
-      tableName
+      tableName,
+      carbonTable
     )
     Seq.empty
   }
@@ -662,10 +670,14 @@ private[sql] case class DeleteLoadByDate(
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
+    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      .getTableFromMetadata(getDB.getDatabaseName(databaseNameOp, sparkSession), tableName)
+      .map(_.carbonTable).getOrElse(null)
     CarbonStore.deleteLoadByDate(
       loadDate,
       getDB.getDatabaseName(databaseNameOp, sparkSession),
-      tableName
+      tableName,
+      carbonTable
     )
     Seq.empty
   }
@@ -680,12 +692,17 @@ case class CleanFiles(
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
-    val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val relation = catalog
       .lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation]
+    val carbonTable = catalog
+      .getTableFromMetadata(getDB.getDatabaseName(databaseNameOp, sparkSession), tableName)
+      .map(_.carbonTable).getOrElse(null)
     CarbonStore.cleanFiles(
       getDB.getDatabaseName(databaseNameOp, sparkSession),
       tableName,
-      relation.asInstanceOf[CarbonRelation].tableMeta.storePath
+      relation.asInstanceOf[CarbonRelation].tableMeta.storePath,
+      carbonTable
     )
     Seq.empty
   }
@@ -699,10 +716,14 @@ case class ShowLoads(
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
+    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      .getTableFromMetadata(getDB.getDatabaseName(databaseNameOp, sparkSession), tableName)
+      .map(_.carbonTable).getOrElse(null)
     CarbonStore.showSegments(
       getDB.getDatabaseName(databaseNameOp, sparkSession),
       tableName,
-      limit
+      limit,
+      carbonTable.getMetaDataFilepath
     )
   }
 }
