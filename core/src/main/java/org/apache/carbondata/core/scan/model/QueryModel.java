@@ -111,6 +111,8 @@ public class QueryModel implements Serializable {
     queryDimension = new ArrayList<QueryDimension>();
     queryMeasures = new ArrayList<QueryMeasure>();
     invalidSegmentIds = new ArrayList<>();
+    sortMdkDimensions = new ArrayList<QueryDimension>();
+    limit = -1;
   }
 
   public static QueryModel createModel(AbsoluteTableIdentifier absoluteTableIdentifier,
@@ -360,4 +362,56 @@ public class QueryModel implements Serializable {
   public Map<String,UpdateVO>  getInvalidBlockVOForSegmentId() {
     return  invalidSegmentBlockIdMap;
   }
+
+  /**
+   * list of dimension in which sorting is applied
+   */
+  private List<QueryDimension> sortMdkDimensions;
+
+  /**
+   * in case of lime query we need to know how many records will passed from
+   * executor
+   */
+  private int limit;
+
+
+
+  /**
+   * @return the sortDimension
+   */
+  public List<QueryDimension> getSortMdkDimensions() {
+    return sortMdkDimensions;
+  }
+
+  /**
+   * @return the limit
+   */
+  public int getLimit() {
+    return limit;
+  }
+
+  /**
+   * @param limit
+   *          the limit to set
+   */
+  public void setLimit(int limit) {
+    this.limit = limit;
+  }
+
+  /**
+   * @param sortDimension the sortDimension to set
+   */
+  public void setSortMdkDimensions(List<QueryDimension> sortMdkDimensions,
+      CarbonTable carbonTable) {
+    if (sortMdkDimensions == null || sortMdkDimensions.size() == 0) {
+      return;
+    }
+    for (QueryDimension qd : sortMdkDimensions) {
+      CarbonDimension dimensionByName = carbonTable
+          .getDimensionByName(carbonTable.getFactTableName(), qd.getColumnName());
+      qd.setDimension(dimensionByName);
+    }
+    this.sortMdkDimensions = sortMdkDimensions;
+  }
+
 }

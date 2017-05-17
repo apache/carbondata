@@ -27,19 +27,21 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.catalyst.expressions.{AttributeSet, _}
-import org.apache.spark.sql.catalyst.planning.{PhysicalOperation, QueryPlanner}
+import org.apache.spark.sql.catalyst.planning.{PhysicalOperation, PhysicalOperationForPushdown, QueryPlanner}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter => LogicalFilter, LogicalPlan}
-import org.apache.spark.sql.execution.{ExecutedCommand, Filter, Project, SparkPlan}
+import org.apache.spark.sql.execution.{ExecutedCommand, Filter, Project, SparkPlan, TakeOrderedAndProject}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.{DescribeCommand => LogicalDescribeCommand, LogicalRelation}
 import org.apache.spark.sql.hive.execution.{DropTable, HiveNativeCommand}
 import org.apache.spark.sql.hive.execution.command._
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
+import org.apache.spark.sql.optimizer.CarbonMergeSort
 import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.sql.types.StringType
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.scan.model.QueryDimension
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
@@ -69,6 +71,19 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           } else {
             carbonRawScan(projectList, predicates, l)(sqlContext) :: Nil
           }
+        case PhysicalOperationForPushdown(projectList, predicates, l: LogicalRelation,
+          sortMdkDimensions, limitValue)
+          if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
+          if ((plan.isInstanceOf[CarbonPushDownToScan]
+            && isStarQuery(plan.asInstanceOf[CarbonPushDownToScan].child))
+            || (!plan.isInstanceOf[CarbonPushDownToScan]
+              && isStarQuery(plan))) {
+            carbonRawScanForStarQuery(projectList, predicates, l, sortMdkDimensions,
+              limitValue)(sqlContext) :: Nil
+          } else {
+            carbonRawScan(projectList, predicates, l, sortMdkDimensions
+                , limitValue)(sqlContext) :: Nil
+          }
         case InsertIntoCarbonTable(relation: CarbonDatasourceRelation,
             _, child: LogicalPlan, _, _) =>
             ExecutedCommand(LoadTableByInsert(relation,
@@ -78,6 +93,12 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
             profile,
             aliasMap,
             planLater(child))(sqlContext) :: Nil
+        case CarbonMergeSort(limit, sortExprs, global, child) =>
+          TakeOrderedAndProject(
+            limit,
+            sortExprs,
+            None,
+            planLater(child)) :: Nil
         case _ =>
           Nil
       }
@@ -88,7 +109,8 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
      */
     private def carbonRawScan(projectList: Seq[NamedExpression],
       predicates: Seq[Expression],
-      logicalRelation: LogicalRelation)(sc: SQLContext): SparkPlan = {
+      logicalRelation: LogicalRelation, sortMdkDimensions: Seq[QueryDimension] = Nil,
+            limitValue: Int = -1)(sc: SQLContext): SparkPlan = {
 
       val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceRelation]
       val tableName: String =
@@ -109,7 +131,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       val filterSet = AttributeSet(predicates.flatMap(_.references))
       val scan = CarbonScan(projectSet.toSeq,
         relation.carbonRelation,
-        predicates)(sqlContext)
+        predicates, true, sortMdkDimensions, limitValue)(sqlContext)
       newProjectList.map {
         case attr: AttributeReference =>
         case Alias(attr: AttributeReference, _) =>
@@ -156,7 +178,9 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
      */
     private def carbonRawScanForStarQuery(projectList: Seq[NamedExpression],
       predicates: Seq[Expression],
-      logicalRelation: LogicalRelation)(sc: SQLContext): SparkPlan = {
+      logicalRelation: LogicalRelation,
+      sortMdkDimensions: Seq[QueryDimension] = Nil,
+      limitValue: Int = -1)(sc: SQLContext): SparkPlan = {
       val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceRelation]
       val tableName: String =
         relation.carbonRelation.metaData.carbonTable.getFactTableName.toLowerCase
@@ -166,7 +190,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       val scan = CarbonScan(projectList.map(_.toAttribute),
         relation.carbonRelation,
         predicates,
-        useUnsafeCoversion = false)(sqlContext)
+        useUnsafeCoversion = false, sortMdkDimensions, limitValue)(sqlContext)
       projectExprsNeedToDecode.addAll(scan.attributesNeedToDecode)
       val updatedAttrs = scan.columnProjection.map(attr =>
         updateDataType(attr.asInstanceOf[AttributeReference], relation, projectExprsNeedToDecode))

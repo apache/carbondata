@@ -1191,6 +1191,8 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_BAD_RECORDS_ACTION_DEFAULT = "FORCE";
 
+  public static final boolean ORDER_BY_MDK_OPTIMIZATION_FLG = true;
+
   private CarbonCommonConstants() {
   }
 }

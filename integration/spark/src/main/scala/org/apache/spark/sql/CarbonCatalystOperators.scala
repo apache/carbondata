@@ -25,6 +25,7 @@ import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types._
 
+import org.apache.carbondata.core.scan.model.QueryDimension
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 /**
@@ -156,4 +157,10 @@ case class InsertIntoCarbonTable(
   // This is the expected schema of the table prepared to be inserted into,
   // including dynamic partition columns.
   val tableOutput = table.carbonRelation.output
+}
+case class CarbonPushDownToScan(
+    sortMdkDimensions: Seq[QueryDimension],
+    limit: Int,
+    child: LogicalPlan) extends UnaryNode {
+  override def output: Seq[Attribute] = child.output
 }

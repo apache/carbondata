@@ -642,5 +642,34 @@ public class BlockExecutionInfo {
   public void setProjectionListMeasureIndexes(int[] projectionListMeasureIndexes) {
     this.projectionListMeasureIndexes = projectionListMeasureIndexes;
   }
+  /**
+   * this to handle limit query in case of detail query we are pushing down the
+   * limit to executor level so based on the number of limit we can process only
+   * that many records
+   */
+  private int limit;
+  private boolean orderByMdkFlg;
 
+  /**
+   * @return the limit
+   */
+  public int getLimit() {
+    return limit;
+  }
+
+  /**
+   * @param limit
+   *          the limit to set
+   */
+  public void setLimit(int limit) {
+    this.limit = limit;
+  }
+
+  public boolean isOrderByMdkFlg() {
+    return orderByMdkFlg;
+  }
+
+  public void setOrderByMdkFlg(boolean orderByMdkFlg) {
+    this.orderByMdkFlg = orderByMdkFlg;
+  }
 }

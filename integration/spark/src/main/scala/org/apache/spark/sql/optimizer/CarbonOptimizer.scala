@@ -36,6 +36,9 @@ import org.apache.spark.sql.types.{IntegerType, StringType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.scan.model.QueryDimension
+import org.apache.carbondata.core.scan.model.SortOrderType
 import org.apache.carbondata.core.stats.QueryStatistic
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.apache.carbondata.spark.{CarbonAliasDecoderRelation, CarbonFilters}
@@ -205,9 +208,96 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
     val attrMap = new util.HashMap[AttributeReferenceWrapper, CarbonDecoderRelation]()
     relations.foreach(_.fillAttributeMap(attrMap))
 
+    // for sort optimization
+    var limitValue: Int = -1
+    var sortMdkDimensions: Seq[QueryDimension] = Nil
+    var sortMdkPushdownFlg = false
+    var carbonTable : CarbonTable = null
+    def isCanPushDownLimitAndSortMdk(sort: Sort): Boolean = {
+      if (sortMdkPushdownFlg) {
+        def getCarbonSortDirection(sortDirection: SortDirection) = {
+          sortDirection match {
+            case Descending => SortOrderType.DSC
+            case Ascending => SortOrderType.ASC
+            case _ => SortOrderType.NONE
+          }
+        }
+        // use to check whether all order by columns are  dimensions
+        var orderByPrefixMdkCnt: Int = 0
+        // use to check whether all order by columns sort directions are the same , ASC or DESC
+        var sortDirection: SortDirection = null
+        sortMdkDimensions = sort.order.map {
+          x =>
+            if (!sortMdkPushdownFlg) {
+              null
+            } else {
+              if (!x.child.isInstanceOf[AttributeReference]) {
+                sortMdkPushdownFlg = false
+                null
+              } else {
+                var sortColRef = x.child.references
+                var col = sortColRef.iterator.next()
+                var colName = col.name
+                val carbonDimension =
+                  carbonTable.getDimensionByName(carbonTable.getFactTableName, colName)
+                if (carbonDimension == null) {
+                  sortMdkPushdownFlg = false
+                  null
+                } else {
+                  // not prefix of mdk
+                  if (carbonDimension.getKeyOrdinal != orderByPrefixMdkCnt) {
+                    sortMdkPushdownFlg = false
+                    null
+                  } else {
+                    orderByPrefixMdkCnt = orderByPrefixMdkCnt + 1
+                    var qd = new QueryDimension(colName)
+                    if (sortDirection == null) {
+                      sortDirection = x.direction
+                    }
+                    // not the same sort direction
+                    if (!sortDirection.equals(x.direction)) {
+                      sortMdkPushdownFlg = false
+                      null
+                    } else {
+                      qd.setSortOrder(getCarbonSortDirection(x.direction))
+                      qd.setDimension(carbonDimension)
+                      qd
+                    }
+                  }
+                }
+              }
+            }
+        }
+      }
+      // print(" sortMdkPushdownFlg: " + sortMdkPushdownFlg)
+      sortMdkPushdownFlg
+    }
     def addTempDecoder(currentPlan: LogicalPlan): LogicalPlan = {
       currentPlan match {
-        case limit@Limit(_, child: Sort) =>
+        case limit@Limit(limitExpr, child: Sort) =>
+
+          // handle limit+sort flg
+          if (CarbonCommonConstants.ORDER_BY_MDK_OPTIMIZATION_FLG) {
+            var tmpChild = child.child;
+            if (tmpChild != null && tmpChild.isInstanceOf[Project]) {
+              tmpChild = tmpChild.asInstanceOf[Project].child
+              if (tmpChild != null && tmpChild.isInstanceOf[LogicalRelation]) {
+                sortMdkPushdownFlg = true
+                carbonTable = tmpChild.asInstanceOf[LogicalRelation].relation
+                  .asInstanceOf[CarbonDatasourceRelation].carbonRelation.metaData.carbonTable
+                limitValue = limitExpr.asInstanceOf[Literal].value.asInstanceOf[Int]
+              } else if (tmpChild != null && tmpChild.isInstanceOf[Filter]) {
+                tmpChild = tmpChild.asInstanceOf[Filter].child
+                if (tmpChild != null && tmpChild.isInstanceOf[LogicalRelation]) {
+                  sortMdkPushdownFlg = true
+                  carbonTable = tmpChild.asInstanceOf[LogicalRelation].relation
+                    .asInstanceOf[CarbonDatasourceRelation].carbonRelation.metaData.carbonTable
+                limitValue = limitExpr.asInstanceOf[Literal].value.asInstanceOf[Int]
+                }
+              }
+            }
+          }
+
           if (!decoder) {
             decoder = true
             CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
@@ -231,14 +321,29 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             child = CarbonDictionaryTempDecoder(attrsOnSort,
               new util.HashSet[AttributeReferenceWrapper](), sort.child)
           }
+          var tempSort: LogicalPlan = null;
+          if (isCanPushDownLimitAndSortMdk(sort)) {
+            var sortNextChild: LogicalPlan = null
+            if (child.isInstanceOf[CarbonDictionaryTempDecoder]) {
+              var tempChild = child.asInstanceOf[CarbonDictionaryTempDecoder]
+              sortNextChild = CarbonDictionaryTempDecoder(tempChild.attrList,
+                tempChild.attrsNotDecode, CarbonPushDownToScan(sortMdkDimensions, limitValue,
+                  tempChild.child))
+            } else {
+              sortNextChild = CarbonPushDownToScan(sortMdkDimensions, limitValue, child)
+            }
+            tempSort = CarbonMergeSort(limitValue, sort.order, sort.global, sortNextChild)
+          } else {
+            tempSort = Sort(sort.order, sort.global, child)
+          }
           if (!decoder) {
             decoder = true
             CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
               new util.HashSet[AttributeReferenceWrapper](),
-              Sort(sort.order, sort.global, child),
+              tempSort,
               isOuter = true)
           } else {
-            Sort(sort.order, sort.global, child)
+            tempSort
           }
 
         case union: Union
@@ -580,6 +685,14 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
         }
       case cd: CarbonDictionaryCatalystDecoder =>
         cd
+      case sort: CarbonMergeSort =>
+        val sortExprs = sort.order.map { s =>
+          s.transform {
+            case attr: AttributeReference =>
+              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+          }.asInstanceOf[SortOrder]
+        }
+        CarbonMergeSort(sort.limit, sortExprs, sort.global, sort.child)
       case sort: Sort =>
         val sortExprs = sort.order.map { s =>
           s.transform {
@@ -803,4 +916,12 @@ case class CarbonDecoderRelation(
   }
 
   lazy val dictionaryMap = carbonRelation.carbonRelation.metaData.dictionaryMap
+}
+
+case class CarbonMergeSort(
+    limit: Int,
+    order: Seq[SortOrder],
+    global: Boolean,
+    child: LogicalPlan) extends UnaryNode {
+  override def output: Seq[Attribute] = child.output
 }

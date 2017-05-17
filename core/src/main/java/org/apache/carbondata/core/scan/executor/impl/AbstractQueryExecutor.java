@@ -245,6 +245,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setBlockKeyGenerator(blockKeyGenerator);
     // setting whether raw record query or not
     blockExecutionInfo.setRawRecordDetailQuery(queryModel.isForcedDetailRawQuery());
+    // setting the limit
+    blockExecutionInfo.setLimit(queryModel.getLimit());
+    // order by mdk flg
+    blockExecutionInfo.setOrderByMdkFlg(
+        queryModel.getSortMdkDimensions() != null && queryModel.getSortMdkDimensions().size() > 0);
     // total number dimension
     blockExecutionInfo
         .setTotalNumberDimensionBlock(segmentProperties.getDimensionOrdinalToBlockMapping().size());
