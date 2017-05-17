@@ -26,7 +26,7 @@ import org.apache.spark.{Dependency, OneToOneDependency, Partition, SparkContext
 import org.apache.spark.rdd.RDD
 
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, CarbonTaskInfo, SessionParams, ThreadLocalSessionInfo, ThreadLocalTaskInfo}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, CarbonTaskInfo, SessionParams, TaskMetricsMap, ThreadLocalSessionInfo, ThreadLocalTaskInfo}
 
 /**
  * This RDD maintains session level ThreadLocal
@@ -53,6 +53,7 @@ abstract class CarbonRDD[T: ClassTag](@transient sc: SparkContext,
 
   final def compute(split: Partition, context: TaskContext): Iterator[T] = {
     ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
+    TaskMetricsMap.threadLocal.set(Thread.currentThread().getId)
     val carbonTaskInfo = new CarbonTaskInfo
     carbonTaskInfo.setTaskId(System.nanoTime)
     ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo)

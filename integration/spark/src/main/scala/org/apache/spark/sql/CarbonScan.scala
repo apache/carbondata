@@ -20,6 +20,7 @@ package org.apache.spark.sql
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
@@ -27,7 +28,7 @@ import org.apache.spark.sql.execution.LeafNode
 import org.apache.spark.sql.hive.CarbonMetastore
 
 import org.apache.carbondata.core.scan.model._
-import org.apache.carbondata.hadoop.CarbonProjection
+import org.apache.carbondata.hadoop.{CarbonProjection, InputMetricsStats}
 import org.apache.carbondata.spark.CarbonFilters
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
@@ -122,14 +123,14 @@ case class CarbonScan(
     columnProjection.foreach { attr =>
       projection.addColumn(attr.name)
     }
-
+    val inputMetricsStats: CarbonInputMetrics = new CarbonInputMetrics
     new CarbonScanRDD(
       ocRaw.sparkContext,
       projection,
       buildCarbonPlan.getFilterExpression,
       carbonTable.getAbsoluteTableIdentifier,
       carbonTable.getTableInfo.serialize(),
-      carbonTable.getTableInfo
+      carbonTable.getTableInfo, inputMetricsStats
     )
   }
 

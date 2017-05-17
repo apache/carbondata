@@ -41,6 +41,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.AbstractRecordReader;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
+import org.apache.carbondata.hadoop.InputMetricsStats;
 import org.apache.carbondata.spark.util.CarbonScalaUtil;
 
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -81,8 +82,11 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
 
   private QueryExecutor queryExecutor;
 
-  public VectorizedCarbonRecordReader(QueryModel queryModel) {
+  private InputMetricsStats inputMetricsStats;
+
+  public VectorizedCarbonRecordReader(QueryModel queryModel, InputMetricsStats inputMetricsStats) {
     this.queryModel = queryModel;
+    this.inputMetricsStats = inputMetricsStats;
     enableReturningBatches();
   }
 
@@ -149,7 +153,9 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
 
   @Override public Object getCurrentValue() throws IOException, InterruptedException {
     if (returnColumnarBatch) {
-      rowCount += columnarBatch.numValidRows();
+      int value = columnarBatch.numValidRows();
+      rowCount += value;
+      inputMetricsStats.incrementRecordRead(new Long(value));
       return columnarBatch;
     }
     rowCount += 1;

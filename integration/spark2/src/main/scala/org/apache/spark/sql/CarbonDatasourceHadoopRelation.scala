@@ -21,6 +21,7 @@ import java.io.{ByteArrayOutputStream, DataOutputStream}
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.LoadTableByInsert
@@ -34,7 +35,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.core.util.{CarbonSessionInfo, ThreadLocalSessionInfo}
-import org.apache.carbondata.hadoop.CarbonProjection
+import org.apache.carbondata.hadoop.{CarbonProjection, InputMetricsStats}
 import org.apache.carbondata.spark.CarbonFilters
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
@@ -71,14 +72,14 @@ case class CarbonDatasourceHadoopRelation(
 
     val projection = new CarbonProjection
     requiredColumns.foreach(projection.addColumn)
-
+    val inputMetricsStats: CarbonInputMetrics = new CarbonInputMetrics
     new CarbonScanRDD(
       sqlContext.sparkContext,
       projection,
       filterExpression.orNull,
       identifier,
       carbonTable.getTableInfo.serialize(),
-      carbonTable.getTableInfo)
+      carbonTable.getTableInfo, inputMetricsStats)
   }
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)

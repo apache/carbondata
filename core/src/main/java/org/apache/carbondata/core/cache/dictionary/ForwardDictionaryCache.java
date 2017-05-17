@@ -35,6 +35,7 @@ import org.apache.carbondata.core.cache.CarbonLRUCache;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ObjectSizeCalculator;
+import org.apache.carbondata.core.util.TaskMetricsMap;
 
 /**
  * This class implements methods to create dictionary cache which will hold
@@ -100,28 +101,36 @@ public class ForwardDictionaryCache<K extends
     for (final DictionaryColumnUniqueIdentifier uniqueIdent : dictionaryColumnUniqueIdentifiers) {
       taskSubmitList.add(executorService.submit(new Callable<Dictionary>() {
         @Override public Dictionary call() throws IOException {
-          // in case of multiple task for same query same executor
-          // only one task should load the dictionary
-          // others will wait on monitor and get the loaded dictionary values
-          Object lockObject = DICTIONARY_LOCK_OBJECT.get(uniqueIdent);
-          // if lock object is null
-          if (null == lockObject) {
-            // Acquire the lock on map
-            synchronized (DICTIONARY_LOCK_OBJECT) {
-              // double checking the dictionary lock object
-              lockObject = DICTIONARY_LOCK_OBJECT.get(uniqueIdent);
-              // if still it is null add new lock object
-              if (null == lockObject) {
-                lockObject = new Object();
-                DICTIONARY_LOCK_OBJECT.put(uniqueIdent, lockObject);
+          try {
+            // Register thread callback for calculating metrics
+            TaskMetricsMap.getInstance().registerThreadCallback();
+            // in case of multiple task for same query same executor
+            // only one task should load the dictionary
+            // others will wait on monitor and get the loaded dictionary values
+            Object lockObject = DICTIONARY_LOCK_OBJECT.get(uniqueIdent);
+            // if lock object is null
+            if (null == lockObject) {
+              // Acquire the lock on map
+              synchronized (DICTIONARY_LOCK_OBJECT) {
+                // double checking the dictionary lock object
+                lockObject = DICTIONARY_LOCK_OBJECT.get(uniqueIdent);
+                // if still it is null add new lock object
+                if (null == lockObject) {
+                  lockObject = new Object();
+                  DICTIONARY_LOCK_OBJECT.put(uniqueIdent, lockObject);
+                }
               }
             }
+            Dictionary dictionary = null;
+            synchronized (lockObject) {
+              dictionary = getDictionary(uniqueIdent);
+            }
+            return dictionary;
+          }  finally {
+            // update read bytes metrics for this thread
+            TaskMetricsMap.getInstance().updateReadBytes(Thread.currentThread().getId());
           }
-          Dictionary dictionary = null;
-          synchronized (lockObject) {
-            dictionary = getDictionary(uniqueIdent);
-          }
-          return dictionary;
+
         }
       }));
     }

@@ -37,9 +37,10 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, TaskMetricsMap}
 import org.apache.carbondata.hadoop._
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
+import org.apache.carbondata.spark.InitInputMetrics
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
 
@@ -54,7 +55,7 @@ class CarbonScanRDD(
     filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
     serializedTableInfo: Array[Byte],
-    @transient tableInfo: TableInfo)
+    @transient tableInfo: TableInfo, inputMetricsStats: InitInputMetrics)
   extends CarbonRDDWithTableInfo[InternalRow](sc, Nil, serializedTableInfo) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
@@ -187,19 +188,23 @@ class CarbonScanRDD(
     val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
     val format = prepareInputFormatForExecutor(attemptContext.getConfiguration)
     val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
+    TaskMetricsMap.getInstance().registerThreadCallback()
+    inputMetricsStats.initBytesReadCallback(context, inputSplit)
     val iterator = if (inputSplit.getAllSplits.size() > 0) {
       val model = format.getQueryModel(inputSplit, attemptContext)
       val reader = {
         if (vectorReader) {
-          val carbonRecordReader = createVectorizedCarbonRecordReader(model)
+          val carbonRecordReader = createVectorizedCarbonRecordReader(model, inputMetricsStats)
           if (carbonRecordReader == null) {
             new CarbonRecordReader(model,
-              format.getReadSupportClass(attemptContext.getConfiguration))
+              format.getReadSupportClass(attemptContext.getConfiguration), inputMetricsStats)
           } else {
             carbonRecordReader
           }
         } else {
-          new CarbonRecordReader(model, format.getReadSupportClass(attemptContext.getConfiguration))
+          new CarbonRecordReader(model,
+            format.getReadSupportClass(attemptContext.getConfiguration),
+            inputMetricsStats)
         }
       }
 
@@ -213,6 +218,7 @@ class CarbonScanRDD(
         context.addTaskCompletionListener { context =>
           logStatistics(queryStartTime, model.getStatisticsRecorder)
           reader.close()
+        close()
         }
 
         override def hasNext: Boolean = {
@@ -234,6 +240,10 @@ class CarbonScanRDD(
           val value = reader.getCurrentValue
           value
         }
+        private def close() {
+          TaskMetricsMap.getInstance().updateReadBytes(Thread.currentThread().getId)
+          inputMetricsStats.updateAndClose()
+      }
       }
     } else {
       new Iterator[Any] {
@@ -284,12 +294,13 @@ class CarbonScanRDD(
     firstOptionLocation
   }
 
-  def createVectorizedCarbonRecordReader(queryModel: QueryModel): RecordReader[Void, Object] = {
+  def createVectorizedCarbonRecordReader(queryModel: QueryModel,
+      inputMetricsStats: InputMetricsStats): RecordReader[Void, Object] = {
     val name = "org.apache.carbondata.spark.vectorreader.VectorizedCarbonRecordReader"
     try {
       val cons = Class.forName(name).getDeclaredConstructors
       cons.head.setAccessible(true)
-      cons.head.newInstance(queryModel).asInstanceOf[RecordReader[Void, Object]]
+      cons.head.newInstance(queryModel, inputMetricsStats).asInstanceOf[RecordReader[Void, Object]]
     } catch {
       case e: Exception =>
         LOGGER.error(e)
