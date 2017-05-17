@@ -861,7 +861,7 @@ object CarbonDataRDDFactory {
 
   private def writeDictionary(carbonLoadModel: CarbonLoadModel,
       result: Option[DictionaryServer], writeAll: Boolean) = {
-    // write dictionary file and shutdown dictionary server
+    // write dictionary file
     val uniqueTableName: String = s"${ carbonLoadModel.getDatabaseName }_${
       carbonLoadModel.getTableName
     }"
@@ -874,7 +874,7 @@ object CarbonDataRDDFactory {
             server.writeTableDictionary(uniqueTableName)
           }
         } catch {
-          case ex: Exception =>
+          case _: Exception =>
             LOGGER.error(s"Error while writing dictionary file for $uniqueTableName")
             throw new Exception("Dataload failed due to error while writing dictionary file!")
         }

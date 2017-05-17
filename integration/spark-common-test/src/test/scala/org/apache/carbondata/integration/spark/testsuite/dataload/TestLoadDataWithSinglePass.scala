@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.testsuite.dataload
+package org.apache.carbondata.integration.spark.testsuite.dataload
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -103,9 +104,26 @@ class TestLoadDataWithSinglePass extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("test data loading with dctionary exclude") {
+    sql("DROP TABLE IF EXISTS dict_exclude")
+    sql(
+      """
+        |CREATE TABLE dict_exclude (ID int, date Timestamp, country String,
+        |name String, phonetype String, serialname String, salary int)
+        |STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='country,name,serialname,phonetype')
+      """.stripMargin)
+    sql(
+      s"""
+         |LOAD DATA local inpath '$resourcesPath/source.csv' INTO TABLE dict_exclude
+         |OPTIONS('DELIMITER'= ',', 'SINGLE_PASS'='FALSE')
+      """.stripMargin)
+    checkAnswer(sql("select name from dict_exclude limit 1"),Row("aaa1"))
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS table_two_pass")
     sql("DROP TABLE IF EXISTS table_one_pass")
     sql("DROP TABLE IF EXISTS table_one_pass_2")
+    sql("DROP TABLE IF EXISTS dict_exclude")
   }
 }
