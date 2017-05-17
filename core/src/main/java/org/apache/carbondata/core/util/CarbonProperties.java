@@ -22,7 +22,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -53,6 +55,11 @@ public final class CarbonProperties {
   private Properties carbonProperties;
 
   private Set<String> propertySet = new HashSet<String>();
+
+  /**
+   * It is purely for testing
+   */
+  private Map<String, String> addedProperty = new HashMap<>();
 
   /**
    * Private constructor this will call load properties method to load all the
@@ -572,6 +579,7 @@ public final class CarbonProperties {
    */
   public CarbonProperties addProperty(String key, String value) {
     carbonProperties.setProperty(key, value);
+    addedProperty.put(key, value);
     return this;
   }
 
@@ -874,5 +882,9 @@ public final class CarbonProperties {
    */
   public boolean isCarbonProperty(String key) {
     return propertySet.contains(key);
+  }
+
+  public Map<String, String> getAddedProperty() {
+    return addedProperty;
   }
 }
