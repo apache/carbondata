@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.core.datastore.impl;
 
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -29,12 +31,14 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-
 public class DFSFileHolderImpl implements FileHolder {
   /**
    * cache to hold filename and its stream
    */
   private Map<String, FSDataInputStream> fileNameAndStreamCache;
+
+  private String queryId;
+
 
   public DFSFileHolderImpl() {
     this.fileNameAndStreamCache =
@@ -137,5 +141,20 @@ public class DFSFileHolderImpl implements FileHolder {
     ByteBuffer byteBuffer = ByteBuffer.wrap(readByteArray);
     byteBuffer.rewind();
     return byteBuffer;
+  }
+
+  @Override public void setQueryId(String queryId) {
+    this.queryId = queryId;
+  }
+
+  @Override public String getQueryId() {
+    return queryId;
+  }
+
+  @Override public DataInputStream getDataInputStream(String filePath, long offset)
+      throws IOException {
+    FSDataInputStream fsDataInputStream = updateCache(filePath);
+    fsDataInputStream.seek(offset);
+    return new DataInputStream(new BufferedInputStream(fsDataInputStream, 1 * 1024 * 1024));
   }
 }

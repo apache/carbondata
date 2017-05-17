@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -97,4 +98,11 @@ public interface FileHolder {
    * This method will be used to close all the streams currently present in the cache
    */
   void finish() throws IOException;
+
+  void setQueryId(String queryId);
+
+  String getQueryId();
+
+  DataInputStream getDataInputStream(String filePath, long offset) throws IOException;
+
 }
