@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.testsuite.dataload
+package org.apache.carbondata.integration.spark.testsuite.dataload
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
