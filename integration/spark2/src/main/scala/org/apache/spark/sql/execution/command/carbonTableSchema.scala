@@ -41,22 +41,19 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
-import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
-import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.format.SchemaEvolutionEntry
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonSparkUtil, CommonUtil,
-DataTypeConverterUtil, GlobalDictionaryUtil}
+import org.apache.carbondata.spark.util.{CarbonSparkUtil, CommonUtil, GlobalDictionaryUtil}
 
 object Checker {
   def validateTableExists(
@@ -436,15 +433,13 @@ case class LoadTable(
           DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + "," + isEmptyDataBadRecord)
       val useOnePass = options.getOrElse("single_pass", "false").trim.toLowerCase match {
         case "true" =>
-          if (StringUtils.isEmpty(allDictionaryPath)) {
+          true
+        case "false" =>
+          if (!StringUtils.isEmpty(allDictionaryPath)) {
             true
           } else {
-            LOGGER.error("Can't use single_pass, because SINGLE_PASS and ALL_DICTIONARY_PATH" +
-                         "can not be used together")
             false
           }
-        case "false" =>
-          false
         case illegal =>
           LOGGER.error(s"Can't use single_pass, because illegal syntax found: [" + illegal + "] " +
                        "Please set it as 'true' or 'false'")
@@ -480,22 +475,33 @@ case class LoadTable(
         carbonLoadModel.setMaxColumns(validatedMaxColumns.toString)
         GlobalDictionaryUtil.updateTableMetadataFunc = LoadTable.updateTableMetadata
         if (carbonLoadModel.getUseOnePass) {
+          val storePath = relation.tableMeta.storePath
+          val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+          val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
+            .getCarbonTableIdentifier
+          val carbonTablePath = CarbonStorePath
+            .getCarbonTablePath(storePath, carbonTableIdentifier)
+          val dictFolderPath = carbonTablePath.getMetadataDirectoryPath
+          val dimensions = carbonTable.getDimensionByTableName(
+            carbonTable.getFactTableName).asScala.toArray
           val colDictFilePath = carbonLoadModel.getColDictFilePath
-          if (colDictFilePath != null) {
-            val storePath = relation.tableMeta.storePath
-            val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-            val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-              .getCarbonTableIdentifier
-            val carbonTablePath = CarbonStorePath
-              .getCarbonTablePath(storePath, carbonTableIdentifier)
-            val dictFolderPath = carbonTablePath.getMetadataDirectoryPath
-            val dimensions = carbonTable.getDimensionByTableName(
-              carbonTable.getFactTableName).asScala.toArray
+          if (!StringUtils.isEmpty(colDictFilePath)) {
             carbonLoadModel.initPredefDictMap()
             // generate predefined dictionary
             GlobalDictionaryUtil
               .generatePredefinedColDictionary(colDictFilePath, carbonTableIdentifier,
                 dimensions, carbonLoadModel, sparkSession.sqlContext, storePath, dictFolderPath)
+          }
+          if (!StringUtils.isEmpty(allDictionaryPath)) {
+            carbonLoadModel.initPredefDictMap()
+            GlobalDictionaryUtil
+              .generateDictionaryFromDictionaryFiles(sparkSession.sqlContext,
+                carbonLoadModel,
+                storePath,
+                carbonTableIdentifier,
+                dictFolderPath,
+                dimensions,
+                allDictionaryPath)
           }
           // dictionaryServerClient dictionary generator
           val dictionaryServerPort = CarbonProperties.getInstance()

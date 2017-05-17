@@ -750,37 +750,13 @@ object GlobalDictionaryUtil {
           LOGGER.info("No column found for generating global dictionary in source data files")
         }
       } else {
-        LOGGER.info("Generate global dictionary from dictionary files!")
-        val isNonempty = validateAllDictionaryPath(allDictionaryPath)
-        if (isNonempty) {
-          var headers = carbonLoadModel.getCsvHeaderColumns
-          headers = headers.map(headerName => headerName.trim)
-          // prune columns according to the CSV file header, dimension columns
-          val (requireDimension, requireColumnNames) = pruneDimensions(dimensions, headers, headers)
-          if (requireDimension.nonEmpty) {
-            val model = createDictionaryLoadModel(carbonLoadModel, carbonTableIdentifier,
-              requireDimension, storePath, dictfolderPath, false)
-            // check if dictionary files contains bad record
-            val accumulator = sqlContext.sparkContext.accumulator(0)
-            // read local dictionary file, and group by key
-            val allDictionaryRdd = readAllDictionaryFiles(sqlContext, headers,
-              requireColumnNames, allDictionaryPath, accumulator)
-            // read exist dictionary and combine
-            val inputRDD = new CarbonAllDictionaryCombineRDD(allDictionaryRdd, model)
-              .partitionBy(new ColumnPartitioner(model.primDimensions.length))
-            // generate global dictionary files
-            val statusList = new CarbonGlobalDictionaryGenerateRDD(inputRDD, model).collect()
-            // check result status
-            checkStatus(carbonLoadModel, sqlContext, model, statusList)
-            // if the dictionary contains wrong format record, throw ex
-            if (accumulator.value > 0) {
-              throw new DataLoadingException("Data Loading failure, dictionary values are " +
-                                             "not in correct format!")
-            }
-          } else {
-            LOGGER.info("have no column need to generate global dictionary")
-          }
-        }
+        generateDictionaryFromDictionaryFiles(sqlContext,
+          carbonLoadModel,
+          storePath,
+          carbonTableIdentifier,
+          dictfolderPath,
+          dimensions,
+          allDictionaryPath)
       }
     } catch {
       case ex: Exception =>
@@ -793,6 +769,46 @@ object GlobalDictionaryUtil {
             LOGGER.error(ex, "generate global dictionary failed")
             throw ex
         }
+    }
+  }
+
+  def generateDictionaryFromDictionaryFiles(sqlContext: SQLContext,
+      carbonLoadModel: CarbonLoadModel,
+      storePath: String,
+      carbonTableIdentifier: CarbonTableIdentifier,
+      dictfolderPath: String,
+      dimensions: Array[CarbonDimension],
+      allDictionaryPath: String): Unit = {
+    LOGGER.info("Generate global dictionary from dictionary files!")
+    val isNonempty = validateAllDictionaryPath(allDictionaryPath)
+    if (isNonempty) {
+      var headers = carbonLoadModel.getCsvHeaderColumns
+      headers = headers.map(headerName => headerName.trim)
+      // prune columns according to the CSV file header, dimension columns
+      val (requireDimension, requireColumnNames) = pruneDimensions(dimensions, headers, headers)
+      if (requireDimension.nonEmpty) {
+        val model = createDictionaryLoadModel(carbonLoadModel, carbonTableIdentifier,
+          requireDimension, storePath, dictfolderPath, false)
+        // check if dictionary files contains bad record
+        val accumulator = sqlContext.sparkContext.accumulator(0)
+        // read local dictionary file, and group by key
+        val allDictionaryRdd = readAllDictionaryFiles(sqlContext, headers,
+          requireColumnNames, allDictionaryPath, accumulator)
+        // read exist dictionary and combine
+        val inputRDD = new CarbonAllDictionaryCombineRDD(allDictionaryRdd, model)
+          .partitionBy(new ColumnPartitioner(model.primDimensions.length))
+        // generate global dictionary files
+        val statusList = new CarbonGlobalDictionaryGenerateRDD(inputRDD, model).collect()
+        // check result status
+        checkStatus(carbonLoadModel, sqlContext, model, statusList)
+        // if the dictionary contains wrong format record, throw ex
+        if (accumulator.value > 0) {
+          throw new DataLoadingException("Data Loading failure, dictionary values are " +
+                                         "not in correct format!")
+        }
+      } else {
+        LOGGER.info("have no column need to generate global dictionary")
+      }
     }
   }
 
