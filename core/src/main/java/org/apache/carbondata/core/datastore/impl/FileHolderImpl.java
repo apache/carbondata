@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.datastore.impl;
 
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -34,6 +36,7 @@ public class FileHolderImpl implements FileHolder {
    * cache to hold filename and its stream
    */
   private Map<String, FileChannel> fileNameAndStreamCache;
+  private String queryId;
 
   /**
    * FileHolderImpl Constructor
@@ -203,4 +206,18 @@ public class FileHolderImpl implements FileHolder {
     return byteBuffer;
   }
 
+  @Override public void setQueryId(String queryId) {
+    this.queryId = queryId;
+  }
+
+  @Override public String getQueryId() {
+    return queryId;
+  }
+
+  @Override public DataInputStream getDataInputStream(String filePath, long offset)
+      throws IOException {
+    FileInputStream stream = new FileInputStream(filePath);
+    stream.skip(offset);
+    return new DataInputStream(new BufferedInputStream(stream));
+  }
 }
