@@ -31,11 +31,11 @@ object CarbonBitMapEncodingExample {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
 
-    cc.sql("DROP TABLE IF EXISTS bitmapTable")
+    cc.sql("DROP TABLE IF EXISTS t3")
 
     // Create BITMAP table, 6 dimensions, 2 measure
     cc.sql("""
-           CREATE TABLE IF NOT EXISTS bitmapTable
+           CREATE TABLE IF NOT EXISTS t3
            (ID Int, date Date, country String,
            name String, phonetype String, serialname char(10), salary Int)
            STORED BY 'carbondata'
@@ -44,23 +44,23 @@ object CarbonBitMapEncodingExample {
 
     // Load data
     cc.sql(s"""
-           LOAD DATA LOCAL INPATH '$testData' into table bitmapTable
+           LOAD DATA LOCAL INPATH '$testData' into table t3
            """)
 
     // Perform a query
     cc.sql("""
-           SELECT country, count(salary) AS amount
-           FROM bitmapTable
-           WHERE country IN ('china','france')
-           GROUP BY country
+           SELECT date, country, count(salary) AS amount
+           FROM t3
+           WHERE country IN ('china','france') and name between 'aaa1' and 'aaa6'
+           GROUP BY date, country
            """).show()
     cc.sql("""
            SELECT country, name, salary AS amount
-           FROM bitmapTable
-           WHERE country IN ('china','france')
+           FROM t3
+           WHERE country IN ('china','france') and name = 'aaa10'
            """).show()
     // Drop table
-    cc.sql("DROP TABLE IF EXISTS bitmapTable")
+    cc.sql("DROP TABLE IF EXISTS t3")
   }
 
 }
