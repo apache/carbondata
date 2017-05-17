@@ -99,11 +99,9 @@ public final class DataTypeUtil {
             new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
         return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
       case SHORT:
-        Short shortValue = Short.parseShort(msrValue);
-        return shortValue.longValue();
+        return Short.parseShort(msrValue);
       case INT:
-        Integer intValue = Integer.parseInt(msrValue);
-        return intValue.longValue();
+        return Integer.parseInt(msrValue);
       case LONG:
         return Long.valueOf(msrValue);
       default:

@@ -102,7 +102,11 @@ public class FixLengthColumnPage extends ColumnPage {
     switch (dataType) {
       case BYTE:
       case SHORT:
+        putLong(rowId, ((Short) value).longValue());
+        break;
       case INT:
+        putLong(rowId, ((Integer) value).longValue());
+        break;
       case LONG:
         putLong(rowId, (long) value);
         break;
