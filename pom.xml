@@ -114,6 +114,8 @@
     <spark.deps.scope>compile</spark.deps.scope>
     <scala.deps.scope>compile</scala.deps.scope>
     <dev.path>${basedir}/dev</dev.path>
+    <spark.master.url>local[2]</spark.master.url>
+    <hdfs.url>local</hdfs.url>
   </properties>
 
   <repositories>

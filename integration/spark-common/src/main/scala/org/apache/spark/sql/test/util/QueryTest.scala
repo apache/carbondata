@@ -84,6 +84,10 @@ class QueryTest extends PlanTest {
     checkAnswer(df, expectedAnswer.collect())
   }
 
+  protected def checkAnswer(carbon: String, hive: String): Unit = {
+    checkAnswer(sql(carbon), sql(hive))
+  }
+
   def sql(sqlText: String): DataFrame = TestQueryExecutor.INSTANCE.sql(sqlText)
 
   val sqlContext: SQLContext = TestQueryExecutor.INSTANCE.sqlContext

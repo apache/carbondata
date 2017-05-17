@@ -49,6 +49,15 @@ object TestQueryExecutor {
   val warehouse = s"$integrationPath/spark-common/target/warehouse"
   val metastoredb = s"$integrationPath/spark-common/target"
   val timestampFormat = "dd-MM-yyyy"
+  val masterUrl = {
+    val property = System.getProperty("spark.master.url")
+    if (property == null) {
+      "local[2]"
+    } else {
+      property
+    }
+  }
+
 
   val INSTANCE = lookupQueryExecutor.newInstance().asInstanceOf[TestQueryExecutorRegister]
   CarbonProperties.getInstance()

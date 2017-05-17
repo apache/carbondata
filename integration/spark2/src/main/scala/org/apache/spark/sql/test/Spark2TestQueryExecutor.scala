@@ -17,7 +17,12 @@
 
 package org.apache.spark.sql.test
 
-import org.apache.spark.sql.{DataFrame, SparkSession, SQLContext}
+import java.io.{File, FilenameFilter}
+
+import scala.collection.mutable.ArrayBuffer
+
+import org.apache.spark.SparkConf
+import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -45,13 +50,34 @@ object Spark2TestQueryExecutor {
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
 
 
+
   import org.apache.spark.sql.CarbonSession._
+  val modules = Seq(TestQueryExecutor.projectPath+"/common/target",
+    TestQueryExecutor.projectPath+"/core/target",
+    TestQueryExecutor.projectPath+"/hadoop/target",
+    TestQueryExecutor.projectPath+"/processing/target",
+    TestQueryExecutor.projectPath+"/integration/spark-common/target",
+    TestQueryExecutor.projectPath+"/integration/spark2/target",
+    TestQueryExecutor.projectPath+"/integration/spark-common/target/jars")
+  val jars = new ArrayBuffer[String]()
+  modules.foreach { path =>
+    val files = new File(path).listFiles(new FilenameFilter {
+      override def accept(dir: File, name: String) = {
+        name.endsWith(".jar")
+      }
+    })
+    files.foreach(jars += _.getAbsolutePath)
+  }
+
+  val conf = new SparkConf().setJars(jars)
+
   val spark = SparkSession
-    .builder()
-    .master("local[2]")
+    .builder().config(conf)
+    .master(TestQueryExecutor.masterUrl)
     .appName("Spark2TestQueryExecutor")
     .enableHiveSupport()
     .config("spark.sql.warehouse.dir", TestQueryExecutor.warehouse)
+    .config("spark.sql.crossJoin.enabled", "true")
     .getOrCreateCarbonSession(null, TestQueryExecutor.metastoredb)
   spark.sparkContext.setLogLevel("ERROR")
 
