@@ -38,6 +38,7 @@ import org.apache.carbondata.core.scan.scanner.BlockletScanner;
 import org.apache.carbondata.core.scan.scanner.impl.FilterScanner;
 import org.apache.carbondata.core.scan.scanner.impl.NonFilterScanner;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
+import org.apache.carbondata.core.util.TaskMetricsMap;
 
 /**
  * This abstract class provides a skeletal implementation of the
@@ -198,14 +199,20 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
   private Future<BlocksChunkHolder> executeRead() {
     return executorService.submit(new Callable<BlocksChunkHolder>() {
       @Override public BlocksChunkHolder call() throws Exception {
-        if (dataBlockIterator.hasNext()) {
-          BlocksChunkHolder blocksChunkHolder = getBlocksChunkHolder();
-          if (blocksChunkHolder != null) {
-            blockletScanner.readBlocklet(blocksChunkHolder);
-            return blocksChunkHolder;
+        try {
+          TaskMetricsMap.getInstance().registerThreadCallback();
+          if (dataBlockIterator.hasNext()) {
+            BlocksChunkHolder blocksChunkHolder = getBlocksChunkHolder();
+            if (blocksChunkHolder != null) {
+              blockletScanner.readBlocklet(blocksChunkHolder);
+              return blocksChunkHolder;
+            }
           }
+          return null;
+        } finally {
+          // update read bytes metrics for this thread
+          TaskMetricsMap.getInstance().updateReadBytes(Thread.currentThread().getId());
         }
-        return null;
       }
     });
   }

@@ -47,6 +47,13 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
   protected CarbonIterator<Object[]> carbonIterator;
 
   protected QueryExecutor queryExecutor;
+  private InputMetricsStats inputMetricsStats;
+
+  public CarbonRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport,
+      InputMetricsStats inputMetricsStats) {
+    this(queryModel, readSupport);
+    this.inputMetricsStats = inputMetricsStats;
+  }
 
   public CarbonRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport) {
     this.queryModel = queryModel;
@@ -92,6 +99,9 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
 
   @Override public T getCurrentValue() throws IOException, InterruptedException {
     rowCount += 1;
+    if (null != inputMetricsStats) {
+      inputMetricsStats.incrementRecordRead(1L);
+    }
     return readSupport.readRow(carbonIterator.next());
   }
 

@@ -47,6 +47,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.TaskMetricsMap;
 
 /**
  * This class is used to load the B-Tree in Executor LRU Cache
@@ -290,8 +291,15 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
     }
 
     @Override public AbstractIndex call() throws Exception {
-      // load and return the loaded blocks
-      return get(tableBlockUniqueIdentifier);
+      try {
+        //register thread callback for calculating metrics
+        TaskMetricsMap.getInstance().registerThreadCallback();
+        // load and return the loaded blocks
+        return get(tableBlockUniqueIdentifier);
+      } finally {
+        // update read bytes metrics for this thread
+        TaskMetricsMap.getInstance().updateReadBytes(Thread.currentThread().getId());
+      }
     }
   }
 
