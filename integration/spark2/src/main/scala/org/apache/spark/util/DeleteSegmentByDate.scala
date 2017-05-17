@@ -29,7 +29,9 @@ object DeleteSegmentByDate {
   def deleteSegmentByDate(spark: SparkSession, dbName: String, tableName: String,
       dateValue: String): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
-    CarbonStore.deleteLoadByDate(dateValue, dbName, tableName)
+    val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore
+      .getTableFromMetadata(dbName, tableName).map(_.carbonTable).getOrElse(null)
+    CarbonStore.deleteLoadByDate(dateValue, dbName, tableName, carbonTable)
   }
 
   def main(args: Array[String]): Unit = {

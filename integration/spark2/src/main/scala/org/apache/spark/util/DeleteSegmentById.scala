@@ -33,7 +33,9 @@ object DeleteSegmentById {
   def deleteSegmentById(spark: SparkSession, dbName: String, tableName: String,
       segmentIds: Seq[String]): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
-    CarbonStore.deleteLoadById(segmentIds, dbName, tableName)
+    val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore
+      .getTableFromMetadata(dbName, tableName).map(_.carbonTable).getOrElse(null)
+    CarbonStore.deleteLoadById(segmentIds, dbName, tableName, carbonTable)
   }
 
   def main(args: Array[String]): Unit = {
