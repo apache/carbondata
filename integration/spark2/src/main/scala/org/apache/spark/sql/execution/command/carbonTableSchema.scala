@@ -504,16 +504,27 @@ case class LoadTable(
           val sparkDriverHost = sparkSession.sqlContext.sparkContext.
             getConf.get("spark.driver.host")
           carbonLoadModel.setDictionaryServerHost(sparkDriverHost)
-          // start dictionary server when use one pass load.
-          val server: DictionaryServer = DictionaryServer
-            .getInstance(dictionaryServerPort.toInt)
-          carbonLoadModel.setDictionaryServerPort(server.getPort)
+          // start dictionary server when use one pass load and dimension with DICTIONARY
+          // encoding is present.
+          val allDimensions = table.getAllDimensions.asScala.toList
+          val createDictionary = allDimensions.exists {
+            carbonDimension => carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
+                               !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
+          }
+          val server: Option[DictionaryServer] = if (createDictionary) {
+            val dictionaryServer = DictionaryServer
+              .getInstance(dictionaryServerPort.toInt)
+            carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
+            Some(dictionaryServer)
+          } else {
+            None
+          }
           CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
             carbonLoadModel,
             relation.tableMeta.storePath,
             columnar,
             partitionStatus,
-            Some(server),
+            server,
             dataFrame,
             updateModel)
         }
