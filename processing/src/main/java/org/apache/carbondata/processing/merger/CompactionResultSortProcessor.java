@@ -121,6 +121,10 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * whether the allocated tasks has any record
    */
   private boolean isRecordFound;
+  /**
+   * intermediate sort merger
+   */
+  private SortIntermediateFileMerger intermediateFileMerger;
 
   /**
    * @param carbonLoadModel
@@ -266,6 +270,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void readAndLoadDataFromSortTempFiles() throws Exception {
     try {
+      intermediateFileMerger.finish();
       finalMerger.startFinalMerge();
       while (finalMerger.hasNext()) {
         Object[] rowRead = finalMerger.next();
@@ -328,7 +333,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     }
     dimensionColumnCount = dimensions.size();
     SortParameters parameters = createSortParameters();
-    SortIntermediateFileMerger intermediateFileMerger = new SortIntermediateFileMerger(parameters);
+    intermediateFileMerger = new SortIntermediateFileMerger(parameters);
     // TODO: Now it is only supported onheap merge, but we can have unsafe merge
     // as well by using UnsafeSortDataRows.
     this.sortDataRows = new SortDataRows(parameters, intermediateFileMerger);
@@ -348,10 +353,10 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private SortParameters createSortParameters() {
     return SortParameters
-        .createSortParameters(carbonLoadModel.getDatabaseName(), tableName, dimensionColumnCount,
-            segmentProperties.getComplexDimensions().size(), measureCount, noDictionaryCount,
-            carbonLoadModel.getPartitionId(), segmentId, carbonLoadModel.getTaskNo(),
-            noDictionaryColMapping, true);
+        .createSortParameters(carbonTable, carbonLoadModel.getDatabaseName(), tableName,
+            dimensionColumnCount, segmentProperties.getComplexDimensions().size(), measureCount,
+            noDictionaryCount, carbonLoadModel.getPartitionId(), segmentId,
+            carbonLoadModel.getTaskNo(), noDictionaryColMapping, true);
   }
 
   /**

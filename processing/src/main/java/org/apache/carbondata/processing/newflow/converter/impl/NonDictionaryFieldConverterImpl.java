@@ -55,11 +55,12 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
         row.update(DataTypeUtil
             .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType), index);
       } catch (Throwable ex) {
-        if (dimensionValue.length() != 0 || isEmptyBadRecord) {
+        if (dimensionValue.length() > 0 || isEmptyBadRecord) {
           logHolder.setReason(
               "The value " + " \"" + dimensionValue + "\"" + " with column name " + column
                   .getColName() + " and column data type " + dataType + " is not a valid "
                   + dataType + " type.");
+          row.update(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, index);
         } else {
           row.update(new byte[0], index);
         }
