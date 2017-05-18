@@ -30,7 +30,6 @@ import org.apache.carbondata.core.util.CarbonProperties
 class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
         new File("./target/test/badRecords").getCanonicalPath)
@@ -418,6 +417,7 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("table rename with dbname in Camel Case") {
     sql("drop table if exists uniqdata")
+    sql("drop table if exists uniqdata1")
     sql("""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String) STORED BY 'org.apache.carbondata.format'""")
     sql("""insert into table uniqdata values(1,"hello")""")
     sql("alter table Default.uniqdata rename to uniqdata1")

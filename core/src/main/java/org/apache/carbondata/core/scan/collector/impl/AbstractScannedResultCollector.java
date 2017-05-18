@@ -91,7 +91,7 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
     }
   }
 
-  private Object getMeasureData(MeasureColumnDataChunk dataChunk, int index,
+  protected Object getMeasureData(MeasureColumnDataChunk dataChunk, int index,
       CarbonMeasure carbonMeasure) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
       switch (carbonMeasure.getDataType()) {
