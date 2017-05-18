@@ -24,6 +24,7 @@ import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
 
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.Value
 import org.apache.carbondata.spark.util.CarbonQueryUtil
 
@@ -34,7 +35,7 @@ class CarbonDeleteLoadRDD[V: ClassTag](
     databaseName: String,
     tableName: String,
     partitioner: Partitioner)
-  extends RDD[V](sc, Nil) {
+  extends CarbonRDD[V](sc, Nil) with InternalCompute[V] {
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
   override def getPartitions: Array[Partition] = {
@@ -45,6 +46,9 @@ class CarbonDeleteLoadRDD[V: ClassTag](
   }
 
   override def compute(theSplit: Partition, context: TaskContext): Iterator[V] = {
+    super.compute(this, theSplit, context)
+  }
+  override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[V] = {
     val iter = new Iterator[V] {
       val split = theSplit.asInstanceOf[CarbonLoadPartition]
       logInfo("Input split: " + split.serializableHadoopSplit.value)

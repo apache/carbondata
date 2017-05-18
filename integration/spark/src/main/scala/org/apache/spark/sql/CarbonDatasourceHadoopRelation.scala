@@ -37,11 +37,13 @@ import org.apache.spark.util.SerializableConfiguration
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
+import org.apache.carbondata.core.util.{SessionParams, ThreadLocalSessionParams}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, SchemaReader}
 import org.apache.carbondata.processing.merger.TableMeta
 import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
+import org.apache.carbondata.spark.rdd.{CarbonRDD, InternalCompute}
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
 private[sql] case class CarbonDatasourceHadoopRelation(
@@ -94,7 +96,6 @@ private[sql] case class CarbonDatasourceHadoopRelation(
     requiredColumns.foreach(projection.addColumn)
     CarbonInputFormat.setColumnProjection(conf, projection)
     CarbonInputFormat.setCarbonReadSupport(conf, classOf[SparkRowReadSupportImpl])
-
     new CarbonHadoopFSRDD[Row](sqlContext.sparkContext,
       new SerializableConfiguration(conf),
       absIdentifier,
@@ -120,7 +121,7 @@ class CarbonHadoopFSRDD[V: ClassTag](
   identifier: AbsoluteTableIdentifier,
   inputFormatClass: Class[_ <: CarbonInputFormat[V]],
   valueClass: Class[V])
-  extends RDD[V](sc, Nil) with SparkHadoopMapReduceUtil {
+  extends CarbonRDD[V](sc, Nil) with SparkHadoopMapReduceUtil with InternalCompute[V]{
 
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
@@ -130,6 +131,12 @@ class CarbonHadoopFSRDD[V: ClassTag](
 
   @DeveloperApi
   override def compute(split: Partition,
+      context: TaskContext): Iterator[V] = {
+    super.compute(this, split, context)
+
+  }
+
+  override def internalCompute(split: Partition,
     context: TaskContext): Iterator[V] = {
     val attemptId = newTaskAttemptID(jobTrackerId, id, isMap = true, split.index, 0)
     val hadoopAttemptContext = newTaskAttemptContext(conf.value, attemptId)

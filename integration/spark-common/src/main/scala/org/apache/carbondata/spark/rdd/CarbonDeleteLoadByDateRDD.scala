@@ -24,6 +24,7 @@ import org.apache.spark.rdd.RDD
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.DeletedLoadResult
 import org.apache.carbondata.spark.util.CarbonQueryUtil
 
@@ -39,7 +40,7 @@ class CarbonDeleteLoadByDateRDD[K, V](
     dimTableName: String,
     storePath: String,
     loadMetadataDetails: List[LoadMetadataDetails])
-  extends RDD[(K, V)](sc, Nil) {
+  extends CarbonRDD[(K, V)](sc, Nil) with InternalCompute[(K, V)] {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
@@ -51,6 +52,9 @@ class CarbonDeleteLoadByDateRDD[K, V](
   }
 
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
+    super.compute(this, theSplit, context)
+  }
+  override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     new Iterator[(K, V)] {
       val split = theSplit.asInstanceOf[CarbonLoadPartition]
       logInfo("Input split: " + split.serializableHadoopSplit.value)
