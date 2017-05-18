@@ -42,6 +42,17 @@ public class NotInExpression extends BinaryConditionalExpression {
     if (setOfExprResult == null) {
       ExpressionResult val = null;
       ExpressionResult rightRsult = right.evaluate(value);
+      // Both left and right results need to be checked for null because NotInExpression is basically
+      // an And Operation on the list of predicates that are provided.
+      // Example: x in (1,2,null) would be converted to x=1 AND x=2 AND x=null.
+      // If any of the predicates is null then the result is unknown for all the predicates thus
+      // we will return false for each of them.
+      for (ExpressionResult expressionResult: rightRsult.getList()) {
+        if (expressionResult.isNull() || leftRsult.isNull()) {
+          leftRsult.set(DataType.BOOLEAN, false);
+          return leftRsult;
+        }
+      }
       setOfExprResult = new HashSet<ExpressionResult>(10);
       for (ExpressionResult exprResVal : rightRsult.getList()) {
         if (exprResVal.getDataType().getPrecedenceOrder() < leftRsult.getDataType()
@@ -78,17 +89,6 @@ public class NotInExpression extends BinaryConditionalExpression {
                 "DataType: " + val.getDataType() + " not supported for the filter expression");
         }
         setOfExprResult.add(val);
-      }
-    }
-    // Both left and right results need to be checked for null because NotInExpression is basically
-    // an And Operation on the list of predicates that are provided.
-    // Example: x in (1,2,null) would be converted to x=1 AND x=2 AND x=null.
-    // If any of the predicates is null then the result is unknown for all the predicates thus
-    // we will return false for each of them.
-    for (ExpressionResult expressionResult: setOfExprResult) {
-      if (expressionResult.isNull() || leftRsult.isNull()) {
-        leftRsult.set(DataType.BOOLEAN, false);
-        return leftRsult;
       }
     }
     leftRsult.set(DataType.BOOLEAN, !setOfExprResult.contains(leftRsult));

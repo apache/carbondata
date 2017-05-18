@@ -38,6 +38,7 @@ class ExpressionWithNullTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test to check in expression with null values") {
+    checkAnswer(sql("select * from expression_test where id in (1,2,'', NULL, ' ')"), sql("select * from expression_test_hive where id in (1,2,' ', NULL, ' ')"))
     checkAnswer(sql("select * from expression_test where id in (1,2,'')"), sql("select * from expression_test_hive where id in (1,2,'')"))
     checkAnswer(sql("select * from expression_test where id in ('')"), sql("select * from expression_test_hive where id in ('')"))
     checkAnswer(sql("select * from expression_test where number in (null)"), sql("select * from expression_test_hive where number in (null)"))
@@ -54,6 +55,7 @@ class ExpressionWithNullTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test to check not in expression with null values") {
+    checkAnswer(sql("select * from expression_test where id not in (1,2,'', NULL, ' ')"), sql("select * from expression_test_hive where id not in (1,2,' ', NULL, ' ')"))
     checkAnswer(sql("select * from expression_test where id not in (1,2,'')"), sql("select * from expression_test_hive where id not in (1,2,'')"))
     checkAnswer(sql("select * from expression_test where id not in ('')"), sql("select * from expression_test_hive where id not in ('')"))
     checkAnswer(sql("select * from expression_test where number not in (null)"), sql("select * from expression_test_hive where number not in (null)"))
