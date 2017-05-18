@@ -954,7 +954,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         }
       } else {
         if (version == ColumnarFormatVersion.V3) {
-          return new BlockIndexerStorageForNoInvertedIndexForShort(this.data);
+          return new BlockIndexerStorageForNoInvertedIndexForShort(this.data,isNoDictionary);
         } else {
           return new BlockIndexerStorageForNoInvertedIndex(this.data);
         }
