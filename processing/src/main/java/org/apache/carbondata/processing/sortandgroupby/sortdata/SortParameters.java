@@ -23,6 +23,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.schema.metadata.SortObserver;
@@ -370,14 +371,7 @@ public class SortParameters {
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields()));
     parameters.setNumberOfSortColumns(configuration.getNumberOfSortColumns());
     parameters.setNumberOfNoDictSortColumns(configuration.getNumberOfNoDictSortColumns());
-    if (parameters.getNumberOfSortColumns() == parameters.getNoDictionaryDimnesionColumn().length) {
-      parameters.setNoDictionarySortColumn(parameters.getNoDictionaryDimnesionColumn());
-    } else {
-      boolean[] noDictionarySortColumnTemp = new boolean[parameters.getNumberOfSortColumns()];
-      System.arraycopy(parameters.getNoDictionaryDimnesionColumn(), 0,
-          noDictionarySortColumnTemp, 0, parameters.getNumberOfSortColumns());
-      parameters.setNoDictionarySortColumn(noDictionarySortColumnTemp);
-    }
+    setNoDictionarySortColumnMapping(parameters);
     parameters.setObserver(new SortObserver());
     // get sort buffer size
     parameters.setSortBufferSize(Integer.parseInt(carbonProperties
@@ -465,10 +459,27 @@ public class SortParameters {
     return parameters;
   }
 
-  public static SortParameters createSortParameters(String databaseName, String tableName,
-      int dimColCount, int complexDimColCount, int measureColCount, int noDictionaryCount,
-      String partitionID, String segmentId, String taskNo, boolean[] noDictionaryColMaping,
-      boolean isCompactionFlow) {
+  /**
+   * this method will set the boolean mapping for no dictionary sort columns
+   *
+   * @param parameters
+   */
+  private static void setNoDictionarySortColumnMapping(SortParameters parameters) {
+    if (parameters.getNumberOfSortColumns() == parameters.getNoDictionaryDimnesionColumn().length) {
+      parameters.setNoDictionarySortColumn(parameters.getNoDictionaryDimnesionColumn());
+    } else {
+      boolean[] noDictionarySortColumnTemp = new boolean[parameters.getNumberOfSortColumns()];
+      System
+          .arraycopy(parameters.getNoDictionaryDimnesionColumn(), 0, noDictionarySortColumnTemp, 0,
+              parameters.getNumberOfSortColumns());
+      parameters.setNoDictionarySortColumn(noDictionarySortColumnTemp);
+    }
+  }
+
+  public static SortParameters createSortParameters(CarbonTable carbonTable, String databaseName,
+      String tableName, int dimColCount, int complexDimColCount, int measureColCount,
+      int noDictionaryCount, String partitionID, String segmentId, String taskNo,
+      boolean[] noDictionaryColMaping, boolean isCompactionFlow) {
     SortParameters parameters = new SortParameters();
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
     parameters.setDatabaseName(databaseName);
@@ -478,7 +489,9 @@ public class SortParameters {
     parameters.setTaskNo(taskNo);
     parameters.setMeasureColCount(measureColCount);
     parameters.setDimColCount(dimColCount - complexDimColCount);
+    parameters.setNumberOfSortColumns(carbonTable.getNumberOfSortColumns());
     parameters.setNoDictionaryCount(noDictionaryCount);
+    parameters.setNumberOfNoDictSortColumns(carbonTable.getNumberOfNoDictSortColumns());
     parameters.setComplexDimColCount(complexDimColCount);
     parameters.setNoDictionaryDimnesionColumn(noDictionaryColMaping);
     parameters.setObserver(new SortObserver());
@@ -565,6 +578,7 @@ public class SortParameters {
         .getMeasureDataType(parameters.getMeasureColCount(), parameters.getDatabaseName(),
             parameters.getTableName());
     parameters.setMeasureDataType(type);
+    setNoDictionarySortColumnMapping(parameters);
     return parameters;
   }
 

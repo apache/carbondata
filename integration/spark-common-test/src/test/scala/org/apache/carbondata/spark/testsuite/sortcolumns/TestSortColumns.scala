@@ -233,6 +233,17 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       defaultLoadingProperties
     }
   }
+
+  test("create table with invalid values for numeric data type columns specified as sort_columns") {
+    // load hive data
+    sql("CREATE TABLE test_sort_col_hive (id INT, name STRING, age INT) row format delimited fields terminated by ','")
+    sql(s"LOAD DATA local inpath '$resourcesPath/numeric_column_invalid_values.csv' INTO TABLE test_sort_col_hive")
+    // load carbon data
+    sql("CREATE TABLE test_sort_col (id INT, name STRING, age INT) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_COLUMNS'='id,age')")
+    sql(s"LOAD DATA local inpath '$resourcesPath/numeric_column_invalid_values.csv' INTO TABLE test_sort_col OPTIONS('FILEHEADER'='id,name,age')")
+    // compare hive and carbon data
+    checkAnswer(sql("select * from test_sort_col_hive"), sql("select * from test_sort_col"))
+  }
   
   override def afterAll = {
     dropTable
@@ -258,6 +269,8 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists unsortedtable_heap_safe")
     sql("drop table if exists unsortedtable_heap_unsafe")
     sql("drop table if exists unsortedtable_heap_inmemory")
+    sql("drop table if exists test_sort_col")
+    sql("drop table if exists test_sort_col_hive")
   }
 
   def setLoadingProperties(offheap: String, unsafe: String, useBatch: String): Unit = {
@@ -267,7 +280,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
   }
 
   def defaultLoadingProperties = {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, CarbonCommonConstants.ENABLE_OFFHEAP_SORT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT, CarbonCommonConstants.LOAD_USE_BATCH_SORT_DEFAULT)
   }
