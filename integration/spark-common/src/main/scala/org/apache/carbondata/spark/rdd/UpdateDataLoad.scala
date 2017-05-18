@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.rdd
 
+import java.util
+
 import scala.collection.mutable
 
 import org.apache.spark.TaskContext
@@ -53,7 +55,7 @@ object UpdateDataLoad {
         segId,
         loadMetadataDetails)
       // Intialize to set carbon properties
-      loader.initialize()
+      loader.initialize(new util.HashMap)
 
       loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
       new DataLoadExecutor().execute(carbonLoadModel,
