@@ -269,6 +269,19 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+
+  test("test FilterUnsupportedException when using big numbers") {
+    sql("drop table if exists outofrange")
+    sql("CREATE table outofrange (column1 STRING, column2 STRING,column3 INT, column4 INT,column5 INT, column6 INT) stored by 'org.apache.carbondata.format'")
+    sql(s"""LOAD DATA INPATH '$resourcesPath/outofrange.csv' INTO TABLE outofrange OPTIONS('DELIMITER'=',','QUOTECHAR'='\"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='')""")
+
+    sql("select * from outofrange where column4=-9223372036854775808").show()
+    sql("drop table if exists outofrange")
+  }
+
+
+
+
   override def afterAll {
     sql("drop table if exists filtertestTables")
     sql("drop table if exists filtertestTablesWithDecimal")

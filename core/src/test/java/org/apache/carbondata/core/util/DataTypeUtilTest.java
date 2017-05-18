@@ -118,7 +118,7 @@ public class DataTypeUtilTest {
     ColumnSchema columnSchema = new ColumnSchema();
     CarbonMeasure carbonMeasure = new CarbonMeasure(columnSchema, 1);
     Object resultInt = getMeasureValueBasedOnDataType("1", DataType.INT, carbonMeasure);
-    Object expectedInt = Double.valueOf(1).longValue();
+    Object expectedInt = Double.valueOf(1).intValue();
     assertEquals(expectedInt, resultInt);
     Object resultLong = getMeasureValueBasedOnDataType("1", DataType.LONG, carbonMeasure);
     Object expectedLong = Long.valueOf(1);

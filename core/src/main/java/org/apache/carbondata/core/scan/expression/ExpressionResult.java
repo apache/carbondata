@@ -282,7 +282,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
               "Cannot convert" + this.getDataType().name() + " to Long type value");
       }
     } catch (ClassCastException e) {
-      throw new FilterIllegalMemberException(
+      throw new FilterIllegalMemberException(e.getMessage() + " " +
           "Cannot convert" + this.getDataType().name() + " to Long type value");
     }
 

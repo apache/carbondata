@@ -118,7 +118,15 @@ public class UnsafeCarbonRowPage {
       if (null != value) {
         switch (measureDataType[mesCount]) {
           case SHORT:
+            Short sval = (Short) value;
+            CarbonUnsafe.unsafe.putShort(baseObject, address + size, sval);
+            size += 2;
+            break;
           case INT:
+            Integer ival = (Integer) value;
+            CarbonUnsafe.unsafe.putInt(baseObject, address + size, ival);
+            size += 4;
+            break;
           case LONG:
             Long val = (Long) value;
             CarbonUnsafe.unsafe.putLong(baseObject, address + size, val);
@@ -195,7 +203,15 @@ public class UnsafeCarbonRowPage {
       if (isSet(nullSetWords, mesCount)) {
         switch (measureDataType[mesCount]) {
           case SHORT:
+            Short sval = CarbonUnsafe.unsafe.getShort(baseObject, address + size);
+            size += 2;
+            rowToFill[dimensionSize + mesCount] = sval;
+            break;
           case INT:
+            Integer ival = CarbonUnsafe.unsafe.getInt(baseObject, address + size);
+            size += 4;
+            rowToFill[dimensionSize + mesCount] = ival;
+            break;
           case LONG:
             Long val = CarbonUnsafe.unsafe.getLong(baseObject, address + size);
             size += 8;
@@ -272,7 +288,15 @@ public class UnsafeCarbonRowPage {
       if (isSet(nullSetWords, mesCount)) {
         switch (measureDataType[mesCount]) {
           case SHORT:
+            short sval = CarbonUnsafe.unsafe.getShort(baseObject, address + size);
+            size += 2;
+            stream.writeShort(sval);
+            break;
           case INT:
+            int ival = CarbonUnsafe.unsafe.getInt(baseObject, address + size);
+            size += 4;
+            stream.writeInt(ival);
+            break;
           case LONG:
             long val = CarbonUnsafe.unsafe.getLong(baseObject, address + size);
             size += 8;

@@ -106,7 +106,7 @@ class SparkDatasourceSuite extends QueryTest with BeforeAndAfterAll {
     newSQLContext.sql(
       s"""
          | CREATE TEMPORARY TABLE temp
-         | (c1 string, c2 string, c3 long)
+         | (c1 string, c2 string, c3 int)
          | USING org.apache.spark.sql.CarbonSource
          | OPTIONS (path '$storeLocation/default/carbon1')
       """.stripMargin)
@@ -153,7 +153,7 @@ class SparkDatasourceSuite extends QueryTest with BeforeAndAfterAll {
     newSQLContext.sql(
       s"""
          | CREATE TEMPORARY TABLE temp
-         | (id long, name string, city string, age long)
+         | (id int, name string, city string, age int)
          | USING org.apache.spark.sql.CarbonSource
          | OPTIONS (path '$storeLocation/default/test')
       """.stripMargin)

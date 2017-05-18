@@ -288,7 +288,11 @@ public class SortDataRows {
             stream.write((byte) 1);
             switch (type[mesCount]) {
               case SHORT:
+                stream.writeShort((Short) value);
+                break;
               case INT:
+                stream.writeInt((Integer) value);
+                break;
               case LONG:
                 stream.writeLong((Long) value);
                 break;

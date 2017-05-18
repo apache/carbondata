@@ -326,7 +326,11 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
         if (UnsafeCarbonRowPage.isSet(words, mesCount)) {
           switch (measureDataType[mesCount]) {
             case SHORT:
+              row[dimensionCount + mesCount] = stream.readShort();
+              break;
             case INT:
+              row[dimensionCount + mesCount] = stream.readInt();
+              break;
             case LONG:
               row[dimensionCount + mesCount] = stream.readLong();
               break;
