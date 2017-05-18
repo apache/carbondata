@@ -360,13 +360,6 @@ public final class CarbonLoaderUtil {
     return date;
   }
 
-  public static String extractLoadMetadataFileLocation(String dbName, String tableName) {
-    CarbonTable carbonTable =
-        org.apache.carbondata.core.metadata.CarbonMetadata.getInstance()
-            .getCarbonTable(dbName + '_' + tableName);
-    return carbonTable.getMetaDataFilepath();
-  }
-
   public static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier,
       String carbonStorePath) throws IOException {
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache =
