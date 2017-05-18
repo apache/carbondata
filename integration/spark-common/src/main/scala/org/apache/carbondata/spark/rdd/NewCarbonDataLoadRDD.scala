@@ -20,6 +20,7 @@ package org.apache.carbondata.spark.rdd
 import java.io.{IOException, ObjectInputStream, ObjectOutputStream}
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
+import java.util
 import java.util.{Date, UUID}
 
 import scala.collection.JavaConverters._
@@ -126,12 +127,16 @@ class SparkPartitionLoader(model: CarbonLoadModel,
 
   var storeLocation: String = ""
 
-  def initialize(): Unit = {
+  def initialize(addedProperies: util.Map[String, String]): Unit = {
     val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
     if (null == carbonPropertiesFilePath) {
       System.setProperty("carbon.properties.filepath",
         System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties")
     }
+    // Add the properties added in driver to executor.
+    CarbonProperties.getInstance().setProperties(addedProperies)
+    // Add the properties added in driver to executor.
+    CarbonProperties.getInstance().setProperties(addedProperies)
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance.initPartitonInfo(model.getPartitionId)
     CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true")
     CarbonProperties.getInstance().addProperty("carbon.dimension.split.value.in.columnar", "1")
@@ -184,6 +189,8 @@ class NewCarbonDataLoadRDD[K, V](
   // A Hadoop Configuration can be about 10 KB, which is pretty big, so broadcast it
   private val confBroadcast =
     sc.broadcast(new SerializableConfiguration(sc.hadoopConfiguration))
+
+  private val addedProperies = CarbonProperties.getInstance().getAddedProperies
 
   override def getPartitions: Array[Partition] = {
     if (isTableSplitPartition) {
@@ -239,7 +246,7 @@ class NewCarbonDataLoadRDD[K, V](
           String.valueOf(loadCount),
           loadMetadataDetails)
         // Intialize to set carbon properties
-        loader.initialize()
+        loader.initialize(addedProperies)
         new DataLoadExecutor().execute(model,
           loader.storeLocation,
           recordReaders)
@@ -392,6 +399,7 @@ class NewDataFrameLoaderRDD[K, V](
                                    schemaLastUpdatedTime: Long,
                                    prev: DataLoadCoalescedRDD[Row]) extends RDD[(K, V)](prev) {
 
+  private val addedProperies = CarbonProperties.getInstance().getAddedProperies
 
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -430,7 +438,7 @@ class NewDataFrameLoaderRDD[K, V](
           String.valueOf(loadCount),
           loadMetadataDetails)
         // Intialize to set carbon properties
-        loader.initialize()
+        loader.initialize(addedProperies)
         new DataLoadExecutor().execute(model, loader.storeLocation, recordReaders.toArray)
       } catch {
         case e: BadRecordFoundException =>
@@ -587,6 +595,7 @@ class PartitionTableDataLoaderRDD[K, V](
     schemaLastUpdatedTime: Long,
     prev: RDD[Row]) extends RDD[(K, V)](prev) {
 
+  private val addedProperies = CarbonProperties.getInstance().getAddedProperies
 
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -616,7 +625,7 @@ class PartitionTableDataLoaderRDD[K, V](
           String.valueOf(loadCount),
           loadMetadataDetails)
         // Intialize to set carbon properties
-        loader.initialize()
+        loader.initialize(addedProperies)
         new DataLoadExecutor().execute(model, loader.storeLocation, recordReaders)
       } catch {
         case e: BadRecordFoundException =>

@@ -18,9 +18,11 @@
 package org.apache.spark.sql.hive.execution.command
 
 import org.apache.spark.sql._
-import org.apache.spark.sql.execution.RunnableCommand
+import org.apache.spark.sql.execution.{RunnableCommand, SetCommand}
 import org.apache.spark.sql.execution.command.DropTableCommand
 import org.apache.spark.sql.hive.execution.HiveNativeCommand
+
+import org.apache.carbondata.core.util.CarbonProperties
 
 private[hive] case class CreateDatabaseCommand(dbName: String,
     command: HiveNativeCommand) extends RunnableCommand {
@@ -50,6 +52,18 @@ private[hive] case class DropDatabaseCascadeCommand(dbName: String,
       DropTableCommand(true, Some(dbName), tableName).run(sqlContext)
     }
     CarbonEnv.get.carbonMetastore.dropDatabaseDirectory(dbName)
+    rows
+  }
+}
+
+case class CarbonSetCommand(command: SetCommand)
+  extends RunnableCommand {
+
+  override val output = command.output
+
+  override def run(sparkSession: SQLContext): Seq[Row] = {
+    val rows = command.run(sparkSession)
+    CarbonProperties.getInstance().addProperty(rows.head.getString(0), rows.head.getString(1))
     rows
   }
 }

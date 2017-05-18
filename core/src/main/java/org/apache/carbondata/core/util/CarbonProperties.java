@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -45,6 +47,11 @@ public final class CarbonProperties {
    * porpeties .
    */
   private Properties carbonProperties;
+
+  /**
+   * Added properties on the fly.
+   */
+  private Map<String, String> setProperties = new HashMap<>();
 
   /**
    * Private constructor this will call load properties method to load all the
@@ -447,8 +454,24 @@ public final class CarbonProperties {
    * @return properties value
    */
   public CarbonProperties addProperty(String key, String value) {
+    setProperties.put(key, value);
     carbonProperties.setProperty(key, value);
     return this;
+  }
+
+  /**
+   * Get all the added properties.
+   * @return
+   */
+  public Map<String, String> getAddedProperies() {
+    return setProperties;
+  }
+
+  public void setProperties(Map<String, String> newProperties) {
+    setProperties.putAll(newProperties);
+    for (Map.Entry<String, String> entry : newProperties.entrySet()) {
+      carbonProperties.setProperty(entry.getKey(), entry.getValue());
+    }
   }
 
   private ColumnarFormatVersion getDefaultFormatVersion() {
