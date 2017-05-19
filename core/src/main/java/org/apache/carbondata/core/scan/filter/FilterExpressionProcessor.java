@@ -173,7 +173,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @param partitionInfo
    * @return
    */
-  public PartitionFilterIntf createPartitionFilterTree(Expression expressionTree,
+  private PartitionFilterIntf createPartitionFilterTree(Expression expressionTree,
       PartitionInfo partitionInfo) {
     ExpressionType filterExpressionType = expressionTree.getFilterExpressionType();
     String partitionColumnName = partitionInfo.getColumnSchemaList().get(0).getColumnName();

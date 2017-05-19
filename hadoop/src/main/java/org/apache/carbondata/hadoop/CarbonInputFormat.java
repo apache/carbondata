@@ -262,20 +262,20 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
 
       // prune partitions for filter query on partition table
-      BitSet partitionMap = null;
+      BitSet matchedPartitions = null;
       if (null != filter) {
         PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName());
         if (null != partitionInfo) {
           Partitioner partitioner = PartitionUtil.getPartitioner(partitionInfo);
-          partitionMap = new FilterExpressionProcessor()
+          matchedPartitions = new FilterExpressionProcessor()
               .getFilteredPartitions(filter, partitionInfo, partitioner);
-          if (partitionMap.cardinality() == 0) {
+          if (matchedPartitions.cardinality() == 0) {
             // no partition is required
             return new ArrayList<InputSplit>();
           }
-          if (partitionMap.cardinality() == partitioner.numPartitions()) {
-            // all partitions are required
-            partitionMap = null;
+          if (matchedPartitions.cardinality() == partitioner.numPartitions()) {
+            // all partitions are required, no need to prune partitions
+            matchedPartitions = null;
           }
         }
       }
@@ -283,7 +283,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       FilterResolverIntf filterInterface = CarbonInputFormatUtil.resolveFilter(filter, identifier);
 
       // do block filtering and get split
-      List<InputSplit> splits = getSplits(job, filterInterface, partitionMap, cacheClient);
+      List<InputSplit> splits = getSplits(job, filterInterface, matchedPartitions, cacheClient);
       // pass the invalid segment to task side in order to remove index entry in task side
       if (invalidSegments.size() > 0) {
         for (InputSplit split : splits) {
@@ -324,7 +324,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @throws IOException
    */
   private List<InputSplit> getSplits(JobContext job, FilterResolverIntf filterResolver,
-      BitSet partitionMap, CacheClient cacheClient) throws IOException {
+      BitSet matchedPartitions, CacheClient cacheClient) throws IOException {
 
     List<InputSplit> result = new LinkedList<InputSplit>();
     FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
@@ -337,7 +337,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     for (String segmentNo : getSegmentsToAccess(job)) {
       List<DataRefNode> dataRefNodes =
           getDataBlocksOfSegment(job, filterExpressionProcessor, absoluteTableIdentifier,
-              filterResolver, partitionMap, segmentNo, cacheClient, updateStatusManager);
+              filterResolver, matchedPartitions, segmentNo, cacheClient, updateStatusManager);
       for (DataRefNode dataRefNode : dataRefNodes) {
         BlockBTreeLeafNode leafNode = (BlockBTreeLeafNode) dataRefNode;
         TableBlockInfo tableBlockInfo = leafNode.getTableBlockInfo();
@@ -374,7 +374,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private List<DataRefNode> getDataBlocksOfSegment(JobContext job,
       FilterExpressionProcessor filterExpressionProcessor,
       AbsoluteTableIdentifier absoluteTableIdentifier, FilterResolverIntf resolver,
-      BitSet partitionMap, String segmentId, CacheClient cacheClient,
+      BitSet matchedPartitions, String segmentId, CacheClient cacheClient,
       SegmentUpdateStatusManager updateStatusManager) throws IOException {
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap = null;
     try {
@@ -392,7 +392,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
           // for partition table, the task id of carbaondata file name is the partition id.
           // if this partition is not required, here will skip it.
-          if (partitionMap == null || partitionMap.get(taskId)) {
+          if (matchedPartitions == null || matchedPartitions.get(taskId)) {
             AbstractIndex abstractIndex = entry.getValue();
             List<DataRefNode> filterredBlocks;
             // if no filter is given get all blocks from Btree Index
