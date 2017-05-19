@@ -50,11 +50,12 @@ import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedExc
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.partition.AndFilterImpl;
-import org.apache.carbondata.core.scan.filter.partition.DefaultPartitionFilterImpl;
 import org.apache.carbondata.core.scan.filter.partition.EqualToFilterImpl;
 import org.apache.carbondata.core.scan.filter.partition.InFilterImpl;
+import org.apache.carbondata.core.scan.filter.partition.KeepAllPartitionFilterImpl;
 import org.apache.carbondata.core.scan.filter.partition.OrFilterImpl;
 import org.apache.carbondata.core.scan.filter.partition.PartitionFilterIntf;
+import org.apache.carbondata.core.scan.filter.partition.PruneAllPartitionFilterImpl;
 import org.apache.carbondata.core.scan.filter.partition.RangeFilterImpl;
 import org.apache.carbondata.core.scan.filter.resolver.ConditionalFilterResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -200,7 +201,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
             return new EqualToFilterImpl(equalTo, partitionInfo);
           }
         }
-        return new DefaultPartitionFilterImpl(true);
+        return new KeepAllPartitionFilterImpl();
       case IN:
         InExpression in = (InExpression) expressionTree;
         if (in.getLeft() instanceof ColumnExpression &&
@@ -210,11 +211,11 @@ public class FilterExpressionProcessor implements FilterProcessor {
             return new InFilterImpl(in, partitionInfo);
           }
         }
-        return new DefaultPartitionFilterImpl(true);
+        return new KeepAllPartitionFilterImpl();
       case FALSE:
-        return new DefaultPartitionFilterImpl(false);
+        return new PruneAllPartitionFilterImpl();
       case TRUE:
-        return new DefaultPartitionFilterImpl(true);
+        return new KeepAllPartitionFilterImpl();
       case GREATERTHAN:
         GreaterThanExpression greaterThan = (GreaterThanExpression) expressionTree;
         if (greaterThan.getLeft() instanceof ColumnExpression &&
@@ -225,7 +226,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
                 partitionInfo);
           }
         }
-        return new DefaultPartitionFilterImpl(true);
+        return new KeepAllPartitionFilterImpl();
       case GREATERTHAN_EQUALTO:
         GreaterThanEqualToExpression greaterThanEqualTo =
             (GreaterThanEqualToExpression) expressionTree;
@@ -237,7 +238,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
                 true, partitionInfo);
           }
         }
-        return new DefaultPartitionFilterImpl(true);
+        return new KeepAllPartitionFilterImpl();
       case LESSTHAN:
         LessThanExpression lessThan = (LessThanExpression) expressionTree;
         if (lessThan.getLeft() instanceof ColumnExpression &&
@@ -248,7 +249,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
                 partitionInfo);
           }
         }
-        return new DefaultPartitionFilterImpl(true);
+        return new KeepAllPartitionFilterImpl();
       case LESSTHAN_EQUALTO:
         LessThanEqualToExpression lessThanEqualTo = (LessThanEqualToExpression) expressionTree;
         if (lessThanEqualTo.getLeft() instanceof ColumnExpression &&
@@ -259,11 +260,11 @@ public class FilterExpressionProcessor implements FilterProcessor {
                 partitionInfo);
           }
         }
-        return new DefaultPartitionFilterImpl(true);
+        return new KeepAllPartitionFilterImpl();
       case NOT_IN:
       case NOT_EQUALS:
       default:
-        return new DefaultPartitionFilterImpl(true);
+        return new KeepAllPartitionFilterImpl();
     }
   }
 

@@ -390,6 +390,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
           SegmentTaskIndexStore.TaskBucketHolder taskHolder = entry.getKey();
           int taskId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskHolder.taskNo);
 
+          // matchedPartitions variable will be null in two cases as follows
+          // 1. the table is not a partition table
+          // 2. the table is a partition table, and all partitions are matched by query
           // for partition table, the task id of carbaondata file name is the partition id.
           // if this partition is not required, here will skip it.
           if (matchedPartitions == null || matchedPartitions.get(taskId)) {

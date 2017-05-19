@@ -139,12 +139,12 @@ public class PartitionUtil {
   /**
    * generate a BitSet by size
    * @param size
-   * @param isContainAll true: set all bits to true
+   * @param initValue true: initialize all bits to true
    * @return
    */
-  public static BitSet generateBitSetBySize(int size, boolean isContainAll) {
+  public static BitSet generateBitSetBySize(int size, boolean initValue) {
     BitSet bitSet = new BitSet(size);
-    if (isContainAll) {
+    if (initValue) {
       bitSet.set(0, size);
     }
     return bitSet;

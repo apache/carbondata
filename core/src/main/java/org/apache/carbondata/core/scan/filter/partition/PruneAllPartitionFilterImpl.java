@@ -23,21 +23,11 @@ import org.apache.carbondata.core.scan.partition.PartitionUtil;
 import org.apache.carbondata.core.scan.partition.Partitioner;
 
 /**
- * the default implement of partition filter
+ * the implement of partition filter to prune all partitions
  */
-public class DefaultPartitionFilterImpl implements PartitionFilterIntf {
-
-  /**
-   * true: all partitions are required
-   * false: no partition is required
-   */
-  private boolean isContainAll;
-
-  public DefaultPartitionFilterImpl(boolean isContainAll) {
-    this.isContainAll = isContainAll;
-  }
+public class PruneAllPartitionFilterImpl implements PartitionFilterIntf {
 
   @Override public BitSet applyFilter(Partitioner partitioner) {
-    return PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), this.isContainAll);
+    return PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), false);
   }
 }
