@@ -43,6 +43,7 @@ class CarbonEnv {
   var initialized = false
 
   def init(sparkSession: SparkSession): Unit = {
+    sparkSession.udf.register("getTupleId", () => "")
     if (!initialized) {
       carbonMetastore = {
         val storePath =
