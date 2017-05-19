@@ -36,6 +36,7 @@ import org.apache.carbondata.core.datastore.impl.btree.BlockBTreeLeafNode;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.mutate.data.BlockMappingVO;
@@ -45,6 +46,8 @@ import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.scan.partition.PartitionUtil;
+import org.apache.carbondata.core.scan.partition.Partitioner;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
@@ -255,11 +258,32 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       if (null == carbonTable) {
         throw new IOException("Missing/Corrupt schema file for table.");
       }
+
       CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
+
+      // prune partitions for filter query on partition table
+      BitSet matchedPartitions = null;
+      if (null != filter) {
+        PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName());
+        if (null != partitionInfo) {
+          Partitioner partitioner = PartitionUtil.getPartitioner(partitionInfo);
+          matchedPartitions = new FilterExpressionProcessor()
+              .getFilteredPartitions(filter, partitionInfo, partitioner);
+          if (matchedPartitions.cardinality() == 0) {
+            // no partition is required
+            return new ArrayList<InputSplit>();
+          }
+          if (matchedPartitions.cardinality() == partitioner.numPartitions()) {
+            // all partitions are required, no need to prune partitions
+            matchedPartitions = null;
+          }
+        }
+      }
+
       FilterResolverIntf filterInterface = CarbonInputFormatUtil.resolveFilter(filter, identifier);
 
       // do block filtering and get split
-      List<InputSplit> splits = getSplits(job, filterInterface, cacheClient);
+      List<InputSplit> splits = getSplits(job, filterInterface, matchedPartitions, cacheClient);
       // pass the invalid segment to task side in order to remove index entry in task side
       if (invalidSegments.size() > 0) {
         for (InputSplit split : splits) {
@@ -300,10 +324,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @throws IOException
    */
   private List<InputSplit> getSplits(JobContext job, FilterResolverIntf filterResolver,
-      CacheClient cacheClient) throws IOException {
+      BitSet matchedPartitions, CacheClient cacheClient) throws IOException {
 
     List<InputSplit> result = new LinkedList<InputSplit>();
-
     FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
 
     AbsoluteTableIdentifier absoluteTableIdentifier =
@@ -314,7 +337,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     for (String segmentNo : getSegmentsToAccess(job)) {
       List<DataRefNode> dataRefNodes =
           getDataBlocksOfSegment(job, filterExpressionProcessor, absoluteTableIdentifier,
-              filterResolver, segmentNo, cacheClient, updateStatusManager);
+              filterResolver, matchedPartitions, segmentNo, cacheClient, updateStatusManager);
       for (DataRefNode dataRefNode : dataRefNodes) {
         BlockBTreeLeafNode leafNode = (BlockBTreeLeafNode) dataRefNode;
         TableBlockInfo tableBlockInfo = leafNode.getTableBlockInfo();
@@ -351,8 +374,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private List<DataRefNode> getDataBlocksOfSegment(JobContext job,
       FilterExpressionProcessor filterExpressionProcessor,
       AbsoluteTableIdentifier absoluteTableIdentifier, FilterResolverIntf resolver,
-      String segmentId, CacheClient cacheClient, SegmentUpdateStatusManager updateStatusManager)
-      throws IOException {
+      BitSet matchedPartitions, String segmentId, CacheClient cacheClient,
+      SegmentUpdateStatusManager updateStatusManager) throws IOException {
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap = null;
     try {
       QueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.createDriverRecorder();
@@ -362,19 +385,30 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
               updateStatusManager);
       List<DataRefNode> resultFilterredBlocks = new LinkedList<DataRefNode>();
       if (null != segmentIndexMap) {
-        // build result
-        for (AbstractIndex abstractIndex : segmentIndexMap.values()) {
-          List<DataRefNode> filterredBlocks;
-          // if no filter is given get all blocks from Btree Index
-          if (null == resolver) {
-            filterredBlocks = getDataBlocksOfIndex(abstractIndex);
-          } else {
-            // apply filter and get matching blocks
-            filterredBlocks = filterExpressionProcessor
-                .getFilterredBlocks(abstractIndex.getDataRefNode(), resolver, abstractIndex,
-                    absoluteTableIdentifier);
+        for (Map.Entry<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> entry :
+            segmentIndexMap.entrySet()) {
+          SegmentTaskIndexStore.TaskBucketHolder taskHolder = entry.getKey();
+          int taskId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskHolder.taskNo);
+
+          // matchedPartitions variable will be null in two cases as follows
+          // 1. the table is not a partition table
+          // 2. the table is a partition table, and all partitions are matched by query
+          // for partition table, the task id of carbaondata file name is the partition id.
+          // if this partition is not required, here will skip it.
+          if (matchedPartitions == null || matchedPartitions.get(taskId)) {
+            AbstractIndex abstractIndex = entry.getValue();
+            List<DataRefNode> filterredBlocks;
+            // if no filter is given get all blocks from Btree Index
+            if (null == resolver) {
+              filterredBlocks = getDataBlocksOfIndex(abstractIndex);
+            } else {
+              // apply filter and get matching blocks
+              filterredBlocks = filterExpressionProcessor
+                  .getFilterredBlocks(abstractIndex.getDataRefNode(), resolver, abstractIndex,
+                      absoluteTableIdentifier);
+            }
+            resultFilterredBlocks.addAll(filterredBlocks);
           }
-          resultFilterredBlocks.addAll(filterredBlocks);
         }
       }
       statistic
