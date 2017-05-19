@@ -470,8 +470,23 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     if (this.value == objToCompare.value) {
       return true;
     }
+
+    if (this.isNull() || objToCompare.isNull()) {
+      return false;
+    }
+
+    // make the comparison against the data type whose precedence is higher like
+    // LONG precedence is higher than INT, so from int value we should get the long value
+    // and then compare both the values. If done vice versa exception will be thrown
+    // and comparison will fail
+    DataType dataType = null;
+    if (objToCompare.getDataType().getPrecedenceOrder() < this.getDataType().getPrecedenceOrder()) {
+      dataType = this.getDataType();
+    } else {
+      dataType = objToCompare.getDataType();
+    }
     try {
-      switch (this.getDataType()) {
+      switch (dataType) {
         case STRING:
           result = this.getString().equals(objToCompare.getString());
           break;
