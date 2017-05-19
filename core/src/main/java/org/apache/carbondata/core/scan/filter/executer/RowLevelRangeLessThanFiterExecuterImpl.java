@@ -203,11 +203,14 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
       start = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
               filterValues[i], false);
-      // Logic will handle the case where the range filter member is not present in block
-      // in this case the binary search will return the index from where the bit sets will be
-      // set inorder to apply filters. this is Lesser than filter so the range will be taken
-      // from the prev element which is Lesser than filter member.
-      start = CarbonUtil.nextLesserValueToTarget(start, dimensionColumnDataChunk, filterValues[i]);
+      if (start >= 0) {
+        // Logic will handle the case where the range filter member is not present in block
+        // in this case the binary search will return the index from where the bit sets will be
+        // set inorder to apply filters. this is Lesser than filter so the range will be taken
+        // from the prev element which is Lesser than filter member.
+        start =
+            CarbonUtil.nextLesserValueToTarget(start, dimensionColumnDataChunk, filterValues[i]);
+      }
       if (start < 0) {
         start = -(start + 1);
         if (start >= numerOfRows) {
