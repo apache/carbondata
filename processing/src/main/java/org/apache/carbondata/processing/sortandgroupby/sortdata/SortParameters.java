@@ -122,6 +122,8 @@ public class SortParameters {
 
   private int numberOfCores;
 
+  private int batchSortSizeinMb;
+
   public SortParameters getCopy() {
     SortParameters parameters = new SortParameters();
     parameters.tempFileLocation = tempFileLocation;
@@ -149,6 +151,7 @@ public class SortParameters {
     parameters.numberOfSortColumns = numberOfSortColumns;
     parameters.numberOfNoDictSortColumns = numberOfNoDictSortColumns;
     parameters.numberOfCores = numberOfCores;
+    parameters.batchSortSizeinMb = batchSortSizeinMb;
     return parameters;
   }
 
@@ -352,6 +355,14 @@ public class SortParameters {
     this.numberOfNoDictSortColumns = Math.min(numberOfNoDictSortColumns, noDictionaryCount);
   }
 
+  public int getBatchSortSizeinMb() {
+    return batchSortSizeinMb;
+  }
+
+  public void setBatchSortSizeinMb(int batchSortSizeinMb) {
+    this.batchSortSizeinMb = batchSortSizeinMb;
+  }
+
   public static SortParameters createSortParameters(CarbonDataLoadConfiguration configuration) {
     SortParameters parameters = new SortParameters();
     CarbonTableIdentifier tableIdentifier =
@@ -369,6 +380,8 @@ public class SortParameters {
     parameters.setComplexDimColCount(configuration.getComplexDimensionCount());
     parameters.setNoDictionaryDimnesionColumn(
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields()));
+    parameters.setBatchSortSizeinMb(CarbonDataProcessorUtil.getBatchSortSizeinMb(configuration));
+
     parameters.setNumberOfSortColumns(configuration.getNumberOfSortColumns());
     parameters.setNumberOfNoDictSortColumns(configuration.getNumberOfNoDictSortColumns());
     setNoDictionarySortColumnMapping(parameters);
