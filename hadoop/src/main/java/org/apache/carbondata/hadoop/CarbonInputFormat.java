@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.hadoop;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.*;
@@ -90,9 +91,12 @@ import org.apache.hadoop.util.StringUtils;
  */
 public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
-  //comma separated list of input segment numbers
+  // comma separated list of input segment numbers
   public static final String INPUT_SEGMENT_NUMBERS =
       "mapreduce.input.carboninputformat.segmentnumbers";
+  // comma separated list of input files
+  public static final String INPUT_FILES =
+      "mapreduce.input.carboninputformat.files";
   private static final Log LOG = LogFactory.getLog(CarbonInputFormat.class);
   private static final String FILTER_PREDICATE =
       "mapreduce.input.carboninputformat.filter.predicate";
@@ -202,6 +206,14 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   public static void setSegmentsToAccess(Configuration configuration, List<String> validSegments) {
     configuration
         .set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, CarbonUtil.getSegmentString(validSegments));
+  }
+
+  /**
+   * Set list of files to access
+   */
+  public static void setFilesToAccess(Configuration configuration, List<String> validFiles) {
+    configuration
+        .set(CarbonInputFormat.INPUT_FILES, CarbonUtil.getSegmentString(validFiles));
   }
 
   private static AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
@@ -542,7 +554,6 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
               updateStatusManager.getInvalidTimestampRange(segmentId), updateStatusManager,
               segmentId, validTaskKeys);
       if (!tableBlockInfoList.isEmpty()) {
-        // getFileStatusOfSegments(job, new int[]{ segmentId }, fileStatusList);
         Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos = new HashMap<>();
         segmentToTableBlocksInfos.put(segmentId, tableBlockInfoList);
         // get Btree blocks for given segment
@@ -723,8 +734,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     if (segmentsToConsider.length == 0) {
       throw new IOException("No segments found");
     }
+    String[] filesToConsider = getFilesToAccess(job);
 
-    getFileStatusOfSegments(job, segmentsToConsider, result);
+    getFileStatus(job, segmentsToConsider, filesToConsider, result);
     return result;
   }
 
@@ -741,8 +753,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return true;
   }
 
-  private void getFileStatusOfSegments(JobContext job, String[] segmentsToConsider,
-      List<FileStatus> result) throws IOException {
+  private void getFileStatus(JobContext job, String[] segmentsToConsider,
+      String[] filesToConsider, List<FileStatus> result) throws IOException {
     String[] partitionsToConsider = getValidPartitions(job);
     if (partitionsToConsider.length == 0) {
       throw new IOException("No partitions/data found");
@@ -762,20 +774,36 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
       for (int j = 0; j < segmentsToConsider.length; ++j) {
         String segmentId = segmentsToConsider[j];
-        String dataDirectoryPath = absIdentifier
-            .appendWithLocalPrefix(tablePath.getCarbonDataDirectoryPath(partition, segmentId));
-        Path segmentPath = new Path(dataDirectoryPath);
-        FileSystem fs = segmentPath.getFileSystem(job.getConfiguration());
-        RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(segmentPath);
-        while (iter.hasNext()) {
-          LocatedFileStatus stat = iter.next();
-          if (inputFilter.accept(stat.getPath())) {
-            if (stat.isDirectory()) {
-              addInputPathRecursively(result, fs, stat.getPath(), inputFilter);
-            } else {
-              result.add(stat);
-            }
+        String dataDirectoryPath = absIdentifier.appendWithLocalPrefix(
+            tablePath.getCarbonDataDirectoryPath(partition, segmentId));
+        if (filesToConsider.length == 0) {
+          Path segmentPath = new Path(dataDirectoryPath);
+          FileSystem fs = segmentPath.getFileSystem(job.getConfiguration());
+          getFileStatusInternal(inputFilter, fs, segmentPath, result);
+        } else {
+          for (int k = 0; k < filesToConsider.length; ++k) {
+            String dataPath = absIdentifier.appendWithLocalPrefix(
+                tablePath.getCarbonDataDirectoryPath(partition, segmentId) + File.separator +
+                    filesToConsider[k]);
+            Path filePath = new Path(dataPath);
+            FileSystem fs = filePath.getFileSystem(job.getConfiguration());
+            getFileStatusInternal(inputFilter, fs, filePath, result);
           }
+        }
+      }
+    }
+  }
+
+  private void getFileStatusInternal(PathFilter inputFilter, FileSystem fs, Path path,
+      List<FileStatus> result) throws IOException {
+    RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(path);
+    while (iter.hasNext()) {
+      LocatedFileStatus stat = iter.next();
+      if (inputFilter.accept(stat.getPath())) {
+        if (stat.isDirectory()) {
+          addInputPathRecursively(result, fs, stat.getPath(), inputFilter);
+        } else {
+          result.add(stat);
         }
       }
     }
@@ -807,6 +835,17 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       return new String[0];
     }
     return segmentString.split(",");
+  }
+
+  /**
+   * return valid file to access
+   */
+  private String[] getFilesToAccess(JobContext job) {
+    String fileString = job.getConfiguration().get(INPUT_FILES, "");
+    if (fileString.trim().isEmpty()) {
+      return new String[0];
+    }
+    return fileString.split(",");
   }
 
   /**
