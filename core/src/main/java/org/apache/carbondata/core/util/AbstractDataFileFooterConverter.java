@@ -98,10 +98,10 @@ public abstract class AbstractDataFileFooterConverter {
         dataFileFooter = new DataFileFooter();
         TableBlockInfo tableBlockInfo = tableBlockInfoList.get(index);
         if (Integer.parseInt(CarbonTablePath.DataFileUtil.getPartNo(
-          tableBlockInfo.getFilePath())) == counter++) {
+            tableBlockInfo.getFilePath())) == counter++) {
           tableBlockInfo.setBlockOffset(readBlockIndexInfo.getOffset());
           tableBlockInfo.setVersion(
-            ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion()));
+              ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion()));
           int blockletSize = getBlockletSize(readBlockIndexInfo);
           tableBlockInfo.getBlockletInfos().setNoOfBlockLets(blockletSize);
           dataFileFooter.setBlockletIndex(blockletIndex);
