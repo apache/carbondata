@@ -56,7 +56,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
         None)
       case _ =>
         val options = new CarbonOption(parameters)
-        val storePath = CarbonProperties.getInstance()
+        val storePath = CarbonEnv.getInstance(sqlContext.sparkSession).sessionParams
           .getProperty(CarbonCommonConstants.STORE_LOCATION)
         val tablePath = storePath + "/" + options.dbName + "/" + options.tableName
         CarbonDatasourceHadoopRelation(sqlContext.sparkSession, Array(tablePath), parameters, None)
@@ -77,7 +77,8 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
                                           "specified when creating CarbonContext")
 
     val options = new CarbonOption(parameters)
-    val storePath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
+    val storePath = CarbonEnv.getInstance(sqlContext.sparkSession).sessionParams
+      .getProperty(CarbonCommonConstants.STORE_LOCATION)
     val tablePath = new Path(storePath + "/" + options.dbName + "/" + options.tableName)
     val isExists = tablePath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
       .exists(tablePath)

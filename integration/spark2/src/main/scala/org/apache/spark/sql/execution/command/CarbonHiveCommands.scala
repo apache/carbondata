@@ -50,7 +50,8 @@ case class CarbonSetCommand(command: SetCommand)
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val rows = command.run(sparkSession)
-    CarbonProperties.getInstance().addProperty(rows.head.getString(0), rows.head.getString(1))
+    CarbonEnv.getInstance(sparkSession).sessionParams
+      .addProperty(rows.head.getString(0), rows.head.getString(1))
     rows
   }
 }
