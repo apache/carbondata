@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.commons.lang3.StringUtils
+import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
@@ -525,6 +526,11 @@ case class LoadTable(
             val dictionaryServer = DictionaryServer
               .getInstance(dictionaryServerPort.toInt)
             carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
+            sqlContext.sparkContext.addSparkListener(new SparkListener() {
+              override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
+                dictionaryServer.shutdown()
+              }
+            })
             Some(dictionaryServer)
           } else {
             None
