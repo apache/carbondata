@@ -147,6 +147,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       row[order[i]] = comlexDimensionInfoMap.get(queryDimensions[i].getDimension().getOrdinal())
           .getDataBasedOnDataTypeFromSurrogates(
               ByteBuffer.wrap(complexTypeKeyArray[complexTypeColumnIndex++]));
+      dictionaryColumnIndex++;
     } else {
       row[order[i]] = surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]];
     }
