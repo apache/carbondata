@@ -142,12 +142,14 @@ public class DataFileFooterConverterTest {
       }
     };
     String[] arr = { "a", "b", "c" };
-    TableBlockInfo tableBlockInfo = new TableBlockInfo("/file.carbondata", 3, "id", arr, 3, ColumnarFormatVersion.V1);
+    String fileName = "/part-0-0_batchno0-0-1495074251740.carbondata";
+    TableBlockInfo tableBlockInfo = new TableBlockInfo(fileName, 3, "id", arr, 3, ColumnarFormatVersion.V1);
     tableBlockInfo.getBlockletInfos().setNoOfBlockLets(3);
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
     tableBlockInfoList.add(tableBlockInfo);
+    String idxFileName = "0_batchno0-0-1495074251740.carbonindex";
     List<DataFileFooter> dataFileFooterList =
-        dataFileFooterConverter.getIndexInfo("indexfile", tableBlockInfoList);
+        dataFileFooterConverter.getIndexInfo(idxFileName, tableBlockInfoList);
     byte[] exp = dataFileFooterList.get(0).getBlockletIndex().getBtreeIndex().getStartKey();
     byte[] res = "1".getBytes();
     for (int i = 0; i < exp.length; i++) {
