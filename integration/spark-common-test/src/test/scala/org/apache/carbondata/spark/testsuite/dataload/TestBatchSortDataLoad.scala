@@ -86,7 +86,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(sql("select count(*) from carbon_load1"), Seq(Row(200000)))
 
-    assert(getIndexfileCount("carbon_load1") == 12, "Something wrong in batch sort")
+    assert(getIndexfileCount("carbon_load1") == 10, "Something wrong in batch sort")
   }
 
   test("test batch sort load by passing option to load command and compare with normal load") {
@@ -167,7 +167,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(sql("select count(*) from carbon_load3"), Seq(Row(200000)))
 
-    assert(getIndexfileCount("carbon_load3") == 12, "Something wrong in batch sort")
+    assert(getIndexfileCount("carbon_load3") == 10, "Something wrong in batch sort")
 
     checkAnswer(sql("select * from carbon_load3 where c1='a1' order by c1"),
       sql("select * from carbon_load2 where c1='a1' order by c1"))
@@ -188,7 +188,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(sql("select count(*) from carbon_load4"), Seq(Row(200000)))
 
-    assert(getIndexfileCount("carbon_load4") == 12, "Something wrong in batch sort")
+    assert(getIndexfileCount("carbon_load4") == 10, "Something wrong in batch sort")
     CarbonProperties.getInstance().
       addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
         CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
