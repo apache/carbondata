@@ -437,8 +437,9 @@ case class LoadTable(
         case "true" =>
           true
         case "false" =>
-          if (!StringUtils.isEmpty(allDictionaryPath)) {
-            true
+          if (StringUtils.isNotEmpty(allDictionaryPath) || StringUtils.isNotEmpty(columnDict)) {
+            throw new MalformedCarbonCommandException(
+              "Can not use all_dictionary_path or columndict without single_pass.")
           } else {
             false
           }
