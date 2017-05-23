@@ -178,6 +178,46 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     relations.foreach(_.fillAttributeMap(attrMap))
 
     def addTempDecoder(currentPlan: LogicalPlan): LogicalPlan = {
+
+      def transformAggregateExpression(agg: Aggregate,
+          attrsOnGroup: util.HashSet[AttributeReferenceWrapper]  = null): LogicalPlan = {
+        val attrsOndimAggs = new util.HashSet[AttributeReferenceWrapper]
+        if (attrsOnGroup != null) {
+          attrsOndimAggs.addAll(attrsOnGroup)
+        }
+        agg.aggregateExpressions.map {
+          case attr: AttributeReference =>
+          case a@Alias(attr: AttributeReference, name) =>
+          case aggExp: AggregateExpression =>
+            aggExp.transform {
+              case aggExp: AggregateExpression =>
+                collectDimensionAggregates(aggExp, attrsOndimAggs, aliasMap, attrMap)
+                aggExp
+            }
+          case others =>
+            others.collect {
+              case attr: AttributeReference
+                if isDictionaryEncoded(attr, attrMap, aliasMap) =>
+                attrsOndimAggs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
+            }
+        }
+        var child = agg.child
+        // Incase if the child also aggregate then push down decoder to child
+        if (attrsOndimAggs.size() > 0 && !child.equals(agg)) {
+          child = CarbonDictionaryTempDecoder(attrsOndimAggs,
+            new util.HashSet[AttributeReferenceWrapper](),
+            agg.child)
+        }
+        if (!decoder && attrsOnGroup == null) {
+          decoder = true
+          CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
+            new util.HashSet[AttributeReferenceWrapper](),
+            Aggregate(agg.groupingExpressions, agg.aggregateExpressions, child),
+            isOuter = true)
+        } else {
+          Aggregate(agg.groupingExpressions, agg.aggregateExpressions, child)
+        }
+      }
       currentPlan match {
         case limit@GlobalLimit(_, LocalLimit(_, child: Sort)) =>
           if (!decoder) {
@@ -259,39 +299,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
             Union(children)
           }
         case agg: Aggregate if !agg.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
-          val attrsOndimAggs = new util.HashSet[AttributeReferenceWrapper]
-          agg.aggregateExpressions.map {
-            case attr: AttributeReference =>
-            case a@Alias(attr: AttributeReference, name) =>
-            case aggExp: AggregateExpression =>
-              aggExp.transform {
-                case aggExp: AggregateExpression =>
-                  collectDimensionAggregates(aggExp, attrsOndimAggs, aliasMap, attrMap)
-                  aggExp
-              }
-            case others =>
-              others.collect {
-                case attr: AttributeReference
-                  if isDictionaryEncoded(attr, attrMap, aliasMap) =>
-                  attrsOndimAggs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
-              }
-          }
-          var child = agg.child
-          // Incase if the child also aggregate then push down decoder to child
-          if (attrsOndimAggs.size() > 0 && !child.equals(agg)) {
-            child = CarbonDictionaryTempDecoder(attrsOndimAggs,
-              new util.HashSet[AttributeReferenceWrapper](),
-              agg.child)
-          }
-          if (!decoder) {
-            decoder = true
-            CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
-              new util.HashSet[AttributeReferenceWrapper](),
-              Aggregate(agg.groupingExpressions, agg.aggregateExpressions, child),
-              isOuter = true)
-          } else {
-            Aggregate(agg.groupingExpressions, agg.aggregateExpressions, child)
-          }
+          transformAggregateExpression(agg)
         case expand: Expand if !expand.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
           val attrsOnExpand = new util.HashSet[AttributeReferenceWrapper]
           expand.projections.map {s =>
@@ -381,15 +389,29 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
             var rightPlan = j.right
             if (leftCondAttrs.size() > 0 &&
                 !leftPlan.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
-              leftPlan = CarbonDictionaryTempDecoder(leftCondAttrs,
-                new util.HashSet[AttributeReferenceWrapper](),
-                j.left)
+              leftPlan = leftPlan match {
+                case agg: Aggregate =>
+                  CarbonDictionaryTempDecoder(leftCondAttrs,
+                    new util.HashSet[AttributeReferenceWrapper](),
+                    transformAggregateExpression(agg, leftCondAttrs))
+                case _ =>
+                  CarbonDictionaryTempDecoder(leftCondAttrs,
+                    new util.HashSet[AttributeReferenceWrapper](),
+                    j.left)
+              }
             }
             if (rightCondAttrs.size() > 0 &&
                 !rightPlan.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
-              rightPlan = CarbonDictionaryTempDecoder(rightCondAttrs,
-                new util.HashSet[AttributeReferenceWrapper](),
-                j.right)
+              rightPlan = rightPlan match {
+                case agg: Aggregate =>
+                  CarbonDictionaryTempDecoder(rightCondAttrs,
+                    new util.HashSet[AttributeReferenceWrapper](),
+                    transformAggregateExpression(agg, rightCondAttrs))
+                case _ =>
+                  CarbonDictionaryTempDecoder(rightCondAttrs,
+                    new util.HashSet[AttributeReferenceWrapper](),
+                    j.right)
+              }
             }
             Join(leftPlan, rightPlan, j.joinType, j.condition)
           } else {
@@ -503,7 +525,6 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
 
         case others => others
       }
-
     }
 
     val transFormedPlan =
