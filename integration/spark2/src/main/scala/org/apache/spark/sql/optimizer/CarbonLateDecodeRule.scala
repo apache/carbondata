@@ -180,7 +180,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     def addTempDecoder(currentPlan: LogicalPlan): LogicalPlan = {
 
       def transformAggregateExpression(agg: Aggregate,
-          attrsOnGroup: util.HashSet[AttributeReferenceWrapper]  = null): LogicalPlan = {
+          attrsOnGroup: util.HashSet[AttributeReferenceWrapper] = null): LogicalPlan = {
         val attrsOndimAggs = new util.HashSet[AttributeReferenceWrapper]
         if (attrsOnGroup != null) {
           attrsOndimAggs.addAll(attrsOnGroup)
