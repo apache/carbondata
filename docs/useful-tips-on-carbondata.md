@@ -175,7 +175,7 @@ excessive memory usage.
 | Parameter | Default Value | Description/Tuning |
 |-----------|-------------|--------|
 |carbon.number.of.cores.while.loading|Default: 2.This value should be >= 2|Specifies the number of cores used for data processing during data loading in CarbonData. |
-|carbon.sort.size|Data loading|Default: 100000. The value should be >= 100.|Threshhold to write local file in sort step when loading data|
+|carbon.sort.size|Default: 100000. The value should be >= 100.|Threshhold to write local file in sort step when loading data|
 |carbon.sort.file.write.buffer.size|Default:  50000.|DataOutputStream buffer. |
 |carbon.number.of.cores.block.sort|Default: 7 | If you have huge memory and cpus, increase it as you will|
 |carbon.merge.sort.reader.thread|Default: 3 |Specifies the number of cores used for temp file merging during data loading in CarbonData.|
