@@ -155,12 +155,3 @@ CLEAN FILES FOR TABLE table1
     To update we need to specify the column expression with an optional filter condition(s).
 
     For update commands refer to [DML operations on CarbonData](dml-operation-on-carbondata.md).
-
-
-    
-
-
-
-
- 
- 

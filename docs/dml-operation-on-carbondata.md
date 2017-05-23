@@ -107,7 +107,7 @@ You can use the following options to load data:
 - **COMPLEX_DELIMITER_LEVEL_2:** Split the complex type nested data column in a row. Applies level_1 delimiter & applies level_2 based on complex data type (eg., a:b$c:d --> Array> = {{a,b},{c,d}}).
 
     ```
-    OPTIONS('COMPLEX_DELIMITER_LEVEL_2'=':') 
+    OPTIONS('COMPLEX_DELIMITER_LEVEL_2'=':')
     ```
 
 - **ALL_DICTIONARY_PATH:** All dictionary files path.

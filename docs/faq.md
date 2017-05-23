@@ -58,12 +58,16 @@ To ignore the Bad Records from getting stored in the raw csv, we need to set the
 The store location specified while creating carbon session is used by the CarbonData to store the meta data like the schema, dictionary files, dictionary meta data and sort indexes.
 
 Try creating ``carbonsession`` with ``storepath`` specified in the following manner :
+
 ```
-val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession(<store_path>)
+val carbon = SparkSession.builder().config(sc.getConf)
+             .getOrCreateCarbonSession(<store_path>)
 ```
 Example:
+
 ```
-val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("hdfs://localhost:9000/carbon/store ")
+val carbon = SparkSession.builder().config(sc.getConf)
+             .getOrCreateCarbonSession("hdfs://localhost:9000/carbon/store")
 ```
 
 ## What is Carbon Lock Type?
@@ -77,7 +81,8 @@ In order to build CarbonData project it is necessary to specify the spark profil
 
 ## How Carbon will behave when execute insert operation in abnormal scenarios?
 Carbon support insert operation, you can refer to the syntax mentioned in [DML Operations on CarbonData](http://carbondata.apache.org/dml-operation-on-carbondata).
-First, create a soucre table in spark-sql and load data into this created table. 
+First, create a soucre table in spark-sql and load data into this created table.
+
 ```
 CREATE TABLE source_table(
 id String,
@@ -85,6 +90,7 @@ name String,
 city String)
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ",";
 ```
+
 ```
 SELECT * FROM source_table;
 id  name    city
@@ -92,9 +98,11 @@ id  name    city
 2   erlu    hangzhou
 3   davi    shenzhen
 ```
+
 **Scenario 1** :
 
 Suppose, the column order in carbon table is different from source table, use script "SELECT * FROM carbon table" to query, will get the column order similar as source table, rather than in carbon table's column order as expected. 
+
 ```
 CREATE TABLE IF NOT EXISTS carbon_table(
 id String,
@@ -102,9 +110,11 @@ city String,
 name String)
 STORED BY 'carbondata';
 ```
+
 ```
 INSERT INTO TABLE carbon_table SELECT * FROM source_table;
 ```
+
 ```
 SELECT * FROM carbon_table;
 id  city    name
@@ -112,9 +122,11 @@ id  city    name
 2   erlu    hangzhou
 3   davi    shenzhen
 ```
+
 As result shows, the second column is city in carbon table, but what inside is name, such as jack. This phenomenon is same with insert data into hive table.
 
 If you want to insert data into corresponding column in carbon table, you have to specify the column order same in insert statment. 
+
 ```
 INSERT INTO TABLE carbon_table SELECT id, city, name FROM source_table;
 ```
@@ -122,9 +134,11 @@ INSERT INTO TABLE carbon_table SELECT id, city, name FROM source_table;
 **Scenario 2** :
 
 Insert operation will be failed when the number of column in carbon table is different from the column specified in select statement. The following insert operation will be failed.
+
 ```
 INSERT INTO TABLE carbon_table SELECT id, city FROM source_table;
 ```
+
 **Scenario 3** :
 
 When the column type in carbon table is different from the column specified in select statement. The insert operation will still success, but you may get NULL in result, because NULL will be substitute value when conversion type failed.
