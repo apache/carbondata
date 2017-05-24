@@ -36,11 +36,11 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-
 public class FlinkRowReadSupportImpl<T> extends DictionaryDecodeReadSupport<T> {
 
     private static final long SECONDS_PER_DAY = 60 * 60 * 24L;
     private static final long MILLIS_PER_DAY = SECONDS_PER_DAY * 1000L;
+    protected String dateDefaultFormat = "yyyy/MM/dd";
     protected Dictionary[] dictionaries;
     protected DataType[] dataTypes;
     /**
@@ -96,8 +96,7 @@ public class FlinkRowReadSupportImpl<T> extends DictionaryDecodeReadSupport<T> {
                         data[i] = data[i];
                     } else {
                         String dateFormat = CarbonProperties.getInstance().getProperty(
-                                CarbonCommonConstants.CARBON_DATE_FORMAT,
-                                CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+                                CarbonCommonConstants.CARBON_DATE_FORMAT, dateDefaultFormat);
                         Long date = Long.parseLong(String.valueOf(data[i])) * MILLIS_PER_DAY;
                         Date millisTransformedDate = new Date(date);
                         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat);
