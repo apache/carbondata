@@ -26,6 +26,7 @@ import java.util.Map;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
@@ -262,6 +263,29 @@ public abstract class AbstractScannedResult {
           CarbonUtil.closeStreams(dataOutput);
           CarbonUtil.closeStreams(byteStream);
         }
+      }
+    }
+  }
+
+  /**
+   * Fill the column data to vector
+   */
+  public void fillColumnarImplicitBatch(ColumnVectorInfo[] vectorInfo) {
+    int column = 0;
+    for (int i = 0; i < vectorInfo.length; i++) {
+      ColumnVectorInfo columnVectorInfo = vectorInfo[column];
+      CarbonColumnVector vector = columnVectorInfo.vector;
+      int offset = columnVectorInfo.offset;
+      int vectorOffset = columnVectorInfo.vectorOffset;
+      int len = offset + columnVectorInfo.size;
+      for (int j = offset; j < len; j++) {
+        // Considering only String case now as we support only
+        String data = getBlockletId();
+        if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
+            .equals(columnVectorInfo.dimension.getColumnName())) {
+          data = data + CarbonCommonConstants.FILE_SEPARATOR + j;
+        }
+        vector.putBytes(vectorOffset++, offset, data.length(), data.getBytes());
       }
     }
   }
