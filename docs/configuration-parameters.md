@@ -58,6 +58,9 @@ This section provides the details of all the configurations required for CarbonD
 | carbon.merge.sort.prefetch | true | Enable prefetch of data during merge sort while reading data from sort temp files in data loading. |  |
 | carbon.update.persist.enable | true | Enabling this parameter considers persistent data. Enabling this will reduce the execution time of UPDATE operation. |  |
 | carbon.load.global.sort.partitions | 0 | The Number of partitions to use when shuffling data for sort. If user don't configurate or configurate it less than 1, it uses the number of map tasks as reduce tasks. In general, we recommend 2-3 tasks per CPU core in your cluster.
+| sort.inmemory.size.inmb | 1024 MB | Memory size in MB available for in-memory sort. |  |
+|  carbon.load.sort.scope |  LOCAL_SORT | This property can have four possible values BATCH_SORT, LOCAL_SORT, GLOBAL_SORT and NO_SORT. If set to BATCH_SORT, the sorting scope is smaller and more index tree will be created,thus loading is faster but query maybe slower. If set to LOCAL_SORT, the sorting scope is bigger and one index tree per data node will be created, thus loading is slower but query is faster. If set to GLOBAL_SORT, the sorting scope is bigger and one index tree per task will be created, thus loading is slower but query is faster. If set to NO_SORT data will be loaded in unsorted manner. |  |
+| carbon.load.batch.sort.size.inmb | 0.45 * sort.inmemory.size.inmb | Specifies the size of data to be considered for batch sorting during data load. Recommended value is less than 45% of the total sort data (sort.inmemory.size.inmb), otherwise it may start spilling the intermediate temp data to disk, so it may slow down the loading process. |  |
 
 
 
