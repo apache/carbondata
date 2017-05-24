@@ -554,7 +554,6 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
               updateStatusManager.getInvalidTimestampRange(segmentId), updateStatusManager,
               segmentId, validTaskKeys);
       if (!tableBlockInfoList.isEmpty()) {
-        // getFileStatus(job, new String[]{ segmentId }, new String[] { fileName }, fileStatusList);
         Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos = new HashMap<>();
         segmentToTableBlocksInfos.put(segmentId, tableBlockInfoList);
         // get Btree blocks for given segment
