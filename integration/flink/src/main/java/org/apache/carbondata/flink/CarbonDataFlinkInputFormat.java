@@ -82,7 +82,7 @@ public class CarbonDataFlinkInputFormat {
             for (String column : columns)
                 projections.addColumn(column);
             Configuration conf = new Configuration();
-
+            CarbonInputFormat.setCarbonReadSupport(conf, FlinkRowReadSupportImpl.class);
             CarbonInputFormat.setColumnProjection(conf, projections);
             try {
                 HadoopInputFormat<Void, Object[]> format = HadoopInputs.readHadoopFile(new CarbonInputFormat(),
@@ -92,6 +92,5 @@ public class CarbonDataFlinkInputFormat {
                 throw new HadoopFormatException("Could not create hadoop-input-format " + e);
             }
         }
-
     }
 }
