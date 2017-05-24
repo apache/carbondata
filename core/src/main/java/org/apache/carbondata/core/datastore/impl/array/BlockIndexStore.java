@@ -3,14 +3,11 @@ package org.apache.carbondata.core.datastore.impl.array;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.datastore.BTreeBuilderInfo;
-import org.apache.carbondata.core.datastore.DataRefNode;
-import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.IndexKey;
-import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
-import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
+import org.apache.carbondata.core.memory.MemoryAllocatorFactory;
 import org.apache.carbondata.core.memory.MemoryBlock;
 
 /**
@@ -30,18 +27,23 @@ public class BlockIndexStore implements IndexStore {
 
   private int[] dimensionColumnValueSize;
 
-  public BlockIndexStore(BTreeBuilderInfo btreeBuilderInfo, MemoryBlock block, int[] rowPointers) {
+  private int[] tableBlockPointer;
+
+  public BlockIndexStore(BTreeBuilderInfo btreeBuilderInfo, MemoryBlock block, int[] rowPointers,
+      int[] tableBlockPointer) {
     this.rowPointers = rowPointers;
     this.block = block;
     this.dimensionColumnValueSize = btreeBuilderInfo.getDimensionColumnValueSize();
+    this.tableBlockPointer = tableBlockPointer;
   }
 
   @Override public IndexKey getIndexKey(int index) {
     // Starting we are adding row number so we add 4
     int size = getKeySize(rowPointers[index]);
     byte[] startKey = new byte[size];
-    CarbonUnsafe.unsafe.copyMemory(block.getBaseObject(), block.getBaseOffset() + 8, startKey,
-        CarbonUnsafe.BYTE_ARRAY_OFFSET, startKey.length);
+    CarbonUnsafe.unsafe
+        .copyMemory(block.getBaseObject(), block.getBaseOffset() + rowPointers[index] + 8, startKey,
+            CarbonUnsafe.BYTE_ARRAY_OFFSET, startKey.length);
     ByteBuffer buffer = ByteBuffer.wrap(startKey);
     buffer.rewind();
     int dictonaryKeySize = buffer.getInt();
@@ -56,13 +58,14 @@ public class BlockIndexStore implements IndexStore {
   @Override public byte[] getMin(int index, int colIndex) {
     int startOffset = 0;
     int length = 0;
-    if (dimensionColumnValueSize[index] > 0) {
+    if (dimensionColumnValueSize[colIndex] > 0) {
       startOffset = getFixedMinOffset(index, colIndex);
-      length = dimensionColumnValueSize[index];
+      length = dimensionColumnValueSize[colIndex];
     } else {
       startOffset = getVariableMinOffset(index, colIndex);
       length =
           CarbonUnsafe.unsafe.getShort(block.getBaseObject(), block.getBaseOffset() + startOffset);
+      startOffset += 2;
     }
     byte[] min = new byte[length];
     CarbonUnsafe.unsafe.copyMemory(block.getBaseObject(), block.getBaseOffset() + startOffset, min,
@@ -73,13 +76,14 @@ public class BlockIndexStore implements IndexStore {
   @Override public byte[] getMax(int index, int colIndex) {
     int startOffset = 0;
     int length = 0;
-    if (dimensionColumnValueSize[index] > 0) {
+    if (dimensionColumnValueSize[colIndex] > 0) {
       startOffset = getFixedMaxOffset(index, colIndex);
-      length = dimensionColumnValueSize[index];
+      length = dimensionColumnValueSize[colIndex];
     } else {
       startOffset = getVariableMaxOffset(index, colIndex);
       length =
           CarbonUnsafe.unsafe.getShort(block.getBaseObject(), block.getBaseOffset() + startOffset);
+      startOffset += 2;
     }
     byte[] max = new byte[length];
     CarbonUnsafe.unsafe.copyMemory(block.getBaseObject(), block.getBaseOffset() + startOffset, max,
@@ -89,7 +93,7 @@ public class BlockIndexStore implements IndexStore {
 
   private int getFixedMaxOffset(int rowIndex, int colIndex) {
     int start = getKeySize(rowPointers[rowIndex]);
-
+    start += rowPointers[rowIndex] + 8;
     for (int i = 0; i < colIndex; i++) {
       if (dimensionColumnValueSize[i] > 0) {
         start += dimensionColumnValueSize[i];
@@ -99,11 +103,12 @@ public class BlockIndexStore implements IndexStore {
   }
 
   private int getVariableMaxOffset(int rowIndex, int colIndex) {
-    int start = getFixedMaxOffset(rowIndex, dimensionColumnValueSize.length - 1);
+    int start = getFixedMaxOffset(rowIndex, dimensionColumnValueSize.length);
     for (int i = 0; i < colIndex; i++) {
       if (dimensionColumnValueSize[i] < 0) {
         short aShort =
             CarbonUnsafe.unsafe.getShort(block.getBaseObject(), block.getBaseOffset() + start);
+        start += 2;
         start += aShort;
       }
     }
@@ -111,7 +116,7 @@ public class BlockIndexStore implements IndexStore {
   }
 
   private int getFixedMinOffset(int rowIndex, int colIndex) {
-    int start = getVariableMaxOffset(rowIndex, dimensionColumnValueSize.length - 1);
+    int start = getVariableMaxOffset(rowIndex, dimensionColumnValueSize.length);
     for (int i = 0; i < colIndex; i++) {
       if (dimensionColumnValueSize[i] > 0) {
         start += dimensionColumnValueSize[i];
@@ -121,11 +126,12 @@ public class BlockIndexStore implements IndexStore {
   }
 
   private int getVariableMinOffset(int rowIndex, int colIndex) {
-    int start = getFixedMinOffset(rowIndex, dimensionColumnValueSize.length - 1);
+    int start = getFixedMinOffset(rowIndex, dimensionColumnValueSize.length);
     for (int i = 0; i < colIndex; i++) {
       if (dimensionColumnValueSize[i] < 0) {
         short aShort =
             CarbonUnsafe.unsafe.getShort(block.getBaseObject(), block.getBaseOffset() + start);
+        start += 2;
         start += aShort;
       }
     }
@@ -137,60 +143,48 @@ public class BlockIndexStore implements IndexStore {
         .getInt(block.getBaseObject(), block.getBaseOffset() + rowPointer + 4);
   }
 
-  @Override public DataRefNode getNextDataRefNode() {
-    return null;
+  @Override public boolean isKeyAvailableAtIndex(int index) {
+    return index < rowPointers.length;
   }
 
-  @Override public int nodeSize() {
+  @Override public int getRowCount(int index) {
     return CarbonUnsafe.unsafe
         .getInt(block.getBaseObject(), block.getBaseOffset() + rowPointers[index]);
   }
 
-  @Override public long nodeNumber() {
-    return 0;
+  @Override public byte[][] getMins(int index) {
+    byte[][] mins = new byte[dimensionColumnValueSize.length][];
+    for (int i = 0; i < mins.length; i++) {
+      mins[i] = getMin(index, i);
+    }
+    return mins;
   }
 
-  @Override public byte[][] getColumnsMaxValue() {
-    return new byte[0][];
+  @Override public byte[][] getMaxs(int index) {
+    byte[][] maxs = new byte[dimensionColumnValueSize.length][];
+    for (int i = 0; i < maxs.length; i++) {
+      maxs[i] = getMax(index, i);
+    }
+    return maxs;
   }
 
-  @Override public byte[][] getColumnsMinValue() {
-    return new byte[0][];
+  public TableBlockInfo getTableBlockInfo(int index) throws IOException {
+    int size = CarbonUnsafe.unsafe
+        .getInt(block.getBaseObject(), block.getBaseOffset() + tableBlockPointer[index]);
+    byte[] data = new byte[size];
+    CarbonUnsafe.unsafe
+        .copyMemory(block.getBaseObject(), block.getBaseOffset() + tableBlockPointer[index] + 4,
+            data, CarbonUnsafe.BYTE_ARRAY_OFFSET, size);
+    TableBlockInfo tableBlockInfo = new TableBlockInfo();
+    tableBlockInfo.writeSerializedData(data);
+    return tableBlockInfo;
   }
 
-  @Override
-  public DimensionRawColumnChunk[] getDimensionChunks(FileHolder fileReader, int[][] blockIndexes)
-      throws IOException {
-    return new DimensionRawColumnChunk[0];
+  @Override public int getIndexKeyCount() {
+    return rowPointers.length;
   }
 
-  @Override
-  public DimensionRawColumnChunk getDimensionChunk(FileHolder fileReader, int blockIndexes)
-      throws IOException {
-    return null;
-  }
-
-  @Override
-  public MeasureRawColumnChunk[] getMeasureChunks(FileHolder fileReader, int[][] blockIndexes)
-      throws IOException {
-    return new MeasureRawColumnChunk[0];
-  }
-
-  @Override public MeasureRawColumnChunk getMeasureChunk(FileHolder fileReader, int blockIndex)
-      throws IOException {
-    return null;
-  }
-
-  @Override
-  public void setDeleteDeltaDataCache(BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache) {
-
-  }
-
-  @Override public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
-    return null;
-  }
-
-  @Override public int numberOfPages() {
-    return 0;
+  @Override public void clear() {
+    MemoryAllocatorFactory.INSATANCE.getMemoryAllocator().free(block);
   }
 }

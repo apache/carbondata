@@ -16,6 +16,11 @@
  */
 package org.apache.carbondata.core.datastore.block;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -71,6 +76,10 @@ public class TableBlockInfo implements Distributable, Serializable {
    */
   private Map<String, String> blockStorageIdMap =
           new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+  public TableBlockInfo() {
+
+  }
 
   public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
       long blockLength, ColumnarFormatVersion version) {
@@ -306,5 +315,46 @@ public class TableBlockInfo implements Distributable, Serializable {
    */
   public void setBlockStorageIdMap(Map<String, String> blockStorageIdMap) {
     this.blockStorageIdMap = blockStorageIdMap;
+  }
+
+  public byte[] getSerializedData() throws IOException {
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    DataOutputStream output = new DataOutputStream(stream);
+    output.writeUTF(filePath);
+    output.writeLong(blockOffset);
+    output.writeLong(blockLength);
+    output.writeUTF(segmentId);
+    output.writeByte(locations.length);
+    for (int i = 0; i < locations.length; i++) {
+      output.writeUTF(locations[i]);
+    }
+    output.writeShort(version.number());
+    byte[] serializedData = blockletInfos.getSerializedData();
+    output.writeInt(serializedData.length);
+    output.write(serializedData);
+    output.close();
+    return stream.toByteArray();
+  }
+
+  public void writeSerializedData(byte[] data) throws IOException {
+    ByteArrayInputStream stream = new ByteArrayInputStream(data);
+    DataInputStream input = new DataInputStream(stream);
+    filePath = input.readUTF();
+    blockOffset = input.readLong();
+    blockLength = input.readLong();
+    segmentId = input.readUTF();
+    byte length = input.readByte();
+    locations = new String[length];
+    for (int i = 0; i < length; i++) {
+      locations[i] = input.readUTF();
+    }
+    short v = input.readShort();
+    version = ColumnarFormatVersion.valueOf(v);
+    int blockletInfoLen = input.readInt();
+    byte[] blockletData = new byte[blockletInfoLen];
+    input.read(blockletData);
+    blockletInfos = new BlockletInfos();
+    blockletInfos.writeSerializedData(blockletData);
+    input.close();
   }
 }

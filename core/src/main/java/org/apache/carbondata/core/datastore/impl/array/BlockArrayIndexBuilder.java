@@ -1,10 +1,12 @@
 package org.apache.carbondata.core.datastore.impl.array;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.BTreeBuilderInfo;
 import org.apache.carbondata.core.datastore.BtreeBuilder;
 import org.apache.carbondata.core.datastore.DataRefNode;
+import org.apache.carbondata.core.datastore.block.BlockInfo;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryAllocator;
 import org.apache.carbondata.core.memory.MemoryAllocatorFactory;
@@ -16,6 +18,8 @@ import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
  * Created by root1 on 18/5/17.
  */
 public class BlockArrayIndexBuilder implements BtreeBuilder {
+
+  private BlockIndexStore blockIndexStore;
 
   /**
    * Maintain pointers in the following way.
@@ -33,6 +37,7 @@ public class BlockArrayIndexBuilder implements BtreeBuilder {
   @Override public void build(BTreeBuilderInfo btreeBuilderInfo) {
     int indexSize = 0;
     List<DataFileFooter> footerList = btreeBuilderInfo.getFooterList();
+    byte[][] blockInfo = new byte[footerList.size()][];
     // First calculate the size of complete index to store in memory
     for (int metadataIndex = 0; metadataIndex < footerList.size(); metadataIndex++) {
       DataFileFooter footer = footerList.get(metadataIndex);
@@ -65,12 +70,24 @@ public class BlockArrayIndexBuilder implements BtreeBuilder {
 
       //row num in int
       indexSize += 4;
+
+      try {
+        BlockInfo blockInfo1 = footer.getBlockInfo();
+        if (blockInfo1 != null) {
+          blockInfo[metadataIndex] = blockInfo1.getTableBlockInfo().getSerializedData();
+          indexSize += 4;
+          indexSize += blockInfo[metadataIndex].length;
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
     }
 
     MemoryAllocator memoryAllocator = MemoryAllocatorFactory.INSATANCE.getMemoryAllocator();
     MemoryBlock block = memoryAllocator.allocate(indexSize);
 
     int[] rowPointers = new int[footerList.size()];
+    int[] blockInfoPointers = new int[footerList.size()];
     long address = block.getBaseOffset();
     Object baseObject = block.getBaseObject();
     indexSize = 0;
@@ -132,11 +149,23 @@ public class BlockArrayIndexBuilder implements BtreeBuilder {
           indexSize += minValues[i].length;
         }
       }
+      if (blockInfo[metadataIndex] != null) {
+        // write table block info to unsafe
+        blockInfoPointers[metadataIndex] = indexSize;
+        CarbonUnsafe.unsafe.putInt(address + indexSize, blockInfo[metadataIndex].length);
+        indexSize += 4;
+        CarbonUnsafe.unsafe
+            .copyMemory(blockInfo[metadataIndex], CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
+                address + indexSize, blockInfo[metadataIndex].length);
+        indexSize += blockInfo[metadataIndex].length;
+      }
     }
-    new BlockIndexStore(btreeBuilderInfo, block, rowPointers);
+
+    blockIndexStore =
+        new BlockIndexStore(btreeBuilderInfo, block, rowPointers, blockInfoPointers);
   }
 
   @Override public DataRefNode get() {
-    return null;
+    return new BlockIndexNodeWrapper(blockIndexStore, (short) 0);
   }
 }
