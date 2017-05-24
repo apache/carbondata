@@ -21,11 +21,10 @@ import java.nio.ByteBuffer;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.DataRefNodeFinder;
 import org.apache.carbondata.core.datastore.IndexKey;
-import org.apache.carbondata.core.datastore.impl.btree.BTreeNode;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
- * Below class will be used to find a block in a btree
+ * Below class will be used to find a block in a Array store
  */
 public class ArrayDataRefNodeFinder implements DataRefNodeFinder {
 
@@ -96,7 +95,7 @@ public class ArrayDataRefNodeFinder implements DataRefNodeFinder {
    * Binary search used to get the first tentative block of the btree based on
    * search key
    *
-   * @param key  search key
+   * @param key search key
    * @return first tentative block
    */
   private DataRefNode findFirstLeafNode(IndexKey key, IndexStore indexStore) {
@@ -117,7 +116,8 @@ public class ArrayDataRefNodeFinder implements DataRefNodeFinder {
       } else {
         // if key is matched then get the first entry
         int currentPos = mid;
-        while (currentPos - 1 >= 0 && compareIndexes(key, indexStore.getIndexKey(currentPos - 1)) == 0) {
+        while (currentPos - 1 >= 0
+            && compareIndexes(key, indexStore.getIndexKey(currentPos - 1)) == 0) {
           currentPos--;
         }
         mid = currentPos;
@@ -143,7 +143,7 @@ public class ArrayDataRefNodeFinder implements DataRefNodeFinder {
    * Binary search used to get the last tentative block of the btree based on
    * search key
    *
-   * @param key  search key
+   * @param key search key
    * @return first tentative block
    */
   private DataRefNode findLastLeafNode(IndexKey key, IndexStore indexStore) {
@@ -226,14 +226,14 @@ public class ArrayDataRefNodeFinder implements DataRefNodeFinder {
           actualOffset = firstNoDictionaryKeyBuffer.getShort(nonDictionaryKeyOffset);
           firstNoDcitionaryLength =
               firstNoDictionaryKeyBuffer.getShort(nonDictionaryKeyOffset + SHORT_SIZE_IN_BYTES)
-                      - actualOffset;
+                  - actualOffset;
           actualOffset1 = secondNoDictionaryKeyBuffer.getShort(nonDictionaryKeyOffset);
           secondNodeDictionaryLength =
               secondNoDictionaryKeyBuffer.getShort(nonDictionaryKeyOffset + SHORT_SIZE_IN_BYTES)
-                      - actualOffset1;
+                  - actualOffset1;
           compareResult = ByteUtil.UnsafeComparer.INSTANCE
-                  .compareTo(first.getNoDictionaryKeys(), actualOffset, firstNoDcitionaryLength,
-                          second.getNoDictionaryKeys(), actualOffset1, secondNodeDictionaryLength);
+              .compareTo(first.getNoDictionaryKeys(), actualOffset, firstNoDcitionaryLength,
+                  second.getNoDictionaryKeys(), actualOffset1, secondNodeDictionaryLength);
           nonDictionaryKeyOffset += SHORT_SIZE_IN_BYTES;
           processedNoDictionaryColumn--;
         } else {

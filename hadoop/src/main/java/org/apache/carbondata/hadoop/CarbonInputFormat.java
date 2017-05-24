@@ -18,7 +18,14 @@ package org.apache.carbondata.hadoop;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.DataRefNode;
@@ -31,7 +38,8 @@ import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.datastore.impl.btree.BTreeDataRefNodeFinder;
+import org.apache.carbondata.core.datastore.impl.array.BlockIndexNodeWrapper;
+import org.apache.carbondata.core.datastore.impl.array.IndexStoreFactory;
 import org.apache.carbondata.core.datastore.impl.btree.BlockBTreeLeafNode;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -339,8 +347,14 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
           getDataBlocksOfSegment(job, filterExpressionProcessor, absoluteTableIdentifier,
               filterResolver, matchedPartitions, segmentNo, cacheClient, updateStatusManager);
       for (DataRefNode dataRefNode : dataRefNodes) {
-        BlockBTreeLeafNode leafNode = (BlockBTreeLeafNode) dataRefNode;
-        TableBlockInfo tableBlockInfo = leafNode.getTableBlockInfo();
+        TableBlockInfo tableBlockInfo;
+        if (dataRefNode instanceof BlockIndexNodeWrapper) {
+          BlockIndexNodeWrapper leafNode = (BlockIndexNodeWrapper) dataRefNode;
+          tableBlockInfo = leafNode.getTableBlockInfo((int)leafNode.nodeNumber());
+        } else {
+          BlockBTreeLeafNode leafNode = (BlockBTreeLeafNode) dataRefNode;
+          tableBlockInfo = leafNode.getTableBlockInfo();
+        }
         if (CarbonUtil.isInvalidTableBlock(tableBlockInfo,
             updateStatusManager.getInvalidTimestampRange(tableBlockInfo.getSegmentId()),
             updateStatusManager)) {
@@ -632,14 +646,14 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
       // Add all blocks of btree into result
       DataRefNodeFinder blockFinder =
-          new BTreeDataRefNodeFinder(segmentProperties.getEachDimColumnValueSize(),
+          IndexStoreFactory.getNodeFinder(segmentProperties.getEachDimColumnValueSize(),
               segmentProperties.getNumberOfSortColumns(),
               segmentProperties.getNumberOfNoDictSortColumns());
       DataRefNode startBlock =
           blockFinder.findFirstDataBlock(abstractIndex.getDataRefNode(), startIndexKey);
       DataRefNode endBlock =
           blockFinder.findLastDataBlock(abstractIndex.getDataRefNode(), endIndexKey);
-      while (startBlock != endBlock) {
+      while (!startBlock.equals(endBlock)) {
         blocks.add(startBlock);
         startBlock = startBlock.getNextDataRefNode();
       }

@@ -1191,6 +1191,10 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_BAD_RECORDS_ACTION_DEFAULT = "FORCE";
 
+  public static final String CARBON_INDEX_DRIVER_STORE_TYPE = "carbon.index.driver.store.type";
+
+  public static final String CARBON_INDEX_DRIVER_STORE_TYPE_DEFAULT = "unsafe.array";
+
   private CarbonCommonConstants() {
   }
 }

@@ -1,5 +1,6 @@
 package org.apache.carbondata.core.datastore.impl.array;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,9 +12,12 @@ import org.apache.carbondata.core.datastore.BTreeBuilderInfo;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.DataRefNodeFinder;
 import org.apache.carbondata.core.datastore.IndexKey;
+import org.apache.carbondata.core.datastore.block.BlockInfo;
+import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
@@ -52,6 +56,8 @@ public class BlockIndexStoreTest extends TestCase {
 
   private List<byte[][]> maxOnlyDic;
 
+  private TableBlockInfo tableBlockInfo;
+
   @Override protected void setUp() throws Exception {
     key = new ArrayList<>();
     min = new ArrayList<>();
@@ -62,6 +68,9 @@ public class BlockIndexStoreTest extends TestCase {
     keyOnlyDic = new ArrayList<>();
     minOnlyDic = new ArrayList<>();
     maxOnlyDic = new ArrayList<>();
+    tableBlockInfo = new TableBlockInfo(
+        "/home/root1/carbon/carbondata/examples/spark2/target/store/default/carbon_table/Fact/Part0/Segment_0/part-0-0_batchno0-0-1495629801725.carbondata",
+        3000, "Segment0", new String[] { "local" }, 5999, ColumnarFormatVersion.V3);
     int[] dimensionBitLength =
         CarbonUtil.getDimensionBitLength(new int[] { 10000, 10000 }, new int[] { 1, 1 });
     List<DataFileFooter> dataFileFooterList = getDataFileFooterList(dimensionBitLength);
@@ -118,6 +127,12 @@ public class BlockIndexStoreTest extends TestCase {
         assert (Arrays.equals(ma[j], sma[j]));
       }
       assert (999 == indexStore.getRowCount(i));
+      try {
+        assert(tableBlockInfo.equals(((BlockIndexStore)indexStore).getTableBlockInfo(i)));
+      } catch (IOException e) {
+        e.printStackTrace();
+        assert (false);
+      }
     }
   }
 
@@ -207,7 +222,7 @@ public class BlockIndexStoreTest extends TestCase {
         key.add(footer.getBlockletIndex().getBtreeIndex().getStartKey());
         min.add(footer.getBlockletIndex().getMinMaxIndex().getMinValues());
         max.add(footer.getBlockletIndex().getMinMaxIndex().getMaxValues());
-
+        footer.setBlockInfo(new BlockInfo(tableBlockInfo));
         list.add(footer);
         i = i + 10;
       }

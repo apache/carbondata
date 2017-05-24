@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.carbondata.core.datastore.impl.array;
 
 import java.io.IOException;
@@ -15,7 +31,7 @@ import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 
 /**
- * Created by root1 on 18/5/17.
+ * Builder for storing block index in unsafe array format
  */
 public class BlockArrayIndexBuilder implements BtreeBuilder {
 
@@ -50,7 +66,7 @@ public class BlockArrayIndexBuilder implements BtreeBuilder {
       BlockletMinMaxIndex minMaxIndex = footer.getBlockletIndex().getMinMaxIndex();
       // max calculation
       byte[][] maxValues = minMaxIndex.getMaxValues();
-      for (int i = 0; i < maxValues.length; i++) {
+      for (int i = 0; i < btreeBuilderInfo.getDimensionColumnValueSize().length; i++) {
         //If it is variable length size in short + actual data length
         if (btreeBuilderInfo.getDimensionColumnValueSize()[i] == -1) {
           indexSize += 2;
@@ -60,7 +76,7 @@ public class BlockArrayIndexBuilder implements BtreeBuilder {
 
       // min calculation
       byte[][] minValues = minMaxIndex.getMaxValues();
-      for (int i = 0; i < minValues.length; i++) {
+      for (int i = 0; i < btreeBuilderInfo.getDimensionColumnValueSize().length; i++) {
         //If it is variable length size in short + actual data length
         if (btreeBuilderInfo.getDimensionColumnValueSize()[i] == -1) {
           indexSize += 2;
@@ -110,7 +126,7 @@ public class BlockArrayIndexBuilder implements BtreeBuilder {
 
       // max calculation for fixed values
       byte[][] maxValues = minMaxIndex.getMaxValues();
-      for (int i = 0; i < maxValues.length; i++) {
+      for (int i = 0; i < btreeBuilderInfo.getDimensionColumnValueSize().length; i++) {
         if (btreeBuilderInfo.getDimensionColumnValueSize()[i] > 0) {
           CarbonUnsafe.unsafe.copyMemory(maxValues[i], CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
               address + indexSize, maxValues[i].length);
@@ -119,7 +135,7 @@ public class BlockArrayIndexBuilder implements BtreeBuilder {
       }
 
       // For variable max data
-      for (int i = 0; i < maxValues.length; i++) {
+      for (int i = 0; i < btreeBuilderInfo.getDimensionColumnValueSize().length; i++) {
         if (btreeBuilderInfo.getDimensionColumnValueSize()[i] == -1) {
           CarbonUnsafe.unsafe.putShort(address + indexSize, (short) maxValues[i].length);
           indexSize += 2;
@@ -131,7 +147,7 @@ public class BlockArrayIndexBuilder implements BtreeBuilder {
 
       // min calculation for fixed values
       byte[][] minValues = minMaxIndex.getMinValues();
-      for (int i = 0; i < minValues.length; i++) {
+      for (int i = 0; i < btreeBuilderInfo.getDimensionColumnValueSize().length; i++) {
         if (btreeBuilderInfo.getDimensionColumnValueSize()[i] > 0) {
           CarbonUnsafe.unsafe.copyMemory(minValues[i], CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
               address + indexSize, minValues[i].length);
@@ -140,7 +156,7 @@ public class BlockArrayIndexBuilder implements BtreeBuilder {
       }
 
       // For variable min data
-      for (int i = 0; i < minValues.length; i++) {
+      for (int i = 0; i < btreeBuilderInfo.getDimensionColumnValueSize().length; i++) {
         if (btreeBuilderInfo.getDimensionColumnValueSize()[i] == -1) {
           CarbonUnsafe.unsafe.putShort(address + indexSize, (short) minValues[i].length);
           indexSize += 2;

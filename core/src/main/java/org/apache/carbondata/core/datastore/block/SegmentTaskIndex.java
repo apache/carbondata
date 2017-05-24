@@ -20,7 +20,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.BTreeBuilderInfo;
 import org.apache.carbondata.core.datastore.BtreeBuilder;
-import org.apache.carbondata.core.datastore.impl.btree.BlockBTreeBuilder;
+import org.apache.carbondata.core.datastore.impl.array.IndexStoreFactory;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 
 /**
@@ -41,8 +41,9 @@ public class SegmentTaskIndex extends AbstractIndex {
     // create a segment builder info
     // in case of segment create we do not need any file path and each column value size
     // as Btree will be build as per min max and start key
-    BTreeBuilderInfo btreeBuilderInfo = new BTreeBuilderInfo(footerList, null);
-    BtreeBuilder blocksBuilder = new BlockBTreeBuilder();
+    BTreeBuilderInfo btreeBuilderInfo =
+        new BTreeBuilderInfo(footerList, segmentProperties.getEachDimColumnValueSize());
+    BtreeBuilder blocksBuilder = IndexStoreFactory.getDriverIndexBuilder();
     // load the metadata
     blocksBuilder.build(btreeBuilderInfo);
     dataRefNode = blocksBuilder.get();
