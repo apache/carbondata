@@ -24,7 +24,7 @@ CarbonData files contain groups of data called blocklets, along with all require
 The file footer can be read once to build the indices in memory, which can be utilized for optimizing the scans and processing for all subsequent queries.
 
 ### Understanding CarbonData File Structure
-* Block : It would be as same as HDFS block, CarbonData creates one file for each data block, user can specify TABLE_BLOCKSIZE during creation table. Each file contains File Header, Blocklets and File Footer. 
+* Block : It would be as same as HDFS block, CarbonData creates one file for each data block, user can specify TABLE_BLOCKSIZE during creation table. Each file contains File Header, Blocklets and File Footer.
 
 ![CarbonData File Structure](../docs/images/carbon_data_file_structure_new.png?raw=true)
 
@@ -32,7 +32,7 @@ The file footer can be read once to build the indices in memory, which can be ut
 * File Footer : it contains Number of rows, segmentinfo ,all blocklets’ info and index, you can find the detail from the below diagram.
 * Blocklet : Rows are grouped to form a blocklet, the size of the blocklet is configurable and default size is 64MB, Blocklet contains Column Page groups for each column.
 * Column Page Group : Data of one column and it is further divided into pages, it is guaranteed to be contiguous in file.
-* Page : It has the data of one column and the number of row is fixed to 32000 size. 
+* Page : It has the data of one column and the number of row is fixed to 32000 size.
 
 ![CarbonData File Format](../docs/images/carbon_data_format_new.png?raw=true)
 
@@ -40,6 +40,3 @@ The file footer can be read once to build the indices in memory, which can be ut
 * Data Page: Contains the encoded data of a column of columns.
 * Row ID Page (optional): Contains the row ID mappings used when the data page is stored as an inverted index.
 * RLE Page (optional): Contains additional metadata used when the data page is RLE coded.
-
-
-

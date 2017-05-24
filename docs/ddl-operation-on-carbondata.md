@@ -20,7 +20,7 @@
 # DDL Operations on CarbonData
 This tutorial guides you through the data definition language support provided by CarbonData.
 
-## Overview 
+## Overview
 The following DDL operations are supported in CarbonData :
 
 * [CREATE TABLE](#create-table)
@@ -37,6 +37,7 @@ The following DDL operations are supported in CarbonData :
 
 ## CREATE TABLE
   This command can be used to create a CarbonData table by specifying the list of fields along with the table properties.
+
 ```
    CREATE TABLE [IF NOT EXISTS] [db_name.]table_name
                     [(col_name data_type , ...)]
@@ -49,9 +50,9 @@ The following DDL operations are supported in CarbonData :
 
 | Parameter | Description | Optional |
 |---------------|-----------------------------------------------------------------------------------------------------------------------------------------------|----------|
-| db_name | Name of the database. Database name should consist of alphanumeric characters and underscore(_) special character. | Yes |
-| field_list | Comma separated List of fields with data type. The field names should consist of alphanumeric characters and underscore(_) special character. | No |
-| table_name | The name of the table in Database. Table Name should consist of alphanumeric characters and underscore(_) special character. | No |
+| db_name | Name of the database. Database name should consist of alphanumeric characters and underscore(\_) special character. | Yes |
+| field_list | Comma separated List of fields with data type. The field names should consist of alphanumeric characters and underscore(\_) special character. | No |
+| table_name | The name of the table in Database. Table Name should consist of alphanumeric characters and underscore(\_) special character. | No |
 | STORED BY | "org.apache.carbondata.format", identifies and creates a CarbonData table. | No |
 | TBLPROPERTIES | List of CarbonData table properties. |  |
 
@@ -62,6 +63,7 @@ The following DDL operations are supported in CarbonData :
    - **Dictionary Encoding Configuration**
 
        Dictionary encoding is enabled by default for all String columns, and disabled for non-String columns. You can include and exclude columns for dictionary encoding.
+
 ```
        TBLPROPERTIES ('DICTIONARY_EXCLUDE'='column1, column2')
        TBLPROPERTIES ('DICTIONARY_INCLUDE'='column1, column2')
@@ -72,15 +74,17 @@ The following DDL operations are supported in CarbonData :
    - **Row/Column Format Configuration**
 
        Column groups with more than one column are stored in row format, instead of columnar format. By default, each column is a separate column group.
+
 ```
-TBLPROPERTIES ('COLUMN_GROUPS'='(column1, column2),
-(Column3,Column4,Column5)')
+       TBLPROPERTIES ('COLUMN_GROUPS'='(column1, column2),
+       (Column3,Column4,Column5)')
 ```
 
    - **Table Block Size Configuration**
 
      The block size of table files can be defined using the property TABLE_BLOCKSIZE. It accepts only integer values. The default value is 1024 MB and supports a range of 1 MB to 2048 MB.
      If you do not specify this value in the DDL command, default value is used.
+
 ```
        TBLPROPERTIES ('TABLE_BLOCKSIZE'='512')
 ```
@@ -91,6 +95,7 @@ TBLPROPERTIES ('COLUMN_GROUPS'='(column1, column2),
 
       Inverted index is very useful to improve compression ratio and query speed, especially for those low-cardinality columns which are in reward position.
       By default inverted index is enabled. The user can disable the inverted index creation for some columns.
+
 ```
        TBLPROPERTIES ('NO_INVERTED_INDEX'='column1, column3')
 ```
@@ -188,7 +193,7 @@ This command is used to add a new column to the existing table.
 |--------------------|-----------------------------------------------------------------------------------------------------------|
 | db_Name            | Name of the database. If this parameter is left unspecified, the current database is selected.            |
 | table_name         | Name of the existing table.                                                                               |
-| col_name data_type | Name of comma-separated column with data type. Column names contain letters, digits, and underscores (_). |
+| col_name data_type | Name of comma-separated column with data type. Column names contain letters, digits, and underscores (\_). |
 
 NOTE: Do not name the column after name, tupleId, PositionId, and PositionReference when creating Carbon tables because they are used internally by UPDATE, DELETE, and secondary index.
 
@@ -207,15 +212,18 @@ NOTE: Do not name the column after name, tupleId, PositionId, and PositionRefere
 ```
 
 ```
-    ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DICTIONARY_EXCLUDE'='b1');
+    ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING)
+    TBLPROPERTIES('DICTIONARY_EXCLUDE'='b1');
 ```
 
 ```
-    ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DICTIONARY_INCLUDE'='a1');
+    ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING)
+    TBLPROPERTIES('DICTIONARY_INCLUDE'='a1');
 ```
 
 ```
-    ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DEFAULT.VALUE.a1'='10');
+    ALTER TABLE carbon ADD COLUMNS (a1 INT, b1 STRING)
+    TBLPROPERTIES('DEFAULT.VALUE.a1'='10');
 ```
 
 
@@ -232,7 +240,7 @@ This command is used to delete a existing column or multiple columns in a table.
 |------------|----------------------------------------------------------------------------------------------------------|
 | db_Name    | Name of the database. If this parameter is left unspecified, the current database is selected.           |
 | table_name | Name of the existing table.                                                                              |
-| col_name   | Name of comma-separated column with data type. Column names contain letters, digits, and underscores (_) |
+| col_name   | Name of comma-separated column with data type. Column names contain letters, digits, and underscores (\_) |
 
 #### Usage Guidelines
 
@@ -270,7 +278,8 @@ If the table contains 4 columns namely a1, b1, c1, and d1.
 This command is used to change the data type from INT to BIGINT or decimal precision from lower to higher.
 
 ```
-    ALTER TABLE [db_name.]table_name CHANGE col_name col_name changed_column_type;
+    ALTER TABLE [db_name.]table_name
+    CHANGE col_name col_name changed_column_type;
 ```
 
 #### Parameter Description
@@ -278,7 +287,7 @@ This command is used to change the data type from INT to BIGINT or decimal preci
 |---------------------|-----------------------------------------------------------------------------------------------------------|
 | db_Name             | Name of the database. If this parameter is left unspecified, the current database is selected.            |
 | table_name          | Name of the existing table.                                                                               |
-| col_name            | Name of comma-separated column with data type. Column names contain letters, digits, and underscores (_). |
+| col_name            | Name of comma-separated column with data type. Column names contain letters, digits, and underscores (\_). |
 | changed_column_type | The change in the data type.                                                                              |
 
 #### Usage Guidelines
