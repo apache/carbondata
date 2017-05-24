@@ -36,7 +36,7 @@ This section provides the details of all the configurations required for the Car
 | carbon.storelocation | /user/hive/warehouse/carbon.store | Location where CarbonData will create the store, and write the data in its own format. NOTE: Store location should be in HDFS. |
 | carbon.ddl.base.hdfs.url | hdfs://hacluster/opt/data | This property is used to configure the HDFS relative path, the path configured in carbon.ddl.base.hdfs.url will be appended to the HDFS path configured in fs.defaultFS. If this path is configured, then user need not pass the complete path while dataload. For example: If absolute path of the csv file is hdfs://10.18.101.155:54310/data/cnbc/2016/xyz.csv, the path "hdfs://10.18.101.155:54310" will come from property fs.defaultFS and user can configure the /data/cnbc/ as carbon.ddl.base.hdfs.url. Now while dataload user can specify the csv path as /2016/xyz.csv. |
 | carbon.badRecords.location | /opt/Carbon/Spark/badrecords | Path where the bad records are stored. |
-| carbon.data.file.version | 2 | If this parameter value is set to 1, then CarbonData will support the data load which is in old format(0.x version). If the value is set to 2(1.x onwards version), then CarbonData will support the data load of new format only.|
+| carbon.data.file.version | 3 | If this parameter value is set to 1, then CarbonData will support the data load which is in old format(0.x version). If the value is set to 2(1.x onwards version), then CarbonData will support the data load of new format only. The default value for this parameter is 3(latest version is set as default  version). It improves the query performance by ~20% to 50%. For configuring V3 format explicitly add carbon.data.file.version = V3 in carbon.properties|
 
 ##  Performance Configuration
 This section provides the details of all the configurations required for CarbonData Performance Optimization.
@@ -63,6 +63,9 @@ This section provides the details of all the configurations required for CarbonD
 | carbon.options.is.empty.data.bad.record | false | If false, then empty ("" or '' or ,,) data will not be considered as bad record and vice versa. | |
 | carbon.options.bad.record.path |  | Specifies the HDFS path where bad records are stored. By default the value is Null. This path must to be configured by the user if bad record logger is enabled or bad record action redirect. | |
 | carbon.enable.vector.reader | true | This parameter increases the performance of select queries as it fetch columnar batch of size 4*1024 rows instead of fetching data row by row. | |
+| carbon.blocklet.size.in.mb | 64 MB | By configuring sized based blocklet, uniform number of IO can be achieved. |  |
+
+
 
 * **Compaction Configuration**
   
