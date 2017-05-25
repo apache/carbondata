@@ -29,14 +29,14 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class FlinkRowReadSupportImpl<T> extends DictionaryDecodeReadSupport<T> {
+public class FlinkRowReadSupportImpl<T> implements CarbonReadSupport<T> {
 
     private static final long SECONDS_PER_DAY = 60 * 60 * 24L;
     private static final long MILLIS_PER_DAY = SECONDS_PER_DAY * 1000L;
@@ -79,22 +79,18 @@ public class FlinkRowReadSupportImpl<T> extends DictionaryDecodeReadSupport<T> {
             } else if (carbonColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
                 //convert the long to timestamp in case of direct dictionary column
                 if (DataType.TIMESTAMP == carbonColumns[i].getDataType()) {
-                    if (data[i] == null) {
-                        data[i] = data[i];
-                    } else {
+                    if (data[i] != null) {
                         String timestampFormat = CarbonProperties.getInstance().getProperty(
                                 CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
                                 CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
                         long timestamp = Long.parseLong(data[i].toString());
-                        Timestamp transformedTimestamp = new Timestamp((timestamp) / 1000 );
+                        Timestamp transformedTimestamp = new Timestamp((timestamp) / 1000);
                         SimpleDateFormat simpleTimestampFormat = new SimpleDateFormat(timestampFormat);
                         data[i] = simpleTimestampFormat.format(transformedTimestamp);
                     }
                     //convert the long to date in case of direct dictionary column
                 } else if (DataType.DATE == carbonColumns[i].getDataType()) {
-                    if (data[i] == null) {
-                        data[i] = data[i];
-                    } else {
+                    if (data[i] != null) {
                         String dateFormat = CarbonProperties.getInstance().getProperty(
                                 CarbonCommonConstants.CARBON_DATE_FORMAT, dateDefaultFormat);
                         Long date = Long.parseLong(String.valueOf(data[i])) * MILLIS_PER_DAY;

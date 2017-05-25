@@ -32,6 +32,8 @@ import java.io.IOException;
 
 public class CarbonDataFlinkInputFormatTest {
 
+    protected static String[] columns;
+
     @BeforeClass
     public static void defineStore() throws IOException {
         String zipPath = getRootPath() + "/integration/flink/src/test/resources/store-input.zip";
@@ -48,7 +50,7 @@ public class CarbonDataFlinkInputFormatTest {
     @Test
     public void getDataFromCarbon() throws Exception {
         ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
-        String[] columns = {"id", "name"};
+        columns = new String[]{"id", "name"};
         String path = "/integration/flink/target/store-input/default/t3";
         CarbonDataFlinkInputFormat carbondataFlinkInputFormat = new CarbonDataFlinkInputFormat(getRootPath() + path, columns, false);
 
@@ -60,7 +62,7 @@ public class CarbonDataFlinkInputFormatTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void getDataFromInvalidPath() throws Exception {
-        String[] columns = {"id", "name"};
+        columns = new String[]{"id", "name"};
         String path = "./flink/target/store-input/default/t3";
         CarbonDataFlinkInputFormat carbondataFlinkInputFormat = new CarbonDataFlinkInputFormat(getRootPath() + path, columns, false);
 
@@ -69,7 +71,7 @@ public class CarbonDataFlinkInputFormatTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void getDataFromTableHavingInvalidColumns() throws Exception {
-        String[] columns = {};
+        columns = new String[]{};
         String path = "integration/flink/target/store-input/default/t3";
         CarbonDataFlinkInputFormat carbondataFlinkInputFormat = new CarbonDataFlinkInputFormat(getRootPath() + path, columns, false);
 

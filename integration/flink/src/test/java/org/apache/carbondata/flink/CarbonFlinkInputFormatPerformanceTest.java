@@ -29,10 +29,13 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.logging.Logger;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public class CarbonFlinkInputFormatPerformanceTest {
 
-    Date date = new Date();
     private final static Logger LOGGER = Logger.getLogger(CarbonFlinkInputFormatPerformanceTest.class.getName());
+    Date date = new Date();
 
     static String getRootPath() throws IOException {
         return new File(CarbonFlinkInputFormatPerformanceTest.class.getResource("/").getPath() + "../../../..").getCanonicalPath();
@@ -65,6 +68,7 @@ public class CarbonFlinkInputFormatPerformanceTest {
 
     @Test
     public void generatePerformanceReport() throws Exception {
+        LOGGER.info("\n\n Writing Performance Report to : " + getPerformanceReportFilePath() + "\n\n");
 
         ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
@@ -81,18 +85,18 @@ public class CarbonFlinkInputFormatPerformanceTest {
             CarbonDataFlinkInputFormat carbondataFlinkInputFormat = new CarbonDataFlinkInputFormat(getRootPath() + path, columns, false);
             DataSource dataSource = env.createInput(carbondataFlinkInputFormat.getInputFormat());
             int rowCount = dataSource.collect().size();
-            assert (rowCount == 100);
+            assertEquals(rowCount, 100);
             long t2 = System.currentTimeMillis();
             long timeTaken = t2 - t1;
             LOGGER.info("Time taken : (in milliseconds) " + timeTaken);
             LOGGER.info("Time taken to fetch Hundred records  :  (in milliseconds) " + timeTaken);
             averageTime = averageTime + timeTaken;
             Boolean status = writeToFile("Time taken for Hundred records :::  (in milliseconds) " + timeTaken + "\n");
-            assert (status);
+            assertTrue(status);
         }
         Boolean status = writeToFile("\n" + date.toString() + " : Average Time taken for Hundred records :::  (in milliseconds) " + averageTime / 3 + "\n");
         writeToFile("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n\n");
-        assert (status);
+        assertTrue(status);
 
         averageTime = 0;
         for (int iterator = 0; iterator < 3; iterator++) {
@@ -102,17 +106,17 @@ public class CarbonFlinkInputFormatPerformanceTest {
             CarbonDataFlinkInputFormat carbondataFlinkInputFormat1 = new CarbonDataFlinkInputFormat(getRootPath() + path1, columns, false);
             DataSource dataSource1 = env.createInput(carbondataFlinkInputFormat1.getInputFormat());
             int rowCount1 = dataSource1.collect().size();
-            assert (rowCount1 == 1000);
+            assertEquals(rowCount1, 1000);
             long t4 = System.currentTimeMillis();
             long timeTaken1 = t4 - t3;
             LOGGER.info("Time taken to fetch thousand records  :  (in milliseconds) " + timeTaken1);
             averageTime = averageTime + timeTaken1;
             Boolean status1 = writeToFile("Time taken for thousand records :::  (in milliseconds) " + timeTaken1 + "\n");
-            assert (status1);
+            assertTrue(status1);
         }
         Boolean status1 = writeToFile("\n" + date.toString() + " : Average Time taken for Hundred records :::  (in milliseconds) " + averageTime / 3 + "\n");
         writeToFile("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n\n");
-        assert (status1);
+        assertTrue(status1);
 
 
         LOGGER.info(">>>>>>>>>Ten Thousand records:::::::::::::::::::");
@@ -123,17 +127,17 @@ public class CarbonFlinkInputFormatPerformanceTest {
             CarbonDataFlinkInputFormat carbondataFlinkInputFormat2 = new CarbonDataFlinkInputFormat(getRootPath() + path2, columns, false);
             DataSource dataSource2 = env.createInput(carbondataFlinkInputFormat2.getInputFormat());
             int rowCount2 = dataSource2.collect().size();
-            assert (rowCount2 == 10000);
+            assertEquals(rowCount2, 10000);
             long t6 = System.currentTimeMillis();
             long timeTaken2 = t6 - t5;
             LOGGER.info("Time taken to fetch ten thousand records  :  (in milliseconds) " + timeTaken2);
             averageTime = averageTime + timeTaken2;
             Boolean status2 = writeToFile("Time taken for Ten Thousand records :::  (in milliseconds) " + timeTaken2 + "\n");
-            assert (status2);
+            assertTrue(status2);
         }
         Boolean status2 = writeToFile("\n" + date.toString() + " : Average Time taken for Ten Thousand records :::  (in milliseconds) " + averageTime / 3 + "\n");
         writeToFile("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n\n");
-        assert (status2);
+        assertTrue(status2);
 
         LOGGER.info(">>>>>>>>>One Lakh records:::::::::::::::::::");
         averageTime = 0;
@@ -143,17 +147,17 @@ public class CarbonFlinkInputFormatPerformanceTest {
             CarbonDataFlinkInputFormat carbondataFlinkInputFormat3 = new CarbonDataFlinkInputFormat(getRootPath() + path3, columns, false);
             DataSource dataSource3 = env.createInput(carbondataFlinkInputFormat3.getInputFormat());
             int rowCount3 = dataSource3.collect().size();
-            assert (rowCount3 == 105308);
+            assertEquals(rowCount3, 105308);
             long t8 = System.currentTimeMillis();
             long timeTaken3 = t8 - t7;
             LOGGER.info("Time taken to fetch One Lac records  :  (in milliseconds) " + timeTaken3);
             averageTime = averageTime + timeTaken3;
             Boolean status3 = writeToFile("Time taken for One Lac records :::  (in milliseconds) " + timeTaken3 + "\n");
-            assert (status3);
+            assertTrue(status3);
         }
         Boolean status3 = writeToFile("\n" + date.toString() + " : Average Time taken for One Lac records :::  (in milliseconds) " + averageTime / 3 + "\n");
         writeToFile("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n\n");
-        assert status3;
+        assertTrue(status3);
 
         LOGGER.info(">>>>>>>>>Five Lakh records:::::::::::::::::::");
         averageTime = 0;
@@ -163,37 +167,17 @@ public class CarbonFlinkInputFormatPerformanceTest {
             CarbonDataFlinkInputFormat carbondataFlinkInputFormat4 = new CarbonDataFlinkInputFormat(getRootPath() + path4, columns, false);
             DataSource dataSource4 = env.createInput(carbondataFlinkInputFormat4.getInputFormat());
             int rowCount4 = dataSource4.collect().size();
-            assert (rowCount4 == 526544);
+            assertEquals(rowCount4, 526544);
             long t10 = System.currentTimeMillis();
             long timeTaken4 = t10 - t9;
             averageTime = averageTime + timeTaken4;
             LOGGER.info("Time taken to fetch Five Lac records  :  (in milliseconds) " + timeTaken4);
             Boolean status4 = writeToFile("Time taken for Five Lac records :::  (in milliseconds) " + timeTaken4 + "\n");
-            assert (status4);
+            assertTrue(status4);
         }
         Boolean status4 = writeToFile("\n" + date.toString() + " : Average Time taken for Five Lac records :::  (in milliseconds) " + averageTime / 3 + "\n");
         writeToFile("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n\n");
-        assert status4;
-
-        /*LOGGER.info(">>>>>>>>>20 Lacs records:::::::::::::::::::");
-        averageTime = 0;
-        for (int iterator = 0; iterator < 3; iterator++) {
-            long t11 = System.currentTimeMillis();
-            String path5 = "/integration/flink/target/store-input/default/twentylac_uniqdata";
-            CarbonDataFlinkInputFormat carbondataFlinkInputFormat5 = new CarbonDataFlinkInputFormat(getRootPath() + path5, columns, false);
-            DataSource<Tuple2<Void, Object[]>> dataSource5 = env.createInput(carbondataFlinkInputFormat5.getInputFormat());
-            int rowCount5 = dataSource5.collect().size();
-            assert (rowCount5 == 2107040);
-            long t12 = System.currentTimeMillis();
-            long timeTaken5 = t12 - t11;
-            averageTime = averageTime + timeTaken5;
-            LOGGER.info("Time taken to fetch Twenty Lac records  :  (in milliseconds) " + timeTaken5);
-            Boolean status5 = writeToFile("Time taken for Twenty Lac records :::  (in milliseconds) " + timeTaken5 + "\n\n\n");
-            assert (status5);
-        }
-        Boolean status5 = writeToFile("Average Time taken for Five Lac records :::  (in milliseconds) " + averageTime/3 + "\n");
-        writeToFile("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n\n");
-        assert status5;*/
+        assertTrue(status4);
     }
-    
+
 }
