@@ -38,14 +38,13 @@ import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.constants.LoggerAction
-import org.apache.carbondata.processing.newflow.sort.SortScopeOptions
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.{CommonUtil, DataTypeConverterUtil}
 
 /**
- * TODO remove the duplicate code and add the common methods to common class.
- * Parser for All Carbon DDL cases
- */
+  * TODO remove the duplicate code and add the common methods to common class.
+  * Parser for All Carbon DDL cases
+  */
 abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -184,17 +183,17 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
   implicit def regexToParser(regex: Regex): Parser[String] = {
     acceptMatch(
-    s"identifier matching regex ${ regex }",
-    { case Identifier(str) if regex.unapplySeq(str).isDefined => str }
+      s"identifier matching regex ${ regex }",
+      { case Identifier(str) if regex.unapplySeq(str).isDefined => str }
     )
   }
 
   /**
-   * This will convert key word to regular expression.
-   *
-   * @param keys
-   * @return
-   */
+    * This will convert key word to regular expression.
+    *
+    * @param keys
+    * @return
+    */
   private def carbonKeyWord(keys: String) = {
     ("(?i)" + keys).r
   }
@@ -225,21 +224,21 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * This will prepate the Model from the Tree details.
-   *
-   * @param ifNotExistPresent
-   * @param dbName
-   * @param tableName
-   * @param fields
-   * @param partitionCols
-   * @param tableProperties
-   * @return
-   */
+    * This will prepate the Model from the Tree details.
+    *
+    * @param ifNotExistPresent
+    * @param dbName
+    * @param tableName
+    * @param fields
+    * @param partitionCols
+    * @param tableProperties
+    * @return
+    */
   def prepareTableModel(ifNotExistPresent: Boolean, dbName: Option[String]
-      , tableName: String, fields: Seq[Field],
-      partitionCols: Seq[PartitionerField],
-      tableProperties: mutable.Map[String, String],
-      bucketFields: Option[BucketFields], isAlterFlow: Boolean = false): TableModel = {
+                        , tableName: String, fields: Seq[Field],
+                        partitionCols: Seq[PartitionerField],
+                        tableProperties: mutable.Map[String, String],
+                        bucketFields: Option[BucketFields], isAlterFlow: Boolean = false): TableModel = {
 
     fields.zipWithIndex.foreach { case (field, index) =>
       field.schemaOrdinal = index
@@ -249,9 +248,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     if (dims.isEmpty && !isAlterFlow) {
       throw new MalformedCarbonCommandException(
         s"Table ${dbName.getOrElse(CarbonCommonConstants.DATABASE_DEFAULT_NAME)}.$tableName " +
-        "can not be created without key columns. Please use DICTIONARY_INCLUDE or " +
-        "DICTIONARY_EXCLUDE to set at least one key column " +
-        "if all specified columns are numeric types")
+          "can not be created without key columns. Please use DICTIONARY_INCLUDE or " +
+          "DICTIONARY_EXCLUDE to set at least one key column " +
+          "if all specified columns are numeric types")
     }
 
     // column properties
@@ -286,16 +285,16 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * Extract the column groups configuration from table properties.
-   * Based on this Row groups of fields will be determined.
-   *
-   * @param tableProperties
-   * @return
-   */
+    * Extract the column groups configuration from table properties.
+    * Based on this Row groups of fields will be determined.
+    *
+    * @param tableProperties
+    * @return
+    */
   protected def updateColumnGroupsInField(tableProperties: mutable.Map[String, String],
-      noDictionaryDims: Seq[String],
-      msrs: Seq[Field],
-      dims: Seq[Field]): Seq[String] = {
+                                          noDictionaryDims: Seq[String],
+                                          msrs: Seq[Field],
+                                          dims: Seq[Field]): Seq[String] = {
     if (tableProperties.get(CarbonCommonConstants.COLUMN_GROUPS).isDefined) {
 
       var splittedColGrps: Seq[String] = Seq[String]()
@@ -354,11 +353,11 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * @param partitionCols
-   * @param tableProperties
-   */
+    * @param partitionCols
+    * @param tableProperties
+    */
   protected def getPartitionInfo(partitionCols: Seq[PartitionerField],
-      tableProperties: Map[String, String]): Option[PartitionInfo] = {
+                                 tableProperties: Map[String, String]): Option[PartitionInfo] = {
     if (partitionCols.isEmpty) {
       None
     } else {
@@ -433,8 +432,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   protected def fillAllChildrenColumnProperty(parent: String, fieldChildren: Option[List[Field]],
-      tableProperties: Map[String, String],
-      colPropMap: java.util.HashMap[String, java.util.List[ColumnProperty]]) {
+                                              tableProperties: Map[String, String],
+                                              colPropMap: java.util.HashMap[String, java.util.List[ColumnProperty]]) {
     fieldChildren.foreach(fields => {
       fields.foreach(field => {
         fillColumnProperty(Some(parent), field.column, tableProperties, colPropMap)
@@ -445,9 +444,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   protected def fillColumnProperty(parentColumnName: Option[String],
-      columnName: String,
-      tableProperties: Map[String, String],
-      colPropMap: java.util.HashMap[String, java.util.List[ColumnProperty]]) {
+                                   columnName: String,
+                                   tableProperties: Map[String, String],
+                                   colPropMap: java.util.HashMap[String, java.util.List[ColumnProperty]]) {
     val (tblPropKey, colProKey) = getKey(parentColumnName, columnName)
     val colProps = CommonUtil.getColumnProperties(tblPropKey, tableProperties)
     if (colProps.isDefined) {
@@ -456,7 +455,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   def getKey(parentColumnName: Option[String],
-      columnName: String): (String, String) = {
+             columnName: String): (String, String) = {
     if (parentColumnName.isDefined) {
       if (columnName == "val") {
         (parentColumnName.get, parentColumnName.get + "." + columnName)
@@ -469,15 +468,15 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * This will extract the no inverted columns fields.
-   * By default all dimensions use inverted index.
-   *
-   * @param fields
-   * @param tableProperties
-   * @return
-   */
+    * This will extract the no inverted columns fields.
+    * By default all dimensions use inverted index.
+    *
+    * @param fields
+    * @param tableProperties
+    * @return
+    */
   protected def extractNoInvertedIndexColumns(fields: Seq[Field],
-      tableProperties: Map[String, String]): Seq[String] = {
+                                              tableProperties: Map[String, String]): Seq[String] = {
     // check whether the column name is in fields
     var noInvertedIdxColsProps: Array[String] = Array[String]()
     var noInvertedIdxCols: Seq[String] = Seq[String]()
@@ -486,16 +485,15 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       noInvertedIdxColsProps =
         tableProperties.get(CarbonCommonConstants.NO_INVERTED_INDEX).get.split(',').map(_.trim)
       noInvertedIdxColsProps.foreach { noInvertedIdxColProp =>
-          if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
-            val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
-                           " does not exist in table. Please check create table statement."
-            throw new MalformedCarbonCommandException(errormsg)
-          }
+        if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
+          val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
+            " does not exist in table. Please check create table statement."
+          throw new MalformedCarbonCommandException(errormsg)
         }
+      }
     }
     // check duplicate columns and only 1 col left
     val distinctCols = noInvertedIdxColsProps.toSet
-    // extract the no inverted index columns
     fields.foreach(field => {
       if (distinctCols.exists(x => x.equalsIgnoreCase(field.column))) {
         noInvertedIdxCols :+= field.column
@@ -506,15 +504,15 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * This will extract the Dimensions and NoDictionary Dimensions fields.
-   * By default all string cols are dimensions.
-   *
-   * @param fields
-   * @param tableProperties
-   * @return
-   */
+    * This will extract the Dimensions and NoDictionary Dimensions fields.
+    * By default all string cols are dimensions.
+    *
+    * @param fields
+    * @param tableProperties
+    * @return
+    */
   protected def extractDimAndMsrFields(fields: Seq[Field],
-      tableProperties: Map[String, String]): (Seq[Field], Seq[Field], Seq[String], Seq[String]) = {
+                                       tableProperties: Map[String, String]): (Seq[Field], Seq[Field], Seq[String], Seq[String]) = {
     var dimFields: LinkedHashSet[Field] = LinkedHashSet[Field]()
     var msrFields: Seq[Field] = Seq[Field]()
     var dictExcludeCols: Array[String] = Array[String]()
@@ -565,18 +563,18 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         .foreach { dictExcludeCol =>
           if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
             val errormsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
-                           " does not exist in table. Please check create table statement."
+              " does not exist in table. Please check create table statement."
             throw new MalformedCarbonCommandException(errormsg)
           } else {
             val dataType = fields.find(x =>
               x.column.equalsIgnoreCase(dictExcludeCol)).get.dataType.get
             if (isComplexDimDictionaryExclude(dataType)) {
               val errormsg = "DICTIONARY_EXCLUDE is unsupported for complex datatype column: " +
-                             dictExcludeCol
+                dictExcludeCol
               throw new MalformedCarbonCommandException(errormsg)
             } else if (!isDataTypeSupportedForDictionary_Exclude(dataType)) {
               val errorMsg = "DICTIONARY_EXCLUDE is unsupported for " + dataType.toLowerCase() +
-                             " data type column: " + dictExcludeCol
+                " data type column: " + dictExcludeCol
               throw new MalformedCarbonCommandException(errorMsg)
             }
           }
@@ -589,7 +587,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       dictIncludeCols.foreach { distIncludeCol =>
         if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol.trim))) {
           val errormsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
-                         " does not exist in table. Please check create table statement."
+            " does not exist in table. Please check create table statement."
           throw new MalformedCarbonCommandException(errormsg)
         }
       }
@@ -599,7 +597,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     dictExcludeCols.foreach { dicExcludeCol =>
       if (dictIncludeCols.exists(x => x.equalsIgnoreCase(dicExcludeCol))) {
         val errormsg = "DICTIONARY_EXCLUDE can not contain the same column: " + dicExcludeCol +
-                       " with DICTIONARY_INCLUDE. Please check create table statement."
+          " with DICTIONARY_INCLUDE. Please check create table statement."
         throw new MalformedCarbonCommandException(errormsg)
       }
     }
@@ -644,10 +642,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * It fills non string dimensions in dimFields
-   */
+    * It fills non string dimensions in dimFields
+    */
   def fillNonStringDimension(dictIncludeCols: Seq[String],
-      field: Field, dimFields: LinkedHashSet[Field]) {
+                             field: Field, dimFields: LinkedHashSet[Field]) {
     var dictInclude = false
     if (dictIncludeCols.nonEmpty) {
       dictIncludeCols.foreach(dictIncludeCol =>
@@ -661,37 +659,37 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * detect dimention data type
-   *
-   * @param dimensionDatatype
-   */
+    * detect dimention data type
+    *
+    * @param dimensionDatatype
+    */
   def isDetectAsDimentionDatatype(dimensionDatatype: String): Boolean = {
     val dimensionType = Array("string", "array", "struct", "timestamp", "date", "char")
     dimensionType.exists(x => dimensionDatatype.toLowerCase.contains(x))
   }
 
   /**
-   * detects whether complex dimension is part of dictionary_exclude
-   */
+    * detects whether complex dimension is part of dictionary_exclude
+    */
   def isComplexDimDictionaryExclude(dimensionDataType: String): Boolean = {
     val dimensionType = Array("array", "struct")
     dimensionType.exists(x => x.equalsIgnoreCase(dimensionDataType))
   }
 
   /**
-   * detects whether datatype is part of dictionary_exclude
-   */
+    * detects whether datatype is part of dictionary_exclude
+    */
   def isDataTypeSupportedForDictionary_Exclude(columnDataType: String): Boolean = {
     val dataTypes = Array("string")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 
   /**
-   * Extract the DbName and table name.
-   *
-   * @param tableNameParts
-   * @return
-   */
+    * Extract the DbName and table name.
+    *
+    * @param tableNameParts
+    * @return
+    */
   protected def extractDbNameTableName(tableNameParts: Node): (Option[String], String) = {
     val (db, tableName) =
       tableNameParts.getChildren.asScala.map {
@@ -705,21 +703,21 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * This method will convert the database name to lower case
-   *
-   * @param dbName
-   * @return String
-   */
+    * This method will convert the database name to lower case
+    *
+    * @param dbName
+    * @return String
+    */
   protected def convertDbNameToLowerCase(dbName: String) = {
     dbName.toLowerCase
   }
 
   /**
-   * This method will convert the database name to lower case
-   *
-   * @param dbName
-   * @return Option of String
-   */
+    * This method will convert the database name to lower case
+    *
+    * @param dbName
+    * @return Option of String
+    */
   protected def convertDbNameToLowerCase(dbName: Option[String]): Option[String] = {
     dbName match {
       case Some(databaseName) => Some(convertDbNameToLowerCase(databaseName))
@@ -749,7 +747,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     if (remainingNodes.nonEmpty) {
       sys.error(
         s"""Unhandled clauses:
-            |You are likely trying to use an unsupported carbon feature."""".stripMargin)
+           |You are likely trying to use an unsupported carbon feature."""".stripMargin)
     }
     clauses
   }
@@ -768,11 +766,11 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
-   * Extract the table properties token
-   *
-   * @param node
-   * @return
-   */
+    * Extract the table properties token
+    *
+    * @param node
+    * @return
+    */
   protected def getProperties(node: Node): Seq[(String, String)] = {
     node match {
       case Token("TOK_TABLEPROPLIST", list) =>
@@ -799,7 +797,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       "COMPLEX_DELIMITER_LEVEL_1", "COMPLEX_DELIMITER_LEVEL_2", "COLUMNDICT",
       "SERIALIZATION_NULL_FORMAT", "BAD_RECORDS_LOGGER_ENABLE", "BAD_RECORDS_ACTION",
       "ALL_DICTIONARY_PATH", "MAXCOLUMNS", "COMMENTCHAR", "DATEFORMAT",
-      "SINGLE_PASS", "IS_EMPTY_DATA_BAD_RECORD", "SORT_SCOPE", "BATCH_SORT_SIZE_INMB"
+      "SINGLE_PASS", "IS_EMPTY_DATA_BAD_RECORD"
     )
     var isSupported = true
     val invalidOptions = StringBuilder.newBuilder
@@ -818,9 +816,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     //  COLUMNDICT and ALL_DICTIONARY_PATH can not be used together.
     if (options.exists(_._1.equalsIgnoreCase("COLUMNDICT")) &&
-        options.exists(_._1.equalsIgnoreCase("ALL_DICTIONARY_PATH"))) {
+      options.exists(_._1.equalsIgnoreCase("ALL_DICTIONARY_PATH"))) {
       val errorMessage = "Error: COLUMNDICT and ALL_DICTIONARY_PATH can not be used together" +
-                         " in options"
+        " in options"
       throw new MalformedCarbonCommandException(errorMessage)
     }
 
@@ -851,14 +849,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       if (!("true".equalsIgnoreCase(optionValue) || "false".equalsIgnoreCase(optionValue))) {
         throw new MalformedCarbonCommandException(
           "option IS_EMPTY_DATA_BAD_RECORD can have option either true or false")
-      }
-    }
-
-    if (options.exists(_._1.equalsIgnoreCase("SORT_SCOPE"))) {
-      val optionValue: String = options.get("sort_scope").get.head._2
-      if (!SortScopeOptions.isValidSortOption(optionValue)) {
-        throw new MalformedCarbonCommandException(
-          "option SORT_SCOPE can have option either BATCH_SORT or LOCAL_SORT or GLOBAL_SORT")
       }
     }
 
@@ -910,14 +900,14 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
   protected lazy val primitiveTypes =
     STRING ^^^ "string" | INTEGER ^^^ "integer" |
-    TIMESTAMP ^^^ "timestamp" | NUMERIC ^^^ "numeric" |
-    BIGINT ^^^ "bigint" | (SHORT | SMALLINT) ^^^ "smallint" |
-    INT ^^^ "int" | DOUBLE ^^^ "double" | FLOAT ^^^ "double" | decimalType |
-    DATE ^^^ "date" | charType
+      TIMESTAMP ^^^ "timestamp" | NUMERIC ^^^ "numeric" |
+      BIGINT ^^^ "bigint" | (SHORT | SMALLINT) ^^^ "smallint" |
+      INT ^^^ "int" | DOUBLE ^^^ "double" | FLOAT ^^^ "double" | decimalType |
+      DATE ^^^ "date" | charType
 
   /**
-   * Matching the decimal(10,0) data type and returning the same.
-   */
+    * Matching the decimal(10,0) data type and returning the same.
+    */
   private lazy val charType =
     (CHAR | VARCHAR ) ~ ("(" ~>numericLit <~ ")") ^^ {
       case char ~ digit =>
@@ -925,19 +915,19 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     }
 
   /**
-   * Matching the decimal(10,0) data type and returning the same.
-   */
+    * Matching the decimal(10,0) data type and returning the same.
+    */
   private lazy val decimalType =
-  DECIMAL ~ (("(" ~> numericLit <~ ",") ~ (numericLit <~ ")")).? ^^ {
-    case decimal ~ precisionAndScale => if (precisionAndScale.isDefined) {
-      s"$decimal(${ precisionAndScale.get._1 }, ${ precisionAndScale.get._2 })"
-    } else {
-      s"$decimal(10,0)"
+    DECIMAL ~ (("(" ~> numericLit <~ ",") ~ (numericLit <~ ")")).? ^^ {
+      case decimal ~ precisionAndScale => if (precisionAndScale.isDefined) {
+        s"$decimal(${ precisionAndScale.get._1 }, ${ precisionAndScale.get._2 })"
+      } else {
+        s"$decimal(10,0)"
+      }
     }
-  }
 
   protected lazy val nestedType: Parser[Field] = structFieldType | arrayFieldType |
-                                                 primitiveFieldType
+    primitiveFieldType
 
   lazy val anyFieldDef: Parser[Field] =
     (ident | stringLit) ~ (":".? ~> nestedType) ~ (IN ~> (ident | stringLit)).? ^^ {
@@ -967,8 +957,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
   protected lazy val measureCol: Parser[Field] =
     (ident | stringLit) ~ (INTEGER ^^^ "integer" | NUMERIC ^^^ "numeric" | SHORT ^^^ "smallint" |
-                           BIGINT ^^^ "bigint" | DECIMAL ^^^ "decimal").? ~
-    (AS ~> (ident | stringLit)).? ~ (IN ~> (ident | stringLit)).? ^^ {
+      BIGINT ^^^ "bigint" | DECIMAL ^^^ "decimal").? ~
+      (AS ~> (ident | stringLit)).? ~ (IN ~> (ident | stringLit)).? ^^ {
       case e1 ~ e2 ~ e3 ~ e4 => Field(e1, e2, e3, Some(null))
     }
 
@@ -977,8 +967,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     dataType match {
       case "string" =>
         Field(field.column, Some("String"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
-      )
+          field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
+        )
       case "smallint" =>
         Field(field.column, Some("SmallInt"), field.name, Some(null),
           field.parent, field.storeType, field.schemaOrdinal,
@@ -1089,18 +1079,18 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
   protected lazy val segmentId: Parser[String] =
     numericLit ^^ { u => u } |
-    elem("decimal", p => {
-      p.getClass.getSimpleName.equals("FloatLit") ||
-      p.getClass.getSimpleName.equals("DecimalLit")
-    }) ^^ (_.chars)
+      elem("decimal", p => {
+        p.getClass.getSimpleName.equals("FloatLit") ||
+          p.getClass.getSimpleName.equals("DecimalLit")
+      }) ^^ (_.chars)
 
   /**
-   * This method will parse the given data type and validate against the allowed data types
-   *
-   * @param dataType
-   * @param values
-   * @return
-   */
+    * This method will parse the given data type and validate against the allowed data types
+    *
+    * @param dataType
+    * @param values
+    * @return
+    */
   protected def parseDataType(dataType: String, values: Option[List[(Int, Int)]]): DataTypeInfo = {
     dataType match {
       case "bigint" | "long" =>

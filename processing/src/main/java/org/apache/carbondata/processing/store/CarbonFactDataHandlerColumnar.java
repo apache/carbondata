@@ -90,7 +90,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(CarbonFactDataHandlerColumnar.class.getName());
+          LogServiceFactory.getLogService(CarbonFactDataHandlerColumnar.class.getName());
   /**
    * data writer
    */
@@ -275,12 +275,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
 
     boolean isAggKeyBlock = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK,
-            CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE));
+            .getProperty(CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK,
+                    CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE));
     if (isAggKeyBlock) {
       int noDictionaryValue = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.HIGH_CARDINALITY_VALUE,
-              CarbonCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
+              .getProperty(CarbonCommonConstants.HIGH_CARDINALITY_VALUE,
+                      CarbonCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
       int[] columnSplits = colGrpModel.getColumnSplit();
       int dimCardinalityIndex = 0;
       int aggIndex = 0;
@@ -335,9 +335,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     //TODO need to pass carbon table identifier to metadata
     CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
+            .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     isDictDimension =
-        CarbonUtil.identifyDimensionType(carbonTable.getDimensionByTableName(tableName));
+            CarbonUtil.identifyDimensionType(carbonTable.getDimensionByTableName(tableName));
 
     this.compactionFlow = carbonFactDataHandlerModel.isCompactionFlow();
     // in compaction flow the measure with decimal type will come as spark decimal.
@@ -345,23 +345,23 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     if (compactionFlow) {
       try {
         numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.NUM_CORES_COMPACTING,
-                CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
+                .getProperty(CarbonCommonConstants.NUM_CORES_COMPACTING,
+                        CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
       } catch (NumberFormatException exc) {
         LOGGER.error("Configured value for property " + CarbonCommonConstants.NUM_CORES_COMPACTING
-            + "is wrong.Falling back to the default value "
-            + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+                + "is wrong.Falling back to the default value "
+                + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
         numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
       }
     } else {
       try {
         numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
-                CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
+                .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
+                        CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
       } catch (NumberFormatException exc) {
         LOGGER.error("Configured value for property " + CarbonCommonConstants.NUM_CORES_LOADING
-            + "is wrong.Falling back to the default value "
-            + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+                + "is wrong.Falling back to the default value "
+                + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
         numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
       }
     }
@@ -369,7 +369,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     blockletProcessingCount = new AtomicInteger(0);
     producerExecutorService = Executors.newFixedThreadPool(numberOfCores);
     producerExecutorServiceTaskList =
-        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     LOGGER.info("Initializing writer executors");
     consumerExecutorService = Executors.newFixedThreadPool(1);
     consumerExecutorServiceTaskList = new ArrayList<>(1);
@@ -438,11 +438,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       try {
         semaphore.acquire();
 
-        producerExecutorServiceTaskList.add(
-            producerExecutorService.submit(
-                new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter, false)
-            )
-        );
+        producerExecutorServiceTaskList.add(producerExecutorService.submit(
+                new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter, false)));
         blockletProcessingCount.incrementAndGet();
         // set the entry count to zero
         processedDataCount += entryCount;
@@ -471,7 +468,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       this.pageSize = pageSize;
     }
 
-    /** update all keys based on the input row */
+    /**
+     * update all keys based on the input row
+     */
     void update(int rowId, Object[] row) {
       currentMDKey = (byte[]) row[mdKeyIndex];
       if (noDictionaryCount > 0 || complexIndexMap.size() > 0) {
@@ -488,7 +487,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       }
     }
 
-    /** update all keys if SORT_COLUMNS option is used when creating table */
+    /**
+     * update all keys if SORT_COLUMNS option is used when creating table
+     */
     private void finalizeKeys() {
       // If SORT_COLUMNS is used, may need to update start/end keys since the they may
       // contains dictionary columns that are not in SORT_COLUMNS, which need to be removed from
@@ -522,17 +523,14 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         if (noDictStartKey.length > numberOfNoDictSortColumns) {
           byte[][] newNoDictionaryStartKey = new byte[numberOfNoDictSortColumns][];
           byte[][] newNoDictionaryEndKey = new byte[numberOfNoDictSortColumns][];
-          System.arraycopy(
-              noDictStartKey, 0, newNoDictionaryStartKey, 0, numberOfNoDictSortColumns);
-          System.arraycopy(
-              noDictEndKey, 0, newNoDictionaryEndKey, 0, numberOfNoDictSortColumns);
+          System
+                  .arraycopy(noDictStartKey, 0, newNoDictionaryStartKey, 0, numberOfNoDictSortColumns);
+          System.arraycopy(noDictEndKey, 0, newNoDictionaryEndKey, 0, numberOfNoDictSortColumns);
           noDictStartKey = newNoDictionaryStartKey;
           noDictEndKey = newNoDictionaryEndKey;
         }
-        packedNoDictStartKey =
-            NonDictionaryUtil.packByteBufferIntoSingleByteArray(noDictStartKey);
-        packedNoDictEndKey =
-            NonDictionaryUtil.packByteBufferIntoSingleByteArray(noDictEndKey);
+        packedNoDictStartKey = NonDictionaryUtil.packByteBufferIntoSingleByteArray(noDictStartKey);
+        packedNoDictEndKey = NonDictionaryUtil.packByteBufferIntoSingleByteArray(noDictEndKey);
       }
     }
   }
@@ -580,8 +578,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     /**
      * Add one row to the internal store, it will be converted into columnar layout
+     *
      * @param rowId Id of the input row
-     * @param rows row object
+     * @param rows  row object
      */
     void addRow(int rowId, Object[] rows) {
 
@@ -596,7 +595,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
       // convert noDictionary columns and complex columns.
       if (noDictionaryCount > 0 || complexColCount > 0) {
-        byte[][] noDictAndComplex = (byte[][])(rows[mdKeyIndex - 1]);
+        byte[][] noDictAndComplex = (byte[][]) (rows[mdKeyIndex - 1]);
         for (int i = 0; i < noDictAndComplex.length; i++) {
           if (i < noDictionaryCount) {
             // noDictionary columns, since it is variable length, we need to prepare each
@@ -616,7 +615,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
         // in compaction flow the measure with decimal type will come as spark decimal.
         // need to convert it to byte array.
-        if (type[i] == DataType.DECIMAL && compactionFlow) {
+        if (null != value && type[i] == DataType.DECIMAL && compactionFlow) {
           BigDecimal bigDecimal = ((Decimal) rows[i]).toJavaBigDecimal();
           value = DataTypeUtil.bigDecimalToByte(bigDecimal);
         }
@@ -626,8 +625,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     /**
      * add a complex column into internal member compleDimensionPage
-     * @param index index of the complexDimensionPage
-     * @param rowId Id of the input row
+     *
+     * @param index          index of the complexDimensionPage
+     * @param rowId          Id of the input row
      * @param complexColumns byte array the complex columm to be added, extracted of input row
      */
     // TODO: this function should be refactoried, ColumnPage should support complex type encoding
@@ -656,11 +656,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutput);
         complexDataType.parseAndBitPack(byteArrayInput, dataOutputStream, complexKeyGenerator);
         complexDataType.getColumnarDataForComplexType(encodedComplexColumnar,
-            ByteBuffer.wrap(byteArrayOutput.toByteArray()));
+                ByteBuffer.wrap(byteArrayOutput.toByteArray()));
         byteArrayOutput.close();
       } catch (IOException | KeyGenException e) {
         throw new CarbonDataWriterException(
-            "Problem while bit packing and writing complex datatype", e);
+                "Problem while bit packing and writing complex datatype", e);
       }
 
       for (int depth = 0; depth < depthInComplexColumn; depth++) {
@@ -682,8 +682,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   /**
    * generate the NodeHolder from the input rows (one page in case of V3 format)
    */
-  private NodeHolder processDataRows(List<Object[]> dataRows)
-      throws CarbonDataWriterException {
+  private NodeHolder processDataRows(List<Object[]> dataRows) throws CarbonDataWriterException {
     if (dataRows.size() == 0) {
       return new NodeHolder();
     }
@@ -715,9 +714,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     LOGGER.info("Number Of records processed: " + dataRows.size());
 
     // TODO: writer interface should be modified to use TablePage
-    return dataWriter.buildDataNodeHolder(dimColumns, encodedMeasure.getEncodedMeasure(),
-        dataRows.size(), keys.startKey, keys.endKey, encodedMeasure.getCompressionModel(),
-        keys.packedNoDictStartKey, keys.packedNoDictEndKey, nullBitSet);
+    return dataWriter
+            .buildDataNodeHolder(dimColumns, encodedMeasure.getEncodedMeasure(), dataRows.size(),
+                    keys.startKey, keys.endKey, encodedMeasure.getCompressionModel(),
+                    keys.packedNoDictStartKey, keys.packedNoDictEndKey, nullBitSet);
   }
 
   /**
@@ -729,7 +729,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     // still some data is present in stores if entryCount is more
     // than 0
     producerExecutorServiceTaskList.add(producerExecutorService
-        .submit(new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter, true)));
+            .submit(new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter, true)));
     blockletProcessingCount.incrementAndGet();
     processedDataCount += entryCount;
     closeWriterExecutionService(producerExecutorService);
@@ -745,7 +745,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @throws CarbonDataWriterException
    */
   private void closeWriterExecutionService(ExecutorService service)
-      throws CarbonDataWriterException {
+          throws CarbonDataWriterException {
     try {
       service.shutdown();
       service.awaitTermination(1, TimeUnit.DAYS);
@@ -763,7 +763,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @throws CarbonDataWriterException
    */
   private void processWriteTaskSubmitList(List<Future<Void>> taskList)
-      throws CarbonDataWriterException {
+          throws CarbonDataWriterException {
     for (int i = 0; i < taskList.size(); i++) {
       try {
         taskList.get(i).get();
@@ -837,17 +837,17 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private void setWritingConfiguration() throws CarbonDataWriterException {
     // get blocklet size
     this.blockletSize = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
+            .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+                    CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
     if (version == ColumnarFormatVersion.V3) {
       this.blockletSize = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
-              CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT));
+              .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
+                      CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT));
     }
     LOGGER.info("Number of rows per column blocklet " + blockletSize);
     dataRows = new ArrayList<>(this.blockletSize);
     int dimSet =
-        Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
+            Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
     // if atleast one dimension is present then initialize column splitter otherwise null
     int noOfColStore = colGrpModel.getNoOfColumnStore();
     int[] keyBlockSize = new int[noOfColStore + complexColCount];
@@ -862,14 +862,14 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       this.columnarSplitter = this.segmentProperties.getFixedLengthKeySplitter();
       System.arraycopy(columnarSplitter.getBlockKeySize(), 0, keyBlockSize, 0, noOfColStore);
       this.keyBlockHolder =
-          new CarbonKeyBlockHolder[this.columnarSplitter.getBlockKeySize().length];
+              new CarbonKeyBlockHolder[this.columnarSplitter.getBlockKeySize().length];
     } else {
       this.keyBlockHolder = new CarbonKeyBlockHolder[0];
     }
     this.complexKeyGenerator = new KeyGenerator[completeDimLens.length];
     for (int i = 0; i < completeDimLens.length; i++) {
       complexKeyGenerator[i] =
-          KeyGeneratorFactory.getKeyGenerator(new int[] { completeDimLens[i] });
+              KeyGeneratorFactory.getKeyGenerator(new int[] { completeDimLens[i] });
     }
 
     for (int i = 0; i < keyBlockHolder.length; i++) {
@@ -879,9 +879,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     // agg type
     List<Integer> otherMeasureIndexList =
-        new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     List<Integer> customMeasureIndexList =
-        new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (int j = 0; j < type.length; j++) {
       if (type[j] != DataType.BYTE && type[j] != DataType.DECIMAL) {
         otherMeasureIndexList.add(j);
@@ -900,10 +900,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
     setComplexMapSurrogateIndex(this.dimensionCount);
     int[] blockKeySize = getBlockKeySizeWithComplexTypes(new MultiDimKeyVarLengthEquiSplitGenerator(
-        CarbonUtil.getIncrementedCardinalityFullyFilled(completeDimLens.clone()), (byte) dimSet)
-        .getBlockKeySize());
+            CarbonUtil.getIncrementedCardinalityFullyFilled(completeDimLens.clone()), (byte) dimSet)
+            .getBlockKeySize());
     System.arraycopy(blockKeySize, noOfColStore, keyBlockSize, noOfColStore,
-        blockKeySize.length - noOfColStore);
+            blockKeySize.length - noOfColStore);
     this.dataWriter = getFactDataWriter(keyBlockSize);
     this.dataWriter.setIsNoDictionary(isNoDictionary);
     // initialize the channel;
@@ -920,10 +920,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private int[] getBlockKeySizeWithComplexTypes(int[] primitiveBlockKeySize) {
     int allColsCount = getExpandedComplexColsCount();
     int[] blockKeySizeWithComplexTypes =
-        new int[this.colGrpModel.getNoOfColumnStore() + allColsCount];
+            new int[this.colGrpModel.getNoOfColumnStore() + allColsCount];
 
     List<Integer> blockKeySizeWithComplex =
-        new ArrayList<Integer>(blockKeySizeWithComplexTypes.length);
+            new ArrayList<Integer>(blockKeySizeWithComplexTypes.length);
     for (int i = 0; i < this.dimensionCount; i++) {
       GenericDataType complexDataType = complexIndexMap.get(i);
       if (complexDataType != null) {
@@ -947,7 +947,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private CarbonFactDataWriter<?> getFactDataWriter(int[] keyBlockSize) {
     return CarbonDataWriterFactory.getInstance()
-        .getFactDataWriter(version, getDataWriterVo(keyBlockSize));
+            .getFactDataWriter(version, getDataWriterVo(keyBlockSize));
   }
 
   /**
@@ -1086,7 +1086,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     private boolean isWriteAll;
 
     private Producer(BlockletDataHolder blockletDataHolder, List<Object[]> dataRows,
-        int sequenceNumber, boolean isWriteAll) {
+                     int sequenceNumber, boolean isWriteAll) {
       this.blockletDataHolder = blockletDataHolder;
       this.dataRows = dataRows;
       this.sequenceNumber = sequenceNumber;
@@ -1168,7 +1168,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     private boolean isNoDictionary;
 
     private BlockSortThread(int index, byte[][] data, boolean isSortRequired,
-        boolean isUseInvertedIndex) {
+                            boolean isUseInvertedIndex) {
       this.index = index;
       this.data = data;
       isCompressionReq = aggKeyBlock[this.index];
@@ -1177,7 +1177,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
 
     public BlockSortThread(int index, byte[][] data, boolean b, boolean isNoDictionary,
-        boolean isSortRequired, boolean isUseInvertedIndex) {
+                           boolean isSortRequired, boolean isUseInvertedIndex) {
       this.index = index;
       this.data = data;
       isCompressionReq = b;
@@ -1190,14 +1190,14 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       if (isUseInvertedIndex) {
         if (version == ColumnarFormatVersion.V3) {
           return new BlockIndexerStorageForShort(this.data, isCompressionReq, isNoDictionary,
-              isSortRequired);
+                  isSortRequired);
         } else {
           return new BlockIndexerStorageForInt(this.data, isCompressionReq, isNoDictionary,
-              isSortRequired);
+                  isSortRequired);
         }
       } else {
         if (version == ColumnarFormatVersion.V3) {
-          return new BlockIndexerStorageForNoInvertedIndexForShort(this.data);
+          return new BlockIndexerStorageForNoInvertedIndexForShort(this.data, isNoDictionary);
         } else {
           return new BlockIndexerStorageForNoInvertedIndex(this.data);
         }
@@ -1239,7 +1239,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       }
       // encode and compress measure column page
       compressionModel = ValueCompressionUtil
-          .getWriterCompressModel(max, min, decimal, uniqueValue, type, new byte[measureCount]);
+              .getWriterCompressModel(max, min, decimal, uniqueValue, type, new byte[measureCount]);
       encodedMeasureArray = encodeMeasure(compressionModel, measurePage);
       return this;
     }
@@ -1247,7 +1247,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     // this method first invokes encoding routine to encode the data chunk,
     // followed by invoking compression routine for preparing the data chunk for writing.
     private byte[][] encodeMeasure(WriterCompressModel compressionModel,
-        FixLengthColumnPage[] columnPages) {
+                                   FixLengthColumnPage[] columnPages) {
 
       CarbonWriteDataHolder[] holders = new CarbonWriteDataHolder[columnPages.length];
       for (int i = 0; i < holders.length; i++) {
@@ -1271,16 +1271,15 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
       DataType[] dataType = compressionModel.getDataType();
       ValueCompressionHolder[] values =
-          new ValueCompressionHolder[compressionModel.getValueCompressionHolder().length];
+              new ValueCompressionHolder[compressionModel.getValueCompressionHolder().length];
       byte[][] returnValue = new byte[values.length][];
       for (int i = 0; i < compressionModel.getValueCompressionHolder().length; i++) {
         values[i] = compressionModel.getValueCompressionHolder()[i];
         if (dataType[i] != DataType.DECIMAL) {
           values[i].setValue(
-              ValueCompressionUtil.getValueCompressor(compressionModel.getCompressionFinders()[i])
-                  .getCompressedValues(compressionModel.getCompressionFinders()[i], holders[i],
-                      compressionModel.getMaxValue()[i],
-                      compressionModel.getMantissa()[i]));
+                  ValueCompressionUtil.getValueCompressor(compressionModel.getCompressionFinders()[i])
+                          .getCompressedValues(compressionModel.getCompressionFinders()[i], holders[i],
+                                  compressionModel.getMaxValue()[i], compressionModel.getMantissa()[i]));
         } else {
           values[i].setValue(holders[i].getWritableByteArrayValues());
         }
@@ -1301,12 +1300,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       // thread pool size to be used for encoding dimension
       // each thread will sort the column page data and compress it
       int thread_pool_size = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.NUM_CORES_BLOCK_SORT,
-              CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL));
+              .getProperty(CarbonCommonConstants.NUM_CORES_BLOCK_SORT,
+                      CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL));
       ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
       Callable<IndexStorage> callable;
       List<Future<IndexStorage>> submit = new ArrayList<Future<IndexStorage>>(
-          primitiveDimLens.length + noDictionaryCount + complexColCount);
+              primitiveDimLens.length + noDictionaryCount + complexColCount);
       int i = 0;
       int dictionaryColumnCount = -1;
       int noDictionaryColumnCount = -1;
@@ -1318,30 +1317,20 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           dictionaryColumnCount++;
           if (colGrpModel.isColumnar(dictionaryColumnCount)) {
             // dictionary dimension
-            callable =
-                new BlockSortThread(
-                    i,
-                    tablePage.dictDimensionPage[dictionaryColumnCount].getByteArrayPage(),
-                    isSortColumn,
+            callable = new BlockSortThread(i,
+                    tablePage.dictDimensionPage[dictionaryColumnCount].getByteArrayPage(), isSortColumn,
                     isUseInvertedIndex[i] & isSortColumn);
 
           } else {
             // column group
-            callable = new ColGroupBlockStorage(
-                segmentProperties,
-                ++colGrpId,
-                tablePage.dictDimensionPage[dictionaryColumnCount].getByteArrayPage());
+            callable = new ColGroupBlockStorage(segmentProperties, ++colGrpId,
+                    tablePage.dictDimensionPage[dictionaryColumnCount].getByteArrayPage());
           }
         } else {
           // no dictionary dimension
-          callable =
-              new BlockSortThread(
-                  i,
-                  tablePage.noDictDimensionPage[++noDictionaryColumnCount].getByteArrayPage(),
-                  false,
-                  true,
-                  isSortColumn,
-                  isUseInvertedIndex[i] & isSortColumn);
+          callable = new BlockSortThread(i,
+                  tablePage.noDictDimensionPage[++noDictionaryColumnCount].getByteArrayPage(), false,
+                  true, isSortColumn, isUseInvertedIndex[i] & isSortColumn);
         }
         // start a thread to sort the page data
         submit.add(executorService.submit(callable));
@@ -1351,12 +1340,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       for (int index = 0; index < getComplexColumnCount(); index++) {
         Iterator<byte[][]> iterator = tablePage.complexDimensionPage[index].iterator();
         while (iterator.hasNext()) {
-          callable =
-              new BlockSortThread(
-                  i++,
-                  iterator.next(),
-                  false,
-                  true);
+          callable = new BlockSortThread(i++, iterator.next(), false, true);
           submit.add(executorService.submit(callable));
         }
       }
@@ -1366,8 +1350,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       } catch (InterruptedException e) {
         LOGGER.error(e, e.getMessage());
       }
-      IndexStorage[] dimColumns = new IndexStorage[
-          colGrpModel.getNoOfColumnStore() + noDictionaryCount + getExpandedComplexColsCount()];
+      IndexStorage[] dimColumns =
+              new IndexStorage[colGrpModel.getNoOfColumnStore() + noDictionaryCount
+                      + getExpandedComplexColsCount()];
       try {
         for (int k = 0; k < dimColumns.length; k++) {
           dimColumns[k] = submit.get(k).get();
