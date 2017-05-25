@@ -253,6 +253,9 @@ class AlterTableColumnSchemaGenerator(
             }
           }
         }
+        else if (elem._1.equalsIgnoreCase("no_inverted_index")) {
+          col.getEncodingList.remove(Encoding.INVERTED_INDEX)
+        }
       }
     }
     tableSchema.setListOfColumns(allColumns.asJava)
