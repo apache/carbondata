@@ -314,7 +314,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           // default value should not be converted to lower case
           val tblProps = tblProp.get
             .map(f => if (CarbonCommonConstants.TABLE_BLOCKSIZE.equalsIgnoreCase(f._1) ||
-                          CarbonCommonConstants.NO_INVERTED_INDEX.equalsIgnoreCase(f._1) ||
                           CarbonCommonConstants.COLUMN_GROUPS.equalsIgnoreCase(f._1) ||
             CarbonCommonConstants.SORT_COLUMNS.equalsIgnoreCase(f._1)) {
               throw new MalformedCarbonCommandException(
