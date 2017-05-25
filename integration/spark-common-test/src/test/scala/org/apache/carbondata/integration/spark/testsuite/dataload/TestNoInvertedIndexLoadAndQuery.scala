@@ -23,7 +23,6 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 /**
  * Test Class for no inverted index load and query
@@ -36,8 +35,21 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
   val testData2 = s"$resourcesPath/source.csv"
 
   override def beforeAll {
+    clean
+    sql("""
+           CREATE TABLE hiveNoInvertedIndexTable
+           (id Int, name String, city String) row format delimited fields terminated by ','
+        """)
+    sql(s"""
+           LOAD DATA LOCAL INPATH '$testData1' into table hiveNoInvertedIndexTable
+           """)
+  }
+
+  def clean = {
     sql("DROP TABLE IF EXISTS index1")
     sql("DROP TABLE IF EXISTS index2")
+    sql("DROP TABLE IF EXISTS hiveNoInvertedIndexTable")
+    sql("DROP TABLE IF EXISTS carbonNoInvertedIndexTable")
   }
 
   test("no inverted index load and point query") {
@@ -212,11 +224,46 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
         """),
       Seq(Row(19.0, "Emily", "Bangalore")))
   }
+  
+  test("no inverted index test for row level filter queries") {
+    sql("""
+           CREATE TABLE IF NOT EXISTS carbonNoInvertedIndexTable
+           (id Int, name String, city String)
+           STORED BY 'org.apache.carbondata.format'
+           TBLPROPERTIES('NO_INVERTED_INDEX'='name,city', 'DICTIONARY_EXCLUDE'='city')
+        """)
+    sql(s"""
+           LOAD DATA LOCAL INPATH '$testData1' into table carbonNoInvertedIndexTable
+           OPTIONS('FILEHEADER'='id,name,city', 'BAD_RECORDS_ACTION'='FORCE')
+           """)
+    // row level filter evaluation test
+    checkAnswer(
+      sql("SELECT * FROM hiveNoInvertedIndexTable WHERE city <= 'Shanghai'"),
+      sql("SELECT * FROM carbonNoInvertedIndexTable WHERE city <= 'Shanghai'"))
+    checkAnswer(
+      sql("SELECT * FROM hiveNoInvertedIndexTable WHERE city >= 'Shanghai'"),
+      sql("SELECT * FROM carbonNoInvertedIndexTable WHERE city >= 'Shanghai'"))
+    checkAnswer(
+      sql("SELECT * FROM hiveNoInvertedIndexTable WHERE city < 'Shanghai'"),
+      sql("SELECT * FROM carbonNoInvertedIndexTable WHERE city < 'Shanghai'"))
+    checkAnswer(
+      sql("SELECT * FROM hiveNoInvertedIndexTable WHERE city > 'Shanghai'"),
+      sql("SELECT * FROM carbonNoInvertedIndexTable WHERE city > 'Shanghai'"))
+    // range filter test
+    checkAnswer(
+      sql("SELECT * FROM hiveNoInvertedIndexTable WHERE city > 'Shanghai' and city < 'Washington'"),
+      sql("SELECT * FROM carbonNoInvertedIndexTable WHERE city > 'Shanghai' and city < 'Washington'"))
+    checkAnswer(
+      sql("SELECT * FROM hiveNoInvertedIndexTable WHERE city >= 'Shanghai' and city < 'Washington'"),
+      sql("SELECT * FROM carbonNoInvertedIndexTable WHERE city >= 'Shanghai' and city < 'Washington'"))
+    checkAnswer(
+      sql("SELECT * FROM hiveNoInvertedIndexTable WHERE city > 'Shanghai' and city <= 'Washington'"),
+      sql("SELECT * FROM carbonNoInvertedIndexTable WHERE city > 'Shanghai' and city <= 'Washington'"))
+  }
 
 
   override def afterAll {
-    sql("drop table index1")
-    sql("drop table index2")
+    clean
   }
 
 }
