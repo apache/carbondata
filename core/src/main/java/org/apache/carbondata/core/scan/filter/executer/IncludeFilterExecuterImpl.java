@@ -137,19 +137,39 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
     if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
+      int startIndex = 0;
       byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-      if (filterValues.length > 1) {
-        for (int i = 0; i < numerOfRows; i++) {
-          int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
-              dimensionColumnDataChunk.getChunkData(i));
-          if (index >= 0) {
-            bitSet.set(i);
+      // binary search can only be applied if column is sorted and
+      // inverted index exists for that column
+      if (dimensionColumnDataChunk.isExplicitSorted()) {
+        for (int i = 0; i < filterValues.length; i++) {
+          if (startIndex >= numerOfRows) {
+            break;
+          }
+          int[] rangeIndex = CarbonUtil
+              .getRangeIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
+                  filterValues[i]);
+          for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
+            bitSet.set(j);
+          }
+          if (rangeIndex[1] >= 0) {
+            startIndex = rangeIndex[1] + 1;
           }
         }
-      } else if (filterValues.length == 1) {
-        for (int i = 0; i < numerOfRows; i++) {
-          if (dimensionColumnDataChunk.compareTo(i, filterValues[0]) == 0) {
-            bitSet.set(i);
+      } else {
+        if (filterValues.length > 1) {
+          for (int i = 0; i < numerOfRows; i++) {
+            int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
+                dimensionColumnDataChunk.getChunkData(i));
+            if (index >= 0) {
+              bitSet.set(i);
+            }
+          }
+        } else {
+          for (int j = 0; j < numerOfRows; j++) {
+            if (dimensionColumnDataChunk.compareTo(j, filterValues[0]) == 0) {
+              bitSet.set(j);
+            }
           }
         }
       }
