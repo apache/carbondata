@@ -91,7 +91,14 @@ public class DictionaryClientHandler extends ChannelInboundHandlerAdapter {
     try {
       dictionaryMessage = responseMsgQueue.poll(100, TimeUnit.SECONDS);
       if (dictionaryMessage == null) {
-        throw new RuntimeException("Request timed out for key : " + key);
+        StringBuilder message = new StringBuilder();
+        message.append("DictionaryMessage { ColumnName: ")
+            .append(key.getColumnName())
+            .append(", DictionaryValue: ")
+            .append(key.getDictionaryValue())
+            .append(", type: ")
+            .append(key.getType());
+        throw new RuntimeException("Request timed out for key : " + message);
       }
       return dictionaryMessage;
     } catch (Exception e) {
