@@ -45,4 +45,9 @@ public interface Cacheable {
    * @return
    */
   long getMemorySize();
+
+  /**
+   * Clear the resources before remove.
+   */
+  void release();
 }

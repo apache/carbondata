@@ -254,4 +254,8 @@ public class BTreeNonLeafNode implements BTreeNode {
     // TODO Auto-generated method stub
     throw new UnsupportedOperationException("Unsupported operation");
   }
+
+  @Override public void release() {
+    // TODO remove resources if any
+  }
 }

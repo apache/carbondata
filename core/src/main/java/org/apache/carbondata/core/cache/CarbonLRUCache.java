@@ -159,6 +159,7 @@ public final class CarbonLRUCache {
     }
     Cacheable remove = lruCacheMap.remove(key);
     if (null != remove) {
+      remove.release();
       LOGGER.info("Removed entry from InMemory lru cache :: " + key);
     }
   }

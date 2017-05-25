@@ -128,4 +128,8 @@ public class BlockIndexNodeWrapper implements DataRefNode {
     result = 31 * result + (int) index;
     return result;
   }
+
+  @Override public void release() {
+    indexStore.clear();
+  }
 }

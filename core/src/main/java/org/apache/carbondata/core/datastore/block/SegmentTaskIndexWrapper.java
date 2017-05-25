@@ -143,4 +143,7 @@ public class SegmentTaskIndexWrapper implements Cacheable {
     return invalidTaskKey;
   }
 
+  @Override public void release() {
+    // TODO remove resources if any
+  }
 }

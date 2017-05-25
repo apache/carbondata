@@ -301,5 +301,9 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
     byte[] keyData = value.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     return getSurrogateKey(keyData);
   }
+
+  @Override public void release() {
+    // TODO release resources if any
+  }
 }
 

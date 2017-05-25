@@ -289,7 +289,8 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
     byte[][] filterValues = this.filterRangesValues;
     int columnIndex = this.dimColEvaluatorInfo.getColumnIndex();
     boolean isScanRequired =
-        isScanRequired(blockMinValue[columnIndex], blockMaxValue[columnIndex], filterValues);
+        columnIndex >= blockMinValue.length ||
+            isScanRequired(blockMinValue[columnIndex], blockMaxValue[columnIndex], filterValues);
     if (isScanRequired) {
       bitSet.set(0);
     }

@@ -27,7 +27,7 @@ import org.apache.carbondata.core.memory.MemoryAllocatorFactory;
 import org.apache.carbondata.core.memory.MemoryBlock;
 
 /**
- * Store block index in unsafe array format
+ * Store block index in unsafe arrat
  * Order of storing and retrieving data.
  * 1. Number of rows (int)
  * 2. Key length(int) + key
@@ -45,6 +45,8 @@ public class BlockIndexStore implements IndexStore {
   private int[] dimensionColumnValueSize;
 
   private int[] tableBlockPointer;
+
+  private boolean isCleared;
 
   public BlockIndexStore(BTreeBuilderInfo btreeBuilderInfo, MemoryBlock block, int[] rowPointers,
       int[] tableBlockPointer) {
@@ -202,6 +204,9 @@ public class BlockIndexStore implements IndexStore {
   }
 
   @Override public void clear() {
-    MemoryAllocatorFactory.INSATANCE.getMemoryAllocator().free(block);
+    if (!isCleared) {
+      isCleared = true;
+      MemoryAllocatorFactory.INSATANCE.getMemoryAllocator().free(block);
+    }
   }
 }

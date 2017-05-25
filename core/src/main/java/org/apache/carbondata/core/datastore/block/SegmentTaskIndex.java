@@ -16,7 +16,9 @@
  */
 package org.apache.carbondata.core.datastore.block;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.datastore.BTreeBuilderInfo;
 import org.apache.carbondata.core.datastore.BtreeBuilder;
@@ -35,14 +37,14 @@ public class SegmentTaskIndex extends AbstractIndex {
 
   /**
    * Below method is store the blocks in some data structure
-   *
    */
   public void buildIndex(List<DataFileFooter> footerList) {
     // create a segment builder info
     // in case of segment create we do not need any file path and each column value size
     // as Btree will be build as per min max and start key
-    BTreeBuilderInfo btreeBuilderInfo =
-        new BTreeBuilderInfo(footerList, segmentProperties.getEachDimColumnValueSize());
+    BTreeBuilderInfo btreeBuilderInfo = new BTreeBuilderInfo(footerList,
+        updateColumnSizes(segmentProperties.getEachDimColumnValueSize(),
+            segmentProperties.getDimensionOrdinalToBlockMapping()));
     BtreeBuilder blocksBuilder = IndexStoreFactory.getDriverIndexBuilder();
     // load the metadata
     blocksBuilder.build(btreeBuilderInfo);
@@ -50,5 +52,17 @@ public class SegmentTaskIndex extends AbstractIndex {
     for (DataFileFooter footer : footerList) {
       totalNumberOfRows += footer.getNumberOfRows();
     }
+  }
+
+  // If the columns participated in column groups then better update the size as -1 ,
+  // so that it can take as variable length;
+  private int[] updateColumnSizes(int[] eachDimColumnValueSize,
+      Map<Integer, Integer> dimensionOrdinalToBlockMapping) {
+    if (eachDimColumnValueSize.length < dimensionOrdinalToBlockMapping.size()) {
+      int[] updated = new int[dimensionOrdinalToBlockMapping.size()];
+      Arrays.fill(updated, -1);
+      return updated;
+    }
+    return eachDimColumnValueSize;
   }
 }
