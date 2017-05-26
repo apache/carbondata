@@ -20,8 +20,10 @@ package org.apache.spark.sql.parser
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-import org.apache.spark.sql.ShowLoadsCommand
-import org.apache.spark.sql.catalyst.CarbonDDLSqlParser
+import org.apache.spark.sql.{DeleteRecords, ShowLoadsCommand, UpdateTable}
+import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, TableIdentifier}
+import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
+import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.types.StructField
@@ -61,7 +63,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
   protected lazy val startCommand: Parser[LogicalPlan] =
-    loadManagement| showLoads | alterTable | restructure
+    loadManagement| showLoads | alterTable | restructure | updateTable | deleteRecords
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -77,6 +79,128 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           Some(System.currentTimeMillis()), null)
         AlterTableCompaction(altertablemodel)
     }
+
+  protected lazy val deleteRecords: Parser[LogicalPlan] =
+    (DELETE ~> FROM ~> table) ~ restInput.? <~ opt(";") ^^ {
+      case table ~ rest =>
+        val tableName = getTableName(table.tableIdentifier)
+        val alias = table.alias.getOrElse("")
+        DeleteRecords("select tupleId from " + tableName + " " + alias + rest.getOrElse(""), table)
+    }
+
+  protected lazy val updateTable: Parser[LogicalPlan] =
+    UPDATE ~> table ~
+    (SET ~> "(" ~> repsep(element, ",") <~ ")") ~
+    ("=" ~> restInput) <~ opt(";") ^^ {
+      case tab ~ columns ~ rest =>
+        val (sel, where) = splitQuery(rest)
+        val (selectStmt, relation) =
+          if (!sel.toLowerCase.startsWith("select ")) {
+            if (sel.trim.isEmpty) {
+              sys.error("At least one source column has to be specified ")
+            }
+            // only list of expression are given, need to convert that list of expressions into
+            // select statement on destination table
+            val relation = tab match {
+              case r@UnresolvedRelation(tableIdentifier, alias) =>
+                updateRelation(r, tableIdentifier, alias)
+              case _ => tab
+            }
+            ("select " + sel + " from " + getTableName(relation.tableIdentifier) + " " +
+             relation.alias.get, relation)
+          } else {
+            (sel, updateRelation(tab, tab.tableIdentifier, tab.alias))
+          }
+        UpdateTable(relation, columns, selectStmt, where)
+    }
+
+  private def updateRelation(
+      r: UnresolvedRelation,
+      tableIdentifier: Seq[String],
+      alias: Option[String]): UnresolvedRelation = {
+    alias match {
+      case Some(_) => r
+      case _ =>
+        val tableAlias = tableIdentifier match {
+          case Seq(dbName, tableName) => Some(tableName)
+          case Seq(tableName) => Some(tableName)
+        }
+        UnresolvedRelation(tableIdentifier, Option(tableAlias.toString))
+    }
+  }
+
+  protected lazy val element: Parser[String] =
+    (ident <~ ".").? ~ ident ^^ {
+      case table ~ column => column.toLowerCase
+    }
+
+  protected lazy val table: Parser[UnresolvedRelation] = {
+    rep1sep(attributeName, ".") ~ opt(ident) ^^ {
+      case tableIdent ~ alias => UnresolvedRelation(tableIdent, alias)
+    }
+  }
+
+  private def splitQuery(query: String): (String, String) = {
+    val stack = scala.collection.mutable.Stack[Char]()
+    var foundSingleQuotes = false
+    var foundDoubleQuotes = false
+    var foundEscapeChar = false
+    var ignoreChar = false
+    var stop = false
+    var bracketCount = 0
+    val (selectStatement, where) = query.span {
+      ch => {
+        if (stop) {
+          false
+        } else {
+          ignoreChar = false
+          if (foundEscapeChar && (ch == '\'' || ch == '\"' || ch == '\\')) {
+            foundEscapeChar = false
+            ignoreChar = true
+          }
+          // If escaped single or double quotes found, no need to consider
+          if (!ignoreChar) {
+            if (ch == '\\') {
+              foundEscapeChar = true
+            } else if (ch == '\'') {
+              foundSingleQuotes = !foundSingleQuotes
+            } else if (ch == '\"') {
+              foundDoubleQuotes = !foundDoubleQuotes
+            }
+            else if (ch == '(' && !foundSingleQuotes && !foundDoubleQuotes) {
+              bracketCount = bracketCount + 1
+              stack.push(ch)
+            } else if (ch == ')' && !foundSingleQuotes && !foundDoubleQuotes) {
+              bracketCount = bracketCount + 1
+              stack.pop()
+              if (0 == stack.size) {
+                stop = true
+              }
+            }
+          }
+          true
+        }
+      }
+    }
+    if (bracketCount == 0 || bracketCount % 2 != 0) {
+      sys.error("Parsing error, missing bracket ")
+    }
+    val select = selectStatement.trim
+    (select.substring(1, select.length - 1).trim -> where.trim)
+  }
+
+  protected lazy val attributeName: Parser[String] = acceptMatch("attribute name", {
+    case lexical.Identifier(str) => str.toLowerCase
+    case lexical.Keyword(str) if !lexical.delimiters.contains(str) => str.toLowerCase
+  })
+
+  private def getTableName(tableIdentifier: Seq[String]): String = {
+    if (tableIdentifier.size > 1) {
+      tableIdentifier(0) + "." + tableIdentifier(1)
+    } else {
+      tableIdentifier(0)
+    }
+  }
 
 
   protected lazy val loadDataNew: Parser[LogicalPlan] =
