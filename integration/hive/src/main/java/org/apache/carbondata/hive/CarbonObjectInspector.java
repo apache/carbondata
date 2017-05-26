@@ -26,6 +26,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.SettableStructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
+import org.apache.hadoop.hive.serde2.typeinfo.CharTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.ListTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
@@ -69,7 +70,7 @@ public class CarbonObjectInspector extends SettableStructObjectInspector {
       return PrimitiveObjectInspectorFactory.writableStringObjectInspector;
     } else if (typeInfo instanceof DecimalTypeInfo) {
       return PrimitiveObjectInspectorFactory.getPrimitiveWritableObjectInspector(
-        (DecimalTypeInfo) typeInfo);
+          (DecimalTypeInfo) typeInfo);
     } else if (typeInfo.getCategory().equals(Category.STRUCT)) {
       return new CarbonObjectInspector((StructTypeInfo) typeInfo);
     } else if (typeInfo.getCategory().equals(Category.LIST)) {
@@ -81,6 +82,9 @@ public class CarbonObjectInspector extends SettableStructObjectInspector {
       return PrimitiveObjectInspectorFactory.writableTimestampObjectInspector;
     } else if (typeInfo.equals(TypeInfoFactory.dateTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableDateObjectInspector;
+    } else if (((CharTypeInfo) typeInfo).getPrimitiveCategory()
+        .name().equals("CHAR")) {
+      return PrimitiveObjectInspectorFactory.writableStringObjectInspector;
     } else {
       throw new UnsupportedOperationException("Unknown field type: " + typeInfo);
     }
@@ -119,7 +123,7 @@ public class CarbonObjectInspector extends SettableStructObjectInspector {
       int listSize = isArray ? ((Object[]) ((Object[]) data)).length : ((List) data).size();
       int fieldID = fieldRef.getFieldID();
       return fieldID >= listSize ? null :
-        (isArray ? ((Object[]) ((Object[]) data))[fieldID] : ((List) data).get(fieldID));
+          (isArray ? ((Object[]) ((Object[]) data))[fieldID] : ((List) data).get(fieldID));
     }
   }
 
