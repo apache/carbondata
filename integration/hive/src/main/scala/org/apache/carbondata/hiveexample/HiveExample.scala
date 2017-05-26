@@ -24,6 +24,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.hive.server.HiveEmbeddedServer2
 
+// scalastyle:off println
 object HiveExample {
 
   private val driverName: String = "org.apache.hive.jdbc.HiveDriver"
@@ -103,14 +104,16 @@ object HiveExample {
     }
     catch {
       case exception: Exception =>
-        logger.warn(s"Jar Not Found $carbonHadoopJarPath"+"Looking For hadoop 2.2.0 version jar")
+        logger.warn(s"Jar Not Found $carbonHadoopJarPath" + "Looking For hadoop 2.2.0 version jar")
         try {
           stmt
             .execute(s"ADD JAR $carbon_DefaultHadoopVersion_JarPath")
         }
         catch {
           case exception: Exception => logger
-            .error(s"Exception Occurs:Neither One of Jar is Found $carbon_DefaultHadoopVersion_JarPath,$carbonHadoopJarPath"+"Atleast One Should Be Build")
+            .error("Exception Occurs:Neither One of Jar is Found" +
+                   s"$carbon_DefaultHadoopVersion_JarPath,$carbonHadoopJarPath" +
+                   "Atleast One Should Be Build")
             hiveEmbeddedServer2.stop()
             System.exit(0)
         }
@@ -177,12 +180,13 @@ object HiveExample {
     println(s"******Total Number Of Rows Fetched ****** $rowsFetched")
 
     logger.info("Fetching the Individual Columns ")
-    //fetching the seperate columns
+
+    // fetching the separate columns
     var individualColRowsFetched = 0
 
     val resultIndividualCol = stmt.executeQuery("SELECT NAME FROM HIVE_CARBON_EXAMPLE")
 
-    while(resultIndividualCol.next){
+    while (resultIndividualCol.next) {
       if (individualColRowsFetched == 0) {
         println("+--------------+")
         println("| NAME         |")
@@ -197,18 +201,19 @@ object HiveExample {
       else {
         val resultName = resultIndividualCol.getString("NAME")
 
-        println(s"| $resultName      |" )
-        println("+---+" + "+---------+" )
+        println(s"| $resultName      |")
+        println("+---+" + "+---------+")
       }
-      individualColRowsFetched =  individualColRowsFetched +1
+      individualColRowsFetched = individualColRowsFetched + 1
     }
-    println(s" ********** Total Rows Fetched When Quering The Individual Column ********** $individualColRowsFetched")
+    println(" ********** Total Rows Fetched When Quering The Individual Column **********" +
+            s"$individualColRowsFetched")
 
     logger.info("Fetching the Out Of Order Columns ")
 
     val resultOutOfOrderCol = stmt.executeQuery("SELECT SALARY,ID,NAME FROM HIVE_CARBON_EXAMPLE")
     var outOfOrderColFetched = 0
-    while (resultOutOfOrderCol.next()){
+    while (resultOutOfOrderCol.next()) {
       if (outOfOrderColFetched == 0) {
         println("+---+" + "+-------+" + "+--------------+")
         println("| Salary|" + "| ID |" + "| NAME        |")
@@ -230,7 +235,7 @@ object HiveExample {
         println(s"| $resultSalary |" + s"| $resultId |" + s"| $resultName   |")
         println("+---+" + "+-------+" + "+--------------+")
       }
-      outOfOrderColFetched =  outOfOrderColFetched +1
+      outOfOrderColFetched = outOfOrderColFetched + 1
     }
     hiveEmbeddedServer2.stop()
     System.exit(0)
