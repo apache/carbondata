@@ -42,7 +42,8 @@ import org.apache.hive.service.server.HiveServer2;
 /**
  * Utility starting a local/embedded Hive org.apache.carbondata.hive.server for testing purposes.
  * Uses sensible defaults to properly clean between reruns.
- * Additionally it wrangles the Hive internals so it rather executes the jobs locally not within a child JVM (which Hive calls local) or external.
+ * Additionally it wrangles the Hive internals so it rather executes the jobs locally not within
+ * a child JVM (which Hive calls local) or external.
  */
 public class HiveEmbeddedServer2 {
   private static final String SCRATCH_DIR = "/tmp/hive";
@@ -131,7 +132,8 @@ public class HiveEmbeddedServer2 {
     conf.set("hive.added.archives.path", "");
     conf.set("fs.default.name", "file:///");
 
-    // clear mapred.job.tracker - Hadoop defaults to 'local' if not defined. Hive however expects this to be set to 'local' - if it's not, it does a remote execution (i.e. no child JVM)
+    // clear mapred.job.tracker - Hadoop defaults to 'local' if not defined. Hive however expects
+    // this to be set to 'local' - if it's not, it does a remote execution (i.e. no child JVM)
     Field field = Configuration.class.getDeclaredField("properties");
     field.setAccessible(true);
     Properties props = (Properties) field.get(conf);

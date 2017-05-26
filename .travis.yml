@@ -14,4 +14,4 @@
 # limitations under the License.
 
 language: java
-script: mvn -U clean scalastyle:check checkstyle:check -Pspark-2.1 test
+script: mvn -B -e -U clean validate

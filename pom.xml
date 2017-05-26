@@ -102,6 +102,10 @@
     <module>integration/spark-common</module>
     <module>integration/spark-common-test</module>
     <module>assembly</module>
+    <module>examples/flink</module>
+    <module>integration/hive</module>
+    <module>integration/presto</module>
+
   </modules>
 
   <properties>
@@ -127,10 +131,6 @@
     <repository>
       <id>pentaho-releases</id>
       <url>http://repository.pentaho.org/artifactory/repo/</url>
-    </repository>
-    <repository>
-      <id>carbondata-releases</id>
-      <url>http://136.243.101.176:9091/repository/carbondata/</url>
     </repository>
   </repositories>
 
@@ -317,7 +317,6 @@
         <module>examples/spark</module>
         <module>integration/spark2</module>
         <module>examples/spark2</module>
-        <module>examples/flink</module>
       </modules>
     </profile>
     <profile>
@@ -370,16 +369,6 @@
       <modules>
         <module>integration/spark2</module>
         <module>examples/spark2</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>flink</id>
-      <properties>
-        <flink.version>1.1.4</flink.version>
-        <scala.binary.version>2.10</scala.binary.version>
-      </properties>
-      <modules>
-        <module>examples/flink</module>
       </modules>
     </profile>
     <profile>
