@@ -27,7 +27,10 @@ You can find the latest CarbonData document and learn more at:
 [CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA/)
 
 ## Status
-[![Build Status](https://travis-ci.org/apache/carbondata.svg?branch=master)](https://travis-ci.org/apache/carbondata.svg?branch=master)
+Spark2.1:
+[![Build Status](https://builds.apache.org/buildStatus/icon?job=carbondata-master-spark-2.1)](https://builds.apache.org/view/CarbonData/job/carbondata-master-spark-2.1/)
+Spark1.6:
+[![Build Status](https://builds.apache.org/buildStatus/icon?job=carbondata-master-spark-1.6)](https://builds.apache.org/view/CarbonData/job/carbondata-master-spark-1.6/)
 
 ## Features
 CarbonData file format is a columnar store in HDFS, it has many features that a modern columnar format has, such as splittable, compression schema ,complex data type etc, and CarbonData has following unique features:
