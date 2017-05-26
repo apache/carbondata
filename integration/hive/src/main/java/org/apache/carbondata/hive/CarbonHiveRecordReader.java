@@ -78,14 +78,16 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     }
     List<TableBlockInfo> tableBlockInfoList = CarbonHiveInputSplit.createBlocks(splitList);
     queryModel.setTableBlockInfos(tableBlockInfoList);
-    readSupport.initialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());
+    readSupport.initialize(queryModel.getProjectionColumns(),
+                           queryModel.getAbsoluteTableIdentifier());
     try {
       carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
     } catch (QueryExecutionException e) {
       throw new IOException(e.getMessage(), e.getCause());
     }
     if (valueObj == null) {
-      valueObj = new ArrayWritable(Writable.class, new Writable[queryModel.getProjectionColumns().length]);
+      valueObj = new ArrayWritable(Writable.class,
+                                   new Writable[queryModel.getProjectionColumns().length]);
     }
 
     final TypeInfo rowTypeInfo;

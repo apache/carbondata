@@ -72,8 +72,8 @@ scala>carbon.sql("SELECT * FROM hive_carbon").show()
 ### Configure hive classpath
 ```
 mkdir hive/auxlibs/
-cp incubator-carbondata/assembly/target/scala-2.11/carbondata_2.11*.jar hive/auxlibs/
-cp incubator-carbondata/integration/hive/target/carbondata-hive-*.jar hive/auxlibs/
+cp carbondata/assembly/target/scala-2.11/carbondata_2.11*.jar hive/auxlibs/
+cp carbondata/integration/hive/target/carbondata-hive-*.jar hive/auxlibs/
 cp $SPARK_HOME/jars/spark-catalyst*.jar hive/auxlibs/
 export HIVE_AUX_JARS_PATH=hive/auxlibs/
 ```
