@@ -126,7 +126,7 @@
       <version>3.0</version>
     </dependency>
 
-    <!--presto intergated-->
+    <!--presto integrated-->
     <dependency>
       <groupId>com.facebook.presto</groupId>
       <artifactId>presto-spi</artifactId>
