@@ -23,7 +23,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
+class InsertIntoCarbonTableSpark2TestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll: Unit = {
     sql("drop table if exists OneRowTable")
   }

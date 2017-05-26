@@ -45,7 +45,8 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("insert from hive-sum expression") {
      sql("drop table if exists TCarbon")
      sql("create table TCarbon (MAC string,deviceInformationIdSum int) STORED BY 'org.apache.carbondata.format'")
-     sql("insert into TCarbon select MAC,sum(deviceInformationId+ 10) as a from THive group by MAC")
+     sql("insert into TCarbon select MAC,sum(deviceInformationId + 10) as a from THive group by MAC")
+
      checkAnswer(
          sql("select MAC,deviceInformationIdSum from TCarbon order by MAC"),
          sql("select MAC,sum(deviceInformationId+ 10) as a from THive group by MAC order by MAC")
