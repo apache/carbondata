@@ -471,6 +471,10 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         Some(CastExpr(c))
       case c@In(Cast(a: Attribute, _), list) if !list.exists(!_.isInstanceOf[Literal]) =>
         Some(CastExpr(c))
+      case InSet(a: Attribute, set) =>
+        Some(sources.In(a.name, set.toArray))
+      case Not(InSet(a: Attribute, set)) =>
+        Some(sources.Not(sources.In(a.name, set.toArray)))
       case GreaterThan(a: Attribute, Literal(v, t)) =>
         Some(sources.GreaterThan(a.name, v))
       case GreaterThan(Literal(v, t), a: Attribute) =>
