@@ -399,10 +399,6 @@ public final class ByteUtil {
     return b[0] != (byte) 0;
   }
 
-  public static boolean toBoolean(final byte b) {
-    return b != (byte) 0;
-  }
-
   /**
    * short => byte[]
    *
