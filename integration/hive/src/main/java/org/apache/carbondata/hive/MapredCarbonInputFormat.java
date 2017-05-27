@@ -21,6 +21,8 @@ import java.util.List;
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
@@ -41,28 +43,26 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.Job;
 
-
 public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     implements InputFormat<Void, ArrayWritable>, CombineHiveInputFormat.AvoidSplitCombination {
 
-  @Override
-  public InputSplit[] getSplits(JobConf jobConf, int numSplits) throws IOException {
+  @Override public InputSplit[] getSplits(JobConf jobConf, int numSplits) throws IOException {
     org.apache.hadoop.mapreduce.JobContext jobContext = Job.getInstance(jobConf);
     List<org.apache.hadoop.mapreduce.InputSplit> splitList = super.getSplits(jobContext);
     InputSplit[] splits = new InputSplit[splitList.size()];
     CarbonInputSplit split = null;
     for (int i = 0; i < splitList.size(); i++) {
       split = (CarbonInputSplit) splitList.get(i);
-      splits[i] = new CarbonHiveInputSplit(split.getSegmentId(), split.getPath(),
-          split.getStart(), split.getLength(), split.getLocations(),
-          split.getNumberOfBlocklets(), split.getVersion(), split.getBlockStorageIdMap());
+      splits[i] = new CarbonHiveInputSplit(split.getSegmentId(), split.getPath(), split.getStart(),
+          split.getLength(), split.getLocations(), split.getNumberOfBlocklets(), split.getVersion(),
+          split.getBlockStorageIdMap());
     }
     return splits;
   }
 
   @Override
   public RecordReader<Void, ArrayWritable> getRecordReader(InputSplit inputSplit, JobConf jobConf,
-                                                           Reporter reporter) throws IOException {
+      Reporter reporter) throws IOException {
     QueryModel queryModel = getQueryModel(jobConf);
     CarbonReadSupport<ArrayWritable> readSupport = getReadSupportClass(jobConf);
     return new CarbonHiveRecordReader(queryModel, readSupport, inputSplit, jobConf);
@@ -72,17 +72,39 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     CarbonTable carbonTable = getCarbonTable(configuration);
     // getting the table absoluteTableIdentifier from the carbonTable
     // to avoid unnecessary deserialization
+
+    String colNames = "";
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
 
     // query plan includes projection column
-
     String projection = getColumnProjection(configuration);
     if (projection == null) {
       projection = configuration.get("hive.io.file.readcolumn.names");
     }
+    if (projection.equals("")) {
+      List<CarbonDimension> carbonDimensionList = carbonTable.getAllDimensions();
+      List<CarbonMeasure> carbonMeasureList = carbonTable.getAllMeasures();
+
+      for (CarbonDimension aCarbonDimensionList : carbonDimensionList) {
+        colNames = (colNames + (aCarbonDimensionList.getColName())) + ",";
+      }
+      if (carbonMeasureList.size() < 1) {
+        colNames = colNames.substring(0, colNames.lastIndexOf(","));
+      }
+      for (int index = 0; index < carbonMeasureList.size(); index++) {
+        if (!carbonMeasureList.get(index).getColName().equals("default_dummy_measure")) {
+          if (index == carbonMeasureList.size() - 1) {
+            colNames = (colNames + (carbonMeasureList.get(index).getColName()));
+          } else {
+            colNames = (colNames + (carbonMeasureList.get(index).getColName())) + ",";
+          }
+        }
+      }
+      projection = colNames.trim();
+      configuration.set("hive.io.file.readcolumn.names", colNames);
+    }
     CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(carbonTable, projection);
     QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable);
-
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
     CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
@@ -92,8 +114,7 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     return queryModel;
   }
 
-  @Override
-  public boolean shouldSkipCombine(Path path, Configuration conf) throws IOException {
+  @Override public boolean shouldSkipCombine(Path path, Configuration conf) throws IOException {
     return true;
   }
 }
