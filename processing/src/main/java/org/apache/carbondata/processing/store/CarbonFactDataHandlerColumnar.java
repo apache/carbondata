@@ -17,17 +17,11 @@
 
 package org.apache.carbondata.processing.store;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -52,25 +46,21 @@ import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.compression.ValueCompressionHolder;
 import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastore.dataholder.CarbonWriteDataHolder;
-import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
 import org.apache.carbondata.core.datastore.page.FixLengthColumnPage;
-import org.apache.carbondata.core.datastore.page.VarLengthColumnPage;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.apache.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
-import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.NodeHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
+import org.apache.carbondata.processing.newflow.row.CarbonRow;
+import org.apache.carbondata.processing.newflow.row.WriteStepRowUtil;
 import org.apache.carbondata.processing.store.colgroup.ColGroupBlockStorage;
 import org.apache.carbondata.processing.store.file.FileManager;
 import org.apache.carbondata.processing.store.file.IFileManagerComposite;
@@ -78,8 +68,6 @@ import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.NonDictionaryUtil;
-
-import org.apache.spark.sql.types.Decimal;
 
 /**
  * Fact data handler class to handle the fact data
@@ -91,6 +79,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonFactDataHandlerColumnar.class.getName());
+
+  private CarbonFactDataHandlerModel model;
+
   /**
    * data writer
    */
@@ -103,48 +94,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * total number of entries in blocklet
    */
   private int entryCount;
-  private Map<Integer, GenericDataType> complexIndexMap;
-  /**
-   * measure count
-   */
-  private int measureCount;
-  /**
-   * measure count
-   */
-  private int dimensionCount;
-  /**
-   * index of mdkey in incoming rows
-   */
-  private int mdKeyIndex;
+
   /**
    * blocklet size (for V1 and V2) or page size (for V3). A Producer thread will start to process
    * once this size of input is reached
    */
   private int blockletSize;
-  /**
-   * mdkeyLength
-   */
-  private int mdkeyLength;
-  /**
-   * storeLocation
-   */
-  private String storeLocation;
-  /**
-   * databaseName
-   */
-  private String databaseName;
-  /**
-   * tableName
-   */
-  private String tableName;
-  /**
-   * table block size in MB
-   */
-  private int tableBlockSize;
-  /**
-   * dimLens
-   */
-  private int[] dimLens;
   /**
    * keyGenerator
    */
@@ -156,22 +111,13 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private boolean[] aggKeyBlock;
   private boolean[] isNoDictionary;
   private long processedDataCount;
-  private KeyGenerator[] complexKeyGenerator;
   private ExecutorService producerExecutorService;
   private List<Future<Void>> producerExecutorServiceTaskList;
   private ExecutorService consumerExecutorService;
   private List<Future<Void>> consumerExecutorServiceTaskList;
-  private List<Object[]> dataRows;
-  private int noDictionaryCount;
+  private List<CarbonRow> dataRows;
   private ColumnGroupModel colGrpModel;
-  private int[] primitiveDimLens;
-  private DataType[] type;
-  private int[] completeDimLens;
   private boolean[] isUseInvertedIndex;
-  /**
-   * data file attributes which will used for file construction
-   */
-  private CarbonDataFileAttributes carbonDataFileAttributes;
   /**
    * semaphore which will used for managing node holder objects
    */
@@ -197,19 +143,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * flag to check whether all blocklets have been finished writing
    */
   private boolean processingComplete;
-  /**
-   * data directory location in carbon store path
-   */
-  private String carbonDataDirectoryPath;
-  /**
-   * no of complex dimensions
-   */
-  private int complexColCount;
-
-  /**
-   * column schema present in the table
-   */
-  private List<ColumnSchema> wrapperColumnSchemaList;
 
   /**
    * boolean to check whether dimension
@@ -217,23 +150,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private boolean[] isDictDimension;
 
-  /**
-   * colCardinality for the merge case.
-   */
-  private int[] colCardinality;
-
-  /**
-   * Segment properties
-   */
-  private SegmentProperties segmentProperties;
-  /**
-   * flag to check for compaction flow
-   */
-  private boolean compactionFlow;
-
   private int bucketNumber;
-
-  private long schemaUpdatedTimeStamp;
 
   private int taskExtension;
 
@@ -245,24 +162,21 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   /**
    * CarbonFactDataHandler constructor
    */
-  public CarbonFactDataHandlerColumnar(CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
-    initParameters(carbonFactDataHandlerModel);
-    this.dimensionCount = carbonFactDataHandlerModel.getDimensionCount();
-    this.complexIndexMap = carbonFactDataHandlerModel.getComplexIndexMap();
-    this.primitiveDimLens = carbonFactDataHandlerModel.getPrimitiveDimLens();
-    this.carbonDataDirectoryPath = carbonFactDataHandlerModel.getCarbonDataDirectoryPath();
-    this.complexColCount = getExpandedComplexColsCount();
+  public CarbonFactDataHandlerColumnar(CarbonFactDataHandlerModel model) {
+    this.model = model;
+    initParameters(model);
 
-    int numDimColumns = colGrpModel.getNoOfColumnStore() + noDictionaryCount + complexColCount;
+    int numDimColumns = colGrpModel.getNoOfColumnStore() + model.getNoDictionaryCount()
+        + getExpandedComplexColsCount();
     this.aggKeyBlock = new boolean[numDimColumns];
     this.isNoDictionary = new boolean[numDimColumns];
-    this.bucketNumber = carbonFactDataHandlerModel.getBucketId();
-    this.taskExtension = carbonFactDataHandlerModel.getTaskExtension();
+    this.bucketNumber = model.getBucketId();
+    this.taskExtension = model.getTaskExtension();
     this.isUseInvertedIndex = new boolean[numDimColumns];
-    if (null != carbonFactDataHandlerModel.getIsUseInvertedIndex()) {
+    if (null != model.getIsUseInvertedIndex()) {
       for (int i = 0; i < isUseInvertedIndex.length; i++) {
-        if (i < carbonFactDataHandlerModel.getIsUseInvertedIndex().length) {
-          isUseInvertedIndex[i] = carbonFactDataHandlerModel.getIsUseInvertedIndex()[i];
+        if (i < model.getIsUseInvertedIndex().length) {
+          isUseInvertedIndex[i] = model.getIsUseInvertedIndex()[i];
         } else {
           isUseInvertedIndex[i] = true;
         }
@@ -270,20 +184,23 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
     int noDictStartIndex = this.colGrpModel.getNoOfColumnStore();
     // setting true value for dims of high card
-    for (int i = 0; i < noDictionaryCount; i++) {
+    for (int i = 0; i < model.getNoDictionaryCount(); i++) {
       this.isNoDictionary[noDictStartIndex + i] = true;
     }
 
-    boolean isAggKeyBlock = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK,
+    boolean isAggKeyBlock = Boolean.parseBoolean(
+        CarbonProperties.getInstance().getProperty(
+            CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK,
             CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE));
     if (isAggKeyBlock) {
-      int noDictionaryValue = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.HIGH_CARDINALITY_VALUE,
+      int noDictionaryValue = Integer.parseInt(
+          CarbonProperties.getInstance().getProperty(
+              CarbonCommonConstants.HIGH_CARDINALITY_VALUE,
               CarbonCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
       int[] columnSplits = colGrpModel.getColumnSplit();
       int dimCardinalityIndex = 0;
       int aggIndex = 0;
+      int[] dimLens = model.getSegmentProperties().getDimColumnsCardinality();
       for (int i = 0; i < columnSplits.length; i++) {
         if (colGrpModel.isColumnar(i) && dimLens[dimCardinalityIndex] < noDictionaryValue) {
           this.aggKeyBlock[aggIndex++] = true;
@@ -293,11 +210,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         aggIndex++;
       }
 
-      if (dimensionCount < dimLens.length) {
-        int allColsCount = getColsCount(dimensionCount);
+      if (model.getDimensionCount() < dimLens.length) {
+        int allColsCount = getColsCount(model.getDimensionCount());
         List<Boolean> aggKeyBlockWithComplex = new ArrayList<Boolean>(allColsCount);
-        for (int i = 0; i < dimensionCount; i++) {
-          GenericDataType complexDataType = complexIndexMap.get(i);
+        for (int i = 0; i < model.getDimensionCount(); i++) {
+          GenericDataType complexDataType = model.getComplexIndexMap().get(i);
           if (complexDataType != null) {
             complexDataType.fillAggKeyBlock(aggKeyBlockWithComplex, this.aggKeyBlock);
           } else {
@@ -314,35 +231,20 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     version = CarbonProperties.getInstance().getFormatVersion();
   }
 
-  private void initParameters(CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
-    this.databaseName = carbonFactDataHandlerModel.getDatabaseName();
-    this.tableBlockSize = carbonFactDataHandlerModel.getBlockSizeInMB();
-    this.tableName = carbonFactDataHandlerModel.getTableName();
-    this.type = carbonFactDataHandlerModel.getMeasureDataType();
-    this.segmentProperties = carbonFactDataHandlerModel.getSegmentProperties();
-    this.wrapperColumnSchemaList = carbonFactDataHandlerModel.getWrapperColumnSchema();
-    this.colCardinality = carbonFactDataHandlerModel.getColCardinality();
-    this.storeLocation = carbonFactDataHandlerModel.getStoreLocation();
-    this.measureCount = carbonFactDataHandlerModel.getMeasureCount();
-    this.mdkeyLength = carbonFactDataHandlerModel.getMdKeyLength();
-    this.mdKeyIndex = carbonFactDataHandlerModel.getMdKeyIndex();
-    this.noDictionaryCount = carbonFactDataHandlerModel.getNoDictionaryCount();
-    this.colGrpModel = segmentProperties.getColumnGroupModel();
-    this.completeDimLens = carbonFactDataHandlerModel.getDimLens();
-    this.dimLens = this.segmentProperties.getDimColumnsCardinality();
-    this.carbonDataFileAttributes = carbonFactDataHandlerModel.getCarbonDataFileAttributes();
-    this.schemaUpdatedTimeStamp = carbonFactDataHandlerModel.getSchemaUpdatedTimeStamp();
+  private void initParameters(CarbonFactDataHandlerModel model) {
+
+    this.colGrpModel = model.getSegmentProperties().getColumnGroupModel();
 
     //TODO need to pass carbon table identifier to metadata
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
+    CarbonTable carbonTable =
+        CarbonMetadata.getInstance().getCarbonTable(
+            model.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + model.getTableName());
     isDictDimension =
-        CarbonUtil.identifyDimensionType(carbonTable.getDimensionByTableName(tableName));
+        CarbonUtil.identifyDimensionType(carbonTable.getDimensionByTableName(model.getTableName()));
 
-    this.compactionFlow = carbonFactDataHandlerModel.isCompactionFlow();
     // in compaction flow the measure with decimal type will come as spark decimal.
     // need to convert it to byte array.
-    if (compactionFlow) {
+    if (model.isCompactionFlow()) {
       try {
         numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.NUM_CORES_COMPACTING,
@@ -397,7 +299,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private void setComplexMapSurrogateIndex(int dimensionCount) {
     int surrIndex = 0;
     for (int i = 0; i < dimensionCount; i++) {
-      GenericDataType complexDataType = complexIndexMap.get(i);
+      GenericDataType complexDataType = model.getComplexIndexMap().get(i);
       if (complexDataType != null) {
         List<GenericDataType> primitiveTypes = new ArrayList<GenericDataType>();
         complexDataType.getAllPrimitiveChildren(primitiveTypes);
@@ -418,7 +320,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   public void initialise() throws CarbonDataWriterException {
     fileManager = new FileManager();
-    fileManager.setName(new File(this.storeLocation).getName());
+    fileManager.setName(new File(model.getStoreLocation()).getName());
     setWritingConfiguration();
   }
 
@@ -428,11 +330,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @param row
    * @throws CarbonDataWriterException
    */
-  public void addDataToStore(Object[] row) throws CarbonDataWriterException {
+  public void addDataToStore(CarbonRow row) throws CarbonDataWriterException {
     dataRows.add(row);
     this.entryCount++;
-    // if entry count reaches to leaf node size then we are ready to
-    // write
+    // if entry count reaches to leaf node size then we are ready to write
     // this to leaf node file and update the intermediate files
     if (this.entryCount == this.blockletSize) {
       try {
@@ -472,10 +373,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
 
     /** update all keys based on the input row */
-    void update(int rowId, Object[] row) {
-      currentMDKey = (byte[]) row[mdKeyIndex];
-      if (noDictionaryCount > 0 || complexIndexMap.size() > 0) {
-        currentNoDictionaryKey = (byte[][]) row[mdKeyIndex - 1];
+    void update(int rowId, CarbonRow row) throws KeyGenException {
+      currentMDKey = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
+      if (model.getNoDictionaryCount() > 0 || model.getComplexIndexMap().size() > 0) {
+        currentNoDictionaryKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
       }
       if (rowId == 0) {
         startKey = currentMDKey;
@@ -493,7 +394,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       // If SORT_COLUMNS is used, may need to update start/end keys since the they may
       // contains dictionary columns that are not in SORT_COLUMNS, which need to be removed from
       // start/end key
-      int numberOfDictSortColumns = segmentProperties.getNumberOfDictSortColumns();
+      int numberOfDictSortColumns = model.getSegmentProperties().getNumberOfDictSortColumns();
       if (numberOfDictSortColumns > 0) {
         // if SORT_COLUMNS contain dictionary columns
         int[] keySize = columnarSplitter.getBlockKeySize();
@@ -516,7 +417,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       }
 
       // Do the same update for noDictionary start/end Key
-      int numberOfNoDictSortColumns = segmentProperties.getNumberOfNoDictSortColumns();
+      int numberOfNoDictSortColumns = model.getSegmentProperties().getNumberOfNoDictSortColumns();
       if (numberOfNoDictSortColumns > 0) {
         // if sort_columns contain no-dictionary columns
         if (noDictStartKey.length > numberOfNoDictSortColumns) {
@@ -538,161 +439,19 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   }
 
   /**
-   * Represent a page data for all columns, we store its data in columnar layout, so that
-   * all processing apply to TablePage can be done in vectorized fashion.
-   */
-  class TablePage {
-
-    // For all dimension and measure columns, we store the column data directly in the page,
-    // the length of the page is the number of rows.
-
-    // TODO: we should have separate class for key columns so that keys are stored together in
-    // one vector to make it efficient for sorting
-    VarLengthColumnPage[] dictDimensionPage;
-    VarLengthColumnPage[] noDictDimensionPage;
-    ComplexColumnPage[] complexDimensionPage;
-    FixLengthColumnPage[] measurePage;
-
-    // the num of rows in this page, it must be less than short value (65536)
-    int pageSize;
-
-    TablePage(int pageSize) {
-      this.pageSize = pageSize;
-      dictDimensionPage = new VarLengthColumnPage[dimensionCount];
-      for (int i = 0; i < dictDimensionPage.length; i++) {
-        dictDimensionPage[i] = new VarLengthColumnPage(pageSize);
-      }
-      noDictDimensionPage = new VarLengthColumnPage[noDictionaryCount];
-      for (int i = 0; i < noDictDimensionPage.length; i++) {
-        noDictDimensionPage[i] = new VarLengthColumnPage(pageSize);
-      }
-      complexDimensionPage = new ComplexColumnPage[getComplexColumnCount()];
-      for (int i = 0; i < complexDimensionPage.length; i++) {
-        // here we still do not the depth of the complex column, it will be initialized when
-        // we get the first row.
-        complexDimensionPage[i] = null;
-      }
-      measurePage = new FixLengthColumnPage[measureCount];
-      for (int i = 0; i < measurePage.length; i++) {
-        measurePage[i] = new FixLengthColumnPage(type[i], pageSize);
-      }
-    }
-
-    /**
-     * Add one row to the internal store, it will be converted into columnar layout
-     * @param rowId Id of the input row
-     * @param rows row object
-     */
-    void addRow(int rowId, Object[] rows) {
-
-      // convert dictionary columns
-      byte[] MDKey = (byte[]) rows[mdKeyIndex];
-      if (columnarSplitter != null) {
-        byte[][] splitKey = columnarSplitter.splitKey(MDKey);
-        for (int i = 0; i < splitKey.length; i++) {
-          dictDimensionPage[i].putByteArray(rowId, splitKey[i]);
-        }
-      }
-
-      // convert noDictionary columns and complex columns.
-      if (noDictionaryCount > 0 || complexColCount > 0) {
-        byte[][] noDictAndComplex = (byte[][])(rows[mdKeyIndex - 1]);
-        for (int i = 0; i < noDictAndComplex.length; i++) {
-          if (i < noDictionaryCount) {
-            // noDictionary columns, since it is variable length, we need to prepare each
-            // element as LV encoded byte array (first two bytes are the length of the array)
-            byte[] valueWithLength = addLengthToByteArray(noDictAndComplex[i]);
-            noDictDimensionPage[i].putByteArray(rowId, valueWithLength);
-          } else {
-            // complex columns
-            addComplexColumn(i - noDictionaryCount, rowId, noDictAndComplex[i]);
-          }
-        }
-      }
-
-      // convert measure columns
-      for (int i = 0; i < type.length; i++) {
-        Object value = rows[i];
-
-        // in compaction flow the measure with decimal type will come as spark decimal.
-        // need to convert it to byte array.
-        if (type[i] == DataType.DECIMAL && compactionFlow) {
-          BigDecimal bigDecimal = ((Decimal) rows[i]).toJavaBigDecimal();
-          value = DataTypeUtil.bigDecimalToByte(bigDecimal);
-        }
-        measurePage[i].putData(rowId, value);
-      }
-    }
-
-    /**
-     * add a complex column into internal member compleDimensionPage
-     * @param index index of the complexDimensionPage
-     * @param rowId Id of the input row
-     * @param complexColumns byte array the complex columm to be added, extracted of input row
-     */
-    // TODO: this function should be refactoried, ColumnPage should support complex type encoding
-    // directly instead of doing it here
-    private void addComplexColumn(int index, int rowId, byte[] complexColumns) {
-      GenericDataType complexDataType = complexIndexMap.get(index + primitiveDimLens.length);
-
-      // initialize the page if first row
-      if (rowId == 0) {
-        int depthInComplexColumn = complexDataType.getColsCount();
-        complexDimensionPage[index] = new ComplexColumnPage(pageSize, depthInComplexColumn);
-      }
-
-      int depthInComplexColumn = complexDimensionPage[index].getDepth();
-      // this is the encoded columnar data which will be added to page,
-      // size of this list is the depth of complex column, we will fill it by input data
-      List<ArrayList<byte[]>> encodedComplexColumnar = new ArrayList<>();
-      for (int k = 0; k < depthInComplexColumn; k++) {
-        encodedComplexColumnar.add(new ArrayList<byte[]>());
-      }
-
-      // encode the complex type data and fill columnsArray
-      try {
-        ByteBuffer byteArrayInput = ByteBuffer.wrap(complexColumns);
-        ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
-        DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutput);
-        complexDataType.parseAndBitPack(byteArrayInput, dataOutputStream, complexKeyGenerator);
-        complexDataType.getColumnarDataForComplexType(encodedComplexColumnar,
-            ByteBuffer.wrap(byteArrayOutput.toByteArray()));
-        byteArrayOutput.close();
-      } catch (IOException | KeyGenException e) {
-        throw new CarbonDataWriterException(
-            "Problem while bit packing and writing complex datatype", e);
-      }
-
-      for (int depth = 0; depth < depthInComplexColumn; depth++) {
-        complexDimensionPage[index].putComplexData(rowId, depth, encodedComplexColumnar.get(depth));
-      }
-    }
-
-    // Adds length as a short element (first 2 bytes) to the head of the input byte array
-    private byte[] addLengthToByteArray(byte[] input) {
-      byte[] output = new byte[input.length + 2];
-      ByteBuffer buffer = ByteBuffer.wrap(output);
-      buffer.putShort((short) input.length);
-      buffer.put(input, 0, input.length);
-      return output;
-    }
-
-  }
-
-  /**
    * generate the NodeHolder from the input rows (one page in case of V3 format)
    */
-  private NodeHolder processDataRows(List<Object[]> dataRows)
-      throws CarbonDataWriterException {
+  private NodeHolder processDataRows(List<CarbonRow> dataRows)
+      throws CarbonDataWriterException, KeyGenException {
     if (dataRows.size() == 0) {
       return new NodeHolder();
     }
-    TablePage tablePage = new TablePage(dataRows.size());
+    TablePage tablePage = new TablePage(model, dataRows.size());
     IndexKey keys = new IndexKey(dataRows.size());
     int rowId = 0;
 
     // convert row to columnar data
-    for (Object[] row : dataRows) {
+    for (CarbonRow row : dataRows) {
       tablePage.addRow(rowId, row);
       keys.update(rowId, row);
       rowId++;
@@ -702,14 +461,15 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     // TODO: To make the encoding more transparent to the user, user should be enable to specify
     // the encoding and compression method for each type when creating table.
 
-    Codec codec = new Codec();
+    Codec codec = new Codec(model.getMeasureDataType());
     IndexStorage[] dimColumns = codec.encodeAndCompressDimensions(tablePage);
     Codec encodedMeasure = codec.encodeAndCompressMeasures(tablePage);
 
     // prepare nullBitSet for writer, remove this after writer can accept TablePage
-    BitSet[] nullBitSet = new BitSet[tablePage.measurePage.length];
+    BitSet[] nullBitSet = new BitSet[tablePage.getMeasurePage().length];
+    FixLengthColumnPage[] measurePages = tablePage.getMeasurePage();
     for (int i = 0; i < nullBitSet.length; i++) {
-      nullBitSet[i] = tablePage.measurePage[i].getNullBitSet();
+      nullBitSet[i] = measurePages[i].getNullBitSet();
     }
 
     LOGGER.info("Number Of records processed: " + dataRows.size());
@@ -767,10 +527,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     for (int i = 0; i < taskList.size(); i++) {
       try {
         taskList.get(i).get();
-      } catch (InterruptedException e) {
-        LOGGER.error(e, e.getMessage());
-        throw new CarbonDataWriterException(e.getMessage(), e);
-      } catch (ExecutionException e) {
+      } catch (InterruptedException | ExecutionException e) {
         LOGGER.error(e, e.getMessage());
         throw new CarbonDataWriterException(e.getMessage(), e);
       }
@@ -780,7 +537,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private int getColsCount(int columnSplit) {
     int count = 0;
     for (int i = 0; i < columnSplit; i++) {
-      GenericDataType complexDataType = complexIndexMap.get(i);
+      GenericDataType complexDataType = model.getComplexIndexMap().get(i);
       if (complexDataType != null) {
         count += complexDataType.getColsCount();
       } else count++;
@@ -791,8 +548,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   // return the number of complex column after complex columns are expanded
   private int getExpandedComplexColsCount() {
     int count = 0;
-    for (int i = 0; i < dimensionCount; i++) {
-      GenericDataType complexDataType = complexIndexMap.get(i);
+    int dictDimensionCount = model.getDimensionCount();
+    for (int i = 0; i < dictDimensionCount; i++) {
+      GenericDataType complexDataType = model.getComplexIndexMap().get(i);
       if (complexDataType != null) {
         count += complexDataType.getColsCount();
       }
@@ -802,7 +560,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   // return the number of complex column
   private int getComplexColumnCount() {
-    return complexIndexMap.size();
+    return model.getComplexIndexMap().size();
   }
 
   /**
@@ -850,26 +608,21 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
     // if atleast one dimension is present then initialize column splitter otherwise null
     int noOfColStore = colGrpModel.getNoOfColumnStore();
-    int[] keyBlockSize = new int[noOfColStore + complexColCount];
+    int[] keyBlockSize = new int[noOfColStore + getExpandedComplexColsCount()];
 
-    if (dimLens.length > 0) {
+    if (model.getDimLens().length > 0) {
       //Using Variable length variable split generator
       //This will help in splitting mdkey to columns. variable split is required because all
       // columns which are part of
       //row store will be in single column store
       //e.g if {0,1,2,3,4,5} is dimension and {0,1,2) is row store dimension
       //than below splitter will return column as {0,1,2}{3}{4}{5}
-      this.columnarSplitter = this.segmentProperties.getFixedLengthKeySplitter();
+      this.columnarSplitter = model.getSegmentProperties().getFixedLengthKeySplitter();
       System.arraycopy(columnarSplitter.getBlockKeySize(), 0, keyBlockSize, 0, noOfColStore);
       this.keyBlockHolder =
           new CarbonKeyBlockHolder[this.columnarSplitter.getBlockKeySize().length];
     } else {
       this.keyBlockHolder = new CarbonKeyBlockHolder[0];
-    }
-    this.complexKeyGenerator = new KeyGenerator[completeDimLens.length];
-    for (int i = 0; i < completeDimLens.length; i++) {
-      complexKeyGenerator[i] =
-          KeyGeneratorFactory.getKeyGenerator(new int[] { completeDimLens[i] });
     }
 
     for (int i = 0; i < keyBlockHolder.length; i++) {
@@ -882,6 +635,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     List<Integer> customMeasureIndexList =
         new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    DataType[] type = model.getMeasureDataType();
     for (int j = 0; j < type.length; j++) {
       if (type[j] != DataType.BYTE && type[j] != DataType.DECIMAL) {
         otherMeasureIndexList.add(j);
@@ -898,9 +652,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     for (int i = 0; i < customMeasureIndex.length; i++) {
       customMeasureIndex[i] = customMeasureIndexList.get(i);
     }
-    setComplexMapSurrogateIndex(this.dimensionCount);
+    setComplexMapSurrogateIndex(model.getDimensionCount());
     int[] blockKeySize = getBlockKeySizeWithComplexTypes(new MultiDimKeyVarLengthEquiSplitGenerator(
-        CarbonUtil.getIncrementedCardinalityFullyFilled(completeDimLens.clone()), (byte) dimSet)
+        CarbonUtil.getIncrementedCardinalityFullyFilled(model.getDimLens().clone()), (byte) dimSet)
         .getBlockKeySize());
     System.arraycopy(blockKeySize, noOfColStore, keyBlockSize, noOfColStore,
         blockKeySize.length - noOfColStore);
@@ -924,8 +678,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     List<Integer> blockKeySizeWithComplex =
         new ArrayList<Integer>(blockKeySizeWithComplexTypes.length);
-    for (int i = 0; i < this.dimensionCount; i++) {
-      GenericDataType complexDataType = complexIndexMap.get(i);
+    int dictDimensionCount = model.getDimensionCount();
+    for (int i = 0; i < dictDimensionCount; i++) {
+      GenericDataType complexDataType = model.getComplexIndexMap().get(i);
       if (complexDataType != null) {
         complexDataType.fillBlockKeySize(blockKeySizeWithComplex, primitiveBlockKeySize);
       } else {
@@ -958,37 +713,37 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private CarbonDataWriterVo getDataWriterVo(int[] keyBlockSize) {
     CarbonDataWriterVo carbonDataWriterVo = new CarbonDataWriterVo();
-    carbonDataWriterVo.setStoreLocation(storeLocation);
-    carbonDataWriterVo.setMeasureCount(measureCount);
-    carbonDataWriterVo.setMdKeyLength(mdkeyLength);
-    carbonDataWriterVo.setTableName(tableName);
+    carbonDataWriterVo.setStoreLocation(model.getStoreLocation());
+    carbonDataWriterVo.setMeasureCount(model.getMeasureCount());
+    carbonDataWriterVo.setTableName(model.getTableName());
     carbonDataWriterVo.setKeyBlockSize(keyBlockSize);
     carbonDataWriterVo.setFileManager(fileManager);
     carbonDataWriterVo.setAggBlocks(aggKeyBlock);
     carbonDataWriterVo.setIsComplexType(isComplexTypes());
-    carbonDataWriterVo.setNoDictionaryCount(noDictionaryCount);
-    carbonDataWriterVo.setCarbonDataFileAttributes(carbonDataFileAttributes);
-    carbonDataWriterVo.setDatabaseName(databaseName);
-    carbonDataWriterVo.setWrapperColumnSchemaList(wrapperColumnSchemaList);
+    carbonDataWriterVo.setNoDictionaryCount(model.getNoDictionaryCount());
+    carbonDataWriterVo.setCarbonDataFileAttributes(model.getCarbonDataFileAttributes());
+    carbonDataWriterVo.setDatabaseName(model.getDatabaseName());
+    carbonDataWriterVo.setWrapperColumnSchemaList(model.getWrapperColumnSchema());
     carbonDataWriterVo.setIsDictionaryColumn(isDictDimension);
-    carbonDataWriterVo.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
-    carbonDataWriterVo.setColCardinality(colCardinality);
-    carbonDataWriterVo.setSegmentProperties(segmentProperties);
-    carbonDataWriterVo.setTableBlocksize(tableBlockSize);
+    carbonDataWriterVo.setCarbonDataDirectoryPath(model.getCarbonDataDirectoryPath());
+    carbonDataWriterVo.setColCardinality(model.getColCardinality());
+    carbonDataWriterVo.setSegmentProperties(model.getSegmentProperties());
+    carbonDataWriterVo.setTableBlocksize(model.getBlockSizeInMB());
     carbonDataWriterVo.setBucketNumber(bucketNumber);
     carbonDataWriterVo.setTaskExtension(taskExtension);
-    carbonDataWriterVo.setSchemaUpdatedTimeStamp(schemaUpdatedTimeStamp);
+    carbonDataWriterVo.setSchemaUpdatedTimeStamp(model.getSchemaUpdatedTimeStamp());
     return carbonDataWriterVo;
   }
 
   private boolean[] isComplexTypes() {
-    int noOfColumn = colGrpModel.getNoOfColumnStore() + noDictionaryCount + complexIndexMap.size();
+    int noDictionaryCount = model.getNoDictionaryCount();
+    int noOfColumn = colGrpModel.getNoOfColumnStore() + noDictionaryCount + getComplexColumnCount();
     int allColsCount = getColsCount(noOfColumn);
     boolean[] isComplexType = new boolean[allColsCount];
 
     List<Boolean> complexTypesList = new ArrayList<Boolean>(allColsCount);
     for (int i = 0; i < noOfColumn; i++) {
-      GenericDataType complexDataType = complexIndexMap.get(i - noDictionaryCount);
+      GenericDataType complexDataType = model.getComplexIndexMap().get(i - noDictionaryCount);
       if (complexDataType != null) {
         int count = complexDataType.getColsCount();
         for (int j = 0; j < count; j++) {
@@ -1081,11 +836,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private final class Producer implements Callable<Void> {
 
     private BlockletDataHolder blockletDataHolder;
-    private List<Object[]> dataRows;
+    private List<CarbonRow> dataRows;
     private int sequenceNumber;
     private boolean isWriteAll;
 
-    private Producer(BlockletDataHolder blockletDataHolder, List<Object[]> dataRows,
+    private Producer(BlockletDataHolder blockletDataHolder, List<CarbonRow> dataRows,
         int sequenceNumber, boolean isWriteAll) {
       this.blockletDataHolder = blockletDataHolder;
       this.dataRows = dataRows;
@@ -1176,17 +931,19 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       this.isUseInvertedIndex = isUseInvertedIndex;
     }
 
-    public BlockSortThread(int index, byte[][] data, boolean b, boolean isNoDictionary,
+    public BlockSortThread(byte[][] data, boolean compression, boolean isNoDictionary,
         boolean isSortRequired, boolean isUseInvertedIndex) {
-      this.index = index;
       this.data = data;
-      isCompressionReq = b;
+      this.isCompressionReq = compression;
       this.isNoDictionary = isNoDictionary;
       this.isSortRequired = isSortRequired;
       this.isUseInvertedIndex = isUseInvertedIndex;
     }
 
     @Override public IndexStorage call() throws Exception {
+      if (index == 1) {
+        int dd = 1 + 1;
+      }
       if (isUseInvertedIndex) {
         if (version == ColumnarFormatVersion.V3) {
           return new BlockIndexerStorageForShort(this.data, isCompressionReq, isNoDictionary,
@@ -1210,8 +967,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   public class Codec {
     private WriterCompressModel compressionModel;
     private byte[][] encodedMeasureArray;
+    private DataType[] measureType;
 
-    Codec() {
+    Codec(DataType[] measureType) {
+      this.measureType = measureType;
     }
 
     public WriterCompressModel getCompressionModel() {
@@ -1225,7 +984,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     public Codec encodeAndCompressMeasures(TablePage tablePage) {
       // TODO: following conversion is required only because compress model requires them,
       // remove then after the compress framework is refactoried
-      FixLengthColumnPage[] measurePage = tablePage.measurePage;
+      FixLengthColumnPage[] measurePage = tablePage.getMeasurePage();
       int measureCount = measurePage.length;
       Object[] min = new Object[measurePage.length];
       Object[] max = new Object[measurePage.length];
@@ -1238,8 +997,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         decimal[i] = measurePage[i].getStatistics().getDecimal();
       }
       // encode and compress measure column page
-      compressionModel = ValueCompressionUtil
-          .getWriterCompressModel(max, min, decimal, uniqueValue, type, new byte[measureCount]);
+      compressionModel =
+          ValueCompressionUtil.getWriterCompressModel(max, min, decimal, uniqueValue, measureType,
+              new byte[measureCount]);
       encodedMeasureArray = encodeMeasure(compressionModel, measurePage);
       return this;
     }
@@ -1295,8 +1055,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
      * Encode and compress each column page. The work is done using a thread pool.
      */
     private IndexStorage[] encodeAndCompressDimensions(TablePage tablePage) {
-      int noDictionaryCount = tablePage.noDictDimensionPage.length;
-      int complexColCount = tablePage.complexDimensionPage.length;
+      int noDictionaryCount = tablePage.getNoDictDimensionPage().length;
+      int complexColCount = tablePage.getComplexDimensionPage().length;
 
       // thread pool size to be used for encoding dimension
       // each thread will sort the column page data and compress it
@@ -1306,12 +1066,13 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
       Callable<IndexStorage> callable;
       List<Future<IndexStorage>> submit = new ArrayList<Future<IndexStorage>>(
-          primitiveDimLens.length + noDictionaryCount + complexColCount);
+          model.getPrimitiveDimLens().length + noDictionaryCount + complexColCount);
       int i = 0;
       int dictionaryColumnCount = -1;
       int noDictionaryColumnCount = -1;
       int colGrpId = -1;
       boolean isSortColumn = false;
+      SegmentProperties segmentProperties = model.getSegmentProperties();
       for (i = 0; i < isDictDimension.length; i++) {
         isSortColumn = i < segmentProperties.getNumberOfSortColumns();
         if (isDictDimension[i]) {
@@ -1320,8 +1081,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             // dictionary dimension
             callable =
                 new BlockSortThread(
-                    i,
-                    tablePage.dictDimensionPage[dictionaryColumnCount].getByteArrayPage(),
+                    tablePage.getKeyColumnPage().getKeyVector(dictionaryColumnCount),
+                    true,
+                    false,
                     isSortColumn,
                     isUseInvertedIndex[i] & isSortColumn);
 
@@ -1330,14 +1092,13 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             callable = new ColGroupBlockStorage(
                 segmentProperties,
                 ++colGrpId,
-                tablePage.dictDimensionPage[dictionaryColumnCount].getByteArrayPage());
+                tablePage.getKeyColumnPage().getKeyVector(dictionaryColumnCount));
           }
         } else {
           // no dictionary dimension
           callable =
               new BlockSortThread(
-                  i,
-                  tablePage.noDictDimensionPage[++noDictionaryColumnCount].getByteArrayPage(),
+                  tablePage.getNoDictDimensionPage()[++noDictionaryColumnCount].getByteArrayPage(),
                   false,
                   true,
                   isSortColumn,
@@ -1349,12 +1110,13 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
       // complex type column
       for (int index = 0; index < getComplexColumnCount(); index++) {
-        Iterator<byte[][]> iterator = tablePage.complexDimensionPage[index].iterator();
+        Iterator<byte[][]> iterator = tablePage.getComplexDimensionPage()[index].iterator();
         while (iterator.hasNext()) {
+          byte[][] data = iterator.next();
           callable =
               new BlockSortThread(
                   i++,
-                  iterator.next(),
+                  data,
                   false,
                   true);
           submit.add(executorService.submit(callable));

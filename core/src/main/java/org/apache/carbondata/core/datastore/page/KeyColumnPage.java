@@ -15,36 +15,28 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.constants;
+package org.apache.carbondata.core.datastore.page;
 
-/**
- * This enum is used for determining the indexes of the
- * dimension,ignoreDictionary,measure columns.
- */
-public enum IgnoreDictionary {
-  /**
-   * POSITION WHERE DIMENSIONS R STORED IN OBJECT ARRAY.
-   */
-  DIMENSION_INDEX_IN_ROW(0),
+// Represent a MDK columnar data in one page.
+public class KeyColumnPage {
 
-  /**
-   * POSITION WHERE BYTE[] (high cardinality) IS STORED IN OBJECT ARRAY.
-   */
-  BYTE_ARRAY_INDEX_IN_ROW(1),
+  private byte[][][] keyVector;
 
-  /**
-   * POSITION WHERE MEASURES R STORED IN OBJECT ARRAY.
-   */
-  MEASURES_INDEX_IN_ROW(2);
-
-  private final int index;
-
-  IgnoreDictionary(int index) {
-    this.index = index;
+  public KeyColumnPage(int pageSize, int numColumn) {
+    keyVector = new byte[numColumn][][];
+    for (int i = 0; i < numColumn; i++) {
+      keyVector[i] = new byte[pageSize][];
+    }
   }
 
-  public int getIndex() {
-    return this.index;
+  public void putKey(int rowId, byte[][] key) {
+    for (int i = 0; i < keyVector.length; i++) {
+      keyVector[i][rowId] = key[i];
+    }
+  }
+
+  public byte[][] getKeyVector(int columnIndex) {
+    return keyVector[columnIndex];
   }
 
 }

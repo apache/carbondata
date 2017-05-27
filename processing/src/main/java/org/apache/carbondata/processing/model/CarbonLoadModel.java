@@ -22,14 +22,11 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 
 public class CarbonLoadModel implements Serializable {
-  /**
-   *
-   */
+
   private static final long serialVersionUID = 6580168429197697465L;
 
   private String databaseName;
@@ -37,8 +34,6 @@ public class CarbonLoadModel implements Serializable {
   private String tableName;
 
   private String factFilePath;
-
-  private String dimFolderPath;
 
   private String colDictFilePath;
 
@@ -56,7 +51,6 @@ public class CarbonLoadModel implements Serializable {
 
   private boolean isRetentionRequest;
 
-  private List<String> factFilesToProcess;
   private String csvHeader;
   private String[] csvHeaderColumns;
   private String csvDelimiter;
@@ -65,7 +59,6 @@ public class CarbonLoadModel implements Serializable {
 
   private boolean isDirectLoad;
   private List<LoadMetadataDetails> loadMetadataDetails;
-  private transient List<SegmentUpdateDetails> segmentUpdateDetails;
   private transient SegmentUpdateStatusManager segmentUpdateStatusManager;
 
   private String blocksID;
@@ -132,24 +125,9 @@ public class CarbonLoadModel implements Serializable {
   private String maxColumns;
 
   /**
-   * the key of RDD Iterator in RDD iterator Map
-   */
-  private String rddIteratorKey;
-
-  private String carbondataFileName = "";
-
-  /**
    * defines the string to specify whether empty data is good or bad
    */
   private String isEmptyDataBadRecord;
-
-  public String getCarbondataFileName() {
-    return carbondataFileName;
-  }
-
-  public void setCarbondataFileName(String carbondataFileName) {
-    this.carbondataFileName = carbondataFileName;
-  }
 
   /**
    * Use one pass to generate dictionary
@@ -180,6 +158,7 @@ public class CarbonLoadModel implements Serializable {
    * Batch sort size in mb.
    */
   private String batchSortSizeInMb;
+
   /**
    * get escape char
    *
@@ -196,24 +175,6 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setEscapeChar(String escapeChar) {
     this.escapeChar = escapeChar;
-  }
-
-  /**
-   * get blocck id
-   *
-   * @return
-   */
-  public String getBlocksID() {
-    return blocksID;
-  }
-
-  /**
-   * set block id for carbon load model
-   *
-   * @param blocksID
-   */
-  public void setBlocksID(String blocksID) {
-    this.blocksID = blocksID;
   }
 
   public String getCsvDelimiter() {
@@ -254,10 +215,6 @@ public class CarbonLoadModel implements Serializable {
 
   public void setAllDictPath(String allDictPath) {
     this.allDictPath = allDictPath;
-  }
-
-  public List<String> getFactFilesToProcess() {
-    return factFilesToProcess;
   }
 
   public String getCsvHeader() {
@@ -428,7 +385,6 @@ public class CarbonLoadModel implements Serializable {
     copyObj.carbonDataLoadSchema = carbonDataLoadSchema;
     copyObj.csvHeader = header;
     copyObj.csvHeaderColumns = csvHeaderColumns;
-    copyObj.factFilesToProcess = filesForPartition;
     copyObj.isDirectLoad = true;
     copyObj.csvDelimiter = delimiter;
     copyObj.complexDelimiterLevel1 = complexDelimiterLevel1;
@@ -479,20 +435,6 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * @return the aggLoadRequest
-   */
-  public boolean isAggLoadRequest() {
-    return aggLoadRequest;
-  }
-
-  /**
-   * @param aggLoadRequest the aggLoadRequest to set
-   */
-  public void setAggLoadRequest(boolean aggLoadRequest) {
-    this.aggLoadRequest = aggLoadRequest;
-  }
-
-  /**
    * @param storePath The storePath to set.
    */
   public void setStorePath(String storePath) {
@@ -500,24 +442,10 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * @return Returns the aggTableName.
-   */
-  public String getAggTableName() {
-    return aggTableName;
-  }
-
-  /**
    * @return Returns the factStoreLocation.
    */
   public String getStorePath() {
     return storePath;
-  }
-
-  /**
-   * @param aggTableName The aggTableName to set.
-   */
-  public void setAggTableName(String aggTableName) {
-    this.aggTableName = aggTableName;
   }
 
   /**
@@ -545,24 +473,6 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setLoadMetadataDetails(List<LoadMetadataDetails> loadMetadataDetails) {
     this.loadMetadataDetails = loadMetadataDetails;
-  }
-
-  /**
-   * getSegmentUpdateDetails
-   *
-   * @return
-   */
-  public List<SegmentUpdateDetails> getSegmentUpdateDetails() {
-    return segmentUpdateDetails;
-  }
-
-  /**
-   * setSegmentUpdateDetails
-   *
-   * @param segmentUpdateDetails
-   */
-  public void setSegmentUpdateDetails(List<SegmentUpdateDetails> segmentUpdateDetails) {
-    this.segmentUpdateDetails = segmentUpdateDetails;
   }
 
   /**
@@ -727,15 +637,6 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setBadRecordsAction(String badRecordsAction) {
     this.badRecordsAction = badRecordsAction;
-  }
-
-  public String getRddIteratorKey() {
-    return rddIteratorKey;
-  }
-
-  public void setRddIteratorKey(String rddIteratorKey) {
-    this.rddIteratorKey = rddIteratorKey;
-
   }
 
   public boolean getUseOnePass() {

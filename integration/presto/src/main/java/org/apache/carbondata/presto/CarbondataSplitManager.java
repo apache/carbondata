@@ -137,7 +137,7 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
       ColumnExpression colExpression =
           new ColumnExpression(cdch.getColumnName(), target.get().getDataType());
       //colExpression.setColIndex(cs.getSchemaOrdinal());
-      colExpression.setDimension(target.get().isDimesion());
+      colExpression.setDimension(target.get().isDimension());
       colExpression.setDimension(
           carbonTable.getDimensionByName(carbonTable.getFactTableName(), cdch.getColumnName()));
       colExpression.setCarbonColumn(target.get());

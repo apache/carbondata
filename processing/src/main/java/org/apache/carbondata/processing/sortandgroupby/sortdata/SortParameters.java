@@ -375,9 +375,9 @@ public class SortParameters {
     parameters.setTaskNo(configuration.getTaskNo());
     parameters.setMeasureColCount(configuration.getMeasureCount());
     parameters.setDimColCount(
-        configuration.getDimensionCount() - configuration.getComplexDimensionCount());
+        configuration.getDimensionCount() - configuration.getComplexColumnCount());
     parameters.setNoDictionaryCount(configuration.getNoDictionaryCount());
-    parameters.setComplexDimColCount(configuration.getComplexDimensionCount());
+    parameters.setComplexDimColCount(configuration.getComplexColumnCount());
     parameters.setNoDictionaryDimnesionColumn(
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields()));
     parameters.setBatchSortSizeinMb(CarbonDataProcessorUtil.getBatchSortSizeinMb(configuration));
@@ -466,8 +466,7 @@ public class SortParameters {
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
 
-    DataType[] measureDataType = CarbonDataProcessorUtil
-        .getMeasureDataType(configuration.getMeasureCount(), configuration.getMeasureFields());
+    DataType[] measureDataType = configuration.getMeasureDataType();
     parameters.setMeasureDataType(measureDataType);
     return parameters;
   }

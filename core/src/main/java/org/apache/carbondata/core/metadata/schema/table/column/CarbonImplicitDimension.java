@@ -106,7 +106,7 @@ public class CarbonImplicitDimension extends CarbonDimension {
   /**
    * @return if column is dimension return true, else false.
    */
-  @Override public Boolean isDimesion() {
+  @Override public Boolean isDimension() {
     return true;
   }
 

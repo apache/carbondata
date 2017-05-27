@@ -62,6 +62,7 @@ class TestQueryForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     // In
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from hashTable where empno in (11, 13)"),
       sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where empno in (11, 13)"))
+    sql("drop table hashTable")
   }
 
   test("detail query on partition table: range partition") {
@@ -97,6 +98,7 @@ class TestQueryForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeTable where doj < '2014-08-15 00:00:00'"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj < '2014-08-15 00:00:00'"))
 
+    sql("drop table rangeTable")
   }
 
   test("detail query on partition table: list partition") {
@@ -134,6 +136,7 @@ class TestQueryForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from listTable where workgroupcategory < 2"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where workgroupcategory < 2"))
 
+    sql("drop table listTable")
   }
 
   override def afterAll = {

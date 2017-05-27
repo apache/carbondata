@@ -71,7 +71,7 @@ public class DFSFileHolderImpl implements FileHolder {
   }
 
   /**
-   * This method will be used to read from file based on number of bytes to be read and positon
+   * This method will be used to read from file based on number of bytes to be read and position
    *
    * @param channel file channel
    * @param size    number of bytes
@@ -86,7 +86,7 @@ public class DFSFileHolderImpl implements FileHolder {
   }
 
   /**
-   * This method will be used to read from file based on number of bytes to be read and positon
+   * This method will be used to read from file based on number of bytes to be read and position
    *
    * @param channel file channel
    * @param size    number of bytes

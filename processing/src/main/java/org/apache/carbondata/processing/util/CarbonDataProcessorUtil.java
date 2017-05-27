@@ -32,13 +32,10 @@ import java.util.Set;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.constants.IgnoreDictionary;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -56,7 +53,6 @@ import org.apache.carbondata.processing.datatypes.StructDataType;
 import org.apache.carbondata.processing.model.CarbonDataLoadSchema;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.sort.SortScopeOptions;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -90,32 +86,6 @@ public final class CarbonDataProcessorUtil {
       fileBufferSize = CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
     }
     return fileBufferSize;
-  }
-
-  /**
-   * Utility method to get level cardinality string
-   *
-   * @param dimCardinalities
-   * @param aggDims
-   * @return level cardinality string
-   */
-  public static String getLevelCardinalitiesString(Map<String, String> dimCardinalities,
-      String[] aggDims) {
-    StringBuilder sb = new StringBuilder();
-
-    for (int i = 0; i < aggDims.length; i++) {
-      String string = dimCardinalities.get(aggDims[i]);
-      if (string != null) {
-        sb.append(string);
-        sb.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-      }
-    }
-    String resultStr = sb.toString();
-    if (resultStr.endsWith(CarbonCommonConstants.COMA_SPC_CHARACTER)) {
-      resultStr = resultStr
-          .substring(0, resultStr.length() - CarbonCommonConstants.COMA_SPC_CHARACTER.length());
-    }
-    return resultStr;
   }
 
   /**
@@ -237,9 +207,9 @@ public final class CarbonDataProcessorUtil {
         break;
       }
 
-      if (!field.hasDictionaryEncoding() && field.getColumn().isDimesion()) {
+      if (!field.hasDictionaryEncoding() && field.getColumn().isDimension()) {
         noDictionaryMapping.add(true);
-      } else if (field.getColumn().isDimesion()) {
+      } else if (field.getColumn().isDimension()) {
         noDictionaryMapping.add(false);
       }
     }
@@ -253,9 +223,9 @@ public final class CarbonDataProcessorUtil {
   public static boolean[] getIsUseInvertedIndex(DataField[] fields) {
     List<Boolean> isUseInvertedIndexList = new ArrayList<Boolean>();
     for (DataField field : fields) {
-      if (field.getColumn().isUseInvertedIndex() && field.getColumn().isDimesion()) {
+      if (field.getColumn().isUseInvertedIndex() && field.getColumn().isDimension()) {
         isUseInvertedIndexList.add(true);
-      } else if (field.getColumn().isDimesion()) {
+      } else if (field.getColumn().isDimension()) {
         isUseInvertedIndexList.add(false);
       }
     }
@@ -349,13 +319,6 @@ public final class CarbonDataProcessorUtil {
     return true;
   }
 
-  public static boolean isHeaderValid(String tableName, String header,
-      CarbonDataLoadSchema schema, String delimiter) {
-    String convertedDelimiter = CarbonUtil.delimiterConverter(delimiter);
-    String[] csvHeader = getColumnFields(header.toLowerCase(), convertedDelimiter);
-    return isHeaderValid(tableName, csvHeader, schema);
-  }
-
   /**
    * This method update the column Name
    *
@@ -387,25 +350,6 @@ public final class CarbonDataProcessorUtil {
     }
     return columnNames;
   }
-
-  /**
-   * Splits header to fields using delimiter.
-   * @param header
-   * @param delimiter
-   * @return
-   */
-  public static String[] getColumnFields(String header, String delimiter) {
-    delimiter = CarbonUtil.delimiterConverter(delimiter);
-    String[] columnNames = header.split(delimiter);
-    String tmpCol;
-    for (int i = 0; i < columnNames.length; i++) {
-      tmpCol = columnNames[i].replaceAll("\"", "");
-      columnNames[i] = tmpCol.trim();
-    }
-
-    return columnNames;
-  }
-
 
   public static DataType[] getMeasureDataType(int measureCount, String databaseName,
       String tableName) {
@@ -446,45 +390,6 @@ public final class CarbonDataProcessorUtil {
       }
     }
     return dateformatsHashMap;
-  }
-
-  /**
-   * This method will convert surrogate key to MD key and fill the row in format
-   * required by the writer for further processing
-   *
-   * @param row
-   * @param segmentProperties
-   * @param measureCount
-   * @param noDictionaryCount
-   * @param complexDimensionCount
-   * @return
-   * @throws KeyGenException
-   */
-  public static Object[] convertToMDKeyAndFillRow(CarbonRow row,
-      SegmentProperties segmentProperties, int measureCount, int noDictionaryCount,
-      int complexDimensionCount) throws KeyGenException {
-    Object[] outputRow = null;
-    // adding one for the high cardinality dims byte array.
-    if (noDictionaryCount > 0 || complexDimensionCount > 0) {
-      outputRow = new Object[measureCount + 1 + 1];
-    } else {
-      outputRow = new Object[measureCount + 1];
-    }
-    int l = 0;
-    int index = 0;
-    Object[] measures = row.getObjectArray(IgnoreDictionary.MEASURES_INDEX_IN_ROW.getIndex());
-    for (int i = 0; i < measureCount; i++) {
-      outputRow[l++] = measures[index++];
-    }
-    outputRow[l] = row.getObject(IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex());
-    int[] highCardExcludedRows = new int[segmentProperties.getDimColumnsCardinality().length];
-    int[] dimsArray = row.getIntArray(IgnoreDictionary.DIMENSION_INDEX_IN_ROW.getIndex());
-    for (int i = 0; i < highCardExcludedRows.length; i++) {
-      highCardExcludedRows[i] = dimsArray[i];
-    }
-    outputRow[outputRow.length - 1] =
-        segmentProperties.getDimensionKeyGenerator().generateKey(highCardExcludedRows);
-    return outputRow;
   }
 
   /**

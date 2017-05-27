@@ -465,6 +465,8 @@ public class StoreCreator {
 
       String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetails.toArray());
       brWriter.write(metadataInstance);
+    } catch (Exception ex) {
+      throw ex;
     } finally {
       try {
         if (null != brWriter) {
