@@ -31,7 +31,8 @@ class CarbonSparkILoop extends SparkILoop {
           if (_sc.getConf.getBoolean("spark.ui.reverseProxy", false)) {
             val proxyUrl = _sc.getConf.get("spark.ui.reverseProxyUrl", null)
             if (proxyUrl != null) {
-              println(s"Spark Context Web UI is available at ${proxyUrl}/proxy/${_sc.applicationId}")
+              println(s"Spark Context Web UI is available at " +
+                s"${proxyUrl}/proxy/${_sc.applicationId}")
             } else {
               println(s"Spark Context Web UI is available at Spark Master Public URL")
             }
