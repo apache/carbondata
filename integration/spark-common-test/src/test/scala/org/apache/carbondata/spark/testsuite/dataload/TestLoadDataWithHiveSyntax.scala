@@ -77,6 +77,8 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   }
 
   test("create table with smallint type and query smallint table") {
+    sql("drop table if exists smallinttable")
+    sql("drop table if exists smallinthivetable")
     sql(
       "create table smallinttable(empno smallint, empname String, designation string, " +
         "doj String, workgroupcategory int, workgroupcategoryname String,deptno int, " +
@@ -107,6 +109,8 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test data loading and validate query output") {
+    sql("drop table if exists testtable")
+    sql("drop table if exists testhivetable")
     //Create test cube and hive table
     sql(
       "CREATE table testtable (empno string, empname String, designation String, doj String, " +
@@ -148,6 +152,8 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     * however deletion and creation of cube with same name
     */
   test("test data loading with different case file header and validate query output") {
+    sql("drop table if exists testtable1")
+    sql("drop table if exists testhivetable1")
     //Create test cube and hive table
     sql(
       "CREATE table testtable1 (empno string, empname String, designation String, doj String, " +
@@ -217,6 +223,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   }
 
   test("complex types data loading") {
+    sql("drop table if exists complexcarbontable")
     sql("create table complexcarbontable(deviceInformationId int, channelsId string," +
       "ROMSize string, purchasedate string, mobile struct<imei:string, imsi:string>," +
       "MAC array<string>, locationinfo array<struct<ActiveAreaId:int, ActiveCountry:string, " +
@@ -240,6 +247,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     "complex types data loading with more unused columns and different order of complex columns " +
       "in csv and create table"
   ) {
+    sql("drop table if exists complexcarbontable")
     sql("create table complexcarbontable(deviceInformationId int, channelsId string," +
       "mobile struct<imei:string, imsi:string>, ROMSize string, purchasedate string," +
       "MAC array<string>, locationinfo array<struct<ActiveAreaId:int, ActiveCountry:string, " +
@@ -309,6 +317,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
 
 
   test("complex types data loading with hive column having more than required column values") {
+    sql("drop table if exists complexcarbontable")
     sql("create table complexcarbontable(deviceInformationId int, channelsId string," +
       "ROMSize string, purchasedate string, mobile struct<imei:string, imsi:string>," +
       "MAC array<string>, locationinfo array<struct<ActiveAreaId:int, ActiveCountry:string, " +
@@ -329,6 +338,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   }
 
   test("complex types & no dictionary columns data loading") {
+    sql("drop table if exists complexcarbontable")
     sql("create table complexcarbontable(deviceInformationId int, channelsId string," +
       "ROMSize string, purchasedate string, mobile struct<imei:string, imsi:string>," +
       "MAC array<string>, locationinfo array<struct<ActiveAreaId:int, ActiveCountry:string, " +
@@ -350,6 +360,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   }
 
   test("array<string> and string datatype for same column is not working properly") {
+    sql("drop table if exists complexcarbontable")
     sql("create table complexcarbontable(deviceInformationId int, MAC array<string>, channelsId string, "+
         "ROMSize string, purchasedate string, gamePointId double,contractNumber double) STORED BY 'org.apache.carbondata.format' "+
         "TBLPROPERTIES ('DICTIONARY_INCLUDE'='deviceInformationId')")
@@ -370,6 +381,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     "test carbon table data loading when table name is in different case with create table, for " +
       "UpperCase"
   ) {
+    sql("drop table if exists UPPERCASEcube")
     sql("create table UPPERCASEcube(empno Int, empname String, designation String, " +
       "doj String, workgroupcategory Int, workgroupcategoryname String, deptno Int, " +
       "deptname String, projectcode Int, projectjoindate String, projectenddate String, " +
@@ -386,6 +398,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     "test carbon table data loading when table name is in different case with create table ,for " +
       "LowerCase"
   ) {
+    sql("drop table if exists lowercaseCUBE")
     sql("create table lowercaseCUBE(empno Int, empname String, designation String, " +
       "doj String, workgroupcategory Int, workgroupcategoryname String, deptno Int, " +
       "deptname String, projectcode Int, projectjoindate String, projectenddate String, " +

@@ -882,7 +882,7 @@ case class CarbonRelation(
       .asScala
     // convert each column to Attribute
     columns.filter(!_.isInvisible).map { column =>
-      if (column.isDimesion()) {
+      if (column.isDimension()) {
         val output: DataType = column.getDataType.toString.toLowerCase match {
           case "array" =>
             CarbonMetastoreTypes.toDataType(s"array<${getArrayChildren(column.getColName)}>")

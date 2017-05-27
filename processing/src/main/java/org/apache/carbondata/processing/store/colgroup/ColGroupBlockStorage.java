@@ -39,14 +39,6 @@ public class ColGroupBlockStorage implements IndexStorage, Callable<IndexStorage
     }
   }
 
-  @Deprecated
-  private ColGroupDataHolder colGrpDataHolder;
-
-  @Deprecated
-  public ColGroupBlockStorage(DataHolder colGrpDataHolder) {
-    this.colGrpDataHolder = (ColGroupDataHolder) colGrpDataHolder;
-  }
-
   /**
    * sorting is not required for colgroup storage and hence return true
    */

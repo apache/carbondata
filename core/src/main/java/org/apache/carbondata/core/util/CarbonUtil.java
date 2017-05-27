@@ -977,8 +977,8 @@ public final class CarbonUtil {
    * @return surrogate key
    */
   public static int getSurrogateKey(byte[] data, ByteBuffer buffer) {
-    int lenght = 4 - data.length;
-    for (int i = 0; i < lenght; i++) {
+    int length = 4 - data.length;
+    for (int i = 0; i < length; i++) {
       buffer.put((byte) 0);
     }
     buffer.put(data);

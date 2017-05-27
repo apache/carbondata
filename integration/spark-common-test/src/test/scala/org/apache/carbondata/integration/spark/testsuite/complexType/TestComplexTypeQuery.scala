@@ -35,6 +35,8 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists structusingstructHive")
     sql("drop table if exists structusingarraycarbon")
     sql("drop table if exists structusingarrayhive")
+    sql("drop table if exists complexcarbonwithspecialchardelimeter")
+    sql("drop table if exists complexhivewithspecialchardelimeter")
     sql(
       "create table complexcarbontable(deviceInformationId int, channelsId string, ROMSize " +
       "string, ROMName String, purchasedate string, mobile struct<imei:string, imsi:string>, MAC " +

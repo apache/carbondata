@@ -43,9 +43,8 @@ import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
-/**
- * This class contains all the data required for processing and writing the carbon data
- */
+// This class contains all the data required for processing and writing the carbon data
+// TODO: we should try to minimize this class as refactorying loading process
 public class CarbonFactDataHandlerModel {
 
   /**
@@ -74,59 +73,25 @@ public class CarbonFactDataHandlerModel {
    */
   private int measureCount;
   /**
-   * length of mdKey
-   */
-  private int mdKeyLength;
-  /**
-   * mdKey index in one row object
-   */
-  private int mdKeyIndex;
-  /**
-   * aggregators (e,g min, amx, sum)
-   */
-  private String[] aggregators;
-  /**
-   * custom aggregator class which contains the logic of merging data
-   */
-  private String[] aggregatorClass;
-  /**
    * local store location
    */
   private String storeLocation;
   /**
-   * cardinality of all dimensions
-   */
-  private int[] factDimLens;
-  /**
-   * flag to check whether to merge data based on custom aggregator
-   */
-  private boolean isMergingRequestForCustomAgg;
-  /**
    * flag to check whether use inverted index
    */
   private boolean[] isUseInvertedIndex;
+
   /**
-   * dimension cardinality
+   * length of each dimension, including dictionary, nodictioncy, complex dimension
    */
   private int[] dimLens;
+
   /**
-   * array of fact table columns
-   */
-  private String[] factLevels;
-  /**
-   * array of aggregate levels
-   */
-  private String[] aggLevels;
-  /**
-   * flag for data writing request
-   */
-  private boolean isDataWritingRequest;
-  /**
-   * count of columns for which dictionary is not generated
+   * total number of no dictionary dimension in the table
    */
   private int noDictionaryCount;
   /**
-   * total number of columns in table
+   * total number of dictionary dimension and complex dimension columns in table
    */
   private int dimensionCount;
   /**
@@ -185,10 +150,11 @@ public class CarbonFactDataHandlerModel {
 
   private int taskExtension;
 
+  // key generator for complex dimension
+  private KeyGenerator[] complexDimensionKeyGenerator;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
-   * @param configuration
-   * @return CarbonFactDataHandlerModel
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
       CarbonDataLoadConfiguration configuration, String storeLocation, int bucketId,
@@ -207,26 +173,6 @@ public class CarbonFactDataHandlerModel {
         }
       }
     }
-    List<Integer> dimsLenList = new ArrayList<Integer>();
-    for (int eachDimLen : dimLensWithComplex) {
-      if (eachDimLen != 0) dimsLenList.add(eachDimLen);
-    }
-    int[] dimLens = new int[dimsLenList.size()];
-    for (int i = 0; i < dimsLenList.size(); i++) {
-      dimLens[i] = dimsLenList.get(i);
-    }
-
-    int dimensionCount = configuration.getDimensionCount();
-    int noDictionaryCount = configuration.getNoDictionaryCount();
-    int complexDimensionCount = configuration.getComplexDimensionCount();
-    int measureCount = configuration.getMeasureCount();
-
-    int simpleDimsCount = dimensionCount - noDictionaryCount - complexDimensionCount;
-    int[] simpleDimsLen = new int[simpleDimsCount];
-    for (int i = 0; i < simpleDimsCount; i++) {
-      simpleDimsLen[i] = dimLens[i];
-    }
-
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
         identifier.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + identifier
             .getTableName());
@@ -235,12 +181,22 @@ public class CarbonFactDataHandlerModel {
             carbonTable.getMeasureByTableName(identifier.getTableName()));
     int[] colCardinality =
         CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchema);
+
     SegmentProperties segmentProperties =
         new SegmentProperties(wrapperColumnSchema, colCardinality);
-    // Actual primitive dimension used to generate start & end key
 
-    KeyGenerator keyGenerator = segmentProperties.getDimensionKeyGenerator();
+    int[] dimLens = configuration.calcDimensionLengths();
 
+    int dimensionCount = configuration.getDimensionCount();
+    int noDictionaryCount = configuration.getNoDictionaryCount();
+    int complexDimensionCount = configuration.getComplexColumnCount();
+    int measureCount = configuration.getMeasureCount();
+
+    int simpleDimsCount = dimensionCount - noDictionaryCount - complexDimensionCount;
+    int[] simpleDimsLen = new int[simpleDimsCount];
+    for (int i = 0; i < simpleDimsCount; i++) {
+      simpleDimsLen[i] = dimLens[i];
+    }
     //To Set MDKey Index of each primitive type in complex type
     int surrIndex = simpleDimsCount;
     Iterator<Map.Entry<String, GenericDataType>> complexMap =
@@ -271,30 +227,23 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel
         .setTableName(identifier.getTableName());
     carbonFactDataHandlerModel.setMeasureCount(measureCount);
-    carbonFactDataHandlerModel.setMdKeyLength(keyGenerator.getKeySizeInBytes());
     carbonFactDataHandlerModel.setStoreLocation(storeLocation);
     carbonFactDataHandlerModel.setDimLens(dimLens);
     carbonFactDataHandlerModel.setNoDictionaryCount(noDictionaryCount);
-    carbonFactDataHandlerModel
-        .setDimensionCount(configuration.getDimensionCount() - noDictionaryCount);
+    carbonFactDataHandlerModel.setDimensionCount(
+        configuration.getDimensionCount() - noDictionaryCount);
     carbonFactDataHandlerModel.setComplexIndexMap(complexIndexMap);
     carbonFactDataHandlerModel.setSegmentProperties(segmentProperties);
     carbonFactDataHandlerModel.setColCardinality(colCardinality);
-    carbonFactDataHandlerModel.setDataWritingRequest(true);
-    carbonFactDataHandlerModel.setMeasureDataType(CarbonDataProcessorUtil
-        .getMeasureDataType(configuration.getMeasureCount(), configuration.getMeasureFields()));
-    carbonFactDataHandlerModel.setFactDimLens(dimLens);
+    carbonFactDataHandlerModel.setMeasureDataType(configuration.getMeasureDataType());
     carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
     carbonFactDataHandlerModel.setPrimitiveDimLens(simpleDimsLen);
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndex);
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
-    if (noDictionaryCount > 0 || complexDimensionCount > 0) {
-      carbonFactDataHandlerModel.setMdKeyIndex(measureCount + 1);
-    } else {
-      carbonFactDataHandlerModel.setMdKeyIndex(measureCount);
-    }
+    carbonFactDataHandlerModel.setComplexDimensionKeyGenerator(
+        configuration.createKeyGeneratorForComplexDimension());
     carbonFactDataHandlerModel.bucketId = bucketId;
     carbonFactDataHandlerModel.segmentId = configuration.getSegmentId();
     carbonFactDataHandlerModel.taskExtension = taskExtension;
@@ -315,8 +264,6 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setDatabaseName(loadModel.getDatabaseName());
     carbonFactDataHandlerModel.setTableName(tableName);
     carbonFactDataHandlerModel.setMeasureCount(segmentProperties.getMeasures().size());
-    carbonFactDataHandlerModel
-        .setMdKeyLength(segmentProperties.getDimensionKeyGenerator().getKeySizeInBytes());
     carbonFactDataHandlerModel.setStoreLocation(tempStoreLocation);
     carbonFactDataHandlerModel.setDimLens(segmentProperties.getDimColumnsCardinality());
     carbonFactDataHandlerModel.setSegmentProperties(segmentProperties);
@@ -337,14 +284,12 @@ public class CarbonFactDataHandlerModel {
     Map<Integer, GenericDataType> complexIndexMap =
         new HashMap<Integer, GenericDataType>(segmentProperties.getComplexDimensions().size());
     carbonFactDataHandlerModel.setComplexIndexMap(complexIndexMap);
-    carbonFactDataHandlerModel.setDataWritingRequest(true);
     DataType[] aggType = new DataType[segmentProperties.getMeasures().size()];
     int i = 0;
     for (CarbonMeasure msr : segmentProperties.getMeasures()) {
       aggType[i++] = msr.getDataType();
     }
     carbonFactDataHandlerModel.setMeasureDataType(aggType);
-    carbonFactDataHandlerModel.setFactDimLens(segmentProperties.getDimColumnsCardinality());
     String carbonDataDirectoryPath = CarbonDataProcessorUtil
         .checkAndCreateCarbonStoreLocation(loadModel.getStorePath(), loadModel.getDatabaseName(),
             tableName, loadModel.getPartitionId(), loadModel.getSegmentId());
@@ -359,12 +304,6 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndexes);
     carbonFactDataHandlerModel.setPrimitiveDimLens(segmentProperties.getDimColumnsCardinality());
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
-    if (segmentProperties.getNumberOfNoDictionaryDimension() > 0
-        || segmentProperties.getComplexDimensions().size() > 0) {
-      carbonFactDataHandlerModel.setMdKeyIndex(segmentProperties.getMeasures().size() + 1);
-    } else {
-      carbonFactDataHandlerModel.setMdKeyIndex(segmentProperties.getMeasures().size());
-    }
     return carbonFactDataHandlerModel;
   }
 
@@ -426,22 +365,6 @@ public class CarbonFactDataHandlerModel {
     this.measureCount = measureCount;
   }
 
-  public int getMdKeyLength() {
-    return mdKeyLength;
-  }
-
-  public void setMdKeyLength(int mdKeyLength) {
-    this.mdKeyLength = mdKeyLength;
-  }
-
-  public int getMdKeyIndex() {
-    return mdKeyIndex;
-  }
-
-  public void setMdKeyIndex(int mdKeyIndex) {
-    this.mdKeyIndex = mdKeyIndex;
-  }
-
   public String getStoreLocation() {
     return storeLocation;
   }
@@ -450,20 +373,12 @@ public class CarbonFactDataHandlerModel {
     this.storeLocation = storeLocation;
   }
 
-  public void setFactDimLens(int[] factDimLens) {
-    this.factDimLens = factDimLens;
-  }
-
   public int[] getDimLens() {
     return dimLens;
   }
 
   public void setDimLens(int[] dimLens) {
     this.dimLens = dimLens;
-  }
-
-  public void setDataWritingRequest(boolean dataWritingRequest) {
-    isDataWritingRequest = dataWritingRequest;
   }
 
   public int getNoDictionaryCount() {
@@ -589,6 +504,23 @@ public class CarbonFactDataHandlerModel {
 
   public int getTaskExtension() {
     return taskExtension;
+  }
+
+  public KeyGenerator[] getComplexDimensionKeyGenerator() {
+    return complexDimensionKeyGenerator;
+  }
+
+  public void setComplexDimensionKeyGenerator(KeyGenerator[] complexDimensionKeyGenerator) {
+    this.complexDimensionKeyGenerator = complexDimensionKeyGenerator;
+  }
+
+  public KeyGenerator getMDKeyGenerator() {
+    return segmentProperties.getDimensionKeyGenerator();
+  }
+
+  // return the number of complex columns
+  public int getComplexColumnCount() {
+    return complexIndexMap.size();
   }
 }
 

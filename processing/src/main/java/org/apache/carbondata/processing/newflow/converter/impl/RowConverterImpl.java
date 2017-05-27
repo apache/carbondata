@@ -148,6 +148,7 @@ public class RowConverterImpl implements RowConverter {
 
   @Override
   public CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException {
+    //TODO: only copy if it is bad record
     CarbonRow copy = row.getCopy();
     logHolder.setLogged(false);
     logHolder.clear();

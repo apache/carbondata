@@ -22,9 +22,6 @@ import java.util.Iterator;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.IgnoreDictionary;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
@@ -47,18 +44,6 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataWriterBatchProcessorStepImpl.class.getName());
-
-  private int noDictionaryCount;
-
-  private int complexDimensionCount;
-
-  private int measureCount;
-
-  private int measureIndex = IgnoreDictionary.MEASURES_INDEX_IN_ROW.getIndex();
-
-  private int noDimByteArrayIndex = IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex();
-
-  private int dimsArrayIndex = IgnoreDictionary.DIMENSION_INDEX_IN_ROW.getIndex();
 
   public DataWriterBatchProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
@@ -88,13 +73,6 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
         configuration.getTableIdentifier().getCarbonTableIdentifier();
     String tableName = tableIdentifier.getTableName();
     try {
-      CarbonFactDataHandlerModel dataHandlerModel = CarbonFactDataHandlerModel
-          .createCarbonFactDataHandlerModel(configuration,
-              getStoreLocation(tableIdentifier, String.valueOf(0)), 0, 0);
-      noDictionaryCount = dataHandlerModel.getNoDictionaryCount();
-      complexDimensionCount = configuration.getComplexDimensionCount();
-      measureCount = dataHandlerModel.getMeasureCount();
-
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
           .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
               System.currentTimeMillis());
@@ -109,7 +87,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
           CarbonFactHandler dataHandler = CarbonFactHandlerFactory
               .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
           dataHandler.initialise();
-          processBatch(next, dataHandler, model.getSegmentProperties());
+          processBatch(next, dataHandler);
           finish(tableName, dataHandler);
         }
         i++;
@@ -152,34 +130,12 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
     }
   }
 
-  private void processBatch(CarbonRowBatch batch, CarbonFactHandler dataHandler,
-      SegmentProperties segmentProperties) throws Exception {
+  private void processBatch(CarbonRowBatch batch, CarbonFactHandler dataHandler) throws Exception {
     int batchSize = 0;
-    KeyGenerator keyGenerator = segmentProperties.getDimensionKeyGenerator();
     while (batch.hasNext()) {
       CarbonRow row = batch.next();
+      dataHandler.addDataToStore(row);
       batchSize++;
-      /*
-      * The order of the data is as follows,
-      * Measuredata, nodictionary/complex byte array data, dictionary(MDK generated key)
-      */
-      int len;
-      // adding one for the high cardinality dims byte array.
-      if (noDictionaryCount > 0 || complexDimensionCount > 0) {
-        len = measureCount + 1 + 1;
-      } else {
-        len = measureCount + 1;
-      }
-      Object[] outputRow = new Object[len];;
-
-      int l = 0;
-      Object[] measures = row.getObjectArray(measureIndex);
-      for (int i = 0; i < measureCount; i++) {
-        outputRow[l++] = measures[i];
-      }
-      outputRow[l] = row.getObject(noDimByteArrayIndex);
-      outputRow[len - 1] = keyGenerator.generateKey(row.getIntArray(dimsArrayIndex));
-      dataHandler.addDataToStore(outputRow);
     }
     rowCounter.getAndAdd(batchSize);
   }

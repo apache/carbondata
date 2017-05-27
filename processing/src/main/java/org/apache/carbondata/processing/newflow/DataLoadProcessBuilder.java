@@ -55,8 +55,7 @@ public final class DataLoadProcessBuilder {
 
   public AbstractDataLoadProcessorStep build(CarbonLoadModel loadModel, String storeLocation,
       CarbonIterator[] inputIterators) throws Exception {
-    CarbonDataLoadConfiguration configuration =
-        createConfiguration(loadModel, storeLocation);
+    CarbonDataLoadConfiguration configuration = createConfiguration(loadModel, storeLocation);
     SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     if (!configuration.isSortTable() || sortScope.equals(SortScopeOptions.SortScope.NO_SORT)) {
       return buildInternalForNoSort(inputIterators, configuration);

@@ -92,7 +92,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   /**
    * agg type defined for measures
    */
-  private DataType[] aggType;
+  private DataType[] dataTypes;
   /**
    * segment id
    */
@@ -241,7 +241,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     int measureIndexInRow = 1;
     for (int i = 0; i < measureCount; i++) {
       preparedRow[dimensionColumnCount + i] =
-          getConvertedMeasureValue(row[measureIndexInRow++], aggType[i]);
+          getConvertedMeasureValue(row[measureIndexInRow++], dataTypes[i]);
     }
     return preparedRow;
   }
@@ -273,13 +273,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       intermediateFileMerger.finish();
       finalMerger.startFinalMerge();
       while (finalMerger.hasNext()) {
-        Object[] rowRead = finalMerger.next();
-        CarbonRow row = new CarbonRow(rowRead);
-        // convert the row from surrogate key to MDKey
-        Object[] outputRow = CarbonDataProcessorUtil
-            .convertToMDKeyAndFillRow(row, segmentProperties, measureCount, noDictionaryCount,
-                segmentProperties.getComplexDimensions().size());
-        dataHandler.addDataToStore(outputRow);
+        Object[] row = finalMerger.next();
+        dataHandler.addDataToStore(new CarbonRow(row));
       }
       dataHandler.finish();
     } catch (CarbonDataWriterException e) {
@@ -307,7 +302,6 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void addRowForSorting(Object[] row) throws Exception {
     try {
-      // prepare row array using RemoveDictionaryUtil class
       sortDataRows.addRow(row);
     } catch (CarbonSortKeyAndGroupByException e) {
       LOGGER.error(e);
@@ -377,7 +371,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     finalMerger =
         new SingleThreadFinalSortFilesMerger(sortTempFileLocation, tableName, dimensionColumnCount,
             segmentProperties.getComplexDimensions().size(), measureCount, noDictionaryCount,
-            aggType, noDictionaryColMapping, noDictionarySortColumnMapping);
+            dataTypes, noDictionaryColMapping, noDictionarySortColumnMapping);
   }
 
   /**
@@ -412,6 +406,6 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * initialise aggregation type for measures for their storage format
    */
   private void initAggType() {
-    aggType = CarbonDataProcessorUtil.initDataType(carbonTable, tableName, measureCount);
+    dataTypes = CarbonDataProcessorUtil.initDataType(carbonTable, tableName, measureCount);
   }
 }

@@ -293,7 +293,7 @@ private[sql] case class AlterTableDropColumns(
         tableColumns.foreach { tableColumn =>
           // column should not be already deleted and should exist in the table
           if (!tableColumn.isInvisible && column.equalsIgnoreCase(tableColumn.getColName)) {
-            if (tableColumn.isDimesion) {
+            if (tableColumn.isDimension) {
               keyColumnCountToBeDeleted += 1
               if (tableColumn.hasEncoding(Encoding.DICTIONARY)) {
                 dictionaryColumns ++= Seq(tableColumn.getColumnSchema)
@@ -309,7 +309,7 @@ private[sql] case class AlterTableDropColumns(
       // take the total key column count. key column to be deleted should not
       // be >= key columns in schema
       val totalKeyColumnInSchema = tableColumns.count {
-        tableColumn => !tableColumn.isInvisible && tableColumn.isDimesion
+        tableColumn => !tableColumn.isInvisible && tableColumn.isDimension
       }
       if (keyColumnCountToBeDeleted >= totalKeyColumnInSchema) {
         sys.error(s"Alter drop operation failed. AtLeast one key column should exist after drop.")
