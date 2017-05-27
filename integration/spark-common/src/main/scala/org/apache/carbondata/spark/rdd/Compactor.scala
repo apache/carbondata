@@ -83,7 +83,7 @@ object Compactor {
       }
     }
 
-    val mergeStatus =
+    val mergeStatus: Array[(String, Boolean)] =
     if (compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
       new CarbonIUDMergerRDD(
         sc.sparkContext,

@@ -433,7 +433,7 @@ class CarbonMergerRDD[K, V](
       logInfo(s"Node: ${ multiBlockSplit.getLocations.mkString(",") }, No.Of Blocks: " +
               s"${ CarbonInputSplit.createBlocks(splitList).size }")
     }
-    result.toArray(new Array[Partition](result.size))
+    result.toArray.map(_.asInstanceOf[Partition])
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
