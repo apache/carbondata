@@ -382,8 +382,6 @@ public class StoreCreator {
     CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false");
     CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000");
 
-    String fileNamePrefix = "";
-
     String graphPath =
         outPutLoc + File.separator + loadModel.getDatabaseName() + File.separator + tableName
             + File.separator + 0 + File.separator + 1 + File.separator + tableName + ".ktr";
@@ -421,11 +419,6 @@ public class StoreCreator {
     info.setDatabaseName(databaseName);
     info.setTableName(tableName);
 
-//    DataGraphExecuter graphExecuter = new DataGraphExecuter(dataProcessTaskStatus);
-//    graphExecuter
-//        .executeGraph(graphPath, info, loadModel.getSchema());
-    //    LoadMetadataDetails[] loadDetails =
-    //        CarbonUtil.readLoadMetadata(loadModel.schema.getCarbonTable().getMetaDataFilepath());
     writeLoadMetadata(loadModel.getCarbonDataLoadSchema(), loadModel.getTableName(), loadModel.getTableName(),
         new ArrayList<LoadMetadataDetails>());
 

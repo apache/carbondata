@@ -32,8 +32,6 @@ public class CarbonDataWriterVo {
 
   private int measureCount;
 
-  private int mdKeyLength;
-
   private String tableName;
 
   private IFileManagerComposite fileManager;
@@ -51,8 +49,6 @@ public class CarbonDataWriterVo {
   private String databaseName;
 
   private List<ColumnSchema> wrapperColumnSchemaList;
-
-  private int numberOfNoDictionaryColumn;
 
   private boolean[] isDictionaryColumn;
 
@@ -96,13 +92,6 @@ public class CarbonDataWriterVo {
    */
   public void setMeasureCount(int measureCount) {
     this.measureCount = measureCount;
-  }
-
-  /**
-   * @param mdKeyLength the mdKeyLength to set
-   */
-  public void setMdKeyLength(int mdKeyLength) {
-    this.mdKeyLength = mdKeyLength;
   }
 
   /**

@@ -357,8 +357,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     // calculate the size of data chunks
     try {
       for (int i = 0; i < nodeHolderList.get(0).getKeyArray().length; i++) {
-        dataChunkBytes[i] = CarbonUtil.getByteArray(CarbonMetadataUtil
-            .getDataChunk3(nodeHolderList, thriftColumnSchemaList,
+        dataChunkBytes[i] = CarbonUtil.getByteArray(
+            CarbonMetadataUtil.getDataChunk3(nodeHolderList, thriftColumnSchemaList,
                 dataWriterVo.getSegmentProperties(), i, true));
         blockletDataSize += dataChunkBytes[i].length;
       }

@@ -22,7 +22,6 @@ import java.util.Iterator;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
@@ -45,14 +44,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataWriterProcessorStepImpl.class.getName());
-
-  private SegmentProperties segmentProperties;
-
-  private int noDictionaryCount;
-
-  private int complexDimensionCount;
-
-  private int measureCount;
 
   private long readCounter;
 
@@ -84,13 +75,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
         configuration.getTableIdentifier().getCarbonTableIdentifier();
     String tableName = tableIdentifier.getTableName();
     try {
-      CarbonFactDataHandlerModel dataHandlerModel = CarbonFactDataHandlerModel
-          .createCarbonFactDataHandlerModel(configuration,
-              getStoreLocation(tableIdentifier, String.valueOf(0)), 0, 0);
-      noDictionaryCount = dataHandlerModel.getNoDictionaryCount();
-      complexDimensionCount = configuration.getComplexDimensionCount();
-      measureCount = dataHandlerModel.getMeasureCount();
-      segmentProperties = dataHandlerModel.getSegmentProperties();
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
           .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
               System.currentTimeMillis());
@@ -170,12 +154,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     try {
       while (batch.hasNext()) {
         CarbonRow row = batch.next();
+        dataHandler.addDataToStore(row);
         readCounter++;
-        // convert the row from surrogate key to MDKey
-        Object[] outputRow = CarbonDataProcessorUtil
-            .convertToMDKeyAndFillRow(row, segmentProperties, measureCount, noDictionaryCount,
-                complexDimensionCount);
-        dataHandler.addDataToStore(outputRow);
       }
     } catch (Exception e) {
       throw new CarbonDataLoadingException("unable to generate the mdkey", e);

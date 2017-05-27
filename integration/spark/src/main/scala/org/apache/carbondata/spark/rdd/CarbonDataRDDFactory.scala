@@ -88,9 +88,6 @@ object CarbonDataRDDFactory {
         carbonLoadModel
           .setSegmentUpdateStatusManager((alterTableModel.segmentUpdateStatusManager.get))
         carbonLoadModel
-          .setSegmentUpdateDetails(alterTableModel.segmentUpdateStatusManager.get
-            .getUpdateStatusDetails.toList.asJava)
-        carbonLoadModel
           .setLoadMetadataDetails(alterTableModel.segmentUpdateStatusManager.get
             .getLoadMetadataDetails.toList.asJava)
       }

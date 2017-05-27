@@ -17,12 +17,13 @@
 
 package org.apache.carbondata.processing.store;
 
+import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
 public interface CarbonFactHandler {
   void initialise() throws CarbonDataWriterException;
 
-  void addDataToStore(Object[] row) throws CarbonDataWriterException;
+  void addDataToStore(CarbonRow row) throws CarbonDataWriterException;
 
   void finish() throws CarbonDataWriterException;
 

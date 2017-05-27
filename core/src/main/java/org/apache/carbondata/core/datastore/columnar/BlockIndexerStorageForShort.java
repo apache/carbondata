@@ -92,7 +92,7 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
    *
    * @param indexes
    */
-  public void compressMyOwnWay(short[] indexes) {
+  private void compressMyOwnWay(short[] indexes) {
     List<Short> list = new ArrayList<Short>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     List<Short> map = new ArrayList<Short>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     int k = 0;

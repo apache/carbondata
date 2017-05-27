@@ -97,7 +97,7 @@ case class CarbonScan(
     columnProjection.foreach { attr =>
       val carbonColumn = carbonTable.getColumnByName(carbonTable.getFactTableName, attr.name)
       if (carbonColumn != null) {
-        if (carbonColumn.isDimesion()) {
+        if (carbonColumn.isDimension()) {
           val dim = new QueryDimension(attr.name)
           dim.setQueryOrder(queryOrder)
           queryOrder = queryOrder + 1

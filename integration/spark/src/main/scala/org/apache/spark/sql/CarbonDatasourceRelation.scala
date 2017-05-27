@@ -251,7 +251,7 @@ case class CarbonRelation(
     val columns = tableMeta.carbonTable.getCreateOrderColumn(tableMeta.carbonTable.getFactTableName)
         .asScala
     columns.filter(!_.isInvisible).map { column =>
-      if (column.isDimesion()) {
+      if (column.isDimension()) {
         val output: DataType = column.getDataType.toString.toLowerCase match {
           case "array" =>
             CarbonMetastoreTypes.toDataType(s"array<${getArrayChildren(column.getColName)}>")
