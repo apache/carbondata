@@ -229,7 +229,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
       case LONG:
         return new LongWritable((long) obj);
       case SHORT:
-        return new ShortWritable((Short) obj);
+        return new ShortWritable((short) obj);
       case DATE:
         return new DateWritable(new Date(Long.parseLong(String.valueOf(obj.toString()))));
       case TIMESTAMP:
