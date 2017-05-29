@@ -24,8 +24,8 @@ import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Cast, NamedE
 import org.apache.spark.sql.catalyst.plans.Inner
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules._
-import org.apache.spark.sql.execution.command.ProjectForDeleteCommand
 import org.apache.spark.sql.execution.{ProjectExec, SparkSqlParser, SubqueryExec}
+import org.apache.spark.sql.execution.command.ProjectForDeleteCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -87,6 +87,8 @@ object CarbonIUDAnalysisRule extends Rule[LogicalPlan] {
      this.sparkSession = sparkSession
   }
 
+  private val parser = new SparkSqlParser(sparkSession.sessionState.conf)
+
   private def processUpdateQuery(
       table: UnresolvedRelation,
       columns: List[String],
@@ -102,12 +104,13 @@ object CarbonIUDAnalysisRule extends Rule[LogicalPlan] {
       val projList = Seq(
         UnresolvedAlias(UnresolvedStar(Option(table.alias.toSeq))), tupleId)
       // include tuple id and rest of the required columns in subqury
-      SubqueryAlias(table.alias.getOrElse(""), Project(projList, relation), Option(table.tableIdentifier))
+      SubqueryAlias(table.alias.getOrElse(""),
+        Project(projList, relation), Option(table.tableIdentifier))
     }
     // get the un-analyzed logical plan
     val targetTable = prepareTargetReleation(table)
-    val selectPlan = new SparkSqlParser(sparkSession.sessionState.conf).parsePlan(selectStmt) transform {
-      case Project(projectList, child) if (!includedDestColumns) =>
+    val selectPlan = parser.parsePlan(selectStmt) transform {
+      case Project(projectList, child) if !includedDestColumns =>
         includedDestColumns = true
         if (projectList.size != columns.size) {
           sys.error("Number of source and destination columns are not matching")
@@ -126,11 +129,10 @@ object CarbonIUDAnalysisRule extends Rule[LogicalPlan] {
         val list = Seq(
           UnresolvedAlias(UnresolvedStar(Option(table.alias.toSeq)))) ++ renamedProjectList
         Project(list, child)
-      case Filter(cond, child) if (!includedDestRelation) =>
+      case Filter(cond, child) if !includedDestRelation =>
         includedDestRelation = true
         Filter(cond, Join(child, targetTable, Inner, None))
-      case r @ UnresolvedRelation(t, a) if (!includedDestRelation &&
-                                            t != table.tableIdentifier) =>
+      case r @ UnresolvedRelation(t, a) if !includedDestRelation && t != table.tableIdentifier =>
         includedDestRelation = true
         Join(r, targetTable, Inner, None)
     }
@@ -138,8 +140,8 @@ object CarbonIUDAnalysisRule extends Rule[LogicalPlan] {
       // special case to handle self join queries
       // Eg. update tableName  SET (column1) = (column1+1)
       selectPlan transform {
-        case relation: UnresolvedRelation if (table.tableIdentifier == relation.tableIdentifier &&
-                                              addedTupleId == false) =>
+        case relation: UnresolvedRelation
+          if table.tableIdentifier == relation.tableIdentifier && !addedTupleId =>
           addedTupleId = true
           targetTable
       }
@@ -152,22 +154,17 @@ object CarbonIUDAnalysisRule extends Rule[LogicalPlan] {
       // Create a dummy projection to include filter conditions
       var newPlan: LogicalPlan = null
       if (table.tableIdentifier.database.isDefined) {
-        newPlan = new SparkSqlParser(sparkSession.sessionState.conf).parsePlan("select * from  " +
-                                                                     table.tableIdentifier.database
-                                                                       .getOrElse("") + "." +
-                                                                     table.tableIdentifier.table +
-                                                                     " " + alias + " " +
-                                                                     filter)
+        newPlan = parser.parsePlan("select * from  " +
+           table.tableIdentifier.database.getOrElse("") + "." +
+           table.tableIdentifier.table + " " + alias + " " + filter)
       }
       else {
-        newPlan = new SparkSqlParser(sparkSession.sessionState.conf).parsePlan("select * from  " +
-                                                                     table.tableIdentifier.table +
-                                                                     " " + alias + " " +
-                                                                     filter)
+        newPlan = parser.parsePlan("select * from  " +
+           table.tableIdentifier.table + " " + alias + " " + filter)
       }
       newPlan transform {
-        case UnresolvedRelation(t, Some(a)) if (
-          !transformed && t == table.tableIdentifier && a == alias) =>
+        case UnresolvedRelation(t, Some(a))
+          if !transformed && t == table.tableIdentifier && a == alias =>
           transformed = true
           // Add the filter condition of update statement  on destination table
           SubqueryAlias(alias, updatedSelectPlan, Option(table.tableIdentifier))
@@ -185,7 +182,7 @@ object CarbonIUDAnalysisRule extends Rule[LogicalPlan] {
    val tidSeq = Seq(getDB.getDatabaseName(table.tableIdentifier.database, sparkSession),
      table.tableIdentifier.table)
     var addedTupleId = false
-    val parsePlan = new SparkSqlParser(sparkSession.sessionState.conf).parsePlan(selectStmt)
+    val parsePlan = parser.parsePlan(selectStmt)
     val selectPlan = parsePlan transform {
       case relation: UnresolvedRelation
         if table.tableIdentifier == relation.tableIdentifier && !addedTupleId =>

@@ -23,7 +23,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, DataFrame, Dataset, Row, SparkSession, getDB}
+import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -566,8 +566,10 @@ object deleteExecution {
     CarbonUpdateUtil
       .createBlockDetailsMap(blockMappingVO, segmentUpdateStatusMngr)
 
-    val rowContRdd = sparkSession.sparkContext.parallelize(blockMappingVO.getCompleteBlockRowDetailVO.asScala.toSeq,
-      keyRdd.partitions.size)
+    val rowContRdd =
+      sparkSession.sparkContext.parallelize(
+        blockMappingVO.getCompleteBlockRowDetailVO.asScala.toSeq,
+          keyRdd.partitions.length)
 
 //    val rowContRdd = sqlContext.sparkContext
 //      .parallelize(blockMappingVO.getCompleteBlockRowDetailVO.asScala.toSeq,
@@ -820,9 +822,9 @@ object UpdateExecution {
     }
     val ex = dataFrame.queryExecution.analyzed
     val res = ex find {
-      case relation: LogicalRelation if (relation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-        isDestinationRelation(relation.relation
-          .asInstanceOf[CarbonDatasourceHadoopRelation])) =>
+      case relation: LogicalRelation
+        if relation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
+        isDestinationRelation(relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]) =>
         true
       case _ => false
     }
