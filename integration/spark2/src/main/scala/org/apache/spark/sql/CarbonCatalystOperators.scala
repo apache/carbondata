@@ -90,7 +90,7 @@ case class ShowLoadsCommand(databaseNameOp: Option[String], table: String, limit
 case class ProjectForUpdate(
     table: UnresolvedRelation,
     columns: List[String],
-    child: Seq[LogicalPlan] ) extends Command {
+    children: Seq[LogicalPlan] ) extends LogicalPlan {
   override def output: Seq[AttributeReference] = Seq.empty
 }
 

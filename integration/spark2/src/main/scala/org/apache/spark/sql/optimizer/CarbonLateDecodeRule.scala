@@ -122,16 +122,21 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
           case Project(pList, child) if (!isTransformed) =>
             val (dest: Seq[NamedExpression], source: Seq[NamedExpression]) = pList
               .splitAt(pList.size - cols.size)
-            val diff = cols.diff(dest.map(_.name))
+            val diff = cols.diff(dest.map(_.name.toLowerCase))
             if (diff.size > 0) {
               sys.error(s"Unknown column(s) ${diff.mkString(",")} in table ${table.tableName}")
             }
             isTransformed = true
-            Project(dest.filter(a => !cols.contains(a.name)) ++ source, child)
+            Project(dest.filter(a => !cols.contains(a.name.toLowerCase)) ++ source, child)
         }
-        ProjectForUpdateCommand(newPlan, Seq(table.tableIdentifier.toString()))
+        val identifier = table.tableIdentifier.database match {
+          case Some(db) => Seq(db, table.tableIdentifier.table)
+          case _ => Seq(table.tableIdentifier.table)
+        }
+        ProjectForUpdateCommand(newPlan, identifier)
     }
   }
+
 
   def isOptimized(plan: LogicalPlan): Boolean = {
     plan find {

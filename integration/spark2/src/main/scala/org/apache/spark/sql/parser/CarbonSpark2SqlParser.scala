@@ -125,7 +125,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           case Seq(dbName, tableName) => Some(tableName)
           case Seq(tableName) => Some(tableName)
         }
-        UnresolvedRelation(tableIdentifier, Option(tableAlias.toString))
+        UnresolvedRelation(tableIdentifier, tableAlias)
     }
   }
 
