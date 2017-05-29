@@ -17,12 +17,13 @@
 
 package org.apache.carbondata.flink;
 
-import org.apache.carbondata.flink.utils.UnzipUtility;
+import org.apache.carbondata.flink.utils.FlinkTestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.*;
 import org.apache.flink.api.java.operators.DataSource;
 
+import org.apache.spark.sql.CarbonContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,14 +34,17 @@ import java.io.IOException;
 public class CarbonDataFlinkInputFormatTest {
 
     protected static String[] columns;
+    private static FlinkTestUtils flinkTestUtils = new FlinkTestUtils();
 
     @BeforeClass
     public static void defineStore() throws IOException {
-        String zipPath = getRootPath() + "/integration/flink/src/test/resources/store-input.zip";
-        String zipDestinationPath = getRootPath() + "/integration/flink/target";
-
-        UnzipUtility unzipUtility = new UnzipUtility();
-        unzipUtility.unzip(zipPath, zipDestinationPath);
+        String testData = getRootPath() + "/integration/flink/src/test/resources/data.csv";
+        CarbonContext carbonContext = flinkTestUtils.createCarbonContext();
+        String createTableCommand = "CREATE TABLE IF NOT EXISTS t3 "
+                + "(ID Int, date Date, country String, name String, phonetype String, "             + "serialname char(10), salary Int) STORED BY 'carbondata'";
+        String loadTableCommand = "LOAD DATA LOCAL INPATH '"+ testData +"' into table t3";
+        flinkTestUtils.createStore(carbonContext, createTableCommand, loadTableCommand);
+        flinkTestUtils.closeContext(carbonContext);
     }
 
     static String getRootPath() throws IOException {
@@ -49,9 +53,10 @@ public class CarbonDataFlinkInputFormatTest {
 
     @Test
     public void getDataFromCarbon() throws Exception {
+
         ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
         columns = new String[]{"id", "name"};
-        String path = "/integration/flink/target/store-input/default/t3";
+        String path = "/integration/flink/target/store/default/t3";
         CarbonDataFlinkInputFormat carbondataFlinkInputFormat = new CarbonDataFlinkInputFormat(getRootPath() + path, columns, false);
 
         DataSource<Tuple2<Void, Object[]>> dataSource = env.createInput(carbondataFlinkInputFormat.getInputFormat());
@@ -63,7 +68,7 @@ public class CarbonDataFlinkInputFormatTest {
     @Test(expected = IllegalArgumentException.class)
     public void getDataFromInvalidPath() throws Exception {
         columns = new String[]{"id", "name"};
-        String path = "./flink/target/store-input/default/t3";
+        String path = "./flink/target/store/default/t3";
         CarbonDataFlinkInputFormat carbondataFlinkInputFormat = new CarbonDataFlinkInputFormat(getRootPath() + path, columns, false);
 
         carbondataFlinkInputFormat.getInputFormat();
@@ -72,15 +77,15 @@ public class CarbonDataFlinkInputFormatTest {
     @Test(expected = IllegalArgumentException.class)
     public void getDataFromTableHavingInvalidColumns() throws Exception {
         columns = new String[]{};
-        String path = "integration/flink/target/store-input/default/t3";
+        String path = "integration/flink/target/store/default/t3";
         CarbonDataFlinkInputFormat carbondataFlinkInputFormat = new CarbonDataFlinkInputFormat(getRootPath() + path, columns, false);
-
         carbondataFlinkInputFormat.getInputFormat();
     }
 
     @AfterClass
     public static void removeStore() throws IOException {
         FileUtils.deleteDirectory(new File(getRootPath() + "/integration/flink/target/store"));
+        FileUtils.deleteDirectory(new File(getRootPath() + "/integration/flink/target/carbonmetastore"));
     }
 
 }

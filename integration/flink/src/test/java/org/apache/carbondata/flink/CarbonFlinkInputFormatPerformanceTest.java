@@ -17,9 +17,12 @@
 
 package org.apache.carbondata.flink;
 
-import org.apache.carbondata.flink.utils.UnzipUtility;
+import org.apache.carbondata.flink.utils.FlinkTestUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.operators.DataSource;
+import org.apache.spark.sql.CarbonContext;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -36,18 +39,51 @@ public class CarbonFlinkInputFormatPerformanceTest {
 
     private final static Logger LOGGER = Logger.getLogger(CarbonFlinkInputFormatPerformanceTest.class.getName());
     Date date = new Date();
+    private static FlinkTestUtils flinkTestUtils = new FlinkTestUtils();
+
 
     static String getRootPath() throws IOException {
         return new File(CarbonFlinkInputFormatPerformanceTest.class.getResource("/").getPath() + "../../../..").getCanonicalPath();
     }
 
+    private static String getCreateTableCommand(String tableName) {
+        return "CREATE TABLE "+ tableName +" (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES (\"TABLE_BLOCKSIZE\"= \"256 MB\")";
+    }
+
+    private static String getLoadTableCommand(String filePath, String tableName) {
+        return "LOAD DATA INPATH '"+ filePath + "' into table "+ tableName +" OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='\"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')";
+    }
+
     @BeforeClass
     public static void defineStore() throws IOException {
-        String zipPath = getRootPath() + "/integration/flink/src/test/resources/store-input.zip";
-        String zipDestinationPath = getRootPath() + "/integration/flink/target";
+        CarbonContext carbonContext = flinkTestUtils.createCarbonContext();
 
-        UnzipUtility unzipUtility = new UnzipUtility();
-        unzipUtility.unzip(zipPath, zipDestinationPath);
+        String inputDataForHundred = getRootPath() + "/integration/flink/src/test/resources/100_UniqData.csv";
+        String createTableCommandForHundred = getCreateTableCommand("100_uniqdata");
+        String loadTableCommandForHundred = getLoadTableCommand(inputDataForHundred, "100_uniqdata");
+        flinkTestUtils.createStore(carbonContext, createTableCommandForHundred, loadTableCommandForHundred);
+
+        String inputDataForThousand = getRootPath() + "/integration/flink/src/test/resources/1000_UniqData.csv";
+        String createTableCommandForThousand = getCreateTableCommand("1000_uniqdata");
+        String loadTableCommandForThousand = getLoadTableCommand(inputDataForThousand, "1000_uniqdata");
+        flinkTestUtils.createStore(carbonContext, createTableCommandForThousand, loadTableCommandForThousand);
+
+        String inputDataForTenThousand = getRootPath() + "/integration/flink/src/test/resources/10000_UniqData.csv";
+        String createTableCommandForTenThousand = getCreateTableCommand("10000_uniqdata");
+        String loadTableCommandForTenThousand = getLoadTableCommand(inputDataForTenThousand, "10000_uniqdata");
+        flinkTestUtils.createStore(carbonContext, createTableCommandForTenThousand, loadTableCommandForTenThousand);
+
+        String inputDataForLakh = getRootPath() + "/integration/flink/src/test/resources/1lac_UniqData.csv";
+        String createTableCommandForLakh = getCreateTableCommand("1lac_uniqdata");
+        String loadTableCommandForLakh = getLoadTableCommand(inputDataForLakh, "1lac_uniqdata");
+        flinkTestUtils.createStore(carbonContext, createTableCommandForLakh, loadTableCommandForLakh);
+
+        String inputDataForFourLakh = getRootPath() + "/integration/flink/src/test/resources/4lac_UniqData.csv";
+        String createTableCommandForFourLakh = getCreateTableCommand("4lac_uniqdata");
+        String loadTableCommandForFourLakh = getLoadTableCommand(inputDataForFourLakh, "4lac_uniqdata");
+        flinkTestUtils.createStore(carbonContext, createTableCommandForFourLakh, loadTableCommandForFourLakh);
+
+        flinkTestUtils.closeContext(carbonContext);
     }
 
     String getPerformanceReportFilePath() throws IOException {
@@ -80,7 +116,7 @@ public class CarbonFlinkInputFormatPerformanceTest {
 
         long averageTime = 0;
         for (int iterator = 0; iterator < 3; iterator++) {
-            String path = "/integration/flink/target/store-input/default/uniqdata";
+            String path = "/integration/flink/target/store/default/100_uniqdata";
             long t1 = System.currentTimeMillis();
             CarbonDataFlinkInputFormat carbondataFlinkInputFormat = new CarbonDataFlinkInputFormat(getRootPath() + path, columns, false);
             DataSource dataSource = env.createInput(carbondataFlinkInputFormat.getInputFormat());
@@ -102,7 +138,7 @@ public class CarbonFlinkInputFormatPerformanceTest {
         for (int iterator = 0; iterator < 3; iterator++) {
             LOGGER.info(">>>>>>>>>Thousand records:::::::::::::::::::");
             long t3 = System.currentTimeMillis();
-            String path1 = "/integration/flink/target/store-input/default/1000_uniqdata";
+            String path1 = "/integration/flink/target/store/default/1000_uniqdata";
             CarbonDataFlinkInputFormat carbondataFlinkInputFormat1 = new CarbonDataFlinkInputFormat(getRootPath() + path1, columns, false);
             DataSource dataSource1 = env.createInput(carbondataFlinkInputFormat1.getInputFormat());
             int rowCount1 = dataSource1.collect().size();
@@ -123,7 +159,7 @@ public class CarbonFlinkInputFormatPerformanceTest {
         averageTime = 0;
         for (int iterator = 0; iterator < 3; iterator++) {
             long t5 = System.currentTimeMillis();
-            String path2 = "/integration/flink/target/store-input/default/10000_uniqdata";
+            String path2 = "/integration/flink/target/store/default/10000_uniqdata";
             CarbonDataFlinkInputFormat carbondataFlinkInputFormat2 = new CarbonDataFlinkInputFormat(getRootPath() + path2, columns, false);
             DataSource dataSource2 = env.createInput(carbondataFlinkInputFormat2.getInputFormat());
             int rowCount2 = dataSource2.collect().size();
@@ -143,11 +179,11 @@ public class CarbonFlinkInputFormatPerformanceTest {
         averageTime = 0;
         for (int iterator = 0; iterator < 3; iterator++) {
             long t7 = System.currentTimeMillis();
-            String path3 = "/integration/flink/target/store-input/default/uniqdata_1l";
+            String path3 = "/integration/flink/target/store/default/1lac_uniqdata";
             CarbonDataFlinkInputFormat carbondataFlinkInputFormat3 = new CarbonDataFlinkInputFormat(getRootPath() + path3, columns, false);
             DataSource dataSource3 = env.createInput(carbondataFlinkInputFormat3.getInputFormat());
             int rowCount3 = dataSource3.collect().size();
-            assertEquals(rowCount3, 105308);
+            assertEquals(rowCount3, 100000);
             long t8 = System.currentTimeMillis();
             long timeTaken3 = t8 - t7;
             LOGGER.info("Time taken to fetch One Lac records  :  (in milliseconds) " + timeTaken3);
@@ -159,25 +195,30 @@ public class CarbonFlinkInputFormatPerformanceTest {
         writeToFile("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n\n");
         assertTrue(status3);
 
-        LOGGER.info(">>>>>>>>>Five Lakh records:::::::::::::::::::");
+        LOGGER.info(">>>>>>>>>Four Lakh records:::::::::::::::::::");
         averageTime = 0;
         for (int iterator = 0; iterator < 3; iterator++) {
             long t9 = System.currentTimeMillis();
-            String path4 = "/integration/flink/target/store-input/default/5lac_uniqdata";
+            String path4 = "/integration/flink/target/store/default/4lac_uniqdata";
             CarbonDataFlinkInputFormat carbondataFlinkInputFormat4 = new CarbonDataFlinkInputFormat(getRootPath() + path4, columns, false);
             DataSource dataSource4 = env.createInput(carbondataFlinkInputFormat4.getInputFormat());
             int rowCount4 = dataSource4.collect().size();
-            assertEquals(rowCount4, 526544);
+            assertEquals(rowCount4, 400000);
             long t10 = System.currentTimeMillis();
             long timeTaken4 = t10 - t9;
             averageTime = averageTime + timeTaken4;
-            LOGGER.info("Time taken to fetch Five Lac records  :  (in milliseconds) " + timeTaken4);
-            Boolean status4 = writeToFile("Time taken for Five Lac records :::  (in milliseconds) " + timeTaken4 + "\n");
+            LOGGER.info("Time taken to fetch Four Lac records  :  (in milliseconds) " + timeTaken4);
+            Boolean status4 = writeToFile("Time taken for Four Lac records :::  (in milliseconds) " + timeTaken4 + "\n");
             assertTrue(status4);
         }
-        Boolean status4 = writeToFile("\n" + date.toString() + " : Average Time taken for Five Lac records :::  (in milliseconds) " + averageTime / 3 + "\n");
+        Boolean status4 = writeToFile("\n" + date.toString() + " : Average Time taken for Four Lac records :::  (in milliseconds) " + averageTime / 3 + "\n");
         writeToFile("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n\n");
         assertTrue(status4);
     }
 
+    @AfterClass
+    public static void removeStore() throws IOException {
+        FileUtils.deleteDirectory(new File(getRootPath() + "/integration/flink/target/store"));
+        FileUtils.deleteDirectory(new File(getRootPath() + "/integration/flink/target/carbonmetastore"));
+    }
 }
