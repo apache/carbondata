@@ -99,8 +99,8 @@ public class IncludeFilterExecuterImplTest extends TestCase {
   @Test
   public void testPerformance() {
 
-    // dimension's data number in a blocklet, usually default is 120000
-    int dataChunkSize = 120000; 
+    // dimension's data number in a blocklet, usually default is 32000
+    int dataChunkSize = 32000; 
     //  repeat query times in the test
     int queryTimes = 5;    
     // repeated times for a dictionary value
@@ -122,8 +122,8 @@ public class IncludeFilterExecuterImplTest extends TestCase {
   @Test
   public void testBoundary() {
 
-	// dimension's data number in a blocklet, usually default is 120000
-    int dataChunkSize = 120000; 
+	// dimension's data number in a blocklet, usually default is 32000
+    int dataChunkSize = 32000; 
     //  repeat query times in the test
     int queryTimes = 5;    
     // repeated times for a dictionary value
