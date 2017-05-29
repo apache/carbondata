@@ -314,7 +314,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
           case SHORT:
           case INT:
           case LONG:
-            rowData.putLong(size, (Long) value);
+            rowData.putLong(size, Long.valueOf(value.toString()));
             size += 8;
             break;
           case DOUBLE:
