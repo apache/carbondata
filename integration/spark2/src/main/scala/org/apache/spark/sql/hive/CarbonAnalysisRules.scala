@@ -182,18 +182,22 @@ object CarbonIUDAnalysisRule extends Rule[LogicalPlan] {
   }
 
   def processDeleteRecordsQuery(selectStmt: String, table: UnresolvedRelation): LogicalPlan = {
-   // val tid = CarbonTableIdentifierImplicit.toTableIdentifier(Seq(table.tableIdentifier.toString()))
    val tidSeq = Seq(getDB.getDatabaseName(table.tableIdentifier.database, sparkSession),
      table.tableIdentifier.table)
     var addedTupleId = false
-    val selectPlan = new SparkSqlParser(sparkSession.sessionState.conf).parsePlan(selectStmt) transform {
-      case relation: UnresolvedRelation if (table.tableIdentifier == relation.tableIdentifier &&
-                                            addedTupleId == false) =>
+    val parsePlan = new SparkSqlParser(sparkSession.sessionState.conf).parsePlan(selectStmt)
+    val selectPlan = parsePlan transform {
+      case relation: UnresolvedRelation
+        if table.tableIdentifier == relation.tableIdentifier && !addedTupleId =>
         addedTupleId = true
         val tupleId = UnresolvedAlias(Alias(UnresolvedFunction("getTupleId",
           Seq.empty, isDistinct = false), "tupleId")())
+        val alias = table.alias match {
+          case Some(alias) => Some(table.alias.toSeq)
+          case _ => None
+        }
         val projList = Seq(
-          UnresolvedAlias(UnresolvedStar(Option(table.alias.toSeq))), tupleId)
+          UnresolvedAlias(UnresolvedStar(alias)), tupleId)
         // include tuple id in subqury
         Project(projList, relation)
     }

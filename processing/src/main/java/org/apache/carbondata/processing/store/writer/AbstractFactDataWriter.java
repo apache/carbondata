@@ -520,7 +520,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
           getMaxOfBlockAndFileSize(fileSizeInBytes, localCarbonFile.getSize()));
     } catch (IOException e) {
       throw new CarbonDataWriterException(
-          "Problem while copying file from local store to carbon store");
+          "Problem while copying file from local store to carbon store", e);
     }
     LOGGER.info(
         "Total copy time (ms) to copy file " + localFileName + " is " + (System.currentTimeMillis()
