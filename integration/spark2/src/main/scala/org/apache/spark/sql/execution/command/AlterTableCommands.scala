@@ -96,11 +96,19 @@ private[sql] case class AlterTableAddColumns(
       schemaEvolutionEntry.setAdded(newCols.toList.asJava)
       val thriftTable = schemaConverter
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
+      val catalog = sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog]
       AlterTableUtil
         .updateSchemaInfo(carbonTable,
           schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
           thriftTable)(sparkSession,
-          sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog])
+          catalog)
+      val newFields = alterTableAddColumnsModel.dimCols ++ alterTableAddColumnsModel.msrCols
+      val useCompatibleSchema = sparkSession.sparkContext.conf
+        .getBoolean(CarbonCommonConstants.SPARK_SCHEMA_HIVE_COMPATIBILITY_ENABLE, false)
+      if (useCompatibleSchema) {
+        catalog.client.runSqlHive(s"ALTER TABLE $dbName.$tableName " +
+          s"ADD COLUMNS(${newFields.sortBy(_.schemaOrdinal).map(f => f.rawSchema).mkString(",")})")
+      }
       LOGGER.info(s"Alter table for add columns is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for add columns is successful for table $dbName.$tableName")
     } catch {
@@ -335,17 +343,25 @@ private[sql] case class AlterTableDropColumns(
       timeStamp = System.currentTimeMillis
       val schemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
       schemaEvolutionEntry.setRemoved(deletedColumnSchema.toList.asJava)
+      val catalog = sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog]
       AlterTableUtil
         .updateSchemaInfo(carbonTable,
           schemaEvolutionEntry,
           tableInfo)(sparkSession,
-          sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog])
+          catalog)
       // TODO: 1. add check for deletion of index tables
       // delete dictionary files for dictionary column and clear dictionary cache from memory
       new AlterTableDropColumnRDD(sparkSession.sparkContext,
         dictionaryColumns,
         carbonTable.getCarbonTableIdentifier,
         carbonTable.getStorePath).collect()
+      val useCompatibleSchema = sparkSession.sparkContext.conf
+        .getBoolean(CarbonCommonConstants.SPARK_SCHEMA_HIVE_COMPATIBILITY_ENABLE, false)
+      if (useCompatibleSchema) {
+        deletedColumnSchema.foreach { col =>
+          catalog.client.runSqlHive(s"ALTER TABLE $dbName.$tableName DROP COLUMN ${col.column_name}")
+        }
+      }
       LOGGER.info(s"Alter table for drop columns is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for drop columns is successful for table $dbName.$tableName")
     } catch {
@@ -424,13 +440,26 @@ private[sql] case class AlterTableDataTypeChange(
       val schemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
       schemaEvolutionEntry.setAdded(List(addColumnSchema).asJava)
       schemaEvolutionEntry.setRemoved(List(deletedColumnSchema).asJava)
+      val catalog = sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog]
       tableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
         .setTime_stamp(System.currentTimeMillis)
       AlterTableUtil
         .updateSchemaInfo(carbonTable,
           schemaEvolutionEntry,
           tableInfo)(sparkSession,
-          sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog])
+          catalog)
+      val useCompatibleSchema = sparkSession.sparkContext.conf
+        .getBoolean(CarbonCommonConstants.SPARK_SCHEMA_HIVE_COMPATIBILITY_ENABLE, false)
+      if (useCompatibleSchema) {
+        val dataTypeInfo = alterTableDataTypeChangeModel.dataTypeInfo
+        val colSchema = if (dataTypeInfo.dataType == "decimal") {
+          s"decimal(${dataTypeInfo.precision},${dataTypeInfo.scale}"
+        } else {
+          dataTypeInfo.dataType
+        }
+        catalog.client.runSqlHive(s"ALTER TABLE $dbName.$tableName " +
+          s"ALTER COLUMN $columnName $colSchema")
+      }
       LOGGER.info(s"Alter table for data type change is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for data type change is successful for table $dbName.$tableName")
     } catch {

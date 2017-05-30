@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.commons.lang3.StringUtils
+
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -34,7 +35,6 @@ import org.apache.spark.sql.hive.{CarbonMetastore, CarbonMetastoreTypes, HiveCon
 import org.apache.spark.sql.types.{StructField, StructType, TimestampType}
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
-
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -160,7 +160,7 @@ case class CreateTable(cm: TableModel) extends RunnableCommand {
       val tablePath = catalog.createTableFromThrift(tableInfo, dbName, tbName, null)(sqlContext)
       try {
         val useCompatibleSchema = sqlContext.sparkContext.conf
-          .getBoolean("spark.carbon.hive.schema.compatibility.enable", false)
+          .getBoolean(CarbonCommonConstants.SPARK_SCHEMA_HIVE_COMPATIBILITY_ENABLE, false)
         if (useCompatibleSchema) {
           val hiveContext = sqlContext.asInstanceOf[HiveContext]
           val fields = new Array[Field](cm.dimCols.size + cm.msrCols.size)
@@ -170,18 +170,19 @@ case class CreateTable(cm: TableModel) extends RunnableCommand {
             val schemaString = f.rawSchema.replaceAll("`[0-9a-zA-Z]+`[\\s:]", "").toLowerCase
             StructField(f.column, CarbonMetastoreTypes.toDataType(schemaString))
           })
-          val threshold = hiveContext.conf.getConf(SQLConf.SCHEMA_STRING_LENGTH_THRESHOLD)
-          val schemaJsonString = schema.json
+          val threshold = hiveContext.conf
+            .getInt(CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD,
+              CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT)
           // Split the JSON string.
           val parts = schemaJsonString.grouped(threshold).toSeq
-          val schemaProperties = new StringBuilder
-          schemaProperties.append(s"'spark.sql.schema.numParts'='${parts.size.toString}',\n")
+          var schemaParts: Seq[String] = Seq.empty
+          schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_NUMPARTS'='${ parts.size }'"
           parts.zipWithIndex.foreach { case (part, index) =>
-            schemaProperties.append(s"'spark.sql.schema.part$index'='$part',\n")
+            schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_PART_PREFIX$index'='$part'"
           }
-          schemaProperties.deleteCharAt(schemaProperties.length() - 2)
+          val schemaString = schemaParts.mkString(",")
           hiveContext.catalog.client.runSqlHive(
-            s"""CREATE TABLE $dbName.$tbName
+            s"""CREATE EXTERNAL TABLE $dbName.$tbName
                |(${fields.map(f => f.rawSchema).mkString(",")})
                |ROW FORMAT SERDE
                |  'org.apache.carbondata.hive.CarbonHiveSerDe'
@@ -197,7 +198,7 @@ case class CreateTable(cm: TableModel) extends RunnableCommand {
                |  '$tablePath'
                |TBLPROPERTIES (
                |  'spark.sql.sources.provider'='org.apache.spark.sql.CarbonSource',
-               |  ${schemaProperties.toString()}
+               |  ${schemaString}
                |)""".stripMargin)
         } else {
           sqlContext.sql(

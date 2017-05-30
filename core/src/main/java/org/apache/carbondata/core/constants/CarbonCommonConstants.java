@@ -1185,6 +1185,9 @@ public final class CarbonCommonConstants {
   public static final String SPARK_SCHEMA_STRING_LENGTH_THRESHOLD =
       "spark.sql.sources.schemaStringLengthThreshold";
 
+  public static final String SPARK_SCHEMA_HIVE_COMPATIBILITY_ENABLE =
+      "spark.carbon.hive.schema.compatibility.enable";
+
   public static final int SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT = 4000;
 
   public static final String CARBON_BAD_RECORDS_ACTION = "carbon.bad.records.action";
