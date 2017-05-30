@@ -671,7 +671,7 @@ object CarbonDataRDDFactory {
 
       if (!updateModel.isDefined) {
       CarbonLoaderUtil.checkAndCreateCarbonDataLocation(storePath,
-        carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName, currentLoadCount.toString)
+        currentLoadCount.toString, carbonTable)
       }
       var loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
       var errorMessage: String = "DataLoad failure"
