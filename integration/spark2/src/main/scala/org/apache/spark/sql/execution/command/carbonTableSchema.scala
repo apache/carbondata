@@ -30,7 +30,9 @@ import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.hive.{CarbonMetastore, CarbonRelation, HiveExternalCatalog}
+import org.apache.spark.sql.hive.{CarbonMetastore, CarbonMetastoreTypes, CarbonRelation, HiveExternalCatalog}
+import org.apache.spark.sql.internal.StaticSQLConf.SCHEMA_STRING_LENGTH_THRESHOLD
+import org.apache.spark.sql.types.{StructField, StructType}
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
 
@@ -165,11 +167,53 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
           val fields = new Array[Field](cm.dimCols.size + cm.msrCols.size)
           cm.dimCols.foreach(f => fields(f.schemaOrdinal) = f)
           cm.msrCols.foreach(f => fields(f.schemaOrdinal) = f)
-          sparkSession.sql(
-            s"""CREATE TABLE $dbName.$tbName
-                |(${ fields.map(f => f.rawSchema).mkString(",") })
-                |USING org.apache.spark.sql.CarbonSource""".stripMargin +
-            s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath "$tablePath") """)
+          val useCompatibleSchema = sparkSession.sparkContext.conf
+            .getBoolean("spark.carbon.hive.schema.compatibility.enable", false)
+          if (useCompatibleSchema) {
+            val schema = StructType(fields.map { f =>
+              val schemaString = f.rawSchema.replaceAll("`[0-9a-zA-Z]+`[\\s:]", "").toLowerCase
+              StructField(f.column, CarbonMetastoreTypes.toDataType(schemaString))
+            })
+            val threshold = sparkSession.conf.get(SCHEMA_STRING_LENGTH_THRESHOLD)
+            val schemaJsonString = schema.json
+            // Split the JSON string.
+            val parts = schemaJsonString.grouped(threshold).toSeq
+            val schemaProperties = new StringBuilder
+            schemaProperties.append(s"'spark.sql.schema.numParts'='${parts.size.toString}',\n")
+            parts.zipWithIndex.foreach { case (part, index) =>
+              schemaProperties.append(s"'spark.sql.schema.part$index'='$part',\n")
+            }
+            schemaProperties.deleteCharAt(schemaProperties.length() - 2)
+
+            sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client
+              .runSqlHive(
+                s"""CREATE TABLE $dbName.$tbName
+                   |(${fields.map(f => f.rawSchema).mkString(",")})
+                   |ROW FORMAT SERDE
+                   |  'org.apache.carbondata.hive.CarbonHiveSerDe'
+                   |WITH SERDEPROPERTIES (
+                   |  'dbName'='$dbName',
+                   |  'path'='$tablePath',
+                   |  'tableName'='$tbName',
+                   |  'tablePath'='$tablePath'
+                   |)
+                   |STORED AS INPUTFORMAT
+                   |  'org.apache.carbondata.hive.MapredCarbonInputFormat'
+                   |OUTPUTFORMAT
+                   |  'org.apache.carbondata.hive.MapredCarbonOutputFormat'
+                   |LOCATION
+                   |  '$tablePath'
+                   |TBLPROPERTIES (
+                   |  'spark.sql.sources.provider'='org.apache.spark.sql.CarbonSource',
+                   |  ${schemaProperties.toString()}
+                   |)""".stripMargin)
+          } else {
+            sparkSession.sql(
+              s"""CREATE TABLE $dbName.$tbName
+                 |(${ fields.map(f => f.rawSchema).mkString(",") })
+                 |USING org.apache.spark.sql.CarbonSource""".stripMargin +
+                s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath "$tablePath") """)
+          }
         } catch {
           case e: Exception =>
             val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))

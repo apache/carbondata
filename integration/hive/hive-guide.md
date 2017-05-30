@@ -40,6 +40,7 @@ mvn -DskipTests -Pspark-2.1 -Dspark.version=2.1.0 clean package -Phadoop-2.7.2 -
 
 ## Create hive carbon table in spark shell
 
+Please set spark.carbon.hive.schema.compatibility.enable=true in spark-defaults.conf
 Start Spark shell by running the following command in the Spark directory:
 
 ```
@@ -79,6 +80,9 @@ export HIVE_AUX_JARS_PATH=hive/auxlibs/
 ```
 
 ### Alter schema in Hive
+If you already set spark.carbon.hive.schema.compatibility.enable=true in spark-defaults.conf, please skip this secion.
+For some tables which already exists, we need to alter schema in Hive.
+
 $HIVE_HOME/bin/hive
 
 ```

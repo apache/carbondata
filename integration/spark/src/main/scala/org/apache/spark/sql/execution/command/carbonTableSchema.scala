@@ -30,8 +30,8 @@ import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
-import org.apache.spark.sql.hive.CarbonMetastore
-import org.apache.spark.sql.types.TimestampType
+import org.apache.spark.sql.hive.{CarbonMetastore, CarbonMetastoreTypes, HiveContext}
+import org.apache.spark.sql.types.{StructField, StructType, TimestampType}
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
 
@@ -159,10 +159,51 @@ case class CreateTable(cm: TableModel) extends RunnableCommand {
       // Need to fill partitioner class when we support partition
       val tablePath = catalog.createTableFromThrift(tableInfo, dbName, tbName, null)(sqlContext)
       try {
-        sqlContext.sql(
-          s"""CREATE TABLE $dbName.$tbName USING carbondata""" +
-          s""" OPTIONS (tableName "$dbName.$tbName", tablePath "$tablePath") """)
-          .collect
+        val useCompatibleSchema = sqlContext.sparkContext.conf
+          .getBoolean("spark.carbon.hive.schema.compatibility.enable", false)
+        if (useCompatibleSchema) {
+          val hiveContext = sqlContext.asInstanceOf[HiveContext]
+          val fields = new Array[Field](cm.dimCols.size + cm.msrCols.size)
+          cm.dimCols.foreach(f => fields(f.schemaOrdinal) = f)
+          cm.msrCols.foreach(f => fields(f.schemaOrdinal) = f)
+          val schema = StructType(fields.map { f =>
+            val schemaString = f.rawSchema.replaceAll("`[0-9a-zA-Z]+`[\\s:]", "").toLowerCase
+            StructField(f.column, CarbonMetastoreTypes.toDataType(schemaString))
+          })
+          val threshold = hiveContext.conf.getConf(SQLConf.SCHEMA_STRING_LENGTH_THRESHOLD)
+          val schemaJsonString = schema.json
+          // Split the JSON string.
+          val parts = schemaJsonString.grouped(threshold).toSeq
+          val schemaProperties = new StringBuilder
+          schemaProperties.append(s"'spark.sql.schema.numParts'='${parts.size.toString}',\n")
+          parts.zipWithIndex.foreach { case (part, index) =>
+            schemaProperties.append(s"'spark.sql.schema.part$index'='$part',\n")
+          }
+          schemaProperties.deleteCharAt(schemaProperties.length() - 2)
+          hiveContext.catalog.client.runSqlHive(
+            s"""CREATE TABLE $dbName.$tbName
+               |(${fields.map(f => f.rawSchema).mkString(",")})
+               |ROW FORMAT SERDE
+               |  'org.apache.carbondata.hive.CarbonHiveSerDe'
+               |WITH SERDEPROPERTIES (
+               |  'tableName'='$dbName.$tbName',
+               |  'tablePath'='$tablePath'
+               |)
+               |STORED AS INPUTFORMAT
+               |  'org.apache.carbondata.hive.MapredCarbonInputFormat'
+               |OUTPUTFORMAT
+               |  'org.apache.carbondata.hive.MapredCarbonOutputFormat'
+               |LOCATION
+               |  '$tablePath'
+               |TBLPROPERTIES (
+               |  'spark.sql.sources.provider'='org.apache.spark.sql.CarbonSource',
+               |  ${schemaProperties.toString()}
+               |)""".stripMargin)
+        } else {
+          sqlContext.sql(
+            s"""CREATE TABLE $dbName.$tbName USING carbondata""" +
+            s""" OPTIONS (tableName "$dbName.$tbName", tablePath "$tablePath") """).collect
+        }
       } catch {
         case e: Exception =>
           val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
