@@ -27,7 +27,7 @@ class TestCreateTableWithDatabaseNameCaseChange extends QueryTest with BeforeAnd
 
   override def beforeAll {
     sql("use default")
-    sql("drop database if exists dbCaseChange cascade")
+    sql("drop database if exists dbCaseChange")
   }
 
   test("test create table with database case name change") {
@@ -53,6 +53,6 @@ class TestCreateTableWithDatabaseNameCaseChange extends QueryTest with BeforeAnd
 
   override def afterAll {
     sql("use default")
-    sql("drop database if exists dbCaseChange cascade")
+    sql("drop database if exists dbCaseChange")
   }
 }
