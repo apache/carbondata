@@ -930,9 +930,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   private lazy val decimalType =
   DECIMAL ~ (("(" ~> numericLit <~ ",") ~ (numericLit <~ ")")).? ^^ {
     case decimal ~ precisionAndScale => if (precisionAndScale.isDefined) {
-      s"$decimal(${ precisionAndScale.get._1 }, ${ precisionAndScale.get._2 })"
+      s"decimal(${ precisionAndScale.get._1 }, ${ precisionAndScale.get._2 })"
     } else {
-      s"$decimal(10,0)"
+      s"decimal(10,0)"
     }
   }
 
