@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.hive;
 
-
 import java.io.IOException;
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -41,7 +40,11 @@ import org.apache.hadoop.hive.serde2.io.DoubleWritable;
 import org.apache.hadoop.hive.serde2.io.HiveDecimalWritable;
 import org.apache.hadoop.hive.serde2.io.ShortWritable;
 import org.apache.hadoop.hive.serde2.io.TimestampWritable;
-import org.apache.hadoop.hive.serde2.objectinspector.*;
+import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.StructField;
+import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
@@ -61,7 +64,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
   private CarbonObjectInspector objInspector;
 
   public CarbonHiveRecordReader(QueryModel queryModel, CarbonReadSupport<ArrayWritable> readSupport,
-                                InputSplit inputSplit, JobConf jobConf) throws IOException {
+      InputSplit inputSplit, JobConf jobConf) throws IOException {
     super(queryModel, readSupport);
     initialize(inputSplit, jobConf);
   }
@@ -78,16 +81,16 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     }
     List<TableBlockInfo> tableBlockInfoList = CarbonHiveInputSplit.createBlocks(splitList);
     queryModel.setTableBlockInfos(tableBlockInfoList);
-    readSupport.initialize(queryModel.getProjectionColumns(),
-                           queryModel.getAbsoluteTableIdentifier());
+    readSupport
+        .initialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());
     try {
       carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
     } catch (QueryExecutionException e) {
       throw new IOException(e.getMessage(), e.getCause());
     }
     if (valueObj == null) {
-      valueObj = new ArrayWritable(Writable.class,
-                                   new Writable[queryModel.getProjectionColumns().length]);
+      valueObj =
+          new ArrayWritable(Writable.class, new Writable[queryModel.getProjectionColumns().length]);
     }
 
     final TypeInfo rowTypeInfo;
@@ -120,8 +123,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
   }
 
-  @Override
-  public boolean next(Void aVoid, ArrayWritable value) throws IOException {
+  @Override public boolean next(Void aVoid, ArrayWritable value) throws IOException {
     if (carbonIterator.hasNext()) {
       Object obj = readSupport.readRow(carbonIterator.next());
       ArrayWritable tmpValue = null;
@@ -138,11 +140,12 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
           System.arraycopy(arrCurrent, 0, arrValue, 0, arrCurrent.length);
         } else {
           if (arrValue.length != arrCurrent.length) {
-            throw new IOException("CarbonHiveInput : size of object differs. Value" +
-              " size :  " + arrValue.length + ", Current Object size : " + arrCurrent.length);
+            throw new IOException(
+                "CarbonHiveInput : size of object differs. Value" + " size :  " + arrValue.length
+                    + ", Current Object size : " + arrCurrent.length);
           } else {
-            throw new IOException("CarbonHiveInput can not support RecordReaders that" +
-              " don't return same key & value & value is null");
+            throw new IOException("CarbonHiveInput can not support RecordReaders that"
+                + " don't return same key & value & value is null");
           }
         }
       }
@@ -156,23 +159,19 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     return createStruct(obj, objInspector);
   }
 
-  @Override
-  public Void createKey() {
+  @Override public Void createKey() {
     return null;
   }
 
-  @Override
-  public ArrayWritable createValue() {
+  @Override public ArrayWritable createValue() {
     return valueObj;
   }
 
-  @Override
-  public long getPos() throws IOException {
+  @Override public long getPos() throws IOException {
     return 0;
   }
 
-  @Override
-  public float getProgress() throws IOException {
+  @Override public float getProgress() throws IOException {
     return 0;
   }
 
@@ -190,7 +189,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
   }
 
   private ArrayWritable createArray(Object obj, ListObjectInspector inspector)
-    throws SerDeException {
+      throws SerDeException {
     List sourceArray = inspector.getList(obj);
     ObjectInspector subInspector = inspector.getListElementObjectInspector();
     List array = new ArrayList();
@@ -208,7 +207,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
       ArrayWritable subArray = new ArrayWritable(((Writable) array.get(0)).getClass(),
           (Writable[]) array.toArray(new Writable[array.size()]));
 
-      return new ArrayWritable(Writable.class, new Writable[]{subArray});
+      return new ArrayWritable(Writable.class, new Writable[] { subArray });
     }
     return null;
   }
@@ -224,11 +223,11 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
       case DOUBLE:
         return new DoubleWritable((double) obj);
       case INT:
-        return new IntWritable(((Long) obj).intValue());
+        return new IntWritable((int) obj);
       case LONG:
         return new LongWritable((long) obj);
       case SHORT:
-        return new ShortWritable(((Long) obj).shortValue());
+        return new ShortWritable((Short) obj);
       case DATE:
         return new DateWritable(new Date(Long.parseLong(String.valueOf(obj.toString()))));
       case TIMESTAMP:
@@ -236,8 +235,8 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
       case STRING:
         return new Text(obj.toString());
       case DECIMAL:
-        return new HiveDecimalWritable(HiveDecimal.create(
-          ((org.apache.spark.sql.types.Decimal) obj).toJavaBigDecimal()));
+        return new HiveDecimalWritable(
+            HiveDecimal.create(((org.apache.spark.sql.types.Decimal) obj).toJavaBigDecimal()));
     }
     throw new SerDeException("Unknown primitive : " + inspector.getPrimitiveCategory());
   }
