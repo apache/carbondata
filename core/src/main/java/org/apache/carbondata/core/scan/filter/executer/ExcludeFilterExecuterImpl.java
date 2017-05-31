@@ -146,17 +146,9 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     BitSet bitSet = new BitSet(numerOfRows);
     bitSet.flip(0, numerOfRows);
     byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-    if (filterValues.length > 1) {
+    for (int k = 0; k < filterValues.length; k++) {
       for (int j = 0; j < numerOfRows; j++) {
-        int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
-            dimColumnDataChunk.getChunkData(j));
-        if (index >= 0) {
-          bitSet.flip(j);
-        }
-      }
-    } else if (filterValues.length == 1) {
-      for (int j = 0; j < numerOfRows; j++) {
-        if (dimColumnDataChunk.compareTo(j, filterValues[0]) == 0) {
+        if (dimColumnDataChunk.compareTo(j, filterValues[k]) == 0) {
           bitSet.flip(j);
         }
       }
