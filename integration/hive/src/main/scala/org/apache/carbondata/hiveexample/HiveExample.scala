@@ -17,7 +17,7 @@
 package org.apache.carbondata.hiveexample
 
 import java.io.File
-import java.sql.{DriverManager, ResultSet, SQLException, Statement}
+import java.sql.{DriverManager, ResultSet, Statement}
 
 import org.apache.spark.sql.SparkSession
 
@@ -29,11 +29,6 @@ object HiveExample {
 
   private val driverName: String = "org.apache.hive.jdbc.HiveDriver"
 
-  /**
-   * @param args
-   * @throws SQLException
-   */
-  @throws[SQLException]
   def main(args: Array[String]) {
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
@@ -41,46 +36,38 @@ object HiveExample {
     val warehouse = s"$rootPath/integration/hive/target/warehouse"
     val metaStore_Db = s"$rootPath/integration/hive/target/carbon_metaStore_db"
     val logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+    var resultId = ""
+    var resultName = ""
+    var resultSalary = ""
+
 
     import org.apache.spark.sql.CarbonSession._
 
-    System.setProperty("hadoop.home.dir", "/")
-
-    val carbon = SparkSession
+    val carbonSession = SparkSession
       .builder()
       .master("local")
       .appName("HiveExample")
-      .config("carbon.sql.warehouse.dir", warehouse).enableHiveSupport()
+      .config("carbonSession.sql.warehouse.dir", warehouse).enableHiveSupport()
       .getOrCreateCarbonSession(
         store, metaStore_Db)
 
-    val carbonHadoopJarPath = s"$rootPath/assembly/target/scala-2.11/carbondata_2.11-1.1" +
-                              ".0-incubating-SNAPSHOT-shade-hadoop2.7.2.jar"
+    carbonSession.sql("""DROP TABLE IF EXISTS HIVE_CARBON_EXAMPLE""".stripMargin)
 
-    val carbon_DefaultHadoopVersion_JarPath =
-      s"$rootPath/assembly/target/scala-2.11/carbondata_2.11-1.1" +
-      ".0-incubating-SNAPSHOT-shade-hadoop2.2.0.jar"
-
-    val hiveJarPath = s"$rootPath/integration/hive/target/carbondata-hive-1.1" +
-                      ".0-incubating-SNAPSHOT.jar"
-
-    carbon.sql("""DROP TABLE IF EXISTS HIVE_CARBON_EXAMPLE""".stripMargin)
-
-    carbon
+    carbonSession
       .sql(
         """CREATE TABLE HIVE_CARBON_EXAMPLE (ID int,NAME string,SALARY double) STORED BY
           |'CARBONDATA' """
           .stripMargin)
 
-    carbon.sql(
+    carbonSession.sql(
       s"""
            LOAD DATA LOCAL INPATH '$rootPath/integration/hive/src/main/resources/data.csv' INTO
            TABLE
          HIVE_CARBON_EXAMPLE
            """)
-    carbon.sql("SELECT * FROM HIVE_CARBON_EXAMPLE").show()
+    carbonSession.sql("SELECT * FROM HIVE_CARBON_EXAMPLE").show()
 
-    carbon.stop()
+    carbonSession.stop()
 
     try {
       Class.forName(driverName)
@@ -93,84 +80,49 @@ object HiveExample {
     val hiveEmbeddedServer2 = new HiveEmbeddedServer2()
     hiveEmbeddedServer2.start()
     val port = hiveEmbeddedServer2.getFreePort
-    val con = DriverManager.getConnection(s"jdbc:hive2://localhost:$port/default", "", "")
-    val stmt: Statement = con.createStatement
+    val connection = DriverManager.getConnection(s"jdbc:hive2://localhost:$port/default", "", "")
+    val statement: Statement = connection.createStatement
 
     logger.info(s"============HIVE CLI IS STARTED ON PORT $port ==============")
 
-    try {
-      stmt
-        .execute(s"ADD JAR $carbonHadoopJarPath")
-    }
-    catch {
-      case exception: Exception =>
-        logger.warn(s"Jar Not Found $carbonHadoopJarPath" + "Looking For hadoop 2.2.0 version jar")
-        try {
-          stmt
-            .execute(s"ADD JAR $carbon_DefaultHadoopVersion_JarPath")
-        }
-        catch {
-          case exception: Exception => logger
-            .error("Exception Occurs:Neither One of Jar is Found" +
-                   s"$carbon_DefaultHadoopVersion_JarPath,$carbonHadoopJarPath" +
-                   "Atleast One Should Be Build")
-            hiveEmbeddedServer2.stop()
-            System.exit(0)
-        }
-    }
-    try {
-      stmt
-        .execute(s"ADD JAR $hiveJarPath")
-    }
-    catch {
-      case exception: Exception => logger.error(s"Exception Occurs:Jar Not Found $hiveJarPath")
-        hiveEmbeddedServer2.stop()
-        System.exit(0)
-
-    }
-    stmt.execute("set hive.mapred.supports.subdirectories=true")
-    stmt.execute("set mapreduce.input.fileinputformat.input.dir.recursive=true")
-
-
-    stmt.execute("CREATE TABLE IF NOT EXISTS " + "HIVE_CARBON_EXAMPLE " +
-                 " (ID int, NAME string,SALARY double)")
-    stmt
+    statement.execute("CREATE TABLE IF NOT EXISTS " + "HIVE_CARBON_EXAMPLE " +
+                      " (ID int, NAME string,SALARY double)")
+    statement
       .execute(
         "ALTER TABLE HIVE_CARBON_EXAMPLE SET FILEFORMAT INPUTFORMAT \"org.apache.carbondata." +
         "hive.MapredCarbonInputFormat\"OUTPUTFORMAT \"org.apache.carbondata.hive." +
         "MapredCarbonOutputFormat\"SERDE \"org.apache.carbondata.hive." +
         "CarbonHiveSerDe\" ")
 
-    stmt
+    statement
       .execute(
         "ALTER TABLE HIVE_CARBON_EXAMPLE SET LOCATION " +
         s"'file:///$store/default/hive_carbon_example' ")
 
-
     val sql = "SELECT * FROM HIVE_CARBON_EXAMPLE"
 
-    val res: ResultSet = stmt.executeQuery(sql)
+    val resultSet: ResultSet = statement.executeQuery(sql)
 
     var rowsFetched = 0
 
-    while (res.next) {
+    while (resultSet.next) {
       if (rowsFetched == 0) {
         println("+---+" + "+-------+" + "+--------------+")
         println("| ID|" + "| NAME |" + "| SALARY        |")
 
         println("+---+" + "+-------+" + "+--------------+")
 
-        val resultId = res.getString("id")
-        val resultName = res.getString("name")
-        val resultSalary = res.getString("salary")
+        resultId = resultSet.getString("id")
+        resultName = resultSet.getString("name")
+        resultSalary = resultSet.getString("salary")
 
         println(s"| $resultId |" + s"| $resultName |" + s"| $resultSalary  |")
         println("+---+" + "+-------+" + "+--------------+")
       }
       else {
-        val resultId = res.getString("ID")
-        val resultName = res.getString("NAME")
-        val resultSalary = res.getString("SALARY")
+        resultId = resultSet.getString("ID")
+        resultName = resultSet.getString("NAME")
+        resultSalary = resultSet.getString("SALARY")
 
         println(s"| $resultId |" + s"| $resultName |" + s"| $resultSalary   |")
         println("+---+" + "+-------+" + "+--------------+")
@@ -184,7 +136,7 @@ object HiveExample {
     // fetching the separate columns
     var individualColRowsFetched = 0
 
-    val resultIndividualCol = stmt.executeQuery("SELECT NAME FROM HIVE_CARBON_EXAMPLE")
+    val resultIndividualCol = statement.executeQuery("SELECT NAME FROM HIVE_CARBON_EXAMPLE")
 
     while (resultIndividualCol.next) {
       if (individualColRowsFetched == 0) {
@@ -193,13 +145,13 @@ object HiveExample {
 
         println("+---++---------+")
 
-        val resultName = resultIndividualCol.getString("name")
+        resultName = resultIndividualCol.getString("name")
 
         println(s"| $resultName    |")
         println("+---+" + "+---------+")
       }
       else {
-        val resultName = resultIndividualCol.getString("NAME")
+        resultName = resultIndividualCol.getString("NAME")
 
         println(s"| $resultName      |")
         println("+---+" + "+---------+")
@@ -211,8 +163,10 @@ object HiveExample {
 
     logger.info("Fetching the Out Of Order Columns ")
 
-    val resultOutOfOrderCol = stmt.executeQuery("SELECT SALARY,ID,NAME FROM HIVE_CARBON_EXAMPLE")
+    val resultOutOfOrderCol = statement
+      .executeQuery("SELECT SALARY,ID,NAME FROM HIVE_CARBON_EXAMPLE")
     var outOfOrderColFetched = 0
+
     while (resultOutOfOrderCol.next()) {
       if (outOfOrderColFetched == 0) {
         println("+---+" + "+-------+" + "+--------------+")
@@ -220,17 +174,17 @@ object HiveExample {
 
         println("+---+" + "+-------+" + "+--------------+")
 
-        val resultId = resultOutOfOrderCol.getString("id")
-        val resultName = resultOutOfOrderCol.getString("name")
-        val resultSalary = resultOutOfOrderCol.getString("salary")
+        resultId = resultOutOfOrderCol.getString("id")
+        resultName = resultOutOfOrderCol.getString("name")
+        resultSalary = resultOutOfOrderCol.getString("salary")
 
         println(s"| $resultSalary |" + s"| $resultId |" + s"| $resultName  |")
         println("+---+" + "+-------+" + "+--------------+")
       }
       else {
-        val resultId = resultOutOfOrderCol.getString("ID")
-        val resultName = resultOutOfOrderCol.getString("NAME")
-        val resultSalary = resultOutOfOrderCol.getString("SALARY")
+        resultId = resultOutOfOrderCol.getString("ID")
+        resultName = resultOutOfOrderCol.getString("NAME")
+        resultSalary = resultOutOfOrderCol.getString("SALARY")
 
         println(s"| $resultSalary |" + s"| $resultId |" + s"| $resultName   |")
         println("+---+" + "+-------+" + "+--------------+")
