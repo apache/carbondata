@@ -282,7 +282,15 @@ private[sql] case class AlterTableDropColumns(
       carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
         .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
         .tableMeta.carbonTable
+      val columnNames = carbonTable.getPartitionInfo(tableName).getColumnSchemaList.asScala.map(_.getColumnName)
       // check each column existence in the table
+      val partitionColumns = alterTableDropColumnModel.columns.filter {
+        tableColumn => columnNames.contains(tableColumn)
+      }
+      if (partitionColumns.nonEmpty) {
+        throw new UnsupportedOperationException("Partition columns cannot be dropped: " +
+                                                s"$partitionColumns")
+      }
       val tableColumns = carbonTable.getCreateOrderColumn(tableName).asScala
       var dictionaryColumns = Seq[org.apache.carbondata.core.metadata.schema.table.column
       .ColumnSchema]()

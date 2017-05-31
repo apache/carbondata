@@ -169,7 +169,7 @@ object CommonUtil {
       partitionType.get.toUpperCase() match {
         case "HASH" => if (!numPartitions.isDefined) isValid = false
         case "LIST" => if (!listInfo.isDefined) isValid = false
-        case "RANGE" => if (!rangeInfo.isDefined) isValid = false
+        case "RANGE" => isValid = validateRangeInfo(rangeInfo)
         case "RANGE_INTERVAL" => isValid = false
         case _ => isValid = false
       }
@@ -178,6 +178,17 @@ object CommonUtil {
     }
     isValid
   }
+
+  private def validateRangeInfo(rangeInfo: Option[String]): Boolean = {
+    rangeInfo match {
+      case Some(range) =>
+        val rangeSplit = range.split(",").map(_.trim)
+        val sortedRange = rangeSplit.sorted
+        sortedRange.sameElements(rangeSplit)
+      case None => false
+    }
+  }
+
 
   def validateFields(key: String, fields: Seq[Field]): Boolean = {
     var isValid: Boolean = false

@@ -114,6 +114,68 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     assert(partitionInfo.getListInfo.get(2).get(1).equals("3"))
   }
 
+  test("check if string range is ascending") {
+    sql("drop table if exists default.listTable")
+    intercept[Exception] {
+      sql(
+        """
+        | CREATE TABLE default.listTable (empno int, empname String, designation String, doj Timestamp,
+        |  workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (workgroupcategory string)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('PARTITION_TYPE'='Range',
+        |  'Range_info'='0,10,5,20')
+      """.
+          stripMargin)
+      }
+  }
+
+  test("check if timestamp range is ascending") {
+    sql("drop table if exists default.listTable")
+    intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE default.listTable (empno int, empname String, designation String, doj Timestamp,
+          |  workgroupcategoryname String, deptno int, deptname String,
+          |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+          |  utilization int,salary int)
+          | PARTITIONED BY (workgroupcategory timestamp)
+          | STORED BY 'org.apache.carbondata.format'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
+          |  'RANGE_INFO'='10-10-2015,21-10-2015,15-10-2015,30-10-2015')
+        """.
+          stripMargin)
+    }
+  }
+
+  test("check if numeric range is ascending") {
+    sql("drop table if exists default.listTable")
+    intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE default.listTable (empno int, empname String, designation String, doj Timestamp,
+          |  workgroupcategoryname String, deptno int, deptname String,
+          |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+          |  utilization int,salary int)
+          | PARTITIONED BY (workgroupcategory int)
+          | STORED BY 'org.apache.carbondata.format'
+          | TBLPROPERTIES('PARTITION_TYPE'='Range',
+          |  'Range_info'='0,10,5,20')
+        """.
+          stripMargin)
+    }
+  }
+
+  test("test exception if partition column is dropped") {
+    sql("drop table if exists test")
+    sql(
+      "create table test(a int, b string) partitioned by (c int) stored by 'carbondata' " +
+      "tblproperties('PARTITION_TYPE'='LIST','list_info'='0,10,5,20')")
+    intercept[Exception] { sql("alter table test drop columns(c)") }
+  }
+
   override def afterAll = {
     dropTable
   }
