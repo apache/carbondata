@@ -87,7 +87,7 @@ object CarbonIUDAnalysisRule extends Rule[LogicalPlan] {
      this.sparkSession = sparkSession
   }
 
-  private val parser = new SparkSqlParser(sparkSession.sessionState.conf)
+  private lazy val parser = new SparkSqlParser(sparkSession.sessionState.conf)
 
   private def processUpdateQuery(
       table: UnresolvedRelation,
