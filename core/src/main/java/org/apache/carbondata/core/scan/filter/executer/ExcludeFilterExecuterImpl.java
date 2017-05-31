@@ -22,8 +22,6 @@ import java.util.BitSet;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
-import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
-import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionDataChunk;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -35,7 +33,10 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
   protected DimColumnResolvedFilterInfo dimColEvaluatorInfo;
   protected DimColumnExecuterFilterInfo dimColumnExecuterInfo;
   protected SegmentProperties segmentProperties;
-
+  /**
+   * is dimension column data is natural sorted
+   */
+  private boolean isNaturalSorted;
   public ExcludeFilterExecuterImpl(DimColumnResolvedFilterInfo dimColEvaluatorInfo,
       SegmentProperties segmentProperties) {
     this.dimColEvaluatorInfo = dimColEvaluatorInfo;
@@ -43,6 +44,8 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     this.segmentProperties = segmentProperties;
     FilterUtil.prepareKeysFromSurrogates(dimColEvaluatorInfo.getFilterValues(), segmentProperties,
         dimColEvaluatorInfo.getDimension(), dimColumnExecuterInfo);
+    isNaturalSorted = dimColEvaluatorInfo.getDimension().isUseInvertedIndex() && dimColEvaluatorInfo
+        .getDimension().isSortColumn();
   }
 
   @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder) throws IOException {
@@ -69,96 +72,71 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
 
   protected BitSet getFilteredIndexes(DimensionColumnDataChunk dimColumnDataChunk,
       int numerOfRows) {
-    // For high cardinality dimensions.
-    if (dimColumnDataChunk.isNoDicitionaryColumn()
-        && dimColumnDataChunk instanceof VariableLengthDimensionDataChunk) {
-      return setDirectKeyFilterIndexToBitSet((VariableLengthDimensionDataChunk) dimColumnDataChunk,
-          numerOfRows);
+    if (dimColumnDataChunk.isExplicitSorted()) {
+      return setFilterdIndexToBitSetWithColumnIndex(dimColumnDataChunk, numerOfRows);
     }
-    if (dimColumnDataChunk.isExplicitSorted()
-        && dimColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
-      return setFilterdIndexToBitSetWithColumnIndex(
-          (FixedLengthDimensionDataChunk) dimColumnDataChunk, numerOfRows);
-    }
-    return setFilterdIndexToBitSet((FixedLengthDimensionDataChunk) dimColumnDataChunk, numerOfRows);
-  }
-
-  private BitSet setDirectKeyFilterIndexToBitSet(
-      VariableLengthDimensionDataChunk dimColumnDataChunk, int numerOfRows) {
-    BitSet bitSet = new BitSet(numerOfRows);
-    bitSet.flip(0, numerOfRows);
-    byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-    for (int i = 0; i < filterValues.length; i++) {
-      byte[] filterVal = filterValues[i];
-      if (dimColumnDataChunk.isExplicitSorted()) {
-        for (int index = 0; index < numerOfRows; index++) {
-          if (dimColumnDataChunk.compareTo(index, filterVal) == 0) {
-            bitSet.flip(dimColumnDataChunk.getInvertedIndex(index));
-          }
-        }
-      } else {
-        for (int index = 0; index < numerOfRows; index++) {
-          if (dimColumnDataChunk.compareTo(index, filterVal) == 0) {
-            bitSet.flip(index);
-          }
-        }
-      }
-    }
-    return bitSet;
-
+    return setFilterdIndexToBitSet(dimColumnDataChunk, numerOfRows);
   }
 
   private BitSet setFilterdIndexToBitSetWithColumnIndex(
-      FixedLengthDimensionDataChunk dimColumnDataChunk, int numerOfRows) {
-    int startKey = 0;
-    int last = 0;
-    int startIndex = 0;
+      DimensionColumnDataChunk dimensionColumnDataChunk, int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
     bitSet.flip(0, numerOfRows);
+    int startIndex = 0;
     byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
     for (int i = 0; i < filterValues.length; i++) {
-      startKey = CarbonUtil
-          .getFirstIndexUsingBinarySearch(dimColumnDataChunk, startIndex, numerOfRows - 1,
-              filterValues[i], false);
-      if (startKey < 0) {
-        continue;
-      }
-      bitSet.flip(dimColumnDataChunk.getInvertedIndex(startKey));
-      last = startKey;
-      for (int j = startKey + 1; j < numerOfRows; j++) {
-        if (dimColumnDataChunk.compareTo(j, filterValues[i]) == 0) {
-          bitSet.flip(dimColumnDataChunk.getInvertedIndex(j));
-          last++;
-        } else {
-          break;
-        }
-      }
-      startIndex = last;
       if (startIndex >= numerOfRows) {
         break;
+      }
+      int[] rangeIndex = CarbonUtil
+          .getRangeIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
+              filterValues[i]);
+      for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
+        bitSet.flip(dimensionColumnDataChunk.getInvertedIndex(j));
+      }
+      if (rangeIndex[1] >= 0) {
+        startIndex = rangeIndex[1] + 1;
       }
     }
     return bitSet;
   }
 
-  // use binary search to replace for clause
-  private BitSet setFilterdIndexToBitSet(FixedLengthDimensionDataChunk dimColumnDataChunk,
+  private BitSet setFilterdIndexToBitSet(DimensionColumnDataChunk dimensionColumnDataChunk,
       int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
     bitSet.flip(0, numerOfRows);
     byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-    if (filterValues.length > 1) {
-      for (int j = 0; j < numerOfRows; j++) {
-        int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
-            dimColumnDataChunk.getChunkData(j));
-        if (index >= 0) {
+    // binary search can only be applied if column is sorted
+    if (isNaturalSorted) {
+      int startIndex = 0;
+      for (int i = 0; i < filterValues.length; i++) {
+        if (startIndex >= numerOfRows) {
+          break;
+        }
+        int[] rangeIndex = CarbonUtil
+            .getRangeIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
+                filterValues[i]);
+        for (int j = rangeIndex[0]; j <= rangeIndex[1]; j++) {
           bitSet.flip(j);
         }
+        if (rangeIndex[1] >= 0) {
+          startIndex = rangeIndex[1] + 1;
+        }
       }
-    } else if (filterValues.length == 1) {
-      for (int j = 0; j < numerOfRows; j++) {
-        if (dimColumnDataChunk.compareTo(j, filterValues[0]) == 0) {
-          bitSet.flip(j);
+    } else {
+      if (filterValues.length > 1) {
+        for (int i = 0; i < numerOfRows; i++) {
+          int index = CarbonUtil.binarySearch(filterValues, 0, filterValues.length - 1,
+              dimensionColumnDataChunk.getChunkData(i));
+          if (index >= 0) {
+            bitSet.flip(i);
+          }
+        }
+      } else {
+        for (int j = 0; j < numerOfRows; j++) {
+          if (dimensionColumnDataChunk.compareTo(j, filterValues[0]) == 0) {
+            bitSet.flip(j);
+          }
         }
       }
     }

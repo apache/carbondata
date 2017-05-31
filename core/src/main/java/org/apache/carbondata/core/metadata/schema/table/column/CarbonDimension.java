@@ -122,6 +122,13 @@ public class CarbonDimension extends CarbonColumn {
   }
 
   /**
+   * @return is column participated in sorting or not
+   */
+  public boolean isSortColumn() {
+    return this.columnSchema.isSortColumn();
+  }
+
+  /**
    * to generate the hash code for this class
    */
   @Override public int hashCode() {
