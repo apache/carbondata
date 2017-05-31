@@ -35,18 +35,18 @@ class InsertIntoCarbonTableSpark1TestCase extends QueryTest with BeforeAndAfterA
      CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
      
-     sql("drop table if exists load")
-     sql("drop table if exists inser")
-     sql("CREATE TABLE load(imei string,age int,task bigint,num double,level decimal(10,3),productdate timestamp,name string,point int)STORED BY 'org.apache.carbondata.format'")
-     sql("LOAD DATA INPATH '" + resourcesPath + "/shortolap.csv' INTO TABLE load options ('DELIMITER'=',', 'QUOTECHAR'='\"','FILEHEADER' = 'imei,age,task,num,level,productdate,name,point')")
-     sql("CREATE TABLE inser(imei string,age int,task bigint,num double,level decimal(10,3),productdate timestamp)STORED BY 'org.apache.carbondata.format'")
-     sql("insert into inser select * from load")
+     sql("drop table if exists loadTable")
+     sql("drop table if exists insertTable")
+     sql("CREATE TABLE loadTable(imei string,age int,task bigint,num double,level decimal(10,3),productdate timestamp,name string,point int)STORED BY 'org.apache.carbondata.format'")
+     sql("LOAD DATA INPATH '" + resourcesPath + "/shortolap.csv' INTO TABLE loadTable options ('DELIMITER'=',', 'QUOTECHAR'='\"','FILEHEADER' = 'imei,age,task,num,level,productdate,name,point')")
+     sql("CREATE TABLE insertTable(imei string,age int,task bigint,num double,level decimal(10,3),productdate timestamp) STORED BY 'org.apache.carbondata.format'")
+     sql("insert into insertTable select * from loadTable")
      checkAnswer(
-         sql("select * from inser"),
-         sql("select imei,age,task,num,level,productdate from load")
+         sql("select * from insertTable"),
+         sql("select imei,age,task,num,level,productdate from loadTable")
      ) 
-     sql("drop table if exists load")
-     sql("drop table if exists inser")
+     sql("drop table if exists loadTable")
+     sql("drop table if exists insertTable")
      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, timeStampPropOrig)
   }
 
@@ -73,8 +73,8 @@ class InsertIntoCarbonTableSpark1TestCase extends QueryTest with BeforeAndAfterA
 //  }
 
   override def afterAll {
-    sql("drop table if exists load")
-    sql("drop table if exists inser")
+    sql("drop table if exists loadTable")
+    sql("drop table if exists insertTable")
     sql("DROP TABLE IF EXISTS THive")
     sql("DROP TABLE IF EXISTS TCarbon")
   }
