@@ -20,9 +20,13 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
-
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "false")
     sql("use default")
     sql("drop database  if exists iud_db cascade")
     sql("create database  iud_db")
@@ -44,9 +48,9 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud_db.dest""")
     sql("""create table iud_db.dest (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
-    sql("""delete from dest where c2 = 2""").show
+    sql("""delete from iud_db.dest where c2 = 2""").show
     checkAnswer(
-      sql("""select c1 from dest"""),
+      sql("""select c1 from iud_db.dest"""),
       Seq(Row("a"), Row("c"), Row("d"), Row("e"))
     )
   }
@@ -124,6 +128,8 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     )
   }
   override def afterAll {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
     sql("use default")
     sql("drop database  if exists iud_db cascade")
   }

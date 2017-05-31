@@ -27,7 +27,7 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.RunnableCommand
+import org.apache.spark.sql.execution.command.{ProjectForUpdateCommand, RunnableCommand}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{IntegerType, StringType}
 
@@ -69,7 +69,8 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         return plan
       }
       LOGGER.info("Starting to optimize plan")
-      val udfTransformedPlan = pushDownUDFToJoinLeftRelation(plan)
+      val iudPlan = processPlan(plan)
+      val udfTransformedPlan = pushDownUDFToJoinLeftRelation(iudPlan)
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("")
       val queryStatistic = new QueryStatistic()
       val result = transformCarbonPlan(udfTransformedPlan, relations)
@@ -112,6 +113,30 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     }
     output
   }
+
+  private def processPlan(plan: LogicalPlan): LogicalPlan = {
+    plan transform {
+      case ProjectForUpdate(table, cols, Seq(updatePlan)) =>
+        var isTransformed = false
+        val newPlan = updatePlan transform {
+          case Project(pList, child) if (!isTransformed) =>
+            val (dest: Seq[NamedExpression], source: Seq[NamedExpression]) = pList
+              .splitAt(pList.size - cols.size)
+            val diff = cols.diff(dest.map(_.name.toLowerCase))
+            if (diff.size > 0) {
+              sys.error(s"Unknown column(s) ${diff.mkString(",")} in table ${table.tableName}")
+            }
+            isTransformed = true
+            Project(dest.filter(a => !cols.contains(a.name.toLowerCase)) ++ source, child)
+        }
+        val identifier = table.tableIdentifier.database match {
+          case Some(db) => Seq(db, table.tableIdentifier.table)
+          case _ => Seq(table.tableIdentifier.table)
+        }
+        ProjectForUpdateCommand(newPlan, identifier)
+    }
+  }
+
 
   def isOptimized(plan: LogicalPlan): Boolean = {
     plan find {
