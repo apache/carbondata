@@ -34,6 +34,7 @@ import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -283,7 +284,8 @@ public abstract class AbstractScannedResult {
         String data = getBlockletId();
         if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
             .equals(columnVectorInfo.dimension.getColumnName())) {
-          data = data + CarbonCommonConstants.FILE_SEPARATOR + j;
+          data = data + CarbonCommonConstants.FILE_SEPARATOR +
+              (rowMapping == null ? j : rowMapping[pageCounter][j]);
         }
         vector.putBytes(vectorOffset++, offset, data.length(), data.getBytes());
       }
@@ -637,5 +639,18 @@ public abstract class AbstractScannedResult {
   public void setBlockletDeleteDeltaCache(
       BlockletLevelDeleteDeltaDataCache blockletDeleteDeltaCache) {
     this.blockletDeleteDeltaCache = blockletDeleteDeltaCache;
+  }
+
+  public void markFilteredRows(CarbonColumnarBatch columnarBatch, int startRow, int size,
+      int vectorOffset) {
+    if (blockletDeleteDeltaCache != null) {
+      int len = startRow + size;
+      for (int i = startRow; i < len; i++) {
+        if (blockletDeleteDeltaCache.contains(i)) {
+          columnarBatch.markFiltered(vectorOffset);
+        }
+        vectorOffset++;
+      }
+    }
   }
 }

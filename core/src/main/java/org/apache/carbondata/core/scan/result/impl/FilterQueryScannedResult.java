@@ -18,6 +18,7 @@ package org.apache.carbondata.core.scan.result.impl;
 
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
+import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 /**
@@ -118,6 +119,19 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
     for (int i = 0; i < measuresOrdinal.length; i++) {
       vectorInfo[i].measureVectorFiller.fillMeasureVectorForFilter(rowMapping[pageCounter],
           measureDataChunks[measuresOrdinal[i]][pageCounter], vectorInfo[i]);
+    }
+  }
+
+  @Override public void markFilteredRows(CarbonColumnarBatch columnarBatch, int startRow, int size,
+      int vectorOffset) {
+    if (blockletDeleteDeltaCache != null) {
+      int len = startRow + size;
+      for (int i = startRow; i < len; i++) {
+        if (blockletDeleteDeltaCache.contains(rowMapping[pageCounter][i])) {
+          columnarBatch.markFiltered(vectorOffset);
+        }
+        vectorOffset++;
+      }
     }
   }
 }

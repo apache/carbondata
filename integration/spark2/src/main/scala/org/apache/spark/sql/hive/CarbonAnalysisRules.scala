@@ -79,13 +79,7 @@ object CarbonPreInsertionCasts extends Rule[LogicalPlan] {
   }
 }
 
-object CarbonIUDAnalysisRule extends Rule[LogicalPlan] {
-
-  var sparkSession: SparkSession = _
-
-  def init(sparkSession: SparkSession) {
-     this.sparkSession = sparkSession
-  }
+case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
   private val parser = new SparkSqlParser(sparkSession.sessionState.conf)
 

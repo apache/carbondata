@@ -42,7 +42,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled , "true")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "false")
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
   }
 
 

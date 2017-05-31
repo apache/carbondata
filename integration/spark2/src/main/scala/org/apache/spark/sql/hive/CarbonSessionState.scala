@@ -67,7 +67,6 @@ class CarbonSessionCatalog(
   lazy val carbonEnv = {
     val env = new CarbonEnv
     env.init(sparkSession)
-    CarbonIUDAnalysisRule.init(sparkSession)
     env
   }
 
@@ -130,7 +129,7 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
         catalog.ParquetConversions ::
         catalog.OrcConversions ::
         CarbonPreInsertionCasts ::
-        CarbonIUDAnalysisRule ::
+        CarbonIUDAnalysisRule(sparkSession) ::
         AnalyzeCreateTable(sparkSession) ::
         PreprocessTableInsertion(conf) ::
         DataSourceAnalysis(conf) ::
