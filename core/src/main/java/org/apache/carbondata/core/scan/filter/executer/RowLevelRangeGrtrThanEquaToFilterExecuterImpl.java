@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.BitSet;
 import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
@@ -53,6 +54,8 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier, segmentProperties,
         null);
     this.filterRangeValues = filterRangeValues;
+    isNaturalSorted = dimColEvaluatorInfoList.get(0).getDimension().isUseInvertedIndex()
+        && dimColEvaluatorInfoList.get(0).getDimension().isSortColumn();
     ifDefaultValueMatchesFilter();
   }
 
@@ -151,10 +154,17 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
 
   private BitSet getFilteredIndexes(DimensionColumnDataChunk dimensionColumnDataChunk,
       int numerOfRows) {
+    BitSet bitSet = null;
     if (dimensionColumnDataChunk.isExplicitSorted()) {
-      return setFilterdIndexToBitSetWithColumnIndex(dimensionColumnDataChunk, numerOfRows);
+      bitSet = setFilterdIndexToBitSetWithColumnIndex(dimensionColumnDataChunk, numerOfRows);
+    } else {
+      bitSet = setFilterdIndexToBitSet(dimensionColumnDataChunk, numerOfRows);
     }
-    return setFilterdIndexToBitSet(dimensionColumnDataChunk, numerOfRows);
+    if (dimensionColumnDataChunk.isNoDicitionaryColumn()) {
+      FilterUtil.removeNullValues(dimensionColumnDataChunk, bitSet,
+          CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
+    }
+    return bitSet;
   }
 
   /**
@@ -219,16 +229,15 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
     byte[][] filterValues = this.filterRangeValues;
-    // binary search can only be applied if column is sorted and
-    // inverted index exists for that column
-    if (dimensionColumnDataChunk.isExplicitSorted()) {
+    // binary search can only be applied if column is sorted
+    if (isNaturalSorted) {
       int start = 0;
       int last = 0;
       int startIndex = 0;
       for (int k = 0; k < filterValues.length; k++) {
         start = CarbonUtil
-            .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-                filterValues[k], false);
+            .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex,
+                numerOfRows - 1, filterValues[k], false);
         if (start < 0) {
           start = -(start + 1);
           if (start == numerOfRows) {
