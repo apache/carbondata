@@ -36,7 +36,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
     val writer = new BufferedWriter(new FileWriter(file))
     writer.write("c1,c2,c3, c4, c5, c6, c7, c8, c9, c10")
     writer.newLine()
-    for(i <- 0 until 200000) {
+    for(i <- 0 until 100000) {
       writer.write("a" + i%1000 + "," +
                    "b" + i%1000 + "," +
                    "c" + i%1000 + "," +
@@ -84,9 +84,9 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load1 " +
         s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1')")
 
-    checkAnswer(sql("select count(*) from carbon_load1"), Seq(Row(200000)))
+    checkAnswer(sql("select count(*) from carbon_load1"), Seq(Row(100000)))
 
-    assert(getIndexfileCount("carbon_load1") == 10, "Something wrong in batch sort")
+    assert(getIndexfileCount("carbon_load1") == 5, "Something wrong in batch sort")
   }
 
   test("test batch sort load by passing option to load command and compare with normal load") {
@@ -115,7 +115,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
         s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1')")
     sql("alter table carbon_load1 compact 'major'")
     Thread.sleep(4000)
-    checkAnswer(sql("select count(*) from carbon_load1"), Seq(Row(800000)))
+    checkAnswer(sql("select count(*) from carbon_load1"), Seq(Row(400000)))
 
     assert(getIndexfileCount("carbon_load1", "0.1") == 1, "Something wrong in compaction after batch sort")
 
@@ -137,7 +137,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
         s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1')")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load5 ")
 
-    checkAnswer(sql("select count(*) from carbon_load5"), Seq(Row(800000)))
+    checkAnswer(sql("select count(*) from carbon_load5"), Seq(Row(400000)))
 
     checkAnswer(sql("select * from carbon_load1 where c1='a1' order by c1"),
       sql("select * from carbon_load5 where c1='a1' order by c1"))
@@ -165,9 +165,9 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load3 " +
         s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1', 'single_pass'='true')")
 
-    checkAnswer(sql("select count(*) from carbon_load3"), Seq(Row(200000)))
+    checkAnswer(sql("select count(*) from carbon_load3"), Seq(Row(100000)))
 
-    assert(getIndexfileCount("carbon_load3") == 10, "Something wrong in batch sort")
+    assert(getIndexfileCount("carbon_load3") == 5, "Something wrong in batch sort")
 
     checkAnswer(sql("select * from carbon_load3 where c1='a1' order by c1"),
       sql("select * from carbon_load2 where c1='a1' order by c1"))
@@ -186,9 +186,9 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load4 " )
 
-    checkAnswer(sql("select count(*) from carbon_load4"), Seq(Row(200000)))
+    checkAnswer(sql("select count(*) from carbon_load4"), Seq(Row(100000)))
 
-    assert(getIndexfileCount("carbon_load4") == 10, "Something wrong in batch sort")
+    assert(getIndexfileCount("carbon_load4") == 5, "Something wrong in batch sort")
     CarbonProperties.getInstance().
       addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
         CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
@@ -206,7 +206,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load6 " )
 
-    checkAnswer(sql("select count(*) from carbon_load6"), Seq(Row(200000)))
+    checkAnswer(sql("select count(*) from carbon_load6"), Seq(Row(100000)))
 
     assert(getIndexfileCount("carbon_load6") == 1, "Something wrong in batch sort")
     CarbonProperties.getInstance().

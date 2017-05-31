@@ -20,78 +20,165 @@ package org.apache.carbondata.spark.vectorreader;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 
 import org.apache.spark.sql.execution.vectorized.ColumnVector;
+import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
 
 class ColumnarVectorWrapper implements CarbonColumnVector {
 
   private ColumnVector columnVector;
 
-  public ColumnarVectorWrapper(ColumnVector columnVector) {
+  private boolean[] filteredRows;
+
+  private int counter;
+
+  private boolean filteredRowsExist;
+
+  public ColumnarVectorWrapper(ColumnVector columnVector, boolean[] filteredRows) {
     this.columnVector = columnVector;
+    this.filteredRows = filteredRows;
+  }
+
+  @Override public void putBoolean(int rowId, boolean value) {
+    if (!filteredRows[rowId]) {
+      columnVector.putBoolean(counter++, value);
+    }
+  }
+
+  @Override public void putFloat(int rowId, float value) {
+    if (!filteredRows[rowId]) {
+      columnVector.putFloat(counter++, value);
+    }
   }
 
   @Override public void putShort(int rowId, short value) {
-    columnVector.putShort(rowId, value);
+    if (!filteredRows[rowId]) {
+      columnVector.putShort(counter++, value);
+    }
   }
 
   @Override public void putShorts(int rowId, int count, short value) {
-    columnVector.putShorts(rowId, count, value);
+    if (filteredRowsExist) {
+      for (int i = 0; i < count; i++) {
+        if (!filteredRows[rowId]) {
+          putShort(counter++, value);
+        }
+        rowId++;
+      }
+    } else {
+      columnVector.putShorts(rowId, count, value);
+    }
   }
 
   @Override public void putInt(int rowId, int value) {
-    columnVector.putInt(rowId, value);
+    if (!filteredRows[rowId]) {
+      columnVector.putInt(counter++, value);
+    }
   }
 
   @Override public void putInts(int rowId, int count, int value) {
-    columnVector.putInts(rowId, count, value);
+    if (filteredRowsExist) {
+      for (int i = 0; i < count; i++) {
+        if (!filteredRows[rowId]) {
+          putInt(counter++, value);
+        }
+        rowId++;
+      }
+    } else {
+      columnVector.putInts(rowId, count, value);
+    }
   }
 
   @Override public void putLong(int rowId, long value) {
-    columnVector.putLong(rowId, value);
+    if (!filteredRows[rowId]) {
+      columnVector.putLong(counter++, value);
+    }
   }
 
   @Override public void putLongs(int rowId, int count, long value) {
-    columnVector.putLongs(rowId, count, value);
+    if (filteredRowsExist) {
+      for (int i = 0; i < count; i++) {
+        if (!filteredRows[rowId]) {
+          putLong(counter++, value);
+        }
+        rowId++;
+      }
+    } else {
+      columnVector.putLongs(rowId, count, value);
+    }
   }
 
   @Override public void putDecimal(int rowId, Decimal value, int precision) {
-    columnVector.putDecimal(rowId, value, precision);
+    if (!filteredRows[rowId]) {
+      columnVector.putDecimal(counter++, value, precision);
+    }
   }
 
   @Override public void putDecimals(int rowId, int count, Decimal value, int precision) {
     for (int i = 0; i < count; i++) {
-      putDecimal(rowId++, value, precision);
+      if (!filteredRows[rowId]) {
+        putDecimal(counter++, value, precision);
+      }
+      rowId++;
     }
   }
 
   @Override public void putDouble(int rowId, double value) {
-    columnVector.putDouble(rowId, value);
+    if (!filteredRows[rowId]) {
+      columnVector.putDouble(counter++, value);
+    }
   }
 
   @Override public void putDoubles(int rowId, int count, double value) {
-    columnVector.putDoubles(rowId, count, value);
+    if (filteredRowsExist) {
+      for (int i = 0; i < count; i++) {
+        if (!filteredRows[rowId]) {
+          putDouble(counter++, value);
+        }
+        rowId++;
+      }
+    } else {
+      columnVector.putDoubles(rowId, count, value);
+    }
   }
 
   @Override public void putBytes(int rowId, byte[] value) {
-    columnVector.putByteArray(rowId, value);
+    if (!filteredRows[rowId]) {
+      columnVector.putByteArray(counter++, value);
+    }
   }
 
   @Override public void putBytes(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; i++) {
-      putBytes(rowId++, value);
+      if (!filteredRows[rowId]) {
+        putBytes(counter++, value);
+      }
+      rowId++;
     }
   }
 
   @Override public void putBytes(int rowId, int offset, int length, byte[] value) {
-    columnVector.putByteArray(rowId, value, offset, length);
+    if (!filteredRows[rowId]) {
+      columnVector.putByteArray(counter++, value, offset, length);
+    }
   }
 
   @Override public void putNull(int rowId) {
-    columnVector.putNull(rowId);
+    if (!filteredRows[rowId]) {
+      columnVector.putNull(counter++);
+    }
   }
 
   @Override public void putNulls(int rowId, int count) {
-    columnVector.putNulls(rowId, count);
+    if (filteredRowsExist) {
+      for (int i = 0; i < count; i++) {
+        if (!filteredRows[rowId]) {
+          putNull(counter++);
+        }
+        rowId++;
+      }
+    } else {
+      columnVector.putNulls(rowId, count);
+    }
   }
 
   @Override public boolean isNull(int rowId) {
@@ -108,6 +195,15 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   }
 
   @Override public void reset() {
-//    columnVector.reset();
+    counter = 0;
+    filteredRowsExist = false;
+  }
+
+  @Override public DataType getType() {
+    return columnVector.dataType();
+  }
+
+  @Override public void setFilteredRowsExist(boolean filteredRowsExist) {
+    this.filteredRowsExist = filteredRowsExist;
   }
 }
