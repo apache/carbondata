@@ -824,9 +824,15 @@ private[sql] case class DescribeCommandFormatted(
         }
         if (dimension.hasEncoding(Encoding.DICTIONARY) &&
             !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-          "DICTIONARY, KEY COLUMN"
+          "DICTIONARY, KEY COLUMN" + (dimension.hasEncoding(Encoding.INVERTED_INDEX) match {
+            case false => ",NOINVERTEDINDEX"
+            case _ => ""
+          })
         } else {
-          "KEY COLUMN"
+          "KEY COLUMN" + (dimension.hasEncoding(Encoding.INVERTED_INDEX) match {
+            case false => ",NOINVERTEDINDEX"
+            case _ => ""
+          })
         }
       } else {
         "MEASURE"

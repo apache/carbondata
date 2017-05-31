@@ -121,7 +121,8 @@ class TablePage {
 
       // in compaction flow the measure with decimal type will come as Spark decimal.
       // need to convert it to byte array.
-      if (measurePage[i].getDataType() == DataType.DECIMAL && model.isCompactionFlow()) {
+      if (null != value && measurePage[i].getDataType() == DataType.DECIMAL && model
+          .isCompactionFlow()) {
         BigDecimal bigDecimal = ((Decimal) value).toJavaBigDecimal();
         value = DataTypeUtil.bigDecimalToByte(bigDecimal);
       }
