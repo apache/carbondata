@@ -862,13 +862,19 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   public void finish() throws CarbonDataWriterException {
     // still some data is present in stores if entryCount is more
     // than 0
-    producerExecutorServiceTaskList.add(producerExecutorService
-        .submit(new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter, true)));
-    blockletProcessingCount.incrementAndGet();
-    processedDataCount += entryCount;
-    closeWriterExecutionService(producerExecutorService);
-    processWriteTaskSubmitList(producerExecutorServiceTaskList);
-    processingComplete = true;
+    try {
+      semaphore.acquire();
+      producerExecutorServiceTaskList.add(producerExecutorService
+          .submit(new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter, true)));
+      blockletProcessingCount.incrementAndGet();
+      processedDataCount += entryCount;
+      closeWriterExecutionService(producerExecutorService);
+      processWriteTaskSubmitList(producerExecutorServiceTaskList);
+      processingComplete = true;
+    } catch (InterruptedException e) {
+      LOGGER.error(e, e.getMessage());
+      throw new CarbonDataWriterException(e.getMessage(), e);
+    }
   }
 
   /**
