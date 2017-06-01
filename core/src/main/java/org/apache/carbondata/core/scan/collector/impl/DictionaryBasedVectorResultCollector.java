@@ -144,8 +144,8 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
         return;
       }
       fillColumnVectorDetails(columnarBatch, rowCounter, requiredRows);
-      scannedResult
-          .markFilteredRows(columnarBatch, rowCounter, requiredRows, columnarBatch.getRowCounter());
+      scannedResult.markFilteredRows(
+          columnarBatch, rowCounter, requiredRows, columnarBatch.getRowCounter());
       scanAndFillResult(scannedResult, columnarBatch, rowCounter, availableRows, requiredRows);
     }
   }

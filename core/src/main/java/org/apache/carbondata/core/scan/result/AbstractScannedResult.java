@@ -641,12 +641,20 @@ public abstract class AbstractScannedResult {
     this.blockletDeleteDeltaCache = blockletDeleteDeltaCache;
   }
 
+  /**
+   * Mark the filtered rows in columnar batch. These rows will not be added to vector batches later.
+   * @param columnarBatch
+   * @param startRow
+   * @param size
+   * @param vectorOffset
+   */
   public void markFilteredRows(CarbonColumnarBatch columnarBatch, int startRow, int size,
       int vectorOffset) {
     if (blockletDeleteDeltaCache != null) {
       int len = startRow + size;
       for (int i = startRow; i < len; i++) {
-        if (blockletDeleteDeltaCache.contains(i)) {
+        int rowId = rowMapping != null ? rowMapping[pageCounter][i] : i;
+        if (blockletDeleteDeltaCache.contains(rowId)) {
           columnarBatch.markFiltered(vectorOffset);
         }
         vectorOffset++;

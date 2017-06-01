@@ -70,6 +70,11 @@ public class CarbonColumnarBatch {
     this.rowCounter = rowCounter;
   }
 
+  /**
+   * Mark the rows as filterd first before filling the batch, so that these rows will not be added
+   * to vector batches.
+   * @param rowId
+   */
   public void markFiltered(int rowId) {
     if (!filteredRows[rowId]) {
       filteredRows[rowId] = true;
