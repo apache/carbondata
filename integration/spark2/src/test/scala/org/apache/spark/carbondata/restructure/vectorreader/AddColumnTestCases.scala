@@ -70,7 +70,7 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
 
   test("test add msr column and check aggregate") {
     sql(
-      "alter table addcolumntest add columns(msrField decimal(5,2))TBLPROPERTIES ('DEFAULT.VALUE" +
+      "alter table addcolumntest add columns(msrField DECIMAL(5,2))TBLPROPERTIES ('DEFAULT.VALUE" +
       ".msrfield'= '123.45')")
     checkAnswer(sql("select sum(msrField) from addcolumntest"),
       Row(new BigDecimal("246.90").setScale(2, RoundingMode.HALF_UP)))

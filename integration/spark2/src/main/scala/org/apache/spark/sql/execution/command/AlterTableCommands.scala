@@ -282,7 +282,8 @@ private[sql] case class AlterTableDropColumns(
       carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
         .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
         .tableMeta.carbonTable
-      val columnNames = carbonTable.getPartitionInfo(tableName).getColumnSchemaList.asScala.map(_.getColumnName)
+      val columnNames = carbonTable.getPartitionInfo(tableName).getColumnSchemaList.asScala
+        .map(_.getColumnName)
       // check each column existence in the table
       val partitionColumns = alterTableDropColumnModel.columns.filter {
         tableColumn => columnNames.contains(tableColumn)
