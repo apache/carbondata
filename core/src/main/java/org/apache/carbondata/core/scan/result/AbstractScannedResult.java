@@ -284,8 +284,10 @@ public abstract class AbstractScannedResult {
         String data = getBlockletId();
         if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
             .equals(columnVectorInfo.dimension.getColumnName())) {
-          data = data + CarbonCommonConstants.FILE_SEPARATOR +
-              (rowMapping == null ? j : rowMapping[pageCounter][j]);
+          data = data + CarbonCommonConstants.FILE_SEPARATOR + pageCounter
+              + CarbonCommonConstants.FILE_SEPARATOR + (rowMapping == null ?
+              j :
+              rowMapping[pageCounter][j]);
         }
         vector.putBytes(vectorOffset++, offset, data.length(), data.getBytes());
       }
@@ -648,17 +650,20 @@ public abstract class AbstractScannedResult {
    * @param size
    * @param vectorOffset
    */
-  public void markFilteredRows(CarbonColumnarBatch columnarBatch, int startRow, int size,
+  public int markFilteredRows(CarbonColumnarBatch columnarBatch, int startRow, int size,
       int vectorOffset) {
+    int rowsFiltered = 0;
     if (blockletDeleteDeltaCache != null) {
       int len = startRow + size;
       for (int i = startRow; i < len; i++) {
         int rowId = rowMapping != null ? rowMapping[pageCounter][i] : i;
-        if (blockletDeleteDeltaCache.contains(rowId)) {
+        if (blockletDeleteDeltaCache.contains(rowId, pageCounter)) {
           columnarBatch.markFiltered(vectorOffset);
+          rowsFiltered++;
         }
         vectorOffset++;
       }
     }
+    return rowsFiltered;
   }
 }

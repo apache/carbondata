@@ -254,7 +254,7 @@ public class SegmentUpdateStatusManager {
    * @return
    * @throws Exception
    */
-  public int[] getDeleteDeltaDataFromAllFiles(String tupleId) throws Exception {
+  public Map<Integer, Integer[]> getDeleteDeltaDataFromAllFiles(String tupleId) throws Exception {
     List<String> deltaFiles = getDeltaFiles(tupleId, CarbonCommonConstants.DELETE_DELTA_FILE_EXT);
     CarbonDeleteFilesDataReader dataReader = new CarbonDeleteFilesDataReader();
     String blockletId = CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.BLOCKLET_ID);
