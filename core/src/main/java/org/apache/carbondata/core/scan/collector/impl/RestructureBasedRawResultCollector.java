@@ -159,7 +159,8 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
     while (scannedResult.hasNext() && rowCounter < batchSize) {
       scanResultAndGetData(scannedResult);
       if (null != deleteDeltaDataCache && deleteDeltaDataCache
-          .contains(scannedResult.getCurrentRowId())) {
+          .contains(scannedResult.getCurrentRowId(),
+              String.valueOf(scannedResult.getCurrentPageCounter()))) {
         continue;
       }
       // re-fill dictionary and no dictionary key arrays for the newly added columns
