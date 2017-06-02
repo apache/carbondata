@@ -224,11 +224,11 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
       case DOUBLE:
         return new DoubleWritable((double) obj);
       case INT:
-        return new IntWritable(((int) obj));
+        return new IntWritable(((Long) obj).intValue());
       case LONG:
         return new LongWritable((long) obj);
       case SHORT:
-        return new ShortWritable(((short) obj));
+        return new ShortWritable(((Long) obj).shortValue());
       case DATE:
         return new DateWritable(new Date(Long.parseLong(String.valueOf(obj.toString()))));
       case TIMESTAMP:

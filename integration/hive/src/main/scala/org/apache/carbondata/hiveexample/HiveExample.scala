@@ -54,15 +54,15 @@ object HiveExample {
       .getOrCreateCarbonSession(
         store, metaStore_Db)
 
-    val carbonHadoopJarPath = s"$rootPath/assembly/target/scala-2.11/carbondata_2.11-1.2" +
-                              ".0-SNAPSHOT-shade-hadoop2.7.2.jar"
+    val carbonHadoopJarPath = s"$rootPath/assembly/target/scala-2.11/carbondata_2.11-1.1" +
+      ".0-incubating-SNAPSHOT-shade-hadoop2.7.2.jar"
 
     val carbon_DefaultHadoopVersion_JarPath =
-      s"$rootPath/assembly/target/scala-2.11/carbondata_2.11-1.2" +
-      ".0-SNAPSHOT-shade-hadoop2.2.0.jar"
+      s"$rootPath/assembly/target/scala-2.11/carbondata_2.11-1.1" +
+        ".0-incubating-SNAPSHOT-shade-hadoop2.2.0.jar"
 
-    val hiveJarPath = s"$rootPath/integration/hive/target/carbondata-hive-1.2" +
-                      ".0-SNAPSHOT.jar"
+    val hiveJarPath = s"$rootPath/integration/hive/target/carbondata-hive-1.1" +
+      ".0-incubating-SNAPSHOT.jar"
 
     carbon.sql("""DROP TABLE IF EXISTS HIVE_CARBON_EXAMPLE""".stripMargin)
 
