@@ -40,7 +40,9 @@ object HiveExample {
     var resultName = ""
     var resultSalary = ""
 
+
     import org.apache.spark.sql.CarbonSession._
+
     val carbonSession = SparkSession
       .builder()
       .master("local")
@@ -49,9 +51,7 @@ object HiveExample {
       .getOrCreateCarbonSession(
         store, metaStore_Db)
 
-
     carbonSession.sql("""DROP TABLE IF EXISTS HIVE_CARBON_EXAMPLE""".stripMargin)
-
 
     carbonSession
       .sql(
