@@ -55,7 +55,11 @@ val storeLocation = s"$rootPath/store"
 val warehouse = s"$rootPath/warehouse"
 val metastoredb = s"$rootPath/metastore_db"
 
- val carbon = SparkSession.builder().enableHiveSupport().config("spark.sql.warehouse.dir", warehouse).config(org.apache.carbondata.core.constants.CarbonCommonConstants.STORE_LOCATION, storeLocation).getOrCreateCarbonSession(storeLocation, metastoredb)
+val carbon = SparkSession.builder()
+    .enableHiveSupport()
+    .config("spark.sql.warehouse.dir", warehouse)
+    .config(org.apache.carbondata.core.constants.CarbonCommonConstants.STORE_LOCATION, storeLocation)
+    .getOrCreateCarbonSession(storeLocation, metastoredb)
 
 carbon.sql("create table hive_carbon(id int, name string, scale decimal, country string, salary double) STORED BY 'carbondata'")
 carbon.sql("LOAD DATA INPATH 'hdfs://mycluster/user/hadoop/sample.csv' INTO TABLE hive_carbon")
