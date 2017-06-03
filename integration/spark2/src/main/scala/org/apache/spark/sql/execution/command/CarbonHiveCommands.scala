@@ -31,13 +31,12 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
     val rows = command.run(sparkSession)
     if (command.cascade) {
       val tablesInDB = CarbonEnv.getInstance(sparkSession).carbonMetastore.getAllTables()
-        .filterNot(_.database.exists(_.equalsIgnoreCase(dbName)))
+        .filter(_.database.exists(_.equalsIgnoreCase(dbName)))
       tablesInDB.foreach { tableName =>
-        CarbonDropTableCommand(true, Some(dbName), tableName.table).run(sparkSession)
+        CarbonDropTableCommand(true, tableName.database, tableName.table).run(sparkSession)
       }
     }
-    CarbonEnv.getInstance(sparkSession).carbonMetastore.dropDatabaseDirectory(dbName)
+    CarbonEnv.getInstance(sparkSession).carbonMetastore.dropDatabaseDirectory(dbName.toLowerCase)
     rows
   }
 }
-
