@@ -228,39 +228,51 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
   private BitSet setFilterdIndexToBitSet(DimensionColumnDataChunk dimensionColumnDataChunk,
       int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
-    int start = 0;
-    int last = 0;
-    int startIndex = 0;
     byte[][] filterValues = this.filterRangeValues;
-    for (int k = 0; k < filterValues.length; k++) {
-      start = CarbonUtil
-          .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-              filterValues[k], true);
-      if (start >= 0) {
+    // binary search can only be applied if column is sorted and
+    // inverted index exists for that column
+    if (dimensionColumnDataChunk.isExplicitSorted()) {
+      int start = 0;
+      int last = 0;
+      int startIndex = 0;
+      for (int k = 0; k < filterValues.length; k++) {
         start = CarbonUtil
-            .nextGreaterValueToTarget(start, dimensionColumnDataChunk, filterValues[k],
-                numerOfRows);
-      }
-      if (start < 0) {
-        start = -(start + 1);
-        if (start == numerOfRows) {
-          start = start - 1;
+            .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
+                filterValues[k], true);
+        if (start >= 0) {
+          start = CarbonUtil
+              .nextGreaterValueToTarget(start, dimensionColumnDataChunk, filterValues[k],
+                  numerOfRows);
         }
-        // Method will compare the tentative index value after binary search, this tentative
-        // index needs to be compared by the filter member if its > filter then from that
-        // index the bitset will be considered for filtering process.
-        if (ByteUtil.compare(filterValues[k], dimensionColumnDataChunk.getChunkData(start)) > 0) {
-          start = start + 1;
+        if (start < 0) {
+          start = -(start + 1);
+          if (start == numerOfRows) {
+            start = start - 1;
+          }
+          // Method will compare the tentative index value after binary search, this tentative
+          // index needs to be compared by the filter member if its > filter then from that
+          // index the bitset will be considered for filtering process.
+          if (ByteUtil.compare(filterValues[k], dimensionColumnDataChunk.getChunkData(start)) > 0) {
+            start = start + 1;
+          }
+        }
+        last = start;
+        for (int j = start; j < numerOfRows; j++) {
+          bitSet.set(j);
+          last++;
+        }
+        startIndex = last;
+        if (startIndex >= numerOfRows) {
+          break;
         }
       }
-      last = start;
-      for (int j = start; j < numerOfRows; j++) {
-        bitSet.set(j);
-        last++;
-      }
-      startIndex = last;
-      if (startIndex >= numerOfRows) {
-        break;
+    } else {
+      for (int k = 0; k < filterValues.length; k++) {
+        for (int i = 0; i < numerOfRows; i++) {
+          if (ByteUtil.compare(dimensionColumnDataChunk.getChunkData(i), filterValues[k]) > 0) {
+            bitSet.set(i);
+          }
+        }
       }
     }
     return bitSet;

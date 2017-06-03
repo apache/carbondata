@@ -66,4 +66,6 @@ public interface CarbonColumnVector {
 
   DataType getType();
 
+  void setFilteredRowsExist(boolean filteredRowsExist);
+
 }

@@ -58,7 +58,6 @@ import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -783,14 +782,10 @@ public final class CarbonLoaderUtil {
    * This method will get the store location for the given path, segment id and partition id
    *
    * @param carbonStorePath
-   * @param dbName
-   * @param tableName
    * @param segmentId
    */
-  public static void checkAndCreateCarbonDataLocation(String carbonStorePath, String dbName,
-      String tableName, String segmentId) {
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(dbName + CarbonCommonConstants.UNDERSCORE + tableName);
+  public static void checkAndCreateCarbonDataLocation(String carbonStorePath,
+      String segmentId, CarbonTable carbonTable) {
     CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);

@@ -41,7 +41,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
-import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
@@ -89,7 +89,7 @@ case class AlterTableCompaction(alterTableModel: AlterTableModel) extends Runnab
     if (relation == null) {
       sys.error(s"Table $databaseName.$tableName does not exist")
     }
-    if (null == CarbonMetadata.getInstance.getCarbonTable(databaseName + "_" + tableName)) {
+    if (null == relation.tableMeta.carbonTable) {
       LOGGER.error(s"alter table failed. table not found: $databaseName.$tableName")
       sys.error(s"alter table failed. table not found: $databaseName.$tableName")
     }
@@ -384,7 +384,7 @@ case class LoadTable(
     if (relation == null) {
       sys.error(s"Table $dbName.$tableName does not exist")
     }
-    if (null == CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)) {
+    if (null == relation.tableMeta.carbonTable) {
       LOGGER.error(s"Data loading failed. table not found: $dbName.$tableName")
       LOGGER.audit(s"Data loading failed. table not found: $dbName.$tableName")
       sys.error(s"Data loading failed. table not found: $dbName.$tableName")

@@ -27,7 +27,8 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
-
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "false")
     sql("""drop database if exists iud4 cascade""")
     sql("""create database iud4""")
     sql("""use iud4""")
@@ -236,6 +237,8 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
         Row("j", 40, "jj", "jjj"))
     )
     sql("""drop table dest2""")
+    sql("""drop table source2""")
+    sql("""drop database iud4 cascade""")
   }
 
   test("test IUD Horizontal Compaction Update Delete and Clean") {
@@ -351,6 +354,8 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   override def afterAll {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
     sql("use default")
     sql("drop database if exists iud4 cascade")
     CarbonProperties.getInstance()
