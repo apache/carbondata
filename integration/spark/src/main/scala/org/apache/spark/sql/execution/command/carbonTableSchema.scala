@@ -177,9 +177,9 @@ case class CreateTable(cm: TableModel) extends RunnableCommand {
           // Split the JSON string.
           val parts = schema.json.grouped(threshold).toSeq
           var schemaParts: Seq[String] = Seq.empty
-          schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_NUMPARTS'='${ parts.size }'"
+          schemaParts = schemaParts :+ s"'spark.sql.schema.numParts'='${ parts.size }'"
           parts.zipWithIndex.foreach { case (part, index) =>
-            schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_PART_PREFIX$index'='$part'"
+            schemaParts = schemaParts :+ s"'spark.sql.schema.part$index'='$part'"
           }
           val schemaString = schemaParts.mkString(",")
           hiveContext.catalog.client.runSqlHive(

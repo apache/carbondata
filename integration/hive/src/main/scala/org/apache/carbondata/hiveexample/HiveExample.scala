@@ -40,9 +40,7 @@ object HiveExample {
     var resultName = ""
     var resultSalary = ""
 
-
     import org.apache.spark.sql.CarbonSession._
-
     val carbonSession = SparkSession
       .builder()
       .master("local")
