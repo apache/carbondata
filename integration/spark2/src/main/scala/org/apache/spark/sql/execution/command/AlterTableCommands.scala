@@ -359,7 +359,8 @@ private[sql] case class AlterTableDropColumns(
         .getBoolean(CarbonCommonConstants.SPARK_SCHEMA_HIVE_COMPATIBILITY_ENABLE, false)
       if (useCompatibleSchema) {
         deletedColumnSchema.foreach { col =>
-          catalog.client.runSqlHive(s"ALTER TABLE $dbName.$tableName DROP COLUMN ${col.column_name}")
+          catalog.client.runSqlHive(s"ALTER TABLE $dbName.$tableName " +
+            s"DROP COLUMN ${col.column_name}")
         }
       }
       LOGGER.info(s"Alter table for drop columns is successful for table $dbName.$tableName")

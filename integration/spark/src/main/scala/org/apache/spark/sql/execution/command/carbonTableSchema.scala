@@ -23,7 +23,6 @@ import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.commons.lang3.StringUtils
-
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -35,6 +34,7 @@ import org.apache.spark.sql.hive.{CarbonMetastore, CarbonMetastoreTypes, HiveCon
 import org.apache.spark.sql.types.{StructField, StructType, TimestampType}
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
+
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
