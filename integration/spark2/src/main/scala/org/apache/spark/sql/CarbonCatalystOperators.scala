@@ -18,6 +18,7 @@
 package org.apache.spark.sql
 
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -84,6 +85,29 @@ case class ShowLoadsCommand(databaseNameOp: Option[String], table: String, limit
       AttributeReference("Load Start Time", TimestampType, nullable = false)(),
       AttributeReference("Load End Time", TimestampType, nullable = false)())
   }
+}
+
+case class ProjectForUpdate(
+    table: UnresolvedRelation,
+    columns: List[String],
+    children: Seq[LogicalPlan] ) extends LogicalPlan {
+  override def output: Seq[AttributeReference] = Seq.empty
+}
+
+case class UpdateTable(
+    table: UnresolvedRelation,
+    columns: List[String],
+    selectStmt: String,
+    filer: String) extends LogicalPlan {
+  override def children: Seq[LogicalPlan] = Seq.empty
+  override def output: Seq[AttributeReference] = Seq.empty
+}
+
+case class DeleteRecords(
+    statement: String,
+    table: UnresolvedRelation) extends LogicalPlan {
+  override def children: Seq[LogicalPlan] = Seq.empty
+  override def output: Seq[AttributeReference] = Seq.empty
 }
 
 /**

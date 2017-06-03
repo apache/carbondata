@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.scan.result.vector;
 
+import java.util.Arrays;
+
 public class CarbonColumnarBatch {
 
   public CarbonColumnVector[] columnVectors;
@@ -27,9 +29,15 @@ public class CarbonColumnarBatch {
 
   private int rowCounter;
 
-  public CarbonColumnarBatch(CarbonColumnVector[] columnVectors, int batchSize) {
+  private boolean[] filteredRows;
+
+  private int rowsFiltered;
+
+  public CarbonColumnarBatch(CarbonColumnVector[] columnVectors, int batchSize,
+      boolean[] filteredRows) {
     this.columnVectors = columnVectors;
     this.batchSize = batchSize;
+    this.filteredRows = filteredRows;
   }
 
   public int getBatchSize() {
@@ -47,6 +55,8 @@ public class CarbonColumnarBatch {
   public void reset() {
     actualSize = 0;
     rowCounter = 0;
+    rowsFiltered = 0;
+    Arrays.fill(filteredRows, false);
     for (int i = 0; i < columnVectors.length; i++) {
       columnVectors[i].reset();
     }
@@ -58,5 +68,26 @@ public class CarbonColumnarBatch {
 
   public void setRowCounter(int rowCounter) {
     this.rowCounter = rowCounter;
+  }
+
+  /**
+   * Mark the rows as filterd first before filling the batch, so that these rows will not be added
+   * to vector batches.
+   * @param rowId
+   */
+  public void markFiltered(int rowId) {
+    if (!filteredRows[rowId]) {
+      filteredRows[rowId] = true;
+      rowsFiltered++;
+    }
+    if (rowsFiltered == 1) {
+      for (int i = 0; i < columnVectors.length; i++) {
+        columnVectors[i].setFilteredRowsExist(true);
+      }
+    }
+  }
+
+  public int getRowsFilteredCount() {
+    return rowsFiltered;
   }
 }

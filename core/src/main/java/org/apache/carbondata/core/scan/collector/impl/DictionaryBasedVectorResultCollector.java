@@ -144,6 +144,8 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
         return;
       }
       fillColumnVectorDetails(columnarBatch, rowCounter, requiredRows);
+      scannedResult.markFilteredRows(
+          columnarBatch, rowCounter, requiredRows, columnarBatch.getRowCounter());
       scanAndFillResult(scannedResult, columnarBatch, rowCounter, availableRows, requiredRows);
     }
   }
@@ -162,7 +164,8 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
       // Or set the row counter.
       scannedResult.setRowCounter(rowCounter + requiredRows);
     }
-    columnarBatch.setActualSize(columnarBatch.getActualSize() + requiredRows);
+    columnarBatch.setActualSize(
+        columnarBatch.getActualSize() + requiredRows - columnarBatch.getRowsFilteredCount());
     columnarBatch.setRowCounter(columnarBatch.getRowCounter() + requiredRows);
   }
 
