@@ -29,7 +29,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.SparkPlan
+import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
 import org.apache.spark.sql.hive.{CarbonMetastore, CarbonMetastoreTypes, HiveContext}
 import org.apache.spark.sql.hive.HiveExternalCatalog._
 import org.apache.spark.sql.types.{StructField, StructType, TimestampType}
