@@ -29,8 +29,9 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
+import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.hive.{CarbonMetastore, CarbonMetastoreTypes, HiveContext}
+import org.apache.spark.sql.hive.HiveExternalCatalog._
 import org.apache.spark.sql.types.{StructField, StructType, TimestampType}
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
@@ -170,11 +171,11 @@ case class CreateTable(cm: TableModel) extends RunnableCommand {
             val schemaString = f.rawSchema.replaceAll("`[0-9a-zA-Z]+`[\\s:]", "").toLowerCase
             StructField(f.column, CarbonMetastoreTypes.toDataType(schemaString))
           })
-          val threshold = hiveContext.conf
+          val threshold = hiveContext.sparkContext.conf
             .getInt(CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD,
               CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT)
           // Split the JSON string.
-          val parts = schemaJsonString.grouped(threshold).toSeq
+          val parts = schema.json.grouped(threshold).toSeq
           var schemaParts: Seq[String] = Seq.empty
           schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_NUMPARTS'='${ parts.size }'"
           parts.zipWithIndex.foreach { case (part, index) =>
