@@ -31,9 +31,9 @@ import org.apache.carbondata.hive.server.HiveEmbeddedServer2
 
 case class Query(sqlText: String, queryType: String, desc: String)
 
-case class HiveOrcTablePerformance(query:String,time:String,desc:String)
+case class HiveOrcTablePerformance(query: String, time: String, desc: String)
 
-case class HiveCarbonTablePerformance(query:String,time:String,desc:String)
+case class HiveCarbonTablePerformance(query: String, time: String, desc: String)
 
 
 object CompareTest {
@@ -45,11 +45,11 @@ object CompareTest {
   val rootPath = new File(this.getClass.getResource("/").getPath
                           + "../../../..").getCanonicalPath
   val warehouse = s"$rootPath/integration/hive/target/warehouse"
-  val metastoredb = s"$rootPath/integration/hive/target/metastore_db"
+  val metastoredb = s"$rootPath/integration/hive/target/comparetest_metastore_db"
 
   val carbonTableName = "comparetest_hive_carbon"
 
-  var resultSet:ResultSet = _
+  var resultSet: ResultSet = _
 
   def main(args: Array[String]) {
 
@@ -66,7 +66,7 @@ object CompareTest {
       .appName("CompareTestExample")
       .config("carbon.sql.warehouse.dir", warehouse).enableHiveSupport()
       .getOrCreateCarbonSession(
-        "hdfs://localhost:54310/opt/carbonStore")
+        "hdfs://localhost:54310/opt/carbonStore",metastoredb)
 
     loadCarbonTable(generateDataFrame(carbon))
 
@@ -77,7 +77,8 @@ object CompareTest {
     Try(Class.forName("org.apache.hive.jdbc.HiveDriver")).getOrElse(
       throw new DatastoreDriverNotFoundException("driver not found "))
 
-    val con = DriverManager.getConnection(s"jdbc:hive2://localhost:$port/default", "anonymous", "anonymous")
+    val con = DriverManager
+      .getConnection(s"jdbc:hive2://localhost:$port/default", "anonymous", "anonymous")
     val stmt = con.createStatement
 
     println(s"============HIVE CLI IS STARTED ON PORT $port ==============")
@@ -94,7 +95,8 @@ object CompareTest {
 
     stmt
       .execute(
-        s"CREATE TABLE IF NOT EXISTS $hiveCarbonTableName(city string,country string,planet string,id string,m1 smallint,m2 int,m3 bigint,m4 double,m5 double)")
+        s"CREATE TABLE IF NOT EXISTS $hiveCarbonTableName(city string,country string,planet " +
+        s"string,id string,m1 smallint,m2 int,m3 bigint,m4 double,m5 double)")
     stmt
       .execute(
         "ALTER TABLE comparetest_hive_carbon SET FILEFORMAT INPUTFORMAT \"org.apache.carbondata." +
@@ -114,21 +116,21 @@ object CompareTest {
     val hive_carbon_resultSet = new ListBuffer[(ResultSet)]()
     carbon.stop()
 
-    val queries =getQueries
+    val queries = getQueries
 
     val hive_Orc_Result = new ListBuffer[HiveOrcTablePerformance]()
     val hive_orc_resultSet = new ListBuffer[(ResultSet)]()
 
     queries.zipWithIndex.foreach { case (query, index) =>
       val sqlTextForHive_Orc = query.sqlText.replace("$table", s"$hiveOrcTableName")
-      print(s"running query ${index + 1}: $sqlTextForHive_Orc ")
+      print(s"running query ${ index + 1 }: $sqlTextForHive_Orc ")
       val rt = time {
-       resultSet = stmt.executeQuery(sqlTextForHive_Orc)
+        resultSet = stmt.executeQuery(sqlTextForHive_Orc)
       }
       hive_orc_resultSet += resultSet
       println("time taken by orc on hive")
       println(s"**************=> $rt sec ********************")
-      hive_Orc_Result +=HiveOrcTablePerformance(sqlTextForHive_Orc,rt.toString,query.desc)
+      hive_Orc_Result += HiveOrcTablePerformance(sqlTextForHive_Orc, rt.toString, query.desc)
 
     }
     System.gc()
@@ -137,38 +139,45 @@ object CompareTest {
     queries.zipWithIndex.foreach { case (query, index) =>
       val sqlTextForHive_Carbon = query.sqlText.replace("$table", s"$hiveCarbonTableName")
 
-      println(s"running query ${index + 1}: $sqlTextForHive_Carbon ")
+      println(s"running query ${ index + 1 }: $sqlTextForHive_Carbon ")
       val rt = time {
         resultSet = stmt.executeQuery(sqlTextForHive_Carbon)
       }
       hive_carbon_resultSet += resultSet
 
-      hive_Carbon_Result +=HiveCarbonTablePerformance(sqlTextForHive_Carbon,rt.toString,query.desc)
+      hive_Carbon_Result +=
+      HiveCarbonTablePerformance(sqlTextForHive_Carbon, rt.toString, query.desc)
       println("time taken by carbon on hive")
 
       println(s"**************=> $rt sec ********************")
     }
 
     println("Complete Stats Are Here ")
-    println("+---++-------+------------------------------------------------------------------------------------------------------------------------------+")
-    println("|Id|" + "| Hive_orc Execution Time |" + "| Hive_Carbon Execution Time|" +"hive_carbon_desc                                                             |")
+    println(
+      "+---++-------+------------------------------------------------------------------------------------------------------------------------------+")
+    println("|Id|" + "| Hive_orc Execution Time |" + "| Hive_Carbon Execution Time|" +
+            "hive_carbon_desc                                                             |")
 
-    println("+---+" + "+------------++-------------------------------------------------------------------------------------------------------------------------+")
+    println("+---+" +
+            "+------------++-------------------------------------------------------------------------------------------------------------------------+")
 
-    for (i <- hive_Orc_Result.indices){
+    for (i <- hive_Orc_Result.indices) {
       val hive_OrcExecutionTime = hive_Orc_Result(i).time
       val hive_CarbonExecutionTime = hive_Carbon_Result(i).time
       val desc = hive_Carbon_Result(i).desc
-      val queryIndex = i+1
+      val queryIndex = i + 1
 
-      println(s"| $queryIndex |" + s"| $hive_OrcExecutionTime                     ||" + s"      $hive_CarbonExecutionTime               |"+ s"$desc")
-      println("+---+" + "+------------++------------------------------------------------------------------------------------------------------------------------------+")
+      println(s"| $queryIndex |" + s"| $hive_OrcExecutionTime                     ||" +
+              s"      $hive_CarbonExecutionTime               |" + s"$desc")
+      println("+---+" +
+              "+------------++------------------------------------------------------------------------------------------------------------------------------+")
 
     }
 
     System.exit(0)
 
   }
+
   private def loadCarbonTable(input: DataFrame): Unit = {
     // Table schema:
     // +-------------+-----------+-------------+-------------+------------+
@@ -197,7 +206,7 @@ object CompareTest {
       .option("tableName", carbonTableName)
       .option("tempCSV", "false")
       .option("single_pass", "true")
-      .option("dictionary_exclude","id") // id is high cardinality column
+      .option("dictionary_exclude", "id") // id is high cardinality column
       .option("table_blocksize", "32")
       .mode(SaveMode.Overwrite)
       .save()
@@ -207,8 +216,10 @@ object CompareTest {
     val rdd = spark.sparkContext
       .parallelize(1 to 5000000, 4)
       .map { value =>
-        ("city" + value % 8, "country" + value % 1103, "planet" + value % 10007, "IDENTIFIER" + value.toString,
-          (value % 16).toShort, value / 2, (value << 1).toLong, value.toDouble / 13, value.toDouble / 11)
+        ("city" + value % 8, "country" + value % 1103, "planet" + value % 10007, "IDENTIFIER" +
+                                                                                 value.toString,
+          (value % 16).toShort, value / 2, (value << 1).toLong, value.toDouble / 13,
+          value.toDouble / 11)
       }.map { value =>
       Row(value._1, value._2, value._3, value._4, value._5, value._6, value._7, value._8, value._9)
     }
@@ -232,7 +243,7 @@ object CompareTest {
     dataFrame
   }
 
-  private def getQueries: Array[Query] ={
+  private def getQueries: Array[Query] = {
     Array(
       // ===========================================================================
       // ==                     FULL SCAN AGGREGATION                             ==
@@ -296,7 +307,8 @@ object CompareTest {
         "top N on high card column"
       ),
       Query(
-        "select country,sum(m1) as metric from $table group by country order by metric desc limit 10",
+        "select country,sum(m1) as metric from $table group by country order by metric desc limit" +
+        " 10",
         "topN",
         "top N on medium card column"
       ),
@@ -383,6 +395,7 @@ object CompareTest {
       )
     )
   }
+
   // Run all queries for the specified table
   private def time(code: => Unit): Double = {
     val start = System.currentTimeMillis()
