@@ -448,6 +448,8 @@ class CarbonDecoderRDD(
 
   private val storepath = CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath
 
+  private val storepath = CarbonEnv.get.carbonMetastore.storePath
+
   def canBeDecoded(attr: Attribute): Boolean = {
     profile match {
       case ip: IncludeProfile if ip.attributes.nonEmpty =>
