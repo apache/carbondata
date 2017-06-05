@@ -315,7 +315,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           val tblProps = tblProp.get
             .map(f => if (CarbonCommonConstants.TABLE_BLOCKSIZE.equalsIgnoreCase(f._1) ||
                           CarbonCommonConstants.NO_INVERTED_INDEX.equalsIgnoreCase(f._1) ||
-                          CarbonCommonConstants.COLUMN_GROUPS.equalsIgnoreCase(f._1)) {
+                          CarbonCommonConstants.COLUMN_GROUPS.equalsIgnoreCase(f._1) ||
+            CarbonCommonConstants.SORT_COLUMNS.equalsIgnoreCase(f._1)) {
               throw new MalformedCarbonCommandException(
                 s"Unsupported Table property in add column: ${ f._1 }")
             } else if (f._1.toLowerCase.startsWith("default.value.")) {
