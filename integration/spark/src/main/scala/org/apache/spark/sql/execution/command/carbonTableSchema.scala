@@ -831,6 +831,9 @@ private[sql] case class DescribeCommandFormatted(
     } else {
       results ++= Seq(("ADAPTIVE", "", ""))
     }
+    results ++= Seq(("SORT_COLUMNS", relation.metaData.carbonTable.getAllDimensions
+      .subList(0, relation.metaData.carbonTable.getNumberOfSortColumns).asScala
+      .map(column => column.getColName).mkString(","), ""))
     val dimension = carbonTable
       .getDimensionByTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
     results ++= getColumnGroups(dimension.asScala.toList)
