@@ -834,6 +834,11 @@ private[sql] case class DescribeCommandFormatted(
     val dimension = carbonTable
       .getDimensionByTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
     results ++= getColumnGroups(dimension.asScala.toList)
+    if (carbonTable.getPartitionInfo(carbonTable.getFactTableName) != null) {
+      results ++=
+      Seq(("Partition Columns: ", carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+        .getColumnSchemaList.asScala.map(_.getColumnName).mkString(","), ""))
+    }
     results.map { case (name, dataType, comment) =>
       Row(f"$name%-36s $dataType%-80s $comment%-72s")
     }
