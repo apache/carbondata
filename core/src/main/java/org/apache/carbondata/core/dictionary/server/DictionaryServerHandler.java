@@ -20,6 +20,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.ServerDictionaryGenerator;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
@@ -29,11 +30,10 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 /**
  * Handler for Dictionary server.
  */
-@ChannelHandler.Sharable
-public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
+@ChannelHandler.Sharable public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
 
   private static final LogService LOGGER =
-          LogServiceFactory.getLogService(DictionaryServerHandler.class.getName());
+      LogServiceFactory.getLogService(DictionaryServerHandler.class.getName());
 
   /**
    * dictionary generator
@@ -51,8 +51,7 @@ public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
     super.channelActive(ctx);
   }
 
-  @Override
-  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+  @Override public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     try {
       ByteBuf data = (ByteBuf) msg;
       DictionaryMessage key = new DictionaryMessage();
@@ -76,8 +75,7 @@ public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
    * @param ctx
    * @param cause
    */
-  @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+  @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     LOGGER.error(cause, "exceptionCaught");
     ctx.close();
   }
@@ -91,22 +89,21 @@ public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
    */
   public int processMessage(DictionaryMessage key) throws Exception {
     switch (key.getType()) {
-      case DICT_GENERATION :
+      case DICT_GENERATION:
         return generatorForServer.generateKey(key);
-      case TABLE_INTIALIZATION :
-        generatorForServer.initializeGeneratorForTable(key);
-        return 0;
-      case SIZE :
+      case SIZE:
         return generatorForServer.size(key);
-      case WRITE_DICTIONARY :
-        generatorForServer.writeDictionaryData();
-        return 0;
       case WRITE_TABLE_DICTIONARY:
-        generatorForServer.writeTableDictionaryData(key.getTableUniqueName());
+        generatorForServer
+            .writeTableDictionaryData(key.getTableUniqueId());
         return 0;
       default:
         return -1;
     }
+  }
+
+  void initializeTable(CarbonTable carbonTable) {
+    generatorForServer.initializeGeneratorForTable(carbonTable);
   }
 
 }

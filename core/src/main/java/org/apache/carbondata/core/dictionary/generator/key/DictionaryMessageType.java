@@ -22,10 +22,8 @@ package org.apache.carbondata.core.dictionary.generator.key;
 public enum DictionaryMessageType {
 
   DICT_GENERATION((byte) 1),
-  TABLE_INTIALIZATION((byte) 2),
-  SIZE((byte) 3),
-  WRITE_DICTIONARY((byte) 4),
-  WRITE_TABLE_DICTIONARY((byte) 5);
+  SIZE((byte) 2),
+  WRITE_TABLE_DICTIONARY((byte) 3);
 
   final byte type;
 

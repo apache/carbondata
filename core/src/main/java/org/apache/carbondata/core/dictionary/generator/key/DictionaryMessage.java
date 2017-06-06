@@ -28,9 +28,9 @@ import io.netty.buffer.ByteBuf;
 public class DictionaryMessage {
 
   /**
-   * tableUniqueName
+   * tableUniqueId
    */
-  private String tableUniqueName;
+  private String tableUniqueId;
 
   /**
    * columnName
@@ -53,10 +53,9 @@ public class DictionaryMessage {
   private DictionaryMessageType type;
 
   public void readData(ByteBuf byteBuf) {
-    byte[] tableBytes = new byte[byteBuf.readInt()];
-    byteBuf.readBytes(tableBytes);
-    tableUniqueName =
-        new String(tableBytes, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+    byte[] tableIdBytes = new byte[byteBuf.readInt()];
+    byteBuf.readBytes(tableIdBytes);
+    tableUniqueId = new String(tableIdBytes);
 
     byte[] colBytes = new byte[byteBuf.readInt()];
     byteBuf.readBytes(colBytes);
@@ -80,10 +79,9 @@ public class DictionaryMessage {
     // Just reserve the bytes to add length of header at last.
     byteBuf.writeShort(Short.MAX_VALUE);
 
-    byte[] tableBytes =
-        tableUniqueName.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-    byteBuf.writeInt(tableBytes.length);
-    byteBuf.writeBytes(tableBytes);
+    byte[] tableIdBytes = tableUniqueId.getBytes();
+    byteBuf.writeInt(tableIdBytes.length);
+    byteBuf.writeBytes(tableIdBytes);
 
     byte[] colBytes = columnName.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     byteBuf.writeInt(colBytes.length);
@@ -109,21 +107,13 @@ public class DictionaryMessage {
 
   private DictionaryMessageType getKeyType(byte type) {
     switch (type) {
-      case 1:
-        return DictionaryMessageType.DICT_GENERATION;
       case 2:
-        return DictionaryMessageType.TABLE_INTIALIZATION;
-      case 3:
         return DictionaryMessageType.SIZE;
-      case 4:
-        return DictionaryMessageType.WRITE_DICTIONARY;
+      case 3:
+        return DictionaryMessageType.WRITE_TABLE_DICTIONARY;
       default:
         return DictionaryMessageType.DICT_GENERATION;
     }
-  }
-
-  public String getTableUniqueName() {
-    return tableUniqueName;
   }
 
   public String getColumnName() {
@@ -146,10 +136,6 @@ public class DictionaryMessage {
     this.type = type;
   }
 
-  public void setTableUniqueName(String tableUniqueName) {
-    this.tableUniqueName = tableUniqueName;
-  }
-
   public void setColumnName(String columnName) {
     this.columnName = columnName;
   }
@@ -160,6 +146,14 @@ public class DictionaryMessage {
 
   public void setDictionaryValue(int dictionaryValue) {
     this.dictionaryValue = dictionaryValue;
+  }
+
+  public String getTableUniqueId() {
+    return tableUniqueId;
+  }
+
+  public void setTableUniqueId(String tableUniqueId) {
+    this.tableUniqueId = tableUniqueId;
   }
 
   @Override public String toString() {

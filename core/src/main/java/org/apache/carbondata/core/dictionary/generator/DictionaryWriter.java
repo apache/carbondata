@@ -23,6 +23,6 @@ import java.io.IOException;
  */
 public interface DictionaryWriter {
 
-  void writeDictionaryData(String tableUniqueName) throws IOException;
+  void writeDictionaryData() throws IOException;
 
 }
