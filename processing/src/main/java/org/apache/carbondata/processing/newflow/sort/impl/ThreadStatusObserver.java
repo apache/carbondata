@@ -21,6 +21,11 @@ import java.util.concurrent.ExecutorService;
 
 public class ThreadStatusObserver {
 
+  /**
+   * lock object
+   */
+  private Object lock = new Object();
+
   private ExecutorService executorService;
 
   private Throwable throwable;
@@ -30,8 +35,18 @@ public class ThreadStatusObserver {
   }
 
   public void notifyFailed(Throwable throwable) {
-    executorService.shutdownNow();
-    this.throwable = throwable;
+    // Only the first failing thread should call for shutting down the executor service and
+    // should assign the throwable object else the actual cause for failure can be overridden as
+    // all the running threads will throw interrupted exception on calling shutdownNow and
+    // will override the throwable object
+    if (null == this.throwable) {
+      synchronized (lock) {
+        if (null == this.throwable) {
+          executorService.shutdownNow();
+          this.throwable = throwable;
+        }
+      }
+    }
   }
 
   public Throwable getThrowable() {
