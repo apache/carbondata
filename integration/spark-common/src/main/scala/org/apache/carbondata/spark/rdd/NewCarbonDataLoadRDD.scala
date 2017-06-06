@@ -34,6 +34,7 @@ import org.apache.spark.{Partition, SerializableWritable, SparkContext, SparkEnv
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionWrap, RDD}
 import org.apache.spark.serializer.SerializerInstance
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.CarbonIterator
@@ -49,7 +50,7 @@ import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.DataLoadExecutor
 import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException
 import org.apache.carbondata.spark.DataLoadResult
-import org.apache.carbondata.spark.load.CarbonLoaderUtil
+import org.apache.carbondata.spark.load.{CarbonLoaderUtil, FailureCauses}
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil, CommonUtil}
 
@@ -219,6 +220,7 @@ class NewCarbonDataLoadRDD[K, V](
     val iter = new Iterator[(K, V)] {
       var partitionID = "0"
       val loadMetadataDetails = new LoadMetadataDetails()
+      val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
       var model: CarbonLoadModel = _
       val uniqueLoadStatusId =
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
@@ -244,6 +246,8 @@ class NewCarbonDataLoadRDD[K, V](
       } catch {
         case e: BadRecordFoundException =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+          executionErrors.failureCauses = FailureCauses.BAD_RECORDS
+          executionErrors.errorMsg = e.getMessage
           logInfo("Bad Record Found")
         case e: Exception =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
@@ -348,7 +352,7 @@ class NewCarbonDataLoadRDD[K, V](
 
       override def next(): (K, V) = {
         finished = true
-        result.getKey(uniqueLoadStatusId, loadMetadataDetails)
+        result.getKey(uniqueLoadStatusId, (loadMetadataDetails, executionErrors))
       }
     }
     iter
@@ -394,6 +398,7 @@ class NewDataFrameLoaderRDD[K, V](
     val iter = new Iterator[(K, V)] {
       val partitionID = "0"
       val loadMetadataDetails = new LoadMetadataDetails()
+      val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
       val model: CarbonLoadModel = carbonLoadModel
       val uniqueLoadStatusId =
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
@@ -430,6 +435,8 @@ class NewDataFrameLoaderRDD[K, V](
       } catch {
         case e: BadRecordFoundException =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+          executionErrors.failureCauses = FailureCauses.BAD_RECORDS
+          executionErrors.errorMsg = e.getMessage
           logInfo("Bad Record Found")
         case e: Exception =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
@@ -453,7 +460,7 @@ class NewDataFrameLoaderRDD[K, V](
 
       override def next(): (K, V) = {
         finished = true
-        result.getKey(uniqueLoadStatusId, loadMetadataDetails)
+        result.getKey(uniqueLoadStatusId, (loadMetadataDetails, executionErrors))
       }
     }
     iter
