@@ -58,8 +58,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       s"locationInfo.ActiveCountry:${resourcesPath}/locationInfoActiveCountry.csv"
     extColDictFilePath2 = s"deviceInformationId:${resourcesPath}/deviceInformationId2.csv"
     extColDictFilePath3 = s"channelsId:${resourcesPath}/channelsId.csv"
-    header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC," +
-      "locationinfo,proddate,gamePointId,contractNumber"
+    header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber"
     header2 = "deviceInformationId,channelsId,contractNumber"
   }
 

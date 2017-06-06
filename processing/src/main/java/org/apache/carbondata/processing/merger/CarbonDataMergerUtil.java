@@ -37,9 +37,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
-import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -1300,64 +1298,4 @@ public final class CarbonDataMergerUtil {
     return true;
   }
 
-  /**
-   * This will update the property of segments as major compacted.
-   * @param model
-   * @param changedSegDetails
-   */
-  public static void updateMajorCompactionPropertyInSegment(CarbonLoadModel model,
-      List<LoadMetadataDetails> changedSegDetails,
-      List<LoadMetadataDetails> preservedSegment) throws Exception {
-
-    String metadataPath = model.getCarbonDataLoadSchema().getCarbonTable().getMetaDataFilepath();
-    AbsoluteTableIdentifier absoluteTableIdentifier =
-            model.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
-    LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metadataPath);
-    List<LoadMetadataDetails> originalList = Arrays.asList(details);
-    for (LoadMetadataDetails segment : changedSegDetails) {
-      if (preservedSegment.contains(segment)) {
-        continue;
-      }
-      originalList.get(originalList.indexOf(segment)).setMajorCompacted("true");
-
-    }
-
-
-    ICarbonLock carbonTableStatusLock = CarbonLockFactory.getCarbonLockObj(
-            model.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier(),
-            LockUsage.TABLE_STATUS_LOCK);
-
-    try {
-      if (carbonTableStatusLock.lockWithRetries()) {
-        LOGGER.info(
-            "Acquired lock for the table " + model.getDatabaseName() + "." + model.getTableName()
-                        + " for table status updation ");
-        CarbonTablePath carbonTablePath = CarbonStorePath
-                .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-                        absoluteTableIdentifier.getCarbonTableIdentifier());
-
-        segmentStatusManager.writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePath(),
-                originalList.toArray(new LoadMetadataDetails[originalList.size()]));
-      } else {
-        LOGGER.error(
-                "Could not able to obtain lock for table" + model.getDatabaseName() + "." + model
-                        .getTableName() + "for table status updation");
-        throw new Exception("Failed to update the MajorCompactionStatus.");
-      }
-    } catch (IOException e) {
-      LOGGER.error("Error while writing metadata");
-      throw new Exception("Failed to update the MajorCompactionStatus." + e.getMessage());
-    } finally {
-      if (carbonTableStatusLock.unlock()) {
-        LOGGER.info(
-                "Table unlocked successfully after table status updation" + model.getDatabaseName()
-                        + "." + model.getTableName());
-      } else {
-        LOGGER.error("Unable to unlock Table lock for table" + model.getDatabaseName() + "." + model
-                .getTableName() + " during table status updation");
-      }
-    }
-
-  }
 }

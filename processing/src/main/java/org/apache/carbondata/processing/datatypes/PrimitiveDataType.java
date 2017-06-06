@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
@@ -50,6 +52,9 @@ import org.apache.carbondata.processing.newflow.dictionary.PreCreatedDictionary;
  * Primitive DataType stateless object used in data loading
  */
 public class PrimitiveDataType implements GenericDataType<Object> {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(PrimitiveDataType.class.getName());
 
   /**
    * surrogate index
@@ -113,7 +118,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   public PrimitiveDataType(String name, String parentname, String columnId,
       CarbonDimension carbonDimension, Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, DictionaryClient client, Boolean useOnePass,
-      String storePath, boolean tableInitialize, Map<Object, Integer> localCache) {
+      String storePath, Map<Object, Integer> localCache) {
     this.name = name;
     this.parentname = parentname;
     this.columnId = columnId;
@@ -134,13 +139,9 @@ public class PrimitiveDataType implements GenericDataType<Object> {
           }
           DictionaryMessage dictionaryMessage = new DictionaryMessage();
           dictionaryMessage.setColumnName(carbonDimension.getColName());
-          dictionaryMessage.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
           // for table initialization
-          dictionaryMessage.setType(DictionaryMessageType.TABLE_INTIALIZATION);
+          dictionaryMessage.setTableUniqueId(carbonTableIdentifier.getTableId());
           dictionaryMessage.setData("0");
-          if (tableInitialize) {
-            client.getDictionary(dictionaryMessage);
-          }
           // for generate dictionary
           dictionaryMessage.setType(DictionaryMessageType.DICT_GENERATION);
           dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,

@@ -41,34 +41,39 @@ import static org.junit.Assert.assertTrue;
  */
 public class IncrementalColumnDictionaryGeneratorTest {
 
+  private CarbonTable carbonTable;
+  private CarbonDimension carbonDimension;
+
   @Before public void setUp() throws Exception {
     // enable lru cache by setting cache size
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
+    ColumnSchema columnSchema = new ColumnSchema();
+    columnSchema.setColumnName("empName");
+    TableSchema tableSchema = new TableSchema();
+    tableSchema.setTableName("TestTable");
+    tableSchema.setListOfColumns(Arrays.asList(columnSchema));
+    TableInfo tableInfo = new TableInfo();
+    tableInfo.setFactTable(tableSchema);
+    tableInfo.setTableUniqueName("TestTable");
+    tableInfo.setDatabaseName("test");
+    String storePath = System.getProperty("java.io.tmpdir") + "/tmp";
+    tableInfo.setStorePath(storePath);
+    carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
+    carbonDimension = new CarbonDimension(columnSchema,0,0,0,0,0);
   }
 
   @Test public void generateKeyOnce() throws Exception {
-    //Create required column schema
-    ColumnSchema columnSchema = new ColumnSchema();
-    columnSchema.setColumnName("empName");
-    CarbonDimension carbonDimension = new CarbonDimension(columnSchema, 0, 0, 0, 0, 0);
-
     // Create the generator and add the key to dictionary
     IncrementalColumnDictionaryGenerator generator =
-        new IncrementalColumnDictionaryGenerator(carbonDimension, 10);
+        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable);
     Integer key = generator.generateKey("First");
     assertEquals(new Integer(11), key);
   }
 
   @Test public void generateKeyTwice() throws Exception {
-    //Create required column schema
-    ColumnSchema columnSchema = new ColumnSchema();
-    columnSchema.setColumnName("empName");
-    CarbonDimension carbonDimension = new CarbonDimension(columnSchema, 0, 0, 0, 0, 0);
-
-    // Create the generator and add the key to dictionary
     IncrementalColumnDictionaryGenerator generator =
-        new IncrementalColumnDictionaryGenerator(carbonDimension, 10);
+        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable);
     Integer key = generator.generateKey("First");
 
     // Add one more key and check if it works fine.
@@ -77,14 +82,9 @@ public class IncrementalColumnDictionaryGeneratorTest {
   }
 
   @Test public void generateKeyAgain() throws Exception {
-    //Create required column schema
-    ColumnSchema columnSchema = new ColumnSchema();
-    columnSchema.setColumnName("empName");
-    CarbonDimension carbonDimension = new CarbonDimension(columnSchema, 0, 0, 0, 0, 0);
-
     // Create the generator and add the key to dictionary
     IncrementalColumnDictionaryGenerator generator =
-        new IncrementalColumnDictionaryGenerator(carbonDimension, 10);
+        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable);
     Integer key = generator.generateKey("First");
 
     // Add the same key again anc check if the value is correct
@@ -93,14 +93,9 @@ public class IncrementalColumnDictionaryGeneratorTest {
   }
 
   @Test public void getKey() throws Exception {
-    //Create required column schema
-    ColumnSchema columnSchema = new ColumnSchema();
-    columnSchema.setColumnName("empName");
-    CarbonDimension carbonDimension = new CarbonDimension(columnSchema, 0, 0, 0, 0, 0);
-
     // Create the generator and add the key to dictionary
     IncrementalColumnDictionaryGenerator generator =
-        new IncrementalColumnDictionaryGenerator(carbonDimension, 10);
+        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable);
     Integer generatedKey = generator.generateKey("First");
 
     // Get the value of the key from dictionary and check if it matches with the created value
@@ -109,12 +104,8 @@ public class IncrementalColumnDictionaryGeneratorTest {
   }
 
   @Test public void getKeyInvalid() throws Exception {
-    //Create required column schema
-    ColumnSchema columnSchema = new ColumnSchema();
-    columnSchema.setColumnName("empName");
-    CarbonDimension carbonDimension = new CarbonDimension(columnSchema, 0, 0, 0, 0, 0);
     IncrementalColumnDictionaryGenerator generator =
-        new IncrementalColumnDictionaryGenerator(carbonDimension, 10);
+        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable);
 
     // Try to get value for an invalid key
     Integer obtainedKey = generator.getKey("Second");
@@ -122,12 +113,8 @@ public class IncrementalColumnDictionaryGeneratorTest {
   }
 
   @Test public void getOrGenerateKey() throws Exception {
-    //Create required column schema
-    ColumnSchema columnSchema = new ColumnSchema();
-    columnSchema.setColumnName("empName");
-    CarbonDimension carbonDimension = new CarbonDimension(columnSchema, 0, 0, 0, 0, 0);
     IncrementalColumnDictionaryGenerator generator =
-        new IncrementalColumnDictionaryGenerator(carbonDimension, 10);
+        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable);
 
     // Test first with generating a key and then trying geOrGenerate
     Integer generatedKey = generator.generateKey("First");
@@ -149,7 +136,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
 
     // Create the generator and add the keys to dictionary
     IncrementalColumnDictionaryGenerator generator =
-        new IncrementalColumnDictionaryGenerator(carbonDimension, 10);
+        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable);
 
     // Create a table schema for saving the dictionary
     TableSchema tableSchema = new TableSchema();
@@ -172,7 +159,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
     metadata.addCarbonTable(carbonTable);
 
     /// Write the dictionary and verify whether its written successfully
-    generator.writeDictionaryData("TestTable");
+    generator.writeDictionaryData();
     File dictionaryFile = new File(dictPath, "empNameCol.dict");
     System.out.println(dictionaryFile.getCanonicalPath());
     assertTrue(dictionaryFile.exists());

@@ -36,7 +36,7 @@ import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, N
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, ExecutionErrors, UpdateTableModel}
 import org.apache.spark.sql.hive.DistributionUtil
-import org.apache.spark.util.SparkUtil
+import org.apache.spark.util.{FileUtils, SparkUtil}
 
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -905,7 +905,7 @@ object CarbonDataRDDFactory {
         }
         val metadataDetails = status(0)._2._1
         if (!isAgg) {
-            writeDictionary(carbonLoadModel, result, false)
+            writeDictionary(carbonLoadModel, result)
             CarbonLoaderUtil
               .populateNewLoadMetaEntry(metadataDetails,
                 loadStatus,
@@ -1059,19 +1059,15 @@ object CarbonDataRDDFactory {
   }
 
     private def writeDictionary(carbonLoadModel: CarbonLoadModel,
-        result: Option[DictionaryServer], writeAll: Boolean) = {
+        result: Option[DictionaryServer]) = {
     // write dictionary file and shutdown dictionary server
     val uniqueTableName: String = s"${ carbonLoadModel.getDatabaseName }_${
       carbonLoadModel.getTableName }"
     result match {
       case Some(server) =>
         try {
-          if (writeAll) {
-            server.writeDictionary()
-          }
-          else {
-            server.writeTableDictionary(uniqueTableName)
-          }
+          server.writeTableDictionary(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+            .getCarbonTableIdentifier.getTableId)
         } catch {
           case ex: Exception =>
             LOGGER.error(s"Error while writing dictionary file for $uniqueTableName")

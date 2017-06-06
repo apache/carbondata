@@ -16,16 +16,13 @@
  */
 package org.apache.carbondata.core.dictionary.generator;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.devapi.DictionaryGenerator;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 
 /**
  * This is the dictionary generator for all tables. It generates dictionary
@@ -41,54 +38,41 @@ public class ServerDictionaryGenerator implements DictionaryGenerator<Integer, D
   @Override
   public Integer generateKey(DictionaryMessage value)
       throws DictionaryGenerationException {
-    TableDictionaryGenerator generator = tableMap.get(value.getTableUniqueName());
-    assert generator != null : "Table initialization for generator is not done";
+    initializeGeneratorForColumn(value);
+    TableDictionaryGenerator generator = tableMap.get(value.getTableUniqueId());
     return generator.generateKey(value);
   }
 
-  public void initializeGeneratorForTable(DictionaryMessage key) {
-    CarbonMetadata metadata = CarbonMetadata.getInstance();
-    CarbonTable carbonTable = metadata.getCarbonTable(key.getTableUniqueName());
-    CarbonDimension dimension = carbonTable.getPrimitiveDimensionByName(
-            key.getTableUniqueName(), key.getColumnName());
+  public void initializeGeneratorForTable(CarbonTable carbonTable) {
     // initialize TableDictionaryGenerator first
-    if (tableMap.get(key.getTableUniqueName()) == null) {
+    String tableId = carbonTable.getCarbonTableIdentifier().getTableId();
+    if (tableMap.get(tableId) == null) {
       synchronized (tableMap) {
-        if (tableMap.get(key.getTableUniqueName()) == null) {
-          tableMap.put(key.getTableUniqueName(), new TableDictionaryGenerator(dimension));
-        } else {
-          tableMap.get(key.getTableUniqueName()).updateGenerator(dimension);
+        if (tableMap.get(tableId) == null) {
+          tableMap.put(tableId,
+              new TableDictionaryGenerator(carbonTable));
         }
       }
-    } else {
-      tableMap.get(key.getTableUniqueName()).updateGenerator(dimension);
     }
+  }
+
+  public void initializeGeneratorForColumn(DictionaryMessage key) {
+    tableMap.get(key.getTableUniqueId()).updateGenerator(key);
   }
 
   public Integer size(DictionaryMessage key) {
-    TableDictionaryGenerator generator = tableMap.get(key.getTableUniqueName());
-    assert generator != null : "Table intialization for generator is not done";
+    initializeGeneratorForColumn(key);
+    TableDictionaryGenerator generator = tableMap.get(key.getTableUniqueId());
     return generator.size(key);
   }
 
-  public void writeDictionaryData() throws Exception {
-    final Iterator<Map.Entry<String, TableDictionaryGenerator>> iterator =
-        tableMap.entrySet().iterator();
-    String tableUniqueName;
-    TableDictionaryGenerator generator;
-    while (iterator.hasNext()) {
-      Map.Entry<String, TableDictionaryGenerator> entry = iterator.next();
-      tableUniqueName = entry.getKey();
-      generator = entry.getValue();
-      generator.writeDictionaryData(tableUniqueName);
-    }
-  }
-
-  public void writeTableDictionaryData(String tableUniqueName) throws Exception {
-    TableDictionaryGenerator generator = tableMap.get(tableUniqueName);
+  public void writeTableDictionaryData(String tableUniqueId) throws Exception {
+    TableDictionaryGenerator generator = tableMap.get(tableUniqueId);
     if (generator != null) {
-      generator.writeDictionaryData(tableUniqueName);
+      generator.writeDictionaryData();
     }
+    // Remove dictionary generator after writing
+    tableMap.remove(tableUniqueId);
   }
 
 }

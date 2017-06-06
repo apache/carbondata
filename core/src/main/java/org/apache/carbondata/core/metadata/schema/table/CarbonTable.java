@@ -572,11 +572,10 @@ public class CarbonTable implements Serializable {
   /**
    * to get the normal dimension or the primitive dimension of the complex type
    *
-   * @param tableName
    * @return primitive dimension of a table
    */
-  public CarbonDimension getPrimitiveDimensionByName(String tableName, String columnName) {
-    List<CarbonDimension> dimList = tablePrimitiveDimensionsMap.get(tableName);
+  public CarbonDimension getPrimitiveDimensionByName(String columnName) {
+    List<CarbonDimension> dimList = tablePrimitiveDimensionsMap.get(tableUniqueName);
     for (CarbonDimension dim : dimList) {
       if (!dim.isInvisible() && dim.getColName().equalsIgnoreCase(columnName)) {
         return dim;

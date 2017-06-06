@@ -1172,11 +1172,8 @@ object CarbonDataRDDFactory {
     result match {
       case Some(server) =>
         try {
-          if (writeAll) {
-            server.writeDictionary()
-          } else {
-            server.writeTableDictionary(uniqueTableName)
-          }
+          server.writeTableDictionary(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+            .getCarbonTableIdentifier.getTableId)
         } catch {
           case _: Exception =>
             LOGGER.error(s"Error while writing dictionary file for $uniqueTableName")

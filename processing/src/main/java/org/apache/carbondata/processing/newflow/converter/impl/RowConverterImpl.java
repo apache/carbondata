@@ -104,7 +104,7 @@ public class RowConverterImpl implements RowConverter {
           .createFieldEncoder(fields[i], cache,
               configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat, client,
               configuration.getUseOnePass(), configuration.getTableIdentifier().getStorePath(),
-              true, localCaches[i], isEmptyBadRecord);
+              localCaches[i], isEmptyBadRecord);
       fieldConverterList.add(fieldConverter);
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
@@ -209,7 +209,7 @@ public class RowConverterImpl implements RowConverter {
       try {
         fieldConverter = FieldEncoderFactory.getInstance().createFieldEncoder(fields[i], cache,
             configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat, client,
-            configuration.getUseOnePass(), configuration.getTableIdentifier().getStorePath(), false,
+            configuration.getUseOnePass(), configuration.getTableIdentifier().getStorePath(),
             localCaches[i], isEmptyBadRecord);
       } catch (IOException e) {
         throw new RuntimeException(e);

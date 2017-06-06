@@ -607,7 +607,7 @@ case class LoadTable(
           }
           val server: Option[DictionaryServer] = if (createDictionary) {
             val dictionaryServer = DictionaryServer
-              .getInstance(dictionaryServerPort.toInt)
+              .getInstance(dictionaryServerPort.toInt, carbonTable)
             carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
             sqlContext.sparkContext.addSparkListener(new SparkListener() {
               override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {

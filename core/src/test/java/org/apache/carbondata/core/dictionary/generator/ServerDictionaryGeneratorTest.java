@@ -33,6 +33,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -43,15 +44,16 @@ import static org.junit.Assert.assertTrue;
  */
 public class ServerDictionaryGeneratorTest {
 
-  private ColumnSchema empColumnSchema;
-  private CarbonDimension empDimension;
-  private ColumnSchema ageColumnSchema;
-  private CarbonDimension ageDimension;
-  private TableSchema tableSchema;
-  private TableInfo tableInfo;
-  private String storePath;
+  private static ColumnSchema empColumnSchema;
+  private static CarbonDimension empDimension;
+  private static ColumnSchema ageColumnSchema;
+  private static CarbonDimension ageDimension;
+  private static TableSchema tableSchema;
+  private static TableInfo tableInfo;
+  private static String storePath;
+  private static CarbonTable carbonTable;
 
-  @Before public void setUp() throws Exception {
+  @BeforeClass public static void setUp() throws Exception {
     // enable lru cache by setting cache size
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
@@ -74,6 +76,7 @@ public class ServerDictionaryGeneratorTest {
     // Create a Table
     tableSchema = new TableSchema();
     tableSchema.setTableName("TestTable");
+    tableSchema.setTableId("1");
     tableSchema.setListOfColumns(Arrays.asList(empColumnSchema, ageColumnSchema));
     CarbonMetadata metadata = CarbonMetadata.getInstance();
 
@@ -83,24 +86,21 @@ public class ServerDictionaryGeneratorTest {
     tableInfo.setDatabaseName("test");
     storePath = System.getProperty("java.io.tmpdir") + "/tmp";
     tableInfo.setStorePath(storePath);
-    CarbonTable carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
-
+    carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
     // Add the created table to metadata
     metadata.addCarbonTable(carbonTable);
   }
 
   @Test public void generateKeyOnce() throws Exception {
     ServerDictionaryGenerator serverDictionaryGenerator = new ServerDictionaryGenerator();
-
     // Generate dictionary for one key
     DictionaryMessage empKey = new DictionaryMessage();
-    empKey.setTableUniqueName(tableInfo.getTableUniqueName());
+    empKey.setTableUniqueId("1");
     empKey.setColumnName(empColumnSchema.getColumnName());
     empKey.setData("FirstKey");
-    serverDictionaryGenerator.initializeGeneratorForTable(empKey);
+    serverDictionaryGenerator.initializeGeneratorForTable(carbonTable);
     Integer value = serverDictionaryGenerator.generateKey(empKey);
     assertEquals(new Integer(2), value);
-
   }
 
   @Test public void generateKeyTwice() throws Exception {
@@ -108,33 +108,32 @@ public class ServerDictionaryGeneratorTest {
 
     // Generate dictionary for same key twice
     DictionaryMessage firstKey = new DictionaryMessage();
-    firstKey.setTableUniqueName(tableInfo.getTableUniqueName());
     firstKey.setColumnName(empColumnSchema.getColumnName());
+    firstKey.setTableUniqueId("1");
     firstKey.setData("FirstKey");
-    serverDictionaryGenerator.initializeGeneratorForTable(firstKey);
+    serverDictionaryGenerator.initializeGeneratorForTable(carbonTable);
     Integer value = serverDictionaryGenerator.generateKey(firstKey);
     assertEquals(new Integer(2), value);
     DictionaryMessage secondKey = new DictionaryMessage();
-    secondKey.setTableUniqueName(tableInfo.getTableUniqueName());
     secondKey.setColumnName(empColumnSchema.getColumnName());
     secondKey.setData("FirstKey");
+    secondKey.setTableUniqueId("1");
     value = serverDictionaryGenerator.generateKey(secondKey);
     assertEquals(new Integer(2), value);
   }
 
   @Test public void generateKeyAgain() throws Exception {
     ServerDictionaryGenerator serverDictionaryGenerator = new ServerDictionaryGenerator();
-
     // Generate dictionary for two different keys
     DictionaryMessage firstKey = new DictionaryMessage();
-    firstKey.setTableUniqueName(tableInfo.getTableUniqueName());
     firstKey.setColumnName(empColumnSchema.getColumnName());
+    firstKey.setTableUniqueId("1");
     firstKey.setData("FirstKey");
-    serverDictionaryGenerator.initializeGeneratorForTable(firstKey);
+    serverDictionaryGenerator.initializeGeneratorForTable(carbonTable);
     Integer value = serverDictionaryGenerator.generateKey(firstKey);
     assertEquals(new Integer(2), value);
     DictionaryMessage secondKey = new DictionaryMessage();
-    secondKey.setTableUniqueName(tableInfo.getTableUniqueName());
+    secondKey.setTableUniqueId("1");
     secondKey.setColumnName(empColumnSchema.getColumnName());
     secondKey.setData("SecondKey");
     value = serverDictionaryGenerator.generateKey(secondKey);
@@ -146,16 +145,16 @@ public class ServerDictionaryGeneratorTest {
     //Add keys for first Column
     DictionaryMessage empKey = new DictionaryMessage();
     //Add key 1
-    empKey.setTableUniqueName(tableInfo.getTableUniqueName());
-    empKey.setColumnName(empColumnSchema.getColumnName());
     empKey.setData("FirstKey");
-    serverDictionaryGenerator.initializeGeneratorForTable(empKey);
+    empKey.setTableUniqueId("1");
+    empKey.setColumnName(ageColumnSchema.getColumnName());
+    serverDictionaryGenerator.initializeGeneratorForTable(carbonTable);
     serverDictionaryGenerator.generateKey(empKey);
     assertEquals(new Integer(2), serverDictionaryGenerator.size(empKey));
 
     //Add key 2
     empKey = new DictionaryMessage();
-    empKey.setTableUniqueName(tableInfo.getTableUniqueName());
+    empKey.setTableUniqueId("1");
     empKey.setColumnName(empColumnSchema.getColumnName());
     empKey.setData("SecondKey");
     serverDictionaryGenerator.generateKey(empKey);
@@ -163,8 +162,8 @@ public class ServerDictionaryGeneratorTest {
 
     //Add key 3
     empKey = new DictionaryMessage();
-    empKey.setTableUniqueName(tableInfo.getTableUniqueName());
     empKey.setColumnName(empColumnSchema.getColumnName());
+    empKey.setTableUniqueId("1");
     empKey.setData("ThirdKey");
     serverDictionaryGenerator.generateKey(empKey);
     assertEquals(new Integer(4), serverDictionaryGenerator.size(empKey));
@@ -173,21 +172,21 @@ public class ServerDictionaryGeneratorTest {
   @Test public void writeDictionaryData() throws Exception {
     ServerDictionaryGenerator serverDictionaryGenerator = new ServerDictionaryGenerator();
     DictionaryMessage firstKey = new DictionaryMessage();
-    firstKey.setTableUniqueName(tableInfo.getTableUniqueName());
     firstKey.setColumnName(empColumnSchema.getColumnName());
+    firstKey.setTableUniqueId("1");
     firstKey.setData("FirstKey");
-    serverDictionaryGenerator.initializeGeneratorForTable(firstKey);
+    serverDictionaryGenerator.initializeGeneratorForTable(carbonTable);
 
     //Update generator with a new dimension
 
     DictionaryMessage secondKey = new DictionaryMessage();
-    secondKey.setTableUniqueName(tableInfo.getTableUniqueName());
     secondKey.setColumnName(ageColumnSchema.getColumnName());
+    secondKey.setTableUniqueId("1");
     secondKey.setData("SecondKey");
     serverDictionaryGenerator.generateKey(secondKey);
     File dictPath = new File(storePath + "/test/TestTable/Metadata/");
-    System.out.print(dictPath.mkdirs());
-    serverDictionaryGenerator.writeDictionaryData();
+    dictPath.mkdirs();
+    serverDictionaryGenerator.writeTableDictionaryData("1");
 
     File empDictionaryFile = new File(dictPath, empColumnSchema.getColumnName() + ".dict");
     assertTrue(empDictionaryFile.exists());
@@ -200,7 +199,7 @@ public class ServerDictionaryGeneratorTest {
     cleanUpDirectory(new File(storePath));
   }
 
-  private void cleanUpDirectory(File path) {
+  private static void cleanUpDirectory(File path) {
     File[] files = path.listFiles();
     if (null == files) {
       return;

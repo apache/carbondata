@@ -33,7 +33,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.devapi.DictionaryGenerator;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -73,7 +72,11 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
 
   private CarbonDimension dimension;
 
-  public IncrementalColumnDictionaryGenerator(CarbonDimension dimension, int maxValue) {
+  private CarbonTable carbonTable;
+
+  public IncrementalColumnDictionaryGenerator(CarbonDimension dimension, int maxValue,
+      CarbonTable carbonTable) {
+    this.carbonTable = carbonTable;
     this.maxValue = maxValue;
     this.currentDictionarySize = maxValue;
     this.dimension = dimension;
@@ -111,10 +114,8 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
     }
   }
 
-  @Override public void writeDictionaryData(String tableUniqueName) throws IOException {
+  @Override public void writeDictionaryData() throws IOException {
     // initialize params
-    CarbonMetadata metadata = CarbonMetadata.getInstance();
-    CarbonTable carbonTable = metadata.getCarbonTable(tableUniqueName);
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
     CarbonTableIdentifier tableIdentifier = carbonTable.getCarbonTableIdentifier();
