@@ -22,7 +22,7 @@ import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.hive.{CarbonRelation, HiveExternalCatalog}
+import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionState}
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -100,7 +100,7 @@ private[sql] case class AlterTableAddColumns(
         .updateSchemaInfo(carbonTable,
           schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
           thriftTable)(sparkSession,
-          sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog])
+          sparkSession.sessionState.asInstanceOf[CarbonSessionState])
       LOGGER.info(s"Alter table for add columns is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for add columns is successful for table $dbName.$tableName")
     } catch {
@@ -202,10 +202,10 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
           carbonTable.getStorePath)(sparkSession)
       CarbonEnv.getInstance(sparkSession).carbonMetastore
         .removeTableFromMetadata(oldDatabaseName, oldTableName)
-      sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client
+      sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
         .runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$oldTableName RENAME TO $oldDatabaseName.$newTableName")
-      sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client
+      sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
         .runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$newTableName SET SERDEPROPERTIES" +
           s"('tableName'='$newTableName', " +
@@ -339,7 +339,7 @@ private[sql] case class AlterTableDropColumns(
         .updateSchemaInfo(carbonTable,
           schemaEvolutionEntry,
           tableInfo)(sparkSession,
-          sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog])
+          sparkSession.sessionState.asInstanceOf[CarbonSessionState])
       // TODO: 1. add check for deletion of index tables
       // delete dictionary files for dictionary column and clear dictionary cache from memory
       new AlterTableDropColumnRDD(sparkSession.sparkContext,
@@ -430,7 +430,7 @@ private[sql] case class AlterTableDataTypeChange(
         .updateSchemaInfo(carbonTable,
           schemaEvolutionEntry,
           tableInfo)(sparkSession,
-          sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog])
+          sparkSession.sessionState.asInstanceOf[CarbonSessionState])
       LOGGER.info(s"Alter table for data type change is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for data type change is successful for table $dbName.$tableName")
     } catch {
