@@ -77,8 +77,13 @@ class CarbonMergerRDD[K, V](
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
-
-      carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
+      val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+      val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
+      if (carbonTable.isPartitionTable) {
+        carbonLoadModel.setTaskNo(String.valueOf(carbonSparkPartition.partitionId))
+      } else {
+        carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
+      }
       val tempLocationKey = CarbonDataProcessorUtil
         .getTempStoreLocationKey(carbonLoadModel.getDatabaseName,
           carbonLoadModel.getTableName,
@@ -108,7 +113,7 @@ class CarbonMergerRDD[K, V](
       var mergeNumber = ""
       var exec: CarbonCompactionExecutor = null
       try {
-        val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
+
 
         // sorting the table block info List.
         val splitList = carbonSparkPartition.split.value.getAllSplits
@@ -140,7 +145,6 @@ class CarbonMergerRDD[K, V](
             .toList
         }
 
-        val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
         // get destination segment properties as sent from driver which is of last segment.
         val segmentProperties = new SegmentProperties(
           carbonMergerMapping.maxSegmentColumnSchemaList.asJava,
@@ -266,7 +270,8 @@ class CarbonMergerRDD[K, V](
     job.getConfiguration.set("query.id", queryId)
     var defaultParallelism = sparkContext.defaultParallelism
     val result = new java.util.ArrayList[Partition](defaultParallelism)
-    var partitionNo = 0
+    var taskPartitionNo = 0
+    var carbonPartitionId = 0;
     var columnSize = 0
     var noOfBlocks = 0
 
@@ -398,6 +403,7 @@ class CarbonMergerRDD[K, V](
     logInfo("Time taken to wait for executor allocation is =" + ((30 - maxTimes) * 500) + "millis")
     defaultParallelism = sparkContext.defaultParallelism
 
+    val isPartitionTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isPartitionTable
     // Create Spark Partition for each task and assign blocks
     nodeBlockMap.asScala.foreach { case (nodeName, splitList) =>
       val taskSplitList = new java.util.ArrayList[NodeInfo](0)
@@ -410,11 +416,16 @@ class CarbonMergerRDD[K, V](
           NodeInfo(splitsPerNode.getTaskId, splitsPerNode.getCarbonInputSplitList.size()))
 
         if (blockletCount != 0) {
+          val taskInfo = splitInfo.asInstanceOf[CarbonInputSplitTaskInfo]
           val multiBlockSplit = new CarbonMultiBlockSplit(absoluteTableIdentifier,
-            splitInfo.asInstanceOf[CarbonInputSplitTaskInfo].getCarbonInputSplitList,
+            taskInfo.getCarbonInputSplitList,
             Array(nodeName))
-          result.add(new CarbonSparkPartition(id, partitionNo, multiBlockSplit))
-          partitionNo += 1
+          if (isPartitionTable) {
+            carbonPartitionId = Integer.parseInt(taskInfo.getTaskId)
+          }
+          result.add(
+            new CarbonSparkPartition(id, taskPartitionNo, multiBlockSplit, carbonPartitionId))
+          taskPartitionNo += 1
         }
       }
     }
