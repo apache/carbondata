@@ -21,6 +21,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class TestSortColumns extends QueryTest with BeforeAndAfterAll {
 
@@ -251,6 +252,13 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     checkExistence(sql("describe formatted sorttableDesc"),true,"empno,empname")
   }
   
+  test("duplicate columns in sort_columns") {
+    val exceptionCaught = intercept[MalformedCarbonCommandException]{
+      sql("CREATE TABLE sorttable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='empno,empname,empno')")
+    }
+  assert(exceptionCaught.getMessage.equals("SORT_COLUMNS Either having duplicate columns : empno or it contains illegal argumnet."))
+  }
+
   override def afterAll = {
     dropTable
   }
