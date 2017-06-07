@@ -24,7 +24,8 @@ import org.apache.carbondata.hadoop.CarbonMultiBlockSplit
 class CarbonSparkPartition(
     val rddId: Int,
     val idx: Int,
-    @transient val multiBlockSplit: CarbonMultiBlockSplit)
+    @transient val multiBlockSplit: CarbonMultiBlockSplit,
+    val partitionId: Int = 0)
     extends Partition {
 
   val split = new SerializableWritable[CarbonMultiBlockSplit](multiBlockSplit)
