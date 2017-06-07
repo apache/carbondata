@@ -114,6 +114,14 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     assert(partitionInfo.getListInfo.get(2).get(1).equals("3"))
   }
 
+  test("test exception if partition column is dropped") {
+    sql("drop table if exists test")
+    sql(
+      "create table test(a int, b string) partitioned by (c int) stored by 'carbondata' " +
+      "tblproperties('PARTITION_TYPE'='LIST','list_info'='0,10,5,20')")
+    intercept[Exception] { sql("alter table test drop columns(c)") }
+  }
+
   override def afterAll = {
     dropTable
   }
