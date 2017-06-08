@@ -650,17 +650,20 @@ public abstract class AbstractScannedResult {
    * @param size
    * @param vectorOffset
    */
-  public void markFilteredRows(CarbonColumnarBatch columnarBatch, int startRow, int size,
+  public int markFilteredRows(CarbonColumnarBatch columnarBatch, int startRow, int size,
       int vectorOffset) {
+    int rowsFiltered = 0;
     if (blockletDeleteDeltaCache != null) {
       int len = startRow + size;
       for (int i = startRow; i < len; i++) {
         int rowId = rowMapping != null ? rowMapping[pageCounter][i] : i;
         if (blockletDeleteDeltaCache.contains(rowId, String.valueOf(pageCounter))) {
           columnarBatch.markFiltered(vectorOffset);
+          rowsFiltered++;
         }
         vectorOffset++;
       }
     }
+    return rowsFiltered;
   }
 }

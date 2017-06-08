@@ -109,11 +109,14 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
         return;
       }
       fillColumnVectorDetails(columnarBatch, rowCounter, requiredRows);
+      int filteredRows = scannedResult
+          .markFilteredRows(columnarBatch, rowCounter, requiredRows, columnarBatch.getRowCounter());
       // fill default values for non existing dimensions and measures
       fillDataForNonExistingDimensions();
       fillDataForNonExistingMeasures();
       // fill existing dimensions and measures data
       scanAndFillResult(scannedResult, columnarBatch, rowCounter, availableRows, requiredRows);
+      columnarBatch.setActualSize(columnarBatch.getActualSize() + requiredRows - filteredRows);
     }
   }
 

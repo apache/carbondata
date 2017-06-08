@@ -128,6 +128,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
             .equals(queryDimensions[i].getDimension().getColName())) {
           row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
               scannedResult.getBlockletId() + CarbonCommonConstants.FILE_SEPARATOR + scannedResult
+                  .getCurrentPageCounter() + CarbonCommonConstants.FILE_SEPARATOR + scannedResult
                   .getCurrentRowId(), DataType.STRING);
         } else {
           row[order[i]] =
