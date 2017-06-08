@@ -15,28 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page;
+package org.apache.carbondata.processing.store.writer;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.datastore.columnar.IndexStorage;
+import org.apache.carbondata.processing.store.TablePage;
 
-// Represent a variable length columnar data in one page, e.g. for dictionary columns.
-public class VarLengthColumnPage extends ColumnPage {
+public interface Encoder {
 
-  // TODO: further optimizite it, to store length and data separately
-  private byte[][] byteArrayData;
+  EncodedData encode(TablePage tablePage);
 
-  public VarLengthColumnPage(int pageSize) {
-    super(DataType.BYTE_ARRAY, pageSize);
-    byteArrayData = new byte[pageSize][];
+  // result result of all columns
+  class EncodedData {
+    // dimension data that include rowid (index)
+    public IndexStorage[] indexStorages;
+
+    // encoded and compressed dimension data
+    public byte[][] dimensions;
+
+    // encoded and compressed measure data
+    public byte[][] measures;
   }
-
-  public void putByteArray(int rowId, byte[] value) {
-    byteArrayData[rowId] = value;
-    updateStatistics(value);
-  }
-
-  public byte[][] getByteArrayPage() {
-    return byteArrayData;
-  }
-
 }

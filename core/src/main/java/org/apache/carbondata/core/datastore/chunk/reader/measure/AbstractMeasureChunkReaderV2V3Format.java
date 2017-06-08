@@ -121,4 +121,6 @@ public abstract class AbstractMeasureChunkReaderV2V3Format extends AbstractMeasu
    */
   protected abstract MeasureRawColumnChunk[] readRawMeasureChunksInGroup(FileHolder fileReader,
       int startColumnBlockletIndex, int endColumnBlockletIndex) throws IOException;
+
+
 }

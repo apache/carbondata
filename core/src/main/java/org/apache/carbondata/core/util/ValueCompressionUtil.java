@@ -24,10 +24,8 @@ import java.util.Arrays;
 import org.apache.carbondata.core.compression.BigIntCompressor;
 import org.apache.carbondata.core.compression.DoubleCompressor;
 import org.apache.carbondata.core.compression.ValueCompressor;
-import org.apache.carbondata.core.datastore.compression.MeasureMetaDataModel;
 import org.apache.carbondata.core.datastore.compression.ReaderCompressModel;
 import org.apache.carbondata.core.datastore.compression.ValueCompressionHolder;
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastore.compression.decimal.CompressByteArray;
 import org.apache.carbondata.core.datastore.compression.decimal.CompressionMaxMinByte;
 import org.apache.carbondata.core.datastore.compression.decimal.CompressionMaxMinDefault;
@@ -195,7 +193,8 @@ public final class ValueCompressionUtil {
 
   private static CompressionFinder getLongCompressorFinder(Object maxValue, Object minValue,
       int mantissa, byte dataTypeSelected, DataType measureStoreType) {
-    DataType adaptiveDataType = getDataType((long) maxValue, mantissa, dataTypeSelected);
+    long value = Math.max(Math.abs((long)maxValue), Math.abs((long)minValue));
+    DataType adaptiveDataType = getDataType(value, mantissa, dataTypeSelected);
     int adaptiveSize = getSize(adaptiveDataType);
     DataType deltaDataType = null;
     // we cannot apply compression in case actual data type of the column is long
@@ -264,7 +263,7 @@ public final class ValueCompressionUtil {
    * @param compressionFinders : Compression types for measures
    * @return
    */
-  private static ValueCompressionHolder[] getValueCompressionHolder(
+  public static ValueCompressionHolder[] getValueCompressionHolder(
       CompressionFinder[] compressionFinders) {
     ValueCompressionHolder[] valueCompressionHolders =
         new ValueCompressionHolder[compressionFinders.length];
@@ -655,55 +654,6 @@ public final class ValueCompressionUtil {
       default:
         return new CompressionNonDecimalMaxMinDefault();
     }
-  }
-
-  /**
-   * Create Value compression model for write path
-   */
-  public static WriterCompressModel getWriterCompressModel(Object[] maxValue, Object[] minValue,
-      int[] mantissa, Object[] uniqueValue, DataType[] dataType, byte[] dataTypeSelected) {
-    MeasureMetaDataModel metaDataModel =
-        new MeasureMetaDataModel(minValue, maxValue, mantissa, maxValue.length, uniqueValue,
-            dataType, dataTypeSelected);
-    return getWriterCompressModel(metaDataModel);
-  }
-
-  /**
-   * Create Value compression model for write path
-   */
-  public static WriterCompressModel getWriterCompressModel(MeasureMetaDataModel measureMDMdl) {
-    int measureCount = measureMDMdl.getMeasureCount();
-    Object[] minValue = measureMDMdl.getMinValue();
-    Object[] maxValue = measureMDMdl.getMaxValue();
-    Object[] uniqueValue = measureMDMdl.getUniqueValue();
-    int[] mantissa = measureMDMdl.getMantissa();
-    DataType[] type = measureMDMdl.getType();
-    byte[] dataTypeSelected = measureMDMdl.getDataTypeSelected();
-    WriterCompressModel compressionModel = new WriterCompressModel();
-    DataType[] actualType = new DataType[measureCount];
-    DataType[] convertedType = new DataType[measureCount];
-    CompressionFinder[] compressionFinders = new CompressionFinder[measureCount];
-    for (int i = 0; i < measureCount; i++) {
-      CompressionFinder compresssionFinder =
-          ValueCompressionUtil.getCompressionFinder(maxValue[i],
-              minValue[i], mantissa[i], type[i], dataTypeSelected[i]);
-      compressionFinders[i] = compresssionFinder;
-      actualType[i] = compresssionFinder.getActualDataType();
-      convertedType[i] = compresssionFinder.getConvertedDataType();
-    }
-    compressionModel.setCompressionFinders(compressionFinders);
-    compressionModel.setMaxValue(maxValue);
-    compressionModel.setMantissa(mantissa);
-    compressionModel.setConvertedDataType(convertedType);
-    compressionModel.setActualDataType(actualType);
-    compressionModel.setMinValue(minValue);
-    compressionModel.setUniqueValue(uniqueValue);
-    compressionModel.setType(type);
-    compressionModel.setDataTypeSelected(dataTypeSelected);
-    ValueCompressionHolder[] values = ValueCompressionUtil
-        .getValueCompressionHolder(compressionFinders);
-    compressionModel.setValueCompressionHolder(values);
-    return compressionModel;
   }
 
   /**

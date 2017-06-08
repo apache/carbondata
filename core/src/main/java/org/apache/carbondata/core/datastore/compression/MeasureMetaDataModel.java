@@ -103,7 +103,7 @@ public class MeasureMetaDataModel {
   }
 
   /**
-   * getUniqueValue
+   * nonExistValue
    *
    * @return
    */

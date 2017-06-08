@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
@@ -35,7 +36,6 @@ import org.apache.carbondata.core.writer.CarbonFooterWriter;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.FileFooter;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
-import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.store.writer.v1.CarbonFactDataWriterImplV1;
 
 /**
@@ -158,7 +158,7 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
       currentDataChunksLength.add((short) dataChunksBytes[i].length);
       bufferSize += dataChunksBytes[i].length + nodeHolder.getKeyLengths()[i] + (!nodeHolder
           .getIsSortedKeyBlock()[i] ? nodeHolder.getKeyBlockIndexLength()[rowIdIndex] : 0) + (
-          dataWriterVo.getAggBlocks()[i] ?
+          dataWriterVo.getRleEncodingForDictDim()[i] ?
               nodeHolder.getCompressedDataIndex()[rleIndex].length :
               0);
       offset += dataChunksBytes[i].length;
@@ -167,7 +167,7 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
         offset += nodeHolder.getKeyBlockIndexLength()[rowIdIndex];
         rowIdIndex++;
       }
-      if (dataWriterVo.getAggBlocks()[i]) {
+      if (dataWriterVo.getRleEncodingForDictDim()[i]) {
         offset += nodeHolder.getDataIndexMapLength()[rleIndex];
         rleIndex++;
       }
@@ -186,7 +186,7 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
         }
         rowIdIndex++;
       }
-      if (dataWriterVo.getAggBlocks()[i]) {
+      if (dataWriterVo.getRleEncodingForDictDim()[i]) {
         buffer.put(nodeHolder.getCompressedDataIndex()[rleIndex]);
         rleIndex++;
       }
@@ -233,8 +233,8 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
   protected BlockletInfoColumnar getBlockletInfo(NodeHolder nodeHolder, long offset) {
     // create the info object for leaf entry
     BlockletInfoColumnar info = new BlockletInfoColumnar();
-    //add aggBlocks array
-    info.setAggKeyBlock(nodeHolder.getAggBlocks());
+    //add rleEncodingForDictDim array
+    info.setAggKeyBlock(nodeHolder.getRleEncodingForDictDim());
     // add total entry count
     info.setNumberOfKeys(nodeHolder.getEntryCount());
 
@@ -243,8 +243,8 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
     // adding null measure index bit set
     info.setMeasureNullValueIndex(nodeHolder.getMeasureNullValueIndex());
     //add column min max length
-    info.setColumnMaxData(nodeHolder.getColumnMaxData());
-    info.setColumnMinData(nodeHolder.getColumnMinData());
+    info.setColumnMaxData(nodeHolder.getDimensionColumnMaxData());
+    info.setColumnMinData(nodeHolder.getDimensionColumnMinData());
 
     // add measure length
     info.setMeasureLength(nodeHolder.getMeasureLenght());
@@ -256,7 +256,7 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
     info.setStartKey(nodeHolder.getStartKey());
     // set end key
     info.setEndKey(nodeHolder.getEndKey());
-    info.setCompressionModel(nodeHolder.getCompressionModel());
+    info.setStats(nodeHolder.getStats());
     // return leaf metadata
 
     //colGroup Blocks

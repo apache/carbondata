@@ -18,8 +18,8 @@ package org.apache.carbondata.processing.newflow.converter;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
 /**
  * convert the row

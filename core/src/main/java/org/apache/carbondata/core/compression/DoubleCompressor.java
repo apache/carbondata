@@ -18,7 +18,7 @@ package org.apache.carbondata.core.compression;
 
 import java.math.BigDecimal;
 
-import org.apache.carbondata.core.datastore.dataholder.CarbonWriteDataHolder;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
@@ -26,12 +26,12 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
  */
 public class DoubleCompressor extends ValueCompressor {
 
-
-  @Override protected Object compressNonDecimalMaxMin(DataType convertedDataType,
-      CarbonWriteDataHolder dataHolder, int decimal, Object maxValue) {
+  @Override
+  protected Object compressNonDecimalMaxMin(DataType convertedDataType,
+      ColumnPage columnPage, int decimal, Object maxValue) {
     int i = 0;
     BigDecimal max = BigDecimal.valueOf((double)maxValue);
-    double[] value = dataHolder.getWritableDoubleValues();
+    double[] value = columnPage.getDoublePage();
     switch (convertedDataType) {
       case BYTE:
         byte[] result = new byte[value.length];
@@ -91,10 +91,10 @@ public class DoubleCompressor extends ValueCompressor {
   }
 
   @Override
-  protected Object compressNonDecimal(DataType convertedDataType, CarbonWriteDataHolder dataHolder,
+  protected Object compressNonDecimal(DataType convertedDataType, ColumnPage columnPage,
       int decimal) {
     int i = 0;
-    double[] value = dataHolder.getWritableDoubleValues();
+    double[] value = columnPage.getDoublePage();
     switch (convertedDataType) {
       case BYTE:
         byte[] result = new byte[value.length];
@@ -142,10 +142,10 @@ public class DoubleCompressor extends ValueCompressor {
   }
 
   @Override
-  protected Object compressMaxMin(DataType convertedDataType, CarbonWriteDataHolder dataHolder,
+  protected Object compressMaxMin(DataType convertedDataType, ColumnPage columnPage,
       Object max) {
     double maxValue = (double) max;
-    double[] value = dataHolder.getWritableDoubleValues();
+    double[] value = columnPage.getDoublePage();
     int i = 0;
     switch (convertedDataType) {
       case BYTE:
@@ -194,8 +194,8 @@ public class DoubleCompressor extends ValueCompressor {
   }
 
   @Override
-  protected Object compressAdaptive(DataType changedDataType, CarbonWriteDataHolder dataHolder) {
-    double[] value = dataHolder.getWritableDoubleValues();
+  protected Object compressAdaptive(DataType changedDataType, ColumnPage columnPage) {
+    double[] value = columnPage.getDoublePage();
     int i = 0;
     switch (changedDataType) {
       case BYTE:

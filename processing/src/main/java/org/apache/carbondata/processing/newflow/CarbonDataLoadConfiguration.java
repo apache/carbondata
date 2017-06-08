@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -83,6 +84,9 @@ public class CarbonDataLoadConfiguration {
   private int numberOfSortColumns;
 
   private int numberOfNoDictSortColumns;
+
+  // contains metadata used in write step of loading process
+  private TableSpec tableSpec;
 
   public CarbonDataLoadConfiguration() {
   }
@@ -297,5 +301,13 @@ public class CarbonDataLoadConfiguration {
           KeyGeneratorFactory.getKeyGenerator(new int[] { dimLens[i] });
     }
     return complexKeyGenerators;
+  }
+
+  public TableSpec getTableSpec() {
+    return tableSpec;
+  }
+
+  public void setTableSpec(TableSpec tableSpec) {
+    this.tableSpec = tableSpec;
   }
 }

@@ -19,7 +19,7 @@ package org.apache.carbondata.core.metadata;
 
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
+import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
 
 public class BlockletInfoColumnar {
 
@@ -85,7 +85,7 @@ public class BlockletInfoColumnar {
 
   private boolean[] aggKeyBlock;
 
-  private WriterCompressModel compressionModel;
+  private MeasurePageStatsVO stats;
 
   /**
    * column min array
@@ -316,14 +316,6 @@ public class BlockletInfoColumnar {
     this.columnMinData = columnMinData;
   }
 
-  public WriterCompressModel getCompressionModel() {
-    return compressionModel;
-  }
-
-  public void setCompressionModel(WriterCompressModel compressionModel) {
-    this.compressionModel = compressionModel;
-  }
-
   /**
    * @return
    */
@@ -350,5 +342,13 @@ public class BlockletInfoColumnar {
    */
   public void setMeasureNullValueIndex(BitSet[] measureNullValueIndex) {
     this.measureNullValueIndex = measureNullValueIndex;
+  }
+
+  public MeasurePageStatsVO getStats() {
+    return stats;
+  }
+
+  public void setStats(MeasurePageStatsVO stats) {
+    this.stats = stats;
   }
 }
