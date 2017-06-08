@@ -187,19 +187,25 @@ public class SegmentTaskIndexStore
     TaskBucketHolder taskBucketHolder = null;
     try {
       while (iteratorOverSegmentBlocksInfos.hasNext()) {
+        // Initialize the UpdateVO to Null for each segment.
+        UpdateVO updateVO = null;
         // segment id to table block mapping
         Map.Entry<String, List<TableBlockInfo>> next = iteratorOverSegmentBlocksInfos.next();
         // group task id to table block info mapping for the segment
         Map<TaskBucketHolder, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
             mappedAndGetTaskIdToTableBlockInfo(segmentToTableBlocksInfos);
         segmentId = next.getKey();
-        // get the existing map of task id to table segment map
-        UpdateVO updateVO = updateStatusManager.getInvalidTimestampRange(segmentId);
+        // updateVO is only required when Updates Or Delete performed on the Table.
+        if (updateStatusManager.getUpdateStatusDetails().length != 0) {
+          // get the existing map of task id to table segment map
+          updateVO = updateStatusManager.getInvalidTimestampRange(segmentId);
+        }
         // check if segment is already loaded, if segment is already loaded
         //no need to load the segment block
         String lruCacheKey = tableSegmentUniqueIdentifier.getUniqueTableSegmentIdentifier();
         segmentTaskIndexWrapper = (SegmentTaskIndexWrapper) lruCache.get(lruCacheKey);
-        if (segmentTaskIndexWrapper == null || tableSegmentUniqueIdentifier.isSegmentUpdated()) {
+        if ((segmentTaskIndexWrapper == null) || ((null != updateVO)
+            && (tableSegmentUniqueIdentifier.isSegmentUpdated()))) {
           // get the segment loader lock object this is to avoid
           // same segment is getting loaded multiple times
           // in case of concurrent query
@@ -210,8 +216,8 @@ public class SegmentTaskIndexStore
           // acquire lock to lod the segment
           synchronized (segmentLoderLockObject) {
             segmentTaskIndexWrapper = (SegmentTaskIndexWrapper) lruCache.get(lruCacheKey);
-            if (null == segmentTaskIndexWrapper || tableSegmentUniqueIdentifier
-                .isSegmentUpdated()) {
+            if ((null == segmentTaskIndexWrapper) || ((null != updateVO)
+                && (tableSegmentUniqueIdentifier.isSegmentUpdated()))) {
               // if the segment is updated then get the existing block task id map details
               // so that the same can be updated after loading the btree.
               if (tableSegmentUniqueIdentifier.isSegmentUpdated()
@@ -245,9 +251,14 @@ public class SegmentTaskIndexStore
                     "Can not load the segment. No Enough space available.");
               }
 
-              // set the latest timestamp.
-              segmentTaskIndexWrapper
-                  .setRefreshedTimeStamp(updateVO.getCreatedOrUpdatedTimeStamp());
+              // Refresh the Timestamp for those tables which underwent through IUD Operations.
+              if (null != updateVO) {
+                // set the latest timestamp.
+                segmentTaskIndexWrapper
+                    .setRefreshedTimeStamp(updateVO.getCreatedOrUpdatedTimeStamp());
+              } else {
+                segmentTaskIndexWrapper.setRefreshedTimeStamp(0L);
+              }
               // tableSegmentMapTemp.put(next.getKey(), taskIdToSegmentIndexMap);
               // removing from segment lock map as once segment is loaded
               // if concurrent query is coming for same segment

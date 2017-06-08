@@ -251,6 +251,8 @@ public class CarbonTableReader {
 
     // need apply filters to segment
     FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
+    UpdateVO invalidBlockVOForSegmentId = null;
+    Boolean IUDTable = false;
 
     AbsoluteTableIdentifier absoluteTableIdentifier =
         tableCacheModel.carbonTable.getAbsoluteTableIdentifier();
@@ -289,9 +291,17 @@ public class CarbonTableReader {
     FilterResolverIntf filterInterface = CarbonInputFormatUtil
         .resolveFilter(filters, tableCacheModel.carbonTable.getAbsoluteTableIdentifier());
 
+    IUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
     List<CarbonLocalInputSplit> result = new ArrayList<>();
     // for each segment fetch blocks matching filter in Driver BTree
     for (String segmentNo : tableCacheModel.segments) {
+
+      if (IUDTable) {
+        // update not being performed on this table.
+        invalidBlockVOForSegmentId =
+            updateStatusManager.getInvalidTimestampRange(segmentNo);
+      }
+
       try {
         List<DataRefNode> dataRefNodes =
             getDataBlocksOfSegment(filterExpressionProcessor, absoluteTableIdentifier,
@@ -301,10 +311,11 @@ public class CarbonTableReader {
           BlockBTreeLeafNode leafNode = (BlockBTreeLeafNode) dataRefNode;
           TableBlockInfo tableBlockInfo = leafNode.getTableBlockInfo();
 
-          if (CarbonUtil.isInvalidTableBlock(tableBlockInfo,
-              updateStatusManager.getInvalidTimestampRange(tableBlockInfo.getSegmentId()),
-              updateStatusManager)) {
-            continue;
+          if (IUDTable) {
+            if (CarbonUtil.isInvalidTableBlock(tableBlockInfo, invalidBlockVOForSegmentId,
+                updateStatusManager)) {
+              continue;
+            }
           }
           result.add(new CarbonLocalInputSplit(segmentNo, tableBlockInfo.getFilePath(),
               tableBlockInfo.getBlockOffset(), tableBlockInfo.getBlockLength(),
@@ -361,9 +372,9 @@ public class CarbonTableReader {
 
   private boolean isSegmentUpdate(SegmentTaskIndexWrapper segmentTaskIndexWrapper,
       UpdateVO updateDetails) {
-    if (null != updateDetails.getLatestUpdateTimestamp()
-        && updateDetails.getLatestUpdateTimestamp() > segmentTaskIndexWrapper
-        .getRefreshedTimeStamp()) {
+    Long refreshedTime = segmentTaskIndexWrapper.getRefreshedTimeStamp();
+    Long updateTime = updateDetails.getLatestUpdateTimestamp();
+    if (null != refreshedTime && null != updateTime && updateTime > refreshedTime) {
       return true;
     }
     return false;
@@ -374,16 +385,25 @@ public class CarbonTableReader {
       CacheClient cacheClient, SegmentUpdateStatusManager updateStatusManager) throws IOException {
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap = null;
     SegmentTaskIndexWrapper segmentTaskIndexWrapper = null;
+    UpdateVO updateDetails = null;
     boolean isSegmentUpdated = false;
     Set<SegmentTaskIndexStore.TaskBucketHolder> taskKeys = null;
     TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier =
         new TableSegmentUniqueIdentifier(absoluteTableIdentifier, segmentId);
     segmentTaskIndexWrapper =
         cacheClient.getSegmentAccessClient().getIfPresent(tableSegmentUniqueIdentifier);
-    UpdateVO updateDetails = updateStatusManager.getInvalidTimestampRange(segmentId);
+
+    // Until Updates or Deletes being performed on the table Invalid Blocks will not
+    // be formed. So it is unnecessary to get the InvalidTimeStampRange.
+    if (updateStatusManager.getUpdateStatusDetails().length != 0) {
+      updateDetails = updateStatusManager.getInvalidTimestampRange(segmentId);
+    }
+
     if (null != segmentTaskIndexWrapper) {
       segmentIndexMap = segmentTaskIndexWrapper.getTaskIdToTableSegmentMap();
-      if (isSegmentUpdate(segmentTaskIndexWrapper, updateDetails)) {
+      // IUD operations should be performed on the table in order to mark the segment as Updated.
+      // For Normal table no need to check for invalided blocks as there will be none of them.
+      if ((null != updateDetails) && isSegmentUpdate(segmentTaskIndexWrapper, updateDetails)) {
         taskKeys = segmentIndexMap.keySet();
         isSegmentUpdated = true;
       }
@@ -413,8 +433,8 @@ public class CarbonTableReader {
 
       List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
       for (FileSplit inputSplit : carbonSplits) {
-        if (isValidBlockBasedOnUpdateDetails(taskKeys, inputSplit, updateDetails,
-            updateStatusManager, segmentId)) {
+        if ((null == updateDetails) || ((null != updateDetails) && isValidBlockBasedOnUpdateDetails(
+            taskKeys, inputSplit, updateDetails, updateStatusManager, segmentId))) {
 
           BlockletInfos blockletInfos = new BlockletInfos(0, 0,
               0);//this level we do not need blocklet info!!!! Is this a trick?
