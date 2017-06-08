@@ -281,7 +281,7 @@ public class FilterScanner extends AbstractBlockletScanner {
         new DimensionColumnDataChunk[dimensionRawColumnChunks.length][indexesGroup.length];
     MeasureColumnDataChunk[][] measureColumnDataChunks =
         new MeasureColumnDataChunk[measureRawColumnChunks.length][indexesGroup.length];
-    // convert To dimension datachunk
+    // convert raw data to datachunk
     for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
       if (dimensionRawColumnChunks[i] != null) {
         for (int j = 0; j < indexesGroup.length; j++) {
