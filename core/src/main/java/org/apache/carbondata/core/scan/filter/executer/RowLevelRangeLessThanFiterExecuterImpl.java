@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.BitSet;
 import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
@@ -55,6 +56,8 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
         null);
     this.filterRangeValues = filterRangeValues;
     ifDefaultValueMatchesFilter();
+    isNaturalSorted = dimColEvaluatorInfoList.get(0).getDimension().isUseInvertedIndex()
+        && dimColEvaluatorInfoList.get(0).getDimension().isSortColumn();
   }
 
   /**
@@ -155,11 +158,18 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
       defaultValue = FilterUtil.getMaskKey(key, currentBlockDimension,
           this.segmentProperties.getSortColumnsGenerator());
     }
+    BitSet bitSet = null;
     if (dimensionColumnDataChunk.isExplicitSorted()) {
-      return setFilterdIndexToBitSetWithColumnIndex(dimensionColumnDataChunk, numerOfRows,
+      bitSet = setFilterdIndexToBitSetWithColumnIndex(dimensionColumnDataChunk, numerOfRows,
           defaultValue);
+    } else {
+      bitSet = setFilterdIndexToBitSet(dimensionColumnDataChunk, numerOfRows, defaultValue);
     }
-    return setFilterdIndexToBitSet(dimensionColumnDataChunk, numerOfRows, defaultValue);
+    if (dimensionColumnDataChunk.isNoDicitionaryColumn()) {
+      FilterUtil.removeNullValues(dimensionColumnDataChunk, bitSet,
+          CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
+    }
+    return bitSet;
   }
 
   /**
@@ -252,9 +262,8 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
       int numerOfRows, byte[] defaultValue) {
     BitSet bitSet = new BitSet(numerOfRows);
     byte[][] filterValues = this.filterRangeValues;
-    // binary search can only be applied if column is sorted and
-    // inverted index exists for that column
-    if (dimensionColumnDataChunk.isExplicitSorted()) {
+    // binary search can only be applied if column is sorted
+    if (isNaturalSorted) {
       int start = 0;
       int last = 0;
       int startIndex = 0;
@@ -262,8 +271,8 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
       //find the number of default values to skip the null value in case of direct dictionary
       if (null != defaultValue) {
         start = CarbonUtil
-            .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-                defaultValue, false);
+            .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex,
+                numerOfRows - 1, defaultValue, false);
         if (start < 0) {
           skip = -(start + 1);
           // end of block
@@ -277,8 +286,8 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
       }
       for (int k = 0; k < filterValues.length; k++) {
         start = CarbonUtil
-            .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-                filterValues[k], false);
+            .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex,
+                numerOfRows - 1, filterValues[k], false);
         if (start >= 0) {
           start =
               CarbonUtil.nextLesserValueToTarget(start, dimensionColumnDataChunk, filterValues[k]);
