@@ -16,13 +16,12 @@
  */
 package org.apache.spark.sql.execution.command
 
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, InsertIntoCarbonTable,
-ShowLoadsCommand, SparkSession}
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, InsertIntoCarbonTable, ShowLoadsCommand, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
-import org.apache.spark.sql.hive.execution.command.CarbonDropDatabaseCommand
+import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonSetCommand}
 
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
@@ -110,13 +109,14 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
         }
       case desc@DescribeTableCommand(identifier, partitionSpec, isExtended, isFormatted)
-        if
-        CarbonEnv.getInstance(sparkSession).carbonMetastore
+        if CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(identifier)(sparkSession) && isFormatted =>
         val resolvedTable =
           sparkSession.sessionState.executePlan(UnresolvedRelation(identifier, None)).analyzed
         val resultPlan = sparkSession.sessionState.executePlan(resolvedTable).executedPlan
         ExecutedCommandExec(DescribeCommandFormatted(resultPlan, plan.output, identifier)) :: Nil
+      case set@SetCommand(kv) =>
+        ExecutedCommandExec(CarbonSetCommand(set)) :: Nil
       case _ => Nil
     }
   }

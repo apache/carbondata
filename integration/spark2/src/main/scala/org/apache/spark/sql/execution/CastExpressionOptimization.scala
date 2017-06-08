@@ -24,8 +24,7 @@ import java.util.{Locale, TimeZone}
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Cast, EmptyRow, EqualTo, Expression, GreaterThan, GreaterThanOrEqual, In, LessThan, LessThanOrEqual, Literal, Not}
-import org.apache.spark.sql.CastExpr
-import org.apache.spark.sql.sources
+import org.apache.spark.sql.{CarbonEnv, CastExpr, SparkSession, sources}
 import org.apache.spark.sql.types.{DoubleType, IntegerType, StringType, TimestampType}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -35,7 +34,8 @@ object CastExpressionOptimization {
 
 
   def typeCastStringToLong(v: Any): Any = {
-    val parser: SimpleDateFormat = new SimpleDateFormat(CarbonProperties.getInstance
+    val parser: SimpleDateFormat = new SimpleDateFormat(
+      CarbonEnv.getInstance(SparkSession.getActiveSession.get).sessionParams
       .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
     try {

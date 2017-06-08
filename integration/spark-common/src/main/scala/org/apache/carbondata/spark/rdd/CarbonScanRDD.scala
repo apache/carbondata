@@ -67,6 +67,8 @@ class CarbonScanRDD(
 
   private val bucketedTable = carbonTable.getBucketingInfo(carbonTable.getFactTableName)
 
+  private val addedProperies = CarbonProperties.getInstance().getAddedProperies
+
   @transient private val jobId = new JobID(jobTrackerId, id)
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
@@ -180,6 +182,8 @@ class CarbonScanRDD(
         System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties"
       )
     }
+    // Add the properties added in driver to executor.
+    CarbonProperties.getInstance().setProperties(addedProperies)
 
     val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
     val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)

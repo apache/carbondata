@@ -123,7 +123,7 @@ object CarbonDataRDDFactory {
       isCompactionTriggerByDDl
     )
 
-    val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
+    val isConcurrentCompactionAllowed = CarbonEnv.getInstance(sqlContext.sparkSession).sessionParams
         .getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
           CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
         )
@@ -270,8 +270,8 @@ object CarbonDataRDDFactory {
               exception = e
           }
           // continue in case of exception also, check for all the tables.
-          val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
+          val isConcurrentCompactionAllowed = CarbonEnv.getInstance(sqlContext.sparkSession).
+            sessionParams.getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
                 CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
               ).equalsIgnoreCase("true")
 
@@ -392,8 +392,8 @@ object CarbonDataRDDFactory {
         }
         storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
-        val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
+        val isConcurrentCompactionAllowed = CarbonEnv.getInstance(sqlContext.sparkSession)
+          .sessionParams.getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
               CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
             )
             .equalsIgnoreCase("true")
@@ -1002,10 +1002,12 @@ object CarbonDataRDDFactory {
     // generate RDD[(K, V)] to use the partitionBy method of PairRDDFunctions
     val inputRDD: RDD[(String, Row)] = if (dataFrame.isDefined) {
       // input data from DataFrame
-      val timestampFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+      val timestampFormatString = CarbonEnv.getInstance(sqlContext.sparkSession)
+        .sessionParams.getProperty(CarbonCommonConstants
         .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
       val timeStampFormat = new SimpleDateFormat(timestampFormatString)
-      val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+      val dateFormatString = CarbonEnv.getInstance(sqlContext.sparkSession)
+        .sessionParams.getProperty(CarbonCommonConstants
         .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
       val dateFormat = new SimpleDateFormat(dateFormatString)
       val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1

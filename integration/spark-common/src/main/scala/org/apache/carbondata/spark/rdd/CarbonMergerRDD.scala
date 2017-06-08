@@ -74,8 +74,12 @@ class CarbonMergerRDD[K, V](
   val factTableName = carbonMergerMapping.factTableName
   val tableId = carbonMergerMapping.tableId
 
+  private val addedProperies = CarbonProperties.getInstance().getAddedProperies
+
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    // Add the properties added in driver to executor.
+    CarbonProperties.getInstance().setProperties(addedProperies)
     val iter = new Iterator[(K, V)] {
 
       carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
