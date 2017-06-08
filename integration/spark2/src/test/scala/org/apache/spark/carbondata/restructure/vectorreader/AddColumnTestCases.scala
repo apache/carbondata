@@ -24,6 +24,8 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+
 class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
@@ -344,6 +346,18 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_dict")
   }
 
+  test("test sort_columns for add columns") {
+    sql("DROP TABLE IF EXISTS alter_sort_columns")
+    sql(
+      "CREATE TABLE alter_sort_columns(stringField string,charField string) STORED BY 'carbondata'")
+    val caught = intercept[MalformedCarbonCommandException] {
+      sql(
+        "Alter table alter_sort_columns add columns(newField Int) tblproperties" +
+        "('sort_columns'='newField')")
+    }
+    assert(caught.getMessage.equals("Unsupported Table property in add column: sort_columns"))
+  }
+
   test("test compaction with all no dictionary columns") {
     sql("DROP TABLE IF EXISTS alter_no_dict")
     sql("CREATE TABLE alter_no_dict(stringField string,charField string) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_EXCLUDE'='stringField,charField')")
@@ -360,6 +374,7 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("DROP TABLE IF EXISTS addcolumntest")
     sql("drop table if exists hivetable")
+    sql("drop table if exists alter_sort_columns")
     sqlContext.setConf("carbon.enable.vector.reader", "false")
   }
 }
