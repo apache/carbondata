@@ -149,6 +149,7 @@ public class CarbonLoadModel implements Serializable {
    */
   private boolean preFetch;
 
+
   /**
    * Batch sort should be enabled or not
    */

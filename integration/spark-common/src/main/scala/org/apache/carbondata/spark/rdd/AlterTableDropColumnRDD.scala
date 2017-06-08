@@ -26,6 +26,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * This is a partitioner class for dividing the newly added columns into partitions
@@ -48,7 +49,8 @@ class DropColumnPartition(rddId: Int, idx: Int, schema: ColumnSchema) extends Pa
 class AlterTableDropColumnRDD[K, V](sc: SparkContext,
     @transient newColumns: Seq[ColumnSchema],
     carbonTableIdentifier: CarbonTableIdentifier,
-    carbonStorePath: String) extends RDD[(Int, String)](sc, Nil) {
+    carbonStorePath: String)
+  extends CarbonRDD[(Int, String)](sc, Nil) with InternalCompute[(Int, String)] {
 
   override def getPartitions: Array[Partition] = {
     newColumns.zipWithIndex.map { column =>
@@ -57,6 +59,10 @@ class AlterTableDropColumnRDD[K, V](sc: SparkContext,
   }
 
   override def compute(split: Partition,
+      context: TaskContext): Iterator[(Int, String)] = {
+    super.compute(this, split, context)
+  }
+  override def internalCompute(split: Partition,
       context: TaskContext): Iterator[(Int, String)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS

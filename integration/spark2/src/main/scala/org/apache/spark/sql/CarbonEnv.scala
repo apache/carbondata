@@ -24,7 +24,7 @@ import org.apache.spark.sql.hive.{CarbonMetastore, CarbonSessionCatalog}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, SessionParams, ThreadLocalSessionParams}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
@@ -34,6 +34,8 @@ import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 class CarbonEnv {
 
   var carbonMetastore: CarbonMetastore = _
+
+  var sessionParams: SessionParams = _
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -45,9 +47,11 @@ class CarbonEnv {
   def init(sparkSession: SparkSession): Unit = {
     sparkSession.udf.register("getTupleId", () => "")
     if (!initialized) {
+      sessionParams = new SessionParams()
+      ThreadLocalSessionParams.setSessionParams(sessionParams)
       carbonMetastore = {
         val storePath =
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
         LOGGER.info(s"carbon env initial: $storePath")
         new CarbonMetastore(sparkSession.conf, storePath)
       }

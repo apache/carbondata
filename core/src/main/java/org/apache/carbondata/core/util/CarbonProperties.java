@@ -21,7 +21,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -45,6 +48,8 @@ public final class CarbonProperties {
    * porpeties .
    */
   private Properties carbonProperties;
+
+  private Set<String> propertySet = new HashSet<String>();
 
   /**
    * Private constructor this will call load properties method to load all the
@@ -70,6 +75,11 @@ public final class CarbonProperties {
    * values in case of wrong values.
    */
   private void validateAndLoadDefaultProperties() {
+    try {
+      initPropertySet();
+    } catch (IllegalAccessException e) {
+      LOGGER.error("Illelagal access to declared field" + e.getMessage());
+    }
     if (null == carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION)) {
       carbonProperties.setProperty(CarbonCommonConstants.STORE_LOCATION,
           CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
@@ -89,6 +99,21 @@ public final class CarbonProperties {
     validateBlockletGroupSizeInMB();
     validateNumberOfColumnPerIORead();
     validateNumberOfRowsPerBlockletColumnPage();
+  }
+
+  private void initPropertySet() throws IllegalAccessException {
+    Field[] declaredFields = CarbonCommonConstants.class.getDeclaredFields();
+    for (Field field : declaredFields) {
+      if (field.isAnnotationPresent(CarbonProperty.class)) {
+        propertySet.add(field.get(field.getName()).toString());
+      }
+    }
+    declaredFields = CarbonV3DataFormatConstants.class.getDeclaredFields();
+    for (Field field : declaredFields) {
+      if (field.isAnnotationPresent(CarbonProperty.class)) {
+        propertySet.add(field.get(field.getName()).toString());
+      }
+    }
   }
 
   private void validatePrefetchBufferSize() {
@@ -442,11 +467,32 @@ public final class CarbonProperties {
    * @return properties value
    */
   public String getProperty(String key) {
+    // get the property value from session parameters,
+    // if its null then get value from carbonProperties
+    String sessionPropertyValue = getSessionPropertyValue(key);
+    if (null != sessionPropertyValue) {
+      return sessionPropertyValue;
+    }
     //TODO temporary fix
     if ("carbon.leaf.node.size".equals(key)) {
       return "120000";
     }
     return carbonProperties.getProperty(key);
+  }
+
+  /**
+   * returns session property value
+   *
+   * @param key
+   * @return
+   */
+  private String getSessionPropertyValue(String key) {
+    String value = null;
+    SessionParams sessionParams = ThreadLocalSessionParams.getSessionParams();
+    if (null != sessionParams) {
+      value = sessionParams.getProperty(key);
+    }
+    return value;
   }
 
   /**
@@ -748,5 +794,14 @@ public final class CarbonProperties {
           .parseInt(CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);
     }
     return numberOfDeltaFilesThreshold;
+  }
+
+  /**
+   * returns true if carbon property
+   * @param key
+   * @return
+   */
+  public boolean isCarbonProperty(String key) {
+    return propertySet.contains(key);
   }
 }
