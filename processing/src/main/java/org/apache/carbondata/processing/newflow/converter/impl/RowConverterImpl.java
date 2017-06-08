@@ -42,6 +42,7 @@ import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConst
 import org.apache.carbondata.processing.newflow.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.newflow.converter.FieldConverter;
 import org.apache.carbondata.processing.newflow.converter.RowConverter;
+import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordsLogger;
@@ -157,7 +158,7 @@ public class RowConverterImpl implements RowConverter {
       if (!logHolder.isLogged() && logHolder.isBadRecordNotAdded()) {
         if (badRecordLogger.isDataLoadFail()) {
           String error = "Data load failed due to bad record: " + logHolder.getReason();
-          throw new CarbonDataLoadingException(error);
+          throw new BadRecordFoundException(error);
         }
         badRecordLogger.addBadRecordsToBuilder(copy.getData(), logHolder.getReason());
         logHolder.clear();

@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.processing.newflow.exception;
 
-public class BadRecordFoundException extends Exception {
+public class BadRecordFoundException extends CarbonDataLoadingException {
   /**
    * default serial version ID.
    */
