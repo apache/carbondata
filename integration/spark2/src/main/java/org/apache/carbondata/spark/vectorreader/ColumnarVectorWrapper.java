@@ -60,7 +60,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          putShort(counter++, value);
+          columnVector.putShort(counter++, value);
         }
         rowId++;
       }
@@ -79,7 +79,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          putInt(counter++, value);
+          columnVector.putInt(counter++, value);
         }
         rowId++;
       }
@@ -98,7 +98,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          putLong(counter++, value);
+          columnVector.putLong(counter++, value);
         }
         rowId++;
       }
@@ -116,7 +116,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   @Override public void putDecimals(int rowId, int count, Decimal value, int precision) {
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
-        putDecimal(counter++, value, precision);
+        columnVector.putDecimal(counter++, value, precision);
       }
       rowId++;
     }
@@ -132,7 +132,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          putDouble(counter++, value);
+          columnVector.putDouble(counter++, value);
         }
         rowId++;
       }
@@ -150,7 +150,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   @Override public void putBytes(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
-        putBytes(counter++, value);
+        columnVector.putByteArray(counter++, value);
       }
       rowId++;
     }
@@ -172,7 +172,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     if (filteredRowsExist) {
       for (int i = 0; i < count; i++) {
         if (!filteredRows[rowId]) {
-          putNull(counter++);
+          columnVector.putNull(counter++);
         }
         rowId++;
       }
