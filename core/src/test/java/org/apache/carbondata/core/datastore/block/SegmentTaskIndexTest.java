@@ -25,7 +25,9 @@ import org.apache.carbondata.core.datastore.impl.btree.BlockBTreeBuilder;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
+import org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
+import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 import mockit.Mock;
@@ -65,6 +67,8 @@ public class SegmentTaskIndexTest {
     footer.setColumnInTable(columnSchemaList);
     footer.setBlockletList(Arrays.asList(blockletInfo));
     footer.setNumberOfRows(numberOfRows);
+    footer.setBlockletIndex(new BlockletIndex(new BlockletBTreeIndex(new byte[0], new byte[0]),
+        new BlockletMinMaxIndex()));
     footerList.add(footer);
 
     SegmentProperties properties = new SegmentProperties(footerList.get(0).getColumnInTable(),

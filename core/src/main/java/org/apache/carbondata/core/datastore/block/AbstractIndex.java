@@ -124,4 +124,10 @@ public abstract class AbstractIndex implements Cacheable {
   public void setMemorySize(long memorySize) {
     this.memorySize = memorySize;
   }
+
+  @Override public void release() {
+    if (dataRefNode != null) {
+      dataRefNode.release();
+    }
+  }
 }

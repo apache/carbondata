@@ -27,7 +27,7 @@ import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.DataRefNodeFinder;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
-import org.apache.carbondata.core.datastore.impl.btree.BTreeDataRefNodeFinder;
+import org.apache.carbondata.core.datastore.impl.array.IndexStoreFactory;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -134,7 +134,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
             + "Dictionary End Key: " + searchEndKey.getDictionaryKeys() + "No Dictionary End Key "
             + searchEndKey.getNoDictionaryKeys());
     long startTimeInMillis = System.currentTimeMillis();
-    DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
+    DataRefNodeFinder blockFinder = IndexStoreFactory.getNodeFinder(
         tableSegment.getSegmentProperties().getEachDimColumnValueSize(),
         tableSegment.getSegmentProperties().getNumberOfSortColumns(),
         tableSegment.getSegmentProperties().getNumberOfNoDictSortColumns());
@@ -142,7 +142,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
     DataRefNode endBlock = blockFinder.findLastDataBlock(btreeNode, searchEndKey);
     FilterExecuter filterExecuter =
         FilterUtil.getFilterExecuterTree(filterResolver, tableSegment.getSegmentProperties(),null);
-    while (startBlock != endBlock) {
+    while (!startBlock.equals(endBlock)) {
       addBlockBasedOnMinMaxValue(filterExecuter, listOfDataBlocksToScan, startBlock);
       startBlock = startBlock.getNextDataRefNode();
     }

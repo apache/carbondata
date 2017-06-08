@@ -1,0 +1,189 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.carbondata.core.datastore.impl.array;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.apache.carbondata.core.datastore.BTreeBuilderInfo;
+import org.apache.carbondata.core.datastore.BtreeBuilder;
+import org.apache.carbondata.core.datastore.DataRefNode;
+import org.apache.carbondata.core.datastore.block.BlockInfo;
+import org.apache.carbondata.core.memory.CarbonUnsafe;
+import org.apache.carbondata.core.memory.MemoryAllocator;
+import org.apache.carbondata.core.memory.MemoryAllocatorFactory;
+import org.apache.carbondata.core.memory.MemoryBlock;
+import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
+
+/**
+ * Builder for storing block index in unsafe array format
+ */
+public class BlockArrayIndexBuilder implements BtreeBuilder {
+
+  private BlockIndexStore blockIndexStore;
+
+  /**
+   * Maintain pointers in the following way.
+   * For suppose we have 2 indexes
+   * key pointer = <key1-address><key2-address>
+   * Fixed max pointer = <fmax1-address><fmax2-address>
+   * Fixed min pointer = <fmin1-address><fmin2-address>
+   * Variable max pointer = <vmax1-address><vmax2-address>
+   * Variable min pointer = <vmin1-address><vmin2-address>
+   * Rownum-pointer = <row-num-address>
+   * startkey => <fixkeylength><variablekeylength><fixkey><variablekey>
+   *
+   * @param btreeBuilderInfo
+   */
+  @Override public void build(BTreeBuilderInfo btreeBuilderInfo) {
+    int indexSize = 0;
+    List<DataFileFooter> footerList = btreeBuilderInfo.getFooterList();
+    byte[][] blockInfo = new byte[footerList.size()][];
+    int[] dimensionColumnValueSize = btreeBuilderInfo.getDimensionColumnValueSize();
+    // First calculate the size of complete index to store in memory
+    for (int metadataIndex = 0; metadataIndex < footerList.size(); metadataIndex++) {
+      DataFileFooter footer = footerList.get(metadataIndex);
+      //Key pointer
+      byte[] startKey = footer.getBlockletIndex().getBtreeIndex().getStartKey();
+      indexSize += startKey.length;
+      // Key pointer size in int
+      indexSize += 4;
+
+      BlockletMinMaxIndex minMaxIndex = footer.getBlockletIndex().getMinMaxIndex();
+      // max calculation
+      byte[][] maxValues = minMaxIndex.getMaxValues();
+      for (int i = 0; i < dimensionColumnValueSize.length; i++) {
+        //If it is variable length size in short + actual data length
+        if (dimensionColumnValueSize[i] == -1) {
+          indexSize += 2;
+        }
+        indexSize += maxValues[i].length;
+      }
+
+      // min calculation
+      byte[][] minValues = minMaxIndex.getMinValues();
+      for (int i = 0; i < dimensionColumnValueSize.length; i++) {
+        //If it is variable length size in short + actual data length
+        if (dimensionColumnValueSize[i] == -1) {
+          indexSize += 2;
+        }
+        indexSize += minValues[i].length;
+      }
+
+      //row num in int
+      indexSize += 4;
+
+      try {
+        BlockInfo blockInfo1 = footer.getBlockInfo();
+        if (blockInfo1 != null) {
+          blockInfo[metadataIndex] = blockInfo1.getTableBlockInfo().getSerializedData();
+          indexSize += 4;
+          indexSize += blockInfo[metadataIndex].length;
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+
+    // TODO move to memory manager.
+    MemoryAllocator memoryAllocator = MemoryAllocatorFactory.INSATANCE.getMemoryAllocator();
+    MemoryBlock block = memoryAllocator.allocate(indexSize);
+
+    int[] rowPointers = new int[footerList.size()];
+    int[] blockInfoPointers = new int[footerList.size()];
+    long address = block.getBaseOffset();
+    Object baseObject = block.getBaseObject();
+    indexSize = 0;
+    // First calculate the size of complete index to store in memory
+    for (int metadataIndex = 0; metadataIndex < footerList.size(); metadataIndex++) {
+      DataFileFooter footer = footerList.get(metadataIndex);
+      rowPointers[metadataIndex] = indexSize;
+      CarbonUnsafe.unsafe.putInt(address + indexSize, (int) footer.getNumberOfRows());
+      indexSize += 4;
+      //Key pointer
+      byte[] startKey = footer.getBlockletIndex().getBtreeIndex().getStartKey();
+      CarbonUnsafe.unsafe.putInt(address + indexSize, startKey.length);
+      indexSize += 4;
+      CarbonUnsafe.unsafe
+          .copyMemory(startKey, CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject, address + indexSize,
+              startKey.length);
+      indexSize += startKey.length;
+
+      BlockletMinMaxIndex minMaxIndex = footer.getBlockletIndex().getMinMaxIndex();
+
+      // max calculation for fixed values
+      byte[][] maxValues = minMaxIndex.getMaxValues();
+      for (int i = 0; i < dimensionColumnValueSize.length; i++) {
+        if (dimensionColumnValueSize[i] > 0) {
+          CarbonUnsafe.unsafe.copyMemory(maxValues[i], CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
+              address + indexSize, maxValues[i].length);
+          indexSize += maxValues[i].length;
+        }
+      }
+
+      // For variable max data
+      for (int i = 0; i < dimensionColumnValueSize.length; i++) {
+        if (dimensionColumnValueSize[i] == -1) {
+          CarbonUnsafe.unsafe.putShort(address + indexSize, (short) maxValues[i].length);
+          indexSize += 2;
+          CarbonUnsafe.unsafe.copyMemory(maxValues[i], CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
+              address + indexSize, maxValues[i].length);
+          indexSize += maxValues[i].length;
+        }
+      }
+
+      // min calculation for fixed values
+      byte[][] minValues = minMaxIndex.getMinValues();
+      for (int i = 0; i < dimensionColumnValueSize.length; i++) {
+        if (dimensionColumnValueSize[i] > 0) {
+          CarbonUnsafe.unsafe.copyMemory(minValues[i], CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
+              address + indexSize, minValues[i].length);
+          indexSize += minValues[i].length;
+        }
+      }
+
+      // For variable min data
+      for (int i = 0; i < dimensionColumnValueSize.length; i++) {
+        if (dimensionColumnValueSize[i] == -1) {
+          CarbonUnsafe.unsafe.putShort(address + indexSize, (short) minValues[i].length);
+          indexSize += 2;
+          CarbonUnsafe.unsafe.copyMemory(minValues[i], CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
+              address + indexSize, minValues[i].length);
+          indexSize += minValues[i].length;
+        }
+      }
+      if (blockInfo[metadataIndex] != null) {
+        // write table block info to unsafe
+        blockInfoPointers[metadataIndex] = indexSize;
+        CarbonUnsafe.unsafe.putInt(address + indexSize, blockInfo[metadataIndex].length);
+        indexSize += 4;
+        CarbonUnsafe.unsafe
+            .copyMemory(blockInfo[metadataIndex], CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
+                address + indexSize, blockInfo[metadataIndex].length);
+        indexSize += blockInfo[metadataIndex].length;
+      }
+    }
+
+    blockIndexStore =
+        new BlockIndexStore(btreeBuilderInfo, block, rowPointers, blockInfoPointers);
+  }
+
+  @Override public DataRefNode get() {
+    return new BlockIndexNodeWrapper(blockIndexStore, (short) 0);
+  }
+}

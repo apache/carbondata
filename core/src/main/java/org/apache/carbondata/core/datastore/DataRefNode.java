@@ -128,4 +128,9 @@ public interface DataRefNode {
    * @return
    */
   int numberOfPages();
+
+  /**
+   * Release resources if any it holds.
+   */
+  void release();
 }

@@ -183,7 +183,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     int columnIndex = dimColumnEvaluatorInfo.getColumnIndex();
     int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping().get(columnIndex);
 
-    boolean isScanRequired =
+    boolean isScanRequired = blockIndex >= blkMaxVal.length ||
         isScanRequired(blkMaxVal[blockIndex], blkMinVal[blockIndex], filterValues);
     if (isScanRequired) {
       bitSet.set(0);

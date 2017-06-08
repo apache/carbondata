@@ -16,6 +16,11 @@
  */
 package org.apache.carbondata.core.datastore.block;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 
 /**
@@ -104,6 +109,25 @@ public class BlockletInfos implements Serializable {
    */
   public void setNumberOfBlockletToScan(int numberOfBlockletToScan) {
     this.numberOfBlockletToScan = numberOfBlockletToScan;
+  }
+
+  public byte[] getSerializedData() throws IOException {
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    DataOutputStream output = new DataOutputStream(stream);
+    output.writeInt(noOfBlockLets);
+    output.writeInt(startBlockletNumber);
+    output.writeInt(numberOfBlockletToScan);
+    output.close();
+    return stream.toByteArray();
+  }
+
+  public void writeSerializedData(byte[] data) throws IOException {
+    ByteArrayInputStream stream = new ByteArrayInputStream(data);
+    DataInputStream input = new DataInputStream(stream);
+    noOfBlockLets = input.readInt();
+    startBlockletNumber = input.readInt();
+    numberOfBlockletToScan = input.readInt();
+    input.close();
   }
 
 }

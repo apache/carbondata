@@ -239,4 +239,8 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
   public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
     return deleteDeltaDataCache;
   }
+
+  @Override public void release() {
+    // TODO release resorces.
+  }
 }

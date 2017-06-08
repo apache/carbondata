@@ -17,13 +17,15 @@
 
 package org.apache.carbondata.hadoop.util;
 
+import java.io.IOException;
 import java.util.Map;
 
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.DataRefNodeFinder;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
-import org.apache.carbondata.core.datastore.impl.btree.BTreeDataRefNodeFinder;
+import org.apache.carbondata.core.datastore.impl.array.BlockIndexNodeWrapper;
+import org.apache.carbondata.core.datastore.impl.array.IndexStoreFactory;
 import org.apache.carbondata.core.datastore.impl.btree.BlockBTreeLeafNode;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
@@ -47,12 +49,12 @@ public class BlockLevelTraverser {
    */
   public long getBlockRowMapping(AbstractIndex abstractIndex, Map<String, Long> blockRowMap,
       String segId, SegmentUpdateStatusManager updateStatusManager)
-      throws KeyGenException {
+      throws KeyGenException, IOException {
 
     IndexKey  searchStartKey =
           FilterUtil.prepareDefaultStartIndexKey(abstractIndex.getSegmentProperties());
 
-    DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
+    DataRefNodeFinder blockFinder = IndexStoreFactory.getNodeFinder(
         abstractIndex.getSegmentProperties().getEachDimColumnValueSize(),
         abstractIndex.getSegmentProperties().getNumberOfSortColumns(),
         abstractIndex.getSegmentProperties().getNumberOfNoDictSortColumns());
@@ -60,10 +62,14 @@ public class BlockLevelTraverser {
         blockFinder.findFirstDataBlock(abstractIndex.getDataRefNode(), searchStartKey);
 
     long count = 0;
-
+    String blockName;
     while (currentBlock != null) {
-
-      String blockName = ((BlockBTreeLeafNode) currentBlock).getTableBlockInfo().getFilePath();
+      if (currentBlock instanceof BlockIndexNodeWrapper) {
+        blockName = ((BlockIndexNodeWrapper) currentBlock)
+            .getTableBlockInfo((int) currentBlock.nodeNumber()).getFilePath();
+      } else {
+        blockName = ((BlockBTreeLeafNode) currentBlock).getTableBlockInfo().getFilePath();
+      }
       blockName = CarbonTablePath.getCarbonDataFileName(blockName);
       blockName = blockName + CarbonTablePath.getCarbonDataExtension();
 

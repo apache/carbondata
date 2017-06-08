@@ -14,40 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.carbondata.core.datastore.impl.array;
 
-package org.apache.carbondata.core.cache;
+import org.apache.carbondata.core.datastore.IndexKey;
 
 /**
- * interface which declares methods which will decide whether to keep
- * cacheable objects in memory
+ * Interface for storing and retrieving index.
  */
-public interface Cacheable {
+public interface IndexStore {
 
-  /**
-   * This method will return the timestamp of file based on which decision
-   * the decision will be taken whether to read that file or not
-   *
-   * @return
-   */
-  long getFileTimeStamp();
+  byte[] getMin(int index, int colIndex);
 
-  /**
-   * This method will return the access count for a column based on which decision will be taken
-   * whether to keep the object in memory
-   *
-   * @return
-   */
-  int getAccessCount();
+  byte[] getMax(int index, int colIndex);
 
-  /**
-   * This method will return the memory size of a column
-   *
-   * @return
-   */
-  long getMemorySize();
+  // TODO It can be removed later and use only {getMin(int index, int colIndex)} instead
+  byte[][] getMins(int index);
 
-  /**
-   * Clear the resources before remove.
-   */
-  void release();
+  byte[][] getMaxs(int index);
+
+  IndexKey getIndexKey(int index);
+
+  boolean isKeyAvailableAtIndex(int index);
+
+  int getRowCount(int index);
+
+  int getIndexKeyCount();
+
+  void clear();
+
 }
