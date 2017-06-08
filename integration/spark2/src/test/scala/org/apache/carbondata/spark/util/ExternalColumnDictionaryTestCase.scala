@@ -231,7 +231,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       sql(
         s"""
       LOAD DATA LOCAL INPATH "$complexFilePath1" INTO TABLE loadSqlTest
-      OPTIONS('FILEHEADER'='$header', 'COLUMNDICT'='$extColDictFilePath1')
+      OPTIONS('FILEHEADER'='$header', 'COLUMNDICT'='$extColDictFilePath1', 'single_pass'='true')
         """)
     } catch {
       case ex: Exception =>
@@ -264,7 +264,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       sql(
         s"""
       LOAD DATA LOCAL INPATH "$complexFilePath1" INTO TABLE loadSqlTest
-      OPTIONS('FILEHEADER'='$header', 'COLUMNDICT'='gamePointId:$filePath')
+      OPTIONS('single_pass'='true','FILEHEADER'='$header', 'COLUMNDICT'='gamePointId:$filePath')
       """)
       assert(false)
     } catch {

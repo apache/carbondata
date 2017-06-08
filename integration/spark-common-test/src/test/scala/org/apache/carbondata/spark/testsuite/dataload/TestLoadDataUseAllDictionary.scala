@@ -38,7 +38,7 @@ class TestLoadDataUseAllDictionary extends QueryTest with BeforeAndAfterAll{
       sql(s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' into table t3
            options('FILEHEADER'='id,date,country,name,phonetype,serialname,salary',
-           'All_DICTIONARY_PATH'='$resourcesPath/dict.txt')
+           'All_DICTIONARY_PATH'='$resourcesPath/dict.txt','single_pass'='true')
            """)
       assert(false)
     } catch {
