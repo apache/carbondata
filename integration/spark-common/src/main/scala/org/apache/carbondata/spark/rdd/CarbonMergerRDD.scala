@@ -261,6 +261,7 @@ class CarbonMergerRDD[K, V](
     val jobConf: JobConf = new JobConf(new Configuration)
     val job: Job = new Job(jobConf)
     val format = CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)
+    var updateDetails: UpdateVO = null
     // initialise query_id for job
     job.getConfiguration.set("query.id", queryId)
     var defaultParallelism = sparkContext.defaultParallelism
@@ -287,8 +288,11 @@ class CarbonMergerRDD[K, V](
       // map for keeping the relation of a task and its blocks.
       job.getConfiguration.set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, eachSeg)
 
-      val updateDetails: UpdateVO = updateStatusManager.getInvalidTimestampRange(eachSeg)
+      if (updateStatusManager.getUpdateStatusDetails.length != 0) {
+         updateDetails = updateStatusManager.getInvalidTimestampRange(eachSeg)
+      }
 
+      var updated: Boolean = updateStatusManager.getUpdateStatusDetails.length != 0
       // get splits
       val splits = format.getSplits(job)
 
@@ -303,8 +307,8 @@ class CarbonMergerRDD[K, V](
           entry.getLocations, entry.getLength, entry.getVersion,
           updateStatusManager.getDeleteDeltaFilePath(entry.getPath.toString)
         )
-        !CarbonUtil
-          .isInvalidTableBlock(blockInfo, updateDetails, updateStatusManager)
+        ((!updated) || ((updated) && (!CarbonUtil
+          .isInvalidTableBlock(blockInfo, updateDetails, updateStatusManager))))
       })
     }
 

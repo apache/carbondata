@@ -297,8 +297,7 @@ public class CarbonFactDataHandlerModel {
         .checkAndCreateCarbonStoreLocation(loadModel.getStorePath(), loadModel.getDatabaseName(),
             tableName, loadModel.getPartitionId(), loadModel.getSegmentId());
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
-    List<CarbonDimension> dimensionByTableName =
-        loadModel.getCarbonDataLoadSchema().getCarbonTable().getDimensionByTableName(tableName);
+    List<CarbonDimension> dimensionByTableName = carbonTable.getDimensionByTableName(tableName);
     boolean[] isUseInvertedIndexes = new boolean[dimensionByTableName.size()];
     int index = 0;
     for (CarbonDimension dimension : dimensionByTableName) {
