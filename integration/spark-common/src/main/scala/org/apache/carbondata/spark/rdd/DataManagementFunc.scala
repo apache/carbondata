@@ -156,6 +156,7 @@ object DataManagementFunc {
       carbonLoadModel.getLoadMetadataDetails
     )
     CarbonDataMergerUtil.sortSegments(sortedSegments)
+    val lastSegment = sortedSegments.get(sortedSegments.size() - 1)
 
     var segList = carbonLoadModel.getLoadMetadataDetails
     var loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
@@ -166,13 +167,11 @@ object DataManagementFunc {
       compactionModel.compactionType
     )
     while (loadsToMerge.size() > 1 ||
-           (compactionModel.compactionType.name().equals("IUD_UPDDEL_DELTA_COMPACTION") &&
-            loadsToMerge.size() > 0)) {
-      val lastSegment = sortedSegments.get(sortedSegments.size() - 1)
+           (compactionModel.compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION &&
+            loadsToMerge.size() == 1)) {
       deletePartialLoadsInCompaction(carbonLoadModel)
       val futureList: util.List[Future[Void]] = new util.ArrayList[Future[Void]](
-        CarbonCommonConstants
-            .DEFAULT_COLLECTION_SIZE
+        CarbonCommonConstants.DEFAULT_COLLECTION_SIZE
       )
 
       scanSegmentsAndSubmitJob(futureList,
@@ -219,8 +218,7 @@ object DataManagementFunc {
           segList,
           compactionModel.compactionType
         )
-      }
-      else {
+      } else {
         loadsToMerge.clear()
       }
     }
@@ -257,9 +255,7 @@ object DataManagementFunc {
     )
 
     val future: Future[Void] = executor
-        .submit(new CompactionCallable(compactionCallableModel
-        )
-        )
+        .submit(new CompactionCallable(compactionCallableModel))
     futureList.add(future)
   }
 
