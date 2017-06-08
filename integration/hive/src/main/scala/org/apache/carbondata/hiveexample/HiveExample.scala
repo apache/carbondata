@@ -41,33 +41,33 @@ object HiveExample {
     var resultSalary = ""
 
 
-    import org.apache.spark.sql.CarbonSession._
-
-    val carbonSession = SparkSession
-      .builder()
-      .master("local")
-      .appName("HiveExample")
-      .config("carbonSession.sql.warehouse.dir", warehouse).enableHiveSupport()
-      .getOrCreateCarbonSession(
-        store, metaStore_Db)
-
-    carbonSession.sql("""DROP TABLE IF EXISTS HIVE_CARBON_EXAMPLE""".stripMargin)
-
-    carbonSession
-      .sql(
-        """CREATE TABLE HIVE_CARBON_EXAMPLE (ID int,NAME string,SALARY double) STORED BY
-          |'CARBONDATA' """
-          .stripMargin)
-
-    carbonSession.sql(
-      s"""
-           LOAD DATA LOCAL INPATH '$rootPath/integration/hive/src/main/resources/data.csv' INTO
-           TABLE
-         HIVE_CARBON_EXAMPLE
-           """)
-    carbonSession.sql("SELECT * FROM HIVE_CARBON_EXAMPLE").show()
-
-    carbonSession.stop()
+//    import org.apache.spark.sql.CarbonSession._
+//
+//    val carbonSession = SparkSession
+//      .builder()
+//      .master("local")
+//      .appName("HiveExample")
+//      .config("carbonSession.sql.warehouse.dir", warehouse).enableHiveSupport()
+//      .getOrCreateCarbonSession(
+//        store, metaStore_Db)
+//
+//    carbonSession.sql("""DROP TABLE IF EXISTS HIVE_CARBON_EXAMPLE""".stripMargin)
+//
+//    carbonSession
+//      .sql(
+//        """CREATE TABLE HIVE_CARBON_EXAMPLE (ID int,NAME string,SALARY double) STORED BY
+//          |'CARBONDATA' """
+//          .stripMargin)
+//
+//    carbonSession.sql(
+//      s"""
+//           LOAD DATA LOCAL INPATH '$rootPath/integration/hive/src/main/resources/data.csv' INTO
+//           TABLE
+//         HIVE_CARBON_EXAMPLE
+//           """)
+//    carbonSession.sql("SELECT * FROM HIVE_CARBON_EXAMPLE").show()
+//
+//    carbonSession.stop()
 
     try {
       Class.forName(driverName)
