@@ -23,7 +23,7 @@ import scala.collection.JavaConversions._
 
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
-import org.apache.spark.sql.hive.{CarbonSessionState, HiveExternalCatalog}
+import org.apache.spark.sql.hive.CarbonSessionState
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.{DataFrame, Row}
 
