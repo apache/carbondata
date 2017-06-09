@@ -115,7 +115,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       }
 
       val tableProperties = mutable.Map[String, String]()
-      properties.foreach{property => tableProperties.put(property._1, property._2.toLowerCase)}
+      properties.foreach{property => tableProperties.put(property._1, property._2)}
 
       // validate partition clause
       if (partitionerFields.nonEmpty) {
@@ -173,8 +173,16 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         s"Values must be specified for key(s): ${ badKeys.mkString("[", ",", "]") }", ctx)
     }
     props.map { case (key, value) =>
+      if(needToConvertToLowerCase(key))
       (key.toLowerCase, value.toLowerCase)
+        else
+        (key.toLowerCase, value)
     }
+  }
+
+  private def needToConvertToLowerCase(key: String): Boolean={
+    val noConvertList=Array("LIST_INFO","RANGE_INFO")
+    !noConvertList.exists(x=>x.equalsIgnoreCase(key));
   }
 
 
