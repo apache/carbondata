@@ -995,7 +995,7 @@ object CarbonDataRDDFactory {
     val columns = carbonLoadModel.getCsvHeaderColumns
     var partitionColumnIndex = -1
     for (i <- 0 until columns.length) {
-      if (partitionColumn.equals(columns(i))) {
+      if (partitionColumn.equalsIgnoreCase(columns(i))) {
         partitionColumnIndex = i
       }
     }
