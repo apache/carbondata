@@ -107,8 +107,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
     List<DataRefNode> listOfDataBlocksToScan = new ArrayList<DataRefNode>();
     // getting the start and end index key based on filter for hitting the
     // selected block reference nodes based on filter resolver tree.
-    LOGGER.debug("preparing the start and end key for finding"
-        + "start and end block as per filter resolver");
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("preparing the start and end key for finding"
+          + "start and end block as per filter resolver");
+    }
     List<IndexKey> listOfStartEndKeys = new ArrayList<IndexKey>(2);
     FilterUtil.traverseResolverTreeAndGetStartAndEndKey(tableSegment.getSegmentProperties(),
         filterResolver, listOfStartEndKeys);
@@ -127,12 +129,13 @@ public class FilterExpressionProcessor implements FilterProcessor {
         return listOfDataBlocksToScan;
       }
     }
-
-    LOGGER.debug(
-        "Successfully retrieved the start and end key" + "Dictionary Start Key: " + searchStartKey
-            .getDictionaryKeys() + "No Dictionary Start Key " + searchStartKey.getNoDictionaryKeys()
-            + "Dictionary End Key: " + searchEndKey.getDictionaryKeys() + "No Dictionary End Key "
-            + searchEndKey.getNoDictionaryKeys());
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug(
+          "Successfully retrieved the start and end key" + "Dictionary Start Key: " + searchStartKey
+              .getDictionaryKeys() + "No Dictionary Start Key " + searchStartKey
+              .getNoDictionaryKeys() + "Dictionary End Key: " + searchEndKey.getDictionaryKeys()
+              + "No Dictionary End Key " + searchEndKey.getNoDictionaryKeys());
+    }
     long startTimeInMillis = System.currentTimeMillis();
     DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
         tableSegment.getSegmentProperties().getEachDimColumnValueSize(),

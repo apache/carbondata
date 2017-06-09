@@ -16,10 +16,18 @@
  */
 package org.apache.carbondata.processing.newflow.converter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * It is holder for reason of bad records.
  */
 public class BadRecordLogHolder {
+
+  /**
+   * this map will hold the bad record unified message for columns
+   */
+  private Map<String, String> columnMessageMap = new HashMap<>();
 
   private String reason;
 
@@ -50,5 +58,18 @@ public class BadRecordLogHolder {
 
   public void setLogged(boolean logged) {
     isLogged = logged;
+  }
+
+  public Map<String, String> getColumnMessageMap() {
+    return columnMessageMap;
+  }
+
+  /**
+   * this method will clear the map entries
+   */
+  public void finish() {
+    if (null != columnMessageMap) {
+      columnMessageMap.clear();
+    }
   }
 }
