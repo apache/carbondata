@@ -21,6 +21,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
+import scala.util.Success
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
@@ -168,8 +169,18 @@ object CommonUtil {
     } else {
       partitionType.get.toUpperCase() match {
         case "HASH" => if (!numPartitions.isDefined) isValid = false
-        case "LIST" => if (!listInfo.isDefined) isValid = false
-        case "RANGE" => if (!rangeInfo.isDefined) isValid = false
+        case "LIST" => if (!listInfo.isDefined) {
+          isValid = false
+        } else {
+          listInfo.get.split(CarbonCommonConstants.COMMA).foreach(
+            isValid &= validateTypeConvert(partitionerFields(0).dataType, _))
+        }
+        case "RANGE" => if (!rangeInfo.isDefined) {
+          isValid = false
+        } else {
+          rangeInfo.get.split(CarbonCommonConstants.COMMA).foreach(
+            isValid &= validateTypeConvert(partitionerFields(0).dataType, _))
+        }
         case "RANGE_INTERVAL" => isValid = false
         case _ => isValid = false
       }
@@ -177,6 +188,24 @@ object CommonUtil {
       if (partitionerFields.length > 1) isValid = false
     }
     isValid
+  }
+
+  def validateTypeConvert(desType: Option[String], value: String): Boolean = {
+    val result = desType match {
+      case Some("IntegerType") => scala.util.Try(value.toInt)
+      case Some("LongType") => scala.util.Try(value.toLong)
+      case Some("FloatType") => scala.util.Try(value.toFloat)
+      case Some("DoubleType") => scala.util.Try(value.toDouble)
+      case Some("ByteType") => scala.util.Try(value.toByte)
+      case Some("ShortType") => scala.util.Try(value.toShort)
+      case Some("DecimalType") => scala.util.Try(value.toDouble)
+      case Some("BooleanType") => scala.util.Try(value.toBoolean)
+    }
+    val isConverted = result match {
+      case Success(_) => true
+      case _ => false
+    }
+    isConverted
   }
 
   def validateFields(key: String, fields: Seq[Field]): Boolean = {
