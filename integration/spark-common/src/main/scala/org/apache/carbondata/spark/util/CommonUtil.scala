@@ -200,6 +200,8 @@ object CommonUtil {
       case Some("ShortType") => scala.util.Try(value.toShort)
       case Some("DecimalType") => scala.util.Try(value.toDouble)
       case Some("BooleanType") => scala.util.Try(value.toBoolean)
+      case Some("StringType") => scala.util.Try(value.toString)
+      case _ => scala.util.Try(value.toString)
     }
     val isConverted = result match {
       case Success(_) => true

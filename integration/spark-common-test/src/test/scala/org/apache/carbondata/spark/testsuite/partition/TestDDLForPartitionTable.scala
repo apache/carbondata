@@ -316,7 +316,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
       }
       assert(errorMessage_range_8.getMessage.contains("Invalid partition definition"))
     }
-    
+
   }
 
   override def afterAll = {
