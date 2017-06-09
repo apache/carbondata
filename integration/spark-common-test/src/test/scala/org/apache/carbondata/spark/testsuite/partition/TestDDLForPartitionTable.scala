@@ -24,6 +24,7 @@ import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
 
@@ -120,6 +121,247 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
       "create table test(a int, b string) partitioned by (c int) stored by 'carbondata' " +
       "tblproperties('PARTITION_TYPE'='LIST','list_info'='0,10,5,20')")
     intercept[Exception] { sql("alter table test drop columns(c)") }
+  }
+
+  test("test exception if hash number is invalid") {
+    sql("DROP TABLE IF EXISTS test_hash_1")
+    val exception_test_hash_1: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_hash_1(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 INT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='2.1')
+        """.stripMargin
+      )
+    }
+    assert(exception_test_hash_1.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_hash_2")
+    val exception_test_hash_2: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_hash_2(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 INT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='abc')
+        """.stripMargin
+      )
+    }
+    assert(exception_test_hash_2.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_hash_3")
+    val exception_test_hash_3: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_hash_3(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 INT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='-2.1')
+        """.stripMargin
+      )
+    }
+    assert(exception_test_hash_3.getMessage.contains("Invalid partition definition"))
+  }
+
+
+  test("test exception when values in list_info can not match partition column type") {
+    sql("DROP TABLE IF EXISTS test_list_1")
+    val exception_test_list_1: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_list_1(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 INT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_list_1.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_list_2")
+    val exception_test_list_2: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_list_2(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 SHORT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_list_2.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_list_3")
+    val exception_test_list_3: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_list_3(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 FLOAT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_list_3.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_list_4")
+    val exception_test_list_4: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_list_4(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 DOUBLE) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_list_4.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_list_5")
+    val exception_test_list_5: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_list_5(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 LONG) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_list_5.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_list_7")
+    val exception_test_list_7: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_list_7(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 BYTE) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_list_7.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_list_8")
+    val exception_test_list_8: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_list_8(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 BOOLEAN) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_list_8.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_list_9")
+    val exception_test_list_9: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_list_9(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 DATE) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_list_9.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_list_10")
+    val exception_test_list_10: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_list_10(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 TIMESTAMP) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_list_10.getMessage.contains("Invalid partition definition"))
+  }
+
+  test("test exception when values in range_info can not match partition column type") {
+    sql("DROP TABLE IF EXISTS test_range_1")
+    val exception_test_range_1: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_1(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 INT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_range_1.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_range_2")
+    val exception_test_range_2: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_2(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 SHORT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_range_2.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_range_3")
+    val exception_test_range_3: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_3(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 FLOAT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_range_3.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_range_4")
+    val exception_test_range_4: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_4(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 DOUBLE) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_range_4.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_range_5")
+    val exception_test_range_5: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_5(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 LONG) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_range_5.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_range_7")
+    val exception_test_range_7: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_7(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 BYTE) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_range_7.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_range_8")
+    val exception_test_range_8: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_8(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 BOOLEAN) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_range_8.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_range_9")
+    val exception_test_range_9: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_9(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 BOOLEAN) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_range_9.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_range_10")
+    val exception_test_range_10: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_10(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 TIMESTAMP) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_range_10.getMessage.contains("Invalid partition definition"))
   }
 
   override def afterAll = {
