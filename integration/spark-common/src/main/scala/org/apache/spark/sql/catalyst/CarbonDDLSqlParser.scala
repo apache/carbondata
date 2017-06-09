@@ -778,7 +778,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case Token("TOK_TABLEPROPLIST", list) =>
         list.map {
           case Token("TOK_TABLEPROPERTY", Token(key, Nil) :: Token(value, Nil) :: Nil) =>
-            unquoteString(key) -> unquoteString(value)
+            val reslovedKey = unquoteString(key)
+            if (needToConvertToLowerCase(reslovedKey)) {
+              (reslovedKey, unquoteString(value))
+            } else {
+              (reslovedKey, unquoteStringWithoutLowerConversion(value))
+            }
         }
     }
   }
@@ -789,6 +794,19 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case doubleQuotedString(s) => s.toLowerCase()
       case other => other
     }
+  }
+
+  protected def unquoteStringWithoutLowerConversion(str: String) = {
+    str match {
+      case singleQuotedString(s) => s
+      case doubleQuotedString(s) => s
+      case other => other
+    }
+  }
+
+  private def needToConvertToLowerCase(key: String): Boolean = {
+    val noConvertList = Array("LIST_INFO", "RANGE_INFO")
+    !noConvertList.exists(x => x.equalsIgnoreCase(key))
   }
 
   protected def validateOptions(optionList: Option[List[(String, String)]]): Unit = {

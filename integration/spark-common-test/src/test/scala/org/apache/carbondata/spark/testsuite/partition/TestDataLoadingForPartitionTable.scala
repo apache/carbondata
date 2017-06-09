@@ -260,6 +260,27 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originMultiLoads order by empno"))
   }
 
+  test("list partition with string coloum and  list_info in upper case") {
+    sql(
+      """
+        | CREATE TABLE listTableUpper (empno int, empname String, doj Timestamp,
+        |  workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (designation string)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('PARTITION_TYPE'='LIST',
+        |  'LIST_INFO'='SE,SSE')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE listTableUpper OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    validateDataFiles("default_listTableUpper", "0", Seq(0,1,2))
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from listTableUpper order by empno"),
+      sql("select empno, empname, designation, doj, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
+  }
+
+
   override def afterAll = {
     dropTable
     if (defaultTimestampFormat == null) {
@@ -284,6 +305,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
     sql("drop table if exists multiLoads")
     sql("drop table if exists multiInserts")
     sql("drop table if exists loadAndInsert")
+    sql("drop table if exists listTableUpper")
   }
 
 }

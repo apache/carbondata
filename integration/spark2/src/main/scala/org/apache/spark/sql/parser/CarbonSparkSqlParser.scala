@@ -170,19 +170,20 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
     val badKeys = props.filter { case (_, v) => v == null }.keys
     if (badKeys.nonEmpty) {
       operationNotAllowed(
-        s"Values must be specified for key(s): ${ badKeys.mkString("[", ",", "]") }", ctx)
+        s"Values must be specified for key(s): ${badKeys.mkString("[", ",", "]")}", ctx)
     }
     props.map { case (key, value) =>
-      if(needToConvertToLowerCase(key))
-      (key.toLowerCase, value.toLowerCase)
-        else
+      if (needToConvertToLowerCase(key)) {
+        (key.toLowerCase, value.toLowerCase)
+      } else {
         (key.toLowerCase, value)
+      }
     }
   }
 
-  private def needToConvertToLowerCase(key: String): Boolean={
-    val noConvertList=Array("LIST_INFO","RANGE_INFO")
-    !noConvertList.exists(x=>x.equalsIgnoreCase(key));
+  private def needToConvertToLowerCase(key: String): Boolean = {
+    val noConvertList = Array("LIST_INFO", "RANGE_INFO")
+    !noConvertList.exists(x => x.equalsIgnoreCase(key));
   }
 
 
