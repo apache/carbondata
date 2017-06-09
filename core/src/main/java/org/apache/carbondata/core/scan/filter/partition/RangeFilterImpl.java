@@ -25,6 +25,7 @@ import org.apache.carbondata.core.scan.partition.ListPartitioner;
 import org.apache.carbondata.core.scan.partition.PartitionUtil;
 import org.apache.carbondata.core.scan.partition.Partitioner;
 import org.apache.carbondata.core.scan.partition.RangePartitioner;
+import org.apache.carbondata.core.util.ByteUtil;
 
 /**
  * the implement of Range filter(include <=, <, >=, >)
@@ -57,6 +58,9 @@ public class RangeFilterImpl implements PartitionFilterIntf {
         Object filterValueOfRange = PartitionUtil.getDataBasedOnDataTypeForFilter(
             literal.getLiteralExpValue().toString(),
             partitionInfo.getColumnSchemaList().get(0).getDataType());
+        if (filterValueOfRange instanceof String) {
+          filterValueOfRange = ByteUtil.toBytes((String)filterValueOfRange);
+        }
         return PartitionFilterUtil.getPartitionMapForRangeFilter(partitionInfo,
             (RangePartitioner) partitioner, filterValueOfRange, isGreaterThan, isEqualTo);
       default:
