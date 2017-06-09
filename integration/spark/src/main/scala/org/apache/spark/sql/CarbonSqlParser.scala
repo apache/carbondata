@@ -295,7 +295,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
 
           if (partitionCols.nonEmpty) {
             if (!CommonUtil.validatePartitionColumns(tableProperties, partitionCols)) {
-              throw new MalformedCarbonCommandException("Invalid table properties")
+              throw new MalformedCarbonCommandException("Invalid partition definition")
             }
             // partition columns should not be part of the schema
             val colNames = fields.map(_.column)
