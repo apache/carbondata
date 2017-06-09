@@ -158,8 +158,10 @@ public class SegmentUpdateDetails implements Serializable {
     try {
       longValue = Long.parseLong(timtstamp);
     } catch (NumberFormatException nfe) {
-      String errorMsg = "Invalid timestamp : " + timtstamp;
-      LOGGER.debug(errorMsg);
+      if (LOGGER.isDebugEnabled()) {
+        String errorMsg = "Invalid timestamp : " + timtstamp;
+        LOGGER.debug(errorMsg);
+      }
     }
     return longValue;
   }

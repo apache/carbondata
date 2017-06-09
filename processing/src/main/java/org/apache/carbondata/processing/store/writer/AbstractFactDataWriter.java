@@ -538,8 +538,10 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     DataOutputStream dataOutputStream = null;
     DataInputStream dataInputStream = null;
     try {
-      LOGGER.debug(
-          "HDFS file block size for file: " + carbonStoreFilePath + " is " + blockSize + " (bytes");
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("HDFS file block size for file: " + carbonStoreFilePath + " is " + blockSize
+            + " (bytes");
+      }
       dataOutputStream = FileFactory
           .getDataOutputStream(carbonStoreFilePath, FileFactory.getFileType(carbonStoreFilePath),
               bufferSize, blockSize);

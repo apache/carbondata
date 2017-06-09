@@ -24,6 +24,7 @@ import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.newflow.converter.FieldConverter;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class NonDictionaryFieldConverterImpl implements FieldConverter {
 
@@ -56,10 +57,13 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
             .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType), index);
       } catch (Throwable ex) {
         if (dimensionValue.length() > 0 || isEmptyBadRecord) {
-          logHolder.setReason(
-              "The value " + " \"" + dimensionValue + "\"" + " with column name " + column
-                  .getColName() + " and column data type " + dataType + " is not a valid "
-                  + dataType + " type.");
+          String message = logHolder.getColumnMessageMap().get(column.getColName());
+          if (null == message) {
+            message = CarbonDataProcessorUtil
+                .prepareFailureReason(column.getColName(), column.getDataType());
+            logHolder.getColumnMessageMap().put(column.getColName(), message);
+          }
+          logHolder.setReason(message);
           row.update(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, index);
         } else {
           row.update(new byte[0], index);
