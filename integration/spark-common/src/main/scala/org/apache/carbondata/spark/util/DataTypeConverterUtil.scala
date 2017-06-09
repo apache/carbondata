@@ -21,6 +21,9 @@ import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.format.{DataType => ThriftDataType}
 
 object DataTypeConverterUtil {
+  val FIXED_DECIMAL = """decimal\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
+  val FIXED_DECIMALTYPE = """decimaltype\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
+
   def convertToCarbonType(dataType: String): DataType = {
     dataType.toLowerCase match {
       case "string" => DataType.STRING
@@ -34,6 +37,7 @@ object DataTypeConverterUtil {
       case "double" => DataType.DOUBLE
       case "float" => DataType.DOUBLE
       case "decimal" => DataType.DECIMAL
+      case FIXED_DECIMAL(_, _) => DataType.DECIMAL
       case "timestamp" => DataType.TIMESTAMP
       case "date" => DataType.DATE
       case "array" => DataType.ARRAY
@@ -55,6 +59,7 @@ object DataTypeConverterUtil {
       case "doubletype" => DataType.DOUBLE
       case "floattype" => DataType.DOUBLE
       case "decimaltype" => DataType.DECIMAL
+      case FIXED_DECIMALTYPE(_, _) => DataType.DECIMAL
       case "timestamptype" => DataType.TIMESTAMP
       case "datetype" => DataType.DATE
       case others =>
