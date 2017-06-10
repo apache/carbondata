@@ -179,6 +179,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
   }
 
   override def beforeAll {
+    cleanAllTables
     buildTestData
     buildTable
     buildRelation
@@ -276,9 +277,13 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     }
   }
 
+  def cleanAllTables: Unit = {
+    sql("DROP TABLE IF EXISTS extComplextypes")
+    sql("DROP TABLE IF EXISTS verticalDelimitedTable")
+    sql("DROP TABLE IF EXISTS loadSqlTest")
+  }
+
   override def afterAll: Unit = {
-    sql("DROP TABLE extComplextypes")
-    sql("DROP TABLE verticalDelimitedTable")
-    sql("DROP TABLE loadSqlTest")
+    cleanAllTables
   }
 }

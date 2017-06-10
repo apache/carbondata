@@ -20,8 +20,8 @@ package org.apache.carbondata.processing.sortandgroupby.sortdata;
 import java.nio.ByteBuffer;
 import java.util.Comparator;
 
+import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
-import org.apache.carbondata.processing.newflow.row.WriteStepRowUtil;
 import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 public class RowComparator implements Comparator<Object[]> {

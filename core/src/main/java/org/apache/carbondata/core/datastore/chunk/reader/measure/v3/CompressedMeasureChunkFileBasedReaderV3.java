@@ -26,11 +26,14 @@ import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReaderV2V3Format;
 import org.apache.carbondata.core.datastore.compression.ValueCompressionHolder;
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastore.dataholder.CarbonReadDataHolder;
+import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.CompressionFinder;
+import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 
@@ -69,7 +72,7 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
    * 5. Create the raw chunk object and fill the details
    *
    * @param fileReader          reader for reading the column from carbon data file
-   * @param blockIndex          blocklet index of the column in carbon data file
+   * @param blockletColumnIndex          blocklet index of the column in carbon data file
    * @return measure raw chunk
    */
   @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader,
@@ -217,16 +220,28 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
         .get(measureRawColumnChunk.getBlockletId()) + dataChunk3.getPage_offset().get(pageNumber);
     List<ValueEncoderMeta> valueEncodeMeta = new ArrayList<>();
     for (int i = 0; i < measureColumnChunk.getEncoder_meta().size(); i++) {
-      valueEncodeMeta.add(CarbonUtil
-          .deserializeEncoderMetaNew(measureColumnChunk.getEncoder_meta().get(i).array()));
+      valueEncodeMeta.add(
+          CarbonUtil.deserializeEncoderMetaV3(measureColumnChunk.getEncoder_meta().get(i).array()));
     }
-    WriterCompressModel compressionModel = CarbonUtil.getValueCompressionModel(valueEncodeMeta);
-    ValueCompressionHolder values = compressionModel.getValueCompressionHolder()[0];
+
+    MeasurePageStatsVO stats = CarbonUtil.getMeasurePageStats(valueEncodeMeta);
+    int measureCount = valueEncodeMeta.size();
+    CompressionFinder[] finders = new CompressionFinder[measureCount];
+    DataType[] convertedType = new DataType[measureCount];
+    for (int i = 0; i < measureCount; i++) {
+      CompressionFinder compresssionFinder =
+          ValueCompressionUtil.getCompressionFinder(stats.getMax(i), stats.getMin(i),
+              stats.getDecimal(i), stats.getDataType(i), stats.getDataTypeSelected(i));
+      finders[i] = compresssionFinder;
+      convertedType[i] = compresssionFinder.getConvertedDataType();
+    }
+
+    ValueCompressionHolder values = ValueCompressionUtil.getValueCompressionHolder(finders)[0];
     // uncompress
     ByteBuffer rawData = measureRawColumnChunk.getRawData();
-    values.uncompress(compressionModel.getConvertedDataType()[0], rawData.array(), copyPoint,
-        measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
-        compressionModel.getMaxValue()[0], measureRawColumnChunk.getRowCount()[pageNumber]);
+    values.uncompress(convertedType[0], rawData.array(), copyPoint,
+        measureColumnChunk.data_page_length, stats.getDecimal(0),
+        stats.getMax(0), measureRawColumnChunk.getRowCount()[pageNumber]);
     CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values);
     // set the data chunk
     datChunk.setMeasureDataHolder(measureDataHolder);

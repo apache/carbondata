@@ -15,43 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.metadata.datatype;
+package org.apache.carbondata.core.datastore;
 
-public enum DataType {
+public enum DimensionType {
+  // global dictionary for low cardinality dimension
+  GLOBAL_DICTIONARY,
 
-  STRING(0, "STRING"),
-  DATE(1, "DATE"),
-  TIMESTAMP(2, "TIMESTAMP"),
-  BOOLEAN(1, "BOOLEAN"),
-  SHORT(2, "SMALLINT"),
-  INT(3, "INT"),
-  FLOAT(4, "FLOAT"),
-  LONG(5, "BIGINT"),
-  DOUBLE(6, "DOUBLE"),
-  NULL(7, "NULL"),
-  DECIMAL(8, "DECIMAL"),
-  ARRAY(9, "ARRAY"),
-  STRUCT(10, "STRUCT"),
-  MAP(11, "MAP"),
-  BYTE(12, "BYTE");
+  // for timestamp and date column
+  DIRECT_DICTIONARY,
 
-  private int precedenceOrder;
-  private String name ;
+  // no dictionary, for high cardinality dimension
+  PLAIN_VALUE,
 
-  DataType(int value ,String  name) {
-    this.precedenceOrder = value;
-    this.name = name;
-  }
+  // expanded column from a complex data type column
+  COMPLEX,
 
-  public int getPrecedenceOrder() {
-    return precedenceOrder;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public boolean isComplexType() {
-    return precedenceOrder >= 9 && precedenceOrder <= 11;
-  }
+  // column group, multiple columns encoded as one column
+  COLUMN_GROUP
 }

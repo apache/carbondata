@@ -31,7 +31,6 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -661,9 +660,7 @@ public class CarbonUtilTest {
     valueEncoderMetas.add(valueEncoderMeta);
     dataChunk.setValueEncoderMeta(valueEncoderMetas);
     dataChunkList.add(dataChunk);
-    WriterCompressModel writerCompressModel =
-        CarbonUtil.getValueCompressionModel(dataChunkList.get(0).getValueEncoderMeta());
-    assertEquals(1, writerCompressModel.getMaxValue().length);
+    assertEquals(1, dataChunkList.get(0).getValueEncoderMeta().size());
   }
 
   @Test public void testToGetDictionaryChunkSize() {

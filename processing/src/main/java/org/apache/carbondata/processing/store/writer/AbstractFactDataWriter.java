@@ -39,8 +39,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.columnar.IndexStorage;
-import org.apache.carbondata.core.datastore.compression.CompressorFactory;
+import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
@@ -67,7 +66,6 @@ import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.processing.store.file.FileData;
-import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.hadoop.io.IOUtils;
@@ -574,59 +572,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * @throws CarbonDataWriterException throws new CarbonDataWriterException if any problem
    */
   public abstract void writeBlockletData(NodeHolder nodeHolder) throws CarbonDataWriterException;
-
-  protected byte[][] fillAndCompressedKeyBlockData(IndexStorage[] keyStorageArray,
-      int entryCount) {
-    byte[][] keyBlockData = new byte[keyStorageArray.length][];
-    int destPos = 0;
-    int keyBlockSizePosition = -1;
-    for (int i = 0; i < keyStorageArray.length; i++) {
-      destPos = 0;
-      //handling for high card dims
-      if (!dataWriterVo.getIsComplexType()[i] && !dataWriterVo.getIsDictionaryColumn()[i]) {
-        int totalLength = 0;
-        // calc size of the total bytes in all the colmns.
-        for (int k = 0; k < keyStorageArray[i].getKeyBlock().length; k++) {
-          byte[] colValue = keyStorageArray[i].getKeyBlock()[k];
-          totalLength += colValue.length;
-        }
-        keyBlockData[i] = new byte[totalLength];
-
-        for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
-          int length = keyStorageArray[i].getKeyBlock()[j].length;
-          System
-              .arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos, length);
-          destPos += length;
-        }
-      } else {
-        keyBlockSizePosition++;
-        if (dataWriterVo.getAggBlocks()[i]) {
-          keyBlockData[i] = new byte[keyStorageArray[i].getTotalSize()];
-          for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
-            System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos,
-                keyStorageArray[i].getKeyBlock()[j].length);
-            destPos += keyStorageArray[i].getKeyBlock()[j].length;
-          }
-        } else {
-          if (dataWriterVo.getIsComplexType()[i]) {
-            keyBlockData[i] = new byte[keyStorageArray[i].getKeyBlock().length * dataWriterVo
-                .getKeyBlockSize()[keyBlockSizePosition]];
-          } else {
-            keyBlockData[i] =
-                new byte[entryCount * dataWriterVo.getKeyBlockSize()[keyBlockSizePosition]];
-          }
-          for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
-            System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos,
-                dataWriterVo.getKeyBlockSize()[keyBlockSizePosition]);
-            destPos += dataWriterVo.getKeyBlockSize()[keyBlockSizePosition];
-          }
-        }
-      }
-      keyBlockData[i] = CompressorFactory.getInstance().getCompressor()
-          .compressByte(keyBlockData[i]);
-    }
-    return keyBlockData;
-  }
 
   /**
    * Below method will be used to update the min or max value

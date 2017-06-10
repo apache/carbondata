@@ -402,8 +402,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         new HashSet<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     int counter = 0;
     while (counter < queryDimension.size()) {
-      if (queryDimension.get(counter).getDimension().numberOfChild() > 0) {
-        counter += queryDimension.get(counter).getDimension().numberOfChild();
+      if (queryDimension.get(counter).getDimension().getNumberOfChild() > 0) {
+        counter += queryDimension.get(counter).getDimension().getNumberOfChild();
         continue;
       } else if (!CarbonUtil.hasEncoding(queryDimension.get(counter).getDimension().getEncoder(),
           Encoding.DICTIONARY)) {

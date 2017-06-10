@@ -29,10 +29,11 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.newflow.sort.AbstractMergeSorter;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
@@ -41,7 +42,6 @@ import org.apache.carbondata.processing.newflow.sort.unsafe.merger.UnsafeInterme
 import org.apache.carbondata.processing.newflow.sort.unsafe.merger.UnsafeSingleThreadFinalSortFilesMerger;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
-import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
@@ -57,8 +57,6 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
   private SortParameters sortParameters;
 
   private UnsafeIntermediateMerger unsafeIntermediateFileMerger;
-
-  private ExecutorService executorService;
 
   private UnsafeSingleThreadFinalSortFilesMerger finalMerger;
 
@@ -93,8 +91,8 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
     } catch (CarbonSortKeyAndGroupByException e) {
       throw new CarbonDataLoadingException(e);
     }
-    this.executorService = Executors.newFixedThreadPool(iterators.length);
-    this.threadStatusObserver = new ThreadStatusObserver(this.executorService);
+    ExecutorService executorService = Executors.newFixedThreadPool(iterators.length);
+    this.threadStatusObserver = new ThreadStatusObserver(executorService);
 
     try {
       for (int i = 0; i < iterators.length; i++) {

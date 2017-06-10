@@ -221,7 +221,7 @@ public class QueryUtil {
 
       Integer dimensionOrdinal = queryDimensions.get(i).getDimension().getOrdinal();
       allProjectionListDimensionIndexes.add(dimensionOrdinalToBlockMapping.get(dimensionOrdinal));
-      if (queryDimensions.get(i).getDimension().numberOfChild() > 0) {
+      if (queryDimensions.get(i).getDimension().getNumberOfChild() > 0) {
         addChildrenBlockIndex(allProjectionListDimensionIndexes,
             queryDimensions.get(i).getDimension());
       }
@@ -229,7 +229,7 @@ public class QueryUtil {
       if (!filterDimensionOrdinal.contains(dimensionOrdinal)) {
         blockIndex = dimensionOrdinalToBlockMapping.get(dimensionOrdinal);
         dimensionBlockIndex.add(blockIndex);
-        if (queryDimensions.get(i).getDimension().numberOfChild() > 0) {
+        if (queryDimensions.get(i).getDimension().getNumberOfChild() > 0) {
           addChildrenBlockIndex(dimensionBlockIndex, queryDimensions.get(i).getDimension());
         }
       }
@@ -255,7 +255,7 @@ public class QueryUtil {
    * @param dimension    parent dimension
    */
   private static void addChildrenBlockIndex(Set<Integer> blockIndexes, CarbonDimension dimension) {
-    for (int i = 0; i < dimension.numberOfChild(); i++) {
+    for (int i = 0; i < dimension.getNumberOfChild(); i++) {
       addChildrenBlockIndex(blockIndexes, dimension.getListOfChildDimensions().get(i));
       blockIndexes.add(dimension.getListOfChildDimensions().get(i).getOrdinal());
     }
@@ -289,10 +289,10 @@ public class QueryUtil {
           .hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY) && !CarbonUtil
           .hasEncoding(encodingList, Encoding.IMPLICIT)) {
 
-        if (queryDimensions.get(i).getDimension().numberOfChild() == 0) {
+        if (queryDimensions.get(i).getDimension().getNumberOfChild() == 0) {
           dictionaryDimensionFromQuery.add(queryDimensions.get(i).getDimension().getColumnId());
         }
-        if (queryDimensions.get(i).getDimension().numberOfChild() > 0) {
+        if (queryDimensions.get(i).getDimension().getNumberOfChild() > 0) {
           getChildDimensionDictionaryDetail(queryDimensions.get(i).getDimension(),
               dictionaryDimensionFromQuery);
         }
@@ -318,9 +318,9 @@ public class QueryUtil {
    */
   private static void getChildDimensionDictionaryDetail(CarbonDimension queryDimensions,
       Set<String> dictionaryDimensionFromQuery) {
-    for (int j = 0; j < queryDimensions.numberOfChild(); j++) {
+    for (int j = 0; j < queryDimensions.getNumberOfChild(); j++) {
       List<Encoding> encodingList = queryDimensions.getListOfChildDimensions().get(j).getEncoder();
-      if (queryDimensions.getListOfChildDimensions().get(j).numberOfChild() > 0) {
+      if (queryDimensions.getListOfChildDimensions().get(j).getNumberOfChild() > 0) {
         getChildDimensionDictionaryDetail(queryDimensions.getListOfChildDimensions().get(j),
             dictionaryDimensionFromQuery);
       } else if (!CarbonUtil.hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY)) {
@@ -610,12 +610,12 @@ public class QueryUtil {
       Set<Integer> dictionaryDimensionBlockIndex, List<Integer> noDictionaryDimensionBlockIndex) {
     for (QueryDimension queryDimension : queryDimensions) {
       if (CarbonUtil.hasEncoding(queryDimension.getDimension().getEncoder(), Encoding.DICTIONARY)
-          && queryDimension.getDimension().numberOfChild() == 0) {
+          && queryDimension.getDimension().getNumberOfChild() == 0) {
         dictionaryDimensionBlockIndex
             .add(columnOrdinalToBlockIndexMapping.get(queryDimension.getDimension().getOrdinal()));
       } else if (
           !CarbonUtil.hasEncoding(queryDimension.getDimension().getEncoder(), Encoding.IMPLICIT)
-              && queryDimension.getDimension().numberOfChild() == 0) {
+              && queryDimension.getDimension().getNumberOfChild() == 0) {
         noDictionaryDimensionBlockIndex
             .add(columnOrdinalToBlockIndexMapping.get(queryDimension.getDimension().getOrdinal()));
       }
@@ -874,9 +874,9 @@ public class QueryUtil {
    */
   private static void getChildDimensionOrdinal(CarbonDimension queryDimensions,
       Set<Integer> filterDimensionsOrdinal) {
-    for (int j = 0; j < queryDimensions.numberOfChild(); j++) {
+    for (int j = 0; j < queryDimensions.getNumberOfChild(); j++) {
       List<Encoding> encodingList = queryDimensions.getListOfChildDimensions().get(j).getEncoder();
-      if (queryDimensions.getListOfChildDimensions().get(j).numberOfChild() > 0) {
+      if (queryDimensions.getListOfChildDimensions().get(j).getNumberOfChild() > 0) {
         getChildDimensionOrdinal(queryDimensions.getListOfChildDimensions().get(j),
             filterDimensionsOrdinal);
       } else if (!CarbonUtil.hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY)) {
