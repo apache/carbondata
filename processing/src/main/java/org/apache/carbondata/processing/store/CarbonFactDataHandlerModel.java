@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.processing.store;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,6 +43,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
+import org.apache.carbondata.processing.newflow.sort.SortScopeOptions;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 // This class contains all the data required for processing and writing the carbon data
@@ -156,6 +158,8 @@ public class CarbonFactDataHandlerModel {
 
   private TableSpec tableSpec;
 
+  private SortScopeOptions.SortScope sortScope;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
@@ -250,6 +254,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.segmentId = configuration.getSegmentId();
     carbonFactDataHandlerModel.taskExtension = taskExtension;
     carbonFactDataHandlerModel.tableSpec = configuration.getTableSpec();
+    carbonFactDataHandlerModel.sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     return carbonFactDataHandlerModel;
   }
 
@@ -549,6 +554,10 @@ public class CarbonFactDataHandlerModel {
 
   public TableSpec getTableSpec() {
     return tableSpec;
+  }
+
+  public SortScopeOptions.SortScope getSortScope() {
+    return sortScope;
   }
 }
 

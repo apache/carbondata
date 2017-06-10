@@ -52,6 +52,7 @@ import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants
+import org.apache.carbondata.processing.newflow.sort.SortScopeOptions
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
 import org.apache.carbondata.spark.util.{CarbonSparkUtil, CommonUtil, GlobalDictionaryUtil}
@@ -419,7 +420,10 @@ case class LoadTable(
       validateDateFormat(dateFormat, table)
       val maxColumns = options.getOrElse("maxcolumns", null)
       val sortScope = options.getOrElse("sort_scope", null)
+      validateSortScope(carbonLoadModel, sortScope)
       val batchSortSizeInMB = options.getOrElse("batch_sort_size_inmb", null)
+      val globalSortPartitions = options.getOrElse("global_sort_partitions", null)
+      validateGlobalSortPartitions(globalSortPartitions)
       carbonLoadModel.setEscapeChar(checkDefaultValue(escapeChar, "\\"))
       carbonLoadModel.setQuoteChar(checkDefaultValue(quoteChar, "\""))
       carbonLoadModel.setCommentChar(checkDefaultValue(commentChar, "#"))
@@ -444,6 +448,7 @@ case class LoadTable(
           DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + "," + isEmptyDataBadRecord)
       carbonLoadModel.setSortScope(sortScope)
       carbonLoadModel.setBatchSortSizeInMb(batchSortSizeInMB)
+      carbonLoadModel.setGlobalSortPartitions(globalSortPartitions)
       val useOnePass = options.getOrElse("single_pass", "false").trim.toLowerCase match {
         case "true" =>
           true
@@ -645,6 +650,32 @@ case class LoadTable(
       }
     }
     Seq.empty
+  }
+
+  private def validateSortScope(carbonLoadModel: CarbonLoadModel, sortScope: String) = {
+    if (sortScope != null) {
+      // Don't support use global sort on partitioned table.
+      val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+      if (carbonTable.getPartitionInfo(carbonTable.getFactTableName) != null &&
+        sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT.toString)) {
+        throw new MalformedCarbonCommandException("Don't support use global sort on partitioned table.")
+      }
+    }
+  }
+
+  private def validateGlobalSortPartitions(globalSortPartitions: String) = {
+    if (globalSortPartitions != null) {
+      try {
+        val num = globalSortPartitions.toInt
+        if (num <= 0) {
+          throw new MalformedCarbonCommandException("'GLOBAL_SORT_PARTITIONS' should be greater than 0.")
+        }
+      } catch {
+        case e: NumberFormatException => {
+          throw new MalformedCarbonCommandException(e.getMessage)
+        }
+      }
+    }
   }
 
   private def validateDateFormat(dateFormat: String, table: CarbonTable): Unit = {

@@ -59,6 +59,10 @@ import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.exception.{BadRecordFoundException, CarbonDataLoadingException}
+import org.apache.carbondata.processing.newflow.DataLoadProcessBuilder
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
+import org.apache.carbondata.processing.newflow.sort.SortScopeOptions
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark._
 import org.apache.carbondata.spark.load.{FailureCauses, _}
 import org.apache.carbondata.spark.splits.TableSplit
@@ -777,11 +781,17 @@ object CarbonDataRDDFactory {
       var loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
       var errorMessage: String = "DataLoad failure"
       var executorMessage: String = ""
+      val configuration = DataLoadProcessBuilder.createConfiguration(carbonLoadModel)
+      val sortScope = CarbonDataProcessorUtil.getSortScope(configuration)
       try {
         if (updateModel.isDefined) {
           loadDataFrameForUpdate()
         } else if (carbonTable.getPartitionInfo(carbonTable.getFactTableName) != null) {
           loadDataForPartitionTable()
+        } else if (configuration.isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
+          LOGGER.audit("Using global sort for loading.")
+          status =
+            GlobalSort.loadDataUsingGlobalSort(sqlContext.sparkContext, dataFrame, carbonLoadModel, currentLoadCount)
         } else if (dataFrame.isDefined) {
           loadDataFrame()
         } else {

@@ -132,12 +132,12 @@ public final class DataLoadProcessBuilder {
     return new DataWriterProcessorStepImpl(configuration, sortProcessorStep);
   }
 
-  private CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel,
-      String storeLocation) throws Exception {
+  public static CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel,
+      String storeLocation) {
     if (!new File(storeLocation).mkdirs()) {
       LOGGER.error("Error while creating the temp store path: " + storeLocation);
     }
-    CarbonDataLoadConfiguration configuration = new CarbonDataLoadConfiguration();
+
     String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
     String tempLocationKey = CarbonDataProcessorUtil
@@ -146,6 +146,11 @@ public final class DataLoadProcessBuilder {
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, loadModel.getStorePath());
 
+    return createConfiguration(loadModel);
+  }
+
+  public static CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel) {
+    CarbonDataLoadConfiguration configuration = new CarbonDataLoadConfiguration();
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
     configuration.setTableIdentifier(identifier);
@@ -173,6 +178,8 @@ public final class DataLoadProcessBuilder {
         .setDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, loadModel.getSortScope());
     configuration.setDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
         loadModel.getBatchSortSizeInMb());
+    configuration.setDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
+        loadModel.getGlobalSortPartitions());
     CarbonMetadata.getInstance().addCarbonTable(carbonTable);
     List<CarbonDimension> dimensions =
         carbonTable.getDimensionByTableName(carbonTable.getFactTableName());

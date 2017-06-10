@@ -1117,6 +1117,10 @@ public final class CarbonCommonConstants {
    */
   public static final String LOAD_BATCH_SORT_SIZE_INMB = "carbon.load.batch.sort.size.inmb";
 
+  public static final String LOAD_GLOBAL_SORT_PARTITIONS = "carbon.load.global.sort.partitions";
+
+  public static final String LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT = "0";
+
   public static final String ENABLE_VECTOR_READER = "carbon.enable.vector.reader";
 
   public static final String ENABLE_VECTOR_READER_DEFAULT = "true";

@@ -17,7 +17,9 @@
 
 package org.apache.carbondata.processing.schema.metadata;
 
-public class SortObserver {
+import java.io.Serializable;
+
+public class SortObserver implements Serializable {
   /**
    * is failed
    */
