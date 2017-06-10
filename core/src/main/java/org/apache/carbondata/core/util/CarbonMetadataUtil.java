@@ -21,7 +21,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +31,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
+import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
@@ -122,12 +121,11 @@ public class CarbonMetadataUtil {
    * @param blockletIndexs
    * @param cardinalities
    * @param numberOfColumns
-   * @param segmentProperties
    * @return FileFooter
    */
   public static FileFooter3 convertFileFooterVersion3(List<BlockletInfo3> infoList,
-      List<BlockletIndex> blockletIndexs, int[] cardinalities, int numberOfColumns,
-      SegmentProperties segmentProperties) throws IOException {
+      List<BlockletIndex> blockletIndexs, int[] cardinalities, int numberOfColumns)
+      throws IOException {
     FileFooter3 footer = getFileFooter3(infoList, blockletIndexs, cardinalities, numberOfColumns);
     for (BlockletInfo3 info : infoList) {
       footer.addToBlocklet_info_list3(info);
@@ -249,11 +247,11 @@ public class CarbonMetadataUtil {
       List<CarbonMeasure> carbonMeasureList) {
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
     // Calculating min/max for every each column.
-    byte[][] minCol = nodeHolderList.get(0).getColumnMinData().clone();
-    byte[][] maxCol = nodeHolderList.get(0).getColumnMaxData().clone();
+    byte[][] minCol = nodeHolderList.get(0).getDimensionColumnMinData().clone();
+    byte[][] maxCol = nodeHolderList.get(0).getDimensionColumnMaxData().clone();
     for (NodeHolder nodeHolder : nodeHolderList) {
-      byte[][] columnMaxData = nodeHolder.getColumnMaxData();
-      byte[][] columnMinData = nodeHolder.getColumnMinData();
+      byte[][] columnMaxData = nodeHolder.getDimensionColumnMaxData();
+      byte[][] columnMinData = nodeHolder.getDimensionColumnMinData();
       for (int i = 0; i < maxCol.length; i++) {
         if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(columnMaxData[i], maxCol[i]) > 0) {
           maxCol[i] = columnMaxData[i];
@@ -402,7 +400,7 @@ public class CarbonMetadataUtil {
       // TODO : Need to write ValueCompression meta here.
       List<ByteBuffer> encoderMetaList = new ArrayList<ByteBuffer>();
       encoderMetaList.add(ByteBuffer.wrap(serializeEncoderMeta(
-          createValueEncoderMeta(blockletInfoColumnar.getCompressionModel(), i))));
+          createValueEncoderMeta(blockletInfoColumnar.getStats(), i))));
       dataChunk.setEncoder_meta(encoderMetaList);
       colDataChunks.add(dataChunk);
     }
@@ -442,16 +440,31 @@ public class CarbonMetadataUtil {
     return aos.toByteArray();
   }
 
-  private static ValueEncoderMeta createValueEncoderMeta(WriterCompressModel compressionModel,
+  private static ValueEncoderMeta createValueEncoderMeta(MeasurePageStatsVO stats,
       int index) {
     ValueEncoderMeta encoderMeta = new ValueEncoderMeta();
-    encoderMeta.setMaxValue(compressionModel.getMaxValue()[index]);
-    encoderMeta.setMinValue(compressionModel.getMinValue()[index]);
-    encoderMeta.setDataTypeSelected(compressionModel.getDataTypeSelected()[index]);
-    encoderMeta.setDecimal(compressionModel.getMantissa()[index]);
-    encoderMeta.setType(compressionModel.getType()[index]);
-    encoderMeta.setUniqueValue(compressionModel.getUniqueValue()[index]);
+    encoderMeta.setMaxValue(stats.getMax(index));
+    encoderMeta.setMinValue(stats.getMin(index));
+    encoderMeta.setDataTypeSelected(stats.getDataTypeSelected(index));
+    encoderMeta.setDecimal(stats.getDecimal(index));
+    encoderMeta.setType(getTypeInChar(stats.getDataType(index)));
+    encoderMeta.setUniqueValue(stats.getNonExistValue(index));
     return encoderMeta;
+  }
+
+  private static char getTypeInChar(DataType type) {
+    switch (type) {
+      case SHORT:
+      case INT:
+      case LONG:
+        return CarbonCommonConstants.BIG_INT_MEASURE;
+      case DOUBLE:
+        return CarbonCommonConstants.DOUBLE_MEASURE;
+      case DECIMAL:
+        return CarbonCommonConstants.BIG_DECIMAL_MEASURE;
+      default:
+        throw new RuntimeException("unsupported type: " + type);
+    }
   }
 
   /**
@@ -527,7 +540,7 @@ public class CarbonMetadataUtil {
       }
       blockletInfoColumnar.setMeasureLength(msrLens);
       blockletInfoColumnar.setMeasureOffset(msrOffsets);
-      blockletInfoColumnar.setCompressionModel(getValueCompressionModel(encoderMetas));
+      blockletInfoColumnar.setStats(getMeasurePageStats(encoderMetas));
       listOfNodeInfo.add(blockletInfoColumnar);
     }
 
@@ -549,24 +562,8 @@ public class CarbonMetadataUtil {
 
   }
 
-  private static WriterCompressModel getValueCompressionModel(ValueEncoderMeta[] encoderMetas) {
-    Object[] maxValue = new Object[encoderMetas.length];
-    Object[] minValue = new Object[encoderMetas.length];
-    int[] decimalLength = new int[encoderMetas.length];
-    Object[] uniqueValue = new Object[encoderMetas.length];
-    DataType[] aggType = new DataType[encoderMetas.length];
-    byte[] dataTypeSelected = new byte[encoderMetas.length];
-    for (int i = 0; i < encoderMetas.length; i++) {
-      maxValue[i] = encoderMetas[i].getMaxValue();
-      minValue[i] = encoderMetas[i].getMinValue();
-      decimalLength[i] = encoderMetas[i].getDecimal();
-      uniqueValue[i] = encoderMetas[i].getUniqueValue();
-      aggType[i] = encoderMetas[i].getType();
-      dataTypeSelected[i] = encoderMetas[i].getDataTypeSelected();
-    }
-    return ValueCompressionUtil
-        .getWriterCompressModel(maxValue, minValue, decimalLength, uniqueValue, aggType,
-            dataTypeSelected);
+  private static MeasurePageStatsVO getMeasurePageStats(ValueEncoderMeta[] encoderMetas) {
+    return MeasurePageStatsVO.build(encoderMetas);
   }
 
   private static void setBlockletIndex(FileFooter footer,
@@ -714,7 +711,7 @@ public class CarbonMetadataUtil {
       // TODO : Need to write ValueCompression meta here.
       List<ByteBuffer> encoderMetaList = new ArrayList<ByteBuffer>();
       encoderMetaList.add(ByteBuffer.wrap(serializeEncoderMeta(
-          createValueEncoderMeta(blockletInfoColumnar.getCompressionModel(), i))));
+          createValueEncoderMeta(blockletInfoColumnar.getStats(), i))));
       dataChunk.setEncoder_meta(encoderMetaList);
       colDataChunks.add(dataChunk);
     }
@@ -754,7 +751,7 @@ public class CarbonMetadataUtil {
         dataChunk.setRowMajor(nodeHolder.getColGrpBlocks()[index]);
         // TODO : Once schema PR is merged and information needs to be passed
         // here.
-        if (nodeHolder.getAggBlocks()[index]) {
+        if (nodeHolder.getRleEncodingForDictDim()[index]) {
           dataChunk.setRle_page_length(nodeHolder.getDataIndexMapLength()[index]);
           encodings.add(Encoding.RLE);
         }
@@ -766,8 +763,10 @@ public class CarbonMetadataUtil {
           dataChunk.setRowid_page_length(nodeHolder.getKeyBlockIndexLength()[index]);
           encodings.add(Encoding.INVERTED_INDEX);
         }
-        dataChunk.min_max.addToMax_values(ByteBuffer.wrap(nodeHolder.getColumnMaxData()[index]));
-        dataChunk.min_max.addToMin_values(ByteBuffer.wrap(nodeHolder.getColumnMinData()[index]));
+        dataChunk.min_max.addToMax_values(
+            ByteBuffer.wrap(nodeHolder.getDimensionColumnMaxData()[index]));
+        dataChunk.min_max.addToMin_values(
+            ByteBuffer.wrap(nodeHolder.getDimensionColumnMinData()[index]));
       } else {
         dataChunk.setData_page_length(nodeHolder.getDataArray()[index].length);
         // TODO : Right now the encodings are happening at runtime. change as
@@ -788,7 +787,7 @@ public class CarbonMetadataUtil {
         dataChunk.setPresence(presenceMeta);
         List<ByteBuffer> encoderMetaList = new ArrayList<ByteBuffer>();
         encoderMetaList.add(ByteBuffer.wrap(serializeEncodeMetaUsingByteBuffer(
-            createValueEncoderMeta(nodeHolder.getCompressionModel(), index))));
+            createValueEncoderMeta(nodeHolder.getStats(), index))));
         dataChunk.setEncoder_meta(encoderMetaList);
         dataChunk.min_max
             .addToMax_values(ByteBuffer.wrap(nodeHolder.getMeasureColumnMaxData()[index]));
@@ -855,28 +854,6 @@ public class CarbonMetadataUtil {
     buffer.put(valueEncoderMeta.getDataTypeSelected());
     buffer.flip();
     return buffer.array();
-  }
-
-  public static byte[] getByteValueForMeasure(Object data, DataType dataType) {
-    ByteBuffer b = null;
-    switch (dataType) {
-      case DOUBLE:
-        b = ByteBuffer.allocate(8);
-        b.putDouble((Double) data);
-        b.flip();
-        return b.array();
-      case LONG:
-      case INT:
-      case SHORT:
-        b = ByteBuffer.allocate(8);
-        b.putLong((Long) data);
-        b.flip();
-        return b.array();
-      case DECIMAL:
-        return DataTypeUtil.bigDecimalToByte((BigDecimal) data);
-      default:
-        throw new IllegalArgumentException("Invalid data type");
-    }
   }
 
   public static int compareMeasureData(byte[] first, byte[] second, DataType dataType) {
@@ -956,7 +933,7 @@ public class CarbonMetadataUtil {
           encodings.add(Encoding.DIRECT_DICTIONARY);
         }
         dataChunk.setRowMajor(nodeHolder.getColGrpBlocks()[i]);
-        if (nodeHolder.getAggBlocks()[i]) {
+        if (nodeHolder.getRleEncodingForDictDim()[i]) {
           dataChunk.setRle_page_length(nodeHolder.getDataIndexMapLength()[i]);
           encodings.add(Encoding.RLE);
         }
@@ -966,8 +943,10 @@ public class CarbonMetadataUtil {
           dataChunk.setRowid_page_length(nodeHolder.getKeyBlockIndexLength()[i]);
           encodings.add(Encoding.INVERTED_INDEX);
         }
-        dataChunk.min_max.addToMax_values(ByteBuffer.wrap(nodeHolder.getColumnMaxData()[i]));
-        dataChunk.min_max.addToMin_values(ByteBuffer.wrap(nodeHolder.getColumnMinData()[i]));
+        dataChunk.min_max.addToMax_values(
+            ByteBuffer.wrap(nodeHolder.getDimensionColumnMaxData()[i]));
+        dataChunk.min_max.addToMin_values(
+            ByteBuffer.wrap(nodeHolder.getDimensionColumnMinData()[i]));
         dataChunk.setEncoders(encodings);
         dataChunkBuffer.add(CarbonUtil.getByteArray(dataChunk));
       }
@@ -996,7 +975,7 @@ public class CarbonMetadataUtil {
         dataChunk.setPresence(presenceMeta);
         List<ByteBuffer> encoderMetaList = new ArrayList<ByteBuffer>();
         encoderMetaList.add(ByteBuffer.wrap(serializeEncodeMetaUsingByteBuffer(
-            createValueEncoderMeta(nodeHolder.getCompressionModel(), i))));
+            createValueEncoderMeta(nodeHolder.getStats(), i))));
         dataChunk.setEncoder_meta(encoderMetaList);
         dataChunk.min_max.addToMax_values(ByteBuffer.wrap(nodeHolder.getMeasureColumnMaxData()[i]));
         dataChunk.min_max.addToMin_values(ByteBuffer.wrap(nodeHolder.getMeasureColumnMinData()[i]));

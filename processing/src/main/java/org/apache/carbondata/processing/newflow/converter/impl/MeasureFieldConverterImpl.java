@@ -19,6 +19,7 @@ package org.apache.carbondata.processing.newflow.converter.impl;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -26,7 +27,6 @@ import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.newflow.converter.FieldConverter;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
@@ -65,8 +65,6 @@ public class MeasureFieldConverterImpl implements FieldConverter {
     if (value == null || isNull) {
       String message = logHolder.getColumnMessageMap().get(measure.getColName());
       if (null == message) {
-        value = CarbonDataProcessorUtil
-            .prepareFailureReason(measure.getColName(), measure.getDataType());
         logHolder.getColumnMessageMap().put(measure.getColName(), message);
       }
       row.update(null, index);

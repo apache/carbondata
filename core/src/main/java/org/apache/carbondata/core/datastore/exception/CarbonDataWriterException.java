@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.store.writer.exception;
+package org.apache.carbondata.core.datastore.exception;
 
 import java.util.Locale;
 

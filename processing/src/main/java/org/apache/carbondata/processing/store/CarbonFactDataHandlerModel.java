@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.GenericDataType;
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
@@ -37,7 +39,6 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
@@ -153,13 +154,14 @@ public class CarbonFactDataHandlerModel {
   // key generator for complex dimension
   private KeyGenerator[] complexDimensionKeyGenerator;
 
+  private TableSpec tableSpec;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
       CarbonDataLoadConfiguration configuration, String storeLocation, int bucketId,
       int taskExtension) {
-
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
     boolean[] isUseInvertedIndex =
@@ -247,6 +249,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.bucketId = bucketId;
     carbonFactDataHandlerModel.segmentId = configuration.getSegmentId();
     carbonFactDataHandlerModel.taskExtension = taskExtension;
+    carbonFactDataHandlerModel.tableSpec = configuration.getTableSpec();
     return carbonFactDataHandlerModel;
   }
 
@@ -304,6 +307,10 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndexes);
     carbonFactDataHandlerModel.setPrimitiveDimLens(segmentProperties.getDimColumnsCardinality());
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
+
+    carbonFactDataHandlerModel.tableSpec = new TableSpec(
+        segmentProperties.getDimensions(),
+        segmentProperties.getMeasures());
     return carbonFactDataHandlerModel;
   }
 
@@ -521,6 +528,27 @@ public class CarbonFactDataHandlerModel {
   // return the number of complex columns
   public int getComplexColumnCount() {
     return complexIndexMap.size();
+  }
+
+  // return the number of complex column after complex columns are expanded
+  public int getExpandedComplexColsCount() {
+    int count = 0;
+    int dictDimensionCount = getDimensionCount();
+    for (int i = 0; i < dictDimensionCount; i++) {
+      GenericDataType complexDataType = getComplexIndexMap().get(i);
+      if (complexDataType != null) {
+        count += complexDataType.getColsCount();
+      }
+    }
+    return count;
+  }
+
+  public boolean isSortColumn(int columnIndex) {
+    return columnIndex < segmentProperties.getNumberOfSortColumns();
+  }
+
+  public TableSpec getTableSpec() {
+    return tableSpec;
   }
 }
 

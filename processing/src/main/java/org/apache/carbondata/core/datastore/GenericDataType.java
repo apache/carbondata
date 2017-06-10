@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.datatypes;
+package org.apache.carbondata.core.datastore;
 
 import java.io.DataOutputStream;
 import java.io.IOException;

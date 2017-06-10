@@ -19,7 +19,7 @@ package org.apache.carbondata.core.util;
 
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
+import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
 
 public class NodeHolder {
   /**
@@ -83,26 +83,23 @@ public class NodeHolder {
   /**
    * column max data
    */
-  private byte[][] columnMaxData;
+  private byte[][] dimensionColumnMaxData;
 
   /**
    * column min data
    */
-  private byte[][] columnMinData;
+  private byte[][] dimensionColumnMinData;
 
   private byte[][] measureColumnMaxData;
 
   private byte[][] measureColumnMinData;
 
-  /**
-   * compression model for numbers data block.
-   */
-  private WriterCompressModel compressionModel;
+  private MeasurePageStatsVO stats;
 
   /**
-   * array of aggBlocks flag to identify the aggBlocks
+   * array of rleEncodingForDictDim flag to identify the rleEncodingForDictDim
    */
-  private boolean[] aggBlocks;
+  private boolean[] rleEncodingForDictDim;
 
   /**
    * true if given index is colgroup block
@@ -312,46 +309,38 @@ public class NodeHolder {
     this.dataIndexMapLength = dataIndexMapLength;
   }
 
-  public byte[][] getColumnMaxData() {
-    return this.columnMaxData;
+  public byte[][] getDimensionColumnMaxData() {
+    return this.dimensionColumnMaxData;
   }
 
-  public void setColumnMaxData(byte[][] columnMaxData) {
-    this.columnMaxData = columnMaxData;
+  public void setDimensionColumnMaxData(byte[][] columnMaxData) {
+    this.dimensionColumnMaxData = columnMaxData;
   }
 
-  public byte[][] getColumnMinData() {
-    return this.columnMinData;
+  public byte[][] getDimensionColumnMinData() {
+    return this.dimensionColumnMinData;
   }
 
-  public void setColumnMinData(byte[][] columnMinData) {
-    this.columnMinData = columnMinData;
-  }
-
-  public WriterCompressModel getCompressionModel() {
-    return compressionModel;
-  }
-
-  public void setCompressionModel(WriterCompressModel compressionModel) {
-    this.compressionModel = compressionModel;
+  public void setDimensionColumnMinData(byte[][] columnMinData) {
+    this.dimensionColumnMinData = columnMinData;
   }
 
   /**
-   * returns array of aggBlocks flag to identify the aag blocks
+   * returns array of rleEncodingForDictDim flag to identify the aag blocks
    *
    * @return
    */
-  public boolean[] getAggBlocks() {
-    return aggBlocks;
+  public boolean[] getRleEncodingForDictDim() {
+    return rleEncodingForDictDim;
   }
 
   /**
-   * set array of aggBlocks flag to identify the aggBlocks
+   * set array of rleEncodingForDictDim flag to identify the rleEncodingForDictDim
    *
-   * @param aggBlocks
+   * @param rleEncodingForDictDim
    */
-  public void setAggBlocks(boolean[] aggBlocks) {
-    this.aggBlocks = aggBlocks;
+  public void setRleEncodingForDictDim(boolean[] rleEncodingForDictDim) {
+    this.rleEncodingForDictDim = rleEncodingForDictDim;
   }
 
   /**
@@ -427,5 +416,13 @@ public class NodeHolder {
   }
   public boolean isWriteAll() {
     return this.writeAll;
+  }
+
+  public MeasurePageStatsVO getStats() {
+    return stats;
+  }
+
+  public void setMeasureStats(MeasurePageStatsVO stats) {
+    this.stats = stats;
   }
 }

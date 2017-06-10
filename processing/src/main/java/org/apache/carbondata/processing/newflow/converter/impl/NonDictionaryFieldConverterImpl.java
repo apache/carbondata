@@ -17,13 +17,13 @@
 package org.apache.carbondata.processing.newflow.converter.impl;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.newflow.converter.FieldConverter;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class NonDictionaryFieldConverterImpl implements FieldConverter {
@@ -53,8 +53,9 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
       row.update(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, index);
     } else {
       try {
-        row.update(DataTypeUtil
-            .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType), index);
+        row.update(
+            DataTypeUtil.getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType),
+            index);
       } catch (Throwable ex) {
         if (dimensionValue.length() > 0 || isEmptyBadRecord) {
           String message = logHolder.getColumnMessageMap().get(column.getColName());

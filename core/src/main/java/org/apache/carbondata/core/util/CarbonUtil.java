@@ -48,10 +48,9 @@ import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
-import org.apache.carbondata.core.datastore.compression.MeasureMetaDataModel;
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
@@ -822,36 +821,12 @@ public final class CarbonUtil {
   }
 
   /**
-   * Below method will be used to get the value compression model of the
-   * measure data chunk
-   *
-   * @return value compression model
+   * Below method will be used to get the stats of the measure data page
    */
-  public static WriterCompressModel getValueCompressionModel(
+  public static MeasurePageStatsVO getMeasurePageStats(
       List<ValueEncoderMeta> encodeMetaList) {
-    Object[] maxValue = new Object[encodeMetaList.size()];
-    Object[] minValue = new Object[encodeMetaList.size()];
-    Object[] uniqueValue = new Object[encodeMetaList.size()];
-    int[] decimal = new int[encodeMetaList.size()];
-    DataType[] type = new DataType[encodeMetaList.size()];
-    byte[] dataTypeSelected = new byte[encodeMetaList.size()];
-
-    /*
-     * to fill the meta data required for value compression model
-     */
-    for (int i = 0; i < dataTypeSelected.length; i++) {  // always 1
-      ValueEncoderMeta valueEncoderMeta = encodeMetaList.get(i);
-      maxValue[i] = valueEncoderMeta.getMaxValue();
-      minValue[i] = valueEncoderMeta.getMinValue();
-      uniqueValue[i] = valueEncoderMeta.getUniqueValue();
-      decimal[i] = valueEncoderMeta.getDecimal();
-      type[i] = valueEncoderMeta.getType();
-      dataTypeSelected[i] = valueEncoderMeta.getDataTypeSelected();
-    }
-    MeasureMetaDataModel measureMetadataModel =
-        new MeasureMetaDataModel(minValue, maxValue, decimal, dataTypeSelected.length, uniqueValue,
-            type, dataTypeSelected);
-    return ValueCompressionUtil.getWriterCompressModel(measureMetadataModel);
+    return MeasurePageStatsVO.build(
+        encodeMetaList.toArray(new ValueEncoderMeta[encodeMetaList.size()]));
   }
 
   /**
@@ -1045,8 +1020,8 @@ public final class CarbonUtil {
       if (null != childs && childs.size() > 0) {
         break;
       }
-      if (carbonDimension.isColumnar() && hasEncoding(carbonDimension.getEncoder(),
-          Encoding.DICTIONARY)) {
+      if (carbonDimension.isColumnar() &&
+          hasEncoding(carbonDimension.getEncoder(), Encoding.DICTIONARY)) {
         isDictionaryDimensions.add(true);
       } else if (!carbonDimension.isColumnar()) {
         if (processedColumnGroup.add(carbonDimension.columnGroupId())) {
@@ -1420,7 +1395,7 @@ public final class CarbonUtil {
    * @param encoderMeta
    * @return ValueEncoderMeta object
    */
-  public static ValueEncoderMeta deserializeEncoderMeta(byte[] encoderMeta) {
+  public static ValueEncoderMeta deserializeEncoderMetaV2(byte[] encoderMeta) {
     // TODO : should remove the unnecessary fields.
     ByteArrayInputStream aos = null;
     ObjectInputStream objStream = null;
@@ -1437,7 +1412,7 @@ public final class CarbonUtil {
     return meta;
   }
 
-  public static ValueEncoderMeta deserializeEncoderMetaNew(byte[] encodeMeta) {
+  public static ValueEncoderMeta deserializeEncoderMetaV3(byte[] encodeMeta) {
     ByteBuffer buffer = ByteBuffer.wrap(encodeMeta);
     char measureType = buffer.getChar();
     ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
