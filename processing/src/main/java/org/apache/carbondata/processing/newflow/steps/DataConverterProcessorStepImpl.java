@@ -62,7 +62,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
   public void initialize() throws IOException {
     child.initialize();
     converters = new ArrayList<>();
-    badRecordLogger = createBadRecordLogger();
+    badRecordLogger = createBadRecordLogger(configuration);
     RowConverter converter =
         new RowConverterImpl(child.getOutput(), configuration, badRecordLogger);
     configuration.setCardinalityFinder(converter);
@@ -115,7 +115,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     throw new UnsupportedOperationException();
   }
 
-  private BadRecordsLogger createBadRecordLogger() {
+  public static BadRecordsLogger createBadRecordLogger(CarbonDataLoadConfiguration configuration) {
     boolean badRecordsLogRedirect = false;
     boolean badRecordConvertNullDisable = false;
     boolean isDataLoadFail = false;
@@ -159,7 +159,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
         badRecordsLogRedirect, badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail);
   }
 
-  private String getBadLogStoreLocation(String storeLocation) {
+  public static String getBadLogStoreLocation(String storeLocation) {
     String badLogStoreLocation =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
     badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
@@ -172,13 +172,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     if (!closed) {
       if (null != badRecordLogger) {
         badRecordLogger.closeStreams();
-        // rename the bad record in progress to normal
-        CarbonTableIdentifier identifier =
-            configuration.getTableIdentifier().getCarbonTableIdentifier();
-        CarbonDataProcessorUtil.renameBadRecordsFromInProgressToNormal(
-            identifier.getDatabaseName() + File.separator + identifier.getTableName()
-                + File.separator + configuration.getSegmentId() + File.separator + configuration
-                .getTaskNo());
+        renameBadRecord(configuration);
       }
       super.close();
       if (converters != null) {
@@ -187,6 +181,27 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
         }
       }
     }
+  }
+
+  public static void close(BadRecordsLogger badRecordLogger, CarbonDataLoadConfiguration
+      configuration, RowConverter converter) {
+    if (badRecordLogger != null) {
+      badRecordLogger.closeStreams();
+      renameBadRecord(configuration);
+    }
+    if (converter != null) {
+      converter.finish();
+    }
+  }
+
+  private static void renameBadRecord(CarbonDataLoadConfiguration configuration) {
+    // rename the bad record in progress to normal
+    CarbonTableIdentifier identifier =
+        configuration.getTableIdentifier().getCarbonTableIdentifier();
+    CarbonDataProcessorUtil.renameBadRecordsFromInProgressToNormal(
+        identifier.getDatabaseName() + File.separator + identifier.getTableName()
+            + File.separator + configuration.getSegmentId() + File.separator + configuration
+            .getTaskNo());
   }
 
   @Override protected String getStepName() {

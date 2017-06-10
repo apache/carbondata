@@ -481,6 +481,31 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
+   * Get the number of partitions in global sort
+   * @param configuration
+   * @return the number of partitions
+   */
+  public static int getGlobalSortPartitions(CarbonDataLoadConfiguration configuration) {
+    int numPartitions;
+    try {
+      // First try to get the number from ddl, otherwise get it from carbon properties.
+      if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS)
+          == null) {
+        numPartitions = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
+            CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT));
+      } else {
+        numPartitions = Integer.parseInt(
+          configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS)
+            .toString());
+      }
+    } catch (Exception e) {
+      numPartitions = 0;
+    }
+    return numPartitions;
+  }
+
+  /**
    * the method prepares and return the message mentioning the reason of badrecord
    *
    * @param columnName
