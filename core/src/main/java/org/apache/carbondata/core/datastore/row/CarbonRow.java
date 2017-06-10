@@ -17,12 +17,13 @@
 
 package org.apache.carbondata.core.datastore.row;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
  * This row class is used to transfer the row data from one step to other step
  */
-public class CarbonRow {
+public class CarbonRow implements Serializable {
 
   private Object[] data;
 
