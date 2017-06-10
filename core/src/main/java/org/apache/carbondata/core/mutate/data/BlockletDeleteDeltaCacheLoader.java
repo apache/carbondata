@@ -51,7 +51,7 @@ public class BlockletDeleteDeltaCacheLoader implements DeleteDeltaCacheLoaderInt
   public void loadDeleteDeltaFileDataToCache() {
     SegmentUpdateStatusManager segmentUpdateStatusManager =
         new SegmentUpdateStatusManager(absoluteIdentifier);
-    Map<String, Integer[]> deleteDeltaFileData = null;
+    Map<Integer, Integer[]> deleteDeltaFileData = null;
     BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache = null;
     if (null == blockletNode.getDeleteDeltaDataCache()) {
       try {

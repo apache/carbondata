@@ -109,7 +109,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         scannedResult.incrementCounter();
       }
       if (null != deleteDeltaDataCache && deleteDeltaDataCache
-          .contains(scannedResult.getCurrentRowId(), "" + scannedResult.getCurrentPageCounter())) {
+          .contains(scannedResult.getCurrentRowId(), scannedResult.getCurrentPageCounter())) {
         continue;
       }
       fillMeasureData(scannedResult, row);

@@ -657,7 +657,7 @@ public abstract class AbstractScannedResult {
       int len = startRow + size;
       for (int i = startRow; i < len; i++) {
         int rowId = rowMapping != null ? rowMapping[pageCounter][i] : i;
-        if (blockletDeleteDeltaCache.contains(rowId, String.valueOf(pageCounter))) {
+        if (blockletDeleteDeltaCache.contains(rowId, pageCounter)) {
           columnarBatch.markFiltered(vectorOffset);
           rowsFiltered++;
         }

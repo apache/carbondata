@@ -80,7 +80,7 @@ public class DeleteDeltaBlockDetails implements Serializable {
     }
   }
 
-  public boolean addBlocklet(String blockletId, String offset, String pageId) throws Exception {
+  public boolean addBlocklet(String blockletId, String offset, Integer pageId) throws Exception {
     DeleteDeltaBlockletDetails blocklet = new DeleteDeltaBlockletDetails(blockletId, pageId);
     try {
       blocklet.addDeletedRow(CarbonUpdateUtil.getIntegerValue(offset));

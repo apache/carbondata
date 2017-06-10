@@ -28,13 +28,13 @@ import org.roaringbitmap.RoaringBitmap;
  * This class maintains delete delta data cache of each blocklet along with the block timestamp
  */
 public class BlockletLevelDeleteDeltaDataCache {
-  private Map<String, RoaringBitmap> deleteDelataDataCache =
+  private Map<Integer, RoaringBitmap> deleteDelataDataCache =
       new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   private String timeStamp;
 
-  public BlockletLevelDeleteDeltaDataCache(Map<String, Integer[]> deleteDeltaFileData,
+  public BlockletLevelDeleteDeltaDataCache(Map<Integer, Integer[]> deleteDeltaFileData,
       String timeStamp) {
-    for (Map.Entry<String, Integer[]> entry : deleteDeltaFileData.entrySet()) {
+    for (Map.Entry<Integer, Integer[]> entry : deleteDeltaFileData.entrySet()) {
       int[] dest = new int[entry.getValue().length];
       int i = 0;
       for (Integer val : entry.getValue()) {
@@ -45,7 +45,7 @@ public class BlockletLevelDeleteDeltaDataCache {
     this.timeStamp = timeStamp;
   }
 
-  public boolean contains(int key, String pageId) {
+  public boolean contains(int key, Integer pageId) {
     return deleteDelataDataCache.get(pageId).contains(key);
   }
 

@@ -101,7 +101,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
       }
       if (null != deleteDeltaDataCache && deleteDeltaDataCache
           .contains(scannedResult.getCurrentRowId(),
-              String.valueOf(scannedResult.getCurrentPageCounter()))) {
+              scannedResult.getCurrentPageCounter())) {
         continue;
       }
       fillMeasureData(scannedResult, row);

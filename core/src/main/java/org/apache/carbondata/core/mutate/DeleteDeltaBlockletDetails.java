@@ -31,7 +31,7 @@ public class DeleteDeltaBlockletDetails implements Serializable {
 
   private static final long serialVersionUID = 1206104914911491724L;
   private String id;
-  private String pageId;
+  private Integer pageId;
 
   private Set<Integer> deletedRows;
 
@@ -41,7 +41,7 @@ public class DeleteDeltaBlockletDetails implements Serializable {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DeleteDeltaBlockletDetails.class.getName());
 
-  public DeleteDeltaBlockletDetails(String id, String pageId) {
+  public DeleteDeltaBlockletDetails(String id, Integer pageId) {
     this.id = id;
     deletedRows = new TreeSet<Integer>();
     this.pageId = pageId;
@@ -63,7 +63,7 @@ public class DeleteDeltaBlockletDetails implements Serializable {
     this.id = id;
   }
 
-  public String getPageId() {
+  public Integer getPageId() {
     return pageId;
   }
 
@@ -80,7 +80,7 @@ public class DeleteDeltaBlockletDetails implements Serializable {
     }
 
     DeleteDeltaBlockletDetails that = (DeleteDeltaBlockletDetails) obj;
-    return id.equals(that.id) && pageId.equalsIgnoreCase(that.pageId);
+    return id.equals(that.id) && pageId == that.pageId;
   }
 
   @Override public int hashCode() {

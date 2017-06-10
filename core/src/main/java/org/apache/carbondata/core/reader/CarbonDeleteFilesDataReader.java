@@ -79,7 +79,7 @@ public class CarbonDeleteFilesDataReader {
    * @return
    * @throws Exception
    */
-  public Map<String, Integer[]> getDeleteDataFromAllFiles(List<String> deltaFiles,
+  public Map<Integer, Integer[]> getDeleteDataFromAllFiles(List<String> deltaFiles,
       String blockletId) throws Exception {
 
     List<Future<DeleteDeltaBlockDetails>> taskSubmitList = new ArrayList<>();
@@ -100,14 +100,14 @@ public class CarbonDeleteFilesDataReader {
       LOGGER.error("Error while reading the delete delta files : " + e.getMessage());
     }
 
-    Map<String, Integer[]> pageIdDeleteRowsMap =
+    Map<Integer, Integer[]> pageIdDeleteRowsMap =
         new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (int i = 0; i < taskSubmitList.size(); i++) {
       try {
         List<DeleteDeltaBlockletDetails> blockletDetails =
             taskSubmitList.get(i).get().getBlockletDetails();
         for (DeleteDeltaBlockletDetails eachBlockletDetails : blockletDetails) {
-          String pageId = eachBlockletDetails.getPageId();
+          Integer pageId = eachBlockletDetails.getPageId();
           Set<Integer> rows = blockletDetails
               .get(blockletDetails.indexOf(new DeleteDeltaBlockletDetails(blockletId, pageId)))
               .getDeletedRows();
