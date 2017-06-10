@@ -203,11 +203,7 @@ object CommonUtil {
       case Some("StringType") => scala.util.Try(value.toString)
       case _ => scala.util.Try(value.toString)
     }
-    val isConverted = result match {
-      case Success(_) => true
-      case _ => false
-    }
-    isConverted
+    result.isSuccess
   }
 
   def validateFields(key: String, fields: Seq[Field]): Boolean = {
