@@ -24,7 +24,6 @@ import scala.language.implicitConversions
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionState}
 import org.apache.spark.util.AlterTableUtil
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -105,8 +104,10 @@ private[sql] case class AlterTableAddColumns(
       val useCompatibleSchema = sparkSession.sparkContext.conf
         .getBoolean(CarbonCommonConstants.SPARK_SCHEMA_HIVE_COMPATIBILITY_ENABLE, false)
       if (useCompatibleSchema) {
-        sessionState.metadataHive.runSqlHive(s"ALTER TABLE $dbName.$tableName " +
-          s"ADD COLUMNS(${newFields.sortBy(_.schemaOrdinal).map(f => f.rawSchema).mkString(",")})")
+        val alterTableSql = s"ALTER TABLE $dbName.$tableName " +
+          s"ADD COLUMNS(${newFields.sortBy(_.schemaOrdinal).map(f => f.dataType.get).mkString(",")})"
+        LOGGER.info("Execute in hive: " + alterTableSql)
+        sessionState.metadataHive.runSqlHive(alterTableSql)
       }
       LOGGER.info(s"Alter table for add columns is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for add columns is successful for table $dbName.$tableName")
@@ -370,8 +371,9 @@ private[sql] case class AlterTableDropColumns(
         .getBoolean(CarbonCommonConstants.SPARK_SCHEMA_HIVE_COMPATIBILITY_ENABLE, false)
       if (useCompatibleSchema) {
         deletedColumnSchema.foreach { col =>
-          sessionState.metadataHive.runSqlHive(s"ALTER TABLE $dbName.$tableName " +
-            s"DROP COLUMN ${col.column_name}")
+          val alterTableSql = s"ALTER TABLE $dbName.$tableName DROP COLUMN ${col.column_name}"
+          LOGGER.info("Execute in hive: " + alterTableSql)
+          sessionState.metadataHive.runSqlHive(alterTableSql)
         }
       }
       LOGGER.info(s"Alter table for drop columns is successful for table $dbName.$tableName")
@@ -468,8 +470,9 @@ private[sql] case class AlterTableDataTypeChange(
         } else {
           dataTypeInfo.dataType
         }
-        sessionState.metadataHive.runSqlHive(s"ALTER TABLE $dbName.$tableName " +
-          s"ALTER COLUMN $columnName $colSchema")
+        val alterTableSql = s"ALTER TABLE $dbName.$tableName CHANGE COL $columnName $colSchema"
+        LOGGER.info("Execute in hive: " + alterTableSql)
+        sessionState.metadataHive.runSqlHive(alterTableSql)
       }
       LOGGER.info(s"Alter table for data type change is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for data type change is successful for table $dbName.$tableName")
