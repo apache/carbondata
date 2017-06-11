@@ -95,6 +95,11 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    */
   protected boolean[] isMeasurePresentInCurrentBlock;
 
+  /**
+   * is dimension column data is natural sorted
+   */
+  protected boolean isNaturalSorted;
+
   public RowLevelFilterExecuterImpl(List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties,

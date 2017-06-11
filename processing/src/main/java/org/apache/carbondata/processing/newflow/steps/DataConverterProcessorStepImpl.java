@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.constants.LoggerAction;
@@ -34,7 +35,6 @@ import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.newflow.converter.RowConverter;
 import org.apache.carbondata.processing.newflow.converter.impl.RowConverterImpl;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordsLogger;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;

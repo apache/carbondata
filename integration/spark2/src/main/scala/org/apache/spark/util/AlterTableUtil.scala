@@ -23,7 +23,7 @@ import scala.collection.mutable.ListBuffer
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.hive.{CarbonRelation, HiveExternalCatalog}
+import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionState}
 import org.apache.spark.sql.hive.HiveExternalCatalog._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -144,11 +144,12 @@ object AlterTableUtil {
    * @param schemaEvolutionEntry
    * @param thriftTable
    * @param sparkSession
-   * @param catalog
+   * @param sessionState
    */
   def updateSchemaInfo(carbonTable: CarbonTable,
       schemaEvolutionEntry: SchemaEvolutionEntry,
-      thriftTable: TableInfo)(sparkSession: SparkSession, catalog: HiveExternalCatalog): Unit = {
+      thriftTable: TableInfo)(sparkSession: SparkSession,
+      sessionState: CarbonSessionState): Unit = {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getFactTableName
     CarbonEnv.getInstance(sparkSession).carbonMetastore
@@ -160,7 +161,7 @@ object AlterTableUtil {
     val schema = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(tableIdentifier)(sparkSession).schema.json
     val schemaParts = prepareSchemaJsonForAlterTable(sparkSession.sparkContext.getConf, schema)
-    catalog.client.runSqlHive(
+    sessionState.metadataHive.runSqlHive(
       s"ALTER TABLE $dbName.$tableName SET TBLPROPERTIES($schemaParts)")
     sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
   }

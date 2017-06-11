@@ -36,8 +36,8 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
   private byte[] min;
   private byte[] max;
 
-  public BlockIndexerStorageForNoInvertedIndexForShort(byte[][] keyBlockInput,boolean isNoDictonary)
-  {
+  public BlockIndexerStorageForNoInvertedIndexForShort(byte[][] keyBlockInput,
+      boolean isNoDictonary) {
     this.keyBlock = keyBlockInput;
     min = keyBlock[0];
     max = keyBlock[0];

@@ -32,6 +32,7 @@ import java.util.Set;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.GenericDataType;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -47,7 +48,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datatypes.ArrayDataType;
-import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
 import org.apache.carbondata.processing.datatypes.StructDataType;
 import org.apache.carbondata.processing.model.CarbonDataLoadSchema;
@@ -473,6 +473,18 @@ public final class CarbonDataProcessorUtil {
       batchSortSizeInMb = 0;
     }
     return batchSortSizeInMb;
+  }
+
+  /**
+   * the method prepares and return the message mentioning the reason of badrecord
+   *
+   * @param columnName
+   * @param dataType
+   * @return
+   */
+  public static String prepareFailureReason(String columnName, DataType dataType) {
+    return "The value with column name " + columnName + " and column data type " + dataType
+        .getName() + " is not a valid " + dataType + " type.";
   }
 
 }

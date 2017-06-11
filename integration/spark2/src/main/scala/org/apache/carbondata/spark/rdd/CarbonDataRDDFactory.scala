@@ -53,13 +53,14 @@ import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.processing.constants.LoggerAction
 import org.apache.carbondata.processing.csvload.{BlockDetails, CSVInputFormat, StringArrayWritable}
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
+import org.apache.carbondata.processing.newflow.exception.{BadRecordFoundException, CarbonDataLoadingException}
 import org.apache.carbondata.spark._
-import org.apache.carbondata.spark.load._
+import org.apache.carbondata.spark.load.{FailureCauses, _}
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil, CommonUtil}
 
@@ -502,7 +503,7 @@ object CarbonDataRDDFactory {
       // CarbonCommonConstants.TABLE_SPLIT_PARTITION_DEFAULT_VALUE).toBoolean
       val isTableSplitPartition = false
       var blocksGroupBy: Array[(String, Array[BlockDetails])] = null
-      var status: Array[(String, LoadMetadataDetails)] = null
+      var status: Array[(String, (LoadMetadataDetails, ExecutionErrors))] = null
       var res: Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = null
 
       def loadDataFile(): Unit = {
@@ -702,6 +703,12 @@ object CarbonDataRDDFactory {
                 carbonLoadModel,
                 loadMetadataDetails)
             } catch {
+              case e: BadRecordFoundException =>
+                loadMetadataDetails
+                  .setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+                executionErrors.failureCauses = FailureCauses.BAD_RECORDS
+                executionErrors.errorMsg = e.getMessage
+                LOGGER.info("Bad Record Found")
               case e: Exception =>
                 LOGGER.info("DataLoad failure")
                 LOGGER.error(e)
@@ -794,6 +801,11 @@ object CarbonDataRDDFactory {
                 else {
                   updateModel.get.executorErrors = resultOfBlock._2._2
                 }
+              } else if (resultOfBlock._2._1.getLoadStatus
+                .equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)) {
+                loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+                updateModel.get.executorErrors.failureCauses = resultOfBlock._2._2.failureCauses
+                updateModel.get.executorErrors.errorMsg = resultOfBlock._2._2.errorMsg
               }
             }
           ))
@@ -801,20 +813,20 @@ object CarbonDataRDDFactory {
         }
         else {
         val newStatusMap = scala.collection.mutable.Map.empty[String, String]
-        if (status.nonEmpty) {
-          status.foreach { eachLoadStatus =>
-            val state = newStatusMap.get(eachLoadStatus._1)
-            state match {
-              case Some(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) =>
-                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
-              case Some(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
-                if eachLoadStatus._2.getLoadStatus ==
-                    CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS =>
-                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
-              case _ =>
-                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
+          if (status.nonEmpty) {
+            status.foreach { eachLoadStatus =>
+              val state = newStatusMap.get(eachLoadStatus._1)
+              state match {
+                case Some(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) =>
+                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getLoadStatus)
+                case Some(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+                  if eachLoadStatus._2._1.getLoadStatus ==
+                     CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS =>
+                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getLoadStatus)
+                case _ =>
+                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getLoadStatus)
+              }
             }
-          }
 
           newStatusMap.foreach {
             case (key, value) =>
@@ -867,6 +879,10 @@ object CarbonDataRDDFactory {
             }
           }
           return
+        } else if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS &&
+                   updateModel.get.executorErrors.failureCauses == FailureCauses.BAD_RECORDS &&
+                   carbonLoadModel.getBadRecordsAction.split(",")(1) == LoggerAction.FAIL.name) {
+          return
         } else {
           // in success case handle updation of the table status file.
           // success case.
@@ -916,7 +932,7 @@ object CarbonDataRDDFactory {
 
         return
       }
-        LOGGER.info("********starting clean up**********")
+      LOGGER.info("********starting clean up**********")
       if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
         CarbonLoaderUtil.deleteSegment(carbonLoadModel, currentLoadCount)
         LOGGER.info("********clean up done**********")
@@ -925,6 +941,17 @@ object CarbonDataRDDFactory {
         LOGGER.warn("Cannot write load metadata file as data load failed")
         throw new Exception(errorMessage)
       } else {
+        // check if data load fails due to bad record and throw data load failure due to
+        // bad record exception
+        if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS &&
+            status(0)._2._2.failureCauses == FailureCauses.BAD_RECORDS &&
+            carbonLoadModel.getBadRecordsAction.split(",")(1) == LoggerAction.FAIL.name) {
+          CarbonLoaderUtil.deleteSegment(carbonLoadModel, currentLoadCount)
+          LOGGER.info("********clean up done**********")
+          LOGGER.audit(s"Data load is failed for " +
+                       s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+          throw new Exception(status(0)._2._2.errorMsg)
+        }
         // if segment is empty then fail the data load
         if (!CarbonLoaderUtil.isValidSegment(carbonLoadModel, currentLoadCount)) {
           CarbonLoaderUtil.deleteSegment(carbonLoadModel, currentLoadCount)
@@ -935,7 +962,7 @@ object CarbonDataRDDFactory {
           LOGGER.warn("Cannot write load metadata file as data load failed")
           throw new Exception("No Data to load")
         }
-        val metadataDetails = status(0)._2
+        val metadataDetails = status(0)._2._1
         if (!isAgg) {
           writeDictionary(carbonLoadModel, result, false)
           val status = CarbonLoaderUtil.recordLoadMetadata(currentLoadCount, metadataDetails,

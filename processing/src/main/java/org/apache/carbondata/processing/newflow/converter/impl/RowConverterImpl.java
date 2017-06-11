@@ -34,6 +34,7 @@ import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
@@ -42,8 +43,8 @@ import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConst
 import org.apache.carbondata.processing.newflow.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.newflow.converter.FieldConverter;
 import org.apache.carbondata.processing.newflow.converter.RowConverter;
+import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordsLogger;
 
 /**
@@ -155,11 +156,12 @@ public class RowConverterImpl implements RowConverter {
     for (int i = 0; i < fieldConverters.length; i++) {
       fieldConverters[i].convert(row, logHolder);
       if (!logHolder.isLogged() && logHolder.isBadRecordNotAdded()) {
-        if (badRecordLogger.isDataLoadFail()) {
-          String error = "Data load failed due to bad record: " + logHolder.getReason();
-          throw new CarbonDataLoadingException(error);
-        }
         badRecordLogger.addBadRecordsToBuilder(copy.getData(), logHolder.getReason());
+        if (badRecordLogger.isDataLoadFail()) {
+          String error = "Data load failed due to bad record: " + logHolder.getReason() +
+              "Please enable bad record logger to know the detail reason.";
+          throw new BadRecordFoundException(error);
+        }
         logHolder.clear();
         logHolder.setLogged(true);
         if (badRecordLogger.isBadRecordConvertNullDisable()) {
@@ -178,6 +180,9 @@ public class RowConverterImpl implements RowConverter {
         if (client != null) {
           client.shutDown();
         }
+      }
+      if (null != logHolder) {
+        logHolder.finish();
       }
       if (executorService != null) {
         executorService.shutdownNow();

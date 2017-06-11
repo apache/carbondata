@@ -209,5 +209,4 @@ scenarios. After the completion of POC, some of the configurations impacting the
 | carbon.detail.batch.size | spark/carbonlib/carbon.properties | Data loading | The buffer size to store records, returned from the block scan. | In limit scenario this parameter is very important. For example your query limit is 1000. But if we set this value to 3000 that means we get 3000 records from scan but spark will only take 1000 rows. So the 2000 remaining are useless. In one Finance test case after we set it to 100, in the limit 1000 scenario the performance increase about 2 times in comparison to if we set this value to 12000. |
 | carbon.use.local.dir | spark/carbonlib/carbon.properties | Data loading | Whether use YARN local directories for multi-table load disk load balance | If this is set it to true CarbonData will use YARN local directories for multi-table load disk load balance, that will improve the data load performance. |
 
-Note: If your CarbonData instance is provided only for query, you may specify the conf 'spark.speculation=true' which is conf
- in spark.
+Note: If your CarbonData instance is provided only for query, you may specify the conf 'spark.speculation=true' which is conf in spark.

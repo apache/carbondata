@@ -234,6 +234,8 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
         return new TimestampWritable(new Timestamp((long) obj));
       case STRING:
         return new Text(obj.toString());
+      case CHAR:
+        return new Text(obj.toString());
       case DECIMAL:
         return new HiveDecimalWritable(
             HiveDecimal.create(((org.apache.spark.sql.types.Decimal) obj).toJavaBigDecimal()));

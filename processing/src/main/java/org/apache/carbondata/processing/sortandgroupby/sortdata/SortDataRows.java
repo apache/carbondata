@@ -121,7 +121,9 @@ public class SortDataRows {
     int currentSize = entryCount;
 
     if (sortBufferSize == currentSize) {
-      LOGGER.debug("************ Writing to temp file ********** ");
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("************ Writing to temp file ********** ");
+      }
       intermediateFileMerger.startMergingIfPossible();
       Object[][] recordHolderListLocal = recordHolderList;
       try {
@@ -151,7 +153,9 @@ public class SortDataRows {
     synchronized (addRowsLock) {
       int sizeLeft = 0;
       if (entryCount + size >= sortBufferSize) {
-        LOGGER.debug("************ Writing to temp file ********** ");
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("************ Writing to temp file ********** ");
+        }
         intermediateFileMerger.startMergingIfPossible();
         Object[][] recordHolderListLocal = recordHolderList;
         sizeLeft = sortBufferSize - entryCount ;

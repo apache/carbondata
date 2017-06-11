@@ -133,7 +133,7 @@ public class UnsafeSortDataRows {
   public static MemoryBlock getMemoryBlock(long size) throws CarbonSortKeyAndGroupByException {
     MemoryBlock baseBlock = null;
     int tries = 0;
-    while (true && tries < 100) {
+    while (tries < 100) {
       baseBlock = UnsafeMemoryManager.INSTANCE.allocateMemory(size);
       if (baseBlock == null) {
         try {

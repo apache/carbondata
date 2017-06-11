@@ -201,6 +201,8 @@ public class CarbonHiveSerDe extends AbstractSerDe {
         return ((DateObjectInspector) inspector).getPrimitiveWritableObject(obj);
       case STRING:
         return ((StringObjectInspector) inspector).getPrimitiveWritableObject(obj);
+      case CHAR:
+        return ((StringObjectInspector) inspector).getPrimitiveWritableObject(obj);
       case DECIMAL:
         return ((HiveDecimalObjectInspector) inspector).getPrimitiveWritableObject(obj);
     }

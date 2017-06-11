@@ -22,7 +22,7 @@ import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.hive.{CarbonRelation, HiveExternalCatalog}
+import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionState}
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -96,11 +96,11 @@ private[sql] case class AlterTableAddColumns(
       schemaEvolutionEntry.setAdded(newCols.toList.asJava)
       val thriftTable = schemaConverter
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
-      val catalog = sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog]
       AlterTableUtil
         .updateSchemaInfo(carbonTable,
           schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
           thriftTable)(sparkSession,
+          sparkSession.sessionState.asInstanceOf[CarbonSessionState])
           catalog)
       val newFields = alterTableAddColumnsModel.dimCols ++ alterTableAddColumnsModel.msrCols
       val useCompatibleSchema = sparkSession.sparkContext.conf
@@ -210,10 +210,10 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
           carbonTable.getStorePath)(sparkSession)
       CarbonEnv.getInstance(sparkSession).carbonMetastore
         .removeTableFromMetadata(oldDatabaseName, oldTableName)
-      sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client
+      sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
         .runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$oldTableName RENAME TO $oldDatabaseName.$newTableName")
-      sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client
+      sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
         .runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$newTableName SET SERDEPROPERTIES" +
           s"('tableName'='$newTableName', " +
@@ -290,7 +290,19 @@ private[sql] case class AlterTableDropColumns(
       carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
         .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
         .tableMeta.carbonTable
-      // check each column existence in the table
+      val partitionInfo = carbonTable.getPartitionInfo(tableName)
+      if (partitionInfo != null) {
+        val partitionColumnSchemaList = partitionInfo.getColumnSchemaList.asScala
+          .map(_.getColumnName)
+        // check each column existence in the table
+        val partitionColumns = alterTableDropColumnModel.columns.filter {
+          tableColumn => partitionColumnSchemaList.contains(tableColumn)
+        }
+        if (partitionColumns.nonEmpty) {
+          throw new UnsupportedOperationException("Partition columns cannot be dropped: " +
+                                                  s"$partitionColumns")
+        }
+      }
       val tableColumns = carbonTable.getCreateOrderColumn(tableName).asScala
       var dictionaryColumns = Seq[org.apache.carbondata.core.metadata.schema.table.column
       .ColumnSchema]()
@@ -343,12 +355,11 @@ private[sql] case class AlterTableDropColumns(
       timeStamp = System.currentTimeMillis
       val schemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
       schemaEvolutionEntry.setRemoved(deletedColumnSchema.toList.asJava)
-      val catalog = sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog]
       AlterTableUtil
         .updateSchemaInfo(carbonTable,
           schemaEvolutionEntry,
           tableInfo)(sparkSession,
-          catalog)
+          sparkSession.sessionState.asInstanceOf[CarbonSessionState])
       // TODO: 1. add check for deletion of index tables
       // delete dictionary files for dictionary column and clear dictionary cache from memory
       new AlterTableDropColumnRDD(sparkSession.sparkContext,
@@ -441,13 +452,13 @@ private[sql] case class AlterTableDataTypeChange(
       val schemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
       schemaEvolutionEntry.setAdded(List(addColumnSchema).asJava)
       schemaEvolutionEntry.setRemoved(List(deletedColumnSchema).asJava)
-      val catalog = sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog]
       tableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
         .setTime_stamp(System.currentTimeMillis)
       AlterTableUtil
         .updateSchemaInfo(carbonTable,
           schemaEvolutionEntry,
           tableInfo)(sparkSession,
+          sparkSession.sessionState.asInstanceOf[CarbonSessionState])
           catalog)
       val useCompatibleSchema = sparkSession.sparkContext.conf
         .getBoolean(CarbonCommonConstants.SPARK_SCHEMA_HIVE_COMPATIBILITY_ENABLE, false)

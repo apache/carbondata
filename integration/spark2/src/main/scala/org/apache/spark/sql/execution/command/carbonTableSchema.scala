@@ -480,8 +480,11 @@ case class LoadTable(
         case "true" =>
           true
         case "false" =>
-          if (!StringUtils.isEmpty(allDictionaryPath)) {
-            true
+          // when single_pass = false  and if either alldictionarypath
+          // or columnDict is configured the do not allow load
+          if (StringUtils.isNotEmpty(allDictionaryPath) || StringUtils.isNotEmpty(columnDict)) {
+            throw new MalformedCarbonCommandException(
+              "Can not use all_dictionary_path or columndict without single_pass.")
           } else {
             false
           }
@@ -856,9 +859,15 @@ private[sql] case class DescribeCommandFormatted(
         }
         if (dimension.hasEncoding(Encoding.DICTIONARY) &&
             !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-          "DICTIONARY, KEY COLUMN"
+          "DICTIONARY, KEY COLUMN" + (dimension.hasEncoding(Encoding.INVERTED_INDEX) match {
+            case false => ",NOINVERTEDINDEX"
+            case _ => ""
+          })
         } else {
-          "KEY COLUMN"
+          "KEY COLUMN" + (dimension.hasEncoding(Encoding.INVERTED_INDEX) match {
+            case false => ",NOINVERTEDINDEX"
+            case _ => ""
+          })
         }
       } else {
         "MEASURE"

@@ -19,6 +19,7 @@ package org.apache.carbondata.processing.newflow.converter.impl;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -26,7 +27,7 @@ import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.newflow.converter.FieldConverter;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
  * Converter for measure
@@ -62,15 +63,20 @@ public class MeasureFieldConverterImpl implements FieldConverter {
     Object output;
     boolean isNull = CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(value);
     if (value == null || isNull) {
-      logHolder.setReason(
-          "The value " + " \"" + value + "\"" + " with column name " + measure.getColName()
-              + " and column data type " + dataType + " is not a valid " + dataType + " type.");
+      String message = logHolder.getColumnMessageMap().get(measure.getColName());
+      if (null == message) {
+        logHolder.getColumnMessageMap().put(measure.getColName(), message);
+      }
       row.update(null, index);
     } else if (value.length() == 0) {
       if (isEmptyBadRecord) {
-        logHolder.setReason(
-            "The value " + " \"" + value + "\"" + " with column name " + measure.getColName()
-                + " and column data type " + dataType + " is not a valid " + dataType + " type.");
+        String message = logHolder.getColumnMessageMap().get(measure.getColName());
+        if (null == message) {
+          message = CarbonDataProcessorUtil
+              .prepareFailureReason(measure.getColName(), measure.getDataType());
+          logHolder.getColumnMessageMap().put(measure.getColName(), message);
+        }
+        logHolder.setReason(message);
       }
       row.update(null, index);
     } else if (value.equals(nullformat)) {
@@ -81,10 +87,9 @@ public class MeasureFieldConverterImpl implements FieldConverter {
         row.update(output, index);
       } catch (NumberFormatException e) {
         LOGGER.warn(
-            "Cant not convert : " + value + " to Numeric type value. Value considered as null.");
+            "Cant not convert value to Numeric type value. Value considered as null.");
         logHolder.setReason(
-            "The value " + " \"" + value + "\"" + " with column name " + measure.getColName()
-                + " and column data type " + dataType + " is not a valid " + dataType + " type.");
+            CarbonDataProcessorUtil.prepareFailureReason(measure.getColName(), dataType));
         output = null;
         row.update(output, index);
       }
