@@ -98,7 +98,7 @@ The create table command can be modified as below :
 ```
   create table carbondata_table(
   Dime_1 String,
-  BEGIN_TIME bigint
+  BEGIN_TIME bigint,
   HOST String,
   MSISDN String,
   ...
@@ -116,7 +116,7 @@ query performance. The create table command can be modified as below :
 ```
   create table carbondata_table(
   Dime_1 String,
-  BEGIN_TIME bigint
+  BEGIN_TIME bigint,
   HOST String,
   MSISDN String,
   counter_1 double,
