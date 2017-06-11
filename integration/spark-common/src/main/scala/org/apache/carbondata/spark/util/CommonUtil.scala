@@ -203,8 +203,7 @@ object CommonUtil {
       case Some("ShortType") => scala.util.Try(value.trim().toShort)
       case Some("DecimalType") => scala.util.Try(value.trim().toDouble)
       case Some("BooleanType") => scala.util.Try(value.trim().toBoolean)
-      case Some("StringType") => scala.util.Try(value.trim().toString)
-      case _ => scala.util.Try(value.trim().toString)
+      case _ => scala.util.Try(value.trim())
     }
     result.isSuccess
   }
