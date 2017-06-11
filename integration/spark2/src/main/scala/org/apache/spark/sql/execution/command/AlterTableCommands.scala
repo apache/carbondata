@@ -96,17 +96,16 @@ private[sql] case class AlterTableAddColumns(
       schemaEvolutionEntry.setAdded(newCols.toList.asJava)
       val thriftTable = schemaConverter
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
+      val sessionState = sparkSession.sessionState.asInstanceOf[CarbonSessionState]
       AlterTableUtil
         .updateSchemaInfo(carbonTable,
           schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
-          thriftTable)(sparkSession,
-          sparkSession.sessionState.asInstanceOf[CarbonSessionState])
-          catalog)
+          thriftTable)(sparkSession, sessionState)
       val newFields = alterTableAddColumnsModel.dimCols ++ alterTableAddColumnsModel.msrCols
       val useCompatibleSchema = sparkSession.sparkContext.conf
         .getBoolean(CarbonCommonConstants.SPARK_SCHEMA_HIVE_COMPATIBILITY_ENABLE, false)
       if (useCompatibleSchema) {
-        catalog.client.runSqlHive(s"ALTER TABLE $dbName.$tableName " +
+        sessionState.metadataHive.runSqlHive(s"ALTER TABLE $dbName.$tableName " +
           s"ADD COLUMNS(${newFields.sortBy(_.schemaOrdinal).map(f => f.rawSchema).mkString(",")})")
       }
       LOGGER.info(s"Alter table for add columns is successful for table $dbName.$tableName")
@@ -210,10 +209,11 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
           carbonTable.getStorePath)(sparkSession)
       CarbonEnv.getInstance(sparkSession).carbonMetastore
         .removeTableFromMetadata(oldDatabaseName, oldTableName)
-      sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
+      val sessionState = sparkSession.sessionState.asInstanceOf[CarbonSessionState]
+      sessionState.metadataHive
         .runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$oldTableName RENAME TO $oldDatabaseName.$newTableName")
-      sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
+      sessionState.metadataHive
         .runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$newTableName SET SERDEPROPERTIES" +
           s"('tableName'='$newTableName', " +
@@ -355,11 +355,11 @@ private[sql] case class AlterTableDropColumns(
       timeStamp = System.currentTimeMillis
       val schemaEvolutionEntry = new SchemaEvolutionEntry(timeStamp)
       schemaEvolutionEntry.setRemoved(deletedColumnSchema.toList.asJava)
+      val sessionState = sparkSession.sessionState.asInstanceOf[CarbonSessionState]
       AlterTableUtil
         .updateSchemaInfo(carbonTable,
           schemaEvolutionEntry,
-          tableInfo)(sparkSession,
-          sparkSession.sessionState.asInstanceOf[CarbonSessionState])
+          tableInfo)(sparkSession, sessionState)
       // TODO: 1. add check for deletion of index tables
       // delete dictionary files for dictionary column and clear dictionary cache from memory
       new AlterTableDropColumnRDD(sparkSession.sparkContext,
@@ -370,7 +370,7 @@ private[sql] case class AlterTableDropColumns(
         .getBoolean(CarbonCommonConstants.SPARK_SCHEMA_HIVE_COMPATIBILITY_ENABLE, false)
       if (useCompatibleSchema) {
         deletedColumnSchema.foreach { col =>
-          catalog.client.runSqlHive(s"ALTER TABLE $dbName.$tableName " +
+          sessionState.metadataHive.runSqlHive(s"ALTER TABLE $dbName.$tableName " +
             s"DROP COLUMN ${col.column_name}")
         }
       }
@@ -454,12 +454,11 @@ private[sql] case class AlterTableDataTypeChange(
       schemaEvolutionEntry.setRemoved(List(deletedColumnSchema).asJava)
       tableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
         .setTime_stamp(System.currentTimeMillis)
+      val sessionState = sparkSession.sessionState.asInstanceOf[CarbonSessionState]
       AlterTableUtil
         .updateSchemaInfo(carbonTable,
           schemaEvolutionEntry,
-          tableInfo)(sparkSession,
-          sparkSession.sessionState.asInstanceOf[CarbonSessionState])
-          catalog)
+          tableInfo)(sparkSession, sessionState)
       val useCompatibleSchema = sparkSession.sparkContext.conf
         .getBoolean(CarbonCommonConstants.SPARK_SCHEMA_HIVE_COMPATIBILITY_ENABLE, false)
       if (useCompatibleSchema) {
@@ -469,7 +468,7 @@ private[sql] case class AlterTableDataTypeChange(
         } else {
           dataTypeInfo.dataType
         }
-        catalog.client.runSqlHive(s"ALTER TABLE $dbName.$tableName " +
+        sessionState.metadataHive.runSqlHive(s"ALTER TABLE $dbName.$tableName " +
           s"ALTER COLUMN $columnName $colSchema")
       }
       LOGGER.info(s"Alter table for data type change is successful for table $dbName.$tableName")
