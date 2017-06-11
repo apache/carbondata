@@ -169,7 +169,7 @@ object CommonUtil {
       partitionType.get.toUpperCase() match {
         case "HASH" => if (!numPartitions.isDefined
         || scala.util.Try(numPartitions.get.toInt).isFailure
-        || numPartitions.get.toInt > 0) {
+        || numPartitions.get.toInt <= 0) {
           isValid = false
         }
         case "LIST" => if (!listInfo.isDefined) {
