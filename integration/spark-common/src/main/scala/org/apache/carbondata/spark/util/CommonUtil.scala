@@ -21,14 +21,13 @@ import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
-import scala.util.Success
+import scala.util.matching.Regex
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
-import org.apache.spark.sql.types.StructField
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -168,7 +167,11 @@ object CommonUtil {
       isValid = false
     } else {
       partitionType.get.toUpperCase() match {
-        case "HASH" => if (!numPartitions.isDefined) isValid = false
+        case "HASH" => if (!numPartitions.isDefined
+        || scala.util.Try(numPartitions.get.toInt).isFailure
+        || numPartitions.get.toInt > 0) {
+          isValid = false
+        }
         case "LIST" => if (!listInfo.isDefined) {
           isValid = false
         } else {

@@ -122,6 +122,47 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     intercept[Exception] { sql("alter table test drop columns(c)") }
   }
 
+  test("test exception if hash number is invalid") {
+    sql("DROP TABLE IF EXISTS test_hash_1")
+    try {
+      sql(
+        """
+          |CREATE TABLE test_hash_1(col1 INT, col2 STRING) PARTITIONED BY (col3 INT)
+          |STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='2.1')
+        """.stripMargin
+      )
+    } catch {
+      case e: Exception =>
+        assert(e.getMessage.contains("Invalid partition definition"))
+    }
+
+    sql("DROP TABLE IF EXISTS test_hash_2")
+    try {
+      sql(
+        """
+          |CREATE TABLE test_hash_2(col1 INT, col2 STRING) PARTITIONED BY (col3 INT)
+          |STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='abc')
+        """.stripMargin
+      )
+    } catch {
+      case e: Exception =>
+        assert(e.getMessage.contains("Invalid partition definition"))
+    }
+
+    sql("DROP TABLE IF EXISTS test_hash_3")
+    try {
+      sql(
+        """
+          |CREATE TABLE test_hash_3(col1 INT, col2 STRING) PARTITIONED BY (col3 INT)
+          |STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='-2.1')
+        """.stripMargin
+      )
+    } catch {
+      case e: Exception =>
+        assert(e.getMessage.contains("Invalid partition definition"))
+    }
+  }
+
   test("test exception when values in list_info can not match partition column type") {
     sql("DROP TABLE IF EXISTS test_list_1")
     try {
