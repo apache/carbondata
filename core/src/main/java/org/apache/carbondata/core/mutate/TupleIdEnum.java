@@ -24,7 +24,8 @@ public enum TupleIdEnum {
   SEGMENT_ID(1),
   BLOCK_ID(2),
   BLOCKLET_ID(3),
-  OFFSET(4);
+  PAGE_ID(4),
+  OFFSET(5);
 
   private int index;
 

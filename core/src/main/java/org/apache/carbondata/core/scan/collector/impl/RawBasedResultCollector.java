@@ -61,7 +61,8 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
     while (scannedResult.hasNext() && rowCounter < batchSize) {
       scanResultAndGetData(scannedResult);
       if (null != deleteDeltaDataCache && deleteDeltaDataCache
-          .contains(scannedResult.getCurrentRowId())) {
+          .contains(scannedResult.getCurrentRowId(),
+              scannedResult.getCurrentPageCounter())) {
         continue;
       }
       prepareRow(scannedResult, listBasedResult, queryMeasures);

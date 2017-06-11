@@ -17,26 +17,36 @@
 
 package org.apache.carbondata.core.cache.update;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+
 import org.roaringbitmap.RoaringBitmap;
 
 /**
  * This class maintains delete delta data cache of each blocklet along with the block timestamp
  */
 public class BlockletLevelDeleteDeltaDataCache {
-  private RoaringBitmap deleteDelataDataCache;
+  private Map<Integer, RoaringBitmap> deleteDelataDataCache =
+      new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   private String timeStamp;
 
-  public BlockletLevelDeleteDeltaDataCache(int[] deleteDeltaFileData, String timeStamp) {
-    deleteDelataDataCache = RoaringBitmap.bitmapOf(deleteDeltaFileData);
+  public BlockletLevelDeleteDeltaDataCache(Map<Integer, Integer[]> deleteDeltaFileData,
+      String timeStamp) {
+    for (Map.Entry<Integer, Integer[]> entry : deleteDeltaFileData.entrySet()) {
+      int[] dest = new int[entry.getValue().length];
+      int i = 0;
+      for (Integer val : entry.getValue()) {
+        dest[i++] = val.intValue();
+      }
+      deleteDelataDataCache.put(entry.getKey(), RoaringBitmap.bitmapOf(dest));
+    }
     this.timeStamp = timeStamp;
   }
 
-  public boolean contains(int key) {
-    return deleteDelataDataCache.contains(key);
-  }
-
-  public int getSize() {
-    return deleteDelataDataCache.getCardinality();
+  public boolean contains(int key, Integer pageId) {
+    return deleteDelataDataCache.get(pageId).contains(key);
   }
 
   public String getCacheTimeStamp() {
