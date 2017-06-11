@@ -175,7 +175,7 @@ object CommonUtil {
         case "LIST" => if (!listInfo.isDefined) {
           isValid = false
         } else {
-          listInfo.get.split(CarbonCommonConstants.COMMA).foreach(
+          listInfo.get.replace("(","").replace(")","").split(CarbonCommonConstants.COMMA).foreach(
             isValid &= validateTypeConvert(partitionerFields(0).dataType, _))
         }
         case "RANGE" => if (!rangeInfo.isDefined) {
@@ -195,16 +195,16 @@ object CommonUtil {
 
   def validateTypeConvert(desType: Option[String], value: String): Boolean = {
     val result = desType match {
-      case Some("IntegerType") => scala.util.Try(value.toInt)
-      case Some("LongType") => scala.util.Try(value.toLong)
-      case Some("FloatType") => scala.util.Try(value.toFloat)
-      case Some("DoubleType") => scala.util.Try(value.toDouble)
-      case Some("ByteType") => scala.util.Try(value.toByte)
-      case Some("ShortType") => scala.util.Try(value.toShort)
-      case Some("DecimalType") => scala.util.Try(value.toDouble)
-      case Some("BooleanType") => scala.util.Try(value.toBoolean)
-      case Some("StringType") => scala.util.Try(value.toString)
-      case _ => scala.util.Try(value.toString)
+      case Some("IntegerType") => scala.util.Try(value.trim().toInt)
+      case Some("LongType") => scala.util.Try(value.trim().toLong)
+      case Some("FloatType") => scala.util.Try(value.trim().toFloat)
+      case Some("DoubleType") => scala.util.Try(value.trim().toDouble)
+      case Some("ByteType") => scala.util.Try(value.trim().toByte)
+      case Some("ShortType") => scala.util.Try(value.trim().toShort)
+      case Some("DecimalType") => scala.util.Try(value.trim().toDouble)
+      case Some("BooleanType") => scala.util.Try(value.trim().toBoolean)
+      case Some("StringType") => scala.util.Try(value.trim().toString)
+      case _ => scala.util.Try(value.trim().toString)
     }
     result.isSuccess
   }
