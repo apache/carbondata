@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.hive;
 
-
 import java.io.IOException;
 import java.util.Properties;
 
@@ -30,8 +29,10 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.util.Progressable;
 
-
-public class MapredCarbonOutputFormat<T> extends FileOutputFormat<Void, T>
+/**
+ * TODO : To extend CarbonOutputFormat
+ */
+class MapredCarbonOutputFormat<T> extends FileOutputFormat<Void, T>
     implements HiveOutputFormat<Void, T> {
 
   @Override
@@ -40,8 +41,7 @@ public class MapredCarbonOutputFormat<T> extends FileOutputFormat<Void, T>
     return null;
   }
 
-  @Override
-  public FileSinkOperator.RecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath,
+  @Override public FileSinkOperator.RecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath,
       Class<? extends Writable> valueClass, boolean isCompressed, Properties tableProperties,
       Progressable progress) throws IOException {
     return null;
