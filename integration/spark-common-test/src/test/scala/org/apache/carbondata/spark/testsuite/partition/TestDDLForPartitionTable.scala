@@ -256,7 +256,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
       sql(
         """
           | CREATE TABLE test_list_10(col1 INT, col2 STRING)
-          | PARTITIONED BY (col3 BOOLEAN) STORED BY 'carbondata'
+          | PARTITIONED BY (col3 TIMESTAMP) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
@@ -357,7 +357,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
       sql(
         """
           | CREATE TABLE test_range_10(col1 INT, col2 STRING)
-          | PARTITIONED BY (col3 BOOLEAN) STORED BY 'carbondata'
+          | PARTITIONED BY (col3 TIMESTAMP) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
