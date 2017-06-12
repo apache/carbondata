@@ -28,6 +28,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
  */
 public class CarbonTableCacheModel {
 
+  // BHQ: notice that these fucking attributes are public.
   public CarbonTableIdentifier carbonTableIdentifier;
   public CarbonTablePath carbonTablePath;
 

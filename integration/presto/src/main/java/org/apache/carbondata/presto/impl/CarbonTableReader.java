@@ -369,6 +369,16 @@ public class CarbonTableReader {
     return false;
   }
 
+  /**
+   * BHQ: build and load the b trees of the segment.
+   * @param absoluteTableIdentifier
+   * @param tablePath
+   * @param segmentId
+   * @param cacheClient
+   * @param updateStatusManager
+   * @return
+   * @throws IOException
+   */
   private Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> getSegmentAbstractIndexs(/*JobContext job,*/
       AbsoluteTableIdentifier absoluteTableIdentifier, CarbonTablePath tablePath, String segmentId,
       CacheClient cacheClient, SegmentUpdateStatusManager updateStatusManager) throws IOException {
@@ -471,6 +481,13 @@ public class CarbonTableReader {
     return false;
   }
 
+  /**
+   * BHQ: get the input splits of a set of carbondata files.
+   * @param fileStatusList the file statuses of the set of carbondata files.
+   * @param targetSystem hdfs FileSystem
+   * @return
+   * @throws IOException
+   */
   private List<InputSplit> getSplit(List<FileStatus> fileStatusList, FileSystem targetSystem)
       throws IOException {
 
@@ -481,6 +498,7 @@ public class CarbonTableReader {
     while (true) {
       while (true) {
         while (split.hasNext()) {
+          // BHQ: file is a carbondata file
           FileStatus file = (FileStatus) split.next();
           Path path = file.getPath();
           long length = file.getLen();
@@ -500,7 +518,7 @@ public class CarbonTableReader {
               int blkIndex;
               for (
                   bytesRemaining = length;
-                  (double) bytesRemaining / (double) splitSize > 1.1D;
+                  (double) bytesRemaining / (double) splitSize > 1.1D;// BHQ: when there are more than one splits left.
                   bytesRemaining -= splitSize) {
                 blkIndex = this.getBlockIndex(blkLocations, length - bytesRemaining);
                 splits.add(this.makeSplit(path, length - bytesRemaining, splitSize,
@@ -532,6 +550,15 @@ public class CarbonTableReader {
     return new String[] { "0" };
   }
 
+  /**
+   * BHQ: get all file statuses of the carbondata files with a segmentId in segmentsToConsider
+   * under the tablePath, and add them to the result.
+   * @param segmentsToConsider
+   * @param tablePath
+   * @param result
+   * @return the FileSystem instance been used in this function.
+   * @throws IOException
+   */
   private FileSystem getFileStatusOfSegments(String[] segmentsToConsider, CarbonTablePath tablePath,
       List<FileStatus> result) throws IOException {
     String[] partitionsToConsider = getValidPartitions();
@@ -564,6 +591,7 @@ public class CarbonTableReader {
             LocatedFileStatus stat = iter.next();
             if (DefaultFilter.accept(stat.getPath())) {
               if (stat.isDirectory()) {
+                // BHQ DefaultFiler accepts carbondata files.
                 addInputPathRecursively(result, fs, stat.getPath(), DefaultFilter);
               } else {
                 result.add(stat);
@@ -578,6 +606,15 @@ public class CarbonTableReader {
     return fs;
   }
 
+  /**
+   * BHQ: get the FileStatus of all carbondata files under the path recursively,
+   * and add the file statuses into the result
+   * @param result
+   * @param fs
+   * @param path
+   * @param inputFilter the filter used to determinate whether a path is a carbondata file
+   * @throws IOException
+   */
   protected void addInputPathRecursively(List<FileStatus> result, FileSystem fs, Path path,
       PathFilter inputFilter) throws IOException {
     RemoteIterator iter = fs.listLocatedStatus(path);
@@ -596,7 +633,10 @@ public class CarbonTableReader {
   }
 
   /**
-   * get data blocks of given btree
+   * BHQ: get the data blocks of a b tree. the root node of the b tree is abstractIndex.dataRefNode.
+   * BTreeNode is a sub class of DataRefNode.
+   * @param abstractIndex
+   * @return
    */
   private List<DataRefNode> getDataBlocksOfIndex(AbstractIndex abstractIndex) {
     List<DataRefNode> blocks = new LinkedList<DataRefNode>();
