@@ -180,19 +180,16 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
         assert(e.getMessage.contains("Invalid partition definition"))
     }
 
+    // scalastyle:off
     sql("DROP TABLE IF EXISTS test_list_2")
     try {
-      sql(
-        """
-          | CREATE TABLE test_list_2(col1 INT, col2 STRING)
-          | PARTITIONED BY (col3 SHORT)  STORED BY 'carbondata'
-          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
-        """.stripMargin)
+      sql("CREATE TABLE test_list_2(col1 INT, col2 STRING) PARTITIONED BY (col3 SHORT) STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')")
     } catch {
       case e: Exception =>
         assert(e.getMessage.contains("Invalid partition definition"))
     }
 
+    // scalastyle:on
     sql("DROP TABLE IF EXISTS test_list_3")
     try {
       sql(
@@ -285,19 +282,16 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
         assert(e.getMessage.contains("Invalid partition definition"))
     }
 
+    // scalastyle:off
     sql("DROP TABLE IF EXISTS test_range_2")
     try {
-      sql(
-        """
-          | CREATE TABLE test_range_2(col1 INT, col2 STRING)
-          | PARTITIONED BY (col3 SHORT)  STORED BY 'carbondata'
-          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
-        """.stripMargin)
+      sql("CREATE TABLE test_range_2(col1 INT, col2 STRING) PARTITIONED BY (col3 SHORT) STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')")
     } catch {
       case e: Exception =>
         assert(e.getMessage.contains("Invalid partition definition"))
     }
 
+    // scalastyle:on
     sql("DROP TABLE IF EXISTS test_range_3")
     try {
       sql(
