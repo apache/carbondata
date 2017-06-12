@@ -219,7 +219,7 @@ object CommonUtil {
       case Some("DateType") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DATE)
       case _ =>
-        throw new MalformedCarbonCommandException("UnSupported partition type")
+        throw new MalformedCarbonCommandException("UnSupported partition type: " + desType)
     }
     if (result == null) {
       flag = false
