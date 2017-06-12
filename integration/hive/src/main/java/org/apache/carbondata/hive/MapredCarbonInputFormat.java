@@ -50,7 +50,7 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     org.apache.hadoop.mapreduce.JobContext jobContext = Job.getInstance(jobConf);
     List<org.apache.hadoop.mapreduce.InputSplit> splitList = super.getSplits(jobContext);
     InputSplit[] splits = new InputSplit[splitList.size()];
-    CarbonInputSplit split = null;
+    CarbonInputSplit split;
     for (int i = 0; i < splitList.size(); i++) {
       split = (CarbonInputSplit) splitList.get(i);
       splits[i] = new CarbonHiveInputSplit(split.getSegmentId(), split.getPath(), split.getStart(),
@@ -68,12 +68,12 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     return new CarbonHiveRecordReader(queryModel, readSupport, inputSplit, jobConf);
   }
 
-  public QueryModel getQueryModel(Configuration configuration) throws IOException {
+  private QueryModel getQueryModel(Configuration configuration) throws IOException {
     CarbonTable carbonTable = getCarbonTable(configuration);
     // getting the table absoluteTableIdentifier from the carbonTable
     // to avoid unnecessary deserialization
 
-    String colNames = "";
+    StringBuilder colNames = new StringBuilder();
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
 
     // query plan includes projection column
@@ -86,22 +86,23 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
       List<CarbonMeasure> carbonMeasureList = carbonTable.getAllMeasures();
 
       for (CarbonDimension aCarbonDimensionList : carbonDimensionList) {
-        colNames = (colNames + (aCarbonDimensionList.getColName())) + ",";
+        colNames = new StringBuilder((colNames + (aCarbonDimensionList.getColName())) + ",");
       }
       if (carbonMeasureList.size() < 1) {
-        colNames = colNames.substring(0, colNames.lastIndexOf(","));
+        colNames = new StringBuilder(colNames.substring(0, colNames.lastIndexOf(",")));
       }
       for (int index = 0; index < carbonMeasureList.size(); index++) {
         if (!carbonMeasureList.get(index).getColName().equals("default_dummy_measure")) {
           if (index == carbonMeasureList.size() - 1) {
-            colNames = (colNames + (carbonMeasureList.get(index).getColName()));
+            colNames.append(carbonMeasureList.get(index).getColName());
           } else {
-            colNames = (colNames + (carbonMeasureList.get(index).getColName())) + ",";
+            colNames =
+                new StringBuilder((colNames + (carbonMeasureList.get(index).getColName())) + ",");
           }
         }
       }
-      projection = colNames.trim();
-      configuration.set("hive.io.file.readcolumn.names", colNames);
+      projection = colNames.toString().trim();
+      configuration.set("hive.io.file.readcolumn.names", colNames.toString());
     }
     CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(carbonTable, projection);
     QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable);

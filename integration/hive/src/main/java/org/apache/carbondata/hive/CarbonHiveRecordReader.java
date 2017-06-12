@@ -57,10 +57,10 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 
-public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
+class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     implements org.apache.hadoop.mapred.RecordReader<Void, ArrayWritable> {
 
-  ArrayWritable valueObj = null;
+  private ArrayWritable valueObj = null;
   private CarbonObjectInspector objInspector;
 
   public CarbonHiveRecordReader(QueryModel queryModel, CarbonReadSupport<ArrayWritable> readSupport,
@@ -69,7 +69,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     initialize(inputSplit, jobConf);
   }
 
-  public void initialize(InputSplit inputSplit, Configuration conf) throws IOException {
+  private void initialize(InputSplit inputSplit, Configuration conf) throws IOException {
     // The input split can contain single HDFS block or multiple blocks, so firstly get all the
     // blocks and then set them in the query model.
     List<CarbonHiveInputSplit> splitList;
@@ -130,7 +130,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
   @Override public boolean next(Void aVoid, ArrayWritable value) throws IOException {
     if (carbonIterator.hasNext()) {
       Object obj = readSupport.readRow(carbonIterator.next());
-      ArrayWritable tmpValue = null;
+      ArrayWritable tmpValue;
       try {
         tmpValue = createArrayWritable(obj);
       } catch (SerDeException se) {
@@ -159,7 +159,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     }
   }
 
-  public ArrayWritable createArrayWritable(Object obj) throws SerDeException {
+  private ArrayWritable createArrayWritable(Object obj) throws SerDeException {
     return createStruct(obj, objInspector);
   }
 
@@ -179,7 +179,7 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     return 0;
   }
 
-  public ArrayWritable createStruct(Object obj, StructObjectInspector inspector)
+  private ArrayWritable createStruct(Object obj, StructObjectInspector inspector)
       throws SerDeException {
     List fields = inspector.getAllStructFieldRefs();
     Writable[] arr = new Writable[fields.size()];
