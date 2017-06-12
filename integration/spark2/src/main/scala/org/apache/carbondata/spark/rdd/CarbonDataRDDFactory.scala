@@ -578,7 +578,7 @@ object CarbonDataRDDFactory {
             val fileSplit = inputSplit.asInstanceOf[FileSplit]
             new TableBlockInfo(fileSplit.getPath.toString,
               fileSplit.getStart, "1",
-              fileSplit.getLocations, fileSplit.getLength, ColumnarFormatVersion.V1
+              fileSplit.getLocations, fileSplit.getLength, ColumnarFormatVersion.V1, null
             ).asInstanceOf[Distributable]
           }
           // group blocks to nodes, tasks

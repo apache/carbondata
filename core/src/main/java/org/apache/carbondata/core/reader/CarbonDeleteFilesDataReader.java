@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -35,6 +36,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
 import org.apache.carbondata.core.mutate.DeleteDeltaBlockletDetails;
+import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 
@@ -120,7 +122,52 @@ public class CarbonDeleteFilesDataReader {
       }
     }
     return pageIdDeleteRowsMap;
+  }
 
+  /**
+   * Below method will be used to read the delete delta files
+   * and get the map of blockletid and page id mapping to deleted
+   * rows
+   *
+   * @param deltaFiles delete delta files array
+   * @return map of blockletid_pageid to deleted rows
+   */
+  public Map<String, DeleteDeltaVo> getDeletedRowsDataVo(String[] deltaFiles) {
+    List<Future<DeleteDeltaBlockDetails>> taskSubmitList = new ArrayList<>();
+    ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
+    for (final String deltaFile : deltaFiles) {
+      taskSubmitList.add(executorService.submit(new Callable<DeleteDeltaBlockDetails>() {
+        @Override public DeleteDeltaBlockDetails call() throws IOException {
+          CarbonDeleteDeltaFileReaderImpl deltaFileReader =
+              new CarbonDeleteDeltaFileReaderImpl(deltaFile, FileFactory.getFileType(deltaFile));
+          return deltaFileReader.readJson();
+        }
+      }));
+    }
+    try {
+      executorService.shutdown();
+      executorService.awaitTermination(30, TimeUnit.MINUTES);
+    } catch (InterruptedException e) {
+      LOGGER.error("Error while reading the delete delta files : " + e.getMessage());
+    }
+    Map<String, DeleteDeltaVo> pageIdToBlockLetVo = new HashMap<>();
+    List<DeleteDeltaBlockletDetails> blockletDetails = null;
+    for (int i = 0; i < taskSubmitList.size(); i++) {
+      try {
+        blockletDetails = taskSubmitList.get(i).get().getBlockletDetails();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
+      }
+      for (DeleteDeltaBlockletDetails blockletDetail : blockletDetails) {
+        DeleteDeltaVo deleteDeltaVo = pageIdToBlockLetVo.get(blockletDetail.getBlockletKey());
+        if (null == deleteDeltaVo) {
+          deleteDeltaVo = new DeleteDeltaVo();
+          pageIdToBlockLetVo.put(blockletDetail.getBlockletKey(), deleteDeltaVo);
+        }
+        deleteDeltaVo.insertData(blockletDetail.getDeletedRows());
+      }
+    }
+    return pageIdToBlockLetVo;
   }
 
   /**
