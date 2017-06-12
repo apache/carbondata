@@ -127,8 +127,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_hash_1(col1 INT, col2 STRING) PARTITIONED BY (col3 INT)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='2.1')
+          | CREATE TABLE test_hash_1(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 INT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='2.1')
         """.stripMargin
       )
     } catch {
@@ -140,8 +141,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_hash_2(col1 INT, col2 STRING) PARTITIONED BY (col3 INT)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='abc')
+          | CREATE TABLE test_hash_2(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 INT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='abc')
         """.stripMargin
       )
     } catch {
@@ -153,8 +155,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_hash_3(col1 INT, col2 STRING) PARTITIONED BY (col3 INT)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='-2.1')
+          | CREATE TABLE test_hash_3(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 INT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='-2.1')
         """.stripMargin
       )
     } catch {
@@ -168,8 +171,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_list_1(col1 INT, col2 STRING) PARTITIONED BY (col3 INT)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+          | CREATE TABLE test_list_1(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 INT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     } catch {
       case e: Exception =>
@@ -180,8 +184,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_list_2(col1 INT, col2 STRING) PARTITIONED BY (col3 SHORT)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+          | CREATE TABLE test_list_2(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 SHORT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     } catch {
       case e: Exception =>
@@ -192,8 +197,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_list_3(col1 INT, col2 STRING) PARTITIONED BY (col3 FLOAT)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+          | CREATE TABLE test_list_3(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 FLOAT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     } catch {
       case e: Exception =>
@@ -204,8 +210,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_list_4(col1 INT, col2 STRING) PARTITIONED BY (col3 DOUBLE)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+          | CREATE TABLE test_list_4(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 DOUBLE) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     } catch {
       case e: Exception =>
@@ -216,8 +223,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_list_5(col1 INT, col2 STRING) PARTITIONED BY (col3 LONG)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+          | CREATE TABLE test_list_5(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 LONG) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     } catch {
       case e:Exception =>
@@ -240,8 +248,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_list_7(col1 INT, col2 STRING) PARTITIONED BY (col3 BYTE)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+          | CREATE TABLE test_list_7(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 BYTE) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     } catch {
       case e: Exception =>
@@ -252,8 +261,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_list_8(col1 INT, col2 STRING) PARTITIONED BY (col3 BOOLEAN)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+          | CREATE TABLE test_list_8(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 BOOLEAN) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     } catch {
       case e: Exception =>
@@ -266,8 +276,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_range_1(col1 INT, col2 STRING) PARTITIONED BY (col3 INT)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+          | CREATE TABLE test_range_1(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 INT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     } catch {
       case e: Exception =>
@@ -278,8 +289,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_range_2(col1 INT, col2 STRING) PARTITIONED BY (col3 SHORT)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+          | CREATE TABLE test_range_2(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 SHORT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     } catch {
       case e: Exception =>
@@ -290,8 +302,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_range_3(col1 INT, col2 STRING) PARTITIONED BY (col3 FLOAT)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+          | CREATE TABLE test_range_3(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 FLOAT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     } catch {
       case e: Exception =>
@@ -302,8 +315,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_range_4(col1 INT, col2 STRING) PARTITIONED BY (col3 DOUBLE)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+          | CREATE TABLE test_range_4(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 DOUBLE) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     } catch {
       case e: Exception =>
@@ -314,8 +328,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_range_5(col1 INT, col2 STRING) PARTITIONED BY (col3 LONG)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+          | CREATE TABLE test_range_5(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 LONG) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     } catch {
       case e: Exception =>
@@ -338,8 +353,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_range_7(col1 INT, col2 STRING) PARTITIONED BY (col3 BYTE)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+          | CREATE TABLE test_range_7(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 BYTE) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     } catch {
       case e: Exception =>
@@ -350,8 +366,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          | CREATE TABLE test_range_8(col1 INT, col2 STRING) PARTITIONED BY (col3 BOOLEAN)
-          | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+          | CREATE TABLE test_range_8(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 BOOLEAN) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     } catch {
       case e: Exception =>
