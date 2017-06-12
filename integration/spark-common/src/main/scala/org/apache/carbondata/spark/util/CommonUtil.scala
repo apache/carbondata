@@ -175,7 +175,7 @@ object CommonUtil {
         case "LIST" => if (!listInfo.isDefined) {
           isValid = false
         } else {
-          listInfo.get.replace("(","").replace(")","").split(",").foreach(
+          listInfo.get.replace("(", "").replace(")", "").split(",").foreach(
             isValid &= validateTypeConvert(partitionerFields(0).dataType, _))
         }
         case "RANGE" => if (!rangeInfo.isDefined) {
