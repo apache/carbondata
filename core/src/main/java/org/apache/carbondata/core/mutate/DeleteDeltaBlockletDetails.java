@@ -21,9 +21,6 @@ import java.io.Serializable;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
-
 /**
  * This class stores the blocklet details of delete delta file
  */
@@ -34,12 +31,6 @@ public class DeleteDeltaBlockletDetails implements Serializable {
   private Integer pageId;
 
   private Set<Integer> deletedRows;
-
-  /**
-   * LOGGER
-   */
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DeleteDeltaBlockletDetails.class.getName());
 
   public DeleteDeltaBlockletDetails(String id, Integer pageId) {
     this.id = id;
@@ -84,7 +75,11 @@ public class DeleteDeltaBlockletDetails implements Serializable {
   }
 
   @Override public int hashCode() {
-    return id.hashCode();
+    return id.hashCode() + pageId.hashCode();
+  }
+
+  public String getBlockletKey() {
+    return this.id + '_' + this.pageId;
   }
 
 }

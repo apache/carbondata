@@ -515,7 +515,7 @@ public class CarbonUtilTest {
       }
     };
     TableBlockInfo info =
-        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1);
+        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
 
     assertEquals(CarbonUtil.readMetadatFile(info).getVersionId().number(), 1);
   }
@@ -524,7 +524,7 @@ public class CarbonUtilTest {
   public void testToReadMetadatFileWithException()
       throws Exception {
     TableBlockInfo info =
-        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1);
+        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
     CarbonUtil.readMetadatFile(info);
   }
 
