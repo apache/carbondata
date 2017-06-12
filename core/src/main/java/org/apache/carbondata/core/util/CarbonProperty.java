@@ -14,21 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.spark.testsuite.commands
 
-import org.apache.spark.sql.common.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
+package org.apache.carbondata.core.util;
 
-import org.apache.carbondata.core.util.CarbonProperties
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-class SetCommandTestCase  extends QueryTest with BeforeAndAfterAll {
-
-  test("test set command") {
-
-    sql("set key1=value1")
-
-    assert(CarbonProperties.getInstance().getProperty("key1").equals("value1"), "Set command does not work" )
-    assert(sqlContext.getConf("key1").equals("value1"), "Set command does not work" )
-  }
-
+/**
+ * CarbonProperty Anotation
+ */
+@Retention(RetentionPolicy.RUNTIME)
+public @interface CarbonProperty {
 }

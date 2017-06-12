@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.UUID;
 
 import junit.framework.TestCase;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.hadoop.CarbonInputFormat;
 import org.apache.carbondata.hadoop.test.util.StoreCreator;
 import org.apache.hadoop.conf.Configuration;
@@ -37,6 +40,8 @@ import org.junit.Test;
 public class InputFilesTest extends TestCase {
   @Before
   public void setUp() throws Exception {
+    CarbonProperties.getInstance().
+        addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
     StoreCreator.createCarbonStore();
     // waiting 3s to finish table create and data loading
     Thread.sleep(3000L);

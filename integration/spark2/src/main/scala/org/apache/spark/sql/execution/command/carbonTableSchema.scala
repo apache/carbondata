@@ -35,9 +35,10 @@ import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
 
 import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
@@ -359,7 +360,8 @@ case class LoadTable(
       sys.error(s"Data loading failed. table not found: $dbName.$tableName")
     }
 
-    CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
+    val carbonProperty: CarbonProperties = CarbonProperties.getInstance()
+    carbonProperty.addProperty("zookeeper.enable.lock", "false")
     val carbonLock = CarbonLockFactory
       .getCarbonLockObj(relation.tableMeta.carbonTable.getAbsoluteTableIdentifier
         .getCarbonTableIdentifier,
@@ -407,31 +409,60 @@ case class LoadTable(
       val commentChar = options.getOrElse("commentchar", "#")
       val columnDict = options.getOrElse("columndict", null)
       val serializationNullFormat = options.getOrElse("serialization_null_format", "\\N")
-      val badRecordsLoggerEnable = options.getOrElse("bad_records_logger_enable", "false")
-      val badRecordActionValue = CarbonProperties.getInstance()
+      val badRecordsLoggerEnable = options.getOrElse("bad_records_logger_enable",
+        carbonProperty
+          .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE,
+            CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE_DEFAULT))
+      val badRecordActionValue = carbonProperty
         .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
           CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
-      val badRecordsAction = options.getOrElse("bad_records_action", badRecordActionValue)
-      val isEmptyDataBadRecord = options.getOrElse("is_empty_data_bad_record", "false")
+      val badRecordsAction = options.getOrElse("bad_records_action", carbonProperty
+        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION,
+          badRecordActionValue))
+      val isEmptyDataBadRecord = options.getOrElse("is_empty_data_bad_record", carbonProperty
+        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
+          CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT))
       val allDictionaryPath = options.getOrElse("all_dictionary_path", "")
       val complex_delimiter_level_1 = options.getOrElse("complex_delimiter_level_1", "\\$")
       val complex_delimiter_level_2 = options.getOrElse("complex_delimiter_level_2", "\\:")
-      val dateFormat = options.getOrElse("dateformat", null)
+      val dateFormat = options.getOrElse("dateformat",
+        carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
+          CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT))
       ValidateUtil.validateDateFormat(dateFormat, table, tableName)
       val maxColumns = options.getOrElse("maxcolumns", null)
-      val sortScope = options.getOrElse("sort_scope", null)
+      val sortScope = options
+        .getOrElse("sort_scope",
+          carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
+            carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+              CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)))
       ValidateUtil.validateSortScope(table, sortScope)
-      val batchSortSizeInMB = options.getOrElse("batch_sort_size_inmb", null)
-      val globalSortPartitions = options.getOrElse("global_sort_partitions", null)
+      val batchSortSizeInMB = options.getOrElse("batch_sort_size_inmb",
+        carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB,
+          carbonProperty.getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
+            CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT)))
+      val bad_record_path = options.getOrElse("bad_record_path",
+        carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,
+          carbonProperty.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+            CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)))
+      if (badRecordsLoggerEnable.toBoolean ||
+          LoggerAction.REDIRECT.name().equalsIgnoreCase(badRecordsAction)) {
+        if (!CarbonUtil.isValidBadStorePath(bad_record_path)) {
+          sys.error("Invalid bad records location.")
+        }
+      }
+      carbonLoadModel.setBadRecordsLocation(bad_record_path)
+      val globalSortPartitions = options.getOrElse("global_sort_partitions",
+        carbonProperty
+          .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS, null))
       ValidateUtil.validateGlobalSortPartitions(globalSortPartitions)
       carbonLoadModel.setEscapeChar(checkDefaultValue(escapeChar, "\\"))
       carbonLoadModel.setQuoteChar(checkDefaultValue(quoteChar, "\""))
       carbonLoadModel.setCommentChar(checkDefaultValue(commentChar, "#"))
       carbonLoadModel.setDateFormat(dateFormat)
-      carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
+      carbonLoadModel.setDefaultTimestampFormat(carbonProperty.getProperty(
         CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
-      carbonLoadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
+      carbonLoadModel.setDefaultDateFormat(carbonProperty.getProperty(
         CarbonCommonConstants.CARBON_DATE_FORMAT,
         CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
       carbonLoadModel
@@ -449,7 +480,9 @@ case class LoadTable(
       carbonLoadModel.setSortScope(sortScope)
       carbonLoadModel.setBatchSortSizeInMb(batchSortSizeInMB)
       carbonLoadModel.setGlobalSortPartitions(globalSortPartitions)
-      val useOnePass = options.getOrElse("single_pass", "false").trim.toLowerCase match {
+      val useOnePass = options.getOrElse("single_pass",
+        carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS,
+          CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT)).trim.toLowerCase match {
         case "true" =>
           true
         case "false" =>
@@ -534,7 +567,7 @@ case class LoadTable(
                 allDictionaryPath)
           }
           // dictionaryServerClient dictionary generator
-          val dictionaryServerPort = CarbonProperties.getInstance()
+          val dictionaryServerPort = carbonProperty
             .getProperty(CarbonCommonConstants.DICTIONARY_SERVER_PORT,
               CarbonCommonConstants.DICTIONARY_SERVER_PORT_DEFAULT)
           val sparkDriverHost = sparkSession.sqlContext.sparkContext.
@@ -775,13 +808,6 @@ case class CarbonDropTableCommand(ifExistsSet: Boolean,
             val file = FileFactory.getCarbonFile(metadataFilePath, fileType)
             CarbonUtil.deleteFoldersAndFiles(file.getParentFile)
           }
-        }
-        // delete bad record log after drop table
-        val badLogPath = CarbonUtil.getBadLogPath(dbName + File.separator + tableName)
-        val badLogFileType = FileFactory.getFileType(badLogPath)
-        if (FileFactory.isFileExist(badLogPath, badLogFileType)) {
-          val file = FileFactory.getCarbonFile(badLogPath, badLogFileType)
-          CarbonUtil.deleteFoldersAndFiles(file)
         }
       }
     }
