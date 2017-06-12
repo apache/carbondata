@@ -33,7 +33,8 @@ import org.apache.spark.util.FileUtils
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.processing.csvload.CSVInputFormat
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
@@ -194,18 +195,25 @@ object CommonUtil {
   }
 
   def validateTypeConvert(desType: Option[String], value: String): Boolean = {
+    var flag = true
     val result = desType match {
-      case Some("IntegerType") => scala.util.Try(value.trim().toInt)
-      case Some("LongType") => scala.util.Try(value.trim().toLong)
-      case Some("FloatType") => scala.util.Try(value.trim().toFloat)
-      case Some("DoubleType") => scala.util.Try(value.trim().toDouble)
-      case Some("ByteType") => scala.util.Try(value.trim().toByte)
-      case Some("ShortType") => scala.util.Try(value.trim().toShort)
-      case Some("DecimalType") => scala.util.Try(value.trim().toDouble)
-      case Some("BooleanType") => scala.util.Try(value.trim().toBoolean)
-      case _ => scala.util.Try(value.trim())
+      case Some("IntegerType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.INT)
+      case Some("StringType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.STRING)
+      case Some("LongType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.LONG)
+      case Some("FloatType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.FLOAT)
+      case Some("DoubleType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DOUBLE)
+      case Some("ByteType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BYTE)
+      case Some("ShortType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.SHORT)
+      case Some("BooleanType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BOOLEAN)
+      case Some("DecimalType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DECIMAL)
+      case Some("TimestampType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.TIMESTAMP)
+      case Some("DateType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DATE)
+      case _ => throw new MalformedCarbonCommandException("UnSupported partition type")
     }
-    result.isSuccess
+    if (result == null) {
+      flag = false
+    }
+    flag
   }
 
   def validateFields(key: String, fields: Seq[Field]): Boolean = {
