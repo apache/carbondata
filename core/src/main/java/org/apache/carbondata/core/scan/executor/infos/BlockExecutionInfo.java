@@ -18,12 +18,12 @@ package org.apache.carbondata.core.scan.executor.infos;
 
 import java.util.Map;
 
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.model.QueryDimension;
@@ -101,12 +101,6 @@ public class BlockExecutionInfo {
   private int[] projectionListMeasureIndexes;
 
   /**
-   * this will be used to update the older block fixed length keys with the
-   * new block fixed length key
-   */
-  private KeyStructureInfo keyStructureInfo;
-
-  /**
    * first block from which query execution will start
    */
   private DataRefNode firstDataBlock;
@@ -144,12 +138,6 @@ public class BlockExecutionInfo {
    * column group block index in file to key structure info mapping
    */
   private Map<Integer, KeyStructureInfo> columnGroupToKeyStructureInfo;
-
-  /**
-   * mapping of dictionary dimension to its dictionary mapping which will be
-   * used to get the actual data from dictionary for aggregation, sorting
-   */
-  private Map<String, Dictionary> columnIdToDcitionaryMapping;
 
   /**
    * filter tree to execute the filter
@@ -229,6 +217,13 @@ public class BlockExecutionInfo {
    * absolute table identifier
    */
   private AbsoluteTableIdentifier absoluteTableIdentifier;
+
+  /**
+   * delete delta file path
+   */
+  private String[] deleteDeltaFilePath;
+
+  private Map<String, DeleteDeltaVo> deletedRecordsMap;
 
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
     return absoluteTableIdentifier;
@@ -484,13 +479,6 @@ public class BlockExecutionInfo {
     this.columnGroupToKeyStructureInfo = columnGroupToKeyStructureInfo;
   }
 
-  /**
-   * @param columnIdToDcitionaryMapping the columnIdToDcitionaryMapping to set
-   */
-  public void setColumnIdToDcitionaryMapping(Map<String, Dictionary> columnIdToDcitionaryMapping) {
-    this.columnIdToDcitionaryMapping = columnIdToDcitionaryMapping;
-  }
-
   public boolean isRawRecordDetailQuery() {
     return isRawRecordDetailQuery;
   }
@@ -643,4 +631,32 @@ public class BlockExecutionInfo {
     this.projectionListMeasureIndexes = projectionListMeasureIndexes;
   }
 
+  /**
+   * @return delete delta files
+   */
+  public String[] getDeleteDeltaFilePath() {
+    return deleteDeltaFilePath;
+  }
+
+  /**
+   * set the delete delta files
+   * @param deleteDeltaFilePath
+   */
+  public void setDeleteDeltaFilePath(String[] deleteDeltaFilePath) {
+    this.deleteDeltaFilePath = deleteDeltaFilePath;
+  }
+
+  /**
+   * @return deleted record map
+   */
+  public Map<String, DeleteDeltaVo> getDeletedRecordsMap() {
+    return deletedRecordsMap;
+  }
+
+  /**
+   * @param deletedRecordsMap
+   */
+  public void setDeletedRecordsMap(Map<String, DeleteDeltaVo> deletedRecordsMap) {
+    this.deletedRecordsMap = deletedRecordsMap;
+  }
 }

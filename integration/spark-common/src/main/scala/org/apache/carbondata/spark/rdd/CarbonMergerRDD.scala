@@ -300,7 +300,8 @@ class CarbonMergerRDD[K, V](
       carbonInputSplits ++:= splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).filter(entry => {
         val blockInfo = new TableBlockInfo(entry.getPath.toString,
           entry.getStart, entry.getSegmentId,
-          entry.getLocations, entry.getLength, entry.getVersion
+          entry.getLocations, entry.getLength, entry.getVersion,
+          updateStatusManager.getDeleteDeltaFilePath(entry.getPath.toString)
         )
         !CarbonUtil
           .isInvalidTableBlock(blockInfo, updateDetails, updateStatusManager)

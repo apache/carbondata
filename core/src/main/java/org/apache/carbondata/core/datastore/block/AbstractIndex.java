@@ -17,11 +17,13 @@
 package org.apache.carbondata.core.datastore.block;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 
 public abstract class AbstractIndex implements Cacheable {
 
@@ -50,6 +52,16 @@ public abstract class AbstractIndex implements Cacheable {
    */
   protected long memorySize;
 
+  /**
+   * last fetch delete deltaFile timestamp
+   */
+  private long deleteDeltaTimestamp;
+
+  /**
+   * map of blockletidAndPageId to
+   * deleted rows
+   */
+  private Map<String, DeleteDeltaVo> deletedRowsMap;
   /**
    * @return the segmentProperties
    */
@@ -123,5 +135,34 @@ public abstract class AbstractIndex implements Cacheable {
    */
   public void setMemorySize(long memorySize) {
     this.memorySize = memorySize;
+  }
+
+  /**
+   * @return latest deleted delta timestamp
+   */
+  public long getDeleteDeltaTimestamp() {
+    return deleteDeltaTimestamp;
+  }
+
+  /**
+   * set the latest delete delta timestamp
+   * @param deleteDeltaTimestamp
+   */
+  public void setDeleteDeltaTimestamp(long deleteDeltaTimestamp) {
+    this.deleteDeltaTimestamp = deleteDeltaTimestamp;
+  }
+
+  /**
+   * @return the deleted record for block map
+   */
+  public Map<String, DeleteDeltaVo> getDeletedRowsMap() {
+    return deletedRowsMap;
+  }
+
+  /**
+   * @param deletedRowsMap
+   */
+  public void setDeletedRowsMap(Map<String, DeleteDeltaVo> deletedRowsMap) {
+    this.deletedRowsMap = deletedRowsMap;
   }
 }
