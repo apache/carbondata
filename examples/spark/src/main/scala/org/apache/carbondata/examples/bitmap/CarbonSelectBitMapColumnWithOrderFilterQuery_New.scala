@@ -18,6 +18,7 @@
 package org.apache.carbondata.examples.bitmap
 
 import scala.collection.mutable.LinkedHashMap
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.util.ExampleUtils
@@ -28,7 +29,7 @@ object CarbonSelectBitMapColumnWithOrderFilterQuery_New {
 
     CarbonSelectBitMapColumnWithOrderFilterQuery_New.extracted("b3")
   }
-  def extracted(tableName: String) = {
+  def extracted(tableName: String): Unit = {
     val cc = ExampleUtils.createCarbonContext("CarbonBitMapFilterQueryExample")
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
 
@@ -110,7 +111,8 @@ object CarbonSelectBitMapColumnWithOrderFilterQuery_New {
 
       timeCostMap += ("country not in ('korea', 'china', 'usa', 'uk'): "
         -> new java.lang.Long(System.currentTimeMillis() - start))
-      println("country not in ('korea', 'china', 'usa', 'uk'): " + (System.currentTimeMillis() - start))
+      println("country not in ('korea', 'china', 'usa', 'uk'): "
+          + (System.currentTimeMillis() - start))
       timeCostSeq = timeCostSeq :+ timeCostMap
     }
     // Drop table
@@ -119,7 +121,7 @@ object CarbonSelectBitMapColumnWithOrderFilterQuery_New {
     // use to get statistical information
     for (timeCostMap <- timeCostSeq) {
       for (timeCost <- timeCostMap) {
-        print(timeCost._2 + "	 ")
+        print(timeCost._2 + "\t")
       }
       println()
     }

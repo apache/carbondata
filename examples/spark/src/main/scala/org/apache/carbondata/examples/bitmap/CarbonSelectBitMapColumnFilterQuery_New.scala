@@ -18,6 +18,7 @@
 package org.apache.carbondata.examples.bitmap
 
 import scala.collection.mutable.LinkedHashMap
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.util.ExampleUtils
@@ -27,7 +28,7 @@ object CarbonSelectBitMapColumnFilterQuery_New {
 
     CarbonSelectBitMapColumnFilterQuery_New.extracted("b3")
   }
-  def extracted(tableName: String) = {
+  def extracted(tableName: String): Unit = {
     val cc = ExampleUtils.createCarbonContext("CarbonBitMapFilterQueryExample")
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
 
@@ -226,7 +227,7 @@ object CarbonSelectBitMapColumnFilterQuery_New {
     // use to get statistical information
     for (timeCostMap <- timeCostSeq) {
       for (timeCost <- timeCostMap) {
-        print(timeCost._2 + "	 ")
+        print(timeCost._2 + "\t")
       }
       println()
     }

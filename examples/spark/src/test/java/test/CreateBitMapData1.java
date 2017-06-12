@@ -35,7 +35,10 @@ public class CreateBitMapData1 {
       Buff.write("ID,country0,date,country,name,phonetype,country1,serialname,salary,country2\n"
           .getBytes());
 
-      int idcount = 1500000;
+      int idcount = 10000000;
+      if (args != null && args.length > 0) {
+        idcount = Integer.parseInt(args[0]);
+      }
       int datecount = 30;
       int countrycount = 9;
       // int namecount =5000000;

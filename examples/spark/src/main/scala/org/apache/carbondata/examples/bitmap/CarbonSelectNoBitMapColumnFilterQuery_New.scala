@@ -18,6 +18,7 @@
 package org.apache.carbondata.examples.bitmap
 
 import scala.collection.mutable.LinkedHashMap
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.util.ExampleUtils
@@ -27,7 +28,7 @@ object CarbonSelectNoBitMapColumnFilterQuery_New {
 
     CarbonSelectNoBitMapColumnFilterQuery_New.extracted("b3")
   }
-  def extracted(tableName: String) = {
+  def extracted(tableName: String): Unit = {
     val cc = ExampleUtils.createCarbonContext("CarbonBitMapFilterQueryExample")
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
 
@@ -46,7 +47,7 @@ object CarbonSelectNoBitMapColumnFilterQuery_New {
              SELECT serialname, phonetype, salary, name, id
              FROM $tableName
              WHERE country <> 'china'
-             
+
              """).show(10)
       }
       timeCostMap += ("country <> 'china': "
@@ -59,7 +60,7 @@ object CarbonSelectNoBitMapColumnFilterQuery_New {
              SELECT serialname, phonetype, salary, name, id
              FROM $tableName
              WHERE country = 'china'
-             
+
              """).show(10)
       }
       timeCostMap += ("country = 'china': "
@@ -72,7 +73,7 @@ object CarbonSelectNoBitMapColumnFilterQuery_New {
              SELECT serialname, phonetype, salary, name, id
              FROM $tableName
              WHERE country <> 'france'
-             
+
              """).show(10)
       }
       timeCostMap += ("country <> 'france' query time: "
@@ -85,7 +86,7 @@ object CarbonSelectNoBitMapColumnFilterQuery_New {
              SELECT serialname, phonetype, salary, name, id
              FROM $tableName
              WHERE country = 'france'
-             
+
              """).show(10)
       }
       timeCostMap += ("country = 'france' query time: "
@@ -97,7 +98,7 @@ object CarbonSelectNoBitMapColumnFilterQuery_New {
              SELECT serialname, phonetype, salary, name, id
              FROM $tableName
              WHERE country IN ('france')
-             
+
              """).show(10)
       }
       timeCostMap += ("country IN ('france') query time: "
@@ -111,7 +112,7 @@ object CarbonSelectNoBitMapColumnFilterQuery_New {
              FROM $tableName
              WHERE country <> 'china' and country <> 'canada' and country <> 'indian'
              and country <> 'uk'
-             
+
              """).show(10)
       }
       timeCostMap += ("country <> 'china' and country <> 'canada' and country <> 'indian'"
@@ -126,7 +127,7 @@ object CarbonSelectNoBitMapColumnFilterQuery_New {
              SELECT serialname, phonetype, salary, name, id
              FROM $tableName
              WHERE country not in ('china','canada','indian','usa','uk')
-             
+
              """).show(10)
       }
       timeCostMap += ("country not in ('china','canada','indian','usa','uk') query time: "
@@ -140,7 +141,7 @@ object CarbonSelectNoBitMapColumnFilterQuery_New {
              SELECT serialname, phonetype, salary, name, id
              FROM $tableName
              WHERE country IN ('china','usa','uk')
-             
+
              """).show(10)
       }
       timeCostMap += ("country IN ('china','usa','uk') query time: "
@@ -153,7 +154,7 @@ object CarbonSelectNoBitMapColumnFilterQuery_New {
              SELECT serialname, phonetype, salary, name, id
              FROM $tableName
              WHERE country = 'china' or country = 'indian' or country = 'usa'
-             
+
              """).show(10)
       }
       timeCostMap += ("country = 'china' or country = 'indian' or country = 'usa' query time: "
@@ -167,7 +168,7 @@ object CarbonSelectNoBitMapColumnFilterQuery_New {
              SELECT serialname, phonetype, salary, name, id
              FROM $tableName
              WHERE country between 'china' and 'indian'
-             
+
              """).show(10)
       }
       timeCostMap += ("country between 'china' and 'indian' query time: "
@@ -183,7 +184,7 @@ object CarbonSelectNoBitMapColumnFilterQuery_New {
     // use to get statistical information
     for (timeCostMap <- timeCostSeq) {
       for (timeCost <- timeCostMap) {
-        print(timeCost._2 + "	 ")
+        print(timeCost._2 + "\t")
       }
       println()
     }

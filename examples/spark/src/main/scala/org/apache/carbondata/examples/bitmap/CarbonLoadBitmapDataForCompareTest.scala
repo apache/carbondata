@@ -21,7 +21,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.util.ExampleUtils
 
-object CarbonLoadBitmapCompareTestData {
+object CarbonLoadBitmapDataForCompareTest {
 
   def main(args: Array[String]) {
     val cc = ExampleUtils.createCarbonContext("CarbonLoadBitmapCompareTestData")

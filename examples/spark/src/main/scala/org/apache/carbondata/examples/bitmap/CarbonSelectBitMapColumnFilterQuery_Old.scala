@@ -18,8 +18,7 @@
 package org.apache.carbondata.examples.bitmap
 
 object CarbonSelectBitMapColumnFilterQuery_Old {
-  def main(args: Array[String]){
-   
+  def main(args: Array[String]) {
     CarbonSelectBitMapColumnFilterQuery_New.extracted("t3")
   }
 
