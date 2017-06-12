@@ -196,18 +196,30 @@ object CommonUtil {
   def validateTypeConvert(desType: Option[String], value: String): Boolean = {
     var flag = true
     val result = desType match {
-      case Some("IntegerType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.INT)
-      case Some("StringType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.STRING)
-      case Some("LongType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.LONG)
-      case Some("FloatType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.FLOAT)
-      case Some("DoubleType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DOUBLE)
-      case Some("ByteType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BYTE)
-      case Some("ShortType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.SHORT)
-      case Some("BooleanType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BOOLEAN)
-      case Some("DecimalType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DECIMAL)
-      case Some("TimestampType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.TIMESTAMP)
-      case Some("DateType") => DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DATE)
-      case _ => throw new MalformedCarbonCommandException("UnSupported partition type")
+      case Some("IntegerType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.INT)
+      case Some("StringType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.STRING)
+      case Some("LongType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.LONG)
+      case Some("FloatType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.FLOAT)
+      case Some("DoubleType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DOUBLE)
+      case Some("ByteType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BYTE)
+      case Some("ShortType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.SHORT)
+      case Some("BooleanType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BOOLEAN)
+      case Some("DecimalType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DECIMAL)
+      case Some("TimestampType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.TIMESTAMP)
+      case Some("DateType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DATE)
+      case _ =>
+        throw new MalformedCarbonCommandException("UnSupported partition type")
     }
     if (result == null) {
       flag = false
