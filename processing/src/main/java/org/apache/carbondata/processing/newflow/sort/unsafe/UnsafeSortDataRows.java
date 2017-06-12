@@ -166,35 +166,53 @@ public class UnsafeSortDataRows {
     // if record holder list size is equal to sort buffer size then it will
     // sort the list and then write current list data to file
     synchronized (addRowsLock) {
-      for (int i = 0; i < size; i++) {
-        if (rowPage.canAdd()) {
-          bytesAdded += rowPage.addRow(rowBatch[i]);
-        } else {
-          try {
-            if (enableInMemoryIntermediateMerge) {
-              unsafeInMemoryIntermediateFileMerger.startInmemoryMergingIfPossible();
-            }
-            unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
-            semaphore.acquire();
-            dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
-            MemoryBlock memoryBlock = getMemoryBlock(inMemoryChunkSize);
-            boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
-            rowPage = new UnsafeCarbonRowPage(
-                parameters.getNoDictionaryDimnesionColumn(),
-                parameters.getNoDictionarySortColumn(),
-                parameters.getDimColCount() + parameters.getComplexDimColCount(),
-                parameters.getMeasureColCount(),
-                parameters.getMeasureDataType(),
-                memoryBlock,
-                saveToDisk);
-            bytesAdded += rowPage.addRow(rowBatch[i]);
-          } catch (Exception e) {
-            LOGGER.error(
-                "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
-            throw new CarbonSortKeyAndGroupByException(e);
-          }
+      addBatch(rowBatch, size);
+    }
+  }
 
+  /**
+   * This method will be used to add new row
+   *
+   * @param rowBatch new rowBatch
+   * @param size
+   * @throws CarbonSortKeyAndGroupByException problem while writing
+   */
+  public void addRowBatchWithOutSync(Object[][] rowBatch, int size)
+      throws CarbonSortKeyAndGroupByException {
+    // if record holder list size is equal to sort buffer size then it will
+    // sort the list and then write current list data to file
+    addBatch(rowBatch, size);
+  }
+
+  private void addBatch(Object[][] rowBatch, int size) throws CarbonSortKeyAndGroupByException {
+    for (int i = 0; i < size; i++) {
+      if (rowPage.canAdd()) {
+        bytesAdded += rowPage.addRow(rowBatch[i]);
+      } else {
+        try {
+          if (enableInMemoryIntermediateMerge) {
+            unsafeInMemoryIntermediateFileMerger.startInmemoryMergingIfPossible();
+          }
+          unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
+          semaphore.acquire();
+          dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
+          MemoryBlock memoryBlock = getMemoryBlock(inMemoryChunkSize);
+          boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
+          rowPage = new UnsafeCarbonRowPage(
+                  parameters.getNoDictionaryDimnesionColumn(),
+                  parameters.getNoDictionarySortColumn(),
+                  parameters.getDimColCount() + parameters.getComplexDimColCount(),
+                  parameters.getMeasureColCount(),
+                  parameters.getMeasureDataType(),
+                  memoryBlock,
+                  saveToDisk);
+          bytesAdded += rowPage.addRow(rowBatch[i]);
+        } catch (Exception e) {
+          LOGGER.error(
+                  "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
+          throw new CarbonSortKeyAndGroupByException(e);
         }
+
       }
     }
   }

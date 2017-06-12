@@ -147,9 +147,9 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
             }
           }
           if (i > 0) {
-            sortDataRows.getSortDataRow().addRowBatch(buffer, i);
-            rowCounter.getAndAdd(i);
             synchronized (sortDataRows) {
+              sortDataRows.getSortDataRow().addRowBatchWithOutSync(buffer, i);
+              rowCounter.getAndAdd(i);
               if (!sortDataRows.getSortDataRow().canAdd()) {
                 sortDataRows.finish();
                 sortDataRows.createSortDataRows();
@@ -197,6 +197,9 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
 
     private void createSortDataRows() {
       int inMemoryChunkSizeInMB = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
+      if (inMemoryChunkSizeInMB > sortParameters.getBatchSortSizeinMb()) {
+        inMemoryChunkSizeInMB = sortParameters.getBatchSortSizeinMb();
+      }
       this.finalMerger = new UnsafeSingleThreadFinalSortFilesMerger(sortParameters,
           sortParameters.getTempFileLocation());
       unsafeIntermediateFileMerger = new UnsafeIntermediateMerger(sortParameters);
