@@ -350,7 +350,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         """
-          |CREATE TABLE test_range_8(col1 INT, col2 STRING) PARTITIONED BY (col3 BOOLEAN)
+          |CREATE TABLE test_range_8(col1 INT, col2 STRING) PARTITIONED BY (col3 BOOLEAN) 
           |STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     } catch {
