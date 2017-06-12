@@ -37,6 +37,39 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select empno from sorttable1"), sql("select empno from sorttable1 order by empno"))
   }
 
+  test("create table with no dictionary sort_columns with dictionary exclude") {
+    sql(
+      "CREATE TABLE sorttable1a (empno String, empname String, designation String, doj Timestamp," +
+      " workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
+      "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
+      "utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties" +
+      "('dictionary_exclude'='empno','sort_columns'='empno')")
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable1a OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '\"','SORT_SCOPE'='BATCH_SORT',
+         |'batch_sort_size_inmb'='64')""".stripMargin)
+    checkAnswer(sql("select empname from sorttable1a"),
+      sql("select empname from origintable1 order by empname"))
+  }
+
+  test(
+    "create table with no dictionary sort_columns where NumberOfNoDictSortColumns < " +
+    "NoDictionaryCount")
+  {
+    sql(
+      "CREATE TABLE sorttable1b (empno String, empname String, designation String, doj Timestamp," +
+      " workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
+      "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
+      "utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties" +
+      "('dictionary_exclude'='empno,empname,workgroupcategoryname','sort_columns'='empno,empname')")
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable1b OPTIONS
+          |('DELIMITER'= ',', 'QUOTECHAR'= '\"','SORT_SCOPE'='BATCH_SORT',
+          |'batch_sort_size_inmb'='64')""".stripMargin)
+    checkAnswer(sql("select empname from sorttable1b"),
+      sql("select empname from origintable1 order by empname"))
+  }
+
   test("create table with dictionary sort_columns") {
     sql("CREATE TABLE sorttable2 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='empname')")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable2 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
@@ -260,6 +293,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists origintable2")
     sql("drop table if exists sorttable1")
     sql("drop table if exists sorttableDesc")
+    sql("drop table if exists sorttable1a")
     sql("drop table if exists sorttable2")
     sql("drop table if exists sorttable3")
     sql("drop table if exists sorttable4_offheap_safe")
