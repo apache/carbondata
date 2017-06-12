@@ -323,10 +323,17 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
             updateStatusManager)) {
           continue;
         }
+        String[] deleteDeltaFilePath = null;
+        try {
+          deleteDeltaFilePath =
+              updateStatusManager.getDeleteDeltaFilePath(tableBlockInfo.getFilePath());
+        } catch (Exception e) {
+          throw new IOException(e);
+        }
         result.add(new CarbonInputSplit(segmentNo, new Path(tableBlockInfo.getFilePath()),
             tableBlockInfo.getBlockOffset(), tableBlockInfo.getBlockLength(),
             tableBlockInfo.getLocations(), tableBlockInfo.getBlockletInfos().getNoOfBlockLets(),
-            tableBlockInfo.getVersion()));
+            tableBlockInfo.getVersion(), deleteDeltaFilePath));
       }
     }
     return result;
@@ -429,7 +436,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
             new TableBlockInfo(carbonInputSplit.getPath().toString(), carbonInputSplit.getStart(),
                 tableSegmentUniqueIdentifier.getSegmentId(), carbonInputSplit.getLocations(),
                 carbonInputSplit.getLength(), blockletInfos, carbonInputSplit.getVersion(),
-                carbonInputSplit.getBlockStorageIdMap()));
+                carbonInputSplit.getBlockStorageIdMap(), carbonInputSplit.getDeleteDeltaFiles()));
       }
     }
     return tableBlockInfoList;

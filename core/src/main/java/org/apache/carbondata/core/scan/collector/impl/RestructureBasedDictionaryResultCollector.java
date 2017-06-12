@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
@@ -50,8 +49,6 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
     int[] surrogateResult;
     String[] noDictionaryKeys;
     byte[][] complexTypeKeyArray;
-    BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
-        scannedResult.getDeleteDeltaDataCache();
     Map<Integer, GenericQueryType> comlexDimensionInfoMap =
         tableBlockExecutionInfos.getComlexDimensionInfoMap();
     while (scannedResult.hasNext() && rowCounter < batchSize) {
@@ -80,9 +77,7 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
       } else {
         scannedResult.incrementCounter();
       }
-      if (null != deleteDeltaDataCache && deleteDeltaDataCache
-          .contains(scannedResult.getCurrentRowId(),
-              scannedResult.getCurrentPageCounter())) {
+      if (scannedResult.containsDeletedRow(scannedResult.getCurrentRowId())) {
         continue;
       }
       fillMeasureData(scannedResult, row);
