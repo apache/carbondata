@@ -21,7 +21,6 @@ import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
-import scala.util.matching.Regex
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
@@ -33,8 +32,8 @@ import org.apache.spark.util.FileUtils
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.processing.csvload.CSVInputFormat
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
