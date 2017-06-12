@@ -542,9 +542,11 @@ public final class CarbonDataProcessorUtil {
             configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
                 .toString());
       }
+      LOGGER.warn("sort scope is set to " + sortScope);
     } catch (Exception e) {
       sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
-      LOGGER.warn("sort scope is set to " + sortScope);
+      LOGGER.warn("Exception occured while resolving sort scope. " +
+          "sort scope is set to " + sortScope);
     }
     return sortScope;
   }
@@ -567,8 +569,11 @@ public final class CarbonDataProcessorUtil {
             configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB)
                 .toString());
       }
+      LOGGER.warn("batch sort size is set to " + batchSortSizeInMb);
     } catch (Exception e) {
       batchSortSizeInMb = 0;
+      LOGGER.warn("Exception occured while resolving batch sort size. " +
+          "batch sort size is set to " + batchSortSizeInMb);
     }
     return batchSortSizeInMb;
   }

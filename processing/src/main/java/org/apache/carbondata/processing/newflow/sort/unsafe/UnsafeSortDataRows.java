@@ -132,7 +132,7 @@ public class UnsafeSortDataRows {
   public static MemoryBlock getMemoryBlock(long size) throws CarbonSortKeyAndGroupByException {
     MemoryBlock baseBlock = null;
     int tries = 0;
-    while (true && tries < 100) {
+    while (tries < 100) {
       baseBlock = UnsafeMemoryManager.INSTANCE.allocateMemory(size);
       if (baseBlock == null) {
         try {
@@ -165,29 +165,32 @@ public class UnsafeSortDataRows {
     // if record holder list size is equal to sort buffer size then it will
     // sort the list and then write current list data to file
     synchronized (addRowsLock) {
-      for (int i = 0; i < size; i++) {
-        if (rowPage.canAdd()) {
-          bytesAdded += rowPage.addRow(rowBatch[i]);
-        } else {
-          try {
-            if (enableInMemoryIntermediateMerge) {
-              unsafeInMemoryIntermediateFileMerger.startInmemoryMergingIfPossible();
-            }
-            unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
-            semaphore.acquire();
-            dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
-            MemoryBlock memoryBlock = getMemoryBlock(inMemoryChunkSize);
-            boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
-            rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
-                parameters.getDimColCount() + parameters.getComplexDimColCount(),
-                parameters.getMeasureColCount(), parameters.getAggType(), memoryBlock, saveToDisk);
-            bytesAdded += rowPage.addRow(rowBatch[i]);
-          } catch (Exception e) {
-            LOGGER.error(
-                "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
-            throw new CarbonSortKeyAndGroupByException(e);
-          }
+      addBatch(rowBatch, size);
+    }
+  }
 
+  private void addBatch(Object[][] rowBatch, int size) throws CarbonSortKeyAndGroupByException {
+    for (int i = 0; i < size; i++) {
+      if (rowPage.canAdd()) {
+        bytesAdded += rowPage.addRow(rowBatch[i]);
+      } else {
+        try {
+          if (enableInMemoryIntermediateMerge) {
+            unsafeInMemoryIntermediateFileMerger.startInmemoryMergingIfPossible();
+          }
+          unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
+          semaphore.acquire();
+          dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
+          MemoryBlock memoryBlock = getMemoryBlock(inMemoryChunkSize);
+          boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
+          rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
+              parameters.getDimColCount() + parameters.getComplexDimColCount(),
+              parameters.getMeasureColCount(), parameters.getAggType(), memoryBlock, saveToDisk);
+          bytesAdded += rowPage.addRow(rowBatch[i]);
+        } catch (Exception e) {
+          LOGGER.error(
+              "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
+          throw new CarbonSortKeyAndGroupByException(e);
         }
       }
     }
