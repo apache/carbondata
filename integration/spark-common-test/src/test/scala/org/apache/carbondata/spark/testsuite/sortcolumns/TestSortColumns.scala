@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.spark.testsuite.sortcolumns
 
+import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -34,7 +35,12 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
   test("create table with no dictionary sort_columns") {
     sql("CREATE TABLE sorttable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='empno')")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-    checkAnswer(sql("select empno from sorttable1"), sql("select empno from sorttable1 order by empno"))
+    val df1 = sql("select empno from sorttable1")
+    val df2 =  sql("select empno from sorttable1 order by empno")
+    val list1: List[Row] = df1.collect().toList
+    val list2 : List[Row] = df2.collect().toList
+    assert((list1,list2).zipped.flatMap((row1,row2)=>row1.toSeq.toList.zip(row2.toSeq.toList)).forall(value=>value._1 == value._2))
+
   }
 
   test("create table with dictionary sort_columns") {
@@ -46,15 +52,24 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
   test("create table with direct-dictioanry sort_columns") {
     sql("CREATE TABLE sorttable3 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='doj')")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable3 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-    checkAnswer(sql("select doj from sorttable3"), sql("select doj from sorttable3 order by doj"))
-  }
+   val df1 = sql("select doj from sorttable3")
+    val df2 = sql("select doj from sorttable3 order by doj")
+    val list1: List[Row] = df1.collect().toList
+    val list2 : List[Row] = df2.collect().toList
+    assert((list1,list2).zipped.flatMap((row1,row2)=>row1.toSeq.toList.zip(row2.toSeq.toList)).forall(value=>value._1 == value._2))
 
+  }
   test("create table with multi-sort_columns and data loading with offheap safe") {
     try {
       setLoadingProperties("true", "false", "false")
       sql("CREATE TABLE sorttable4_offheap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='workgroupcategory, empname')")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable4_offheap_safe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-      checkAnswer(sql("select workgroupcategory, empname from sorttable4_offheap_safe"), sql("select workgroupcategory, empname from origintable1 order by workgroupcategory"))
+      val df1 = sql("select workgroupcategory, empname from sorttable4_offheap_safe")
+      val df2 = sql("select workgroupcategory, empname from origintable1 order by workgroupcategory")
+      val list1: List[Row] = df1.collect().toList
+      val list2 : List[Row] = df2.collect().toList
+      assert((list1,list2).zipped.flatMap((row1,row2)=>row1.toSeq.toList.zip(row2.toSeq.toList)).forall(value=>value._1 == value._2))
+
     } finally {
       defaultLoadingProperties
     }
@@ -66,8 +81,12 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       sql(
         "CREATE TABLE sorttable4_offheap_unsafe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='workgroupcategory, empname')")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable4_offheap_unsafe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-      checkAnswer(sql("select workgroupcategory, empname from sorttable4_offheap_unsafe"),
-        sql("select workgroupcategory, empname from origintable1 order by workgroupcategory"))
+      val df1 = sql("select workgroupcategory, empname from sorttable4_offheap_unsafe")
+      val df2 = sql("select workgroupcategory, empname from origintable1 order by workgroupcategory")
+      val list1: List[Row] = df1.collect().toList
+      val list2 : List[Row] = df2.collect().toList
+      assert((list1,list2).zipped.flatMap((row1,row2)=>row1.toSeq.toList.zip(row2.toSeq.toList)).forall(value=>value._1 == value._2))
+
     } finally {
       defaultLoadingProperties
     }
@@ -79,8 +98,12 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       sql(
         "CREATE TABLE sorttable4_offheap_inmemory (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='workgroupcategory, empname')")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable4_offheap_inmemory OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-      checkAnswer(sql("select workgroupcategory, empname from sorttable4_offheap_inmemory"),
-        sql("select workgroupcategory, empname from origintable1 order by workgroupcategory"))
+      val df1 = sql("select workgroupcategory, empname from sorttable4_offheap_inmemory")
+      val df2 = sql("select workgroupcategory, empname from origintable1 order by workgroupcategory")
+      val list1: List[Row] = df1.collect().toList
+      val list2 : List[Row] = df2.collect().toList
+      assert((list1,list2).zipped.flatMap((row1,row2)=>row1.toSeq.toList.zip(row2.toSeq.toList)).forall(value=>value._1 == value._2))
+
     } finally {
       defaultLoadingProperties
     }
@@ -92,8 +115,12 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       sql(
         "CREATE TABLE sorttable4_heap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='workgroupcategory, empname')")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable4_heap_safe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-      checkAnswer(sql("select workgroupcategory, empname from sorttable4_heap_safe"),
-        sql("select workgroupcategory, empname from origintable1 order by workgroupcategory"))
+      val df1 = sql("select workgroupcategory, empname from sorttable4_heap_safe")
+      val df2 = sql("select workgroupcategory, empname from origintable1 order by workgroupcategory")
+      val list1: List[Row] = df1.collect().toList
+      val list2 : List[Row] = df2.collect().toList
+      assert((list1,list2).zipped.flatMap((row1,row2)=>row1.toSeq.toList.zip(row2.toSeq.toList)).forall(value=>value._1 == value._2))
+
     } finally {
       defaultLoadingProperties
     }
@@ -105,8 +132,11 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       sql(
         "CREATE TABLE sorttable4_heap_unsafe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='workgroupcategory, empname')")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable4_heap_unsafe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-      checkAnswer(sql("select workgroupcategory, empname from sorttable4_heap_unsafe"),
-        sql("select workgroupcategory, empname from origintable1 order by workgroupcategory"))
+      val df1 = sql("select workgroupcategory, empname from sorttable4_heap_unsafe")
+      val df2 = sql("select workgroupcategory, empname from origintable1 order by workgroupcategory")
+      val list1: List[Row] = df1.collect().toList
+      val list2 : List[Row] = df2.collect().toList
+      assert((list1,list2).zipped.flatMap((row1,row2)=>row1.toSeq.toList.zip(row2.toSeq.toList)).forall(value=>value._1 == value._2))
     } finally {
       defaultLoadingProperties
     }
@@ -118,8 +148,12 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       sql(
         "CREATE TABLE sorttable4_heap_inmemory (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='workgroupcategory, empname')")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable4_heap_inmemory OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-      checkAnswer(sql("select workgroupcategory, empname from sorttable4_heap_inmemory"),
-        sql("select workgroupcategory, empname from origintable1 order by workgroupcategory"))
+      val df1 = sql("select workgroupcategory, empname from sorttable4_heap_inmemory")
+      val df2 = sql("select workgroupcategory, empname from origintable1 order by workgroupcategory")
+      val list1: List[Row] = df1.collect().toList
+      val list2 : List[Row] = df2.collect().toList
+      assert((list1,list2).zipped.flatMap((row1,row2)=>row1.toSeq.toList.zip(row2.toSeq.toList)).forall(value=>value._1 == value._2))
+
     } finally {
       defaultLoadingProperties
     }
@@ -139,19 +173,26 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable5 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable5 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
     sql("alter table sorttable5 compact 'minor'")
-
-    checkAnswer(sql("select empno from sorttable5"), sql("select empno from origintable2 order by empno"))
+    val df1 = sql("select empno from sorttable5")
+    val df2 = sql("select empno from origintable2 order by empno")
+    val list1: List[Row] = df1.collect().toList
+    val list2 : List[Row] = df2.collect().toList
+    assert((list1,list2).zipped.flatMap((row1,row2)=>row1.toSeq.toList.zip(row2.toSeq.toList)).forall(value=>value._1 == value._2))
   }
 
   test("filter on sort_columns include no-dictionary, direct-dictionary and dictioanry") {
     sql("CREATE TABLE sorttable6 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='workgroupcategory, doj, empname')")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable6 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
     // no dictionary
-    checkAnswer(sql("select * from sorttable6 where workgroupcategory = 1"), sql("select * from origintable1 where workgroupcategory = 1 order by doj"))
+    val list1 = sql("select * from sorttable6 where workgroupcategory = 1").collect().toList
+    val list2 = sql("select * from origintable1 where workgroupcategory = 1 order by doj").collect().toList
+
+    assert((list1,list2).zipped.flatMap((row1,row2)=>row1.toSeq.toList.zip(row2.toSeq.toList)).forall(value=>value._1 == value._2))
     // direct dictionary
     checkAnswer(sql("select * from sorttable6 where doj = '2007-01-17 00:00:00'"), sql("select * from origintable1 where doj = '2007-01-17 00:00:00'"))
     // dictionary
     checkAnswer(sql("select * from sorttable6 where empname = 'madhan'"), sql("select * from origintable1 where empname = 'madhan'"))
+
   }
 
   test("unsorted table creation, query data loading with heap and safe sort config") {
@@ -226,8 +267,12 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno >= 15 order by empno"), sql("select * from origintable1 where empno >= 15 order by empno"))
       checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno <> 15 order by empno"), sql("select * from origintable1 where empno <> 15 order by empno"))
       checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno in (15, 16, 17) order by empno"), sql("select * from origintable1 where empno in (15, 16, 17) order by empno"))
-      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno is null"), sql("select * from origintable1 where empno is null order by empno"))
-      checkAnswer(sql("select * from unsortedtable_offheap_inmemory where empno is not null"), sql("select * from origintable1 where empno is not null order by empno"))
+      val list1 = sql("select * from unsortedtable_offheap_inmemory where empno is null").collect().toList
+      val list2 = sql("select * from origintable1 where empno is null order by empno").collect().toList
+      assert((list1,list2).zipped.flatMap((row1,row2)=>row1.toSeq.toList.zip(row2.toSeq.toList)).forall(value=>value._1 == value._2))
+      val list3 = sql("select * from unsortedtable_offheap_inmemory where empno is not null").collect().toList
+      val list4 = sql("select * from origintable1 where empno is not null order by empno").collect().toList
+      assert((list3,list4).zipped.flatMap((row1,row2)=>row1.toSeq.toList.zip(row2.toSeq.toList)).forall(value=>value._1 == value._2))
       checkAnswer(sql("select * from unsortedtable_offheap_inmemory order by empno"), sql("select * from origintable1 order by empno"))
     } finally {
       defaultLoadingProperties
@@ -244,7 +289,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     // compare hive and carbon data
     checkAnswer(sql("select * from test_sort_col_hive"), sql("select * from test_sort_col"))
   }
-  
+
   override def afterAll = {
     dropTable
   }
