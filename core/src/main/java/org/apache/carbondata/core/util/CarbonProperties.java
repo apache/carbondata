@@ -21,13 +21,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Field;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 
@@ -48,10 +50,7 @@ public final class CarbonProperties {
    */
   private Properties carbonProperties;
 
-  /**
-   * Added properties on the fly.
-   */
-  private Map<String, String> setProperties = new HashMap<>();
+  private Set<String> propertySet = new HashSet<String>();
 
   /**
    * Private constructor this will call load properties method to load all the
@@ -77,6 +76,11 @@ public final class CarbonProperties {
    * values in case of wrong values.
    */
   private void validateAndLoadDefaultProperties() {
+    try {
+      initPropertySet();
+    } catch (IllegalAccessException e) {
+      LOGGER.error("Illelagal access to declared field" + e.getMessage());
+    }
     if (null == carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION)) {
       carbonProperties.setProperty(CarbonCommonConstants.STORE_LOCATION,
           CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
@@ -86,7 +90,6 @@ public final class CarbonProperties {
     validateNumCores();
     validateNumCoresBlockSort();
     validateSortSize();
-    validateBadRecordsLocation();
     validateHighCardinalityIdentify();
     validateHighCardinalityThreshold();
     validateCarbonDataFileVersion();
@@ -95,6 +98,27 @@ public final class CarbonProperties {
     validateBlockletGroupSizeInMB();
     validateNumberOfColumnPerIORead();
     validateNumberOfRowsPerBlockletColumnPage();
+  }
+
+  private void initPropertySet() throws IllegalAccessException {
+    Field[] declaredFields = CarbonCommonConstants.class.getDeclaredFields();
+    for (Field field : declaredFields) {
+      if (field.isAnnotationPresent(CarbonProperty.class)) {
+        propertySet.add(field.get(field.getName()).toString());
+      }
+    }
+    declaredFields = CarbonV3DataFormatConstants.class.getDeclaredFields();
+    for (Field field : declaredFields) {
+      if (field.isAnnotationPresent(CarbonProperty.class)) {
+        propertySet.add(field.get(field.getName()).toString());
+      }
+    }
+    declaredFields = CarbonLoadOptionConstants.class.getDeclaredFields();
+    for (Field field : declaredFields) {
+      if (field.isAnnotationPresent(CarbonProperty.class)) {
+        propertySet.add(field.get(field.getName()).toString());
+      }
+    }
   }
 
   private void validatePrefetchBufferSize() {
@@ -199,15 +223,6 @@ public final class CarbonProperties {
       carbonProperties
           .setProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
               CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
-    }
-  }
-
-  private void validateBadRecordsLocation() {
-    String badRecordsLocation =
-        carbonProperties.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
-    if (null == badRecordsLocation || badRecordsLocation.length() == 0) {
-      carbonProperties.setProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-          CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL);
     }
   }
 
@@ -425,11 +440,36 @@ public final class CarbonProperties {
    * @return properties value
    */
   public String getProperty(String key) {
+    // get the property value from session parameters,
+    // if its null then get value from carbonProperties
+    String sessionPropertyValue = getSessionPropertyValue(key);
+    if (null != sessionPropertyValue) {
+      return sessionPropertyValue;
+    }
     //TODO temporary fix
     if ("carbon.leaf.node.size".equals(key)) {
       return "120000";
     }
     return carbonProperties.getProperty(key);
+  }
+
+  /**
+   * returns session property value
+   *
+   * @param key
+   * @return
+   */
+  private String getSessionPropertyValue(String key) {
+    String value = null;
+    CarbonSessionInfo carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo();
+    if (null != carbonSessionInfo) {
+      SessionParams sessionParams =
+          ThreadLocalSessionInfo.getCarbonSessionInfo().getSessionParams();
+      if (null != sessionParams) {
+        value = sessionParams.getProperty(key);
+      }
+    }
+    return value;
   }
 
   /**
@@ -454,24 +494,8 @@ public final class CarbonProperties {
    * @return properties value
    */
   public CarbonProperties addProperty(String key, String value) {
-    setProperties.put(key, value);
     carbonProperties.setProperty(key, value);
     return this;
-  }
-
-  /**
-   * Get all the added properties.
-   * @return
-   */
-  public Map<String, String> getAddedProperies() {
-    return setProperties;
-  }
-
-  public void setProperties(Map<String, String> newProperties) {
-    setProperties.putAll(newProperties);
-    for (Map.Entry<String, String> entry : newProperties.entrySet()) {
-      carbonProperties.setProperty(entry.getKey(), entry.getValue());
-    }
   }
 
   private ColumnarFormatVersion getDefaultFormatVersion() {
@@ -747,5 +771,14 @@ public final class CarbonProperties {
           .parseInt(CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);
     }
     return numberOfDeltaFilesThreshold;
+  }
+
+  /**
+   * returns true if carbon property
+   * @param key
+   * @return
+   */
+  public boolean isCarbonProperty(String key) {
+    return propertySet.contains(key);
   }
 }

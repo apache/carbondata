@@ -25,7 +25,7 @@ import org.apache.spark.sql.internal.CarbonSQLConf
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.{CarbonProperties, SessionParams, ThreadLocalSessionParams}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
@@ -38,6 +38,8 @@ class CarbonEnv {
 
   var sessionParams: SessionParams = _
 
+  var carbonSessionInfo: CarbonSessionInfo = _
+
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   // set readsupport class global so that the executor can get it.
@@ -48,8 +50,10 @@ class CarbonEnv {
   def init(sparkSession: SparkSession): Unit = {
     sparkSession.udf.register("getTupleId", () => "")
     if (!initialized) {
+      carbonSessionInfo = new CarbonSessionInfo()
       sessionParams = new SessionParams()
-      ThreadLocalSessionParams.setSessionParams(sessionParams)
+      carbonSessionInfo.setSessionParams(sessionParams)
+      ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
       val config = new CarbonSQLConf(sparkSession)
       if(sparkSession.conf.getOption(CarbonCommonConstants.ENABLE_UNSAFE_SORT) == None) {
         config.addDefaultCarbonParams()

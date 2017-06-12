@@ -17,18 +17,12 @@
 
 package org.apache.carbondata.core.util;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 /**
- * This class maintains ThreadLocal session params
+ * CarbonProperty Anotation
  */
-public class ThreadLocalSessionParams {
-  static final InheritableThreadLocal<SessionParams> threadLocal =
-      new InheritableThreadLocal<SessionParams>();
-
-  public static void setSessionParams(SessionParams sessionParams) {
-    threadLocal.set(sessionParams);
-  }
-
-  public static SessionParams getSessionParams() {
-    return threadLocal.get();
-  }
+@Retention(RetentionPolicy.RUNTIME)
+public @interface CarbonProperty {
 }

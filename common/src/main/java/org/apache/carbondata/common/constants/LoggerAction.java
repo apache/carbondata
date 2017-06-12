@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.constants;
+package org.apache.carbondata.common.constants;
 
 /**
  * enum to hold the bad record logger action

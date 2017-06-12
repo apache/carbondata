@@ -14,21 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.spark.testsuite.commands
 
-import org.apache.spark.sql.common.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
+package org.apache.carbondata.core.util;
 
-import org.apache.carbondata.core.util.CarbonProperties
+import java.io.Serializable;
 
-class SetCommandTestCase  extends QueryTest with BeforeAndAfterAll {
+/**
+ * This class maintains carbon session information details
+ */
+public class CarbonSessionInfo implements Serializable {
 
-  test("test set command") {
+  // contains carbon session param details
+  private SessionParams sessionParams;
 
-    sql("set key1=value1")
+  public SessionParams getSessionParams() {
+    return sessionParams;
+  }
 
-    assert(CarbonProperties.getInstance().getProperty("key1").equals("value1"), "Set command does not work" )
-    assert(sqlContext.getConf("key1").equals("value1"), "Set command does not work" )
+  public void setSessionParams(SessionParams sessionParams) {
+    this.sessionParams = sessionParams;
   }
 
 }

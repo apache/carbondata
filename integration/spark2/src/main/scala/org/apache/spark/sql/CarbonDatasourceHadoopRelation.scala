@@ -30,7 +30,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
-import org.apache.carbondata.core.util.{SessionParams, ThreadLocalSessionParams}
+import org.apache.carbondata.core.util.{CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
 import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.hadoop.util.SchemaReader
 import org.apache.carbondata.processing.merger.TableMeta
@@ -53,8 +53,8 @@ case class CarbonDatasourceHadoopRelation(
       absIdentifier.getCarbonTableIdentifier.getTableName)(sparkSession)
     .asInstanceOf[CarbonRelation]
 
-  val sessionParams : SessionParams = CarbonEnv.getInstance(sparkSession).sessionParams
-  ThreadLocalSessionParams.setSessionParams(sessionParams)
+  val carbonSessionInfo : CarbonSessionInfo = CarbonEnv.getInstance(sparkSession).carbonSessionInfo
+  ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
   override def sqlContext: SQLContext = sparkSession.sqlContext
 
   override def schema: StructType = tableSchema.getOrElse(carbonRelation.schema)
