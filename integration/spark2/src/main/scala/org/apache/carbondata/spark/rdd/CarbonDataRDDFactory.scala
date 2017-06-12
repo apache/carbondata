@@ -128,7 +128,7 @@ object CarbonDataRDDFactory {
       isCompactionTriggerByDDl
     )
 
-    val isConcurrentCompactionAllowed = CarbonEnv.getInstance(sqlContext.sparkSession).sessionParams
+    val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
           CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
         )
@@ -275,8 +275,8 @@ object CarbonDataRDDFactory {
               exception = e
           }
           // continue in case of exception also, check for all the tables.
-          val isConcurrentCompactionAllowed = CarbonEnv.getInstance(sqlContext.sparkSession).
-            sessionParams.getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
+          val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
                 CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
               ).equalsIgnoreCase("true")
 
@@ -397,8 +397,8 @@ object CarbonDataRDDFactory {
         }
         storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
-        val isConcurrentCompactionAllowed = CarbonEnv.getInstance(sqlContext.sparkSession)
-          .sessionParams.getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
+        val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
               CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
             )
             .equalsIgnoreCase("true")
@@ -1042,8 +1042,7 @@ object CarbonDataRDDFactory {
     val timeStampFormat = if (specificFormat.isDefined) {
       new SimpleDateFormat(specificFormat.get)
     } else {
-      val timestampFormatString = CarbonEnv.getInstance(sqlContext.sparkSession)
-        .sessionParams.getProperty(CarbonCommonConstants
+      val timestampFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
         .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
       new SimpleDateFormat(timestampFormatString)
     }
@@ -1051,8 +1050,7 @@ object CarbonDataRDDFactory {
     val dateFormat = if (specificFormat.isDefined) {
       new SimpleDateFormat(specificFormat.get)
     } else {
-      val dateFormatString = CarbonEnv.getInstance(sqlContext.sparkSession)
-        .sessionParams.getProperty(CarbonCommonConstants
+      val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
         .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
       new SimpleDateFormat(dateFormatString)
     }

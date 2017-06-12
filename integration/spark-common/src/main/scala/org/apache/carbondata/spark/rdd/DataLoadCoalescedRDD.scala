@@ -21,26 +21,21 @@ import scala.reflect.ClassTag
 
 import org.apache.spark._
 
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.rdd.CarbonRDD
 
 case class DataLoadPartitionWrap[T: ClassTag](rdd: RDD[T], partition: Partition)
 
 class DataLoadCoalescedRDD[T: ClassTag](
-  @transient var prev: RDD[T],
-  nodeList: Array[String])
-    extends RDD[DataLoadPartitionWrap[T]](prev.context, Nil) {
-
-  private val addedProperies = CarbonProperties.getInstance().getAddedProperies
+    @transient var prev: RDD[T],
+    nodeList: Array[String])
+  extends CarbonRDD[DataLoadPartitionWrap[T]](prev.context, Nil) {
 
   override def getPartitions: Array[Partition] = {
     new DataLoadPartitionCoalescer(prev, nodeList).run
   }
 
-  override def compute(split: Partition,
+  override def internalCompute(split: Partition,
       context: TaskContext): Iterator[DataLoadPartitionWrap[T]] = {
-    // Add the properties added in driver to executor.
-    CarbonProperties.getInstance().setProperties(addedProperies)
-
     new Iterator[DataLoadPartitionWrap[T]] {
       val iter = split.asInstanceOf[CoalescedRDDPartition].parents.iterator
       def hasNext = iter.hasNext

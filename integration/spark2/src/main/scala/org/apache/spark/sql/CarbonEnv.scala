@@ -21,10 +21,11 @@ import java.util.Map
 import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.spark.sql.hive.{CarbonMetastore, CarbonSessionCatalog}
+import org.apache.spark.sql.internal.CarbonSQLConf
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.{CarbonProperties, SessionParams}
+import org.apache.carbondata.core.util.{CarbonProperties, SessionParams, ThreadLocalSessionParams}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
@@ -48,11 +49,18 @@ class CarbonEnv {
     sparkSession.udf.register("getTupleId", () => "")
     if (!initialized) {
       sessionParams = new SessionParams()
+      ThreadLocalSessionParams.setSessionParams(sessionParams)
+      val config = new CarbonSQLConf(sparkSession)
+      if(sparkSession.conf.getOption(CarbonCommonConstants.ENABLE_UNSAFE_SORT) == None) {
+        config.addDefaultCarbonParams()
+      }
+      // add session params after adding DefaultCarbonParams
+      config.addDefaultCarbonSessionParams()
       carbonMetastore = {
         val storePath =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
         LOGGER.info(s"carbon env initial: $storePath")
-        new CarbonMetastore(sparkSession.conf, storePath, sessionParams)
+        new CarbonMetastore(sparkSession.conf, storePath)
       }
       CarbonProperties.getInstance.addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
       initialized = true

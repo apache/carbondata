@@ -18,7 +18,7 @@
 package org.apache.spark.sql.hive.execution.command
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{CarbonDropTableCommand, DropDatabaseCommand, RunnableCommand, SetCommand}
+import org.apache.spark.sql.execution.command.{CarbonDropTableCommand, DropDatabaseCommand, ResetCommand, RunnableCommand, SetCommand}
 
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -49,10 +49,26 @@ case class CarbonSetCommand(command: SetCommand)
   override val output = command.output
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    val rows = command.run(sparkSession)
-    CarbonEnv.getInstance(sparkSession).sessionParams
-      .addProperty(rows.head.getString(0), rows.head.getString(1))
-    rows
+    val sessionParms = CarbonEnv.getInstance(sparkSession).sessionParams
+    command.kv match {
+      case Some((key, Some(value))) =>
+        val isCarbonProperty: Boolean = CarbonProperties.getInstance().isCarbonProperty(key)
+        if (isCarbonProperty) {
+          sessionParms.addProperty(key, value)
+        }
+      case _ =>
+
+    }
+    command.run(sparkSession)
   }
 }
 
+case class CarbonResetCommand()
+  extends RunnableCommand {
+  override val output = ResetCommand.output
+
+  override def run(sparkSession: SparkSession): Seq[Row] = {
+    CarbonEnv.getInstance(sparkSession).sessionParams.clear()
+    ResetCommand.run(sparkSession)
+  }
+}

@@ -176,19 +176,15 @@ case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends S
 class CarbonAllDictionaryCombineRDD(
     prev: RDD[(String, Iterable[String])],
     model: DictionaryLoadModel)
-  extends RDD[(Int, ColumnDistinctValues)](prev) {
-
-  private val addedProperies = CarbonProperties.getInstance().getAddedProperies
+  extends CarbonRDD[(Int, ColumnDistinctValues)](prev) {
 
   override def getPartitions: Array[Partition] = {
     firstParent[(String, Iterable[String])].partitions
   }
 
-  override def compute(split: Partition, context: TaskContext
+    override def internalCompute(split: Partition, context: TaskContext
   ): Iterator[(Int, ColumnDistinctValues)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    // Add the properties added in driver to executor.
-    CarbonProperties.getInstance().setProperties(addedProperies)
     val distinctValuesList = new ArrayBuffer[(Int, mutable.HashSet[String])]
     /*
      * for all dictionary, all columns need to encoding and checking
@@ -273,17 +269,12 @@ class StringArrayRow(var values: Array[String]) extends Row {
 class CarbonBlockDistinctValuesCombineRDD(
     prev: RDD[Row],
     model: DictionaryLoadModel)
-  extends RDD[(Int, ColumnDistinctValues)](prev) {
-
-  private val addedProperies = CarbonProperties.getInstance().getAddedProperies
+  extends CarbonRDD[(Int, ColumnDistinctValues)](prev) {
 
   override def getPartitions: Array[Partition] = firstParent[Row].partitions
-
-  override def compute(split: Partition,
+  override def internalCompute(split: Partition,
       context: TaskContext): Iterator[(Int, ColumnDistinctValues)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    // Add the properties added in driver to executor.
-    CarbonProperties.getInstance().setProperties(addedProperies)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION,
       model.hdfsLocation)
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordLoadCsvfilesToDfTime()
@@ -338,16 +329,13 @@ class CarbonBlockDistinctValuesCombineRDD(
 class CarbonGlobalDictionaryGenerateRDD(
     prev: RDD[(Int, ColumnDistinctValues)],
     model: DictionaryLoadModel)
-  extends RDD[(Int, String, Boolean)](prev) {
-
-  private val addedProperies = CarbonProperties.getInstance().getAddedProperies
+  extends CarbonRDD[(Int, String, Boolean)](prev) {
 
   override def getPartitions: Array[Partition] = firstParent[(Int, ColumnDistinctValues)].partitions
 
-  override def compute(split: Partition, context: TaskContext): Iterator[(Int, String, Boolean)] = {
+  override def internalCompute(split: Partition,
+      context: TaskContext): Iterator[(Int, String, Boolean)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    // Add the properties added in driver to executor.
-    CarbonProperties.getInstance().setProperties(addedProperies)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION,
       model.hdfsLocation)
     val status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
@@ -544,9 +532,7 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
     dimensions: Array[CarbonDimension],
     hdfsLocation: String,
     dictFolderPath: String)
-  extends RDD[(Int, ColumnDistinctValues)](sparkContext, Nil) {
-
-  private val addedProperies = CarbonProperties.getInstance().getAddedProperies
+  extends CarbonRDD[(Int, ColumnDistinctValues)](sparkContext, Nil) {
 
   override def getPartitions: Array[Partition] = {
     val primDimensions = dictionaryLoadModel.primDimensions
@@ -558,10 +544,8 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
     result
   }
 
-  override def compute(split: Partition, context: TaskContext)
+  override def internalCompute(split: Partition, context: TaskContext)
   : Iterator[(Int, ColumnDistinctValues)] = {
-    // Add the properties added in driver to executor.
-    CarbonProperties.getInstance().setProperties(addedProperies)
     val theSplit = split.asInstanceOf[CarbonColumnDictPatition]
     val primDimension = theSplit.preDefDictDimension
     // read the column dict data

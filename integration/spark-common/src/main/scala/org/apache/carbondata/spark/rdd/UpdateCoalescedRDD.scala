@@ -22,25 +22,21 @@ import scala.reflect.ClassTag
 import org.apache.spark._
 import org.apache.spark.rdd.{CoalescedRDDPartition, DataLoadPartitionCoalescer, RDD}
 
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.rdd.CarbonRDD
 
 // This RDD distributes previous RDD data based on number of nodes. i.e., one partition for one node
 
 class UpdateCoalescedRDD[T: ClassTag](
     @transient var prev: RDD[T],
     nodeList: Array[String])
-  extends RDD[T](prev.context, Nil) {
-
-  private val addedProperies = CarbonProperties.getInstance().getAddedProperies
+  extends CarbonRDD[T](prev.context, Nil) {
 
   override def getPartitions: Array[Partition] = {
     new DataLoadPartitionCoalescer(prev, nodeList).run
   }
 
-  override def compute(split: Partition,
+  override def internalCompute(split: Partition,
       context: TaskContext): Iterator[T] = {
-    // Add the properties added in driver to executor.
-    CarbonProperties.getInstance().setProperties(addedProperies)
     // This iterator combines data from all the parent partitions
     new Iterator[T] {
       val parentPartitionIter = split.asInstanceOf[CoalescedRDDPartition].parents.iterator

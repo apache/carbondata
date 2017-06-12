@@ -29,7 +29,6 @@ import org.apache.spark.sql.execution.command.CarbonMergerMapping
 
 import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
@@ -50,8 +49,6 @@ class CarbonIUDMergerRDD[K, V](
     carbonLoadModel,
     carbonMergerMapping,
     confExecutorsTemp) {
-
-  private val addedProperies = CarbonProperties.getInstance().getAddedProperies
 
   override def getPartitions: Array[Partition] = {
     val startTime = System.currentTimeMillis()

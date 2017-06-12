@@ -18,30 +18,33 @@ package org.apache.spark.sql.parser
 
 import scala.collection.mutable
 
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, ParseException, SqlBaseParser}
 import org.apache.spark.sql.catalyst.parser.ParserUtils._
-import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{CreateTableContext,
-TablePropertyListContext}
+import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{CreateTableContext, TablePropertyListContext}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
-import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field,
-PartitionerField, TableModel}
+import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field, PartitionerField, TableModel}
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
 
+import org.apache.carbondata.core.util.{SessionParams, ThreadLocalSessionParams}
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
 /**
- * Concrete parser for Spark SQL statements and carbon specific statements
+ * Concrete parser for Spark SQL stateENABLE_INMEMORY_MERGE_SORT_DEFAULTments and carbon specific
+ * statements
  */
-class CarbonSparkSqlParser(conf: SQLConf) extends AbstractSqlParser {
+class CarbonSparkSqlParser(conf: SQLConf, sparkSession: SparkSession) extends AbstractSqlParser {
 
   val astBuilder = new CarbonSqlAstBuilder(conf)
 
   private val substitutor = new VariableSubstitution(conf)
 
   override def parsePlan(sqlText: String): LogicalPlan = {
+    val sessionParams : SessionParams = CarbonEnv.getInstance(sparkSession).sessionParams
+    ThreadLocalSessionParams.setSessionParams(sessionParams)
     try {
       super.parsePlan(sqlText)
     } catch {

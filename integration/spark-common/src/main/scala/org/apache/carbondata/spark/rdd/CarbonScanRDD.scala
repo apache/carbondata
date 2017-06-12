@@ -54,7 +54,7 @@ class CarbonScanRDD(
     filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
     @transient carbonTable: CarbonTable)
-  extends RDD[InternalRow](sc, Nil) {
+  extends CarbonRDD[InternalRow](sc, Nil) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
   private val jobTrackerId: String = {
@@ -66,8 +66,6 @@ class CarbonScanRDD(
   private val readSupport = SparkReadSupport.readSupportClass
 
   private val bucketedTable = carbonTable.getBucketingInfo(carbonTable.getFactTableName)
-
-  private val addedProperies = CarbonProperties.getInstance().getAddedProperies
 
   @transient private val jobId = new JobID(jobTrackerId, id)
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -175,15 +173,13 @@ class CarbonScanRDD(
     result.toArray(new Array[Partition](result.size()))
   }
 
-  override def compute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
+  override def internalCompute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
     val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
     if (null == carbonPropertiesFilePath) {
       System.setProperty("carbon.properties.filepath",
         System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties"
       )
     }
-    // Add the properties added in driver to executor.
-    CarbonProperties.getInstance().setProperties(addedProperies)
 
     val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
     val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
