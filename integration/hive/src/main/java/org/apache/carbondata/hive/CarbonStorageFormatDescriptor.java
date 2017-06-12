@@ -22,25 +22,24 @@ import java.util.Set;
 import com.google.common.collect.ImmutableSet;
 import org.apache.hadoop.hive.ql.io.AbstractStorageFormatDescriptor;
 
-public class CarbonStorageFormatDescriptor extends AbstractStorageFormatDescriptor {
+/**
+ * TODO : enable this class
+ */
+class CarbonStorageFormatDescriptor extends AbstractStorageFormatDescriptor {
 
-  @Override
-  public Set<String> getNames() {
+  @Override public Set<String> getNames() {
     return ImmutableSet.of("CARBONDATA");
   }
 
-  @Override
-  public String getInputFormat() {
+  @Override public String getInputFormat() {
     return MapredCarbonInputFormat.class.getName();
   }
 
-  @Override
-  public String getOutputFormat() {
+  @Override public String getOutputFormat() {
     return MapredCarbonOutputFormat.class.getName();
   }
 
-  @Override
-  public String getSerde() {
+  @Override public String getSerde() {
     return CarbonHiveSerDe.class.getName();
   }
 
