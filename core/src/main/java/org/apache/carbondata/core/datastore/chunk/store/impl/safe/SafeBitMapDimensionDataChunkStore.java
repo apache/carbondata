@@ -25,18 +25,187 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
- * Below class will be used to store bitMap dimension data
+ * Below class will be used to store bitmap dimension data
  */
 public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataChunkStore {
+
+  /**
+   * Size of each value
+   */
+  private int columnValueSize;
+  private BitMapDataFilter bitMapFilter = new BitMapDataFilter();
+
+  public SafeBitMapDimensionDataChunkStore(List<Integer> bitmap_encoded_dictionaries,
+      List<Integer> bitmap_data_pages_offset, int columnValueSize) {
+    super(false);
+    this.columnValueSize = columnValueSize;
+    int arraySize = bitmap_encoded_dictionaries.size();
+    bitMapFilter.bitmap_encoded_dictionaries = new byte[arraySize][];
+    bitMapFilter.bitmap_data_pages_offset = new int[bitmap_data_pages_offset.size()];
+    for (byte i = 0; i < arraySize; i++) {
+      bitMapFilter.bitmap_encoded_dictionaries[i] = ByteUtil
+          .convertIntToByteArray(bitmap_encoded_dictionaries.get(i), columnValueSize);
+      bitMapFilter.bitmap_data_pages_offset[i] = bitmap_data_pages_offset.get(i + 1);
+    }
+  }
+
+  /**
+   * Below method will be used to put the rows and its metadata in offheap
+   *
+   * @param invertedIndex
+   *          inverted index to be stored
+   * @param invertedIndexReverse
+   *          inverted index reverse to be stored
+   * @param data
+   *          data to be stored
+   */
+  @Override
+  public void putArray(final int[] invertedIndex, final int[] invertedIndexReverse,
+      final byte[] data) {
+    bitMapFilter.bitmap_data_pages_offset[bitMapFilter.bitmap_encoded_dictionaries.length]
+        = data.length;
+    bitMapFilter.data = data;
+    // loadDictionaryDataIndex();
+    bitMapFilter.bitSets = new BitSet[bitMapFilter.bitmap_encoded_dictionaries.length];
+  }
+
+  /**
+   * Below method will be used to get the row data
+   *
+   * @param rowId
+   *          Inverted index
+   */
+  @Override
+  public byte[] getRow(int rowId) {
+    byte[] data = new byte[1];
+    data[0] = bitMapFilter.data[rowId];
+    return data;
+  }
+
+  /**
+   * Below method will be used to get the surrogate key of the based on the row
+   * id passed
+   *
+   * @param index
+   *          row id
+   * @return surrogate key
+   */
+  @Override
+  public int getSurrogate(int index) {
+    // loadAllBitSets();
+    return bitMapFilter.data[index];
+  }
+
+  /**
+   * Below method will be used to fill the row values to buffer array
+   *
+   * @param rowId
+   *          row id of the data to be filled
+   * @param buffer
+   *          buffer in which data will be filled
+   * @param offset
+   *          off the of the buffer
+   */
+  @Override
+  public void fillRow(int rowId, byte[] buffer, int offset) {
+
+    System.arraycopy(bitMapFilter.data[rowId], 0, buffer,
+        offset, columnValueSize);
+  }
+
+  /**
+   * @return size of each column value
+   */
+  @Override
+  public int getColumnValueSize() {
+    return columnValueSize;
+  }
+
+  /**
+   * to compare the two byte array
+   *
+   * @param index
+   *          index of first byte array
+   * @param compareValue
+   *          value of to be compared
+   * @return compare result
+   */
+  @Override
+  public int compareTo(int index, byte[] compareValue) {
+    return ByteUtil.UnsafeComparer.INSTANCE.compareTo(
+        bitMapFilter.bitmap_encoded_dictionaries[(int)bitMapFilter.data[index]], 0, columnValueSize,
+        compareValue, 0, columnValueSize);
+  }
+  /**
+   * apply Filter
+   *
+   * @param filterValues
+   * @param operator
+   * @return BitSet
+   */
+  @Override
+  public BitSet applyFilter(byte[][] filterValues, FilterOperator operator, int numerOfRows) {
+    return bitMapFilter.applyFilter(filterValues, operator, numerOfRows);
+  }
 
   public static class BitMapDataFilter {
     public byte[][] bitmap_encoded_dictionaries;
     public int[] bitmap_data_pages_offset;
-    public byte[] bitMapData;
+    public BitSet[] bitSets;
+    public byte[] data;
 
     public BitMapDataFilter() {
     }
 
+    public void setData(List<Integer> bitmap_encoded_dictionaries,
+        List<Integer> bitmap_data_pages_offset, int columnValueSize) {
+      int arraySize = bitmap_encoded_dictionaries.size();
+      this.bitmap_encoded_dictionaries = new byte[arraySize][];
+      this.bitmap_data_pages_offset = new int[bitmap_data_pages_offset.size()];
+      for (byte i = 0; i < arraySize; i++) {
+        this.bitmap_encoded_dictionaries[i] = ByteUtil
+            .convertIntToByteArray(bitmap_encoded_dictionaries.get(i), columnValueSize);
+        this.bitmap_data_pages_offset[i] = bitmap_data_pages_offset.get(i + 1);
+      }
+    }
+
+    /**
+     * apply Filter
+     *
+     * @param filterValues
+     * @param operator
+     * @return BitSet
+     */
+    public BitSet applyFilter_backup(byte[][] filterValues, FilterOperator operator,
+        int numerOfRows) {
+      BitSet bitSet = null;
+      for (byte i = 0; i < filterValues.length; i++) {
+        int index = CarbonUtil.binarySearch(bitmap_encoded_dictionaries, 0,
+            bitmap_encoded_dictionaries.length - 1, filterValues[i]);
+        if (index >= 0) {
+          if (bitSet == null) {
+            bitSet = loadBitSet(index);
+          } else {
+            bitSet.or(loadBitSet(index));
+          }
+        }
+      }
+      if (FilterOperator.NOT_IN.equals(operator)) {
+        if (bitSet == null) {
+          bitSet = new BitSet(numerOfRows);
+        }
+        bitSet.flip(0, numerOfRows);
+      }
+      return bitSet;
+    }
+
+    /**
+     * apply Filter
+     *
+     * @param filterValues
+     * @param operator
+     * @return BitSet
+     */
     public BitSet applyFilter(byte[][] filterValues, FilterOperator operator, int numerOfRows) {
 
       byte[] inDicts = new byte[bitmap_encoded_dictionaries.length];
@@ -55,9 +224,10 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
       } else {
         bitset = getBitSetResult(numerOfRows, inDicts, false, inCnt);
       }
-      bitMapData = null;
-      bitmap_encoded_dictionaries = null;
-      bitmap_data_pages_offset = null;
+      // bitMapData = null;
+      // bitmap_encoded_dictionaries = null;
+      // bitmap_data_pages_offset = null;
+      // System.out.println("clear:" + this);
       return bitset;
     }
 
@@ -100,139 +270,20 @@ public class SafeBitMapDimensionDataChunkStore extends SafeAbsractDimensionDataC
     }
 
     private BitSet loadBitSet(int index) {
-      int tempIndex = index + 1;
-      int pageOffSet = bitmap_data_pages_offset[tempIndex] - bitmap_data_pages_offset[1];
-      int pageLength;
-      if (tempIndex + 1 == bitmap_data_pages_offset.length) {
-        pageLength = bitMapData.length - pageOffSet;
-      } else {
-        pageLength = bitmap_data_pages_offset[tempIndex + 1] - bitmap_data_pages_offset[tempIndex];
+      BitSet bitSet = this.bitSets[index];
+      if (bitSet != null) {
+        return bitSet;
       }
+
+      int pageOffSet = bitmap_data_pages_offset[index];
+      int pageLength;
+      pageLength = bitmap_data_pages_offset[index + 1] - bitmap_data_pages_offset[index];
+
       byte[] bitSetData = new byte[pageLength];
-      System.arraycopy(bitMapData, pageOffSet, bitSetData, 0, pageLength);
-      BitSet bitSet = BitSet.valueOf(bitSetData);
+      System.arraycopy(this.data, pageOffSet, bitSetData, 0, pageLength);
+      bitSet = BitSet.valueOf(bitSetData);
+      bitSets[index] = bitSet;
       return bitSet;
     }
-  }
-
-  /**
-   * Size of each value
-   */
-  public int columnValueSize;
-  private BitMapDataFilter bitMapFilter = new BitMapDataFilter();
-
-  public SafeBitMapDimensionDataChunkStore(List<Integer> bitMap_encoded_dictionaries,
-      List<Integer> bitMap_data_pages_offset, int columnValueSize) {
-    super(false);
-    this.columnValueSize = columnValueSize;
-    int arraySize = bitMap_encoded_dictionaries.size();
-    this.bitMapFilter.bitmap_encoded_dictionaries = new byte[arraySize][];
-    this.bitMapFilter.bitmap_data_pages_offset = new int[bitMap_data_pages_offset.size()];
-    for (byte i = 0; i < arraySize; i++) {
-      this.bitMapFilter.bitmap_encoded_dictionaries[i] = ByteUtil
-          .convertIntToByteArray(bitMap_encoded_dictionaries.get(i), columnValueSize);
-      this.bitMapFilter.bitmap_data_pages_offset[i] = bitMap_data_pages_offset.get(i);
-    }
-    this.bitMapFilter.bitmap_data_pages_offset[arraySize] = bitMap_data_pages_offset.get(arraySize);
-  }
-
-  /**
-   * Below method will be used to put the rows and its metadata in offheap
-   *
-   * @param invertedIndex
-   *          inverted index to be stored
-   * @param invertedIndexReverse
-   *          inverted index reverse to be stored
-   * @param rawData
-   *          data to be stored
-   */
-  @Override
-  public void putArray(final int[] invertedIndex, final int[] invertedIndexReverse,
-      final byte[] rawData) {
-    data = new byte[bitMapFilter.bitmap_data_pages_offset[1]];
-    System.arraycopy(rawData, 0, data, 0, bitMapFilter.bitmap_data_pages_offset[1]);
-    this.bitMapFilter.bitMapData = new byte[rawData.length
-        - bitMapFilter.bitmap_data_pages_offset[1]];
-    System.arraycopy(rawData, bitMapFilter.bitmap_data_pages_offset[1], bitMapFilter.bitMapData, 0,
-        bitMapFilter.bitMapData.length);
-  }
-
-  /**
-   * Below method will be used to get the row data
-   *
-   * @param rowId
-   *          Inverted index
-   */
-  @Override
-  public byte[] getRow(int rowId) {
-    byte[] data = new byte[1];
-    data[0] = data[rowId];
-    return data;
-  }
-
-  /**
-   * Below method will be used to get the surrogate key of the based on the row
-   * id passed
-   *
-   * @param index
-   *          row id
-   * @return surrogate key
-   */
-  @Override
-  public int getSurrogate(int index) {
-    // loadAllBitSets();
-    return data[index];
-  }
-
-  /**
-   * Below method will be used to fill the row values to buffer array
-   *
-   * @param rowId
-   *          row id of the data to be filled
-   * @param buffer
-   *          buffer in which data will be filled
-   * @param offset
-   *          off the of the buffer
-   */
-  @Override
-  public void fillRow(int rowId, byte[] buffer, int offset) {
-
-    System.arraycopy(data[rowId], 0, buffer, offset, columnValueSize);
-  }
-
-  /**
-   * @return size of each column value
-   */
-  @Override
-  public int getColumnValueSize() {
-    return columnValueSize;
-  }
-
-  /**
-   * to compare the two byte array
-   *
-   * @param index
-   *          index of first byte array
-   * @param compareValue
-   *          value of to be compared
-   * @return compare result
-   */
-  @Override
-  public int compareTo(int index, byte[] compareValue) {
-    return ByteUtil.UnsafeComparer.INSTANCE.compareTo(
-        this.bitMapFilter.bitmap_encoded_dictionaries[(int) data[index]], 0, columnValueSize,
-        compareValue, 0, columnValueSize);
-  }
-
-  /**
-   * apply Filter
-   *
-   * @param filterValues
-   * @param operator
-   * @return BitSet
-   */
-  @Override
-  public BitSet applyFilter(byte[][] filterValues, FilterOperator operator, int numerOfRows) {
-    return this.bitMapFilter.applyFilter(filterValues, operator, numerOfRows);
   }
 }

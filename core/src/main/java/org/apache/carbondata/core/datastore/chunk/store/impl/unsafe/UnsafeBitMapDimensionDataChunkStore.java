@@ -32,6 +32,13 @@ import org.apache.carbondata.core.util.ByteUtil;
 public class UnsafeBitMapDimensionDataChunkStore
     extends UnsafeAbstractDimensionDataChunkStore {
 
+  /**
+   * Size of each value
+   */
+  public int columnValueSize;
+  private SafeBitMapDimensionDataChunkStore.BitMapDataFilter bitMapFilter =
+      new SafeBitMapDimensionDataChunkStore.BitMapDataFilter();
+  private int baseOffSet;
 
   /**
    * Constructor
@@ -47,22 +54,16 @@ public class UnsafeBitMapDimensionDataChunkStore
     super(totalDataSize, false, numberOfRows);
     this.columnValueSize = columnValueSize;
     int arraySize = bitmap_encoded_dictionaries.size();
-    this.bitMapFilter.bitmap_encoded_dictionaries = new byte[arraySize][];
-    this.bitMapFilter.bitmap_data_pages_offset = new int[bitmap_data_pages_offset.size()];
-    for (int i = 0; i < arraySize; i++) {
-      this.bitMapFilter.bitmap_encoded_dictionaries[i] = ByteUtil
+    bitMapFilter.bitmap_encoded_dictionaries = new byte[arraySize][];
+    bitMapFilter.bitmap_data_pages_offset = new int[bitmap_data_pages_offset.size()];
+    baseOffSet = bitmap_data_pages_offset.get(1);
+    for (byte i = 0; i < arraySize; i++) {
+      bitMapFilter.bitmap_encoded_dictionaries[i] = ByteUtil
           .convertIntToByteArray(bitmap_encoded_dictionaries.get(i), columnValueSize);
-      this.bitMapFilter.bitmap_data_pages_offset[i] = bitmap_data_pages_offset.get(i);
+      bitMapFilter.bitmap_data_pages_offset[i] = bitmap_data_pages_offset.get(i + 1) - baseOffSet;
     }
-    this.bitMapFilter.bitmap_data_pages_offset[arraySize] = bitmap_data_pages_offset.get(arraySize);
   }
 
-  /**
-   * Size of each value
-   */
-  public int columnValueSize;
-  private SafeBitMapDimensionDataChunkStore.BitMapDataFilter bitMapFilter =
-      new SafeBitMapDimensionDataChunkStore.BitMapDataFilter();
   /**
    * Below method will be used to get the row based inverted index
    *
@@ -155,15 +156,18 @@ public class UnsafeBitMapDimensionDataChunkStore
   @Override public void putArray(final int[] invertedIndex, final int[] invertedIndexReverse,
       final byte[] rawData) {
     assert (!isMemoryOccupied);
+    bitMapFilter.bitmap_data_pages_offset[bitMapFilter.bitmap_encoded_dictionaries.length]
+        = rawData.length
+        - baseOffSet;
+    bitMapFilter.bitSets = new BitSet[bitMapFilter.bitmap_encoded_dictionaries.length];
     this.dataLength = bitMapFilter.bitmap_data_pages_offset[1];
     // copy the data to memory
-    CarbonUnsafe.unsafe
-        .copyMemory(rawData, CarbonUnsafe.BYTE_ARRAY_OFFSET, dataPageMemoryBlock.getBaseObject(),
-            dataPageMemoryBlock.getBaseOffset(), this.dataLength);
-    this.bitMapFilter.bitMapData = new byte[rawData.length
-        - bitMapFilter.bitmap_data_pages_offset[1]];
-    System.arraycopy(rawData, bitMapFilter.bitmap_data_pages_offset[1], bitMapFilter.bitMapData, 0,
-        bitMapFilter.bitMapData.length);
+    CarbonUnsafe.unsafe.copyMemory(rawData, CarbonUnsafe.BYTE_ARRAY_OFFSET,
+        dataPageMemoryBlock.getBaseObject(), dataPageMemoryBlock.getBaseOffset(), this.dataLength);
+    bitMapFilter.data = rawData;
+    bitMapFilter.data = new byte[rawData.length - baseOffSet];
+    System.arraycopy(rawData, baseOffSet, bitMapFilter.data, 0,
+        bitMapFilter.data.length);
 
   }
 
@@ -176,6 +180,6 @@ public class UnsafeBitMapDimensionDataChunkStore
    */
   @Override
   public BitSet applyFilter(byte[][] filterValues, FilterOperator operator, int numerOfRows) {
-    return this.bitMapFilter.applyFilter(filterValues, operator, numerOfRows);
+    return bitMapFilter.applyFilter(filterValues, operator, numerOfRows);
   }
 }
