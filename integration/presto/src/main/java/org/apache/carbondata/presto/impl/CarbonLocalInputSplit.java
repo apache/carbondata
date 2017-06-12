@@ -17,19 +17,22 @@
 
 package org.apache.carbondata.presto.impl;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
+
+/**
+ * BHQ: CarbonLocalInputSplit represents a block, it contains a set of blocklet.
+ */
 public class CarbonLocalInputSplit {
 
   private static final long serialVersionUID = 3520344046772190207L;
   private String segmentId;
   private String path;
-  private long start;
-  private long length;
-  private List<String> locations;
+  private long start; // BHQ: the start offset of the block in a carbondata file.
+  private long length; // BHQ: the length of the block.
+  private List<String> locations;// BHQ: locations are the locations for different replicas.
   private short version;
 
   /**
