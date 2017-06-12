@@ -18,6 +18,7 @@ package org.apache.carbondata.hive;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
@@ -29,31 +30,27 @@ import org.apache.hadoop.io.Writable;
  * The CarbonHiveArrayInspector will inspect an ArrayWritable, considering it as an Hive array.
  * It can also inspect a List if Hive decides to inspect the result of an inspection.
  */
-public class CarbonArrayInspector implements SettableListObjectInspector {
+class CarbonArrayInspector implements SettableListObjectInspector {
 
-  private ObjectInspector arrayElementInspector;
+  private final ObjectInspector arrayElementInspector;
 
   public CarbonArrayInspector(final ObjectInspector arrayElementInspector) {
     this.arrayElementInspector = arrayElementInspector;
   }
 
-  @Override
-  public String getTypeName() {
+  @Override public String getTypeName() {
     return "array<" + arrayElementInspector.getTypeName() + ">";
   }
 
-  @Override
-  public Category getCategory() {
+  @Override public Category getCategory() {
     return Category.LIST;
   }
 
-  @Override
-  public ObjectInspector getListElementObjectInspector() {
+  @Override public ObjectInspector getListElementObjectInspector() {
     return arrayElementInspector;
   }
 
-  @Override
-  public Object getListElement(final Object data, final int index) {
+  @Override public Object getListElement(final Object data, final int index) {
     if (data == null) {
       return null;
     }
@@ -78,12 +75,10 @@ public class CarbonArrayInspector implements SettableListObjectInspector {
       }
     }
 
-    throw new UnsupportedOperationException("Cannot inspect "
-      + data.getClass().getCanonicalName());
+    throw new UnsupportedOperationException("Cannot inspect " + data.getClass().getCanonicalName());
   }
 
-  @Override
-  public int getListLength(final Object data) {
+  @Override public int getListLength(final Object data) {
     if (data == null) {
       return -1;
     }
@@ -104,12 +99,10 @@ public class CarbonArrayInspector implements SettableListObjectInspector {
       return ((ArrayWritable) subObj).get().length;
     }
 
-    throw new UnsupportedOperationException("Cannot inspect "
-      + data.getClass().getCanonicalName());
+    throw new UnsupportedOperationException("Cannot inspect " + data.getClass().getCanonicalName());
   }
 
-  @Override
-  public List<?> getList(final Object data) {
+  @Override public List<?> getList(final Object data) {
     if (data == null) {
       return null;
     }
@@ -130,19 +123,15 @@ public class CarbonArrayInspector implements SettableListObjectInspector {
       final Writable[] array = ((ArrayWritable) subObj).get();
       final List<Writable> list = Arrays.asList(array);
 
-      for (final Writable obj : array) {
-        list.add(obj);
-      }
+      Collections.addAll(list, array);
 
       return list;
     }
 
-    throw new UnsupportedOperationException("Cannot inspect "
-      + data.getClass().getCanonicalName());
+    throw new UnsupportedOperationException("Cannot inspect " + data.getClass().getCanonicalName());
   }
 
-  @Override
-  public Object create(final int size) {
+  @Override public Object create(final int size) {
     final List<Object> result = Arrays.asList(new Object[size]);
     for (int i = 0; i < size; ++i) {
       result.add(null);
@@ -150,15 +139,13 @@ public class CarbonArrayInspector implements SettableListObjectInspector {
     return result;
   }
 
-  @Override
-  public Object set(final Object list, final int index, final Object element) {
+  @Override public Object set(final Object list, final int index, final Object element) {
     final ArrayList<Object> l = (ArrayList<Object>) list;
     l.set(index, element);
     return list;
   }
 
-  @Override
-  public Object resize(final Object list, final int newSize) {
+  @Override public Object resize(final Object list, final int newSize) {
     final ArrayList<Object> l = (ArrayList<Object>) list;
     l.ensureCapacity(newSize);
     while (l.size() < newSize) {
@@ -170,23 +157,21 @@ public class CarbonArrayInspector implements SettableListObjectInspector {
     return list;
   }
 
-  @Override
-  public boolean equals(final Object o) {
+  @Override public boolean equals(final Object o) {
     if (o == null || o.getClass() != getClass()) {
       return false;
     } else if (o == this) {
       return true;
     } else {
-      final ObjectInspector other = ((CarbonArrayInspector) o).arrayElementInspector;
-      return other.equals(arrayElementInspector);
+      return ((CarbonArrayInspector) o).arrayElementInspector.equals(arrayElementInspector);
     }
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     int hash = 3;
     hash = 29 * hash + (this.arrayElementInspector != null ?
-      this.arrayElementInspector.hashCode() : 0);
+        this.arrayElementInspector.hashCode() :
+        0);
     return hash;
   }
 }
