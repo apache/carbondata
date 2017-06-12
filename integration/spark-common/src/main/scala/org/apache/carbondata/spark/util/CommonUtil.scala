@@ -195,28 +195,28 @@ object CommonUtil {
 
   def validateTypeConvert(desType: Option[String], value: String): Boolean = {
     var flag = true
-    val result = desType match {
-      case Some("IntegerType") =>
+    val result = desType.get.toLowerCase match {
+      case "integertype" =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.INT)
-      case Some("StringType") =>
+      case "stringtype" =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.STRING)
-      case Some("LongType") =>
+      case "longtype" =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.LONG)
-      case Some("FloatType") =>
+      case "floattype" =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.FLOAT)
-      case Some("DoubleType") =>
+      case "doubletype" =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DOUBLE)
-      case Some("ByteType") =>
+      case "bytetype" =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BYTE)
-      case Some("ShortType") =>
+      case "shorttype" =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.SHORT)
-      case Some("BooleanType") =>
+      case "booleantype" =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BOOLEAN)
-      case Some("DecimalType") =>
+      case "decimaltype" =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DECIMAL)
-      case Some("TimestampType") =>
+      case "timestamptype" =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.TIMESTAMP)
-      case Some("DateType") =>
+      case "datetype" =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DATE)
       case _ =>
         throw new MalformedCarbonCommandException("UnSupported partition type: " + desType)
