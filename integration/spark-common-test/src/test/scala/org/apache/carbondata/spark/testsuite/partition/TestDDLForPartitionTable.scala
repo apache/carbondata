@@ -124,10 +124,10 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
 
   test("test describe formatted for partition column") {
     sql(
-      """create table desc(a int, b string) partitioned by (c string) stored by 'carbondata'
+      """create table des(a int, b string) partitioned by (c string) stored by 'carbondata'
         |tblproperties ('partition_type'='list','list_info'='1,2')""".stripMargin)
-    checkExistence(sql("describe formatted desc"),true, "Partition Columns")
-    sql("drop table if exists desc")
+    checkExistence(sql("describe formatted des"),true, "Partition Columns")
+    sql("drop table if exists des")
   }
 
   override def afterAll = {
