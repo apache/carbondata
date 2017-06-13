@@ -114,10 +114,10 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
       totalKeySize += keyLengths[i];
       if (!isSortedData[i]) {
         dataAfterCompression[i] =
-            getByteArray((short[])encoded.indexStorages[i].getDataAfterComp());
-        if (null != encoded.indexStorages[i].getIndexMap() &&
-            ((short[])encoded.indexStorages[i].getIndexMap()).length > 0) {
-          indexMap[i] = getByteArray((short[])encoded.indexStorages[i].getIndexMap());
+            getByteArray((short[])encoded.indexStorages[i].getRowIdPage());
+        if (null != encoded.indexStorages[i].getRowIdRlePage() &&
+            ((short[])encoded.indexStorages[i].getRowIdRlePage()).length > 0) {
+          indexMap[i] = getByteArray((short[])encoded.indexStorages[i].getRowIdRlePage());
         } else {
           indexMap[i] = new byte[0];
         }
@@ -135,7 +135,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
       if (dataWriterVo.getRleEncodingForDictDim()[i]) {
         try {
           compressedDataIndex[i] =
-              getByteArray((short[])encoded.indexStorages[i].getDataIndexMap());
+              getByteArray((short[])encoded.indexStorages[i].getDataRlePage());
           dataIndexMapLength[i] = compressedDataIndex[i].length;
         } catch (Exception e) {
           throw new CarbonDataWriterException(e.getMessage(), e);

@@ -106,10 +106,10 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
     for (int i = 0; i < isSortedData.length; i++) {
       if (!isSortedData[i]) {
         dataAfterCompression[idx] =
-            numberCompressor.compress((int[])keyStorageArray[i].getDataAfterComp());
-        if (null != keyStorageArray[i].getIndexMap()
-            && ((int[])keyStorageArray[i].getIndexMap()).length > 0) {
-          indexMap[idx] = numberCompressor.compress((int[])keyStorageArray[i].getIndexMap());
+            numberCompressor.compress((int[])keyStorageArray[i].getRowIdPage());
+        if (null != keyStorageArray[i].getRowIdRlePage()
+            && ((int[])keyStorageArray[i].getRowIdRlePage()).length > 0) {
+          indexMap[idx] = numberCompressor.compress((int[])keyStorageArray[i].getRowIdRlePage());
         } else {
           indexMap[idx] = new byte[0];
         }
@@ -131,7 +131,7 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
       if (dataWriterVo.getRleEncodingForDictDim()[i]) {
         try {
           compressedDataIndex[idx] =
-              numberCompressor.compress((int[])keyStorageArray[i].getDataIndexMap());
+              numberCompressor.compress((int[])keyStorageArray[i].getDataRlePage());
           dataIndexMapLength[idx] = compressedDataIndex[idx].length;
           idx++;
         } catch (Exception e) {
