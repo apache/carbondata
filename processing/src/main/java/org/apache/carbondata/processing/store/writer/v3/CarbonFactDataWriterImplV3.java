@@ -28,6 +28,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.columnar.ColGroupBlockStorage;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedData;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
@@ -42,7 +43,6 @@ import org.apache.carbondata.processing.store.TablePageKey;
 import org.apache.carbondata.processing.store.TablePageStatistics;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
-import org.apache.carbondata.processing.store.writer.Encoder;
 
 /**
  * Below class will be used to write the data in V3 format
@@ -82,7 +82,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
    * This node holder object will be used to persist data which will
    * be written in carbon data file
    */
-  @Override public NodeHolder buildDataNodeHolder(Encoder.EncodedData encoded,
+  @Override public NodeHolder buildDataNodeHolder(EncodedData encoded,
       TablePageStatistics stats, TablePageKey key) throws CarbonDataWriterException {
     // if there are no NO-Dictionary column present in the table then
     // set the empty byte array
@@ -111,6 +111,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     for (int i = 0; i < numDimensions; i++) {
       isSortedData[i] = encoded.indexStorages[i].isAlreadySorted();
       keyLengths[i] = encoded.dimensions[i].length;
+      totalKeySize += keyLengths[i];
       if (!isSortedData[i]) {
         dataAfterCompression[i] =
             getByteArray((short[])encoded.indexStorages[i].getDataAfterComp());

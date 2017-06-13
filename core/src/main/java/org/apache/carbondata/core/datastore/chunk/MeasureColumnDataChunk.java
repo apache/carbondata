@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.core.datastore.chunk;
 
-import org.apache.carbondata.core.datastore.dataholder.CarbonReadDataHolder;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.blocklet.datachunk.PresenceMeta;
 
 /**
@@ -27,9 +27,9 @@ import org.apache.carbondata.core.metadata.blocklet.datachunk.PresenceMeta;
 public class MeasureColumnDataChunk {
 
   /**
-   * measure chunk
+   * measure column page
    */
-  private CarbonReadDataHolder measureDataHolder;
+  private ColumnPage measurePage;
 
   /**
    * below to hold null value holds this information
@@ -39,17 +39,17 @@ public class MeasureColumnDataChunk {
   private PresenceMeta nullValueIndexHolder;
 
   /**
-   * @return the measureDataHolder
+   * @return the measurePage
    */
-  public CarbonReadDataHolder getMeasureDataHolder() {
-    return measureDataHolder;
+  public ColumnPage getColumnPage() {
+    return measurePage;
   }
 
   /**
-   * @param measureDataHolder the measureDataHolder to set
+   * @param measurePage the column page to set
    */
-  public void setMeasureDataHolder(CarbonReadDataHolder measureDataHolder) {
-    this.measureDataHolder = measureDataHolder;
+  public void setColumnPage(ColumnPage measurePage) {
+    this.measurePage = measurePage;
   }
 
   /**
@@ -67,6 +67,6 @@ public class MeasureColumnDataChunk {
   }
 
   public void freeMemory() {
-    this.measureDataHolder.freeMemory();
+    this.measurePage.freeMemory();
   }
 }

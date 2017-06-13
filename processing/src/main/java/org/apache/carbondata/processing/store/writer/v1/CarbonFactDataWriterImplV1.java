@@ -27,6 +27,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.columnar.ColGroupBlockStorage;
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedData;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.NodeHolder;
@@ -36,7 +37,6 @@ import org.apache.carbondata.processing.store.TablePageKey;
 import org.apache.carbondata.processing.store.TablePageStatistics;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
-import org.apache.carbondata.processing.store.writer.Encoder;
 
 public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
 
@@ -48,7 +48,7 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
   }
 
   @Override
-  public NodeHolder buildDataNodeHolder(Encoder.EncodedData encoded,
+  public NodeHolder buildDataNodeHolder(EncodedData encoded,
       TablePageStatistics stats, TablePageKey key)
       throws CarbonDataWriterException {
     // if there are no NO-Dictionary column present in the table then
