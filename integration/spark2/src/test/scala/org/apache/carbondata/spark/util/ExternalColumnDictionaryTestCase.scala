@@ -179,6 +179,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
   }
 
   override def beforeAll {
+    cleanAllTables
     buildTestData
     buildTable
     buildRelation
@@ -231,7 +232,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       sql(
         s"""
       LOAD DATA LOCAL INPATH "$complexFilePath1" INTO TABLE loadSqlTest
-      OPTIONS('FILEHEADER'='$header', 'COLUMNDICT'='$extColDictFilePath1')
+      OPTIONS('FILEHEADER'='$header', 'COLUMNDICT'='$extColDictFilePath1', 'single_pass'='true')
         """)
     } catch {
       case ex: Exception =>
@@ -264,7 +265,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       sql(
         s"""
       LOAD DATA LOCAL INPATH "$complexFilePath1" INTO TABLE loadSqlTest
-      OPTIONS('FILEHEADER'='$header', 'COLUMNDICT'='gamePointId:$filePath')
+      OPTIONS('single_pass'='true','FILEHEADER'='$header', 'COLUMNDICT'='gamePointId:$filePath')
       """)
       assert(false)
     } catch {
@@ -276,9 +277,13 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     }
   }
 
+  def cleanAllTables: Unit = {
+    sql("DROP TABLE IF EXISTS extComplextypes")
+    sql("DROP TABLE IF EXISTS verticalDelimitedTable")
+    sql("DROP TABLE IF EXISTS loadSqlTest")
+  }
+
   override def afterAll: Unit = {
-    sql("DROP TABLE extComplextypes")
-    sql("DROP TABLE verticalDelimitedTable")
-    sql("DROP TABLE loadSqlTest")
+    cleanAllTables
   }
 }

@@ -303,7 +303,7 @@ public final class DataTypeUtil {
             Date dateToStr = dateformatter.get().parse(data);
             return dateToStr.getTime() * 1000;
           } catch (ParseException e) {
-            LOGGER.error("Cannot convert" + data + " to Time/Long type value" + e.getMessage());
+            LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
             return null;
           }
 
@@ -315,7 +315,7 @@ public final class DataTypeUtil {
             Date dateToStr = timeStampformatter.get().parse(data);
             return dateToStr.getTime() * 1000;
           } catch (ParseException e) {
-            LOGGER.error("Cannot convert" + data + " to Time/Long type value" + e.getMessage());
+            LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
             return null;
           }
         case DECIMAL:
@@ -452,7 +452,7 @@ public final class DataTypeUtil {
             Date dateToStr = dateformatter.get().parse(data5);
             return dateToStr.getTime() * 1000;
           } catch (ParseException e) {
-            LOGGER.error("Cannot convert" + data5 + " to Time/Long type value" + e.getMessage());
+            LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
             return null;
           }
 
@@ -465,7 +465,7 @@ public final class DataTypeUtil {
             Date dateToStr = timeStampformatter.get().parse(data6);
             return dateToStr.getTime() * 1000;
           } catch (ParseException e) {
-            LOGGER.error("Cannot convert" + data6 + " to Time/Long type value" + e.getMessage());
+            LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
             return null;
           }
         case DECIMAL:

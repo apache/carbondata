@@ -220,6 +220,7 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
       s" OPTIONS" +
       s"('BAD_RECORDS_LOGGER_ENABLE'='TRUE', " +
       s"'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,a6')")
+    sql("select a6 from carbon_measure_is_null where a6 is null").show
     checkAnswer(sql("select * from carbon_measure_is_null"),
       sql("select * from carbon_measure_is_null where a6 is null"))
     checkAnswer(sql("select count(*) from carbon_measure_is_null where a6 is not null"), Row(0))
@@ -371,10 +372,45 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_no_dict")
   }
 
+  test("no inverted index load and alter table") {
+
+    sql("drop table if exists indexAlter")
+    sql(
+      """
+        CREATE TABLE IF NOT EXISTS indexAlter
+        (ID Int, date Timestamp, country String,
+        name String, phonetype String, serialname String)
+        STORED BY 'org.apache.carbondata.format'
+        TBLPROPERTIES('NO_INVERTED_INDEX'='country,name,phonetype')
+      """)
+
+    val testData2 = s"$resourcesPath/source.csv"
+
+    sql(s"""
+           LOAD DATA LOCAL INPATH '$testData2' into table indexAlter
+           """)
+
+    sql("alter table indexAlter add columns(salary String) tblproperties('no_inverted_index'='salary')")
+    sql(s"""
+           LOAD DATA LOCAL INPATH '$testData2' into table indexAlter
+           """)
+    checkAnswer(
+      sql("""
+           SELECT country, count(salary) AS amount
+           FROM indexAlter
+           WHERE country IN ('china','france')
+           GROUP BY country
+          """),
+      Seq(Row("china", 96), Row("france", 1))
+    )
+
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS addcolumntest")
     sql("drop table if exists hivetable")
     sql("drop table if exists alter_sort_columns")
+    sql("drop table if exists indexAlter")
     sqlContext.setConf("carbon.enable.vector.reader", "false")
   }
 }

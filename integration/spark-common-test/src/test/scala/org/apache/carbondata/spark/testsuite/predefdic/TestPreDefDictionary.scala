@@ -49,7 +49,7 @@ class TestPreDefDictionary extends QueryTest with BeforeAndAfterAll {
        STORED BY 'carbondata'""")
     sql(
       s"""LOAD DATA LOCAL INPATH '$testData' into table predefdictable
-           options('ALL_DICTIONARY_PATH'='$allDictFile')""")
+           options('ALL_DICTIONARY_PATH'='$allDictFile','single_pass'='true')""")
     checkAnswer(
       sql("select phonetype from predefdictable where phonetype='phone197'"),
       Seq(Row("phone197"))
@@ -89,9 +89,51 @@ class TestPreDefDictionary extends QueryTest with BeforeAndAfterAll {
       Seq(Row("phone197"))
     )
   }
+
+  test("validation test columndict with single_pass= false.") {
+    val csvFilePath = s"$resourcesPath/nullvalueserialization.csv"
+    val testData = s"$resourcesPath/predefdic/data3.csv"
+    val csvHeader = "ID,phonetype"
+    val dicFilePath = s"$resourcesPath/predefdic/dicfilepath.csv"
+    sql(
+      """CREATE TABLE IF NOT EXISTS columndicValidationTable (ID Int, phonetype String)
+       STORED BY 'carbondata'""")
+    try {
+      sql(
+        s"""LOAD DATA LOCAL INPATH '$testData' into table columndicValidationTable
+           options('COLUMNDICT'='phonetype:$dicFilePath', 'SINGLE_PASS'='false')""")
+    } catch {
+      case x: Throwable =>
+        val failMess: String = "Can not use all_dictionary_path or columndict without single_pass."
+        assert(failMess.equals(x.getMessage))
+    }
+  }
+
+  test("validation test ALL_DICTIONARY_PATH with single_pass= false.") {
+    val csvFilePath = s"$resourcesPath/nullvalueserialization.csv"
+    val testData = s"$resourcesPath/predefdic/data3.csv"
+    val csvHeader = "ID,phonetype"
+    val allDictFile = s"$resourcesPath/predefdic/allpredefdictionary.csv"
+    sql(
+      """CREATE TABLE IF NOT EXISTS predefdictableval (ID Int, phonetype String)
+       STORED BY 'carbondata'""")
+    try {
+    sql(
+      s"""LOAD DATA LOCAL INPATH '$testData' into table predefdictableval
+           options('ALL_DICTIONARY_PATH'='$allDictFile', 'SINGLE_PASS'='false')""")
+    } catch {
+      case x: Throwable =>
+        val failMess: String = "Can not use all_dictionary_path or columndict without single_pass."
+        assert(failMess.equals(x.getMessage))
+    }
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS predefdictable")
     sql("DROP TABLE IF EXISTS predefdictable1")
     sql("DROP TABLE IF EXISTS columndicTable")
+    sql("DROP TABLE IF EXISTS columndicValidationTable")
+    sql("DROP TABLE IF EXISTS predefdictableval")
+
   }
 }

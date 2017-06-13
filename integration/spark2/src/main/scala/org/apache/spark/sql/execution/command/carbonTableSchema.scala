@@ -448,8 +448,11 @@ case class LoadTable(
         case "true" =>
           true
         case "false" =>
-          if (!StringUtils.isEmpty(allDictionaryPath)) {
-            true
+          // when single_pass = false  and if either alldictionarypath
+          // or columnDict is configured the do not allow load
+          if (StringUtils.isNotEmpty(allDictionaryPath) || StringUtils.isNotEmpty(columnDict)) {
+            throw new MalformedCarbonCommandException(
+              "Can not use all_dictionary_path or columndict without single_pass.")
           } else {
             false
           }
@@ -859,9 +862,17 @@ private[sql] case class DescribeCommandFormatted(
     } else {
       results ++= Seq(("ADAPTIVE", "", ""))
     }
+    results ++= Seq(("SORT_COLUMNS", relation.metaData.carbonTable.getAllDimensions
+      .subList(0, relation.metaData.carbonTable.getNumberOfSortColumns).asScala
+      .map(column => column.getColName).mkString(","), ""))
     val dimension = carbonTable
       .getDimensionByTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
     results ++= getColumnGroups(dimension.asScala.toList)
+    if (carbonTable.getPartitionInfo(carbonTable.getFactTableName) != null) {
+      results ++=
+      Seq(("Partition Columns: ", carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+        .getColumnSchemaList.asScala.map(_.getColumnName).mkString(","), ""))
+    }
     results.map { case (name, dataType, comment) =>
       Row(f"$name%-36s", f"$dataType%-80s", f"$comment%-72s")
     }

@@ -15,12 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.store.colgroup;
+package org.apache.carbondata.core.datastore.columnar;
 
 import java.util.concurrent.Callable;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
+import org.apache.carbondata.processing.store.colgroup.ColGroupDataHolder;
+import org.apache.carbondata.processing.store.colgroup.ColGroupMinMax;
 
 /**
  * it is holder of column group data and also min max for colgroup block data

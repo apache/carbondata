@@ -340,7 +340,7 @@ public abstract class AbstractDataFileFooterConverter {
       List<ValueEncoderMeta> encodeMetaList =
           new ArrayList<ValueEncoderMeta>(thriftEncoderMeta.size());
       for (int i = 0; i < thriftEncoderMeta.size(); i++) {
-        encodeMetaList.add(CarbonUtil.deserializeEncoderMeta(thriftEncoderMeta.get(i).array()));
+        encodeMetaList.add(CarbonUtil.deserializeEncoderMetaV2(thriftEncoderMeta.get(i).array()));
       }
       dataChunk.setValueEncoderMeta(encodeMetaList);
     }

@@ -31,7 +31,6 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -516,7 +515,7 @@ public class CarbonUtilTest {
       }
     };
     TableBlockInfo info =
-        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1);
+        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
 
     assertEquals(CarbonUtil.readMetadatFile(info).getVersionId().number(), 1);
   }
@@ -525,7 +524,7 @@ public class CarbonUtilTest {
   public void testToReadMetadatFileWithException()
       throws Exception {
     TableBlockInfo info =
-        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1);
+        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
     CarbonUtil.readMetadatFile(info);
   }
 
@@ -661,9 +660,7 @@ public class CarbonUtilTest {
     valueEncoderMetas.add(valueEncoderMeta);
     dataChunk.setValueEncoderMeta(valueEncoderMetas);
     dataChunkList.add(dataChunk);
-    WriterCompressModel writerCompressModel =
-        CarbonUtil.getValueCompressionModel(dataChunkList.get(0).getValueEncoderMeta());
-    assertEquals(1, writerCompressModel.getMaxValue().length);
+    assertEquals(1, dataChunkList.get(0).getValueEncoderMeta().size());
   }
 
   @Test public void testToGetDictionaryChunkSize() {

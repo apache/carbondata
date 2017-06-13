@@ -19,10 +19,12 @@ package org.apache.carbondata.core.reader;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -34,9 +36,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
 import org.apache.carbondata.core.mutate.DeleteDeltaBlockletDetails;
+import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.util.CarbonProperties;
-
-import org.apache.commons.lang.ArrayUtils;
 
 
 /**
@@ -80,8 +81,8 @@ public class CarbonDeleteFilesDataReader {
    * @return
    * @throws Exception
    */
-  public int[] getDeleteDataFromAllFiles(List<String> deltaFiles, String blockletId)
-      throws Exception {
+  public Map<Integer, Integer[]> getDeleteDataFromAllFiles(List<String> deltaFiles,
+      String blockletId) throws Exception {
 
     List<Future<DeleteDeltaBlockDetails>> taskSubmitList = new ArrayList<>();
     ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
@@ -101,21 +102,72 @@ public class CarbonDeleteFilesDataReader {
       LOGGER.error("Error while reading the delete delta files : " + e.getMessage());
     }
 
-    Set<Integer> result = new TreeSet<Integer>();
+    Map<Integer, Integer[]> pageIdDeleteRowsMap =
+        new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (int i = 0; i < taskSubmitList.size(); i++) {
       try {
         List<DeleteDeltaBlockletDetails> blockletDetails =
             taskSubmitList.get(i).get().getBlockletDetails();
-        result.addAll(
-            blockletDetails.get(blockletDetails.indexOf(new DeleteDeltaBlockletDetails(blockletId)))
-                .getDeletedRows());
+        for (DeleteDeltaBlockletDetails eachBlockletDetails : blockletDetails) {
+          Integer pageId = eachBlockletDetails.getPageId();
+          Set<Integer> rows = blockletDetails
+              .get(blockletDetails.indexOf(new DeleteDeltaBlockletDetails(blockletId, pageId)))
+              .getDeletedRows();
+          pageIdDeleteRowsMap.put(pageId, rows.toArray(new Integer[rows.size()]));
+        }
+
       } catch (Throwable e) {
         LOGGER.error(e.getMessage());
         throw new Exception(e.getMessage());
       }
     }
-    return ArrayUtils.toPrimitive(result.toArray(new Integer[result.size()]));
+    return pageIdDeleteRowsMap;
+  }
 
+  /**
+   * Below method will be used to read the delete delta files
+   * and get the map of blockletid and page id mapping to deleted
+   * rows
+   *
+   * @param deltaFiles delete delta files array
+   * @return map of blockletid_pageid to deleted rows
+   */
+  public Map<String, DeleteDeltaVo> getDeletedRowsDataVo(String[] deltaFiles) {
+    List<Future<DeleteDeltaBlockDetails>> taskSubmitList = new ArrayList<>();
+    ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
+    for (final String deltaFile : deltaFiles) {
+      taskSubmitList.add(executorService.submit(new Callable<DeleteDeltaBlockDetails>() {
+        @Override public DeleteDeltaBlockDetails call() throws IOException {
+          CarbonDeleteDeltaFileReaderImpl deltaFileReader =
+              new CarbonDeleteDeltaFileReaderImpl(deltaFile, FileFactory.getFileType(deltaFile));
+          return deltaFileReader.readJson();
+        }
+      }));
+    }
+    try {
+      executorService.shutdown();
+      executorService.awaitTermination(30, TimeUnit.MINUTES);
+    } catch (InterruptedException e) {
+      LOGGER.error("Error while reading the delete delta files : " + e.getMessage());
+    }
+    Map<String, DeleteDeltaVo> pageIdToBlockLetVo = new HashMap<>();
+    List<DeleteDeltaBlockletDetails> blockletDetails = null;
+    for (int i = 0; i < taskSubmitList.size(); i++) {
+      try {
+        blockletDetails = taskSubmitList.get(i).get().getBlockletDetails();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
+      }
+      for (DeleteDeltaBlockletDetails blockletDetail : blockletDetails) {
+        DeleteDeltaVo deleteDeltaVo = pageIdToBlockLetVo.get(blockletDetail.getBlockletKey());
+        if (null == deleteDeltaVo) {
+          deleteDeltaVo = new DeleteDeltaVo();
+          pageIdToBlockLetVo.put(blockletDetail.getBlockletKey(), deleteDeltaVo);
+        }
+        deleteDeltaVo.insertData(blockletDetail.getDeletedRows());
+      }
+    }
+    return pageIdToBlockLetVo;
   }
 
   /**

@@ -30,7 +30,6 @@ public class IntPointerBuffer {
 
   private int actualSize;
 
-
   private int[] pointerBlock;
 
   private MemoryBlock baseBlock;

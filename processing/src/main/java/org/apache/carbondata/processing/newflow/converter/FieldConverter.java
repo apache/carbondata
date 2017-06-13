@@ -17,8 +17,8 @@
 
 package org.apache.carbondata.processing.newflow.converter;
 
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
 /**
  * This interface converts/transforms the column field.

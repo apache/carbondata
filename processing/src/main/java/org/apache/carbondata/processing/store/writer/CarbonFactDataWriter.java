@@ -17,33 +17,19 @@
 
 package org.apache.carbondata.processing.store.writer;
 
-import java.util.BitSet;
-
-import org.apache.carbondata.core.datastore.columnar.IndexStorage;
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
+import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.util.NodeHolder;
-import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
+import org.apache.carbondata.processing.store.TablePageKey;
+import org.apache.carbondata.processing.store.TablePageStatistics;
 
 public interface CarbonFactDataWriter<T> {
 
   /**
-   * This method will be used to write leaf data to file
-   * file format
-   * <key><measure1><measure2>....
-   *
-   * @param measureArray            measure array
-   * @param entryCount           number of entries
-   * @param startKey             start key of leaf
-   * @param endKey               end key of leaf
-   * @param noDictionaryEndKey
-   * @param noDictionaryStartKey
-   * @throws CarbonDataWriterException throws new CarbonDataWriterException if any problem
+   * This method will be used to create NodeHolder for a table page
    */
 
-  NodeHolder buildDataNodeHolder(IndexStorage<T>[] keyStorageArray, byte[][] measureArray,
-      int entryCount, byte[] startKey, byte[] endKey, WriterCompressModel compressionModel,
-      byte[] noDictionaryStartKey, byte[] noDictionaryEndKey, BitSet[] nullValueIndexBitSet)
-      throws CarbonDataWriterException;
+  NodeHolder buildDataNodeHolder(Encoder.EncodedData encoded, TablePageStatistics stats,
+      TablePageKey key) throws CarbonDataWriterException;
 
   /**
    * If node holder flag is enabled the object will be added to list
