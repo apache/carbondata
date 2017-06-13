@@ -33,7 +33,7 @@ public class LogServiceFactoryTest_UT extends TestCase {
   }
 
   @Test public void testGetLogService() {
-    LogService logger = LogServiceFactory.getLogService("sampleclass");
+    LogService logger = LogServiceFactory.getLogService(this.getClass().getName());
     assertTrue(logger instanceof StandardLogService);
   }
 
