@@ -28,7 +28,7 @@ public interface ChangeEvent<T> {
   void setEventData(T data);
 
   enum EventType {
-    DELETE,UPDATE,REFERESH
+    INSERT,DELETE,UPDATE,REFRESH
   }
 }
 

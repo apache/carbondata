@@ -26,16 +26,16 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 /**
  * It maintains all the index tables in it.
  */
-public class DataMapStore {
+public class DataMapStoreManager {
 
-  private static DataMapStore instance = new DataMapStore();
+  private static DataMapStoreManager instance = new DataMapStoreManager();
 
   private Map<DataMapType, Map<String, TableDataMap>> dataMapMappping = new HashMap<>();
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DataMapStore.class.getName());
+      LogServiceFactory.getLogService(DataMapStoreManager.class.getName());
 
-  private DataMapStore() {
+  private DataMapStoreManager() {
 
   }
 
@@ -98,7 +98,7 @@ public class DataMapStore {
     }
   }
 
-  public static DataMapStore getInstance() {
+  public static DataMapStoreManager getInstance() {
     return instance;
   }
 
