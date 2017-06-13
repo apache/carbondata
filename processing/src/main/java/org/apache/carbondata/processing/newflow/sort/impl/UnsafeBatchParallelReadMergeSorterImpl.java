@@ -32,6 +32,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
@@ -208,7 +209,7 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
 
       try {
         sortDataRow.initialize();
-      } catch (CarbonSortKeyAndGroupByException e) {
+      } catch (MemoryException e) {
         throw new CarbonDataLoadingException(e);
       }
     }

@@ -40,7 +40,7 @@ public class MeasurePageStatsVO {
     dataType = new DataType[measurePages.length];
     selectedDataType = new byte[measurePages.length];
     for (int i = 0; i < measurePages.length; i++) {
-      ColumnPageStatistics stats = measurePages[i].getStatistics();
+      ColumnPageStatsVO stats = measurePages[i].getStatistics();
       min[i] = stats.getMin();
       max[i] = stats.getMax();
       nonExistValue[i] = stats.nonExistValue();

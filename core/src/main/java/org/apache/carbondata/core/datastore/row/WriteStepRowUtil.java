@@ -67,7 +67,7 @@ public class WriteStepRowUtil {
     return new CarbonRow(converted);
   }
 
-  private static int[] getDictDimension(CarbonRow row) {
+  public static int[] getDictDimension(CarbonRow row) {
     return (int[]) row.getData()[DICTIONARY_DIMENSION];
   }
 
