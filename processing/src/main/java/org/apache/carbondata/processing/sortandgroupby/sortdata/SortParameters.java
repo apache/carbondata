@@ -17,6 +17,7 @@
 package org.apache.carbondata.processing.sortandgroupby.sortdata;
 
 import java.io.File;
+import java.io.Serializable;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -29,7 +30,7 @@ import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.schema.metadata.SortObserver;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
-public class SortParameters {
+public class SortParameters implements Serializable {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(SortParameters.class.getName());

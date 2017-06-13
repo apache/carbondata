@@ -48,6 +48,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.NodeHolder;
+import org.apache.carbondata.processing.newflow.sort.SortScopeOptions;
 import org.apache.carbondata.processing.store.file.FileManager;
 import org.apache.carbondata.processing.store.file.IFileManagerComposite;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
@@ -145,6 +146,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   private DefaultEncoder encoder;
 
+  private SortScopeOptions.SortScope sortScope;
+
   /**
    * CarbonFactDataHandler constructor
    */
@@ -207,7 +210,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   }
 
   private void initParameters(CarbonFactDataHandlerModel model) {
-
+    this.sortScope = model.getSortScope();
     this.colGrpModel = model.getSegmentProperties().getColumnGroupModel();
 
     //TODO need to pass carbon table identifier to metadata
@@ -241,6 +244,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
         numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
       }
+    }
+
+    if (sortScope != null && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
+      numberOfCores = 1;
     }
 
     blockletProcessingCount = new AtomicInteger(0);
