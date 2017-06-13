@@ -36,27 +36,16 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
   private byte[] min;
   private byte[] max;
 
-  public BlockIndexerStorageForNoInvertedIndexForShort(byte[][] keyBlockInput,
-      boolean isNoDictonary) {
+  public BlockIndexerStorageForNoInvertedIndexForShort(boolean dictionaryStatus,
+      byte[][] keyBlockInput) {
     this.keyBlock = keyBlockInput;
+    int compareVal = 0;
     min = keyBlock[0];
     max = keyBlock[0];
     totalSize += keyBlock[0].length;
-    int minCompare = 0;
-    int maxCompare = 0;
-    if (!isNoDictonary) {
-      for (int i = 1; i < keyBlock.length; i++) {
-        totalSize += keyBlock[i].length;
-        minCompare = ByteUtil.compare(min, keyBlock[i]);
-        maxCompare = ByteUtil.compare(max, keyBlock[i]);
-        if (minCompare > 0) {
-          min = keyBlock[i];
-        }
-        if (maxCompare < 0) {
-          max = keyBlock[i];
-        }
-      }
-    } else {
+    int minCompare = compareVal;
+    int maxCompare = compareVal;
+    if (dictionaryStatus) {
       for (int i = 1; i < keyBlock.length; i++) {
         totalSize += keyBlock[i].length;
         minCompare = ByteUtil.UnsafeComparer.INSTANCE
@@ -65,8 +54,18 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
             .compareTo(max, 2, max.length - 2, keyBlock[i], 2, keyBlock[i].length - 2);
         if (minCompare > 0) {
           min = keyBlock[i];
+        } else if (maxCompare < 0) {
+          max = keyBlock[i];
         }
-        if (maxCompare < 0) {
+      }
+    } else {
+      for (int i = 1; i < keyBlock.length; i++) {
+        totalSize += keyBlock[i].length;
+        minCompare = ByteUtil.compare(min, keyBlock[i]);
+        maxCompare = ByteUtil.compare(max, keyBlock[i]);
+        if (minCompare > 0) {
+          min = keyBlock[i];
+        } else if (maxCompare < 0) {
           max = keyBlock[i];
         }
       }

@@ -76,11 +76,9 @@ public class DefaultEncoder implements Encoder {
     CompressionFinder[] finders = new CompressionFinder[measureCount];
     for (int i = 0; i < measureCount; i++) {
       ColumnPageStatistics stats = measurePage[i].getStatistics();
-      finders[i] = ValueCompressionUtil.getCompressionFinder(
-          stats.getMax(),
-          stats.getMin(),
-          stats.getDecimal(),
-          measurePage[i].getDataType(), dataTypeSelected[i]);
+      finders[i] = ValueCompressionUtil
+          .getCompressionFinder(stats.getMax(), stats.getMin(), stats.getDecimal(),
+              measurePage[i].getDataType(), dataTypeSelected[i]);
     }
 
     //CompressionFinder[] finders = compressionModel.getCompressionFinders();
@@ -90,21 +88,16 @@ public class DefaultEncoder implements Encoder {
 
   // this method first invokes encoding routine to encode the data chunk,
   // followed by invoking compression routine for preparing the data chunk for writing.
-  private byte[][] encodeMeasure(ValueCompressionHolder[] holders,
-      CompressionFinder[] finders,
+  private byte[][] encodeMeasure(ValueCompressionHolder[] holders, CompressionFinder[] finders,
       ColumnPage[] columnPages) {
     ValueCompressionHolder[] values = new ValueCompressionHolder[columnPages.length];
     byte[][] encodedMeasures = new byte[values.length][];
     for (int i = 0; i < columnPages.length; i++) {
       values[i] = holders[i];
       if (columnPages[i].getDataType() != DataType.DECIMAL) {
-        ValueCompressor compressor =
-            ValueCompressionUtil.getValueCompressor(finders[i]);
-        Object compressed = compressor.getCompressedValues(
-            finders[i],
-            columnPages[i],
-            columnPages[i].getStatistics().getMax(),
-            columnPages[i].getStatistics().getDecimal());
+        ValueCompressor compressor = ValueCompressionUtil.getValueCompressor(finders[i]);
+        Object compressed = compressor.getCompressedValues(finders[i], columnPages[i],
+            columnPages[i].getStatistics().getMax(), columnPages[i].getStatistics().getDecimal());
         values[i].setValue(compressed);
       } else {
         // in case of decimal, 'flatten' the byte[][] to byte[]
@@ -136,7 +129,7 @@ public class DefaultEncoder implements Encoder {
       }
     } else {
       if (version == ColumnarFormatVersion.V3) {
-        return new BlockIndexerStorageForNoInvertedIndexForShort(data, false);
+        return new BlockIndexerStorageForNoInvertedIndexForShort(false, data);
       } else {
         return new BlockIndexerStorageForNoInvertedIndex(data);
       }
@@ -153,7 +146,7 @@ public class DefaultEncoder implements Encoder {
       }
     } else {
       if (version == ColumnarFormatVersion.V3) {
-        return new BlockIndexerStorageForNoInvertedIndexForShort(data, false);
+        return new BlockIndexerStorageForNoInvertedIndexForShort(false, data);
       } else {
         return new BlockIndexerStorageForNoInvertedIndex(data);
       }
@@ -178,7 +171,7 @@ public class DefaultEncoder implements Encoder {
       }
     } else {
       if (version == ColumnarFormatVersion.V3) {
-        return new BlockIndexerStorageForNoInvertedIndexForShort(data, true);
+        return new BlockIndexerStorageForNoInvertedIndexForShort(true, data);
       } else {
         return new BlockIndexerStorageForNoInvertedIndex(data);
       }
@@ -202,37 +195,29 @@ public class DefaultEncoder implements Encoder {
       switch (dimensionSpec.getType(i)) {
         case GLOBAL_DICTIONARY:
           // dictionary dimension
-          indexStorages[indexStorageOffset] =
-              encodeAndCompressDictDimension(
-                  tablePage.getKeyColumnPage().getKeyVector(++dictionaryColumnCount),
-                  isSortColumn,
-                  isUseInvertedIndex[i] & isSortColumn);
+          indexStorages[indexStorageOffset] = encodeAndCompressDictDimension(
+              tablePage.getKeyColumnPage().getKeyVector(++dictionaryColumnCount), isSortColumn,
+              isUseInvertedIndex[i] & isSortColumn);
           flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getKeyBlock());
           break;
         case DIRECT_DICTIONARY:
           // timestamp and date column
-          indexStorages[indexStorageOffset] =
-              encodeAndCompressDirectDictDimension(
-                  tablePage.getKeyColumnPage().getKeyVector(++dictionaryColumnCount),
-                  isSortColumn,
-                  isUseInvertedIndex[i] & isSortColumn);
+          indexStorages[indexStorageOffset] = encodeAndCompressDirectDictDimension(
+              tablePage.getKeyColumnPage().getKeyVector(++dictionaryColumnCount), isSortColumn,
+              isUseInvertedIndex[i] & isSortColumn);
           flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getKeyBlock());
           break;
         case PLAIN_VALUE:
           // high cardinality dimension, encoded as plain string
-          indexStorages[indexStorageOffset] =
-              encodeAndCompressNoDictDimension(
-                  tablePage.getNoDictDimensionPage()[++noDictionaryColumnCount].getStringPage(),
-                  isSortColumn,
-                  isUseInvertedIndex[i] & isSortColumn);
+          indexStorages[indexStorageOffset] = encodeAndCompressNoDictDimension(
+              tablePage.getNoDictDimensionPage()[++noDictionaryColumnCount].getStringPage(),
+              isSortColumn, isUseInvertedIndex[i] & isSortColumn);
           flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getKeyBlock());
           break;
         case COLUMN_GROUP:
           // column group
           indexStorages[indexStorageOffset] =
-              new ColGroupBlockStorage(
-                  segmentProperties,
-                  ++colGrpId,
+              new ColGroupBlockStorage(segmentProperties, ++colGrpId,
                   tablePage.getKeyColumnPage().getKeyVector(++dictionaryColumnCount));
           flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getKeyBlock());
           break;
