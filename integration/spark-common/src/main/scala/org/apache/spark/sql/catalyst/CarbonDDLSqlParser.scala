@@ -259,6 +259,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     // get column groups configuration from table properties.
     val groupCols: Seq[String] = updateColumnGroupsInField(tableProperties,
       noDictionaryDims, msrs, dims)
+    if (groupCols != null) {
+      throw new MalformedCarbonCommandException(
+        s"${CarbonCommonConstants.COLUMN_GROUPS} is deprecated")
+    }
 
     // get no inverted index columns from table properties.
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
