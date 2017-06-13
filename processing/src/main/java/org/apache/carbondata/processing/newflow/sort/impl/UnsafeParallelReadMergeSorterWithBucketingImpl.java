@@ -55,7 +55,8 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 public class UnsafeParallelReadMergeSorterWithBucketingImpl implements Sorter {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnsafeParallelReadMergeSorterWithBucketingImpl.class.getName());
+      LogServiceFactory.getLogService(
+                UnsafeParallelReadMergeSorterWithBucketingImpl.class.getName());
 
   private SortParameters sortParameters;
 
