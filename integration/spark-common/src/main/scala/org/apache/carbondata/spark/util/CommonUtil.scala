@@ -195,36 +195,66 @@ object CommonUtil {
 
   def validateTypeConvert(desType: Option[String], value: String): Boolean = {
     var flag = true
-    val result = desType.get.toLowerCase match {
-      case "integertype" =>
+    val result = desType match {
+      case Some("IntegerType") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.INT)
-      case "stringtype" =>
+      case Some("StringType") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.STRING)
-      case "longtype" =>
+      case Some("LongType") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.LONG)
-      case "floattype" =>
+      case Some("FloatType") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.FLOAT)
-      case "doubletype" =>
+      case Some("DoubleType") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DOUBLE)
-      case "bytetype" =>
+      case Some("ByteType") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BYTE)
-      case "shorttype" =>
+      case Some("ShortType") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.SHORT)
-      case "booleantype" =>
+      case Some("BooleanType") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BOOLEAN)
-      case "decimaltype" =>
+      case Some("DecimalType") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DECIMAL)
-      case "timestamptype" =>
+      case Some("TimestampType") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.TIMESTAMP)
-      case "datetype" =>
+      case Some("DateType") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DATE)
       case _ =>
-        throw new MalformedCarbonCommandException("UnSupported partition type: " + desType)
+        validateTypeConvertExt(desType, value)
     }
     if (result == null) {
       flag = false
     }
     flag
+  }
+
+  def validateTypeConvertExt(desType: Option[String], value: String): Object = {
+    val resultExt = desType match {
+      case Some("int") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.INT)
+      case Some("string") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.STRING)
+      case Some("long") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.LONG)
+      case Some("float") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.FLOAT)
+      case Some("double") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DOUBLE)
+      case Some("byte") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BYTE)
+      case Some("short") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.SHORT)
+      case Some("boolean") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BOOLEAN)
+      case Some("decimal") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DECIMAL)
+      case Some("timestamp") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.TIMESTAMP)
+      case Some("date") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DATE)
+      case _ =>
+        throw new MalformedCarbonCommandException("UnSupported partition type: " + desType)
+    }
+    resultExt
   }
 
   def validateFields(key: String, fields: Seq[Field]): Boolean = {
