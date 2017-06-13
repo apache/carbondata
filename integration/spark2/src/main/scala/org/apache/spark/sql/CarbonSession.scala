@@ -31,8 +31,8 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Session implementation for {org.apache.spark.sql.SparkSession}
- * Implemented this class only to use our own SQL DDL commands.
- * User needs to use {CarbonSession.getOrCreateCarbon} to create Carbon session.
+ * Implement this class only to use our own SQL DDL commands.
+ * User needs to use {CarbonSession.getOrCreateCarbon} to create carbon session.
  */
 class CarbonSession(@transient val sc: SparkContext,
     @transient private val existingSharedState: Option[SharedState]) extends SparkSession(sc) {
