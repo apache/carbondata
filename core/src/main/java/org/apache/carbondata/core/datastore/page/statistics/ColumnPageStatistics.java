@@ -18,12 +18,13 @@
 package org.apache.carbondata.core.datastore.page.statistics;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 /** statics for one column page */
-public class PageStatistics {
+public class ColumnPageStatistics {
   private DataType dataType;
 
   /** min and max value of the measures */
@@ -33,12 +34,12 @@ public class PageStatistics {
    * the unique value is the non-exist value in the row,
    * and will be used as storage key for null values of measures
    */
-  private Object uniqueValue;
+  private Object nonExistValue;
 
   /** decimal count of the measures */
   private int decimal;
 
-  public PageStatistics(DataType dataType) {
+  public ColumnPageStatistics(DataType dataType) {
     this.dataType = dataType;
     switch (dataType) {
       case SHORT:
@@ -46,17 +47,17 @@ public class PageStatistics {
       case LONG:
         max = Long.MIN_VALUE;
         min = Long.MAX_VALUE;
-        uniqueValue = Long.MIN_VALUE;
+        nonExistValue = Long.MIN_VALUE;
         break;
       case DOUBLE:
         max = Double.MIN_VALUE;
         min = Double.MAX_VALUE;
-        uniqueValue = Double.MIN_VALUE;
+        nonExistValue = Double.MIN_VALUE;
         break;
       case DECIMAL:
         max = new BigDecimal(Double.MIN_VALUE);
         min = new BigDecimal(Double.MAX_VALUE);
-        uniqueValue = new BigDecimal(Double.MIN_VALUE);
+        nonExistValue = new BigDecimal(Double.MIN_VALUE);
         break;
     }
     decimal = 0;
@@ -70,30 +71,30 @@ public class PageStatistics {
       case SHORT:
         max = ((long) max > ((Short) value).longValue()) ? max : ((Short) value).longValue();
         min = ((long) min < ((Short) value).longValue()) ? min : ((Short) value).longValue();
-        uniqueValue = (long) min - 1;
+        nonExistValue = (long) min - 1;
         break;
       case INT:
         max = ((long) max > ((Integer) value).longValue()) ? max : ((Integer) value).longValue();
         min = ((long) min  < ((Integer) value).longValue()) ? min : ((Integer) value).longValue();
-        uniqueValue = (long) min - 1;
+        nonExistValue = (long) min - 1;
         break;
       case LONG:
         max = ((long) max > (long) value) ? max : value;
         min = ((long) min < (long) value) ? min : value;
-        uniqueValue = (long) min - 1;
+        nonExistValue = (long) min - 1;
         break;
       case DOUBLE:
         max = ((double) max > (double) value) ? max : value;
         min = ((double) min < (double) value) ? min : value;
         int num = getDecimalCount((double) value);
         decimal = decimal > num ? decimal : num;
-        uniqueValue = (double) min - 1;
+        nonExistValue = (double) min - 1;
         break;
       case DECIMAL:
         BigDecimal decimalValue = DataTypeUtil.byteToBigDecimal((byte[]) value);
         decimal = decimalValue.scale();
         BigDecimal val = (BigDecimal) min;
-        uniqueValue = (val.subtract(new BigDecimal(1.0)));
+        nonExistValue = (val.subtract(new BigDecimal(1.0)));
         break;
       case ARRAY:
       case STRUCT:
@@ -114,6 +115,45 @@ public class PageStatistics {
     return decimalPlaces;
   }
 
+  /**
+   * return min value as byte array
+   */
+  public byte[] minBytes() {
+    return getValueAsBytes(getMin());
+  }
+
+  /**
+   * return max value as byte array
+   */
+  public byte[] maxBytes() {
+    return getValueAsBytes(getMax());
+  }
+
+  /**
+   * convert value to byte array
+   */
+  private byte[] getValueAsBytes(Object value) {
+    ByteBuffer b;
+    switch (dataType) {
+      case DOUBLE:
+        b = ByteBuffer.allocate(8);
+        b.putDouble((Double) value);
+        b.flip();
+        return b.array();
+      case LONG:
+      case INT:
+      case SHORT:
+        b = ByteBuffer.allocate(8);
+        b.putLong((Long) value);
+        b.flip();
+        return b.array();
+      case DECIMAL:
+        return DataTypeUtil.bigDecimalToByte((BigDecimal) value);
+      default:
+        throw new IllegalArgumentException("Invalid data type");
+    }
+  }
+
   public Object getMin() {
     return min;
   }
@@ -122,8 +162,8 @@ public class PageStatistics {
     return max;
   }
 
-  public Object getUniqueValue() {
-    return uniqueValue;
+  public Object nonExistValue() {
+    return nonExistValue;
   }
 
   public int getDecimal() {

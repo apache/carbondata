@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.newflow.row;
+package org.apache.carbondata.core.datastore.row;
 
 import java.util.Arrays;
 

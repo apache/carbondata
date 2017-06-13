@@ -62,7 +62,7 @@ public class SegmentTaskIndexStoreTest {
         <TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
             createCache(CacheType.DRIVER_BTREE, "");
     tableBlockInfo = new TableBlockInfo("file", 0L, "SG100", locations, 10L,
-        ColumnarFormatVersion.valueOf(version));
+        ColumnarFormatVersion.valueOf(version), null);
     absoluteTableIdentifier = new AbsoluteTableIdentifier("/tmp",
         new CarbonTableIdentifier("testdatabase", "testtable", "TB100"));
   }

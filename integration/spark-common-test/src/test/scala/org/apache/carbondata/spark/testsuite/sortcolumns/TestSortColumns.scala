@@ -244,6 +244,12 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     // compare hive and carbon data
     checkAnswer(sql("select * from test_sort_col_hive"), sql("select * from test_sort_col"))
   }
+
+  test("describe formatted for sort_columns") {
+    sql("CREATE TABLE sorttableDesc (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='empno,empname')")
+    checkExistence(sql("describe formatted sorttableDesc"),true,"SORT_COLUMNS")
+    checkExistence(sql("describe formatted sorttableDesc"),true,"empno,empname")
+  }
   
   override def afterAll = {
     dropTable
@@ -253,6 +259,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists origintable1")
     sql("drop table if exists origintable2")
     sql("drop table if exists sorttable1")
+    sql("drop table if exists sorttableDesc")
     sql("drop table if exists sorttable2")
     sql("drop table if exists sorttable3")
     sql("drop table if exists sorttable4_offheap_safe")

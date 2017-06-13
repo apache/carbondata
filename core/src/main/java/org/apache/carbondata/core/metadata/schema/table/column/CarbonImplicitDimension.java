@@ -92,7 +92,7 @@ public class CarbonImplicitDimension extends CarbonDimension {
   /**
    * @return return the number of child present in case of complex type
    */
-  @Override public int numberOfChild() {
+  @Override public int getNumberOfChild() {
     return 0;
   }
 
@@ -108,13 +108,6 @@ public class CarbonImplicitDimension extends CarbonDimension {
    */
   @Override public Boolean isDimension() {
     return true;
-  }
-
-  /**
-   * @return number of children for complex type
-   */
-  public int getNumberOfChild() {
-    return 0;
   }
 
   /**

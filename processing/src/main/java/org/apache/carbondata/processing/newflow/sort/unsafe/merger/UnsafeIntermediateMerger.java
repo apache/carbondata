@@ -93,7 +93,9 @@ public class UnsafeIntermediateMerger {
         fileList = procFiles.toArray(new File[procFiles.size()]);
         this.procFiles = new ArrayList<File>();
       }
-      LOGGER.debug("Sumitting request for intermediate merging no of files: " + fileList.length);
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Sumitting request for intermediate merging no of files: " + fileList.length);
+      }
       startIntermediateMerging(fileList);
     }
   }
@@ -124,8 +126,10 @@ public class UnsafeIntermediateMerger {
         localRowPages = rowPages.toArray(new UnsafeCarbonRowPage[rowPages.size()]);
         this.rowPages = new ArrayList<>();
       }
-      LOGGER.debug("Sumitting request for intermediate merging of in-memory pages : "
-          + localRowPages.length);
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Sumitting request for intermediate merging of in-memory pages : "
+            + localRowPages.length);
+      }
       startIntermediateMerging(localRowPages, totalRows);
     }
   }

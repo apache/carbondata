@@ -193,7 +193,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           getBlockExecutionInfoForBlock(queryModel, queryProperties.dataBlocks.get(i),
               queryModel.getTableBlockInfos().get(i).getBlockletInfos().getStartBlockletNumber(),
               queryModel.getTableBlockInfos().get(i).getBlockletInfos().getNumberOfBlockletToScan(),
-              queryModel.getTableBlockInfos().get(i).getFilePath()));
+              queryModel.getTableBlockInfos().get(i).getFilePath(),
+              queryModel.getTableBlockInfos().get(i).getDeletedDeltaFilePath()));
     }
     if (null != queryModel.getStatisticsRecorder()) {
       QueryStatistic queryStatistic = new QueryStatistic();
@@ -214,7 +215,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @throws QueryExecutionException any failure during block info creation
    */
   protected BlockExecutionInfo getBlockExecutionInfoForBlock(QueryModel queryModel,
-      AbstractIndex blockIndex, int startBlockletIndex, int numberOfBlockletToScan, String filePath)
+      AbstractIndex blockIndex, int startBlockletIndex, int numberOfBlockletToScan, String filePath,
+      String[] deleteDeltaFiles)
       throws QueryExecutionException {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
@@ -232,6 +234,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier()).getFactDir()
         .length() + 1;
     blockExecutionInfo.setBlockId(filePath.substring(tableFactPathLength));
+    blockExecutionInfo.setDeleteDeltaFilePath(deleteDeltaFiles);
     blockExecutionInfo.setStartBlockletIndex(startBlockletIndex);
     blockExecutionInfo.setNumberOfBlockletToScan(numberOfBlockletToScan);
     blockExecutionInfo.setQueryDimensions(currentBlockQueryDimensions
@@ -360,8 +363,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // setting the no dictionary column block indexes
     blockExecutionInfo.setNoDictionaryBlockIndexes(ArrayUtils.toPrimitive(
         noDictionaryColumnBlockIndex.toArray(new Integer[noDictionaryColumnBlockIndex.size()])));
-    // setting column id to dictionary mapping
-    blockExecutionInfo.setColumnIdToDcitionaryMapping(queryProperties.columnToDictionayMapping);
     // setting each column value size
     blockExecutionInfo.setEachColumnValueSize(segmentProperties.getEachDimColumnValueSize());
     blockExecutionInfo.setComplexColumnParentBlockIndexes(
@@ -402,8 +403,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         new HashSet<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     int counter = 0;
     while (counter < queryDimension.size()) {
-      if (queryDimension.get(counter).getDimension().numberOfChild() > 0) {
-        counter += queryDimension.get(counter).getDimension().numberOfChild();
+      if (queryDimension.get(counter).getDimension().getNumberOfChild() > 0) {
+        counter += queryDimension.get(counter).getDimension().getNumberOfChild();
         continue;
       } else if (!CarbonUtil.hasEncoding(queryDimension.get(counter).getDimension().getEncoder(),
           Encoding.DICTIONARY)) {

@@ -36,9 +36,7 @@ public class CarbonDataWriterVo {
 
   private IFileManagerComposite fileManager;
 
-  private int[] keyBlockSize;
-
-  private boolean[] aggBlocks;
+  private boolean[] rleEncodingForDictDim;
 
   private boolean[] isComplexType;
 
@@ -123,31 +121,17 @@ public class CarbonDataWriterVo {
   }
 
   /**
-   * @return the keyBlockSize
+   * @return the rleEncodingForDictDim
    */
-  public int[] getKeyBlockSize() {
-    return keyBlockSize;
+  public boolean[] getRleEncodingForDictDim() {
+    return rleEncodingForDictDim;
   }
 
   /**
-   * @param keyBlockSize the keyBlockSize to set
+   * @param rleEncodingForDictDim the rleEncodingForDictDim to set
    */
-  public void setKeyBlockSize(int[] keyBlockSize) {
-    this.keyBlockSize = keyBlockSize;
-  }
-
-  /**
-   * @return the aggBlocks
-   */
-  public boolean[] getAggBlocks() {
-    return aggBlocks;
-  }
-
-  /**
-   * @param aggBlocks the aggBlocks to set
-   */
-  public void setAggBlocks(boolean[] aggBlocks) {
-    this.aggBlocks = aggBlocks;
+  public void setRleEncodingForDictDim(boolean[] rleEncodingForDictDim) {
+    this.rleEncodingForDictDim = rleEncodingForDictDim;
   }
 
   /**

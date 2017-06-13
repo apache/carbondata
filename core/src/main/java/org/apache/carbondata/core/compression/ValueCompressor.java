@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.core.compression;
 
-import org.apache.carbondata.core.datastore.dataholder.CarbonWriteDataHolder;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CompressionFinder;
 import org.apache.carbondata.core.util.ValueCompressionUtil.COMPRESSION_TYPE;
@@ -26,73 +26,30 @@ import org.apache.carbondata.core.util.ValueCompressionUtil.COMPRESSION_TYPE;
 public abstract class ValueCompressor {
 
   public Object getCompressedValues(CompressionFinder compressionFinder,
-      CarbonWriteDataHolder dataHolder, Object maxValue, int decimal) {
-    return getCompressedValues(compressionFinder.getCompType(),
-        dataHolder,
-        compressionFinder.getConvertedDataType(),
-        maxValue, decimal);
-  }
-
-  /**
-   *
-   * @param compType
-   * @param dataHolder
-   * @param convertedDataType
-   * @param maxValue
-   * @param decimal
-   * @return compressed data
-   */
-  public Object getCompressedValues(COMPRESSION_TYPE compType, CarbonWriteDataHolder dataHolder,
-      DataType convertedDataType, Object maxValue, int decimal) {
+      ColumnPage columnPage, Object maxValue, int decimal) {
+    COMPRESSION_TYPE compType = compressionFinder.getCompType();
+    DataType convertedDataType = compressionFinder.getConvertedDataType();
     switch (compType) {
       case ADAPTIVE:
-        return compressAdaptive(convertedDataType, dataHolder);
+        return compressAdaptive(convertedDataType, columnPage);
       case DELTA_DOUBLE:
-        return compressMaxMin(convertedDataType, dataHolder, maxValue);
+        return compressMaxMin(convertedDataType, columnPage, maxValue);
       case BIGINT:
-        return compressNonDecimal(convertedDataType, dataHolder, decimal);
+        return compressNonDecimal(convertedDataType, columnPage, decimal);
       default:
-        return compressNonDecimalMaxMin(convertedDataType, dataHolder, decimal, maxValue);
+        return compressNonDecimalMaxMin(convertedDataType, columnPage, decimal, maxValue);
     }
   }
 
-  /**
-   *
-   * @param convertedDataType
-   * @param dataHolder
-   * @param decimal
-   * @param maxValue
-   * @return compressed data
-   */
-  protected abstract Object compressNonDecimalMaxMin(DataType convertedDataType,
-      CarbonWriteDataHolder dataHolder, int decimal, Object maxValue);
+  abstract Object compressNonDecimalMaxMin(DataType convertedDataType,
+      ColumnPage columnPage, int decimal, Object maxValue);
 
-  /**
-   *
-   * @param convertedDataType
-   * @param dataHolder
-   * @param decimal
-   * @return compressed data
-   */
-  protected abstract Object compressNonDecimal(DataType convertedDataType,
-      CarbonWriteDataHolder dataHolder, int decimal);
+  abstract Object compressNonDecimal(DataType convertedDataType,
+      ColumnPage columnPage, int decimal);
 
-  /**
-   *
-   * @param convertedDataType
-   * @param dataHolder
-   * @param maxValue
-   * @return compressed data
-   */
-  protected abstract Object compressMaxMin(DataType convertedDataType,
-      CarbonWriteDataHolder dataHolder, Object maxValue);
+  abstract Object compressMaxMin(DataType convertedDataType,
+      ColumnPage columnPage, Object maxValue);
 
-  /**
-   *
-   * @param convertedDataType
-   * @param dataHolder
-   * @return compressed data
-   */
-  protected abstract Object compressAdaptive(DataType convertedDataType,
-      CarbonWriteDataHolder dataHolder);
+  abstract Object compressAdaptive(DataType convertedDataType,
+      ColumnPage columnPage);
 }

@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.core.compression;
 
-import org.apache.carbondata.core.datastore.dataholder.CarbonWriteDataHolder;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
@@ -24,47 +24,39 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
  */
 public class BigIntCompressor extends ValueCompressor {
 
-  @Override protected Object compressNonDecimalMaxMin(DataType convertedDataType,
-      CarbonWriteDataHolder dataHolder, int decimal, Object max) {
+  @Override
+  protected Object compressNonDecimalMaxMin(DataType convertedDataType,
+      ColumnPage columnPage, int decimal, Object max) {
     // in case if bigint, decimal will be 0
-    return compressMaxMin(convertedDataType, dataHolder, max);
+    return compressMaxMin(convertedDataType, columnPage, max);
   }
 
   @Override
-  protected Object compressNonDecimal(DataType convertedDataType, CarbonWriteDataHolder dataHolder,
+  protected Object compressNonDecimal(DataType convertedDataType, ColumnPage columnPage,
       int decimal) {
     // in case if bigint, decimal will be 0
-    return compressAdaptive(convertedDataType, dataHolder);
+    return compressAdaptive(convertedDataType, columnPage);
   }
 
   /**
    * 1. It gets delta value i.e difference of maximum value and actual value
    * 2. Convert the delta value computed above to convertedDatatype if it can
    *    be stored with less byte
-   * @param convertedDataType
-   * @param dataHolder
-   * @param max
-   * @return
    */
   @Override
-  protected Object compressMaxMin(DataType convertedDataType, CarbonWriteDataHolder dataHolder,
+  protected Object compressMaxMin(DataType convertedDataType, ColumnPage columnPage,
       Object max) {
     long maxValue = (long) max;
-    long[] value = dataHolder.getWritableLongValues();
+    long[] value = columnPage.getLongPage();
     return compressValue(convertedDataType, value, maxValue, true);
   }
 
   /**
-   * 1. It converts actual value to converted data type if it can be
-   *   stored with less bytes.
-   * @param convertedDataType
-   * @param dataHolder
-   * @return
+   * It converts actual value to converted data type if it can be stored with less bytes.
    */
   @Override
-  protected Object compressAdaptive(DataType convertedDataType, CarbonWriteDataHolder dataHolder) {
-
-    long[] value = dataHolder.getWritableLongValues();
+  protected Object compressAdaptive(DataType convertedDataType, ColumnPage columnPage) {
+    long[] value = columnPage.getLongPage();
     return compressValue(convertedDataType, value, 0, false);
   }
 
@@ -80,7 +72,7 @@ public class BigIntCompressor extends ValueCompressor {
    * @param isMinMax
    * @return
    */
-  protected Object compressValue(DataType convertedDataType, long[] value, long maxValue,
+  private Object compressValue(DataType convertedDataType, long[] value, long maxValue,
       boolean isMinMax) {
     switch (convertedDataType) {
       case BYTE:

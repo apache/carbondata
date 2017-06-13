@@ -188,7 +188,6 @@ public class SegmentProperties {
    *
    */
   private void intialiseColGroups() {
-    // StringBuffer columnGroups = new StringBuffer();
     List<List<Integer>> colGrpList = new ArrayList<List<Integer>>();
     List<Integer> group = new ArrayList<Integer>();
     for (int i = 0; i < dimensions.size(); i++) {
@@ -197,7 +196,6 @@ public class SegmentProperties {
         continue;
       }
       group.add(dimension.getOrdinal());
-      // columnGroups.append(dimension.getOrdinal());
       if (i < dimensions.size() - 1) {
         int currGroupOrdinal = dimension.columnGroupId();
         int nextGroupOrdinal = dimensions.get(i + 1).columnGroupId();
@@ -278,10 +276,10 @@ public class SegmentProperties {
    * @return last block index
    */
   private int fillComplexDimensionChildBlockIndex(int blockOrdinal, CarbonDimension dimension) {
-    for (int i = 0; i < dimension.numberOfChild(); i++) {
+    for (int i = 0; i < dimension.getNumberOfChild(); i++) {
       dimensionOrdinalToBlockMapping
           .put(dimension.getListOfChildDimensions().get(i).getOrdinal(), ++blockOrdinal);
-      if (dimension.getListOfChildDimensions().get(i).numberOfChild() > 0) {
+      if (dimension.getListOfChildDimensions().get(i).getNumberOfChild() > 0) {
         blockOrdinal = fillComplexDimensionChildBlockIndex(blockOrdinal,
             dimension.getListOfChildDimensions().get(i));
       }

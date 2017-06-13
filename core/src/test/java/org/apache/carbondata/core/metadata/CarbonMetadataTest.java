@@ -209,7 +209,7 @@ public class CarbonMetadataTest {
     };
 
     new MockUp<CarbonDimension>() {
-      @Mock public int numberOfChild() {
+      @Mock public int getNumberOfChild() {
         return 1;
       }
 
