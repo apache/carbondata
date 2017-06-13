@@ -923,6 +923,7 @@ public class SegmentUpdateStatusManager {
           range.setLatestUpdateTimestamp(
               CarbonUpdateUtil.getTimeStampAsLong(segment.getUpdateDeltaEndTimestamp()));
         }
+        return range;
       }
     }
     return range;

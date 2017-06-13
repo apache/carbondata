@@ -340,23 +340,37 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
     List<InputSplit> result = new LinkedList<InputSplit>();
     FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
+    UpdateVO invalidBlockVOForSegmentId = null;
+    Boolean  isIUDTable = false;
 
     AbsoluteTableIdentifier absoluteTableIdentifier =
             getCarbonTable(job.getConfiguration()).getAbsoluteTableIdentifier();
     SegmentUpdateStatusManager updateStatusManager =
             new SegmentUpdateStatusManager(absoluteTableIdentifier);
+
+    isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
+
     //for each segment fetch blocks matching filter in Driver BTree
     for (String segmentNo : getSegmentsToAccess(job)) {
       List<DataRefNode> dataRefNodes =
           getDataBlocksOfSegment(job, filterExpressionProcessor, absoluteTableIdentifier,
               filterResolver, matchedPartitions, segmentNo, cacheClient, updateStatusManager);
+
+      // Get the UpdateVO for those tables on which IUD operations being performed.
+      if (isIUDTable) {
+        invalidBlockVOForSegmentId =
+            updateStatusManager.getInvalidTimestampRange(segmentNo);
+      }
       for (DataRefNode dataRefNode : dataRefNodes) {
         BlockBTreeLeafNode leafNode = (BlockBTreeLeafNode) dataRefNode;
         TableBlockInfo tableBlockInfo = leafNode.getTableBlockInfo();
-        if (CarbonUtil.isInvalidTableBlock(tableBlockInfo,
-            updateStatusManager.getInvalidTimestampRange(tableBlockInfo.getSegmentId()),
-            updateStatusManager)) {
-          continue;
+        if (isIUDTable) {
+          // In case IUD is not performed in this table avoid searching for
+          // invalidated blocks.
+          if (CarbonUtil.isInvalidTableBlock(tableBlockInfo, invalidBlockVOForSegmentId,
+              updateStatusManager)) {
+            continue;
+          }
         }
         String[] deleteDeltaFilePath = null;
         try {
@@ -535,16 +549,21 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       CacheClient cacheClient, SegmentUpdateStatusManager updateStatusManager) throws IOException {
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap = null;
     SegmentTaskIndexWrapper segmentTaskIndexWrapper = null;
+    UpdateVO updateDetails = null;
     boolean isSegmentUpdated = false;
     Set<SegmentTaskIndexStore.TaskBucketHolder> taskKeys = null;
     TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier =
         new TableSegmentUniqueIdentifier(absoluteTableIdentifier, segmentId);
     segmentTaskIndexWrapper =
         cacheClient.getSegmentAccessClient().getIfPresent(tableSegmentUniqueIdentifier);
-    UpdateVO updateDetails = updateStatusManager.getInvalidTimestampRange(segmentId);
+
+    if (updateStatusManager.getUpdateStatusDetails().length != 0) {
+      updateDetails = updateStatusManager.getInvalidTimestampRange(segmentId);
+    }
+
     if (null != segmentTaskIndexWrapper) {
       segmentIndexMap = segmentTaskIndexWrapper.getTaskIdToTableSegmentMap();
-      if (isSegmentUpdate(segmentTaskIndexWrapper, updateDetails)) {
+      if (null != updateDetails && isSegmentUpdate(segmentTaskIndexWrapper, updateDetails)) {
         taskKeys = segmentIndexMap.keySet();
         isSegmentUpdated = true;
       }
@@ -629,9 +648,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
   private boolean isSegmentUpdate(SegmentTaskIndexWrapper segmentTaskIndexWrapper,
       UpdateVO updateDetails) {
-    if (null != updateDetails.getLatestUpdateTimestamp()
-            && updateDetails.getLatestUpdateTimestamp() > segmentTaskIndexWrapper
-            .getRefreshedTimeStamp()) {
+    Long refreshedTime = segmentTaskIndexWrapper.getRefreshedTimeStamp();
+    Long updateTimeStamp = updateDetails.getLatestUpdateTimestamp();
+    if (null != refreshedTime && null != updateTimeStamp && updateTimeStamp > refreshedTime) {
       return true;
     }
     return false;
