@@ -53,7 +53,7 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorter {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(ParallelReadMergeSorterImpl.class.getName());
+      LogServiceFactory.getLogService(ParallelReadMergeSorterWithBucketingImpl.class.getName());
 
   private SortParameters sortParameters;
 
