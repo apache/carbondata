@@ -27,25 +27,26 @@ import org.apache.carbondata.core.util.ByteUtil;
 public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
   private boolean alreadySorted;
 
-  private int[] dataAfterComp;
+  private int[] rowIdPage;
 
-  private int[] indexMap;
+  private int[] rowIdRlePage;
 
-  private byte[][] keyBlock;
+  private byte[][] dataPage;
 
-  private int[] dataIndexMap;
+  private int[] dataRlePage;
 
   private int totalSize;
 
-  public BlockIndexerStorageForInt(byte[][] keyBlock, boolean compressData, boolean isNoDictionary,
+  public BlockIndexerStorageForInt(byte[][] dataPage, boolean rleOnData, boolean isNoDictionary,
       boolean isSortRequired) {
-    ColumnWithIntIndex[] columnWithIndexs = createColumnWithIndexArray(keyBlock, isNoDictionary);
+    ColumnWithIntIndex[] dataWithRowId = createColumnWithIndexArray(dataPage, isNoDictionary);
     if (isSortRequired) {
-      Arrays.sort(columnWithIndexs);
+      Arrays.sort(dataWithRowId);
     }
-    compressMyOwnWay(extractDataAndReturnIndexes(columnWithIndexs, keyBlock));
-    if (compressData) {
-      compressDataMyOwnWay(columnWithIndexs);
+    int[] rowIds = extractDataAndReturnIndexes(dataWithRowId, dataPage);
+    rleEncodeOnRowId(rowIds);
+    if (rleOnData) {
+      rleEncodeOnData(dataWithRowId);
     }
   }
 
@@ -73,14 +74,14 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
     return columnWithIndexs;
   }
 
-  private int[] extractDataAndReturnIndexes(ColumnWithIntIndex[] columnWithIndexs,
+  private int[] extractDataAndReturnIndexes(ColumnWithIntIndex[] dataWithRowId,
       byte[][] keyBlock) {
-    int[] indexes = new int[columnWithIndexs.length];
+    int[] indexes = new int[dataWithRowId.length];
     for (int i = 0; i < indexes.length; i++) {
-      indexes[i] = columnWithIndexs[i].getIndex();
-      keyBlock[i] = columnWithIndexs[i].getColumn();
+      indexes[i] = dataWithRowId[i].getIndex();
+      keyBlock[i] = dataWithRowId[i].getColumn();
     }
-    this.keyBlock = keyBlock;
+    this.dataPage = keyBlock;
     return indexes;
   }
 
@@ -92,41 +93,41 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
    * sequential numbers then the same array it returns with empty second
    * array.
    *
-   * @param indexes
+   * @param rowIds
    */
-  public void compressMyOwnWay(int[] indexes) {
+  public void rleEncodeOnRowId(int[] rowIds) {
     List<Integer> list = new ArrayList<Integer>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     List<Integer> map = new ArrayList<Integer>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     int k = 0;
     int i = 1;
-    for (; i < indexes.length; i++) {
-      if (indexes[i] - indexes[i - 1] == 1) {
+    for (; i < rowIds.length; i++) {
+      if (rowIds[i] - rowIds[i - 1] == 1) {
         k++;
       } else {
         if (k > 0) {
           map.add((list.size()));
-          list.add(indexes[i - k - 1]);
-          list.add(indexes[i - 1]);
+          list.add(rowIds[i - k - 1]);
+          list.add(rowIds[i - 1]);
         } else {
-          list.add(indexes[i - 1]);
+          list.add(rowIds[i - 1]);
         }
         k = 0;
       }
     }
     if (k > 0) {
       map.add((list.size()));
-      list.add(indexes[i - k - 1]);
-      list.add(indexes[i - 1]);
+      list.add(rowIds[i - k - 1]);
+      list.add(rowIds[i - 1]);
     } else {
-      list.add(indexes[i - 1]);
+      list.add(rowIds[i - 1]);
     }
-    dataAfterComp = convertToArray(list);
-    if (indexes.length == dataAfterComp.length) {
-      indexMap = new int[0];
+    rowIdPage = convertToArray(list);
+    if (rowIds.length == rowIdPage.length) {
+      rowIdRlePage = new int[0];
     } else {
-      indexMap = convertToArray(map);
+      rowIdRlePage = convertToArray(map);
     }
-    if (dataAfterComp.length == 2 && indexMap.length == 1) {
+    if (rowIdPage.length == 2 && rowIdRlePage.length == 1) {
       alreadySorted = true;
     }
   }
@@ -147,38 +148,38 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
   }
 
   /**
-   * @return the dataAfterComp
+   * @return the rowIdPage
    */
-  public int[] getDataAfterComp() {
-    return dataAfterComp;
+  public int[] getRowIdPage() {
+    return rowIdPage;
   }
 
   /**
-   * @return the indexMap
+   * @return the rowIdRlePage
    */
-  public int[] getIndexMap() {
-    return indexMap;
+  public int[] getRowIdRlePage() {
+    return rowIdRlePage;
   }
 
   /**
-   * @return the keyBlock
+   * @return the dataPage
    */
-  public byte[][] getKeyBlock() {
-    return keyBlock;
+  public byte[][] getDataPage() {
+    return dataPage;
   }
 
-  private void compressDataMyOwnWay(ColumnWithIntIndex[] indexes) {
-    byte[] prvKey = indexes[0].getColumn();
+  private void rleEncodeOnData(ColumnWithIntIndex[] dataWithRowId) {
+    byte[] prvKey = dataWithRowId[0].getColumn();
     List<ColumnWithIntIndex> list =
         new ArrayList<ColumnWithIntIndex>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    list.add(indexes[0]);
+    list.add(dataWithRowId[0]);
     int counter = 1;
     int start = 0;
     List<Integer> map = new ArrayList<Integer>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    for (int i = 1; i < indexes.length; i++) {
-      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(prvKey, indexes[i].getColumn()) != 0) {
-        prvKey = indexes[i].getColumn();
-        list.add(indexes[i]);
+    for (int i = 1; i < dataWithRowId.length; i++) {
+      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(prvKey, dataWithRowId[i].getColumn()) != 0) {
+        prvKey = dataWithRowId[i].getColumn();
+        list.add(dataWithRowId[i]);
         map.add(start);
         map.add(counter);
         start += counter;
@@ -189,11 +190,11 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
     }
     map.add(start);
     map.add(counter);
-    this.keyBlock = convertToKeyArray(list);
-    if (indexes.length == keyBlock.length) {
-      dataIndexMap = new int[0];
+    this.dataPage = convertToKeyArray(list);
+    if (dataWithRowId.length == dataPage.length) {
+      dataRlePage = new int[0];
     } else {
-      dataIndexMap = convertToArray(map);
+      dataRlePage = convertToArray(map);
     }
   }
 
@@ -206,8 +207,8 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
     return shortArray;
   }
 
-  @Override public int[] getDataIndexMap() {
-    return dataIndexMap;
+  public int[] getDataRlePage() {
+    return dataRlePage;
   }
 
   @Override public int getTotalSize() {
@@ -215,10 +216,10 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
   }
 
   @Override public byte[] getMin() {
-    return keyBlock[0];
+    return dataPage[0];
   }
 
   @Override public byte[] getMax() {
-    return keyBlock[keyBlock.length - 1];
+    return dataPage[dataPage.length - 1];
   }
 }
