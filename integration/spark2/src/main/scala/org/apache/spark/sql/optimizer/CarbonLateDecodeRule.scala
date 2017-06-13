@@ -174,7 +174,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
    * Steps for changing the plan.
    * 1. It finds out the join condition columns and dimension aggregate columns which are need to
    * be decoded just before that plan executes.
-   * 2. Plan starts transform by adding the decoder to the plan where it needs the decoded data
+   * 2. Plan starts encode by adding the decoder to the plan where it needs the decoded data
    * like dimension aggregate columns decoder under aggregator and join condition decoder under
    * join children.
    */

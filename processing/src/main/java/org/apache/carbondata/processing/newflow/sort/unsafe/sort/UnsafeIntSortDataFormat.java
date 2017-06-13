@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.processing.newflow.sort.unsafe.sort;
 
-import org.apache.carbondata.processing.newflow.sort.unsafe.IntPointerBuffer;
+import org.apache.carbondata.core.memory.IntPointerBuffer;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.newflow.sort.unsafe.holder.UnsafeCarbonRow;
 

@@ -18,22 +18,14 @@ package org.apache.carbondata.core.datastore.chunk.reader.measure.v3;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReaderV2V3Format;
-import org.apache.carbondata.core.datastore.compression.ValueCompressionHolder;
-import org.apache.carbondata.core.datastore.dataholder.CarbonReadDataHolder;
-import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
-import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.CompressionFinder;
-import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 
@@ -218,35 +210,13 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     // data chunk length + page offset
     int copyPoint = measureRawColumnChunk.getOffSet() + measureColumnChunkLength
         .get(measureRawColumnChunk.getBlockletId()) + dataChunk3.getPage_offset().get(pageNumber);
-    List<ValueEncoderMeta> valueEncodeMeta = new ArrayList<>();
-    for (int i = 0; i < measureColumnChunk.getEncoder_meta().size(); i++) {
-      valueEncodeMeta.add(
-          CarbonUtil.deserializeEncoderMetaV3(measureColumnChunk.getEncoder_meta().get(i).array()));
-    }
+    ColumnPage decodedPage = decodeMeasure(measureRawColumnChunk, measureColumnChunk, copyPoint);
 
-    MeasurePageStatsVO stats = CarbonUtil.getMeasurePageStats(valueEncodeMeta);
-    int measureCount = valueEncodeMeta.size();
-    CompressionFinder[] finders = new CompressionFinder[measureCount];
-    DataType[] convertedType = new DataType[measureCount];
-    for (int i = 0; i < measureCount; i++) {
-      CompressionFinder compresssionFinder =
-          ValueCompressionUtil.getCompressionFinder(stats.getMax(i), stats.getMin(i),
-              stats.getDecimal(i), stats.getDataType(i), stats.getDataTypeSelected(i));
-      finders[i] = compresssionFinder;
-      convertedType[i] = compresssionFinder.getConvertedDataType();
-    }
-
-    ValueCompressionHolder values = ValueCompressionUtil.getValueCompressionHolder(finders)[0];
-    // uncompress
-    ByteBuffer rawData = measureRawColumnChunk.getRawData();
-    values.uncompress(convertedType[0], rawData.array(), copyPoint,
-        measureColumnChunk.data_page_length, stats.getDecimal(0),
-        stats.getMax(0), measureRawColumnChunk.getRowCount()[pageNumber]);
-    CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values);
     // set the data chunk
-    datChunk.setMeasureDataHolder(measureDataHolder);
+    datChunk.setColumnPage(decodedPage);
     // set the null value indexes
     datChunk.setNullValueIndexHolder(getPresenceMeta(measureColumnChunk.presence));
     return datChunk;
   }
+
 }

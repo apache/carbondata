@@ -1389,7 +1389,7 @@ public final class CarbonUtil {
   }
 
   /**
-   * Below method will be used to convert the encode metadata to
+   * Below method will be used to convert the apply metadata to
    * ValueEncoderMeta object
    *
    * @param encoderMeta
