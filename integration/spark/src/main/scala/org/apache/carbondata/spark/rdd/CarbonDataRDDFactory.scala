@@ -776,10 +776,11 @@ object CarbonDataRDDFactory {
           loadDataFrameForUpdate()
         } else if (carbonTable.getPartitionInfo(carbonTable.getFactTableName) != null) {
           loadDataForPartitionTable()
-        } else if (configuration.isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
+        } else if (configuration.isSortTable &&
+            sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
           LOGGER.audit("Using global sort for loading.")
-          status =
-            GlobalSort.loadDataUsingGlobalSort(sqlContext.sparkContext, dataFrame, carbonLoadModel, currentLoadCount)
+          status = DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkContext,
+            dataFrame, carbonLoadModel, currentLoadCount)
         } else if (dataFrame.isDefined) {
           loadDataFrame()
         } else {

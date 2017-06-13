@@ -367,11 +367,13 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * get copy
+   * Get copy with taskNo.
+   * Broadcast value is shared in process, so we need to copy it to make sure the value in each
+   * task independently.
    *
    * @return
    */
-  public CarbonLoadModel getCopy() {
+  public CarbonLoadModel getCopyWithTaskNo(String taskNo) {
     CarbonLoadModel copy = new CarbonLoadModel();
     copy.tableName = tableName;
     copy.factFilePath = factFilePath;

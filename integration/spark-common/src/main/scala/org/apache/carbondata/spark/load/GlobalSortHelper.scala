@@ -17,37 +17,24 @@
 
 package org.apache.carbondata.spark.load
 
+import org.apache.spark.Accumulator
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordsLogger
-import org.apache.spark.util.LongAccumulator
 
 object GlobalSortHelper {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  def badRecordsLogger(loadModel: CarbonLoadModel, badRecordsAccum: LongAccumulator): Unit = {
-    val key = new CarbonTableIdentifier(loadModel.getDatabaseName, loadModel.getTableName, null).getBadRecordLoggerKey
+  def badRecordsLogger(loadModel: CarbonLoadModel, badRecordsAccum: Accumulator[Int]): Unit = {
+    val key = new CarbonTableIdentifier(loadModel.getDatabaseName, loadModel.getTableName, null)
+      .getBadRecordLoggerKey
     if (null != BadRecordsLogger.hasBadRecord(key)) {
       LOGGER.error("Data Load is partially success for table " + loadModel.getTableName)
       badRecordsAccum.add(1)
     } else {
       LOGGER.info("Data loading is successful for table " + loadModel.getTableName)
-    }
-  }
-
-  def tryWithSafeFinally[T](tableName: String, block: => T)
-      (finallyBlock: => Unit): Unit = {
-    try {
-      block
-    } catch {
-      case e: CarbonDataLoadingException => throw e
-      case e: Exception =>
-        LOGGER.error(e, "Data Loading failed for table " + tableName)
-        throw new CarbonDataLoadingException("Data Loading failed for table " + tableName, e)
-    } finally {
-      finallyBlock
     }
   }
 }

@@ -52,8 +52,8 @@ import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants
-import org.apache.carbondata.processing.newflow.sort.SortScopeOptions
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.load.ValidateUtil
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
 import org.apache.carbondata.spark.util.{CarbonSparkUtil, CommonUtil, GlobalDictionaryUtil}
 
@@ -417,13 +417,13 @@ case class LoadTable(
       val complex_delimiter_level_1 = options.getOrElse("complex_delimiter_level_1", "\\$")
       val complex_delimiter_level_2 = options.getOrElse("complex_delimiter_level_2", "\\:")
       val dateFormat = options.getOrElse("dateformat", null)
-      validateDateFormat(dateFormat, table)
+      ValidateUtil.validateDateFormat(dateFormat, table, tableName)
       val maxColumns = options.getOrElse("maxcolumns", null)
       val sortScope = options.getOrElse("sort_scope", null)
-      validateSortScope(carbonLoadModel, sortScope)
+      ValidateUtil.validateSortScope(table, sortScope)
       val batchSortSizeInMB = options.getOrElse("batch_sort_size_inmb", null)
       val globalSortPartitions = options.getOrElse("global_sort_partitions", null)
-      validateGlobalSortPartitions(globalSortPartitions)
+      ValidateUtil.validateGlobalSortPartitions(globalSortPartitions)
       carbonLoadModel.setEscapeChar(checkDefaultValue(escapeChar, "\\"))
       carbonLoadModel.setQuoteChar(checkDefaultValue(quoteChar, "\""))
       carbonLoadModel.setCommentChar(checkDefaultValue(commentChar, "#"))
@@ -651,58 +651,6 @@ case class LoadTable(
     }
     Seq.empty
   }
-
-  private def validateSortScope(carbonLoadModel: CarbonLoadModel, sortScope: String) = {
-    if (sortScope != null) {
-      // Don't support use global sort on partitioned table.
-      val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-      if (carbonTable.getPartitionInfo(carbonTable.getFactTableName) != null &&
-        sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT.toString)) {
-        throw new MalformedCarbonCommandException("Don't support use global sort on partitioned table.")
-      }
-    }
-  }
-
-  private def validateGlobalSortPartitions(globalSortPartitions: String) = {
-    if (globalSortPartitions != null) {
-      try {
-        val num = globalSortPartitions.toInt
-        if (num <= 0) {
-          throw new MalformedCarbonCommandException("'GLOBAL_SORT_PARTITIONS' should be greater than 0.")
-        }
-      } catch {
-        case e: NumberFormatException => {
-          throw new MalformedCarbonCommandException(e.getMessage)
-        }
-      }
-    }
-  }
-
-  private def validateDateFormat(dateFormat: String, table: CarbonTable): Unit = {
-    val dimensions = table.getDimensionByTableName(tableName).asScala
-    if (dateFormat != null) {
-      if (dateFormat.trim == "") {
-        throw new MalformedCarbonCommandException("Error: Option DateFormat is set an empty " +
-                                                  "string.")
-      } else {
-        val dateFormats: Array[String] = dateFormat.split(CarbonCommonConstants.COMMA)
-        for (singleDateFormat <- dateFormats) {
-          val dateFormatSplits: Array[String] = singleDateFormat.split(":", 2)
-          val columnName = dateFormatSplits(0).trim.toLowerCase
-          if (!dimensions.exists(_.getColName.equals(columnName))) {
-            throw new MalformedCarbonCommandException("Error: Wrong Column Name " +
-                                                      dateFormatSplits(0) +
-                                                      " is provided in Option DateFormat.")
-          }
-          if (dateFormatSplits.length < 2 || dateFormatSplits(1).trim.isEmpty) {
-            throw new MalformedCarbonCommandException("Error: Option DateFormat is not provided " +
-                                                      "for " + "Column " + dateFormatSplits(0) +
-                                                      ".")
-          }
-        }
-      }
-    }
-  }
 }
 
 private[sql] case class DeleteLoadByDate(
@@ -726,7 +674,6 @@ private[sql] case class DeleteLoadByDate(
     )
     Seq.empty
   }
-
 }
 
 case class CleanFiles(

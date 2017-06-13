@@ -17,6 +17,12 @@
 
 package org.apache.carbondata.spark.load
 
+import scala.util.Random
+
+import org.apache.spark.{Accumulator, SparkEnv, TaskContext}
+import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.sql.Row
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException
 import org.apache.carbondata.core.datastore.row.CarbonRow
@@ -27,19 +33,13 @@ import org.apache.carbondata.processing.newflow.DataLoadProcessBuilder
 import org.apache.carbondata.processing.newflow.converter.impl.RowConverterImpl
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.newflow.parser.impl.RowParserImpl
-import org.apache.carbondata.processing.newflow.sort.SortHelper
+import org.apache.carbondata.processing.newflow.sort.SortStepRowUtil
 import org.apache.carbondata.processing.newflow.steps.{DataConverterProcessorStepImpl, DataWriterProcessorStepImpl}
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters
 import org.apache.carbondata.processing.store.{CarbonFactHandler, CarbonFactHandlerFactory}
 import org.apache.carbondata.spark.rdd.{NewRddIterator, StringArrayRow}
-import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.sql.Row
-import org.apache.spark.util.LongAccumulator
-import org.apache.spark.{SparkEnv, TaskContext}
 
-import scala.util.Random
-
-object GlobalSortOperates {
+object DataLoadProcessorStepOnSpark {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def toStringArrayRow(row: StringArrayWritable, columnCount: Int): StringArrayRow = {
@@ -62,10 +62,9 @@ object GlobalSortOperates {
   def inputFunc(
       rows: Iterator[Array[AnyRef]],
       index: Int,
-      currentLoadCount: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      rowNumber: LongAccumulator): Iterator[CarbonRow] = {
-    val model: CarbonLoadModel = getModelCopy(index, currentLoadCount, modelBroadcast)
+      rowCounter: Accumulator[Int]): Iterator[CarbonRow] = {
+    val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
     val rowParser = new RowParserImpl(conf.getDataFields, conf)
 
@@ -77,8 +76,9 @@ object GlobalSortOperates {
       override def hasNext: Boolean = rows.hasNext
 
       override def next(): CarbonRow = {
-        rowNumber.add(1)
-        new CarbonRow(rowParser.parseRow(rows.next()))
+        val row = new CarbonRow(rowParser.parseRow(rows.next()))
+        rowCounter.add(1)
+        row
       }
     }
   }
@@ -86,11 +86,10 @@ object GlobalSortOperates {
   def convertFunc(
       rows: Iterator[CarbonRow],
       index: Int,
-      currentLoadCount: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      partialSuccessAccum: LongAccumulator,
-      rowNumber: LongAccumulator): Iterator[CarbonRow] = {
-    val model: CarbonLoadModel = getModelCopy(index, currentLoadCount, modelBroadcast)
+      partialSuccessAccum: Accumulator[Int],
+      rowCounter: Accumulator[Int]): Iterator[CarbonRow] = {
+    val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
     val badRecordLogger = DataConverterProcessorStepImpl.createBadRecordLogger(conf)
     val rowConverter = new RowConverterImpl(conf.getDataFields, conf, badRecordLogger)
@@ -112,8 +111,9 @@ object GlobalSortOperates {
       override def hasNext: Boolean = rows.hasNext
 
       override def next(): CarbonRow = {
-        rowNumber.add(1)
-        rowConverter.convert(rows.next())
+        val row = rowConverter.convert(rows.next())
+        rowCounter.add(1)
+        row
       }
     }
   }
@@ -121,13 +121,11 @@ object GlobalSortOperates {
   def convertTo3Parts(
       rows: Iterator[CarbonRow],
       index: Int,
-      currentLoadCount: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      rowNumber: LongAccumulator): Iterator[CarbonRow] = {
-    val model: CarbonLoadModel = getModelCopy(index, currentLoadCount, modelBroadcast)
+      rowCounter: Accumulator[Int]): Iterator[CarbonRow] = {
+    val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
     val sortParameters = SortParameters.createSortParameters(conf)
-    val sortHelper = new SortHelper(sortParameters)
 
     TaskContext.get().addTaskFailureListener { (t: TaskContext, e: Throwable) =>
       wrapException(e, model)
@@ -137,8 +135,9 @@ object GlobalSortOperates {
       override def hasNext: Boolean = rows.hasNext
 
       override def next(): CarbonRow = {
-        rowNumber.add(1)
-        new CarbonRow(sortHelper.convertRow(rows.next().getData))
+        val row = new CarbonRow(SortStepRowUtil.convertRow(rows.next().getData, sortParameters))
+        rowCounter.add(1)
+        row
       }
     }
   }
@@ -146,22 +145,22 @@ object GlobalSortOperates {
   def writeFunc(
       rows: Iterator[CarbonRow],
       index: Int,
-      currentLoadCount: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      rowNumber: LongAccumulator) {
+      rowCounter: Accumulator[Int]) {
     var model: CarbonLoadModel = null
     var tableName: String = null
     var rowConverter: RowConverterImpl = null
 
     try {
-      model = getModelCopy(index, currentLoadCount, modelBroadcast)
+      model = modelBroadcast.value.getCopyWithTaskNo(index.toString)
       val storeLocation = getTempStoreLocation(index)
       val conf = DataLoadProcessBuilder.createConfiguration(model, storeLocation)
 
       tableName = model.getTableName
 
-      // When we use sortBy, it means we have 2 stages. Stage1 can't get the finder from Stage2 directly because they
-      // are in different processes. We need to set cardinality finder in Stage1 again.
+      // When we use sortBy, it means we have 2 stages. Stage1 can't get the finder from Stage2
+      // directly because they are in different processes. We need to set cardinality finder in
+      // Stage1 again.
       rowConverter = new RowConverterImpl(conf.getDataFields, conf, null)
       rowConverter.initialize()
       conf.setCardinalityFinder(rowConverter)
@@ -178,8 +177,9 @@ object GlobalSortOperates {
             CarbonFactHandlerFactory.FactHandlerType.COLUMNAR)
           dataHandler.initialise()
         }
-        rowNumber.add(1)
-        dataWriter.processRow(rows.next(), dataHandler)
+        val row = dataWriter.processRow(rows.next(), dataHandler)
+        rowCounter.add(1)
+        row
       }
 
       if (!rowsNotExist) {
@@ -188,7 +188,8 @@ object GlobalSortOperates {
     } catch {
       case e: CarbonDataWriterException =>
         LOGGER.error(e, "Failed for table: " + tableName + " in Data Writer Step")
-        throw new CarbonDataLoadingException("Error while initializing data handler : " + e.getMessage)
+        throw new CarbonDataLoadingException("Error while initializing data handler : " +
+          e.getMessage)
       case e: Exception =>
         LOGGER.error(e, "Failed for table: " + tableName + " in Data Writer Step")
         throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage, e)
@@ -199,15 +200,6 @@ object GlobalSortOperates {
       // clean up the folders and files created locally for data load operation
       CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false)
     }
-  }
-
-  // Broadcast value shared in process, so we need to copy to make sure the value in each task independently.
-  private def getModelCopy(index: Int, currentLoadCount: Int, modelBroadcast: Broadcast[CarbonLoadModel]) = {
-    val model = modelBroadcast.value.getCopy
-    model.setPartitionId("0")
-    model.setSegmentId(currentLoadCount.toString)
-    model.setTaskNo(index.toString)
-    model
   }
 
   private def getTempStoreLocation(index: Int): String = {
@@ -236,7 +228,8 @@ object GlobalSortOperates {
       case e: CarbonDataLoadingException => throw e
       case e: Exception =>
         LOGGER.error(e, "Data Loading failed for table " + model.getTableName)
-        throw new CarbonDataLoadingException("Data Loading failed for table " + model.getTableName, e)
+        throw new CarbonDataLoadingException("Data Loading failed for table " + model.getTableName,
+          e)
     }
   }
 }

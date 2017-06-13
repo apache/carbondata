@@ -20,35 +20,23 @@ package org.apache.carbondata.processing.newflow.sort;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
-public class SortHelper {
-  private int measureCount;
+public class SortStepRowUtil {
+  public static Object[] convertRow(Object[] data, SortParameters parameters) {
+    int measureCount = parameters.getMeasureColCount();
+    int dimensionCount = parameters.getDimColCount();
+    int complexDimensionCount = parameters.getComplexDimColCount();
+    int noDictionaryCount = parameters.getNoDictionaryCount();
+    boolean[] isNoDictionaryDimensionColumn = parameters.getNoDictionaryDimnesionColumn();
 
-  private int dimensionCount;
-
-  private int noDictionaryCount;
-
-  private int complexDimensionCount;
-
-  private boolean[] isNoDictionaryDimensionColumn;
-
-  public SortHelper(SortParameters parameters) {
-    this.measureCount = parameters.getMeasureColCount();
-    this.dimensionCount = parameters.getDimColCount();
-    this.complexDimensionCount = parameters.getComplexDimColCount();
-    this.noDictionaryCount = parameters.getNoDictionaryCount();
-    this.isNoDictionaryDimensionColumn = parameters.getNoDictionaryDimnesionColumn();
-  }
-
-  public Object[] convertRow(Object[] data) {
     // create new row of size 3 (1 for dims , 1 for high card , 1 for measures)
 
     Object[] holder = new Object[3];
     int index = 0;
     int nonDicIndex = 0;
     int allCount = 0;
-    int[] dim = new int[this.dimensionCount];
-    byte[][] nonDicArray = new byte[this.noDictionaryCount + this.complexDimensionCount][];
-    Object[] measures = new Object[this.measureCount];
+    int[] dim = new int[dimensionCount];
+    byte[][] nonDicArray = new byte[noDictionaryCount + complexDimensionCount][];
+    Object[] measures = new Object[measureCount];
     try {
       // read dimension values
       for (int i = 0; i < isNoDictionaryDimensionColumn.length; i++) {
@@ -67,7 +55,7 @@ public class SortHelper {
 
       index = 0;
       // read measure values
-      for (int i = 0; i < this.measureCount; i++) {
+      for (int i = 0; i < measureCount; i++) {
         measures[index++] = data[allCount];
         allCount++;
       }

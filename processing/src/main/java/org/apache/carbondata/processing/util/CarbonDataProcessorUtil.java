@@ -476,18 +476,6 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
-   * the method prepares and return the message mentioning the reason of badrecord
-   *
-   * @param columnName
-   * @param dataType
-   * @return
-   */
-  public static String prepareFailureReason(String columnName, DataType dataType) {
-    return "The value with column name " + columnName + " and column data type " + dataType
-        .getName() + " is not a valid " + dataType + " type.";
-  }
-
-  /**
    * Get the number of partitions in global sort
    * @param configuration
    * @return the number of partitions
@@ -496,7 +484,8 @@ public final class CarbonDataProcessorUtil {
     int numPartitions;
     try {
       // First try to get the number from ddl, otherwise get it from carbon properties.
-      if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS) == null) {
+      if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS)
+          == null) {
         numPartitions = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
             CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT));
@@ -510,4 +499,17 @@ public final class CarbonDataProcessorUtil {
     }
     return numPartitions;
   }
+
+  /**
+   * the method prepares and return the message mentioning the reason of badrecord
+   *
+   * @param columnName
+   * @param dataType
+   * @return
+   */
+  public static String prepareFailureReason(String columnName, DataType dataType) {
+    return "The value with column name " + columnName + " and column data type " + dataType
+        .getName() + " is not a valid " + dataType + " type.";
+  }
+
 }
