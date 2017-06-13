@@ -18,6 +18,7 @@
 package org.apache.carbondata.processing.store.writer;
 
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedData;
 import org.apache.carbondata.core.util.NodeHolder;
 import org.apache.carbondata.processing.store.TablePageKey;
 import org.apache.carbondata.processing.store.TablePageStatistics;
@@ -28,7 +29,7 @@ public interface CarbonFactDataWriter<T> {
    * This method will be used to create NodeHolder for a table page
    */
 
-  NodeHolder buildDataNodeHolder(Encoder.EncodedData encoded, TablePageStatistics stats,
+  NodeHolder buildDataNodeHolder(EncodedData encoded, TablePageStatistics stats,
       TablePageKey key) throws CarbonDataWriterException;
 
   /**

@@ -579,8 +579,8 @@ public abstract class AbstractScannedResult {
    * @return measure value of long type
    */
   protected long getLongMeasureValue(int ordinal, int rowIndex) {
-    return measureDataChunks[ordinal][pageCounter].getMeasureDataHolder()
-        .getReadableLongValueByIndex(rowIndex);
+    return measureDataChunks[ordinal][pageCounter].getColumnPage()
+        .getLong(rowIndex);
   }
 
   /**
@@ -591,8 +591,8 @@ public abstract class AbstractScannedResult {
    * @return measure value of double type
    */
   protected double getDoubleMeasureValue(int ordinal, int rowIndex) {
-    return measureDataChunks[ordinal][pageCounter].getMeasureDataHolder()
-        .getReadableDoubleValueByIndex(rowIndex);
+    return measureDataChunks[ordinal][pageCounter].getColumnPage()
+        .getDouble(rowIndex);
   }
 
   /**
@@ -603,8 +603,8 @@ public abstract class AbstractScannedResult {
    * @return measure of big decimal type
    */
   protected BigDecimal getBigDecimalMeasureValue(int ordinal, int rowIndex) {
-    return measureDataChunks[ordinal][pageCounter].getMeasureDataHolder()
-        .getReadableBigDecimalValueByIndex(rowIndex);
+    return measureDataChunks[ordinal][pageCounter].getColumnPage()
+        .getDecimal(rowIndex);
   }
 
   public int getRowCounter() {

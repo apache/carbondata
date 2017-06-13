@@ -23,9 +23,9 @@ import java.util.BitSet;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatistics;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedData;
+import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsVO;
 import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
-import org.apache.carbondata.processing.store.writer.Encoder;
 
 // Statistics of dimension and measure column in a TablePage
 public class TablePageStatistics {
@@ -55,7 +55,7 @@ public class TablePageStatistics {
   private TableSpec tableSpec;
 
   TablePageStatistics(TableSpec tableSpec, TablePage tablePage,
-      Encoder.EncodedData encodedData, MeasurePageStatsVO measurePageStatistics) {
+      EncodedData encodedData, MeasurePageStatsVO measurePageStatistics) {
     this.numDimensionsExpanded = tableSpec.getDimensionSpec().getNumExpandedDimensions();
     int numMeasures = tableSpec.getMeasureSpec().getNumMeasures();
     this.dimensionMinValue = new byte[numDimensionsExpanded][];
@@ -69,7 +69,7 @@ public class TablePageStatistics {
     updateNullBitSet(tablePage);
   }
 
-  private void updateMinMax(TablePage tablePage, Encoder.EncodedData encodedData) {
+  private void updateMinMax(TablePage tablePage, EncodedData encodedData) {
     IndexStorage[] keyStorageArray = encodedData.indexStorages;
     byte[][] measureArray = encodedData.measures;
 
@@ -89,7 +89,7 @@ public class TablePageStatistics {
       }
     }
     for (int i = 0; i < measureArray.length; i++) {
-      ColumnPageStatistics stats = tablePage.getMeasurePage()[i].getStatistics();
+      ColumnPageStatsVO stats = tablePage.getMeasurePage()[i].getStatistics();
       measureMaxValue[i] = stats.minBytes();
       measureMinValue[i] = stats.maxBytes();
     }

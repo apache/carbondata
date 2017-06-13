@@ -63,7 +63,7 @@ public class ColumnSchema implements Serializable {
   private boolean isColumnar = true;
 
   /**
-   * List of encoding that are chained to encode the data for this column
+   * List of encoding that are chained to apply the data for this column
    */
   private List<Encoding> encodingList;
 

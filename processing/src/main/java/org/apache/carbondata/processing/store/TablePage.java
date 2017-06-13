@@ -29,7 +29,7 @@ import org.apache.carbondata.core.datastore.GenericDataType;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
-import org.apache.carbondata.core.datastore.page.KeyColumnPage;
+import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingStrategy;
 import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
@@ -50,7 +50,7 @@ public class TablePage {
 
   // TODO: we should have separate class for key columns so that keys are stored together in
   // one vector to make it efficient for sorting
-  private KeyColumnPage keyColumnPage;
+  private ColumnPage[] dictDimensionPage;
   private ColumnPage[] noDictDimensionPage;
   private ComplexColumnPage[] complexDimensionPage;
   private ColumnPage[] measurePage;
@@ -62,14 +62,17 @@ public class TablePage {
 
   private CarbonFactDataHandlerModel model;
 
-  TablePage(CarbonFactDataHandlerModel model, int pageSize) {
+  public TablePage(CarbonFactDataHandlerModel model, int pageSize) {
     this.model = model;
     this.pageSize = pageSize;
-    keyColumnPage = new KeyColumnPage(pageSize,
-        model.getSegmentProperties().getDimensionPartitions().length);
+    int numDictDimension = model.getMDKeyGenerator().getDimCount();
+    dictDimensionPage = new ColumnPage[numDictDimension];
+    for (int i = 0; i < dictDimensionPage.length; i++) {
+      dictDimensionPage[i] = ColumnPage.newPage(DataType.BYTE_ARRAY, pageSize);
+    }
     noDictDimensionPage = new ColumnPage[model.getNoDictionaryCount()];
     for (int i = 0; i < noDictDimensionPage.length; i++) {
-      noDictDimensionPage[i] = new ColumnPage(DataType.STRING, pageSize);
+      noDictDimensionPage[i] = ColumnPage.newPage(DataType.BYTE_ARRAY, pageSize);
     }
     complexDimensionPage = new ComplexColumnPage[model.getComplexColumnCount()];
     for (int i = 0; i < complexDimensionPage.length; i++) {
@@ -80,7 +83,7 @@ public class TablePage {
     measurePage = new ColumnPage[model.getMeasureCount()];
     DataType[] dataTypes = model.getMeasureDataType();
     for (int i = 0; i < measurePage.length; i++) {
-      measurePage[i] = new ColumnPage(dataTypes[i], pageSize);
+      measurePage[i] = ColumnPage.newPage(dataTypes[i], pageSize);
     }
   }
 
@@ -90,13 +93,15 @@ public class TablePage {
    * @param rowId Id of the input row
    * @param row   row object
    */
-  void addRow(int rowId, CarbonRow row) throws KeyGenException {
+  public void addRow(int rowId, CarbonRow row) throws KeyGenException {
     // convert each column category
 
     // 1. convert dictionary columns
     byte[] mdk = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
     byte[][] keys = model.getSegmentProperties().getFixedLengthKeySplitter().splitKey(mdk);
-    keyColumnPage.putKey(rowId, keys);
+    for (int i = 0; i < dictDimensionPage.length; i++) {
+      dictDimensionPage[i].putData(rowId, keys[i]);
+    }
 
     // 2. convert noDictionary columns and complex columns.
     int noDictionaryCount = noDictDimensionPage.length;
@@ -165,7 +170,7 @@ public class TablePage {
       encodedComplexColumnar.add(new ArrayList<byte[]>());
     }
 
-    // encode the complex type data and fill columnsArray
+    // apply the complex type data and fill columnsArray
     try {
       ByteBuffer byteArrayInput = ByteBuffer.wrap(complexColumns);
       ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
@@ -195,8 +200,8 @@ public class TablePage {
     return output;
   }
 
-  public KeyColumnPage getKeyColumnPage() {
-    return keyColumnPage;
+  public ColumnPage[] getDictDimensionPage() {
+    return dictDimensionPage;
   }
 
   public ColumnPage[] getNoDictDimensionPage() {

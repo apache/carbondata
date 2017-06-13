@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
 
+
 // Represent a complex column page, e.g. Array, Struct type column
 public class ComplexColumnPage {
 
