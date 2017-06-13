@@ -17,16 +17,13 @@
 
 package org.apache.carbondata.processing.store;
 
-import java.security.Key;
 import java.util.Iterator;
 
 import org.apache.carbondata.core.datastore.TableSpec;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForInt;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndex;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForShort;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort;
-import org.apache.carbondata.core.datastore.columnar.ColGroupBlockStorage;
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -136,7 +133,7 @@ public class TablePageEncoder {
 
   // apply and compress each dimension, set encoded data in `encodedData`
   private void encodeAndCompressDimensions(TablePage tablePage, EncodedData encodedData)
-      throws KeyGenException{
+      throws KeyGenException {
     TableSpec.DimensionSpec dimensionSpec = model.getTableSpec().getDimensionSpec();
     int dictionaryColumnCount = -1;
     int noDictionaryColumnCount = -1;
