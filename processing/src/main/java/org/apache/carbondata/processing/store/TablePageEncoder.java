@@ -21,7 +21,7 @@ import java.util.Iterator;
 
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForInt;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndex;
+import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForInt;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForShort;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort;
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
@@ -84,7 +84,7 @@ public class TablePageEncoder {
       if (version == ColumnarFormatVersion.V3) {
         return new BlockIndexerStorageForNoInvertedIndexForShort(data, false);
       } else {
-        return new BlockIndexerStorageForNoInvertedIndex(data);
+        return new BlockIndexerStorageForNoInvertedIndexForInt(data);
       }
     }
   }
@@ -101,7 +101,7 @@ public class TablePageEncoder {
       if (version == ColumnarFormatVersion.V3) {
         return new BlockIndexerStorageForNoInvertedIndexForShort(data, false);
       } else {
-        return new BlockIndexerStorageForNoInvertedIndex(data);
+        return new BlockIndexerStorageForNoInvertedIndexForInt(data);
       }
     }
   }
@@ -126,7 +126,7 @@ public class TablePageEncoder {
       if (version == ColumnarFormatVersion.V3) {
         return new BlockIndexerStorageForNoInvertedIndexForShort(data, true);
       } else {
-        return new BlockIndexerStorageForNoInvertedIndex(data);
+        return new BlockIndexerStorageForNoInvertedIndexForInt(data);
       }
     }
   }
@@ -152,7 +152,7 @@ public class TablePageEncoder {
                   tablePage.getDictDimensionPage()[++dictionaryColumnCount].getByteArrayPage(),
                   isSortColumn,
                   isUseInvertedIndex[i] & isSortColumn);
-          flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getKeyBlock());
+          flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getDataPage());
           break;
         case DIRECT_DICTIONARY:
           // timestamp and date column
@@ -161,7 +161,7 @@ public class TablePageEncoder {
                   tablePage.getDictDimensionPage()[++dictionaryColumnCount].getByteArrayPage(),
                   isSortColumn,
                   isUseInvertedIndex[i] & isSortColumn);
-          flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getKeyBlock());
+          flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getDataPage());
           break;
         case PLAIN_VALUE:
           // high cardinality dimension, encoded as plain string
@@ -170,7 +170,7 @@ public class TablePageEncoder {
                   tablePage.getNoDictDimensionPage()[++noDictionaryColumnCount].getByteArrayPage(),
                   isSortColumn,
                   isUseInvertedIndex[i] & isSortColumn);
-          flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getKeyBlock());
+          flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getDataPage());
           break;
         case COMPLEX:
           // we need to add complex column at last, so skipping it here
@@ -188,7 +188,7 @@ public class TablePageEncoder {
       while (iterator.hasNext()) {
         byte[][] data = iterator.next();
         indexStorages[indexStorageOffset] = encodeAndCompressComplexDimension(data);
-        byte[] flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getKeyBlock());
+        byte[] flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getDataPage());
         compressedColumns[indexStorageOffset] = compressor.compressByte(flattened);
         indexStorageOffset++;
       }

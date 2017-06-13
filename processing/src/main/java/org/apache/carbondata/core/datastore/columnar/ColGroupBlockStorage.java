@@ -25,19 +25,20 @@ import org.apache.carbondata.processing.store.colgroup.ColGroupDataHolder;
 import org.apache.carbondata.processing.store.colgroup.ColGroupMinMax;
 
 /**
- * it is holder of column group data and also min max for colgroup block data
+ * it is holder of column group dataPage and also min max for colgroup block dataPage
  */
 public class ColGroupBlockStorage implements IndexStorage, Callable<IndexStorage> {
 
-  private byte[][] data;
+  private byte[][] dataPage;
 
   private ColGroupMinMax colGrpMinMax;
 
-  public ColGroupBlockStorage(SegmentProperties segmentProperties, int colGrpIndex, byte[][] data) {
+  public ColGroupBlockStorage(SegmentProperties segmentProperties, int colGrpIndex,
+      byte[][] dataPage) {
     colGrpMinMax = new ColGroupMinMax(segmentProperties, colGrpIndex);
-    this.data = data;
-    for (int i = 0; i < data.length; i++) {
-      colGrpMinMax.add(data[i]);
+    this.dataPage = dataPage;
+    for (int i = 0; i < dataPage.length; i++) {
+      colGrpMinMax.add(dataPage[i]);
     }
   }
 
@@ -51,7 +52,7 @@ public class ColGroupBlockStorage implements IndexStorage, Callable<IndexStorage
   /**
    * for column group storage its not required
    */
-  @Override public ColGroupDataHolder getDataAfterComp() {
+  public ColGroupDataHolder getRowIdPage() {
     //not required for column group storage
     return null;
   }
@@ -59,7 +60,7 @@ public class ColGroupBlockStorage implements IndexStorage, Callable<IndexStorage
   /**
    * for column group storage its not required
    */
-  @Override public ColGroupDataHolder getIndexMap() {
+  public ColGroupDataHolder getRowIdRlePage() {
     // not required for column group storage
     return null;
   }
@@ -67,14 +68,14 @@ public class ColGroupBlockStorage implements IndexStorage, Callable<IndexStorage
   /**
    * for column group storage its not required
    */
-  @Override public byte[][] getKeyBlock() {
-    return data;
+  public byte[][] getDataPage() {
+    return dataPage;
   }
 
   /**
    * for column group storage its not required
    */
-  @Override public ColGroupDataHolder getDataIndexMap() {
+  public ColGroupDataHolder getDataRlePage() {
     //not required for column group
     return null;
   }
@@ -83,7 +84,7 @@ public class ColGroupBlockStorage implements IndexStorage, Callable<IndexStorage
    * for column group storage its not required
    */
   @Override public int getTotalSize() {
-    return data.length;
+    return dataPage.length;
   }
 
   @Override public byte[] getMin() {
