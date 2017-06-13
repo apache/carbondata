@@ -233,15 +233,13 @@ object CommonUtil {
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.INT)
       case Some("string") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.STRING)
-      case Some("long") =>
+      case Some("bigint") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.LONG)
       case Some("float") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.FLOAT)
       case Some("double") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DOUBLE)
-      case Some("byte") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BYTE)
-      case Some("short") =>
+      case Some("smallint") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.SHORT)
       case Some("boolean") =>
         DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BOOLEAN)
