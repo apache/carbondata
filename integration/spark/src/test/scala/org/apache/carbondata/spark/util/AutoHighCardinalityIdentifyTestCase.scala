@@ -65,7 +65,6 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
   override def beforeAll {
     buildTestData
     buildTable
-    buildColGrpHighCardTable
   }
 
   override def afterAll {
@@ -103,16 +102,6 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
     }
   }
 
-  def buildColGrpHighCardTable() {
-    try {
-      sql("drop table if exists colgrp_highcard")
-      sql("""create table if not exists colgrp_highcard
-             (hc1 string, c2 string, c3 int)
-             STORED BY 'org.apache.carbondata.format' tblproperties('COLUMN_GROUPS'='(hc1,c2)')""")
-    } catch {
-      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
-    }
-  }
   def relation(tableName: String): CarbonRelation = {
     CarbonEnv.get.carbonMetastore
         .lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
@@ -156,28 +145,4 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
     checkMetaData(oldTable, newTable)
   }
 
-  test("skip auto identify high cardinality column for column group") {
-    val oldTable = relation("colgrp_highcard").tableMeta.carbonTable
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' into table colgrp_highcard")
-    val newTable = relation("colgrp_highcard").tableMeta.carbonTable
-    sql(s"select hc1 from colgrp_highcard")
-
-    // check dictionary file
-    val tableIdentifier = new CarbonTableIdentifier(newTable.getDatabaseName,
-        newTable.getFactTableName, "1")
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(storeLocation,
-        tableIdentifier)
-    val newHc1 = newTable.getDimensionByName("colgrp_highcard", "hc1")
-    val newC2 = newTable.getDimensionByName("colgrp_highcard", "c2")
-    val dictFileHc1 = carbonTablePath.getDictionaryFilePath(newHc1.getColumnId)
-    val dictFileC2 = carbonTablePath.getDictionaryFilePath(newC2.getColumnId)
-    assert(CarbonUtil.isFileExists(dictFileHc1))
-    assert(CarbonUtil.isFileExists(dictFileC2))
-    // check the meta data
-    val hc1 = newTable.getDimensionByName("colgrp_highcard", "hc1")
-    val c2 = newTable.getDimensionByName("colgrp_highcard", "c2")
-    assert(hc1.hasEncoding(Encoding.DICTIONARY))
-    assert(c2.hasEncoding(Encoding.DICTIONARY))
-
-  }
 }
