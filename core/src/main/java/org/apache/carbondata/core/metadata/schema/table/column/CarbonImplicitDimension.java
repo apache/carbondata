@@ -35,7 +35,7 @@ public class CarbonImplicitDimension extends CarbonDimension {
   private static final long serialVersionUID = 3648269871656322681L;
 
   /**
-   * List of encoding that are chained to encode the data for this column
+   * List of encoding that are chained to apply the data for this column
    */
   private List<Encoding> encodingList;
 

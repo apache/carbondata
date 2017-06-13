@@ -37,6 +37,7 @@ import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.GenericDataType;
 import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedData;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.columnar.ColumnarSplitter;
@@ -53,7 +54,6 @@ import org.apache.carbondata.processing.store.file.FileManager;
 import org.apache.carbondata.processing.store.file.IFileManagerComposite;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
-import org.apache.carbondata.processing.store.writer.Encoder;
 
 /**
  * Fact data handler class to handle the fact data
@@ -144,7 +144,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private ColumnarFormatVersion version;
 
-  private DefaultEncoder encoder;
+  private TablePageEncoder encoder;
 
   private SortScopeOptions.SortScope sortScope;
 
@@ -206,7 +206,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       rleEncodingForDictDimension = arrangeUniqueBlockType(rleEncodingForDictDimension);
     }
     this.version = CarbonProperties.getInstance().getFormatVersion();
-    this.encoder = new DefaultEncoder(model);
+    this.encoder = new TablePageEncoder(model);
   }
 
   private void initParameters(CarbonFactDataHandlerModel model) {
@@ -358,8 +358,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       rowId++;
     }
 
-    // encode and compress dimensions and measure
-    Encoder.EncodedData encodedData = encoder.encode(tablePage);
+    // apply and compress dimensions and measure
+    EncodedData encodedData = encoder.encode(tablePage);
 
     TablePageStatistics tablePageStatistics = new TablePageStatistics(
         model.getTableSpec(), tablePage, encodedData, tablePage.getMeasureStats());
