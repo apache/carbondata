@@ -24,12 +24,10 @@ import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.types._
 import org.apache.spark.storage.StorageLevel
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -37,7 +35,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, DeleteDeltaBlockDetails, SegmentUpdateDetails, TupleIdEnum}
 import org.apache.carbondata.core.mutate.data.RowCountDetailsVO
@@ -50,6 +47,7 @@ import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CarbonData
 import org.apache.carbondata.spark.DeleteDelataResultImpl
 import org.apache.carbondata.spark.load.FailureCauses
 import org.apache.carbondata.spark.util.QueryPlanUtil
+
 
 /**
  * IUD update delete and compaction framework.
@@ -258,41 +256,6 @@ private[sql] case class ProjectForUpdateCommand(
       }
     }
     Seq.empty
-  }
-}
-private[sql] case class ShowCarbonPartitionsCommand(
-    tableIdentifier: TableIdentifier) extends RunnableCommand {
-  val LOGGER = LogServiceFactory.getLogService(ShowCarbonPartitionsCommand.getClass.getName)
-  override val output: Seq[Attribute] = Seq(
-    // Column names are based on Hive.
-    AttributeReference("ID", StringType, nullable = false,
-      new MetadataBuilder().putString("comment", "partition id").build())(),
-    AttributeReference("Name", StringType, nullable = false,
-      new MetadataBuilder().putString("comment", "partition name").build())(),
-    AttributeReference("Value", StringType, nullable = true,
-      new MetadataBuilder().putString("comment", "partition value").build())()
-  )
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .lookupRelation(tableIdentifier)(sparkSession).
-      asInstanceOf[CarbonRelation]
-    val carbonTable = relation.tableMeta.carbonTable
-    var partitionInfo = carbonTable.getPartitionInfo(
-      carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
-    var partitionType = partitionInfo.getPartitionType
-    var result = Seq.newBuilder[Row]
-    // val result = new ArrayBuffer[Row]
-    if (PartitionType.RANGE.equals(partitionType)) {
-      result.+=(RowFactory.create("partition0", "0", "0"))
-    } else if (PartitionType.RANGE_INTERVAL.equals(partitionType)) {
-      result.+=(RowFactory.create("partition0", "0", "0"))
-    } else if (PartitionType.LIST.equals(partitionType)) {
-      result.+=(RowFactory.create("partition0", "0", "0"))
-    } else if (PartitionType.HASH.equals(partitionType)) {
-      result.+=(RowFactory.create("partition0", "0", "0"))
-    }
-
-    result.result()
   }
 }
 
