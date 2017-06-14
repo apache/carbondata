@@ -145,18 +145,6 @@ public class ColumnPage {
     return columnPage;
   }
 
-  protected void updateStatisticsLong(long value) {
-    stats.updateLong(value);
-  }
-
-  protected void updateStatisticsDouble(double value) {
-    stats.updateDouble(value);
-  }
-
-  protected void updateStatisticsDecimal(byte[] value) {
-    stats.updateDecimal(value);
-  }
-
   protected static ColumnPage newVarLengthPage(byte[][] stringData) {
     ColumnPage columnPage = new ColumnPage(BYTE_ARRAY, stringData.length);
     columnPage.byteArrayData = stringData;
