@@ -17,6 +17,10 @@
 
 package org.apache.carbondata.processing.newflow.sort;
 
+import java.math.BigDecimal;
+
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
@@ -69,5 +73,40 @@ public class SortStepRowUtil {
 
     //return out row
     return holder;
+  }
+
+  public static Object[] convertDecimalToByte(Object[] data, SortParameters parameters) {
+    int complexDimColCount = parameters.getComplexDimColCount();
+    int dimColCount = parameters.getDimColCount() + complexDimColCount;
+    int meaColCount = parameters.getMeasureColCount();
+    DataType[] type = parameters.getMeasureDataType();
+
+    Object[] result = new Object[data.length];
+
+    // Dimensions
+    System.arraycopy(data, 0, result, 0, dimColCount);
+
+    // Measures
+    for (int mesCount = 0; mesCount < meaColCount; mesCount++) {
+      Object value = data[mesCount + dimColCount];
+      if (null != value) {
+        switch (type[mesCount]) {
+          case SHORT:
+          case INT:
+          case LONG:
+          case DOUBLE:
+            result[mesCount + dimColCount] = value;
+            break;
+          case DECIMAL:
+            BigDecimal val = (BigDecimal) value;
+            result[mesCount + dimColCount] = DataTypeUtil.bigDecimalToByte(val);
+            break;
+        }
+      } else {
+        result[mesCount + dimColCount] = value;
+      }
+    }
+
+    return result;
   }
 }
