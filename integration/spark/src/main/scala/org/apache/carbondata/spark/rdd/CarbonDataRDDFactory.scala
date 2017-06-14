@@ -444,10 +444,6 @@ object CarbonDataRDDFactory {
       // Check if any load need to be deleted before loading new data
       DataManagementFunc.deleteLoadsAndUpdateMetadata(carbonLoadModel.getDatabaseName,
         carbonLoadModel.getTableName, storePath, false, carbonTable)
-      if (null == carbonLoadModel.getLoadMetadataDetails) {
-        CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
-      }
-
       var currentLoadCount = -1
       val convLoadDetails = carbonLoadModel.getLoadMetadataDetails.asScala
       // taking the latest segment ID present.
