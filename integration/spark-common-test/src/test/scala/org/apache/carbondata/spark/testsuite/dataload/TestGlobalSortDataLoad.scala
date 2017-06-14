@@ -24,6 +24,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.TestQueryExecutor.projectPath
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -62,8 +63,10 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql("DROP TABLE IF EXISTS carbon_localsort_triple")
     sql("DROP TABLE IF EXISTS carbon_localsort_delete")
     sql("DROP TABLE IF EXISTS carbon_localsort_update")
+    sql("DROP TABLE IF EXISTS carbon_localsort_difftypes")
     sql("DROP TABLE IF EXISTS carbon_globalsort")
     sql("DROP TABLE IF EXISTS carbon_globalsort_partitioned")
+    sql("DROP TABLE IF EXISTS carbon_globalsort_difftypes")
   }
 
   // ----------------------------------- Compare Result -----------------------------------
@@ -272,6 +275,59 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(12)))
     checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name"),
       sql("SELECT * FROM carbon_localsort_once ORDER BY name"))
+  }
+
+  test("Test with different date types") {
+    val path = s"$projectPath/examples/spark2/src/main/resources/data.csv"
+
+    sql(
+      s"""
+         | CREATE TABLE carbon_localsort_difftypes(
+         | shortField SHORT,
+         | intField INT,
+         | bigintField LONG,
+         | doubleField DOUBLE,
+         | stringField STRING,
+         | timestampField TIMESTAMP,
+         | decimalField DECIMAL(18,2),
+         | dateField DATE,
+         | charField CHAR(5),
+         | floatField FLOAT
+         | )
+         | STORED BY 'org.apache.carbondata.format'
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$path' INTO TABLE carbon_localsort_difftypes
+         | OPTIONS('SORT_SCOPE'='GLOBAL_SORT',
+         | 'FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField')
+       """.stripMargin)
+
+    sql(
+      s"""
+         | CREATE TABLE carbon_globalsort_difftypes(
+         | shortField SHORT,
+         | intField INT,
+         | bigintField LONG,
+         | doubleField DOUBLE,
+         | stringField STRING,
+         | timestampField TIMESTAMP,
+         | decimalField DECIMAL(18,2),
+         | dateField DATE,
+         | charField CHAR(5),
+         | floatField FLOAT
+         | )
+         | STORED BY 'org.apache.carbondata.format'
+       """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$path' INTO TABLE carbon_globalsort_difftypes
+         | OPTIONS('SORT_SCOPE'='GLOBAL_SORT',
+         | 'FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField')
+       """.stripMargin)
+
+    checkAnswer(sql("SELECT * FROM carbon_globalsort_difftypes ORDER BY shortField"),
+      sql("SELECT * FROM carbon_localsort_difftypes ORDER BY shortField"))
   }
 
   private def resetConf() {
