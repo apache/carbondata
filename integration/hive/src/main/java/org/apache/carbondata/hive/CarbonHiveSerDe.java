@@ -102,7 +102,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     } else {
       columnTypes = TypeInfoUtils.getTypeInfosFromTypeString(columnTypeProperty);
     }
-    if (colIds != null) {
+    if (colIds != null && !colIds.equals("")) {
       reqColNames = new ArrayList<String>();
 
       String[] arraySelectedColId = colIds.split(",");
@@ -114,7 +114,8 @@ public class CarbonHiveSerDe extends AbstractSerDe {
       // Create row related objects
       rowTypeInfo = TypeInfoFactory.getStructTypeInfo(reqColNames, reqColTypes);
       this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
-    } else {
+    }
+    else {
       // Create row related objects
       rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
       this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
@@ -135,7 +136,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
   public Writable serialize(Object obj, ObjectInspector objectInspector) throws SerDeException {
     if (!objInspector.getCategory().equals(ObjectInspector.Category.STRUCT)) {
       throw new SerDeException("Cannot serialize " + objInspector.getCategory()
-        + ". Can only serialize a struct");
+          + ". Can only serialize a struct");
     }
     serializedSize += ((StructObjectInspector) objInspector).getAllStructFieldRefs().size();
     status = LAST_OPERATION.SERIALIZE;
@@ -156,7 +157,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
   }
 
   private ArrayWritable createArray(Object obj, ListObjectInspector inspector)
-    throws SerDeException {
+      throws SerDeException {
     List sourceArray = inspector.getList(obj);
     ObjectInspector subInspector = inspector.getListElementObjectInspector();
     List array = new ArrayList();
@@ -180,7 +181,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
   }
 
   private Writable createPrimitive(Object obj, PrimitiveObjectInspector inspector)
-    throws SerDeException {
+      throws SerDeException {
     if (obj == null) {
       return null;
     }
