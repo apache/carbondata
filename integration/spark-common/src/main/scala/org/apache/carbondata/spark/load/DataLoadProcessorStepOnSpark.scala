@@ -135,8 +135,7 @@ object DataLoadProcessorStepOnSpark {
       override def hasNext: Boolean = rows.hasNext
 
       override def next(): CarbonRow = {
-        val tempRow = SortStepRowUtil.convertDecimalToByte(rows.next().getData, sortParameters)
-        val row = new CarbonRow(SortStepRowUtil.convertRow(tempRow, sortParameters))
+        val row = new CarbonRow(SortStepRowUtil.convertRow(rows.next().getData, sortParameters))
         rowCounter.add(1)
         row
       }

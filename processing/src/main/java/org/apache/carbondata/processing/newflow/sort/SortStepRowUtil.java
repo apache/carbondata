@@ -58,9 +58,22 @@ public class SortStepRowUtil {
       }
 
       index = 0;
+
+      DataType[] measureDataType = parameters.getMeasureDataType();
       // read measure values
       for (int i = 0; i < measureCount; i++) {
-        measures[index++] = data[allCount];
+        Object value = data[allCount];
+        if (null != value) {
+          if (measureDataType[i] == DataType.DECIMAL) {
+            BigDecimal decimal = (BigDecimal) value;
+            measures[index++] = DataTypeUtil.bigDecimalToByte(decimal);
+          } else {
+            measures[index++] = value;
+          }
+        } else {
+          measures[index++] = null;
+        }
+
         allCount++;
       }
 
@@ -73,40 +86,5 @@ public class SortStepRowUtil {
 
     //return out row
     return holder;
-  }
-
-  public static Object[] convertDecimalToByte(Object[] data, SortParameters parameters) {
-    int complexDimColCount = parameters.getComplexDimColCount();
-    int dimColCount = parameters.getDimColCount() + complexDimColCount;
-    int meaColCount = parameters.getMeasureColCount();
-    DataType[] type = parameters.getMeasureDataType();
-
-    Object[] result = new Object[data.length];
-
-    // Dimensions
-    System.arraycopy(data, 0, result, 0, dimColCount);
-
-    // Measures
-    for (int mesCount = 0; mesCount < meaColCount; mesCount++) {
-      Object value = data[mesCount + dimColCount];
-      if (null != value) {
-        switch (type[mesCount]) {
-          case SHORT:
-          case INT:
-          case LONG:
-          case DOUBLE:
-            result[mesCount + dimColCount] = value;
-            break;
-          case DECIMAL:
-            BigDecimal val = (BigDecimal) value;
-            result[mesCount + dimColCount] = DataTypeUtil.bigDecimalToByte(val);
-            break;
-        }
-      } else {
-        result[mesCount + dimColCount] = value;
-      }
-    }
-
-    return result;
   }
 }
