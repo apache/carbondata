@@ -57,7 +57,6 @@ public class CarbonMetadataUtilTest {
   static int[] objDecimal;
 
   @BeforeClass public static void setUp() {
-    Long lngObj = new Long("11221");
     byte byt = 1;
     objMaxArr = new Long[6];
     objMaxArr[0] = new Long("111111");
@@ -117,7 +116,6 @@ public class CarbonMetadataUtilTest {
     valueEncoderMeta.setDecimal(5);
     valueEncoderMeta.setMinValue(objMinArr);
     valueEncoderMeta.setMaxValue(objMaxArr);
-    valueEncoderMeta.setUniqueValue(lngObj);
     valueEncoderMeta.setType('a');
     valueEncoderMeta.setDataTypeSelected(byt);
 
@@ -202,7 +200,6 @@ public class CarbonMetadataUtilTest {
       metas[i] = new ValueEncoderMeta();
       metas[i].setMinValue(objMinArr[i]);
       metas[i].setMaxValue(objMaxArr[i]);
-      metas[i].setUniqueValue(objMinArr[i]);
       metas[i].setDecimal(objDecimal[i]);
       metas[i].setType(CarbonCommonConstants.BIG_INT_MEASURE);
       metas[i].setDataTypeSelected(byteArr[i]);

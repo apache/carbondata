@@ -448,7 +448,6 @@ public class CarbonMetadataUtil {
     encoderMeta.setDataTypeSelected(stats.getDataTypeSelected(index));
     encoderMeta.setDecimal(stats.getDecimal(index));
     encoderMeta.setType(getTypeInChar(stats.getDataType(index)));
-    encoderMeta.setUniqueValue(stats.getNonExistValue(index));
     return encoderMeta;
   }
 
@@ -834,7 +833,7 @@ public class CarbonMetadataUtil {
         buffer.putChar(valueEncoderMeta.getTypeInChar());
         buffer.putLong((Long) valueEncoderMeta.getMaxValue());
         buffer.putLong((Long) valueEncoderMeta.getMinValue());
-        buffer.putLong((Long) valueEncoderMeta.getUniqueValue());
+        buffer.putLong(0L); // unique value, deprecated
         break;
       case DOUBLE:
         buffer = ByteBuffer.allocate(
@@ -843,7 +842,7 @@ public class CarbonMetadataUtil {
         buffer.putChar(valueEncoderMeta.getTypeInChar());
         buffer.putDouble((Double) valueEncoderMeta.getMaxValue());
         buffer.putDouble((Double) valueEncoderMeta.getMinValue());
-        buffer.putDouble((Double) valueEncoderMeta.getUniqueValue());
+        buffer.putDouble(0d); // unique value, deprecated
         break;
       case DECIMAL:
         buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + 3);

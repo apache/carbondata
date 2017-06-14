@@ -145,6 +145,18 @@ public class ColumnPage {
     return columnPage;
   }
 
+  protected void updateStatisticsLong(long value) {
+    stats.updateLong(value);
+  }
+
+  protected void updateStatisticsDouble(double value) {
+    stats.updateDouble(value);
+  }
+
+  protected void updateStatisticsDecimal(byte[] value) {
+    stats.updateDecimal(value);
+  }
+
   protected static ColumnPage newVarLengthPage(byte[][] stringData) {
     ColumnPage columnPage = new ColumnPage(BYTE_ARRAY, stringData.length);
     columnPage.byteArrayData = stringData;
@@ -173,21 +185,27 @@ public class ColumnPage {
       case BYTE:
         // TODO: change sort step to store as exact data type
         putByte(rowId, (byte) value);
+        stats.updateLong((byte) value);
         break;
       case SHORT:
         putShort(rowId, (short) value);
+        stats.updateLong((short) value);
         break;
       case INT:
         putInt(rowId, (int) value);
+        stats.updateLong((int) value);
         break;
       case LONG:
         putLong(rowId, (long) value);
+        stats.updateLong((long) value);
         break;
       case DOUBLE:
         putDouble(rowId, (double) value);
+        stats.updateDouble((double) value);
         break;
       case DECIMAL:
         putDecimalBytes(rowId, (byte[]) value);
+        stats.updateDecimal((byte[]) value);
         break;
       case BYTE_ARRAY:
         putBytes(rowId, (byte[]) value);
@@ -195,7 +213,6 @@ public class ColumnPage {
       default:
         throw new RuntimeException("unsupported data type: " + dataType);
     }
-    stats.update(value);
   }
 
   /**

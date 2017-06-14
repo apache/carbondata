@@ -138,7 +138,7 @@ public class TablePage {
 
     // update statistics if it is last row
     if (rowId + 1 == pageSize) {
-      this.measurePageStatistics = new MeasurePageStatsVO(measurePage);
+      this.measurePageStatistics = MeasurePageStatsVO.build(measurePage);
     }
   }
 

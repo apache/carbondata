@@ -23,7 +23,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 
 public class MeasurePageStatsVO {
   // statistics of each measure column
-  private Object[] min, max, nonExistValue;
+  private Object[] min, max;
   private int[] decimal;
 
   private DataType[] dataType;
@@ -32,35 +32,33 @@ public class MeasurePageStatsVO {
   private MeasurePageStatsVO() {
   }
 
-  public MeasurePageStatsVO(ColumnPage[] measurePages) {
-    min = new Object[measurePages.length];
-    max = new Object[measurePages.length];
-    nonExistValue = new Object[measurePages.length];
-    decimal = new int[measurePages.length];
-    dataType = new DataType[measurePages.length];
-    selectedDataType = new byte[measurePages.length];
+  public static MeasurePageStatsVO build(ColumnPage[] measurePages) {
+    MeasurePageStatsVO stats = new MeasurePageStatsVO();
+    stats.min = new Object[measurePages.length];
+    stats.max = new Object[measurePages.length];
+    stats.decimal = new int[measurePages.length];
+    stats.dataType = new DataType[measurePages.length];
+    stats.selectedDataType = new byte[measurePages.length];
     for (int i = 0; i < measurePages.length; i++) {
-      ColumnPageStatsVO stats = measurePages[i].getStatistics();
-      min[i] = stats.getMin();
-      max[i] = stats.getMax();
-      nonExistValue[i] = stats.nonExistValue();
-      decimal[i] = stats.getDecimal();
-      dataType[i] = measurePages[i].getDataType();
+      ColumnPageStatsVO vo = measurePages[i].getStatistics();
+      stats.min[i] = vo.getMin();
+      stats.max[i] = vo.getMax();
+      stats.decimal[i] = vo.getDecimal();
+      stats.dataType[i] = measurePages[i].getDataType();
     }
+    return stats;
   }
 
   public static MeasurePageStatsVO build(ValueEncoderMeta[] encoderMetas) {
     Object[] max = new Object[encoderMetas.length];
     Object[] min = new Object[encoderMetas.length];
     int[] decimal = new int[encoderMetas.length];
-    Object[] nonExistValue = new Object[encoderMetas.length];
     DataType[] dataType = new DataType[encoderMetas.length];
     byte[] selectedDataType = new byte[encoderMetas.length];
     for (int i = 0; i < encoderMetas.length; i++) {
       max[i] = encoderMetas[i].getMaxValue();
       min[i] = encoderMetas[i].getMinValue();
       decimal[i] = encoderMetas[i].getDecimal();
-      nonExistValue[i] = encoderMetas[i].getUniqueValue();
       dataType[i] = encoderMetas[i].getType();
       selectedDataType[i] = encoderMetas[i].getDataTypeSelected();
     }
@@ -70,7 +68,6 @@ public class MeasurePageStatsVO {
     stats.selectedDataType = selectedDataType;
     stats.min = min;
     stats.max = max;
-    stats.nonExistValue = nonExistValue;
     stats.decimal = decimal;
     return stats;
   }
@@ -91,13 +88,7 @@ public class MeasurePageStatsVO {
     return decimal[measureIndex];
   }
 
-  public Object getNonExistValue(int measureIndex) {
-    return nonExistValue[measureIndex];
-  }
-
   public byte getDataTypeSelected(int measureIndex) {
     return selectedDataType[measureIndex];
   }
-
-
 }
