@@ -56,6 +56,11 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
   protected long offsetTillFileIsRead;
 
   /**
+   * memory size of this object.We store it as calculation everytime is costly
+   */
+  protected long memorySize;
+
+  /**
    * length of dictionary metadata file
    */
   private long dictionaryMetaFileLength;
@@ -91,7 +96,11 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    * @return
    */
   @Override public long getMemorySize() {
-    return offsetTillFileIsRead;
+    return memorySize;
+  }
+
+  @Override public void setMemorySize(long memorySize) {
+    this.memorySize = memorySize;
   }
 
   /**
@@ -129,6 +138,10 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    */
   @Override public void setOffsetTillFileIsRead(long offsetTillFileIsRead) {
     this.offsetTillFileIsRead = offsetTillFileIsRead;
+  }
+
+  @Override public long getOffsetTillFileIsRead() {
+    return offsetTillFileIsRead;
   }
 
   /**

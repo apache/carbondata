@@ -133,6 +133,23 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
     return getNewInstanceOfCarbonDictionaryColumnMetaChunk(dictionaryChunkMeta);
   }
 
+  @Override public CarbonDictionaryColumnMetaChunk readEntryOfDictionaryMetaChunk(long end_Offset)
+          throws IOException {
+    ColumnDictionaryChunkMeta dictionaryChunkMeta = null;
+    // open dictionary meta thrift reader
+    openThriftReader();
+    // at the completion of while loop we will get the last dictionary chunk entry
+    while (dictionaryMetadataFileReader.hasNext()) {
+      // get the thrift object for dictionary chunk
+      dictionaryChunkMeta = (ColumnDictionaryChunkMeta) dictionaryMetadataFileReader.read();
+      if (dictionaryChunkMeta.end_offset >= end_Offset) {
+        break;
+      }
+    }
+    // create a new instance of chunk meta wrapper using thrift object
+    return getNewInstanceOfCarbonDictionaryColumnMetaChunk(dictionaryChunkMeta);
+  }
+
   /**
    * Closes this stream and releases any system resources associated
    * with it. If the stream is already closed then invoking this

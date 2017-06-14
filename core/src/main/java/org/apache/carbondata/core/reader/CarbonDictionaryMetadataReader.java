@@ -53,4 +53,17 @@ public interface CarbonDictionaryMetadataReader extends Closeable {
    * @throws IOException if an I/O error occurs
    */
   CarbonDictionaryColumnMetaChunk readLastEntryOfDictionaryMetaChunk() throws IOException;
+
+  /**
+   * This method will be used to read the last dictionary meta chunk ending at end_Offset.
+   * Applicable scenarios :
+   * 1. When loading into LRU cache, we need to calculate the size of Object in memory,for
+   * this we need the number of records already loaded into LRU cache, so that we can calculate
+   * the memory required for incremental load
+   *
+   * @return last segment entry for dictionary chunk
+   * @throws IOException if an I/O error occurs
+   */
+  CarbonDictionaryColumnMetaChunk readEntryOfDictionaryMetaChunk(long end_Offset)
+          throws IOException;
 }
