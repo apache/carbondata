@@ -32,6 +32,7 @@ import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.keygenerator.directdictionary.{DirectDictionaryGenerator, DirectDictionaryKeyGeneratorFactory}
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
@@ -179,14 +180,22 @@ object CommonUtil {
         case "LIST" => if (!listInfo.isDefined) {
           isValid = false
         } else {
-          listInfo.get.replace("(", "").replace(")", "").split(",").map(_.trim).foreach(
+          val trimmedListInfo: Array[String] = listInfo.get.replace("(", "").replace(")", "")
+            .split(",").map(_.trim)
+          trimmedListInfo.foreach(
             isValid &= validateTypeConvert(partitionerFields(0), _))
         }
         case "RANGE" => if (!rangeInfo.isDefined) {
           isValid = false
         } else {
-          rangeInfo.get.split(",").map(_.trim).foreach(
+          // trim all the spaces
+          val trimmedRangeInfo = rangeInfo.get.split(",").map(_.trim)
+          trimmedRangeInfo.foreach(
             isValid &= validateTypeConvert(partitionerFields(0), _))
+          if (isValid) {
+            isValid = validateForOverLappingRangeValues(partitionerFields(0).dataType,
+              trimmedRangeInfo)
+          }
         }
         case "RANGE_INTERVAL" => isValid = false
         case _ => isValid = false
@@ -286,6 +295,69 @@ object CommonUtil {
         validateTypeConvertForSpark2(partitionerField, value)
     }
     result
+  }
+
+  def validateForOverLappingRangeValues(desType: Option[String],
+      rangeInfoArray: Array[String]): Boolean = {
+    val rangeInfoValuesValid = desType match {
+      case Some("IntegerType") | Some("int") =>
+        val intRangeInfoArray = rangeInfoArray.map(_.toInt)
+        val sortedRangeInfoArray = intRangeInfoArray.sorted
+        intRangeInfoArray.sameElements(sortedRangeInfoArray)
+      case Some("StringType") | Some("string") =>
+        val sortedRangeInfoArray = rangeInfoArray.sorted
+        rangeInfoArray.sameElements(sortedRangeInfoArray)
+      case a if (desType.get.startsWith("varchar") || desType.get.startsWith("char")) =>
+        val sortedRangeInfoArray = rangeInfoArray.sorted
+        rangeInfoArray.sameElements(sortedRangeInfoArray)
+      case Some("LongType") | Some("long") | Some("bigint") =>
+        val longRangeInfoArray = rangeInfoArray.map(_.toLong)
+        val sortedRangeInfoArray = longRangeInfoArray.sorted
+        longRangeInfoArray.sameElements(sortedRangeInfoArray)
+      case Some("FloatType") | Some("float") =>
+        val floatRangeInfoArray = rangeInfoArray.map(_.toFloat)
+        val sortedRangeInfoArray = floatRangeInfoArray.sorted
+        floatRangeInfoArray.sameElements(sortedRangeInfoArray)
+      case Some("DoubleType") | Some("double") =>
+        val doubleRangeInfoArray = rangeInfoArray.map(_.toDouble)
+        val sortedRangeInfoArray = doubleRangeInfoArray.sorted
+        doubleRangeInfoArray.sameElements(sortedRangeInfoArray)
+      case Some("ByteType") | Some("tinyint") =>
+        val byteRangeInfoArray = rangeInfoArray.map(_.toByte)
+        val sortedRangeInfoArray = byteRangeInfoArray.sorted
+        byteRangeInfoArray.sameElements(sortedRangeInfoArray)
+      case Some("ShortType") | Some("smallint") =>
+        val shortRangeInfoArray = rangeInfoArray.map(_.toShort)
+        val sortedRangeInfoArray = shortRangeInfoArray.sorted
+        shortRangeInfoArray.sameElements(sortedRangeInfoArray)
+      case Some("BooleanType") | Some("boolean") =>
+        true
+      case a if (desType.get.startsWith("DecimalType") || desType.get.startsWith("decimal")) =>
+        val decimalRangeInfoArray = rangeInfoArray.map(value => BigDecimal(value))
+        val sortedRangeInfoArray = decimalRangeInfoArray.sorted
+        decimalRangeInfoArray.sameElements(sortedRangeInfoArray)
+      case Some("DateType") | Some("date") =>
+        val dateRangeInfoArray = rangeInfoArray.map { value =>
+          val directDictionaryGenerator: DirectDictionaryGenerator =
+            DirectDictionaryKeyGeneratorFactory
+              .getDirectDictionaryGenerator(DataType.DATE)
+          directDictionaryGenerator.generateDirectSurrogateKey(value)
+        }
+        val sortedRangeInfoArray = dateRangeInfoArray.sorted
+        dateRangeInfoArray.sameElements(sortedRangeInfoArray)
+      case Some("TimestampType") | Some("timestamp") =>
+        val timestampRangeInfoArray = rangeInfoArray.map { value =>
+          val directDictionaryGenerator: DirectDictionaryGenerator =
+            DirectDictionaryKeyGeneratorFactory
+              .getDirectDictionaryGenerator(DataType.TIMESTAMP)
+          directDictionaryGenerator.generateDirectSurrogateKey(value)
+        }
+        val sortedRangeInfoArray = timestampRangeInfoArray.sorted
+        timestampRangeInfoArray.sameElements(sortedRangeInfoArray)
+      case _ =>
+        sys.error(s"Unsupported data type : ${ desType.get }")
+    }
+    rangeInfoValuesValid
   }
 
   def validateFields(key: String, fields: Seq[Field]): Boolean = {
