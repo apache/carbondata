@@ -89,6 +89,12 @@ public class CarbonTableReader {
   }
 
   // for worker node to initialize carbon metastore
+
+  /**
+   *
+   * @param table
+   * @return
+   */
   public CarbonTableCacheModel getCarbonCache(SchemaTableName table) {
     if (!cc.containsKey(table)) {
       try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(
@@ -121,6 +127,11 @@ public class CarbonTableReader {
     }
   };
 
+  /**
+   * BHQ: Get the CarbonFile instance which represents the store path in the configuration, and assign it to
+   * carbonFileList.
+   * @return
+   */
   public boolean updateCarbonFile() {
     if (carbonFileList == null) {
       fileType = FileFactory.getFileType(config.getStorePath());
@@ -133,6 +144,12 @@ public class CarbonTableReader {
     return true;
   }
 
+  /**
+   * return the schema names under a database path (carbonFileList).
+   * The carbonFileList represents the root of CarbonData store path. Under the store path, there are
+   * some directories named with the schema names.
+   * @return
+   */
   public List<String> updateSchemaList() {
     updateCarbonFile();
 
@@ -170,6 +187,12 @@ public class CarbonTableReader {
     return table;
   }
 
+  /**
+   * BHQ: This function will add all the carbon tables' schema-table name into tableList.
+   * carbonFileList represents the CarbonData store path. Under carbonFileList, there are some directories
+   * named with the schema name. And under each schema directory, there are directories named with the table
+   * name.
+   */
   public void updateSchemaTables() {
     // update logic determine later
     if (carbonFileList == null) {
@@ -203,8 +226,11 @@ public class CarbonTableReader {
       CarbonTableCacheModel cache = cc.getOrDefault(table, new CarbonTableCacheModel());
       if (cache.isValid()) return cache.carbonTable;
 
-      //Step1: get table meta path, load carbon table param
+      // BHQ: if table is not previously cached:
+
+      // Step1: get table meta path, load carbon table param
       String storePath = config.getStorePath();
+      // table identifier is randomly generated.
       cache.carbonTableIdentifier =
           new CarbonTableIdentifier(table.getSchemaName(), table.getTableName(),
               UUID.randomUUID().toString());
@@ -246,6 +272,14 @@ public class CarbonTableReader {
     return result;
   }
 
+  /**
+   * BHQ: apply filters to the carbon table been cached in the tableCacheModel, and get
+   * valid input splits of the table.
+   * @param tableCacheModel
+   * @param filters
+   * @return
+   * @throws Exception
+   */
   public List<CarbonLocalInputSplit> getInputSplits2(CarbonTableCacheModel tableCacheModel,
       Expression filters) throws Exception {
 
@@ -321,7 +355,7 @@ public class CarbonTableReader {
   }
 
   /**
-   * get data blocks of given segment
+   * get data blocks of given segment.
    */
   private List<DataRefNode> getDataBlocksOfSegment(
       FilterExpressionProcessor filterExpressionProcessor,
