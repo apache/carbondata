@@ -20,12 +20,14 @@ package org.apache.carbondata.core.scan.filter.partition;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.InExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.partition.PartitionUtil;
 import org.apache.carbondata.core.scan.partition.Partitioner;
+import org.apache.carbondata.core.util.ByteUtil;
 
 /**
  * the implement of In filter
@@ -48,6 +50,9 @@ public class InFilterImpl implements PartitionFilterIntf {
       Object value = PartitionUtil.getDataBasedOnDataTypeForFilter(
           literal.getLiteralExpValue().toString(),
           partitionInfo.getColumnSchemaList().get(0).getDataType());
+      if (PartitionType.RANGE == partitionInfo.getPartitionType() && value instanceof String) {
+        value = ByteUtil.toBytes((String)value);
+      }
       partitionMap.set(partitioner.getPartition(value));
     }
     return partitionMap;
