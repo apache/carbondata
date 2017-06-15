@@ -233,11 +233,11 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_delete")
-    sql("DELETE FROM carbon_localsort_delete WHERE id = 1")
+    sql("DELETE FROM carbon_localsort_delete WHERE id = 1").show
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
       "OPTIONS('SORT_SCOPE'='GLOBAL_SORT')")
-    sql("DELETE FROM carbon_globalsort WHERE id = 1")
+    sql("DELETE FROM carbon_globalsort WHERE id = 1").show
 
     assert(getIndexFileCount("carbon_globalsort") === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(11)))
@@ -280,12 +280,13 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
   test("Test with different date types") {
     val path = s"$projectPath/examples/spark2/src/main/resources/data.csv"
 
+    sql("DROP TABLE IF EXISTS carbon_localsort_difftypes")
     sql(
       s"""
          | CREATE TABLE carbon_localsort_difftypes(
-         | shortField SHORT,
+         | shortField smallint,
          | intField INT,
-         | bigintField LONG,
+         | bigintField bigint,
          | doubleField DOUBLE,
          | stringField STRING,
          | timestampField TIMESTAMP,
@@ -299,16 +300,16 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '$path' INTO TABLE carbon_localsort_difftypes
-         | OPTIONS('SORT_SCOPE'='GLOBAL_SORT',
-         | 'FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField')
+         | OPTIONS('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField')
        """.stripMargin)
 
+    sql("DROP TABLE IF EXISTS carbon_globalsort_difftypes")
     sql(
       s"""
          | CREATE TABLE carbon_globalsort_difftypes(
-         | shortField SHORT,
+         | shortField smallint,
          | intField INT,
-         | bigintField LONG,
+         | bigintField bigint,
          | doubleField DOUBLE,
          | stringField STRING,
          | timestampField TIMESTAMP,
