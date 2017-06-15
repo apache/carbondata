@@ -108,7 +108,7 @@ public class RawBasedResultCollectorTest {
 //        measureColumnDataChunk.setNullValueIndexHolder(presenceMeta);
 //        CarbonReadDataHolder carbonReadDataHolder = new CarbonReadDataHolder();
 //        carbonReadDataHolder.setReadableLongValues(new long[] { 1 });
-//        measureColumnDataChunk.setMeasureDataHolder(carbonReadDataHolder);
+//        measureColumnDataChunk.setColumnPage(carbonReadDataHolder);
 //        return measureColumnDataChunk;
 //      }
 //    };

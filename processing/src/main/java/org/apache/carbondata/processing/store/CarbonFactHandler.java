@@ -17,8 +17,8 @@
 
 package org.apache.carbondata.processing.store;
 
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
-import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 
 public interface CarbonFactHandler {
   void initialise() throws CarbonDataWriterException;

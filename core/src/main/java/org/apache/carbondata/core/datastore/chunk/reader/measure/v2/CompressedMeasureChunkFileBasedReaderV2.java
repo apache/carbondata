@@ -18,17 +18,12 @@ package org.apache.carbondata.core.datastore.chunk.reader.measure.v2;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReaderV2V3Format;
-import org.apache.carbondata.core.datastore.compression.ValueCompressionHolder;
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
-import org.apache.carbondata.core.datastore.dataholder.CarbonReadDataHolder;
-import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
@@ -112,41 +107,19 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
   public MeasureColumnDataChunk convertToMeasureChunk(MeasureRawColumnChunk measureRawColumnChunk,
       int pageNumber) throws IOException {
     MeasureColumnDataChunk datChunk = new MeasureColumnDataChunk();
-    DataChunk2 measureColumnChunk = null;
     int copyPoint = measureRawColumnChunk.getOffSet();
     int blockIndex = measureRawColumnChunk.getBlockletId();
     ByteBuffer rawData = measureRawColumnChunk.getRawData();
-    if (measureColumnChunkOffsets.size() - 1 == blockIndex) {
-      measureColumnChunk =
-          CarbonUtil.readDataChunk(rawData, copyPoint, measureColumnChunkLength.get(blockIndex));
-      synchronized (measureRawColumnChunk.getFileReader()) {
-        rawData = measureRawColumnChunk.getFileReader().readByteBuffer(filePath,
-            measureColumnChunkOffsets.get(blockIndex) + measureColumnChunkLength.get(blockIndex),
-            measureColumnChunk.data_page_length);
-      }
-    } else {
-      measureColumnChunk =
-          CarbonUtil.readDataChunk(rawData, copyPoint, measureColumnChunkLength.get(blockIndex));
+    DataChunk2 measureColumnChunk = CarbonUtil.readDataChunk(rawData, copyPoint,
+        measureColumnChunkLength.get(blockIndex));
+    if (measureColumnChunkOffsets.size() - 1 != blockIndex) {
       copyPoint += measureColumnChunkLength.get(blockIndex);
     }
-    List<ValueEncoderMeta> valueEncodeMeta = new ArrayList<>();
-    for (int i = 0; i < measureColumnChunk.getEncoder_meta().size(); i++) {
-      valueEncodeMeta.add(
-          CarbonUtil.deserializeEncoderMeta(measureColumnChunk.getEncoder_meta().get(i).array()));
-    }
-    WriterCompressModel compressionModel = CarbonUtil.getValueCompressionModel(valueEncodeMeta);
 
-    ValueCompressionHolder values = compressionModel.getValueCompressionHolder()[0];
-    // uncompress
-    values.uncompress(compressionModel.getConvertedDataType()[0], rawData.array(), copyPoint,
-        measureColumnChunk.data_page_length, compressionModel.getMantissa()[0],
-        compressionModel.getMaxValue()[0], numberOfRows);
-
-    CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values);
+    ColumnPage page = decodeMeasure(measureRawColumnChunk, measureColumnChunk, copyPoint);
 
     // set the data chunk
-    datChunk.setMeasureDataHolder(measureDataHolder);
-
+    datChunk.setColumnPage(page);
     // set the enun value indexes
     datChunk.setNullValueIndexHolder(getPresenceMeta(measureColumnChunk.presence));
     return datChunk;

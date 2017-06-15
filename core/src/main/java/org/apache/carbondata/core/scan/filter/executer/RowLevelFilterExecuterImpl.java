@@ -95,6 +95,11 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    */
   protected boolean[] isMeasurePresentInCurrentBlock;
 
+  /**
+   * is dimension column data is natural sorted
+   */
+  protected boolean isNaturalSorted;
+
   public RowLevelFilterExecuterImpl(List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties,
@@ -328,21 +333,21 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
               .convertToMeasureColDataChunk(pageIndex);
       switch (msrType) {
         case SHORT:
-          msrValue = (short) measureColumnDataChunk.getMeasureDataHolder()
-              .getReadableLongValueByIndex(index);
+          msrValue = (short) measureColumnDataChunk.getColumnPage()
+              .getLong(index);
           break;
         case INT:
           msrValue =
-              (int)measureColumnDataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
+              (int)measureColumnDataChunk.getColumnPage().getLong(index);
           break;
         case LONG:
           msrValue =
-              measureColumnDataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
+              measureColumnDataChunk.getColumnPage().getLong(index);
           break;
         case DECIMAL:
           BigDecimal bigDecimalValue =
-              measureColumnDataChunk.getMeasureDataHolder()
-                  .getReadableBigDecimalValueByIndex(index);
+              measureColumnDataChunk.getColumnPage()
+                  .getDecimal(index);
           if (null != bigDecimalValue
               && msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema().getScale()
               > bigDecimalValue.scale()) {
@@ -354,7 +359,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           break;
         default:
           msrValue =
-              measureColumnDataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
+              measureColumnDataChunk.getColumnPage().getDouble(index);
       }
       record[msrColumnEvalutorInfo.getRowIndex()] =
           measureColumnDataChunk.getNullValueIndexHolder().getBitSet().get(index) ? null : msrValue;

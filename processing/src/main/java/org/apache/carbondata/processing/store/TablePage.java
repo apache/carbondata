@@ -25,17 +25,16 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.datastore.GenericDataType;
+import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
-import org.apache.carbondata.core.datastore.page.FixLengthColumnPage;
-import org.apache.carbondata.core.datastore.page.KeyColumnPage;
-import org.apache.carbondata.core.datastore.page.VarLengthColumnPage;
+import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.DataTypeUtil;
-import org.apache.carbondata.processing.datatypes.GenericDataType;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
-import org.apache.carbondata.processing.newflow.row.WriteStepRowUtil;
-import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
 import org.apache.spark.sql.types.Decimal;
 
@@ -43,31 +42,36 @@ import org.apache.spark.sql.types.Decimal;
  * Represent a page data for all columns, we store its data in columnar layout, so that
  * all processing apply to TablePage can be done in vectorized fashion.
  */
-class TablePage {
+public class TablePage {
 
   // For all dimension and measure columns, we store the column data directly in the page,
   // the length of the page is the number of rows.
 
   // TODO: we should have separate class for key columns so that keys are stored together in
   // one vector to make it efficient for sorting
-  private KeyColumnPage keyColumnPage;
-  private VarLengthColumnPage[] noDictDimensionPage;
+  private ColumnPage[] dictDimensionPage;
+  private ColumnPage[] noDictDimensionPage;
   private ComplexColumnPage[] complexDimensionPage;
-  private FixLengthColumnPage[] measurePage;
+  private ColumnPage[] measurePage;
+
+  private MeasurePageStatsVO measurePageStatistics;
 
   // the num of rows in this page, it must be less than short value (65536)
   private int pageSize;
 
   private CarbonFactDataHandlerModel model;
 
-  TablePage(CarbonFactDataHandlerModel model, int pageSize) {
+  public TablePage(CarbonFactDataHandlerModel model, int pageSize) {
     this.model = model;
     this.pageSize = pageSize;
-    keyColumnPage = new KeyColumnPage(pageSize,
-        model.getSegmentProperties().getDimensionPartitions().length);
-    noDictDimensionPage = new VarLengthColumnPage[model.getNoDictionaryCount()];
+    int numDictDimension = model.getMDKeyGenerator().getDimCount();
+    dictDimensionPage = new ColumnPage[numDictDimension];
+    for (int i = 0; i < dictDimensionPage.length; i++) {
+      dictDimensionPage[i] = ColumnPage.newPage(DataType.BYTE_ARRAY, pageSize);
+    }
+    noDictDimensionPage = new ColumnPage[model.getNoDictionaryCount()];
     for (int i = 0; i < noDictDimensionPage.length; i++) {
-      noDictDimensionPage[i] = new VarLengthColumnPage(pageSize);
+      noDictDimensionPage[i] = ColumnPage.newPage(DataType.BYTE_ARRAY, pageSize);
     }
     complexDimensionPage = new ComplexColumnPage[model.getComplexColumnCount()];
     for (int i = 0; i < complexDimensionPage.length; i++) {
@@ -75,10 +79,10 @@ class TablePage {
       // we get the first row.
       complexDimensionPage[i] = null;
     }
-    measurePage = new FixLengthColumnPage[model.getMeasureCount()];
+    measurePage = new ColumnPage[model.getMeasureCount()];
     DataType[] dataTypes = model.getMeasureDataType();
     for (int i = 0; i < measurePage.length; i++) {
-      measurePage[i] = new FixLengthColumnPage(dataTypes[i], pageSize);
+      measurePage[i] = ColumnPage.newPage(dataTypes[i], pageSize);
     }
   }
 
@@ -88,13 +92,15 @@ class TablePage {
    * @param rowId Id of the input row
    * @param row   row object
    */
-  void addRow(int rowId, CarbonRow row) throws KeyGenException {
+  public void addRow(int rowId, CarbonRow row) throws KeyGenException {
     // convert each column category
 
     // 1. convert dictionary columns
     byte[] mdk = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
     byte[][] keys = model.getSegmentProperties().getFixedLengthKeySplitter().splitKey(mdk);
-    keyColumnPage.putKey(rowId, keys);
+    for (int i = 0; i < dictDimensionPage.length; i++) {
+      dictDimensionPage[i].putData(rowId, keys[i]);
+    }
 
     // 2. convert noDictionary columns and complex columns.
     int noDictionaryCount = noDictDimensionPage.length;
@@ -104,9 +110,9 @@ class TablePage {
       for (int i = 0; i < noDictAndComplex.length; i++) {
         if (i < noDictionaryCount) {
           // noDictionary columns, since it is variable length, we need to prepare each
-          // element as LV encoded byte array (first two bytes are the length of the array)
+          // element as LV result byte array (first two bytes are the length of the array)
           byte[] valueWithLength = addLengthToByteArray(noDictAndComplex[i]);
-          noDictDimensionPage[i].putByteArray(rowId, valueWithLength);
+          noDictDimensionPage[i].putData(rowId, valueWithLength);
         } else {
           // complex columns
           addComplexColumn(i - noDictionaryCount, rowId, noDictAndComplex[i]);
@@ -121,11 +127,18 @@ class TablePage {
 
       // in compaction flow the measure with decimal type will come as Spark decimal.
       // need to convert it to byte array.
-      if (measurePage[i].getDataType() == DataType.DECIMAL && model.isCompactionFlow()) {
+      if (measurePage[i].getDataType() == DataType.DECIMAL &&
+          model.isCompactionFlow() &&
+          value != null) {
         BigDecimal bigDecimal = ((Decimal) value).toJavaBigDecimal();
         value = DataTypeUtil.bigDecimalToByte(bigDecimal);
       }
       measurePage[i].putData(rowId, value);
+    }
+
+    // update statistics if it is last row
+    if (rowId + 1 == pageSize) {
+      this.measurePageStatistics = new MeasurePageStatsVO(measurePage);
     }
   }
 
@@ -149,14 +162,14 @@ class TablePage {
     }
 
     int depthInComplexColumn = getComplexDimensionPage()[index].getDepth();
-    // this is the encoded columnar data which will be added to page,
+    // this is the result columnar data which will be added to page,
     // size of this list is the depth of complex column, we will fill it by input data
     List<ArrayList<byte[]>> encodedComplexColumnar = new ArrayList<>();
     for (int k = 0; k < depthInComplexColumn; k++) {
       encodedComplexColumnar.add(new ArrayList<byte[]>());
     }
 
-    // encode the complex type data and fill columnsArray
+    // apply the complex type data and fill columnsArray
     try {
       ByteBuffer byteArrayInput = ByteBuffer.wrap(complexColumns);
       ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
@@ -186,11 +199,11 @@ class TablePage {
     return output;
   }
 
-  public KeyColumnPage getKeyColumnPage() {
-    return keyColumnPage;
+  public ColumnPage[] getDictDimensionPage() {
+    return dictDimensionPage;
   }
 
-  public VarLengthColumnPage[] getNoDictDimensionPage() {
+  public ColumnPage[] getNoDictDimensionPage() {
     return noDictDimensionPage;
   }
 
@@ -198,7 +211,17 @@ class TablePage {
     return complexDimensionPage;
   }
 
-  public FixLengthColumnPage[] getMeasurePage() {
+  public ColumnPage[] getMeasurePage() {
     return measurePage;
   }
+
+  public MeasurePageStatsVO getMeasureStats() {
+    return measurePageStatistics;
+  }
+
+  public int getPageSize() {
+    return pageSize;
+  }
 }
+
+

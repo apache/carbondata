@@ -31,7 +31,10 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.memory.IntPointerBuffer;
 import org.apache.carbondata.core.memory.MemoryBlock;
+import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.newflow.sort.unsafe.comparator.UnsafeRowComparator;
@@ -111,8 +114,8 @@ public class UnsafeSortDataRows {
   /**
    * This method will be used to initialize
    */
-  public void initialize() throws CarbonSortKeyAndGroupByException {
-    MemoryBlock baseBlock = getMemoryBlock(inMemoryChunkSize);
+  public void initialize() throws MemoryException {
+    MemoryBlock baseBlock = UnsafeMemoryManager.allocateMemoryWithRetry(inMemoryChunkSize);
     this.rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
         parameters.getNoDictionarySortColumn(),
         parameters.getDimColCount() + parameters.getComplexDimColCount(),
@@ -130,28 +133,6 @@ public class UnsafeSortDataRows {
     semaphore = new Semaphore(parameters.getNumberOfCores());
   }
 
-  public static MemoryBlock getMemoryBlock(long size) throws CarbonSortKeyAndGroupByException {
-    MemoryBlock baseBlock = null;
-    int tries = 0;
-    while (true && tries < 100) {
-      baseBlock = UnsafeMemoryManager.INSTANCE.allocateMemory(size);
-      if (baseBlock == null) {
-        try {
-          Thread.sleep(50);
-        } catch (InterruptedException e) {
-          throw new CarbonSortKeyAndGroupByException(e);
-        }
-      } else {
-        break;
-      }
-      tries++;
-    }
-    if (baseBlock == null) {
-      throw new CarbonSortKeyAndGroupByException("Not enough memory to create page");
-    }
-    return baseBlock;
-  }
-
   public boolean canAdd() {
     return bytesAdded < maxSizeAllowed;
   }
@@ -166,35 +147,53 @@ public class UnsafeSortDataRows {
     // if record holder list size is equal to sort buffer size then it will
     // sort the list and then write current list data to file
     synchronized (addRowsLock) {
-      for (int i = 0; i < size; i++) {
-        if (rowPage.canAdd()) {
-          bytesAdded += rowPage.addRow(rowBatch[i]);
-        } else {
-          try {
-            if (enableInMemoryIntermediateMerge) {
-              unsafeInMemoryIntermediateFileMerger.startInmemoryMergingIfPossible();
-            }
-            unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
-            semaphore.acquire();
-            dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
-            MemoryBlock memoryBlock = getMemoryBlock(inMemoryChunkSize);
-            boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
-            rowPage = new UnsafeCarbonRowPage(
-                parameters.getNoDictionaryDimnesionColumn(),
-                parameters.getNoDictionarySortColumn(),
-                parameters.getDimColCount() + parameters.getComplexDimColCount(),
-                parameters.getMeasureColCount(),
-                parameters.getMeasureDataType(),
-                memoryBlock,
-                saveToDisk);
-            bytesAdded += rowPage.addRow(rowBatch[i]);
-          } catch (Exception e) {
-            LOGGER.error(
-                "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
-            throw new CarbonSortKeyAndGroupByException(e);
-          }
+      addBatch(rowBatch, size);
+    }
+  }
 
+  /**
+   * This method will be used to add new row
+   *
+   * @param rowBatch new rowBatch
+   * @param size
+   * @throws CarbonSortKeyAndGroupByException problem while writing
+   */
+  public void addRowBatchWithOutSync(Object[][] rowBatch, int size)
+      throws CarbonSortKeyAndGroupByException {
+    // if record holder list size is equal to sort buffer size then it will
+    // sort the list and then write current list data to file
+    addBatch(rowBatch, size);
+  }
+
+  private void addBatch(Object[][] rowBatch, int size) throws CarbonSortKeyAndGroupByException {
+    for (int i = 0; i < size; i++) {
+      if (rowPage.canAdd()) {
+        bytesAdded += rowPage.addRow(rowBatch[i]);
+      } else {
+        try {
+          if (enableInMemoryIntermediateMerge) {
+            unsafeInMemoryIntermediateFileMerger.startInmemoryMergingIfPossible();
+          }
+          unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
+          semaphore.acquire();
+          dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
+          MemoryBlock memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(inMemoryChunkSize);
+          boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
+          rowPage = new UnsafeCarbonRowPage(
+                  parameters.getNoDictionaryDimnesionColumn(),
+                  parameters.getNoDictionarySortColumn(),
+                  parameters.getDimColCount() + parameters.getComplexDimColCount(),
+                  parameters.getMeasureColCount(),
+                  parameters.getMeasureDataType(),
+                  memoryBlock,
+                  saveToDisk);
+          bytesAdded += rowPage.addRow(rowBatch[i]);
+        } catch (Exception e) {
+          LOGGER.error(
+                  "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
+          throw new CarbonSortKeyAndGroupByException(e);
         }
+
       }
     }
   }
@@ -215,7 +214,7 @@ public class UnsafeSortDataRows {
         unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
         semaphore.acquire();
         dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
-        MemoryBlock memoryBlock = getMemoryBlock(inMemoryChunkSize);
+        MemoryBlock memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(inMemoryChunkSize);
         boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
         rowPage = new UnsafeCarbonRowPage(
             parameters.getNoDictionaryDimnesionColumn(),

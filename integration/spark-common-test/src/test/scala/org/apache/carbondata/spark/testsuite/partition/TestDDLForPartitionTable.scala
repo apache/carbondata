@@ -114,6 +114,22 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     assert(partitionInfo.getListInfo.get(2).get(1).equals("3"))
   }
 
+  test("test exception if partition column is dropped") {
+    sql("drop table if exists test")
+    sql(
+      "create table test(a int, b string) partitioned by (c int) stored by 'carbondata' " +
+      "tblproperties('PARTITION_TYPE'='LIST','list_info'='0,10,5,20')")
+    intercept[Exception] { sql("alter table test drop columns(c)") }
+  }
+
+  test("test describe formatted for partition column") {
+    sql(
+      """create table des(a int, b string) partitioned by (c string) stored by 'carbondata'
+        |tblproperties ('partition_type'='list','list_info'='1,2')""".stripMargin)
+    checkExistence(sql("describe formatted des"),true, "Partition Columns")
+    sql("drop table if exists des")
+  }
+
   override def afterAll = {
     dropTable
   }
@@ -122,6 +138,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hashTable")
     sql("drop table if exists rangeTable")
     sql("drop table if exists listTable")
+    sql("drop table if exists test")
   }
 
 }

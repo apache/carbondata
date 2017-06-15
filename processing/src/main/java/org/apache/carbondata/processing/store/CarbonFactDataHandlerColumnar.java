@@ -19,8 +19,6 @@ package org.apache.carbondata.processing.store;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -36,17 +34,11 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForInt;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndex;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForShort;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort;
+import org.apache.carbondata.core.datastore.GenericDataType;
 import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
-import org.apache.carbondata.core.datastore.columnar.IndexStorage;
-import org.apache.carbondata.core.datastore.compression.ValueCompressionHolder;
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
-import org.apache.carbondata.core.datastore.dataholder.CarbonWriteDataHolder;
-import org.apache.carbondata.core.datastore.page.FixLengthColumnPage;
+import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedData;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.apache.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
@@ -57,17 +49,11 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.NodeHolder;
-import org.apache.carbondata.core.util.ValueCompressionUtil;
-import org.apache.carbondata.processing.datatypes.GenericDataType;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
-import org.apache.carbondata.processing.newflow.row.WriteStepRowUtil;
-import org.apache.carbondata.processing.store.colgroup.ColGroupBlockStorage;
+import org.apache.carbondata.processing.newflow.sort.SortScopeOptions;
 import org.apache.carbondata.processing.store.file.FileManager;
 import org.apache.carbondata.processing.store.file.IFileManagerComposite;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
-import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 /**
  * Fact data handler class to handle the fact data
@@ -108,7 +94,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * keyBlockHolder
    */
   private CarbonKeyBlockHolder[] keyBlockHolder;
-  private boolean[] aggKeyBlock;
+
+  // This variable is true if it is dictionary dimension and its cardinality is lower than
+  // property of CarbonCommonConstants.HIGH_CARDINALITY_VALUE
+  // It decides whether it will do RLE encoding on data page for this dimension
+  private boolean[] rleEncodingForDictDimension;
   private boolean[] isNoDictionary;
   private long processedDataCount;
   private ExecutorService producerExecutorService;
@@ -117,7 +107,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private List<Future<Void>> consumerExecutorServiceTaskList;
   private List<CarbonRow> dataRows;
   private ColumnGroupModel colGrpModel;
-  private boolean[] isUseInvertedIndex;
   /**
    * semaphore which will used for managing node holder objects
    */
@@ -150,14 +139,14 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private boolean[] isDictDimension;
 
-  private int bucketNumber;
-
-  private int taskExtension;
-
   /**
    * current data format version
    */
   private ColumnarFormatVersion version;
+
+  private TablePageEncoder encoder;
+
+  private SortScopeOptions.SortScope sortScope;
 
   /**
    * CarbonFactDataHandler constructor
@@ -168,20 +157,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     int numDimColumns = colGrpModel.getNoOfColumnStore() + model.getNoDictionaryCount()
         + getExpandedComplexColsCount();
-    this.aggKeyBlock = new boolean[numDimColumns];
+    this.rleEncodingForDictDimension = new boolean[numDimColumns];
     this.isNoDictionary = new boolean[numDimColumns];
-    this.bucketNumber = model.getBucketId();
-    this.taskExtension = model.getTaskExtension();
-    this.isUseInvertedIndex = new boolean[numDimColumns];
-    if (null != model.getIsUseInvertedIndex()) {
-      for (int i = 0; i < isUseInvertedIndex.length; i++) {
-        if (i < model.getIsUseInvertedIndex().length) {
-          isUseInvertedIndex[i] = model.getIsUseInvertedIndex()[i];
-        } else {
-          isUseInvertedIndex[i] = true;
-        }
-      }
-    }
+
     int noDictStartIndex = this.colGrpModel.getNoOfColumnStore();
     // setting true value for dims of high card
     for (int i = 0; i < model.getNoDictionaryCount(); i++) {
@@ -198,41 +176,41 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
               CarbonCommonConstants.HIGH_CARDINALITY_VALUE,
               CarbonCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
       int[] columnSplits = colGrpModel.getColumnSplit();
-      int dimCardinalityIndex = 0;
-      int aggIndex = 0;
+      int dimCardinalityIndex = -1;
+      int aggIndex = -1;
       int[] dimLens = model.getSegmentProperties().getDimColumnsCardinality();
       for (int i = 0; i < columnSplits.length; i++) {
-        if (colGrpModel.isColumnar(i) && dimLens[dimCardinalityIndex] < noDictionaryValue) {
-          this.aggKeyBlock[aggIndex++] = true;
-          continue;
-        }
         dimCardinalityIndex += columnSplits[i];
         aggIndex++;
+        if (colGrpModel.isColumnar(i) && dimLens[dimCardinalityIndex] < noDictionaryValue) {
+          this.rleEncodingForDictDimension[aggIndex] = true;
+        }
       }
 
       if (model.getDimensionCount() < dimLens.length) {
         int allColsCount = getColsCount(model.getDimensionCount());
-        List<Boolean> aggKeyBlockWithComplex = new ArrayList<Boolean>(allColsCount);
+        List<Boolean> rleWithComplex = new ArrayList<Boolean>(allColsCount);
         for (int i = 0; i < model.getDimensionCount(); i++) {
           GenericDataType complexDataType = model.getComplexIndexMap().get(i);
           if (complexDataType != null) {
-            complexDataType.fillAggKeyBlock(aggKeyBlockWithComplex, this.aggKeyBlock);
+            complexDataType.fillAggKeyBlock(rleWithComplex, this.rleEncodingForDictDimension);
           } else {
-            aggKeyBlockWithComplex.add(this.aggKeyBlock[i]);
+            rleWithComplex.add(this.rleEncodingForDictDimension[i]);
           }
         }
-        this.aggKeyBlock = new boolean[allColsCount];
+        this.rleEncodingForDictDimension = new boolean[allColsCount];
         for (int i = 0; i < allColsCount; i++) {
-          this.aggKeyBlock[i] = aggKeyBlockWithComplex.get(i);
+          this.rleEncodingForDictDimension[i] = rleWithComplex.get(i);
         }
       }
-      aggKeyBlock = arrangeUniqueBlockType(aggKeyBlock);
+      rleEncodingForDictDimension = arrangeUniqueBlockType(rleEncodingForDictDimension);
     }
-    version = CarbonProperties.getInstance().getFormatVersion();
+    this.version = CarbonProperties.getInstance().getFormatVersion();
+    this.encoder = new TablePageEncoder(model);
   }
 
   private void initParameters(CarbonFactDataHandlerModel model) {
-
+    this.sortScope = model.getSortScope();
     this.colGrpModel = model.getSegmentProperties().getColumnGroupModel();
 
     //TODO need to pass carbon table identifier to metadata
@@ -266,6 +244,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
         numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
       }
+    }
+
+    if (sortScope != null && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
+      numberOfCores = 1;
     }
 
     blockletProcessingCount = new AtomicInteger(0);
@@ -357,87 +339,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
   }
 
-  class IndexKey {
-    private int pageSize;
-    byte[] currentMDKey = null;
-    byte[][] currentNoDictionaryKey = null;
-    byte[] startKey = null;
-    byte[] endKey = null;
-    byte[][] noDictStartKey = null;
-    byte[][] noDictEndKey = null;
-    byte[] packedNoDictStartKey = null;
-    byte[] packedNoDictEndKey = null;
-
-    IndexKey(int pageSize) {
-      this.pageSize = pageSize;
-    }
-
-    /** update all keys based on the input row */
-    void update(int rowId, CarbonRow row) throws KeyGenException {
-      currentMDKey = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
-      if (model.getNoDictionaryCount() > 0 || model.getComplexIndexMap().size() > 0) {
-        currentNoDictionaryKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
-      }
-      if (rowId == 0) {
-        startKey = currentMDKey;
-        noDictStartKey = currentNoDictionaryKey;
-      }
-      endKey = currentMDKey;
-      noDictEndKey = currentNoDictionaryKey;
-      if (rowId == pageSize - 1) {
-        finalizeKeys();
-      }
-    }
-
-    /** update all keys if SORT_COLUMNS option is used when creating table */
-    private void finalizeKeys() {
-      // If SORT_COLUMNS is used, may need to update start/end keys since the they may
-      // contains dictionary columns that are not in SORT_COLUMNS, which need to be removed from
-      // start/end key
-      int numberOfDictSortColumns = model.getSegmentProperties().getNumberOfDictSortColumns();
-      if (numberOfDictSortColumns > 0) {
-        // if SORT_COLUMNS contain dictionary columns
-        int[] keySize = columnarSplitter.getBlockKeySize();
-        if (keySize.length > numberOfDictSortColumns) {
-          // if there are some dictionary columns that are not in SORT_COLUMNS, it will come to here
-          int newMdkLength = 0;
-          for (int i = 0; i < numberOfDictSortColumns; i++) {
-            newMdkLength += keySize[i];
-          }
-          byte[] newStartKeyOfSortKey = new byte[newMdkLength];
-          byte[] newEndKeyOfSortKey = new byte[newMdkLength];
-          System.arraycopy(startKey, 0, newStartKeyOfSortKey, 0, newMdkLength);
-          System.arraycopy(endKey, 0, newEndKeyOfSortKey, 0, newMdkLength);
-          startKey = newStartKeyOfSortKey;
-          endKey = newEndKeyOfSortKey;
-        }
-      } else {
-        startKey = new byte[0];
-        endKey = new byte[0];
-      }
-
-      // Do the same update for noDictionary start/end Key
-      int numberOfNoDictSortColumns = model.getSegmentProperties().getNumberOfNoDictSortColumns();
-      if (numberOfNoDictSortColumns > 0) {
-        // if sort_columns contain no-dictionary columns
-        if (noDictStartKey.length > numberOfNoDictSortColumns) {
-          byte[][] newNoDictionaryStartKey = new byte[numberOfNoDictSortColumns][];
-          byte[][] newNoDictionaryEndKey = new byte[numberOfNoDictSortColumns][];
-          System.arraycopy(
-              noDictStartKey, 0, newNoDictionaryStartKey, 0, numberOfNoDictSortColumns);
-          System.arraycopy(
-              noDictEndKey, 0, newNoDictionaryEndKey, 0, numberOfNoDictSortColumns);
-          noDictStartKey = newNoDictionaryStartKey;
-          noDictEndKey = newNoDictionaryEndKey;
-        }
-        packedNoDictStartKey =
-            NonDictionaryUtil.packByteBufferIntoSingleByteArray(noDictStartKey);
-        packedNoDictEndKey =
-            NonDictionaryUtil.packByteBufferIntoSingleByteArray(noDictEndKey);
-      }
-    }
-  }
-
   /**
    * generate the NodeHolder from the input rows (one page in case of V3 format)
    */
@@ -447,7 +348,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       return new NodeHolder();
     }
     TablePage tablePage = new TablePage(model, dataRows.size());
-    IndexKey keys = new IndexKey(dataRows.size());
+    TablePageKey keys = new TablePageKey(model, dataRows.size());
     int rowId = 0;
 
     // convert row to columnar data
@@ -457,27 +358,16 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       rowId++;
     }
 
-    // encode and compress dimensions and measure
-    // TODO: To make the encoding more transparent to the user, user should be enable to specify
-    // the encoding and compression method for each type when creating table.
+    // apply and compress dimensions and measure
+    EncodedData encodedData = encoder.encode(tablePage);
 
-    Codec codec = new Codec(model.getMeasureDataType());
-    IndexStorage[] dimColumns = codec.encodeAndCompressDimensions(tablePage);
-    Codec encodedMeasure = codec.encodeAndCompressMeasures(tablePage);
-
-    // prepare nullBitSet for writer, remove this after writer can accept TablePage
-    BitSet[] nullBitSet = new BitSet[tablePage.getMeasurePage().length];
-    FixLengthColumnPage[] measurePages = tablePage.getMeasurePage();
-    for (int i = 0; i < nullBitSet.length; i++) {
-      nullBitSet[i] = measurePages[i].getNullBitSet();
-    }
+    TablePageStatistics tablePageStatistics = new TablePageStatistics(
+        model.getTableSpec(), tablePage, encodedData, tablePage.getMeasureStats());
 
     LOGGER.info("Number Of records processed: " + dataRows.size());
 
     // TODO: writer interface should be modified to use TablePage
-    return dataWriter.buildDataNodeHolder(dimColumns, encodedMeasure.getEncodedMeasure(),
-        dataRows.size(), keys.startKey, keys.endKey, encodedMeasure.getCompressionModel(),
-        keys.packedNoDictStartKey, keys.packedNoDictEndKey, nullBitSet);
+    return dataWriter.buildDataNodeHolder(encodedData, tablePageStatistics, keys);
   }
 
   /**
@@ -553,15 +443,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   // return the number of complex column after complex columns are expanded
   private int getExpandedComplexColsCount() {
-    int count = 0;
-    int dictDimensionCount = model.getDimensionCount();
-    for (int i = 0; i < dictDimensionCount; i++) {
-      GenericDataType complexDataType = model.getComplexIndexMap().get(i);
-      if (complexDataType != null) {
-        count += complexDataType.getColsCount();
-      }
-    }
-    return count;
+    return model.getExpandedComplexColsCount();
   }
 
   // return the number of complex column
@@ -722,9 +604,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     carbonDataWriterVo.setStoreLocation(model.getStoreLocation());
     carbonDataWriterVo.setMeasureCount(model.getMeasureCount());
     carbonDataWriterVo.setTableName(model.getTableName());
-    carbonDataWriterVo.setKeyBlockSize(keyBlockSize);
     carbonDataWriterVo.setFileManager(fileManager);
-    carbonDataWriterVo.setAggBlocks(aggKeyBlock);
+    carbonDataWriterVo.setRleEncodingForDictDim(rleEncodingForDictDimension);
     carbonDataWriterVo.setIsComplexType(isComplexTypes());
     carbonDataWriterVo.setNoDictionaryCount(model.getNoDictionaryCount());
     carbonDataWriterVo.setCarbonDataFileAttributes(model.getCarbonDataFileAttributes());
@@ -735,8 +616,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     carbonDataWriterVo.setColCardinality(model.getColCardinality());
     carbonDataWriterVo.setSegmentProperties(model.getSegmentProperties());
     carbonDataWriterVo.setTableBlocksize(model.getBlockSizeInMB());
-    carbonDataWriterVo.setBucketNumber(bucketNumber);
-    carbonDataWriterVo.setTaskExtension(taskExtension);
+    carbonDataWriterVo.setBucketNumber(model.getBucketId());
+    carbonDataWriterVo.setTaskExtension(model.getTaskExtension());
     carbonDataWriterVo.setSchemaUpdatedTimeStamp(model.getSchemaUpdatedTimeStamp());
     return carbonDataWriterVo;
   }
@@ -915,235 +796,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         }
       }
       return null;
-    }
-  }
-
-  private final class BlockSortThread implements Callable<IndexStorage> {
-    private int index;
-
-    private byte[][] data;
-    private boolean isSortRequired;
-    private boolean isCompressionReq;
-    private boolean isUseInvertedIndex;
-
-    private boolean isNoDictionary;
-
-    private BlockSortThread(int index, byte[][] data, boolean isSortRequired,
-        boolean isUseInvertedIndex) {
-      this.index = index;
-      this.data = data;
-      isCompressionReq = aggKeyBlock[this.index];
-      this.isSortRequired = isSortRequired;
-      this.isUseInvertedIndex = isUseInvertedIndex;
-    }
-
-    public BlockSortThread(byte[][] data, boolean compression, boolean isNoDictionary,
-        boolean isSortRequired, boolean isUseInvertedIndex) {
-      this.data = data;
-      this.isCompressionReq = compression;
-      this.isNoDictionary = isNoDictionary;
-      this.isSortRequired = isSortRequired;
-      this.isUseInvertedIndex = isUseInvertedIndex;
-    }
-
-    @Override public IndexStorage call() throws Exception {
-      if (index == 1) {
-        int dd = 1 + 1;
-      }
-      if (isUseInvertedIndex) {
-        if (version == ColumnarFormatVersion.V3) {
-          return new BlockIndexerStorageForShort(this.data, isCompressionReq, isNoDictionary,
-              isSortRequired);
-        } else {
-          return new BlockIndexerStorageForInt(this.data, isCompressionReq, isNoDictionary,
-              isSortRequired);
-        }
-      } else {
-        if (version == ColumnarFormatVersion.V3) {
-          return new BlockIndexerStorageForNoInvertedIndexForShort(this.data,isNoDictionary);
-        } else {
-          return new BlockIndexerStorageForNoInvertedIndex(this.data);
-        }
-      }
-
-    }
-
-  }
-
-  public class Codec {
-    private WriterCompressModel compressionModel;
-    private byte[][] encodedMeasureArray;
-    private DataType[] measureType;
-
-    Codec(DataType[] measureType) {
-      this.measureType = measureType;
-    }
-
-    public WriterCompressModel getCompressionModel() {
-      return compressionModel;
-    }
-
-    public byte[][] getEncodedMeasure() {
-      return encodedMeasureArray;
-    }
-
-    public Codec encodeAndCompressMeasures(TablePage tablePage) {
-      // TODO: following conversion is required only because compress model requires them,
-      // remove then after the compress framework is refactoried
-      FixLengthColumnPage[] measurePage = tablePage.getMeasurePage();
-      int measureCount = measurePage.length;
-      Object[] min = new Object[measurePage.length];
-      Object[] max = new Object[measurePage.length];
-      Object[] uniqueValue = new Object[measurePage.length];
-      int[] decimal = new int[measurePage.length];
-      for (int i = 0; i < measurePage.length; i++) {
-        min[i] = measurePage[i].getStatistics().getMin();
-        max[i] = measurePage[i].getStatistics().getMax();
-        uniqueValue[i] = measurePage[i].getStatistics().getUniqueValue();
-        decimal[i] = measurePage[i].getStatistics().getDecimal();
-      }
-      // encode and compress measure column page
-      compressionModel =
-          ValueCompressionUtil.getWriterCompressModel(max, min, decimal, uniqueValue, measureType,
-              new byte[measureCount]);
-      encodedMeasureArray = encodeMeasure(compressionModel, measurePage);
-      return this;
-    }
-
-    // this method first invokes encoding routine to encode the data chunk,
-    // followed by invoking compression routine for preparing the data chunk for writing.
-    private byte[][] encodeMeasure(WriterCompressModel compressionModel,
-        FixLengthColumnPage[] columnPages) {
-
-      CarbonWriteDataHolder[] holders = new CarbonWriteDataHolder[columnPages.length];
-      for (int i = 0; i < holders.length; i++) {
-        holders[i] = new CarbonWriteDataHolder();
-        switch (columnPages[i].getDataType()) {
-          case SHORT:
-          case INT:
-          case LONG:
-            holders[i].setWritableLongPage(columnPages[i].getLongPage());
-            break;
-          case DOUBLE:
-            holders[i].setWritableDoublePage(columnPages[i].getDoublePage());
-            break;
-          case DECIMAL:
-            holders[i].setWritableDecimalPage(columnPages[i].getDecimalPage());
-            break;
-          default:
-            throw new RuntimeException("Unsupported data type: " + columnPages[i].getDataType());
-        }
-      }
-
-      DataType[] dataType = compressionModel.getDataType();
-      ValueCompressionHolder[] values =
-          new ValueCompressionHolder[compressionModel.getValueCompressionHolder().length];
-      byte[][] returnValue = new byte[values.length][];
-      for (int i = 0; i < compressionModel.getValueCompressionHolder().length; i++) {
-        values[i] = compressionModel.getValueCompressionHolder()[i];
-        if (dataType[i] != DataType.DECIMAL) {
-          values[i].setValue(
-              ValueCompressionUtil.getValueCompressor(compressionModel.getCompressionFinders()[i])
-                  .getCompressedValues(compressionModel.getCompressionFinders()[i], holders[i],
-                      compressionModel.getMaxValue()[i],
-                      compressionModel.getMantissa()[i]));
-        } else {
-          values[i].setValue(holders[i].getWritableByteArrayValues());
-        }
-        values[i].compress();
-        returnValue[i] = values[i].getCompressedData();
-      }
-
-      return returnValue;
-    }
-
-    /**
-     * Encode and compress each column page. The work is done using a thread pool.
-     */
-    private IndexStorage[] encodeAndCompressDimensions(TablePage tablePage) {
-      int noDictionaryCount = tablePage.getNoDictDimensionPage().length;
-      int complexColCount = tablePage.getComplexDimensionPage().length;
-
-      // thread pool size to be used for encoding dimension
-      // each thread will sort the column page data and compress it
-      int thread_pool_size = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.NUM_CORES_BLOCK_SORT,
-              CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL));
-      ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
-      Callable<IndexStorage> callable;
-      List<Future<IndexStorage>> submit = new ArrayList<Future<IndexStorage>>(
-          model.getPrimitiveDimLens().length + noDictionaryCount + complexColCount);
-      int i = 0;
-      int dictionaryColumnCount = -1;
-      int noDictionaryColumnCount = -1;
-      int colGrpId = -1;
-      boolean isSortColumn = false;
-      SegmentProperties segmentProperties = model.getSegmentProperties();
-      for (i = 0; i < isDictDimension.length; i++) {
-        isSortColumn = i < segmentProperties.getNumberOfSortColumns();
-        if (isDictDimension[i]) {
-          dictionaryColumnCount++;
-          if (colGrpModel.isColumnar(dictionaryColumnCount)) {
-            // dictionary dimension
-            callable =
-                new BlockSortThread(
-                    tablePage.getKeyColumnPage().getKeyVector(dictionaryColumnCount),
-                    true,
-                    false,
-                    isSortColumn,
-                    isUseInvertedIndex[i] & isSortColumn);
-
-          } else {
-            // column group
-            callable = new ColGroupBlockStorage(
-                segmentProperties,
-                ++colGrpId,
-                tablePage.getKeyColumnPage().getKeyVector(dictionaryColumnCount));
-          }
-        } else {
-          // no dictionary dimension
-          callable =
-              new BlockSortThread(
-                  tablePage.getNoDictDimensionPage()[++noDictionaryColumnCount].getByteArrayPage(),
-                  false,
-                  true,
-                  isSortColumn,
-                  isUseInvertedIndex[i] & isSortColumn);
-        }
-        // start a thread to sort the page data
-        submit.add(executorService.submit(callable));
-      }
-
-      // complex type column
-      for (int index = 0; index < getComplexColumnCount(); index++) {
-        Iterator<byte[][]> iterator = tablePage.getComplexDimensionPage()[index].iterator();
-        while (iterator.hasNext()) {
-          byte[][] data = iterator.next();
-          callable =
-              new BlockSortThread(
-                  i++,
-                  data,
-                  false,
-                  true);
-          submit.add(executorService.submit(callable));
-        }
-      }
-      executorService.shutdown();
-      try {
-        executorService.awaitTermination(1, TimeUnit.DAYS);
-      } catch (InterruptedException e) {
-        LOGGER.error(e, e.getMessage());
-      }
-      IndexStorage[] dimColumns = new IndexStorage[
-          colGrpModel.getNoOfColumnStore() + noDictionaryCount + getExpandedComplexColsCount()];
-      try {
-        for (int k = 0; k < dimColumns.length; k++) {
-          dimColumns[k] = submit.get(k).get();
-        }
-      } catch (Exception e) {
-        LOGGER.error(e, e.getMessage());
-      }
-      return dimColumns;
     }
   }
 }

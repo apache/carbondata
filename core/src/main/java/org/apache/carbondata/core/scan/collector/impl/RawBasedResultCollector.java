@@ -20,7 +20,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
@@ -54,14 +53,11 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
   @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
     List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
-    BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
-        scannedResult.getDeleteDeltaDataCache();
     // scan the record and add to list
     int rowCounter = 0;
     while (scannedResult.hasNext() && rowCounter < batchSize) {
       scanResultAndGetData(scannedResult);
-      if (null != deleteDeltaDataCache && deleteDeltaDataCache
-          .contains(scannedResult.getCurrentRowId())) {
+      if (scannedResult.containsDeletedRow(scannedResult.getCurrentRowId())) {
         continue;
       }
       prepareRow(scannedResult, listBasedResult, queryMeasures);

@@ -224,7 +224,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
         """),
       Seq(Row(19.0, "Emily", "Bangalore")))
   }
-  
+
   test("no inverted index test for row level filter queries") {
     sql("""
            CREATE TABLE IF NOT EXISTS carbonNoInvertedIndexTable
@@ -261,8 +261,31 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       sql("SELECT * FROM carbonNoInvertedIndexTable WHERE city > 'Shanghai' and city <= 'Washington'"))
   }
 
+  test("no inverted index with describe formatted query") {
+    sql("drop table if exists indexFormat")
+    sql(
+      """
+           CREATE TABLE IF NOT EXISTS indexFormat
+           (id Int, name String, city String)
+           STORED BY 'org.apache.carbondata.format'
+           TBLPROPERTIES('DICTIONARY_EXCLUDE'='city','NO_INVERTED_INDEX'='city')
+      """)
+    sql(
+      s"""
+           LOAD DATA LOCAL INPATH '$testData1' into table indexFormat
+           """)
+    checkExistence(
+      sql(
+        """
+           describe formatted indexFormat
+        """),
+      true,"NOINVERTEDINDEX")
+  }
 
   override def afterAll {
+    sql("drop table if exists index1")
+    sql("drop table if exists index2")
+    sql("drop table if exists indexFormat")
     clean
   }
 

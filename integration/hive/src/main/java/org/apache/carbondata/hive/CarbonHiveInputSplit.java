@@ -127,7 +127,7 @@ public class CarbonHiveInputSplit extends FileSplit
       try {
         tableBlockInfoList.add(
             new TableBlockInfo(split.getPath().toString(), split.getStart(), split.getSegmentId(),
-            split.getLocations(), split.getLength(), blockletInfos, split.getVersion()));
+            split.getLocations(), split.getLength(), blockletInfos, split.getVersion(), null));
       } catch (IOException e) {
         throw new RuntimeException("fail to get location of split: " + split, e);
       }
@@ -141,7 +141,7 @@ public class CarbonHiveInputSplit extends FileSplit
     try {
       return new TableBlockInfo(inputSplit.getPath().toString(), inputSplit.getStart(),
         inputSplit.getSegmentId(), inputSplit.getLocations(), inputSplit.getLength(),
-        blockletInfos, inputSplit.getVersion());
+        blockletInfos, inputSplit.getVersion(), null);
     } catch (IOException e) {
       throw new RuntimeException("fail to get location of split: " + inputSplit, e);
     }

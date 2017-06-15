@@ -193,7 +193,7 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
   test("select count(*) from insufficientColumn") {
     checkAnswer(
       sql("select count(*) from insufficientColumn"),
-      Seq(Row(1)
+      Seq(Row(3)
       )
     )
   }

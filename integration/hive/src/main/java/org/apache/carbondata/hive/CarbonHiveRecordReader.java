@@ -111,16 +111,20 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     } else {
       columnTypes = TypeInfoUtils.getTypeInfosFromTypeString(columnTypeProperty);
     }
+    if (!colIds.equals("")) {
+      String[] arraySelectedColId = colIds.split(",");
+      List<TypeInfo> reqColTypes = new ArrayList<TypeInfo>();
 
-    String[] arraySelectedColId = colIds.split(",");
-    List<TypeInfo> reqColTypes = new ArrayList<TypeInfo>();
-
-    for (String anArrayColId : arraySelectedColId) {
-      reqColTypes.add(columnTypes.get(Integer.parseInt(anArrayColId)));
+      for (String anArrayColId : arraySelectedColId) {
+        reqColTypes.add(columnTypes.get(Integer.parseInt(anArrayColId)));
+      }
+      // Create row related objects
+      rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, reqColTypes);
+      this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
+    } else {
+      rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
+      this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
     }
-    // Create row related objects
-    rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, reqColTypes);
-    this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
   }
 
   @Override public boolean next(Void aVoid, ArrayWritable value) throws IOException {
@@ -227,12 +231,14 @@ public class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
       case LONG:
         return new LongWritable((long) obj);
       case SHORT:
-        return new ShortWritable((Short) obj);
+        return new ShortWritable((short) obj);
       case DATE:
         return new DateWritable(new Date(Long.parseLong(String.valueOf(obj.toString()))));
       case TIMESTAMP:
         return new TimestampWritable(new Timestamp((long) obj));
       case STRING:
+        return new Text(obj.toString());
+      case CHAR:
         return new Text(obj.toString());
       case DECIMAL:
         return new HiveDecimalWritable(

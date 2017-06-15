@@ -63,7 +63,7 @@ public class ColumnSchema implements Serializable {
   private boolean isColumnar = true;
 
   /**
-   * List of encoding that are chained to encode the data for this column
+   * List of encoding that are chained to apply the data for this column
    */
   private List<Encoding> encodingList;
 
@@ -231,14 +231,14 @@ public class ColumnSchema implements Serializable {
   }
 
   /**
-   * @return the numberOfChild
+   * @return the getNumberOfChild
    */
   public int getNumberOfChild() {
     return numberOfChild;
   }
 
   /**
-   * @param numberOfChild the numberOfChild to set
+   * @param numberOfChild the getNumberOfChild to set
    */
   public void setNumberOfChild(int numberOfChild) {
     this.numberOfChild = numberOfChild;

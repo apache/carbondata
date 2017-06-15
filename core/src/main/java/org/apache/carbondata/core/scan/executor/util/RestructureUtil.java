@@ -253,11 +253,11 @@ public class RestructureUtil {
     for (CarbonDimension queryDimension : queryDimensions) {
       // if number of child is zero, then it is not a complex dimension
       // so directly add it query dimension
-      if (queryDimension.numberOfChild() == 0) {
+      if (queryDimension.getNumberOfChild() == 0) {
         updatedQueryDimension.add(queryDimension);
       }
       // if number of child is more than 1 then add all its children
-      numberOfChildren = queryDimension.getOrdinal() + queryDimension.numberOfChild();
+      numberOfChildren = queryDimension.getOrdinal() + queryDimension.getNumberOfChild();
       for (int j = queryDimension.getOrdinal(); j < numberOfChildren; j++) {
         updatedQueryDimension.add(tableBlockDimensions.get(j));
       }

@@ -96,22 +96,21 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
       switch (carbonMeasure.getDataType()) {
         case SHORT:
-          return (short)dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
+          return (short)dataChunk.getColumnPage().getLong(index);
         case INT:
-          return (int)dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
+          return (int)dataChunk.getColumnPage().getLong(index);
         case LONG:
-          return dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
+          return dataChunk.getColumnPage().getLong(index);
         case DECIMAL:
           BigDecimal bigDecimalMsrValue =
-              dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
+              dataChunk.getColumnPage().getDecimal(index);
           if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
             bigDecimalMsrValue =
                 bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
           }
-          return org.apache.spark.sql.types.Decimal
-              .apply(bigDecimalMsrValue);
+          return org.apache.spark.sql.types.Decimal.apply(bigDecimalMsrValue);
         default:
-          return dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
+          return dataChunk.getColumnPage().getDouble(index);
       }
     }
     return null;

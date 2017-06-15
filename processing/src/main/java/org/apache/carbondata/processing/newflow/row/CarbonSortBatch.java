@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.processing.newflow.row;
 
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.sort.unsafe.merger.UnsafeSingleThreadFinalSortFilesMerger;
 
 /**

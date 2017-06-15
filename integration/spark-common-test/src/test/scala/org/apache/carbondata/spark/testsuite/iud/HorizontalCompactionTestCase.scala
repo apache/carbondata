@@ -53,7 +53,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
 
 
 
-  test("test IUD Horizontal Compaction Update Alter Clean") {
+  test("test IUD Horizontal Compaction Update Alter Clean.") {
     sql("""drop database if exists iud4 cascade""")
     sql("""create database iud4""")
     sql("""use iud4""")
