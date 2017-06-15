@@ -198,7 +198,7 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
         ThreadStatusObserver threadStatusObserver) {
       this.sortParameters = sortParameters.getCopy();
       this.iteratorCount = new AtomicInteger(numberOfThreads);
-      this.mergerQueue = new LinkedBlockingQueue<>();
+      this.mergerQueue = new LinkedBlockingQueue<>(1);
       this.threadStatusObserver = threadStatusObserver;
       createSortDataRows();
     }
@@ -255,6 +255,7 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
             .getThrowable() instanceof CarbonDataLoadingException) {
           finalMerger.setStopProcess(true);
           mergerQueue.put(finalMerger);
+          return;
         }
         processRowToNextStep(sortDataRow, sortParameters);
         unsafeIntermediateFileMerger.finish();
@@ -271,6 +272,12 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
       } catch (CarbonSortKeyAndGroupByException e) {
         throw new CarbonDataLoadingException(e);
       } catch (InterruptedException e) {
+        // if fails to put in queue because of interrupted exception, we can offer to free the main
+        // thread from waiting.
+        if (finalMerger != null) {
+          finalMerger.setStopProcess(true);
+          mergerQueue.offer(finalMerger);
+        }
         throw new CarbonDataLoadingException(e);
       }
     }
