@@ -184,6 +184,8 @@ public class DictionaryClientTest {
     // Cleanup created files
     CarbonMetadata.getInstance().removeTable(tableInfo.getTableUniqueName());
     cleanUpDirectory(new File(storePath));
+    CarbonProperties.getInstance()
+        .removeProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE);
   }
 
   private void cleanUpDirectory(File path) {

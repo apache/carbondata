@@ -18,6 +18,7 @@
 package org.apache.spark.carbondata.query
 
 import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -86,5 +87,8 @@ class TestNotEqualToFilter extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table if exists test_not_equal_to_carbon")
     sql("drop table if exists test_not_equal_to_hive")
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
   }
 }

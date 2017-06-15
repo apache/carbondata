@@ -151,5 +151,8 @@ class TestQueryForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hashTable")
     sql("drop table if exists rangeTable")
     sql("drop table if exists listTable")
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
   }
 }
