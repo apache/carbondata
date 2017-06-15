@@ -175,14 +175,14 @@ object CommonUtil {
         case "LIST" => if (!listInfo.isDefined) {
           isValid = false
         } else {
-          listInfo.get.replace("(", "").replace(")", "").split(",").foreach(
-            isValid &= validateTypeConvert(partitionerFields(0).dataType, _))
+          listInfo.get.replace("(", "").replace(")", "").split(",").map(_.trim).foreach(
+            isValid &= validateTypeConvert(partitionerFields(0), _))
         }
         case "RANGE" => if (!rangeInfo.isDefined) {
           isValid = false
         } else {
-          rangeInfo.get.split(CarbonCommonConstants.COMMA).foreach(
-            isValid &= validateTypeConvert(partitionerFields(0).dataType, _))
+          rangeInfo.get.split(",").map(_.trim).foreach(
+            isValid &= validateTypeConvert(partitionerFields(0), _))
         }
         case "RANGE_INTERVAL" => isValid = false
         case _ => isValid = false
@@ -193,33 +193,43 @@ object CommonUtil {
     isValid
   }
 
-  def validateTypeConvert(desType: Option[String], value: String): Boolean = {
+  def validateTypeConvert(partitionerField: PartitionerField, value: String): Boolean = {
     var flag = true
-    val result = desType match {
+    val result = partitionerField.dataType match {
       case Some("IntegerType") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.INT)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.INT)
       case Some("StringType") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.STRING)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.STRING)
       case Some("LongType") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.LONG)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.LONG)
       case Some("FloatType") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.FLOAT)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.FLOAT)
       case Some("DoubleType") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DOUBLE)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.DOUBLE)
       case Some("ByteType") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BYTE)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.BYTE)
       case Some("ShortType") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.SHORT)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.SHORT)
       case Some("BooleanType") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BOOLEAN)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.BOOLEAN)
       case Some("DecimalType") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DECIMAL)
+        if (value.matches("^\\d*$")) {
+          val parDec = BigDecimal(partitionerField.partitionColumn)
+          val valDec = BigDecimal(value)
+          if (parDec.precision >= valDec.precision || parDec.scale >= valDec.scale) {
+            valDec
+          } else {
+            null
+          }
+        } else {
+          null
+        }
       case Some("TimestampType") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.TIMESTAMP)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.TIMESTAMP)
       case Some("DateType") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DATE)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.DATE)
       case _ =>
-        validateTypeConvertExt(desType, value)
+        validateTypeConvertExt(partitionerField, value)
     }
     if (result == null) {
       flag = false
@@ -227,30 +237,40 @@ object CommonUtil {
     flag
   }
 
-  def validateTypeConvertExt(desType: Option[String], value: String): Object = {
-    val resultExt = desType match {
+  def validateTypeConvertExt(partitionerField: PartitionerField, value: String): Object = {
+    val resultExt = partitionerField.dataType match {
       case Some("int") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.INT)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.INT)
       case Some("string") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.STRING)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.STRING)
       case Some("bigint") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.LONG)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.LONG)
       case Some("float") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.FLOAT)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.FLOAT)
       case Some("double") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DOUBLE)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.DOUBLE)
       case Some("smallint") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.SHORT)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.SHORT)
       case Some("boolean") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BOOLEAN)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.BOOLEAN)
       case Some("decimal") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DECIMAL)
+        if (value.matches("^\\d*$")) {
+          val parDec = BigDecimal(partitionerField.partitionColumn)
+          val valDec = BigDecimal(value)
+          if (parDec.precision >= valDec.precision || parDec.scale >= valDec.scale) {
+            valDec
+          } else {
+            null
+          }
+        } else {
+          null
+        }
       case Some("timestamp") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.TIMESTAMP)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.TIMESTAMP)
       case Some("date") =>
-        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DATE)
+        DataTypeUtil.getDataBasedOnDataType(value, DataType.DATE)
       case _ =>
-        throw new MalformedCarbonCommandException("UnSupported partition type: " + desType)
+        throw new MalformedCarbonCommandException("UnSupported partition type: " + partitionerField.dataType)
     }
     resultExt
   }
