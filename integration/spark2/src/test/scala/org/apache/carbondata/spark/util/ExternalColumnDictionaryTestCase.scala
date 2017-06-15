@@ -285,5 +285,8 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
 
   override def afterAll: Unit = {
     cleanAllTables
+
+    CarbonProperties.getInstance()
+      .removeProperty("carbon.custom.distribution")
   }
 }

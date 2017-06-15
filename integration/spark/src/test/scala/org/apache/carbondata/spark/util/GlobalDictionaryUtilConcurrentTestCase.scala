@@ -151,8 +151,8 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
 
   override def afterAll {
     sql("drop table if exists employee")
-    CarbonProperties.getInstance.addProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME,
-        Integer.toString(CarbonCommonConstants.DEFAULT_MAX_QUERY_EXECUTION_TIME))
+    CarbonProperties.getInstance
+      .removeProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME)
   }
 
   class DictGenerator(loadModel: CarbonLoadModel) extends Callable[String] {

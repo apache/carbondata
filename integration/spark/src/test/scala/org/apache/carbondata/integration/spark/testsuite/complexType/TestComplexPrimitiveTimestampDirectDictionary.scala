@@ -18,6 +18,7 @@
 package org.apache.carbondata.integration.spark.testsuite.complexType
 
 import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -61,5 +62,7 @@ class TestComplexPrimitiveTimestampDirectDictionary extends QueryTest with Befor
   override def afterAll {
 	  sql("drop table if exists complexcarbontimestamptable")
     sql("drop table if exists complexhivetimestamptable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
   }
 }

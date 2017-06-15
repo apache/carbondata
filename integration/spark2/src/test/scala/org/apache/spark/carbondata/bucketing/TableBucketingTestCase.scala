@@ -20,6 +20,7 @@ package org.apache.spark.carbondata.bucketing
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.execution.exchange.ShuffleExchange
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.metadata.CarbonMetadata
@@ -240,5 +241,9 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t9")
     sql("DROP TABLE IF EXISTS t10")
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", threshold.toString)
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
+      .removeProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
   }
 }
