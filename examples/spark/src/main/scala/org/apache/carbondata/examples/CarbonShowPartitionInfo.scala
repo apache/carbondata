@@ -31,7 +31,7 @@ object CarbonShowPartitionInfo {
   def extracted(tableName: String, args: Array[String]): Unit = {
     val cc = ExampleUtils.createCarbonContext("CarbonShowPartitionInfo")
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
-    
+
     // range partition
     cc.sql("DROP TABLE IF EXISTS t1")
 
@@ -86,7 +86,6 @@ object CarbonShowPartitionInfo {
     cc.sql(s"""
       SHOW PARTITIONS t5
              """).show()
-
 
     cc.sql(s"DROP TABLE IF EXISTS partitionDB.$tableName")
     cc.sql(s"DROP DATABASE IF EXISTS partitionDB")
