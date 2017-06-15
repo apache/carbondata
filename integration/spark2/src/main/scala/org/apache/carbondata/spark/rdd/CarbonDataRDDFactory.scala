@@ -1037,15 +1037,28 @@ object CarbonDataRDDFactory {
     if (partitionColumnIndex == -1) {
       throw new DataLoadingException("Partition column not found.")
     }
+
+    val dateFormatMap = CarbonDataProcessorUtil.getDateFormatMap(carbonLoadModel.getDateFormat())
+    val specificFormat = Option(dateFormatMap.get(partitionColumn.toLowerCase))
+    val timeStampFormat = if (specificFormat.isDefined) {
+      new SimpleDateFormat(specificFormat.get)
+    } else {
+      val timestampFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+        .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      new SimpleDateFormat(timestampFormatString)
+    }
+
+    val dateFormat = if (specificFormat.isDefined) {
+      new SimpleDateFormat(specificFormat.get)
+    } else {
+      val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+        .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      new SimpleDateFormat(dateFormatString)
+    }
+
     // generate RDD[(K, V)] to use the partitionBy method of PairRDDFunctions
     val inputRDD: RDD[(String, Row)] = if (dataFrame.isDefined) {
       // input data from DataFrame
-      val timestampFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-        .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-      val timeStampFormat = new SimpleDateFormat(timestampFormatString)
-      val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-        .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
-      val dateFormat = new SimpleDateFormat(dateFormatString)
       val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
       val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
       val serializationNullFormat =
@@ -1084,7 +1097,8 @@ object CarbonDataRDDFactory {
       }
     } else {
       inputRDD.map { row =>
-        (PartitionUtil.getDataBasedOnDataType(row._1, partitionColumnDataType), row._2)
+        (PartitionUtil.getDataBasedOnDataType(row._1, partitionColumnDataType, timeStampFormat,
+          dateFormat), row._2)
       }
         .partitionBy(partitioner)
         .map(_._2)
