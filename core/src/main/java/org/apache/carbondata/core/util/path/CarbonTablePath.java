@@ -51,6 +51,16 @@ public class CarbonTablePath extends Path {
   protected static final String INDEX_FILE_EXT = ".carbonindex";
   protected static final String DELETE_DELTA_FILE_EXT = ".deletedelta";
 
+  /**
+   * Streaming ingest related paths
+   */
+  protected static final String STREAM_PREFIX = "Streaming";
+  public static final String STREAM_FILE_NAME_EXT = ".carbondata.stream";
+  protected static final String STREAM_FILE_BEING_WRITTEN = "in-progress.carbondata.stream";
+  protected static final String STREAM_FILE_BEING_WRITTEN_META = "in-progress.meta";
+  protected static final String STREAM_COMPACTION_STATUS = "streaming_compaction_status";
+  protected static final String STREAM_FILE_LOCK = "streaming_in_use.lock";
+
   protected String tablePath;
   protected CarbonTableIdentifier carbonTableIdentifier;
 
