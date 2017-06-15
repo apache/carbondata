@@ -20,26 +20,30 @@ package org.apache.spark.sql
 import scala.language.implicitConversions
 
 import org.apache.commons.lang.StringUtils
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{FileStatus, Path}
+import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
-import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field}
+import org.apache.spark.sql.execution.command.CreateTable
+import org.apache.spark.sql.execution.datasources.{FileFormat, OutputWriterFactory}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.sources._
-import org.apache.spark.sql.types.{DecimalType, StructType}
+import org.apache.spark.sql.streaming.CarbonStreamingOutputWriterFactory
+import org.apache.spark.sql.types.{StringType, StructType}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
+
 /**
  * Carbon relation provider compliant to data source api.
  * Creates carbon relations
  */
 class CarbonSource extends CreatableRelationProvider with RelationProvider
-  with SchemaRelationProvider with DataSourceRegister {
+  with SchemaRelationProvider with DataSourceRegister with FileFormat  {
 
   override def shortName(): String = "carbondata"
 
@@ -47,7 +51,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
   override def createRelation(sqlContext: SQLContext,
       parameters: Map[String, String]): BaseRelation = {
     CarbonEnv.getInstance(sqlContext.sparkSession)
-    // if path is provided we can directly create Hadoop relation. \
+    // if path is provided we can directly create Hadoop relation.
     // Otherwise create datasource relation
     parameters.get("tablePath") match {
       case Some(path) => CarbonDatasourceHadoopRelation(sqlContext.sparkSession,
@@ -169,13 +173,13 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
   }
 
-  /**
-   * Returns the path of the table
-   * @param sparkSession
-   * @param dbName
-   * @param tableName
-   * @return
-   */
+/**
+ * Returns the path of the table
+ * @param sparkSession
+ * @param dbName
+ * @param tableName
+ * @return
+ */
   private def getPathForTable(sparkSession: SparkSession, dbName: String,
       tableName : String): String = {
 
@@ -190,9 +194,30 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
         .lookupRelation(Option(dbName), tableName)(sparkSession)
       CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath + s"/$dbName/$tableName"
     } catch {
-      case ex: Exception =>
-        throw new Exception(s"Do not have $dbName and $tableName", ex)
+        case ex: Exception =>
+          throw new Exception(s"Do not have $dbName and $tableName", ex)
     }
   }
+
+/**
+ * Prepares a write job and returns an [[OutputWriterFactory]].  Client side job preparation can
+ * be put here.  For example, user defined output committer can be configured here
+ * by setting the output committer class in the conf of spark.sql.sources.outputCommitterClass.
+ */
+  def prepareWrite(
+    sparkSession: SparkSession,
+    job: Job,
+    options: Map[String, String],
+    dataSchema: StructType): OutputWriterFactory = new CarbonStreamingOutputWriterFactory()
+
+/**
+ * When possible, this method should return the schema of the given `files`.  When the format
+ * does not support inference, or no valid files are given should return None.  In these cases
+ * Spark will require that user specify the schema manually.
+ */
+  def inferSchema(
+    sparkSession: SparkSession,
+    options: Map[String, String],
+    files: Seq[FileStatus]): Option[StructType] = Some(new StructType().add("value", StringType))
 
 }
