@@ -670,7 +670,6 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       Row("~carbon,")))
   }
 
-
   override def afterAll {
     sql("drop table if exists escapechar1")
     sql("drop table if exists escapechar2")

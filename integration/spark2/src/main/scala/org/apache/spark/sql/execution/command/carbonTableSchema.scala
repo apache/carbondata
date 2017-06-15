@@ -27,10 +27,11 @@ import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
-import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.hive.{CarbonMetastore, CarbonRelation, HiveExternalCatalog}
+import org.apache.spark.sql.hive.{CarbonMetastore, CarbonRelation}
+import org.apache.spark.sql.types.StringType
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
 
@@ -43,7 +44,7 @@ import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
+import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -799,6 +800,7 @@ private[sql] case class DescribeCommandFormatted(
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(tblIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
     val mapper = new ObjectMapper()
+
     val colProps = StringBuilder.newBuilder
     val dims = relation.metaData.dims.map(x => x.toLowerCase)
     var results: Seq[(String, String, String)] = child.schema.fields.map { field =>
@@ -880,4 +882,20 @@ private[sql] case class DescribeCommandFormatted(
     }
     results
   }
+}
+
+private[sql] case class ShowPartitions(tableIdentifier: TableIdentifier)
+  extends RunnableCommand {
+
+  override val output: Seq[Attribute] = {
+    AttributeReference("partition", StringType, nullable = false)() :: Nil
+  }
+
+  override def run(sparkSession: SparkSession): Seq[Row] = {
+    val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      .lookupRelation(tableIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
+    val carbonTable = relation.tableMeta.carbonTable
+    CarbonStore.showPartitions(carbonTable)
+  }
+
 }

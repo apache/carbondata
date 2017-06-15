@@ -33,6 +33,15 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
 
   def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     plan match {
+      case showPartitionCommand@ShowPartitionsCommand(tableIdentifier, _) =>
+        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .tableExists(tableIdentifier)(
+            sparkSession)
+        if (isCarbonTable) {
+          ExecutedCommandExec(ShowPartitions(tableIdentifier)) :: Nil
+        } else {
+          ExecutedCommandExec(showPartitionCommand) :: Nil
+        }
       case LoadDataCommand(identifier, path, isLocal, isOverwrite, partition)
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(identifier)(sparkSession) =>

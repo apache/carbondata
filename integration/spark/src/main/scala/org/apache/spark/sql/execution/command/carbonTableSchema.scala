@@ -31,7 +31,7 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
 import org.apache.spark.sql.hive.CarbonMetastore
-import org.apache.spark.sql.types.TimestampType
+import org.apache.spark.sql.types.{StringType, TimestampType}
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
 
@@ -43,7 +43,7 @@ import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
+import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -920,4 +920,20 @@ private[sql] case class CleanFiles(
     )
     Seq.empty
   }
+}
+
+private[sql] case class ShowPartitions(tableIdentifier: TableIdentifier)
+  extends RunnableCommand {
+
+  override val output: Seq[Attribute] = {
+    AttributeReference("partition", StringType, nullable = false)() :: Nil
+  }
+
+  def run(sqlContext: SQLContext): Seq[Row] = {
+    val relation = CarbonEnv.get.carbonMetastore
+      .lookupRelation1(tableIdentifier)(sqlContext).asInstanceOf[CarbonRelation]
+    val carbonTable = relation.tableMeta.carbonTable
+    CarbonStore.showPartitions(carbonTable)
+  }
+
 }
