@@ -18,13 +18,13 @@ package org.apache.carbondata.spark.testsuite.partition
 
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.spark.sql.Row
 
 class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll {
 
@@ -281,6 +281,16 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
   }
 
 
+  test("badrecords on partition column") {
+    sql("create table badrecordsPartition(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata' tblproperties('partition_type'='hash', 'num_partitions'='5')")
+    sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartition options('bad_records_action'='force')")
+
+    checkAnswer(sql("select count(*) cnt from badrecordsPartition where intField2 = 13"), Seq(Row(1)))
+    checkAnswer(sql("select count(*) cnt from badrecordsPartition where intField2 = 14"), Seq(Row(1)))
+    checkAnswer(sql("select count(*) cnt from badrecordsPartition where intField2 is null"), Seq(Row(9)))
+    checkAnswer(sql("select count(*) cnt from badrecordsPartition where intField2 is not null"), Seq(Row(2)))
+  }
+
   override def afterAll = {
     dropTable
     if (defaultTimestampFormat == null) {
@@ -306,6 +316,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
     sql("drop table if exists multiInserts")
     sql("drop table if exists loadAndInsert")
     sql("drop table if exists listTableUpper")
+    sql("drop table if exists badrecordsPartition")
   }
 
 }

@@ -1001,9 +1001,12 @@ object CarbonDataRDDFactory {
     val partitionColumnDataType = partitionInfo.getColumnSchemaList.get(0).getDataType
     val columns = carbonLoadModel.getCsvHeaderColumns
     var partitionColumnIndex = -1
-    for (i <- 0 until columns.length) {
-      if (partitionColumn.equalsIgnoreCase(columns(i))) {
-        partitionColumnIndex = i
+    breakable {
+      for (i <- 0 until columns.length) {
+        if (partitionColumn.equalsIgnoreCase(columns(i))) {
+          partitionColumnIndex = i
+          break
+        }
       }
     }
     if (partitionColumnIndex == -1) {
@@ -1023,8 +1026,13 @@ object CarbonDataRDDFactory {
       val serializationNullFormat =
         carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
       dataFrame.get.rdd.map { row =>
-        (CarbonScalaUtil.getString(row.get(partitionColumnIndex), serializationNullFormat,
-          delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat), row)
+        if (null != row && row.length > partitionColumnIndex &&
+          null != row.get(partitionColumnIndex)) {
+          (CarbonScalaUtil.getString(row.get(partitionColumnIndex), serializationNullFormat,
+            delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat), row)
+        } else {
+          (null, row)
+        }
       }
     } else {
       // input data from csv files
@@ -1039,8 +1047,18 @@ object CarbonDataRDDFactory {
         classOf[StringArrayWritable],
         hadoopConfiguration
       ).map { currentRow =>
-        val row = new StringArrayRow(new Array[String](columnCount))
-        (currentRow._2.get()(partitionColumnIndex), row.setValues(currentRow._2.get()))
+        if (null == currentRow || null == currentRow._2) {
+          val row = new StringArrayRow(new Array[String](columnCount))
+          (null, row)
+        } else {
+          val row = new StringArrayRow(new Array[String](columnCount))
+          val values = currentRow._2.get()
+          if (values != null && values.length > partitionColumnIndex) {
+            (currentRow._2.get()(partitionColumnIndex), row.setValues(currentRow._2.get()))
+          } else {
+            (null, row.setValues(currentRow._2.get()))
+          }
+        }
       }
     }
 
