@@ -258,6 +258,17 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
         """.stripMargin)
     }
     assert(exception_test_list_8.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_list_9")
+    val exception_test_list_9: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_list_9(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 DECIMAL(25, 4)) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_list_9.getMessage.contains("Invalid partition definition"))
   }
 
   test("test exception when values in range_info can not match partition column type") {
@@ -348,6 +359,18 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
         """.stripMargin)
     }
     assert(exception_test_range_8.getMessage.contains("Invalid partition definition"))
+
+    sql("DROP TABLE IF EXISTS test_range_9")
+    val exception_test_range_9: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_8(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 DECIMAL(25, 4)) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
+        """.stripMargin)
+    }
+    assert(exception_test_range_9.getMessage.contains("Invalid partition definition"))
+
   }
 
   override def afterAll = {
