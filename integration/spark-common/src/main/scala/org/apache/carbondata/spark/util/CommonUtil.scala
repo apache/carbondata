@@ -27,13 +27,13 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
-import org.apache.spark.sql.types.StructField
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.csvload.CSVInputFormat
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
@@ -167,9 +167,23 @@ object CommonUtil {
       isValid = false
     } else {
       partitionType.get.toUpperCase() match {
-        case "HASH" => if (!numPartitions.isDefined) isValid = false
-        case "LIST" => if (!listInfo.isDefined) isValid = false
-        case "RANGE" => if (!rangeInfo.isDefined) isValid = false
+        case "HASH" => if (!numPartitions.isDefined
+        || scala.util.Try(numPartitions.get.toInt).isFailure
+        || numPartitions.get.toInt <= 0) {
+          isValid = false
+        }
+        case "LIST" => if (!listInfo.isDefined) {
+          isValid = false
+        } else {
+          listInfo.get.replace("(", "").replace(")", "").split(",").foreach(
+            isValid &= validateTypeConvert(partitionerFields(0).dataType, _))
+        }
+        case "RANGE" => if (!rangeInfo.isDefined) {
+          isValid = false
+        } else {
+          rangeInfo.get.split(CarbonCommonConstants.COMMA).foreach(
+            isValid &= validateTypeConvert(partitionerFields(0).dataType, _))
+        }
         case "RANGE_INTERVAL" => isValid = false
         case _ => isValid = false
       }
@@ -177,6 +191,68 @@ object CommonUtil {
       if (partitionerFields.length > 1) isValid = false
     }
     isValid
+  }
+
+  def validateTypeConvert(desType: Option[String], value: String): Boolean = {
+    var flag = true
+    val result = desType match {
+      case Some("IntegerType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.INT)
+      case Some("StringType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.STRING)
+      case Some("LongType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.LONG)
+      case Some("FloatType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.FLOAT)
+      case Some("DoubleType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DOUBLE)
+      case Some("ByteType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BYTE)
+      case Some("ShortType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.SHORT)
+      case Some("BooleanType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BOOLEAN)
+      case Some("DecimalType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DECIMAL)
+      case Some("TimestampType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.TIMESTAMP)
+      case Some("DateType") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DATE)
+      case _ =>
+        validateTypeConvertExt(desType, value)
+    }
+    if (result == null) {
+      flag = false
+    }
+    flag
+  }
+
+  def validateTypeConvertExt(desType: Option[String], value: String): Object = {
+    val resultExt = desType match {
+      case Some("int") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.INT)
+      case Some("string") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.STRING)
+      case Some("bigint") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.LONG)
+      case Some("float") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.FLOAT)
+      case Some("double") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DOUBLE)
+      case Some("smallint") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.SHORT)
+      case Some("boolean") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.BOOLEAN)
+      case Some("decimal") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DECIMAL)
+      case Some("timestamp") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.TIMESTAMP)
+      case Some("date") =>
+        DataTypeUtil.getDataBasedOnDataType(value.trim, DataType.DATE)
+      case _ =>
+        throw new MalformedCarbonCommandException("UnSupported partition type: " + desType)
+    }
+    resultExt
   }
 
   def validateFields(key: String, fields: Seq[Field]): Boolean = {
