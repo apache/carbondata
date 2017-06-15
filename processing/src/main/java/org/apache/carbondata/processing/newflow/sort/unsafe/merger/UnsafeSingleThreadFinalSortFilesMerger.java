@@ -202,7 +202,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    * @return sorted row
    */
   public Object[] next() {
-    return SortStepRowUtil.convertRow(getSortedRecordFromFile(), parameters);
+    return SortStepRowUtil.convertRow(getSortedRecordFromFile(), parameters, false);
   }
 
   /**
