@@ -31,6 +31,9 @@ import org.apache.carbondata.core.util.CarbonProperties
 class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
     dropTable
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
@@ -68,7 +71,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (doj Timestamp)
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-        |  'RANGE_INFO'='01-01-2010, 01-01-2015, 01-04-2015, 01-07-2015')
+        |  'RANGE_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59')
       """.stripMargin)
 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_rangeTable")
@@ -81,11 +84,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(1) == Encoding.DIRECT_DICTIONARY)
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(2) == Encoding.INVERTED_INDEX)
     assert(partitionInfo.getPartitionType == PartitionType.RANGE)
-    assert(partitionInfo.getRangeInfo.size == 4)
-    assert(partitionInfo.getRangeInfo.get(0).equals("01-01-2010"))
-    assert(partitionInfo.getRangeInfo.get(1).equals("01-01-2015"))
-    assert(partitionInfo.getRangeInfo.get(2).equals("01-04-2015"))
-    assert(partitionInfo.getRangeInfo.get(3).equals("01-07-2015"))
+    assert(partitionInfo.getRangeInfo.size == 2)
+    assert(partitionInfo.getRangeInfo.get(0).equals("2017-06-11 00:00:02"))
+    assert(partitionInfo.getRangeInfo.get(1).equals("2017-06-13 23:59:59"))
   }
 
   test("create partition table: list partition") {
@@ -175,205 +176,183 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
 
 
   test("test exception when values in list_info can not match partition column type") {
-    sql("DROP TABLE IF EXISTS test_list_1")
-    val exception_test_list_1: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_list_int")
+    val exception_test_list_int: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_list_1(col1 INT, col2 STRING)
+          | CREATE TABLE test_list_int(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 INT) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_1.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_int.getMessage.contains("Invalid partition definition"))
 
-    sql("DROP TABLE IF EXISTS test_list_2")
-    val exception_test_list_2: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_list_small")
+    val exception_test_list_small: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_list_2(col1 INT, col2 STRING)
+          | CREATE TABLE test_list_small(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 SMALLINT) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_2.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_small.getMessage.contains("Invalid partition definition"))
 
-    sql("DROP TABLE IF EXISTS test_list_3")
-    val exception_test_list_3: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_list_float")
+    val exception_test_list_float: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_list_3(col1 INT, col2 STRING)
+          | CREATE TABLE test_list_float(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 FLOAT) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_3.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_float.getMessage.contains("Invalid partition definition"))
 
-    sql("DROP TABLE IF EXISTS test_list_4")
-    val exception_test_list_4: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_list_double")
+    val exception_test_list_double: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_list_4(col1 INT, col2 STRING)
+          | CREATE TABLE test_list_double(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 DOUBLE) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_4.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_double.getMessage.contains("Invalid partition definition"))
 
-    sql("DROP TABLE IF EXISTS test_list_5")
-    val exception_test_list_5: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_list_bigint")
+    val exception_test_list_bigint: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_list_5(col1 INT, col2 STRING)
+          | CREATE TABLE test_list_bigint(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 BIGINT) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_5.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_bigint.getMessage.contains("Invalid partition definition"))
 
-    sql("DROP TABLE IF EXISTS test_list_6")
-    val exception_test_list_6: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_list_date")
+    val exception_test_list_date: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_list_6(col1 INT, col2 STRING)
-          | PARTITIONED BY (col3 BOOLEAN) STORED BY 'carbondata'
-          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
-        """.stripMargin)
-    }
-    assert(exception_test_list_6.getMessage.contains("Invalid partition definition"))
-
-    sql("DROP TABLE IF EXISTS test_list_7")
-    val exception_test_list_7: Exception = intercept[Exception] {
-      sql(
-        """
-          | CREATE TABLE test_list_7(col1 INT, col2 STRING)
+          | CREATE TABLE test_list_date(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 DATE) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_7.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_date.getMessage.contains("Invalid partition definition"))
 
-    sql("DROP TABLE IF EXISTS test_list_8")
-    val exception_test_list_8: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_list_timestamp")
+    val exception_test_list_timestamp: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_list_8(col1 INT, col2 STRING)
+          | CREATE TABLE test_list_timestamp(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 TIMESTAMP) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_8.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_timestamp.getMessage.contains("Invalid partition definition"))
 
-    sql("DROP TABLE IF EXISTS test_list_9")
-    val exception_test_list_9: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_list_decimal")
+    val exception_test_list_decimal: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_list_9(col1 INT, col2 STRING)
+          | CREATE TABLE test_list_decimal(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 DECIMAL(25, 4)) STORED BY 'carbondata'
-          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='23.23111,2.32')
         """.stripMargin)
     }
-    assert(exception_test_list_9.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_decimal.getMessage.contains("Invalid partition definition"))
   }
 
   test("test exception when values in range_info can not match partition column type") {
-    sql("DROP TABLE IF EXISTS test_range_1")
-    val exception_test_range_1: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_range_int")
+    val exception_test_range_int: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_range_1(col1 INT, col2 STRING)
+          | CREATE TABLE test_range_int(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 INT) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_1.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_int.getMessage.contains("Invalid partition definition"))
 
-    sql("DROP TABLE IF EXISTS test_range_2")
-    val exception_test_range_2: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_range_smallint")
+    val exception_test_range_smallint: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_range_2(col1 INT, col2 STRING)
+          | CREATE TABLE test_range_smallint(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 SMALLINT) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_2.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_smallint.getMessage.contains("Invalid partition definition"))
 
-    sql("DROP TABLE IF EXISTS test_range_3")
-    val exception_test_range_3: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_range_float")
+    val exception_test_range_float: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_range_3(col1 INT, col2 STRING)
+          | CREATE TABLE test_range_float(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 FLOAT) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_3.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_float.getMessage.contains("Invalid partition definition"))
 
-    sql("DROP TABLE IF EXISTS test_range_4")
-    val exception_test_range_4: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_range_double")
+    val exception_test_range_double: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_range_4(col1 INT, col2 STRING)
+          | CREATE TABLE test_range_double(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 DOUBLE) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_4.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_double.getMessage.contains("Invalid partition definition"))
 
-    sql("DROP TABLE IF EXISTS test_range_5")
-    val exception_test_range_5: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_range_bigint")
+    val exception_test_range_bigint: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_range_5(col1 INT, col2 STRING)
+          | CREATE TABLE test_range_bigint(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 BIGINT) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_5.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_bigint.getMessage.contains("Invalid partition definition"))
 
-    sql("DROP TABLE IF EXISTS test_range_6")
-    val exception_test_range_6: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_range_date")
+    val exception_test_range_date: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_range_6(col1 INT, col2 STRING)
-          | PARTITIONED BY (col3 BOOLEAN) STORED BY 'carbondata'
+          | CREATE TABLE test_range_date(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 DATE) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_6.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_date.getMessage.contains("Invalid partition definition"))
 
-    sql("DROP TABLE IF EXISTS test_range_7")
-    val exception_test_range_7: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_range_timestamp")
+    val exception_test_range_timestamp: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_range_7(col1 INT, col2 STRING)
-          | PARTITIONED BY (col3 BOOLEAN) STORED BY 'carbondata'
-          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
-        """.stripMargin)
-    }
-    assert(exception_test_range_7.getMessage.contains("Invalid partition definition"))
-
-    sql("DROP TABLE IF EXISTS test_range_8")
-    val exception_test_range_8: Exception = intercept[Exception] {
-      sql(
-        """
-          | CREATE TABLE test_range_8(col1 INT, col2 STRING)
+          | CREATE TABLE test_range_timestamp(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 TIMESTAMP) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_8.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_timestamp.getMessage.contains("Invalid partition definition"))
 
-    sql("DROP TABLE IF EXISTS test_range_9")
-    val exception_test_range_9: Exception = intercept[Exception] {
+    sql("DROP TABLE IF EXISTS test_range_decimal")
+    val exception_test_range_decimal: Exception = intercept[Exception] {
       sql(
         """
-          | CREATE TABLE test_range_8(col1 INT, col2 STRING)
+          | CREATE TABLE test_range_decimal(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 DECIMAL(25, 4)) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_9.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_decimal.getMessage.contains("Invalid partition definition"))
 
   }
 
@@ -388,6 +367,25 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists rangeTable")
     sql("drop table if exists listTable")
     sql("drop table if exists test")
+    sql("DROP TABLE IF EXISTS test_hash_1")
+    sql("DROP TABLE IF EXISTS test_hash_2")
+    sql("DROP TABLE IF EXISTS test_hash_3")
+    sql("DROP TABLE IF EXISTS test_list_int")
+    sql("DROP TABLE IF EXISTS test_list_smallint")
+    sql("DROP TABLE IF EXISTS test_list_bigint")
+    sql("DROP TABLE IF EXISTS test_list_float")
+    sql("DROP TABLE IF EXISTS test_list_double")
+    sql("DROP TABLE IF EXISTS test_list_date")
+    sql("DROP TABLE IF EXISTS test_list_timestamp")
+    sql("DROP TABLE IF EXISTS test_list_decimal")
+    sql("DROP TABLE IF EXISTS test_range_int")
+    sql("DROP TABLE IF EXISTS test_range_smallint")
+    sql("DROP TABLE IF EXISTS test_range_bigint")
+    sql("DROP TABLE IF EXISTS test_range_float")
+    sql("DROP TABLE IF EXISTS test_range_double")
+    sql("DROP TABLE IF EXISTS test_range_date")
+    sql("DROP TABLE IF EXISTS test_range_timestamp")
+    sql("DROP TABLE IF EXISTS test_range_decimal")
   }
 
 }

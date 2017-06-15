@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.util
 
+import java.text.SimpleDateFormat
 import java.util
 
 import scala.collection.JavaConverters._
@@ -42,6 +43,9 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object CommonUtil {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  val FIXED_DECIMAL = """decimal\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
+  val FIXED_DECIMALTYPE = """decimaltype\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
 
   def validateColumnGroup(colGroup: String, noDictionaryDims: Seq[String],
       msrs: Seq[Field], retrievedColGrps: Seq[String], dims: Seq[Field]) {
@@ -193,86 +197,103 @@ object CommonUtil {
     isValid
   }
 
-  def validateTypeConvert(partitionerField: PartitionerField, value: String): Boolean = {
-    var flag = true
-    val result = partitionerField.dataType match {
-      case Some("IntegerType") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.INT)
-      case Some("StringType") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.STRING)
-      case Some("LongType") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.LONG)
-      case Some("FloatType") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.FLOAT)
-      case Some("DoubleType") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.DOUBLE)
-      case Some("ByteType") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.BYTE)
-      case Some("ShortType") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.SHORT)
-      case Some("BooleanType") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.BOOLEAN)
-      case Some("DecimalType") =>
-        if (value.matches("^\\d*$")) {
-          val parDec = BigDecimal(partitionerField.partitionColumn)
-          val valDec = BigDecimal(value)
-          if (parDec.precision >= valDec.precision || parDec.scale >= valDec.scale) {
-            valDec
-          } else {
-            null
-          }
+  def validateTypeConvertForSpark2(partitionerField: PartitionerField, value: String): Boolean = {
+    val result = partitionerField.dataType.get.toLowerCase match {
+      case "integertype" =>
+        scala.util.Try(value.toInt).isSuccess
+      case "stringtype" =>
+        scala.util.Try(value.toString).isSuccess
+      case "longtype" =>
+        scala.util.Try(value.toLong).isSuccess
+      case "floattype" =>
+        scala.util.Try(value.toFloat).isSuccess
+      case "doubletype" =>
+        scala.util.Try(value.toDouble).isSuccess
+      case "numerictype" =>
+        scala.util.Try(value.toDouble).isSuccess
+      case "smallinttype" =>
+        scala.util.Try(value.toShort).isSuccess
+      case "tinyinttype" =>
+        scala.util.Try(value.toShort).isSuccess
+      case "shorttype" =>
+        scala.util.Try(value.toShort).isSuccess
+      case FIXED_DECIMALTYPE(_, _) =>
+        val parField = partitionerField.dataType.get.split(",")
+        val precision = parField(0).substring(12).toInt
+        val scale = parField(1).substring(0, parField(1).length - 1).toInt
+        val pattern = "^([-]?[0-9]{0," +(precision - scale) +
+                      "})([.][0-9]{1," +scale +"})?$"
+        value.matches(pattern)
+      case "timestamptype" =>
+        val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
+        if (scala.util.Try(timeStampFormat.parse(value)).isSuccess) {
+          true
         } else {
-          null
+          false
         }
-      case Some("TimestampType") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.TIMESTAMP)
-      case Some("DateType") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.DATE)
-      case _ =>
-        validateTypeConvertExt(partitionerField, value)
+      case "datetype" =>
+        val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT))
+        if (scala.util.Try(dateFormat.parse(value)).isSuccess) {
+          true
+        } else {
+          false
+        }
+      case others =>
+       if (others != null && others.startsWith("char")) {
+         scala.util.Try(value.toString).isSuccess
+        } else if (others != null && others.startsWith("varchar")) {
+         scala.util.Try(value.toString).isSuccess
+        } else {
+          throw new MalformedCarbonCommandException(
+            "UnSupported partition type: " + partitionerField.dataType)
+        }
     }
-    if (result == null) {
-      flag = false
-    }
-    flag
+    result
   }
 
-  def validateTypeConvertExt(partitionerField: PartitionerField, value: String): Object = {
-    val resultExt = partitionerField.dataType match {
-      case Some("int") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.INT)
-      case Some("string") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.STRING)
-      case Some("bigint") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.LONG)
-      case Some("float") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.FLOAT)
-      case Some("double") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.DOUBLE)
-      case Some("smallint") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.SHORT)
-      case Some("boolean") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.BOOLEAN)
-      case Some("decimal") =>
-        if (value.matches("^\\d*$")) {
-          val parDec = BigDecimal(partitionerField.partitionColumn)
-          val valDec = BigDecimal(value)
-          if (parDec.precision >= valDec.precision || parDec.scale >= valDec.scale) {
-            valDec
-          } else {
-            null
-          }
-        } else {
-          null
-        }
-      case Some("timestamp") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.TIMESTAMP)
-      case Some("date") =>
-        DataTypeUtil.getDataBasedOnDataType(value, DataType.DATE)
+  def validateTypeConvert(partitionerField: PartitionerField, value: String): Boolean = {
+    val result = partitionerField.dataType.get.toLowerCase() match {
+      case "int" =>
+        scala.util.Try(value.toInt).isSuccess
+      case "string" =>
+        scala.util.Try(value.toString).isSuccess
+      case "bigint" =>
+        scala.util.Try(value.toLong).isSuccess
+      case "long" =>
+        scala.util.Try(value.toLong).isSuccess
+      case "float" =>
+        scala.util.Try(value.toFloat).isSuccess
+      case "doubletype" =>
+        scala.util.Try(value.toDouble).isSuccess
+      case "numeric" =>
+        scala.util.Try(value.toDouble).isSuccess
+      case "smallint" =>
+        scala.util.Try(value.toShort).isSuccess
+      case "tinyint" =>
+        scala.util.Try(value.toShort).isSuccess
+      case "boolean" =>
+        scala.util.Try(value.toBoolean).isSuccess
+      case FIXED_DECIMAL(_, _) =>
+        val parField = partitionerField.dataType.get.split(",")
+        val precision = parField(0).substring(8).toInt
+        val scale = parField(1).substring(0, parField(1).length - 1).toInt
+        val pattern = "^([-]?[0-9]{0," +(precision - scale) +
+                      "})([.][0-9]{1," +scale +"})?$"
+        value.matches(pattern)
+      case "timestamp" =>
+        val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
+        scala.util.Try(timeStampFormat.parse(value)).isSuccess
+      case "date" =>
+        val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT))
+        scala.util.Try(dateFormat.parse(value)).isSuccess
       case _ =>
-        throw new MalformedCarbonCommandException("UnSupported partition type: " + partitionerField.dataType)
+        validateTypeConvertForSpark2(partitionerField, value)
     }
-    resultExt
+    result
   }
 
   def validateFields(key: String, fields: Seq[Field]): Boolean = {

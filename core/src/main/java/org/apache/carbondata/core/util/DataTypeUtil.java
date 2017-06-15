@@ -273,7 +273,7 @@ public final class DataTypeUtil {
           if (data.isEmpty()) {
             return null;
           }
-          return Long.parseLong(data);
+          return Float.parseFloat(data);
         case DOUBLE:
           if (data.isEmpty()) {
             return null;
