@@ -26,7 +26,7 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
-import org.apache.spark.sql.execution.command.{TableModel, TableNewProcessor}
+import org.apache.spark.sql.execution.command.{CreateTable, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.datasources.{FileFormat, OutputWriterFactory}
 import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonRelation}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
@@ -179,14 +179,13 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
   }
 
-  /**
-   * Returns the path of the table
-   *
-     * @param sparkSession
-   * @param dbName
-   * @param tableName
-   * @return
-   */
+/**
+ * Returns the path of the table
+ * @param sparkSession
+ * @param dbName
+ * @param tableName
+ * @return
+ */
   private def getPathForTable(sparkSession: SparkSession, dbName: String,
       tableName : String, parameters: Map[String, String]): (String, Map[String, String]) = {
 
@@ -212,22 +211,22 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
   }
 
-  /**
-   * Prepares a write job and returns an [[OutputWriterFactory]].  Client side job preparation can
-   * be put here.  For example, user defined output committer can be configured here
-   * by setting the output committer class in the conf of spark.sql.sources.outputCommitterClass.
-   */
+/**
+ * Prepares a write job and returns an [[OutputWriterFactory]].  Client side job preparation can
+ * be put here.  For example, user defined output committer can be configured here
+ * by setting the output committer class in the conf of spark.sql.sources.outputCommitterClass.
+ */
   def prepareWrite(
     sparkSession: SparkSession,
     job: Job,
     options: Map[String, String],
     dataSchema: StructType): OutputWriterFactory = new CarbonStreamingOutputWriterFactory()
 
-  /**
-   * When possible, this method should return the schema of the given `files`.  When the format
-   * does not support inference, or no valid files are given should return None.  In these cases
-   * Spark will require that user specify the schema manually.
-   */
+/**
+ * When possible, this method should return the schema of the given `files`.  When the format
+ * does not support inference, or no valid files are given should return None.  In these cases
+ * Spark will require that user specify the schema manually.
+ */
   def inferSchema(
     sparkSession: SparkSession,
     options: Map[String, String],
