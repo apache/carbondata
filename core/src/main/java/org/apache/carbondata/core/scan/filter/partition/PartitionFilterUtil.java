@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.scan.filter.partition;
 
 import java.math.BigDecimal;
+import java.text.DateFormat;
 import java.util.BitSet;
 import java.util.Comparator;
 import java.util.List;
@@ -116,7 +117,8 @@ public class PartitionFilterUtil {
    * @return
    */
   public static BitSet getPartitionMapForRangeFilter(PartitionInfo partitionInfo,
-      ListPartitioner partitioner, Object filterValue,  boolean isGreaterThan, boolean isEqualTo) {
+      ListPartitioner partitioner, Object filterValue,  boolean isGreaterThan, boolean isEqualTo,
+      DateFormat timestampFormatter, DateFormat dateFormatter) {
 
     List<List<String>> values = partitionInfo.getListInfo();
     DataType partitionColumnDataType = partitionInfo.getColumnSchemaList().get(0).getDataType();
@@ -135,7 +137,8 @@ public class PartitionFilterUtil {
         outer1:
         for (int i = 0; i < partitions; i++) {
           for (String value : values.get(i)) {
-            Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType);
+            Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
+                timestampFormatter, dateFormatter);
             if (comparator.compare(listValue, filterValue) >= 0) {
               partitionMap.set(i);
               continue outer1;
@@ -147,7 +150,8 @@ public class PartitionFilterUtil {
         outer2:
         for (int i = 0; i < partitions; i++) {
           for (String value : values.get(i)) {
-            Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType);
+            Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
+                timestampFormatter, dateFormatter);
             if (comparator.compare(listValue, filterValue) > 0) {
               partitionMap.set(i);
               continue outer2;
@@ -161,7 +165,8 @@ public class PartitionFilterUtil {
         outer3:
         for (int i = 0; i < partitions; i++) {
           for (String value : values.get(i)) {
-            Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType);
+            Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
+                timestampFormatter, dateFormatter);
             if (comparator.compare(listValue, filterValue) <= 0) {
               partitionMap.set(i);
               continue outer3;
@@ -173,7 +178,8 @@ public class PartitionFilterUtil {
         outer4:
         for (int i = 0; i < partitions; i++) {
           for (String value : values.get(i)) {
-            Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType);
+            Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
+                timestampFormatter, dateFormatter);
             if (comparator.compare(listValue, filterValue) < 0) {
               partitionMap.set(i);
               continue outer4;
@@ -196,7 +202,8 @@ public class PartitionFilterUtil {
    * @return
    */
   public static BitSet getPartitionMapForRangeFilter(PartitionInfo partitionInfo,
-      RangePartitioner partitioner, Object filterValue, boolean isGreaterThan, boolean isEqualTo) {
+      RangePartitioner partitioner, Object filterValue, boolean isGreaterThan, boolean isEqualTo,
+      DateFormat timestampFormatter, DateFormat dateFormatter) {
 
     List<String> values = partitionInfo.getRangeInfo();
     DataType partitionColumnDataType = partitionInfo.getColumnSchemaList().get(0).getDataType();
@@ -213,7 +220,7 @@ public class PartitionFilterUtil {
     // find the partition of filter value
     for (; partitionIndex < numPartitions; partitionIndex++) {
       result = comparator.compare(filterValue, PartitionUtil.getDataBasedOnDataType(
-          values.get(partitionIndex), partitionColumnDataType));
+          values.get(partitionIndex), partitionColumnDataType, timestampFormatter, dateFormatter));
       if (result <= 0) {
         break;
       }
