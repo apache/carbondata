@@ -495,8 +495,17 @@ case class LoadTable(
           maxColumns)
         carbonLoadModel.setMaxColumns(validatedMaxColumns.toString)
         GlobalDictionaryUtil.updateTableMetadataFunc = LoadTable.updateTableMetadata
+        val storePath = relation.tableMeta.storePath
+        if (null == carbonLoadModel.getLoadMetadataDetails) {
+          CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
+        }
+        if (carbonLoadModel.getLoadMetadataDetails.isEmpty && carbonLoadModel.getUseOnePass &&
+            StringUtils.isEmpty(columnDict) && StringUtils.isEmpty(allDictionaryPath)) {
+          LOGGER.info(s"Cannot use single_pass=true for $dbName.$tableName during the first load")
+          LOGGER.audit(s"Cannot use single_pass=true for $dbName.$tableName during the first load")
+          carbonLoadModel.setUseOnePass(false)
+        }
         if (carbonLoadModel.getUseOnePass) {
-          val storePath = relation.tableMeta.storePath
           val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
           val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
             .getCarbonTableIdentifier
@@ -551,7 +560,6 @@ case class LoadTable(
           } else {
             None
           }
-
           CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
             carbonLoadModel,
             relation.tableMeta.storePath,
