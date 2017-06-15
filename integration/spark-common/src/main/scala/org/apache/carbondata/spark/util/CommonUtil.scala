@@ -265,7 +265,7 @@ object CommonUtil {
         scala.util.Try(value.toLong).isSuccess
       case "float" =>
         scala.util.Try(value.toFloat).isSuccess
-      case "doubletype" =>
+      case "double" =>
         scala.util.Try(value.toDouble).isSuccess
       case "numeric" =>
         scala.util.Try(value.toDouble).isSuccess
