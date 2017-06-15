@@ -233,11 +233,11 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_delete")
-    sql("DELETE FROM carbon_localsort_delete WHERE id = 1")
+    sql("DELETE FROM carbon_localsort_delete WHERE id = 1").show
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
       "OPTIONS('SORT_SCOPE'='GLOBAL_SORT')")
-    sql("DELETE FROM carbon_globalsort WHERE id = 1")
+    sql("DELETE FROM carbon_globalsort WHERE id = 1").show
 
     assert(getIndexFileCount("carbon_globalsort") === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(11)))
@@ -269,7 +269,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
   test("INSERT INTO") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "GLOBAL_SORT")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS, "2")
-    sql(s"INSERT INTO TABLE carbon_globalsort SELECT * FROM carbon_localsort_once")
+    sql(s"INSERT INTO TABLE carbon_globalsort SELECT * FROM carbon_localsort_once").show
 
     assert(getIndexFileCount("carbon_globalsort") === 2)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(12)))
@@ -283,9 +283,9 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       s"""
          | CREATE TABLE carbon_localsort_difftypes(
-         | shortField SHORT,
+         | shortField smallint,
          | intField INT,
-         | bigintField LONG,
+         | bigintField bigint,
          | doubleField DOUBLE,
          | stringField STRING,
          | timestampField TIMESTAMP,
@@ -306,9 +306,9 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       s"""
          | CREATE TABLE carbon_globalsort_difftypes(
-         | shortField SHORT,
+         | shortField smallint,
          | intField INT,
-         | bigintField LONG,
+         | bigintField bigint,
          | doubleField DOUBLE,
          | stringField STRING,
          | timestampField TIMESTAMP,

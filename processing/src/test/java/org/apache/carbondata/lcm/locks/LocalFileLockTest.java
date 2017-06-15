@@ -32,6 +32,7 @@ import org.junit.Test;
  */
 public class LocalFileLockTest {
 
+  String originStoreLocation = null;
   /**
    * @throws java.lang.Exception
    */
@@ -39,6 +40,7 @@ public class LocalFileLockTest {
     String rootPath = new File(this.getClass().getResource("/").getPath()
         + "../../..").getCanonicalPath();
     String storeLocation = rootPath + "/target/store";
+    originStoreLocation = CarbonProperties.getInstance().getProperty("carbon.storelocation");
     CarbonProperties.getInstance()
         .addProperty("carbon.storelocation", storeLocation);
   }
@@ -47,6 +49,8 @@ public class LocalFileLockTest {
    * @throws java.lang.Exception
    */
   @After public void tearDown() throws Exception {
+    CarbonProperties.getInstance()
+        .addProperty("carbon.storelocation", originStoreLocation);
   }
 
   @Test public void testingLocalFileLockingByAcquiring2Locks() {

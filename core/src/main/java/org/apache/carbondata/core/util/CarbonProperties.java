@@ -475,6 +475,15 @@ public final class CarbonProperties {
     return this;
   }
 
+  /**
+   * This method will be used to remove the key property
+   * @param key
+   */
+  public CarbonProperties removeProperty(String key) {
+    carbonProperties.remove(key);
+    return this;
+  }
+
   private ColumnarFormatVersion getDefaultFormatVersion() {
     return ColumnarFormatVersion.valueOf(CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION);
   }

@@ -19,6 +19,7 @@ package org.apache.carbondata.spark.testsuite.datacompaction
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
@@ -134,10 +135,13 @@ class CompactionSystemLockFeatureTest extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     sql("drop table if exists  table1")
     sql("drop table if exists  table2")
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
+      .removeProperty("carbon.compaction.level.threshold")
+      .removeProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION)
   }
 
 }

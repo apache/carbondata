@@ -21,6 +21,7 @@ import java.io.File
 
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -34,6 +35,8 @@ import org.apache.carbondata.core.util.CarbonProperties
 class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
 
+  var originAction: String = _
+
   override def beforeAll: Unit = {
     sql("drop table IF EXISTS data_pm")
     sql("drop table IF EXISTS data_um")
@@ -41,6 +44,9 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS data_bmf")
     sql("drop table IF EXISTS data_tbm")
     sql("drop table IF EXISTS data_bm_no_good_data")
+
+    originAction = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
   }
 
   test("dataload with parallel merge with bad_records_action='FAIL'") {
@@ -248,6 +254,10 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
     sql("drop table IF EXISTS data_tbm")
     sql("drop table IF EXISTS data_bm_no_good_data")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
+      .removeProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC)
+      .removeProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
+      .removeProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
+      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, originAction)
   }
 }
