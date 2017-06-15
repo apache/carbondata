@@ -41,17 +41,64 @@ object CarbonShowPartitionInfo {
       .config("spark.sql.warehouse.dir", warehouse)
       .getOrCreateCarbonSession(storeLocation, metastoredb)
 
-    //    spark.sql(s"""
-    //             update $tableName set (name, phonetype) = ('carbon_name', 'phonetype_france')
-    //             WHERE name = '1600000'
-    //             """).show()
+    spark.sql("""
+                | CREATE TABLE IF NOT EXISTS t1
+                | (
+                | vin String,
+                | phonenumber Long,
+                | country String,
+                | area String
+                | )
+                | PARTITIONED BY (logdate Timestamp)
+                | STORED BY 'carbondata'
+                | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
+                | 'RANGE_INFO'='20140101, 2015/01/01 ,2016-01-01, ')
+              """.stripMargin)
+
+    spark.sql("""
+                | CREATE TABLE IF NOT EXISTS t3
+                | (
+                | logdate Timestamp,
+                | phonenumber Long,
+                | country String,
+                | area String
+                | )
+                | PARTITIONED BY (vin String)
+                | STORED BY 'carbondata'
+                | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='5')
+                """.stripMargin)
+
+    spark.sql("""
+       | CREATE TABLE IF NOT EXISTS t5
+       | (
+       | vin String,
+       | logdate Timestamp,
+       | phonenumber Long,
+       | area String
+       |)
+       | PARTITIONED BY (country string)
+       | STORED BY 'carbondata'
+       | TBLPROPERTIES('PARTITION_TYPE'='LIST',
+       | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea ')
+       """.stripMargin)
+
     spark.sparkContext.setLogLevel("WARN")
     spark.sql(s"""
-      SHOW PARTITIONS $tableName
+      SHOW PARTITIONS t1
              """).show()
     spark.sql(s"""
-      desc t3
+      SHOW PARTITIONS t3
              """).show()
+    spark.sql(s"""
+      SHOW PARTITIONS t5
+             """).show()
+
+    // range partition
+    spark.sql("DROP TABLE IF EXISTS t1")
+    // hash partition
+    spark.sql("DROP TABLE IF EXISTS t3")
+    // list partition
+    spark.sql("DROP TABLE IF EXISTS t5")
 
   }
 }

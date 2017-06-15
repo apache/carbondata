@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.plans.Inner
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules._
 import org.apache.spark.sql.execution.command.ProjectForDeleteCommand
+import org.apache.spark.sql.execution.command.ShowCarbonPartitionsCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -170,6 +171,7 @@ object CarbonIUDAnalysisRule extends Rule[LogicalPlan] {
     logicalplan transform {
       case UpdateTable(t, cols, sel, where) => processUpdateQuery(t, cols, sel, where)
       case DeleteRecords(statement, table) => processDeleteRecordsQuery(statement, table)
+      case ShowPartitions(t) => ShowCarbonPartitionsCommand(t)
     }
   }
 }
