@@ -55,6 +55,8 @@ public class ServerDictionaryGenerator implements DictionaryGenerator<Integer, D
       synchronized (tableMap) {
         if (tableMap.get(key.getTableUniqueName()) == null) {
           tableMap.put(key.getTableUniqueName(), new TableDictionaryGenerator(dimension));
+        } else {
+          tableMap.get(key.getTableUniqueName()).updateGenerator(dimension);
         }
       }
     } else {
