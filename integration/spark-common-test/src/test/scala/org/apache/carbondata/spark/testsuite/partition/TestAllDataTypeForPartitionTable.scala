@@ -23,13 +23,11 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import scala.collection.mutable
 
-class TestAllDataTypeForPartitionTable extends QueryTest with BeforeAndAfterAll {
+import org.apache.spark.sql.test.TestQueryExecutor
 
-  val defaultTimestampFormat = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
+class TestAllDataTypeForPartitionTable extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     CarbonProperties.getInstance()
@@ -41,7 +39,7 @@ class TestAllDataTypeForPartitionTable extends QueryTest with BeforeAndAfterAll 
 
   override def afterAll = {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
 
     dropTable
