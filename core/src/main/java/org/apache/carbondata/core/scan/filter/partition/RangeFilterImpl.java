@@ -17,8 +17,10 @@
 
 package org.apache.carbondata.core.scan.filter.partition;
 
+import java.text.SimpleDateFormat;
 import java.util.BitSet;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.partition.ListPartitioner;
@@ -26,6 +28,7 @@ import org.apache.carbondata.core.scan.partition.PartitionUtil;
 import org.apache.carbondata.core.scan.partition.Partitioner;
 import org.apache.carbondata.core.scan.partition.RangePartitioner;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * the implement of Range filter(include <=, <, >=, >)
@@ -47,13 +50,22 @@ public class RangeFilterImpl implements PartitionFilterIntf {
 
   @Override public BitSet applyFilter(Partitioner partitioner) {
 
+    SimpleDateFormat timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+
+    SimpleDateFormat dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
+
     switch (partitionInfo.getPartitionType()) {
       case LIST:
         Object filterValueOfList = PartitionUtil.getDataBasedOnDataTypeForFilter(
             literal.getLiteralExpValue().toString(),
             partitionInfo.getColumnSchemaList().get(0).getDataType());
         return PartitionFilterUtil.getPartitionMapForRangeFilter(partitionInfo,
-            (ListPartitioner) partitioner, filterValueOfList, isGreaterThan, isEqualTo);
+            (ListPartitioner) partitioner, filterValueOfList, isGreaterThan, isEqualTo,
+            timestampFormatter, dateFormatter);
       case RANGE:
         Object filterValueOfRange = PartitionUtil.getDataBasedOnDataTypeForFilter(
             literal.getLiteralExpValue().toString(),
@@ -62,7 +74,8 @@ public class RangeFilterImpl implements PartitionFilterIntf {
           filterValueOfRange = ByteUtil.toBytes((String)filterValueOfRange);
         }
         return PartitionFilterUtil.getPartitionMapForRangeFilter(partitionInfo,
-            (RangePartitioner) partitioner, filterValueOfRange, isGreaterThan, isEqualTo);
+            (RangePartitioner) partitioner, filterValueOfRange, isGreaterThan, isEqualTo,
+            timestampFormatter, dateFormatter);
       default:
         return PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), true);
     }
