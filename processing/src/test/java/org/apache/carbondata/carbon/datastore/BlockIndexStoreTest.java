@@ -52,14 +52,11 @@ public class BlockIndexStoreTest extends TestCase {
   // private BlockIndexStore indexStore;
   BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex> cache;
 
-  private String property;
-
   private static final LogService LOGGER =
           LogServiceFactory.getLogService(BlockIndexStoreTest.class.getName());
 
   @BeforeClass public void setUp() {
-	property = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION);
-	
+
 	CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, "1");
     StoreCreator.createCarbonStore();
     CarbonProperties.getInstance().
@@ -69,11 +66,10 @@ public class BlockIndexStoreTest extends TestCase {
   }
   
   @AfterClass public void tearDown() {
-	    if(null!=property) {
-		CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, property);
-	    }else {
-	    	CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION);
-	    }
+    CarbonProperties.getInstance()
+        .removeProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION)
+        .removeProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE);
+
 	  }
 
   @Test public void testLoadAndGetTaskIdToSegmentsMapForSingleSegment()

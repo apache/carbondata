@@ -104,6 +104,8 @@ public class CarbonDictionaryWriterImplTest {
   @After public void tearDown() throws Exception {
     carbonTableIdentifier = null;
     deleteStorePath();
+    CarbonProperties.getInstance()
+        .removeProperty(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE);
   }
 
   /**

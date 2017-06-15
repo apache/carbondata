@@ -66,6 +66,8 @@ public class ReverseDictionaryCacheTest extends AbstractDictionaryCacheTest {
     carbonTableIdentifier = null;
     reverseDictionaryCache = null;
     deleteStorePath();
+    CarbonProperties.getInstance()
+        .removeProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE);
   }
 
   private void createDictionaryCacheObject() {

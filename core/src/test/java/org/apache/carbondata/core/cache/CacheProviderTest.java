@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 import org.apache.avro.Schema;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,10 +49,16 @@ public class CacheProviderTest {
   @Before public void setUp() throws Exception {
     // enable lru cache by setting cache size
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
+        .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10")
     // enable lru cache by setting cache size
-    CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE, "20");
+  }
+
+  @After public void tearDown() {
+    CarbonProperties.getInstance()
+        .removeProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE)
+        .removeProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE)
+        .removeProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE);
   }
 
   @Test public void getInstance() throws Exception {

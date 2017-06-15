@@ -22,6 +22,7 @@ import java.io.File
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -177,6 +178,7 @@ class NumericDimensionBadRecordTest extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists num_dic")
     sql("drop table if exists num_dicc")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
+      .removeProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC)
   }
 }
