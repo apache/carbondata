@@ -156,5 +156,8 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table sample")
     sql("drop table complextypes")
+
+    CarbonProperties.getInstance()
+      .removeProperty("carbon.custom.distribution")
   }
 }

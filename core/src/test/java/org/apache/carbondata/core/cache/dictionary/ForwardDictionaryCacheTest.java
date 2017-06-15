@@ -63,6 +63,8 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
     carbonTableIdentifier = null;
     forwardDictionaryCache = null;
     deleteStorePath();
+    CarbonProperties.getInstance()
+        .removeProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE);
   }
 
   private void createDictionaryCacheObject() {

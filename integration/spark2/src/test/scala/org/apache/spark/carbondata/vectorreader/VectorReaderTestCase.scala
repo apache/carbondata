@@ -21,6 +21,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.execution.{BatchedDataSourceScanExec, RowDataSourceScanExec}
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -77,5 +78,8 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     sql("DROP TABLE IF EXISTS vectorreader")
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
   }
 }

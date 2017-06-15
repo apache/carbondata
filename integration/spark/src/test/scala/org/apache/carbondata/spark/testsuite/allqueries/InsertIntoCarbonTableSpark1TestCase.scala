@@ -17,6 +17,7 @@
 package org.apache.carbondata.spark.testsuite.allqueries
 
 import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -77,5 +78,8 @@ class InsertIntoCarbonTableSpark1TestCase extends QueryTest with BeforeAndAfterA
     sql("drop table if exists inser")
     sql("DROP TABLE IF EXISTS THive")
     sql("DROP TABLE IF EXISTS TCarbon")
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
   }
 }
