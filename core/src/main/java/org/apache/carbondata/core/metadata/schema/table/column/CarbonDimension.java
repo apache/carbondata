@@ -125,7 +125,7 @@ public class CarbonDimension extends CarbonColumn {
    * @return is column participated in sorting or not
    */
   public boolean isSortColumn() {
-    return this.columnSchema.isSortColumn();
+    return !isComplex();
   }
 
   /**

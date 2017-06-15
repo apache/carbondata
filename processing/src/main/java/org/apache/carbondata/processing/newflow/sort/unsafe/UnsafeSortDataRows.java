@@ -198,6 +198,19 @@ public class UnsafeSortDataRows {
 
   /**
    * This method will be used to add new row
+   *
+   * @param rowBatch new rowBatch
+   * @throws CarbonSortKeyAndGroupByException problem while writing
+   */
+  public void addRowBatchWithOutSync(Object[][] rowBatch, int size)
+      throws CarbonSortKeyAndGroupByException {
+    // if record holder list size is equal to sort buffer size then it will
+    // sort the list and then write current list data to file
+    addBatch(rowBatch, size);
+  }
+
+  /**
+   * This method will be used to add new row
    */
   public void addRow(Object[] row) throws CarbonSortKeyAndGroupByException {
     // if record holder list size is equal to sort buffer size then it will

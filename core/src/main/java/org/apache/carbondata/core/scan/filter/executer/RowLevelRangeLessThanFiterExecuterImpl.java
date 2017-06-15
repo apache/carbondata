@@ -156,7 +156,7 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
       CarbonDimension currentBlockDimension =
           segmentProperties.getDimensions().get(dimensionBlocksIndex[0]);
       defaultValue = FilterUtil.getMaskKey(key, currentBlockDimension,
-          this.segmentProperties.getSortColumnsGenerator());
+          this.segmentProperties.getDimensionKeyGenerator());
     }
     BitSet bitSet = null;
     if (dimensionColumnDataChunk.isExplicitSorted()) {

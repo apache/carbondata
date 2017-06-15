@@ -23,7 +23,7 @@ import scala.collection.JavaConversions._
 
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
-import org.apache.spark.sql.hive.HiveExternalCatalog
+import org.apache.spark.sql.hive.{CarbonSessionState, HiveExternalCatalog}
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.sql.{DataFrame, Row}
 
@@ -40,7 +40,8 @@ class QueryTest extends PlanTest {
 
   val sqlContext = TestQueryExecutor.INSTANCE.sqlContext
 
-  val hiveClient = sqlContext.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client
+  val hiveClient = sqlContext.sparkSession.sessionState.asInstanceOf[CarbonSessionState]
+    .metadataHive
 
   val resourcesPath = TestQueryExecutor.resourcesPath
 

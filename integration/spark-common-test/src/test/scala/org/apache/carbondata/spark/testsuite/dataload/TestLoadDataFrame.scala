@@ -171,7 +171,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
 
   test("test load dataframe with single pass enabled") {
     // save dataframe to carbon file
-    df.write
+    df2.write
       .format("carbondata")
       .option("tableName", "carbon8")
       .option("tempCSV", "false")
@@ -186,7 +186,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
 
   test("test load dataframe with single pass disabled") {
     // save dataframe to carbon file
-    df.write
+    df2.write
       .format("carbondata")
       .option("tableName", "carbon9")
       .option("tempCSV", "true")

@@ -556,7 +556,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
         CarbonDimension currentBlockDimension =
             segmentProperties.getDimensions().get(dimensionBlocksIndex);
         defaultValue = FilterUtil.getMaskKey(key, currentBlockDimension,
-            this.segmentProperties.getSortColumnsGenerator());
+            this.segmentProperties.getDimensionKeyGenerator());
       } else {
         defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
       }

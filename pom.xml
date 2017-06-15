@@ -128,10 +128,6 @@
       <id>pentaho-releases</id>
       <url>http://repository.pentaho.org/artifactory/repo/</url>
     </repository>
-    <repository>
-      <id>carbondata-releases</id>
-      <url>http://136.243.101.176:9091/repository/carbondata/</url>
-    </repository>
   </repositories>
 
   <dependencyManagement>

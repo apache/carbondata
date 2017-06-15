@@ -115,9 +115,7 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   private void intialiseInfos() {
     for (BlockExecutionInfo blockInfo : blockExecutionInfos) {
       Map<String, DeleteDeltaVo> deletedRowsMap = null;
-      DataRefNodeFinder finder = new BTreeDataRefNodeFinder(blockInfo.getEachColumnValueSize(),
-          blockInfo.getDataBlock().getSegmentProperties().getNumberOfSortColumns(),
-          blockInfo.getDataBlock().getSegmentProperties().getNumberOfNoDictSortColumns());
+      DataRefNodeFinder finder = new BTreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
       // if delete delta file is present
       if (null != blockInfo.getDeleteDeltaFilePath() && 0 != blockInfo
           .getDeleteDeltaFilePath().length) {

@@ -752,23 +752,6 @@ object CarbonDataRDDFactory {
 
       }
 
-      def loadDataForPartitionTable(): Unit = {
-        try {
-          val rdd = repartitionInputData(sqlContext, dataFrame, carbonLoadModel)
-          status = new PartitionTableDataLoaderRDD(sqlContext.sparkContext,
-            new DataLoadResultImpl(),
-            carbonLoadModel,
-            currentLoadCount,
-            tableCreationTime,
-            schemaLastUpdatedTime,
-            rdd).collect()
-        } catch {
-          case ex: Exception =>
-            LOGGER.error(ex, "load data failed for partition table")
-            throw ex
-        }
-      }
-
       if (!updateModel.isDefined) {
       CarbonLoaderUtil.checkAndCreateCarbonDataLocation(storePath,
         currentLoadCount.toString, carbonTable)
