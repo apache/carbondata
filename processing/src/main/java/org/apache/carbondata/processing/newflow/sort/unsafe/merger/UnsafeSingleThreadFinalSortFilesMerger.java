@@ -27,13 +27,13 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
-import org.apache.carbondata.processing.newflow.sort.SortStepRowUtil;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.newflow.sort.unsafe.holder.SortTempChunkHolder;
 import org.apache.carbondata.processing.newflow.sort.unsafe.holder.UnsafeFinalMergePageHolder;
 import org.apache.carbondata.processing.newflow.sort.unsafe.holder.UnsafeInmemoryHolder;
 import org.apache.carbondata.processing.newflow.sort.unsafe.holder.UnsafeSortTempFileChunkHolder;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
+import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
 public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   /**
@@ -202,7 +202,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    * @return sorted row
    */
   public Object[] next() {
-    return SortStepRowUtil.convertRow(getSortedRecordFromFile(), parameters);
+    return convertRow(getSortedRecordFromFile());
   }
 
   /**
@@ -257,6 +257,50 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    */
   public boolean hasNext() {
     return this.fileCounter > 0;
+  }
+
+  private Object[] convertRow(Object[] data) {
+    // create new row of size 3 (1 for dims , 1 for high card , 1 for measures)
+
+    Object[] holder = new Object[3];
+    int index = 0;
+    int nonDicIndex = 0;
+    int allCount = 0;
+    int[] dim = new int[this.dimensionCount];
+    byte[][] nonDicArray = new byte[this.noDictionaryCount + this.complexDimensionCount][];
+    Object[] measures = new Object[this.measureCount];
+    try {
+      // read dimension values
+      for (int i = 0; i < isNoDictionaryDimensionColumn.length; i++) {
+        if (isNoDictionaryDimensionColumn[i]) {
+          nonDicArray[nonDicIndex++] = (byte[]) data[i];
+        } else {
+          dim[index++] = (int) data[allCount];
+        }
+        allCount++;
+      }
+
+      for (int i = 0; i < complexDimensionCount; i++) {
+        nonDicArray[nonDicIndex++] = (byte[]) data[allCount];
+        allCount++;
+      }
+
+      index = 0;
+      // read measure values
+      for (int i = 0; i < this.measureCount; i++) {
+        measures[index++] = data[allCount];
+        allCount++;
+      }
+
+      NonDictionaryUtil.prepareOutObj(holder, dim, nonDicArray, measures);
+
+      // increment number if record read
+    } catch (Exception e) {
+      throw new RuntimeException("Problem while converting row ", e);
+    }
+
+    //return out row
+    return holder;
   }
 
   public void clear() {
