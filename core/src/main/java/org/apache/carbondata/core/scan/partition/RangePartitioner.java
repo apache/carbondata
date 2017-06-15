@@ -19,11 +19,14 @@ package org.apache.carbondata.core.scan.partition;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * Range Partitioner
@@ -33,6 +36,14 @@ public class RangePartitioner implements Partitioner {
   private int numPartitions;
   private Object[] bounds;
   private SerializableComparator comparator;
+
+  private SimpleDateFormat timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+
+  private SimpleDateFormat dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
 
   public RangePartitioner(PartitionInfo partitionInfo) {
     List<String> values = partitionInfo.getRangeInfo();
@@ -45,7 +56,8 @@ public class RangePartitioner implements Partitioner {
       }
     } else {
       for (int i = 0; i < numPartitions; i++) {
-        bounds[i] = PartitionUtil.getDataBasedOnDataType(values.get(i), partitionColumnDataType);
+        bounds[i] = PartitionUtil.getDataBasedOnDataType(values.get(i), partitionColumnDataType,
+            timestampFormatter, dateFormatter);
       }
     }
 
@@ -75,6 +87,7 @@ public class RangePartitioner implements Partitioner {
   /**
    * number of partitions
    * add extra default partition
+   *
    * @return
    */
   @Override public int numPartitions() {
