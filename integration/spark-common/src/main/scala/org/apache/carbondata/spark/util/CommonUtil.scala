@@ -221,8 +221,8 @@ object CommonUtil {
         val parField = partitionerField.dataType.get.split(",")
         val precision = parField(0).substring(12).toInt
         val scale = parField(1).substring(0, parField(1).length - 1).toInt
-        val pattern = "^([-]?[0-9]{0," +(precision - scale) +
-                      "})([.][0-9]{1," +scale +"})?$"
+        val pattern = "^([-]?[0-9]{0," + (precision - scale) +
+                      "})([.][0-9]{1," + scale + "})?$"
         value.matches(pattern)
       case "timestamptype" =>
         val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
@@ -279,8 +279,8 @@ object CommonUtil {
         val parField = partitionerField.dataType.get.split(",")
         val precision = parField(0).substring(8).toInt
         val scale = parField(1).substring(0, parField(1).length - 1).toInt
-        val pattern = "^([-]?[0-9]{0," +(precision - scale) +
-                      "})([.][0-9]{1," +scale +"})?$"
+        val pattern = "^([-]?[0-9]{0," + (precision - scale) +
+                      "})([.][0-9]{1," + scale + "})?$"
         value.matches(pattern)
       case "timestamp" =>
         val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
