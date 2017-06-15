@@ -432,5 +432,8 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS restructure_badnew")
     sql("DROP TABLE IF EXISTS lock_rename")
     sql("drop table if exists uniqdata")
+
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC)
   }
 }

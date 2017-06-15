@@ -25,6 +25,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 
@@ -78,7 +79,9 @@ class BadRecordLoggerSharedDictionaryTest extends QueryTest with BeforeAndAfterA
 
   override def afterAll {
     sql("drop table IF EXISTS testdrive")
+
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, timestamp_format)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
+      .removeProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC)
   }
 }

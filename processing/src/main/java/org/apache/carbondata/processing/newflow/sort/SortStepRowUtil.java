@@ -64,7 +64,7 @@ public class SortStepRowUtil {
       for (int i = 0; i < measureCount; i++) {
         Object value = data[allCount];
         if (null != value) {
-          if (measureDataType[i] == DataType.DECIMAL) {
+          if (measureDataType[i] == DataType.DECIMAL && value instanceof BigDecimal) {
             BigDecimal decimal = (BigDecimal) value;
             measures[index++] = DataTypeUtil.bigDecimalToByte(decimal);
           } else {
