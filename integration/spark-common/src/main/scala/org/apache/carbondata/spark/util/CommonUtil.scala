@@ -227,19 +227,11 @@ object CommonUtil {
       case "timestamptype" =>
         val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
-        if (scala.util.Try(timeStampFormat.parse(value)).isSuccess) {
-          true
-        } else {
-          false
-        }
+        scala.util.Try(timeStampFormat.parse(value)).isSuccess
       case "datetype" =>
         val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT))
-        if (scala.util.Try(dateFormat.parse(value)).isSuccess) {
-          true
-        } else {
-          false
-        }
+        scala.util.Try(dateFormat.parse(value)).isSuccess
       case others =>
        if (others != null && others.startsWith("char")) {
          scala.util.Try(value.toString).isSuccess
