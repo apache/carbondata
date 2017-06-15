@@ -50,7 +50,7 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE hashTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     // EqualTo
-    checkAnswer(sql("show partitions hashTable"), Seq(Row("partition0", "0", "0")))
+    checkAnswer(sql("show partitions hashTable"), Seq(Row("HASH PARTITION", "", "3")))
 
     sql("drop table hashTable")
   }
@@ -65,12 +65,12 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (doj Timestamp)
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-        |  'RANGE_INFO'='01-01-2010, 01-01-2015, 01-04-2015, 01-07-2015')
+        |  'RANGE_INFO'='01-01-2010, 01-01-2015')
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE rangeTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     // EqualTo
-    checkAnswer(sql("show partitions rangeTable"), Seq(Row("partition0", "0", "0")))
+    checkAnswer(sql("show partitions rangeTable"), Seq(Row("0", "", "default"), Row("1", "", "< 01-01-2010"), Row("2", "", "< 01-01-2015")))
     sql("drop table rangeTable")
   }
 
@@ -89,7 +89,7 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE listTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     // EqualTo
-    checkAnswer(sql("show partitions listTable"), Seq(Row("partition0", "0", "0")))
+    checkAnswer(sql("show partitions listTable"), Seq(Row("0", "", "0"), Row("1", "", "1"), Row("2", "", "2, 3")))
 
   sql("drop table listTable")
   }
@@ -112,7 +112,7 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionDB.listTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     // EqualTo
-    checkAnswer(sql("show partitions partitionDB.listTable"), Seq(Row("partition0", "0", "0")))
+    checkAnswer(sql("show partitions partitionDB.listTable"), Seq(Row("0", "", "0"), Row("1", "", "1"), Row("2", "", "2, 3")))
 
     sql("drop table partitionDB.listTable")
     sql(s"DROP DATABASE partitionDB")

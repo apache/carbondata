@@ -31,9 +31,29 @@ object CarbonShowPartitionInfo {
   def extracted(tableName: String, args: Array[String]): Unit = {
     val cc = ExampleUtils.createCarbonContext("CarbonShowPartitionInfo")
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
-    cc.sql(s"DROP TABLE IF EXISTS $tableName")
+    
+    // range partition
+    cc.sql("DROP TABLE IF EXISTS t1")
+
+    cc.sql("""
+                | CREATE TABLE IF NOT EXISTS t1
+                | (
+                | vin String,
+                | phonenumber Int,
+                | country String,
+                | area String
+                | )
+                | PARTITIONED BY (logdate Timestamp)
+                | STORED BY 'carbondata'
+                | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
+                | 'RANGE_INFO'='20140101, 2015/01/01 ,2016-01-01')
+              """.stripMargin)
     cc.sql(s"""
-                | CREATE TABLE IF NOT EXISTS $tableName
+      SHOW PARTITIONS t1
+             """).show()
+
+    cc.sql("""
+                | CREATE TABLE IF NOT EXISTS t3
                 | (
                 | logdate Timestamp,
                 | phonenumber Int,
@@ -44,6 +64,29 @@ object CarbonShowPartitionInfo {
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='5')
                 """.stripMargin)
+    cc.sql(s"""
+      SHOW PARTITIONS t3
+             """).show()
+    // list partition
+    cc.sql("DROP TABLE IF EXISTS t5")
+
+    cc.sql("""
+       | CREATE TABLE IF NOT EXISTS t5
+       | (
+       | vin String,
+       | logdate Timestamp,
+       | phonenumber Int,
+       | area String
+       |)
+       | PARTITIONED BY (country string)
+       | STORED BY 'carbondata'
+       | TBLPROPERTIES('PARTITION_TYPE'='LIST',
+       | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea ')
+       """.stripMargin)
+    cc.sql(s"""
+      SHOW PARTITIONS t5
+             """).show()
+
 
     cc.sql(s"DROP TABLE IF EXISTS partitionDB.$tableName")
     cc.sql(s"DROP DATABASE IF EXISTS partitionDB")
@@ -62,11 +105,11 @@ object CarbonShowPartitionInfo {
                 """.stripMargin)
     cc.sql(s"""
       SHOW PARTITIONS partitionDB.$tableName
-             """).show(10000)
+             """).show()
 
     cc.sql(s"""
       SHOW PARTITIONS $tableName
-             """).show(10000)
+             """).show()
 
   }
 }

@@ -36,6 +36,7 @@ import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 private[sql] case class ShowCarbonPartitionsCommand(
     tableIdentifier: TableIdentifier) extends RunnableCommand {
   val LOGGER = LogServiceFactory.getLogService(ShowCarbonPartitionsCommand.getClass.getName)
+  var columnName = ""
   override val output: Seq[Attribute] = Seq(
     // Column names are based on Hive.
     AttributeReference("ID", StringType, nullable = false,
@@ -54,17 +55,41 @@ private[sql] case class ShowCarbonPartitionsCommand(
       carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
     var partitionType = partitionInfo.getPartitionType
     var result = Seq.newBuilder[Row]
-    // val result = new ArrayBuffer[Row]
+    columnName = partitionInfo.getColumnSchemaList.get(0).getColumnName
     if (PartitionType.RANGE.equals(partitionType)) {
-      result.+=(RowFactory.create("partition0", "0", "0"))
+      result.+=(RowFactory.create("0", "", "default"))
+      var id = 1
+      // var name = "partition_"
+      var rangeInfo = partitionInfo.getRangeInfo
+      var size = rangeInfo.size() - 1
+      for (index <- 0 to size) {
+        result.+=(RowFactory.create(id.toString(), "", "< " + rangeInfo.get(index)))
+        id += 1
+      }
     } else if (PartitionType.RANGE_INTERVAL.equals(partitionType)) {
-      result.+=(RowFactory.create("partition0", "0", "0"))
+      result.+=(RowFactory.create("", "", ""))
     } else if (PartitionType.LIST.equals(partitionType)) {
-      result.+=(RowFactory.create("partition0", "0", "0"))
+      var id = 0
+      var listInfo = partitionInfo.getListInfo
+      var size = listInfo.size() - 1
+      for (index <- 0 to size) {
+        var listStr = ""
+        listInfo.get(index).toArray().foreach { x =>
+          if (listStr.isEmpty()) {
+            listStr = x.toString()
+          } else {
+            listStr += ", " + x.toString()
+          }
+        }
+        result.+=(RowFactory.create(id.toString(), "", listStr))
+        id += 1
+      }
     } else if (PartitionType.HASH.equals(partitionType)) {
-      result.+=(RowFactory.create("partition0", "0", "0"))
+      var hashNumber = partitionInfo.getNumPartitions
+      result.+=(RowFactory.create("HASH PARTITION", "", hashNumber.toString()))
+    } else {
+      result.+=(RowFactory.create("", "", ""))
     }
-
     result.result()
   }
 }
