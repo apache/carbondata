@@ -284,17 +284,6 @@ public final class DataTypeUtil {
             return null;
           }
           return Long.parseLong(data);
-        case BYTE:
-          if (data.isEmpty()) {
-            return null;
-          }
-          return Byte.parseByte(data);
-        case BOOLEAN:
-          if (data.isEmpty() || !(data.equalsIgnoreCase("false")
-              || data.equalsIgnoreCase("true"))) {
-            return null;
-          }
-          return Boolean.parseBoolean(data);
         case DATE:
           if (data.isEmpty()) {
             return null;
