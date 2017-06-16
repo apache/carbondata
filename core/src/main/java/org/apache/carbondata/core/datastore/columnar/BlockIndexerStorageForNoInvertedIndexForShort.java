@@ -36,38 +36,38 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
   private byte[] min;
   private byte[] max;
 
-  public BlockIndexerStorageForNoInvertedIndexForShort(byte[][] keyBlockInput,
+  public BlockIndexerStorageForNoInvertedIndexForShort(byte[][] dataPage,
       boolean isNoDictonary) {
-    this.dataPage = keyBlockInput;
-    min = dataPage[0];
-    max = dataPage[0];
-    totalSize += dataPage[0].length;
+    this.dataPage = dataPage;
+    min = this.dataPage[0];
+    max = this.dataPage[0];
+    totalSize += this.dataPage[0].length;
     int minCompare = 0;
     int maxCompare = 0;
     if (!isNoDictonary) {
-      for (int i = 1; i < dataPage.length; i++) {
-        totalSize += dataPage[i].length;
-        minCompare = ByteUtil.compare(min, dataPage[i]);
-        maxCompare = ByteUtil.compare(max, dataPage[i]);
+      for (int i = 1; i < this.dataPage.length; i++) {
+        totalSize += this.dataPage[i].length;
+        minCompare = ByteUtil.compare(min, this.dataPage[i]);
+        maxCompare = ByteUtil.compare(max, this.dataPage[i]);
         if (minCompare > 0) {
-          min = dataPage[i];
+          min = this.dataPage[i];
         }
         if (maxCompare < 0) {
-          max = dataPage[i];
+          max = this.dataPage[i];
         }
       }
     } else {
-      for (int i = 1; i < dataPage.length; i++) {
-        totalSize += dataPage[i].length;
+      for (int i = 1; i < this.dataPage.length; i++) {
+        totalSize += this.dataPage[i].length;
         minCompare = ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(min, 2, min.length - 2, dataPage[i], 2, dataPage[i].length - 2);
+            .compareTo(min, 2, min.length - 2, this.dataPage[i], 2, this.dataPage[i].length - 2);
         maxCompare = ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(max, 2, max.length - 2, dataPage[i], 2, dataPage[i].length - 2);
+            .compareTo(max, 2, max.length - 2, this.dataPage[i], 2, this.dataPage[i].length - 2);
         if (minCompare > 0) {
-          min = dataPage[i];
+          min = this.dataPage[i];
         }
         if (maxCompare < 0) {
-          max = dataPage[i];
+          max = this.dataPage[i];
         }
       }
     }

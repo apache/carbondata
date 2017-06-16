@@ -14,18 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.datastore.columnar;
 
 import java.util.Arrays;
 
 import org.apache.carbondata.core.util.ByteUtil;
 
-public class ColumnWithShortIndex implements Comparable<ColumnWithShortIndex> {
+public class ColumnWithRowId<T> implements Comparable<ColumnWithRowId<T>> {
   protected byte[] column;
 
-  private short index;
+  private T index;
 
-  public ColumnWithShortIndex(byte[] column, short index) {
+  ColumnWithRowId(byte[] column, T index) {
     this.column = column;
     this.index = index;
   }
@@ -47,18 +48,18 @@ public class ColumnWithShortIndex implements Comparable<ColumnWithShortIndex> {
   /**
    * @return the index
    */
-  public short getIndex() {
+  public T getIndex() {
     return index;
   }
 
   /**
    * @param index the index to set
    */
-  public void setIndex(short index) {
+  public void setIndex(T index) {
     this.index = index;
   }
 
-  @Override public int compareTo(ColumnWithShortIndex o) {
+  @Override public int compareTo(ColumnWithRowId o) {
     return ByteUtil.UnsafeComparer.INSTANCE.compareTo(column, o.column);
   }
 
@@ -66,11 +67,11 @@ public class ColumnWithShortIndex implements Comparable<ColumnWithShortIndex> {
     if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
-    ColumnWithShortIndex o = (ColumnWithShortIndex)obj;
+    ColumnWithRowId o = (ColumnWithRowId)obj;
     return Arrays.equals(column, o.column) && index == o.index;
   }
 
   @Override public int hashCode() {
-    return Arrays.hashCode(column) + index;
+    return Arrays.hashCode(column) + index.hashCode();
   }
 }

@@ -39,11 +39,11 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
 
   public BlockIndexerStorageForInt(byte[][] dataPage, boolean rleOnData, boolean isNoDictionary,
       boolean isSortRequired) {
-    ColumnWithIntIndex[] dataWithRowId = createColumnWithIndexArray(dataPage, isNoDictionary);
+    ColumnWithRowId<Integer>[] dataWithRowId = createColumnWithRowId(dataPage, isNoDictionary);
     if (isSortRequired) {
       Arrays.sort(dataWithRowId);
     }
-    int[] rowIds = extractDataAndReturnIndexes(dataWithRowId, dataPage);
+    int[] rowIds = extractDataAndReturnRowIds(dataWithRowId, dataPage);
     rleEncodeOnRowId(rowIds);
     if (rleOnData) {
       rleEncodeOnData(dataWithRowId);
@@ -51,38 +51,32 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
   }
 
   /**
-   * Create an object with each column array and respective index
-   *
-   * @return
+   * Create an object with each column array and respective rowId
    */
-  private ColumnWithIntIndex[] createColumnWithIndexArray(byte[][] keyBlock,
+  private ColumnWithRowId<Integer>[] createColumnWithRowId(byte[][] dataPage,
       boolean isNoDictionary) {
-    ColumnWithIntIndex[] columnWithIndexs;
+    ColumnWithRowId<Integer>[] columnWithRowId = new ColumnWithRowId[dataPage.length];
     if (isNoDictionary) {
-      columnWithIndexs = new ColumnWithIntIndexForHighCard[keyBlock.length];
-      for (int i = 0; i < columnWithIndexs.length; i++) {
-        columnWithIndexs[i] = new ColumnWithIntIndexForHighCard(keyBlock[i], i);
+      for (int i = 0; i < columnWithRowId.length; i++) {
+        columnWithRowId[i] = new ColumnWithRowIdForHighCard<>(dataPage[i], i);
       }
-
     } else {
-      columnWithIndexs = new ColumnWithIntIndex[keyBlock.length];
-      for (int i = 0; i < columnWithIndexs.length; i++) {
-        columnWithIndexs[i] = new ColumnWithIntIndex(keyBlock[i], i);
+      for (int i = 0; i < columnWithRowId.length; i++) {
+        columnWithRowId[i] = new ColumnWithRowId<>(dataPage[i], i);
       }
     }
-
-    return columnWithIndexs;
+    return columnWithRowId;
   }
 
-  private int[] extractDataAndReturnIndexes(ColumnWithIntIndex[] dataWithRowId,
+  private int[] extractDataAndReturnRowIds(ColumnWithRowId<Integer>[] dataWithRowId,
       byte[][] keyBlock) {
-    int[] indexes = new int[dataWithRowId.length];
-    for (int i = 0; i < indexes.length; i++) {
-      indexes[i] = dataWithRowId[i].getIndex();
+    int[] rowId = new int[dataWithRowId.length];
+    for (int i = 0; i < rowId.length; i++) {
+      rowId[i] = dataWithRowId[i].getIndex();
       keyBlock[i] = dataWithRowId[i].getColumn();
     }
     this.dataPage = keyBlock;
-    return indexes;
+    return rowId;
   }
 
   /**
@@ -168,10 +162,10 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
     return dataPage;
   }
 
-  private void rleEncodeOnData(ColumnWithIntIndex[] dataWithRowId) {
+  private void rleEncodeOnData(ColumnWithRowId[] dataWithRowId) {
     byte[] prvKey = dataWithRowId[0].getColumn();
-    List<ColumnWithIntIndex> list =
-        new ArrayList<ColumnWithIntIndex>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    List<ColumnWithRowId> list =
+        new ArrayList<ColumnWithRowId>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     list.add(dataWithRowId[0]);
     int counter = 1;
     int start = 0;
@@ -190,7 +184,7 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
     }
     map.add(start);
     map.add(counter);
-    this.dataPage = convertToKeyArray(list);
+    this.dataPage = convertToDataPage(list);
     if (dataWithRowId.length == dataPage.length) {
       dataRlePage = new int[0];
     } else {
@@ -198,7 +192,7 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
     }
   }
 
-  private byte[][] convertToKeyArray(List<ColumnWithIntIndex> list) {
+  private byte[][] convertToDataPage(List<ColumnWithRowId> list) {
     byte[][] shortArray = new byte[list.size()][];
     for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = list.get(i).getColumn();

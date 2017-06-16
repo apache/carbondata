@@ -39,7 +39,7 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
 
   public BlockIndexerStorageForShort(byte[][] dataPage, boolean rleOnData,
       boolean isNoDictionary, boolean isSortRequired) {
-    ColumnWithShortIndex[] dataWithRowId = createColumnWithIndexArray(dataPage, isNoDictionary);
+    ColumnWithRowId<Short>[] dataWithRowId = createColumnWithRowId(dataPage, isNoDictionary);
     if (isSortRequired) {
       Arrays.sort(dataWithRowId);
     }
@@ -51,35 +51,33 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
   }
 
   /**
-   * Create an object with each column array and respective index
+   * Create an object with each column array and respective rowId
    *
    * @return
    */
-  private ColumnWithShortIndex[] createColumnWithIndexArray(byte[][] keyBlock,
+  private ColumnWithRowId<Short>[] createColumnWithRowId(byte[][] dataPage,
       boolean isNoDictionary) {
-    ColumnWithShortIndex[] columnWithIndexs;
+    ColumnWithRowId<Short>[] columnWithIndexs = new ColumnWithRowId[dataPage.length];
     if (isNoDictionary) {
-      columnWithIndexs = new ColumnWithShortIndex[keyBlock.length];
       for (short i = 0; i < columnWithIndexs.length; i++) {
-        columnWithIndexs[i] = new ColumnWithShortIndexForNoDictionay(keyBlock[i], i);
+        columnWithIndexs[i] = new ColumnWithRowIdForHighCard<>(dataPage[i], i);
       }
     } else {
-      columnWithIndexs = new ColumnWithShortIndex[keyBlock.length];
       for (short i = 0; i < columnWithIndexs.length; i++) {
-        columnWithIndexs[i] = new ColumnWithShortIndex(keyBlock[i], i);
+        columnWithIndexs[i] = new ColumnWithRowId<>(dataPage[i], i);
       }
     }
     return columnWithIndexs;
   }
 
-  private short[] extractDataAndReturnRowId(ColumnWithShortIndex[] dataWithRowId,
-      byte[][] keyBlock) {
+  private short[] extractDataAndReturnRowId(ColumnWithRowId<Short>[] dataWithRowId,
+      byte[][] dataPage) {
     short[] indexes = new short[dataWithRowId.length];
     for (int i = 0; i < indexes.length; i++) {
       indexes[i] = dataWithRowId[i].getIndex();
-      keyBlock[i] = dataWithRowId[i].getColumn();
+      dataPage[i] = dataWithRowId[i].getColumn();
     }
-    this.dataPage = keyBlock;
+    this.dataPage = dataPage;
     return indexes;
   }
 
@@ -171,9 +169,9 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     return dataPage;
   }
 
-  private void rleEncodeOnData(ColumnWithShortIndex[] dataWithRowId) {
+  private void rleEncodeOnData(ColumnWithRowId<Short>[] dataWithRowId) {
     byte[] prvKey = dataWithRowId[0].getColumn();
-    List<ColumnWithShortIndex> list = new ArrayList<ColumnWithShortIndex>(dataWithRowId.length / 2);
+    List<ColumnWithRowId> list = new ArrayList<>(dataWithRowId.length / 2);
     list.add(dataWithRowId[0]);
     short counter = 1;
     short start = 0;
@@ -196,15 +194,15 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     // so better to avoid rle index and write data as it is
     boolean useRle = (((list.size() + map.size()) * 100) / dataWithRowId.length) < 70;
     if (useRle) {
-      this.dataPage = convertToKeyArray(list);
+      this.dataPage = convertToDataPage(list);
       dataRlePage = convertToArray(map);
     } else {
-      this.dataPage = convertToKeyArray(dataWithRowId);
+      this.dataPage = convertToDataPage(dataWithRowId);
       dataRlePage = new short[0];
     }
   }
 
-  private byte[][] convertToKeyArray(ColumnWithShortIndex[] indexes) {
+  private byte[][] convertToDataPage(ColumnWithRowId[] indexes) {
     byte[][] shortArray = new byte[indexes.length][];
     for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = indexes[i].getColumn();
@@ -213,7 +211,7 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     return shortArray;
   }
 
-  private byte[][] convertToKeyArray(List<ColumnWithShortIndex> list) {
+  private byte[][] convertToDataPage(List<ColumnWithRowId> list) {
     byte[][] shortArray = new byte[list.size()][];
     for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = list.get(i).getColumn();

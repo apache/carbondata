@@ -21,7 +21,7 @@ import org.apache.carbondata.core.util.ByteUtil;
 /**
  * Below class will be used to for no inverted index
  */
-public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]> {
+public class BlockIndexerStorageForNoInvertedIndexForInt implements IndexStorage<int[]> {
 
   /**
    * column data
@@ -36,22 +36,22 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
   private byte[] min;
   private byte[] max;
 
-  public BlockIndexerStorageForNoInvertedIndex(byte[][] keyBlockInput) {
-    this.dataPage = keyBlockInput;
-    min = dataPage[0];
-    max = dataPage[0];
-    totalSize += dataPage[0].length;
+  public BlockIndexerStorageForNoInvertedIndexForInt(byte[][] dataPage) {
+    this.dataPage = dataPage;
+    min = this.dataPage[0];
+    max = this.dataPage[0];
+    totalSize += this.dataPage[0].length;
     int minCompare = 0;
     int maxCompare = 0;
-    for (int i = 1; i < dataPage.length; i++) {
-      totalSize += dataPage[i].length;
-      minCompare = ByteUtil.compare(min, dataPage[i]);
-      maxCompare = ByteUtil.compare(max, dataPage[i]);
+    for (int i = 1; i < this.dataPage.length; i++) {
+      totalSize += this.dataPage[i].length;
+      minCompare = ByteUtil.compare(min, this.dataPage[i]);
+      maxCompare = ByteUtil.compare(max, this.dataPage[i]);
       if (minCompare > 0) {
-        min = dataPage[i];
+        min = this.dataPage[i];
       }
       if (maxCompare < 0) {
-        max = dataPage[i];
+        max = this.dataPage[i];
       }
     }
   }

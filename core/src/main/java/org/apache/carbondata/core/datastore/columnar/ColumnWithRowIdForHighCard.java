@@ -14,20 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.carbondata.core.datastore.columnar;
 
 import java.util.Arrays;
 
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 
-public class ColumnWithShortIndexForNoDictionay extends ColumnWithShortIndex
-    implements Comparable<ColumnWithShortIndex> {
+public class ColumnWithRowIdForHighCard<T> extends ColumnWithRowId<T>
+    implements Comparable<ColumnWithRowId<T>> {
 
-  public ColumnWithShortIndexForNoDictionay(byte[] column, short index) {
+  ColumnWithRowIdForHighCard(byte[] column, T index) {
     super(column, index);
   }
 
-  @Override public int compareTo(ColumnWithShortIndex o) {
+  @Override public int compareTo(ColumnWithRowId o) {
     return UnsafeComparer.INSTANCE
         .compareTo(column, 2, column.length - 2, o.column, 2, o.column.length - 2);
   }
@@ -36,11 +37,11 @@ public class ColumnWithShortIndexForNoDictionay extends ColumnWithShortIndex
     if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
-    ColumnWithIntIndexForHighCard o = (ColumnWithIntIndexForHighCard) obj;
+    ColumnWithRowIdForHighCard o = (ColumnWithRowIdForHighCard)obj;
     return Arrays.equals(column, o.column) && getIndex() == o.getIndex();
   }
 
   @Override public int hashCode() {
-    return Arrays.hashCode(column) + getIndex();
+    return Arrays.hashCode(column) + getIndex().hashCode();
   }
 }
