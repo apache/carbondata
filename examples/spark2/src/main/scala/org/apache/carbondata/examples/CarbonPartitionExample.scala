@@ -52,13 +52,12 @@ object CarbonPartitionExample {
     spark.sql("DROP TABLE IF EXISTS t0")
 
     spark.sql("""
-                | CREATE TABLE IF NOT EXISTS t0
-                | (
-                | vin String,
-                | logdate Timestamp,
-                | phonenumber Long,
-                | country String,
-                | area String
+                | CREATE TABLE IF NOT EXISTS t0(
+                | vin STRING,
+                | logdate TIMESTAMP,
+                | phonenumber LONG,
+                | country STRING,
+                | area STRING
                 | )
                 | STORED BY 'carbondata'
               """.stripMargin)
@@ -67,65 +66,60 @@ object CarbonPartitionExample {
     spark.sql("DROP TABLE IF EXISTS t1")
 
     spark.sql("""
-                | CREATE TABLE IF NOT EXISTS t1
-                | (
-                | vin String,
-                | logdate Timestamp,
-                | phonenumber Long,
-                | country String,
-                | area String
+                | CREATE TABLE IF NOT EXISTS t1(
+                | vin STRING,
+                | logdate TIMESTAMP,
+                | phonenumber LONG,
+                | country STRING,
+                | area STRING
                 | )
-                | PARTITIONED BY (logdate Timestamp)
+                | PARTITIONED BY (timestampField TIMESTAMP)
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-                | 'RANGE_INFO'='20140101, 2015/01/01 ,2016-01-01, ')
+                | 'RANGE_INFO'='2014/01/01, 2015/01/01 ,2016/01/01')
               """.stripMargin)
 
     // hash partition
-    spark.sql("DROP TABLE IF EXISTS t3")
+    spark.sql("DROP TABLE IF EXISTS t2")
 
     spark.sql("""
-                | CREATE TABLE IF NOT EXISTS t3
-                | (
-                | vin String,
-                | logdate Timestamp,
-                | phonenumber Long,
-                | country String,
-                | area String
+                | CREATE TABLE IF NOT EXISTS t2(
+                | vin STRING,
+                | logdate TIMESTAMP,
+                | phonenumber LONG,
+                | country STRING,
+                | area STRING
                 | )
-                | PARTITIONED BY (vin String)
+                | PARTITIONED BY (stringField STRING)
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='5')
                 """.stripMargin)
 
     // list partition
-    spark.sql("DROP TABLE IF EXISTS t5")
+    spark.sql("DROP TABLE IF EXISTS t3")
 
     spark.sql("""
-       | CREATE TABLE IF NOT EXISTS t5
-       | (
-       | vin String,
-       | logdate Timestamp,
-       | phonenumber Long,
-       | country String,
-       | area String
+       | CREATE TABLE IF NOT EXISTS t3(
+       | vin STRING,
+       | logdate TIMESTAMP,
+       | phonenumber LONG,
+       | country STRING,
+       | area STRING
        |)
-       | PARTITIONED BY (country string)
+       | PARTITIONED BY (stringField STRING)
        | STORED BY 'carbondata'
        | TBLPROPERTIES('PARTITION_TYPE'='LIST',
        | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea ')
        """.stripMargin)
 
-    // spark.sql(s"""
-    //   LOAD DATA LOCAL INPATH '$testData' into table t3
-    // options('BAD_RECORDS_ACTION'='FORCE')
-    //   """)
-
-    // spark.sql("select vin, count(*) from t3 group by vin
-    // order by count(*) desc").show(50)
+    // Show tables
+    spark.sql("SHOW TABLES").show()
 
     // Drop table
-    // spark.sql("DROP TABLE IF EXISTS t3")
+    spark.sql("DROP TABLE IF EXISTS t0")
+    spark.sql("DROP TABLE IF EXISTS t1")
+    spark.sql("DROP TABLE IF EXISTS t2")
+    spark.sql("DROP TABLE IF EXISTS t3")
   }
 
 }
