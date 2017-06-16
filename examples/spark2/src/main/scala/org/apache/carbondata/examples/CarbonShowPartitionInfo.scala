@@ -41,6 +41,13 @@ object CarbonShowPartitionInfo {
       .config("spark.sql.warehouse.dir", warehouse)
       .getOrCreateCarbonSession(storeLocation, metastoredb)
 
+    // range partition
+    spark.sql("DROP TABLE IF EXISTS t1")
+    // hash partition
+    spark.sql("DROP TABLE IF EXISTS t3")
+    // list partition
+    spark.sql("DROP TABLE IF EXISTS t5")
+
     spark.sql("""
                 | CREATE TABLE IF NOT EXISTS t1
                 | (
@@ -52,7 +59,7 @@ object CarbonShowPartitionInfo {
                 | PARTITIONED BY (logdate Timestamp)
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-                | 'RANGE_INFO'='20140101, 2015/01/01 ,2016-01-01, ')
+                | 'RANGE_INFO'='20140101, 2015/01/01 ,2016-01-01')
               """.stripMargin)
 
     spark.sql("""

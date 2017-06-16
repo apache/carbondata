@@ -43,7 +43,7 @@ private[sql] case class ShowCarbonPartitionsCommand(
       new MetadataBuilder().putString("comment", "partition id").build())(),
     AttributeReference("Name", StringType, nullable = false,
       new MetadataBuilder().putString("comment", "partition name").build())(),
-    AttributeReference("Value", StringType, nullable = true,
+    AttributeReference("Value(" + columnName + "=)", StringType, nullable = true,
       new MetadataBuilder().putString("comment", "partition value").build())()
   )
   override def run(sparkSession: SparkSession): Seq[Row] = {
