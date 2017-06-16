@@ -96,7 +96,7 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
   test("show partition table: not default db") {
 
     sql(s"DROP DATABASE IF EXISTS partitionDB")
-    sql(s"CREATE DATABASE partitionDB")
+    sql(s"CREATE DATABASE partitionDB IF EXISTS partitionDB")
 
     sql(
       """
