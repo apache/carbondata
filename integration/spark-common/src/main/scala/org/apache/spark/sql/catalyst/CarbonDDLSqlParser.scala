@@ -536,7 +536,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     if (!sortKeyString.isEmpty) {
       val sortKey = sortKeyString.split(',').map(_.trim)
       if (sortKey.diff(sortKey.distinct).length > 0 ||
-          (sortKey.length > 1 && sortKey.contains(""))) {
+          (sortKey.length > 1 && (sortKey.contains("") || sortKeyString.endsWith(",")))) {
         throw new MalformedCarbonCommandException(
           "SORT_COLUMNS Either having duplicate columns : " +
           sortKey.diff(sortKey.distinct).mkString(",") + " or it contains illegal argumnet.")
