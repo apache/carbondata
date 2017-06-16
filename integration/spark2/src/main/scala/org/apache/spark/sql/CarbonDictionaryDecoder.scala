@@ -31,7 +31,9 @@ import org.apache.spark.sql.execution.{CodegenSupport, SparkPlan, UnaryExecNode}
 import org.apache.spark.sql.hive.{CarbonMetastoreTypes, CarbonRelation}
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types._
+import org.apache.spark.util.TaskCompletionListener
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnIdentifier}
@@ -84,13 +86,23 @@ case class CarbonDictionaryDecoder(
           // add a task completion listener to clear dictionary that is a decisive factor for
           // LRU eviction policy
           val dictionaryTaskCleaner = TaskContext.get
-          dictionaryTaskCleaner.addTaskCompletionListener(_ =>
-            dicts.foreach { dictionary =>
-              if (null != dictionary) {
-                dictionary.clear()
+          dictionaryTaskCleaner.addTaskCompletionListener(new TaskCompletionListener() {
+            override def onTaskCompletion(context: TaskContext): Unit = {
+              try {
+                if (dicts != null) {
+                  dicts.foreach { dictionary =>
+                    if (null != dictionary) {
+                      dictionary.clear()
+                    }
+                  }
+                }
+              } catch {
+                case ex: Exception =>
+                  LogServiceFactory.getLogService(
+                    "CarbonDictionaryDecoder[TaskCompletionListener]").error(ex)
               }
             }
-          )
+          })
           new Iterator[InternalRow] {
             val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
             var flag = true
@@ -528,13 +540,22 @@ class CarbonDecoderRDD(
     // add a task completion listener to clear dictionary that is a decisive factor for
     // LRU eviction policy
     val dictionaryTaskCleaner = TaskContext.get
-    dictionaryTaskCleaner.addTaskCompletionListener(_ =>
-      dicts.foreach { dictionary =>
-        if (null != dictionary) {
-          dictionary.clear()
+    dictionaryTaskCleaner.addTaskCompletionListener(new TaskCompletionListener() {
+      override def onTaskCompletion(context: TaskContext): Unit = {
+        try {
+          if (dicts != null) {
+            dicts.foreach { dictionary =>
+              if (null != dictionary) {
+                dictionary.clear()
+              }
+            }
+          }
+        } catch {
+          case ex: Exception =>
+            LogServiceFactory.getLogService("CarbonDecoderRDD[TaskCompletionListener]").error(ex)
         }
       }
-    )
+    })
     val iter = firstParent[InternalRow].iterator(split, context)
     new Iterator[InternalRow] {
       var flag = true
@@ -630,13 +651,23 @@ class DictionaryLoader(storePath: String,
       isDictionaryLoaded = true
       val dictionaryTaskCleaner = TaskContext.get
       if (dictionaryTaskCleaner != null) {
-        dictionaryTaskCleaner.addTaskCompletionListener(_ =>
-          allDicts.asScala.foreach { dictionary =>
-            if (null != dictionary) {
-              dictionary.clear()
+        dictionaryTaskCleaner.addTaskCompletionListener(new TaskCompletionListener {
+          override def onTaskCompletion(context: TaskContext): Unit = {
+            try {
+              if (null != allDicts) {
+                allDicts.asScala.foreach { dictionary =>
+                  if (null != dictionary) {
+                    dictionary.clear()
+                  }
+                }
+              }
+            } catch {
+              case ex: Exception =>
+                LogServiceFactory.getLogService(
+                  "DictionaryLoader[TaskCompletionListener]").error(ex)
             }
           }
-        )
+        })
       }
     }
   }
