@@ -53,6 +53,6 @@ object Spark2TestQueryExecutor {
     .enableHiveSupport()
     .config("spark.sql.warehouse.dir", TestQueryExecutor.warehouse)
     .getOrCreateCarbonSession(TestQueryExecutor.storeLocation, TestQueryExecutor.metastoredb)
-  spark.sparkContext.setLogLevel("ERROR")
+  spark.sparkContext.setLogLevel("INFO")
 
 }
