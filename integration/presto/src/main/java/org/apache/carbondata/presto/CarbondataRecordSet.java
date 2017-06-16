@@ -21,6 +21,7 @@ import com.facebook.presto.spi.*;
 import com.facebook.presto.spi.predicate.TupleDomain;
 import com.facebook.presto.spi.type.Type;
 import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -83,9 +84,9 @@ public class CarbondataRecordSet implements RecordSet {
     tableBlockInfoList.add(new TableBlockInfo(split.getLocalInputSplit().getPath().toString(),
         split.getLocalInputSplit().getStart(), split.getLocalInputSplit().getSegmentId(),
         split.getLocalInputSplit().getLocations().toArray(new String[0]),
-        split.getLocalInputSplit().getLength(),
+        split.getLocalInputSplit().getLength(),new BlockletInfos(),
         //blockletInfos,
-        ColumnarFormatVersion.valueOf(split.getLocalInputSplit().getVersion()), null));
+        ColumnarFormatVersion.valueOf(split.getLocalInputSplit().getVersion()),null));
     queryModel.setTableBlockInfos(tableBlockInfoList);
 
     queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
