@@ -84,8 +84,7 @@ public class CarbondataRecordSet implements RecordSet {
         split.getLocalInputSplit().getStart(), split.getLocalInputSplit().getSegmentId(),
         split.getLocalInputSplit().getLocations().toArray(new String[0]),
         split.getLocalInputSplit().getLength(),
-        //blockletInfos,
-        ColumnarFormatVersion.valueOf(split.getLocalInputSplit().getVersion()), null));
+        ColumnarFormatVersion.valueOf(split.getLocalInputSplit().getVersion())));
     queryModel.setTableBlockInfos(tableBlockInfoList);
 
     queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
@@ -99,8 +98,8 @@ public class CarbondataRecordSet implements RecordSet {
       RecordCursor rc = new CarbondataRecordCursor(readSupport, carbonIterator, columns, split);
       return rc;
     } catch (QueryExecutionException e) {
-       throw new RuntimeException(e.getMessage(), e);
-   } catch (Exception ex) {
+      throw new RuntimeException(e.getMessage(), e);
+    } catch (Exception ex) {
       throw new RuntimeException(ex.getMessage(), ex);
     }
   }
