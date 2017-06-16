@@ -19,12 +19,12 @@ package org.apache.carbondata.hadoop.streaming;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.streaming.CarbonStreamingConstants;
+import org.apache.carbondata.processing.csvload.CSVInputFormat;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-
-import org.apache.carbondata.core.streaming.CarbonStreamingConstants;
-import org.apache.carbondata.processing.csvload.CSVInputFormat;
 
 
 /**

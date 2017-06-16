@@ -19,9 +19,10 @@ package org.apache.spark.sql.streaming
 
 import java.util.concurrent.ConcurrentHashMap
 
-//import org.apache.calcite.avatica.ColumnMetaData.StructType
 import org.apache.carbondata.core.util.path.CarbonTablePath
+
 import org.apache.hadoop.mapreduce.TaskAttemptContext
+
 import org.apache.spark.sql.execution.datasources.OutputWriterFactory
 import org.apache.spark.sql.types.StructType
 

@@ -20,6 +20,8 @@ package org.apache.carbondata.hadoop.streaming;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
+import org.apache.carbondata.core.util.path.CarbonTablePath;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -28,8 +30,6 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 
 public class CarbonStreamingRecordWriter<K,V> extends RecordWriter<K, V> {
