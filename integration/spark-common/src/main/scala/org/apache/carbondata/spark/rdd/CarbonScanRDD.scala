@@ -29,6 +29,7 @@ import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.util.TaskCompletionListener
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -208,10 +209,21 @@ class CarbonScanRDD(
         private var havePair = false
         private var finished = false
 
-        context.addTaskCompletionListener { context =>
-          logStatistics(queryStartTime, model.getStatisticsRecorder)
-          reader.close()
-        }
+        context.addTaskCompletionListener(new TaskCompletionListener() {
+          override def onTaskCompletion(context: TaskContext): Unit = {
+            try {
+              if (model != null) {
+                logStatistics(queryStartTime, model.getStatisticsRecorder)
+              }
+              if (reader != null) {
+                reader.close()
+              }
+            } catch {
+              case ex: Exception =>
+                LogServiceFactory.getLogService("CarbonScanRDD[TaskCompletionListener]").error(ex)
+            }
+          }
+        })
 
         override def hasNext: Boolean = {
           if (context.isInterrupted) {
