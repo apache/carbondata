@@ -19,7 +19,14 @@ package org.apache.carbondata.hadoop;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.DataRefNode;
@@ -367,8 +374,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         if (isIUDTable) {
           // In case IUD is not performed in this table avoid searching for
           // invalidated blocks.
-          if (CarbonUtil.isInvalidTableBlock(tableBlockInfo, invalidBlockVOForSegmentId,
-              updateStatusManager)) {
+          if (CarbonUtil
+              .isInvalidTableBlock(tableBlockInfo.getSegmentId(), tableBlockInfo.getFilePath(),
+                  invalidBlockVOForSegmentId, updateStatusManager)) {
             continue;
           }
         }

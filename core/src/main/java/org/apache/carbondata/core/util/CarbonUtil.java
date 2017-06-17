@@ -52,10 +52,13 @@ import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -918,10 +921,26 @@ public final class CarbonUtil {
    * Below method will be used to read the data file matadata
    */
   public static DataFileFooter readMetadatFile(TableBlockInfo tableBlockInfo) throws IOException {
-    AbstractDataFileFooterConverter fileFooterConverter =
-        DataFileFooterConverterFactory.getInstance()
-            .getDataFileFooterConverter(tableBlockInfo.getVersion());
-    return fileFooterConverter.readDataFileFooter(tableBlockInfo);
+    BlockletDetailInfo detailInfo = tableBlockInfo.getDetailInfo();
+    if (detailInfo == null) {
+      AbstractDataFileFooterConverter fileFooterConverter =
+          DataFileFooterConverterFactory.getInstance()
+              .getDataFileFooterConverter(tableBlockInfo.getVersion());
+      return fileFooterConverter.readDataFileFooter(tableBlockInfo);
+    } else {
+      DataFileFooter fileFooter = new DataFileFooter();
+      fileFooter.setSchemaUpdatedTimeStamp(detailInfo.getSchemaUpdatedTimeStamp());
+      ColumnarFormatVersion version =
+          ColumnarFormatVersion.valueOf(detailInfo.getVersionNumber());
+      AbstractDataFileFooterConverter dataFileFooterConverter =
+          DataFileFooterConverterFactory.getInstance().getDataFileFooterConverter(version);
+      fileFooter.setColumnInTable(dataFileFooterConverter.getSchema(tableBlockInfo));
+      SegmentInfo segmentInfo = new SegmentInfo();
+      segmentInfo.setColumnCardinality(detailInfo.getDimLens());
+      segmentInfo.setNumberOfColumns(detailInfo.getRowCount());
+      fileFooter.setSegmentInfo(segmentInfo);
+      return fileFooter;
+    }
   }
 
   /**
@@ -1559,24 +1578,23 @@ public final class CarbonUtil {
   }
 
   /**
-   * @param tableInfo
    * @param invalidBlockVOForSegmentId
    * @param updateStatusMngr
    * @return
    */
-  public static boolean isInvalidTableBlock(TableBlockInfo tableInfo,
+  public static boolean isInvalidTableBlock(String segmentId, String filePath,
       UpdateVO invalidBlockVOForSegmentId, SegmentUpdateStatusManager updateStatusMngr) {
 
-    if (!updateStatusMngr.isBlockValid(tableInfo.getSegmentId(),
-        CarbonTablePath.getCarbonDataFileName(tableInfo.getFilePath()) + CarbonTablePath
+    if (!updateStatusMngr.isBlockValid(segmentId,
+        CarbonTablePath.getCarbonDataFileName(filePath) + CarbonTablePath
             .getCarbonDataExtension())) {
       return true;
     }
 
     if (null != invalidBlockVOForSegmentId) {
-      Long blockTimeStamp = Long.parseLong(tableInfo.getFilePath()
-          .substring(tableInfo.getFilePath().lastIndexOf('-') + 1,
-              tableInfo.getFilePath().lastIndexOf('.')));
+      Long blockTimeStamp = Long.parseLong(filePath
+          .substring(filePath.lastIndexOf('-') + 1,
+              filePath.lastIndexOf('.')));
       if ((blockTimeStamp > invalidBlockVOForSegmentId.getFactTimestamp() && (
           invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp() != null
               && blockTimeStamp < invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp()))) {

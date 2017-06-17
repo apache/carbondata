@@ -40,7 +40,8 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
 import org.apache.carbondata.core.fileoperations.FileWriteOperation
-import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.indexstore.{DataMapStoreManager, DataMapType, TableDataMap}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -511,8 +512,10 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
     val dbName = tableIdentifier.database.get
     val tableName = tableIdentifier.table
 
-    val metadataFilePath = CarbonStorePath.getCarbonTablePath(tableStorePath,
-      new CarbonTableIdentifier(dbName, tableName, "")).getMetadataDirectoryPath
+    val tablePath = CarbonStorePath.getCarbonTablePath(tableStorePath,
+      new CarbonTableIdentifier(dbName, tableName, ""))
+    val metadataFilePath = tablePath.getMetadataDirectoryPath
+    val identifier = AbsoluteTableIdentifier.fromTablePath(tablePath.getPath)
 
     val fileType = FileFactory.getFileType(metadataFilePath)
 
@@ -528,6 +531,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
         case Some(tableMeta) =>
           metadata.tablesMeta -= tableMeta
           CarbonMetadata.getInstance.removeTable(dbName + "_" + tableName)
+          DataMapStoreManager.getInstance.clearDataMap(identifier, "blocklet")
           updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
         case None =>
           LOGGER.info(s"Metadata does not contain entry for table $tableName in database $dbName")
