@@ -438,10 +438,11 @@ class NewDataFrameLoaderRDD[K, V](
           executionErrors.failureCauses = FailureCauses.BAD_RECORDS
           executionErrors.errorMsg = e.getMessage
           logInfo("Bad Record Found")
+          LOGGER.error(e, "Bad Record Found")
         case e: Exception =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
           logInfo("DataLoad failure", e)
-          LOGGER.error(e)
+          LOGGER.error(e, "NewDataRameLoaderRDD failure")
           throw e
       } finally {
         // clean up the folders and files created locally for data load operation
