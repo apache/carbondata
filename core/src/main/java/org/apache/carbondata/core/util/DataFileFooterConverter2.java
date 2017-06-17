@@ -140,4 +140,7 @@ public class DataFileFooterConverter2 extends AbstractDataFileFooterConverter {
     return numberOfDimensionColumns;
   }
 
+  @Override public List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException {
+    return null;
+  }
 }
