@@ -165,6 +165,9 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
         new BlocksChunkHolder(blockExecutionInfo.getTotalNumberDimensionBlock(),
             blockExecutionInfo.getTotalNumberOfMeasureBlock(), fileReader);
     blocksChunkHolder.setDataBlock(dataBlockIterator.next());
+    if (blocksChunkHolder.getDataBlock().getColumnsMaxValue() == null) {
+      return blocksChunkHolder;
+    }
     if (blockletScanner.isScanRequired(blocksChunkHolder)) {
       return blocksChunkHolder;
     }

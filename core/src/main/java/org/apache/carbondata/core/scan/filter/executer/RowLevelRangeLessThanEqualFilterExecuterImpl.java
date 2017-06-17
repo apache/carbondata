@@ -81,7 +81,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
 
   @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
     BitSet bitSet = new BitSet(1);
-    boolean isScanRequired =
+    boolean isScanRequired = dimensionBlocksIndex[0] >= blockMaxValue.length ||
         isScanRequired(blockMinValue[dimensionBlocksIndex[0]], filterRangeValues);
     if (isScanRequired) {
       bitSet.set(0);
