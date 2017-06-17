@@ -96,7 +96,7 @@ public class ColumnPageStatsVO {
       case DOUBLE:
         max = ((double) max > (double) value) ? max : value;
         min = ((double) min < (double) value) ? min : value;
-        int num = getDecimalCount((double) value);
+        int num = Math.abs(getDecimalCount((double) value));
         decimal = decimal > num ? decimal : num;
         nonExistValue = (double) min - 1;
         break;

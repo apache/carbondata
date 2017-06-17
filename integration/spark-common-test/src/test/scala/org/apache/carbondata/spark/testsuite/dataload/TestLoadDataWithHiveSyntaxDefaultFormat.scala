@@ -670,6 +670,17 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       Row("~carbon,")))
   }
 
+  test("test data load with double datatype") {
+    sql("drop table if exists double_test")
+    sql(
+      "CREATE table double_test (empno string, salary double) STORED BY 'carbondata' TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='empno')"
+    )
+    sql(
+      s"load data local inpath '$resourcesPath/double.csv' into table double_test options" +
+      "('FILEHEADER'='empno,salary')")
+    checkAnswer(sql("select salary from double_test limit 1"),Row(7.756787654567891E23))
+  }
 
   override def afterAll {
     sql("drop table if exists escapechar1")
