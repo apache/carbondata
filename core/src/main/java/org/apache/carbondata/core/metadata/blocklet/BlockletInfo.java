@@ -17,7 +17,13 @@
 
 package org.apache.carbondata.core.metadata.blocklet;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
@@ -187,6 +193,61 @@ public class BlockletInfo implements Serializable {
 
   public void setNumberOfPages(int numberOfPages) {
     this.numberOfPages = numberOfPages;
+  }
+
+  public byte[] getSerializedData() throws IOException {
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    DataOutputStream output = new DataOutputStream(stream);
+    output.writeLong(dimensionOffset);
+    output.writeLong(measureOffsets);
+    int dsize = dimensionChunkOffsets != null ? dimensionChunkOffsets.size() : 0;
+    output.writeShort(dsize);
+    for (int i = 0; i < dsize; i++) {
+      output.writeLong(dimensionChunkOffsets.get(i));
+    }
+    for (int i = 0; i < dsize; i++) {
+      output.writeInt(dimensionChunksLength.get(i));
+    }
+    int mSize = measureChunkOffsets != null ? measureChunkOffsets.size() : 0;
+    output.writeShort(mSize);
+    for (int i = 0; i < mSize; i++) {
+      output.writeLong(measureChunkOffsets.get(i));
+    }
+    for (int i = 0; i < mSize; i++) {
+      output.writeInt(measureChunksLength.get(i));
+    }
+
+    output.close();
+    return stream.toByteArray();
+  }
+
+  public void writeSerializedData(byte[] data) throws IOException {
+    ByteArrayInputStream stream = new ByteArrayInputStream(data);
+    DataInputStream input = new DataInputStream(stream);
+
+    dimensionOffset = input.readLong();
+    measureOffsets = input.readLong();
+    short dimensionChunkOffsetsSize = input.readShort();
+    dimensionChunkOffsets = new ArrayList<>(dimensionChunkOffsetsSize);
+    for (int i = 0; i < dimensionChunkOffsetsSize; i++) {
+      dimensionChunkOffsets.add(input.readLong());
+    }
+    dimensionChunksLength = new ArrayList<>(dimensionChunkOffsetsSize);
+    for (int i = 0; i < dimensionChunkOffsetsSize; i++) {
+      dimensionChunksLength.add(input.readInt());
+    }
+
+    short measureChunkOffsetsSize = input.readShort();
+    measureChunkOffsets = new ArrayList<>(measureChunkOffsetsSize);
+    for (int i = 0; i < measureChunkOffsetsSize; i++) {
+      measureChunkOffsets.add(input.readLong());
+    }
+    measureChunksLength = new ArrayList<>(measureChunkOffsetsSize);
+    for (int i = 0; i < measureChunkOffsetsSize; i++) {
+      measureChunksLength.add(input.readInt());
+    }
+
+    input.close();
   }
 
 }

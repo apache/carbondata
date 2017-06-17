@@ -30,7 +30,7 @@ public class DataMapStoreManager {
 
   private static DataMapStoreManager instance = new DataMapStoreManager();
 
-  private Map<DataMapType, Map<String, TableDataMap>> dataMapMappping = new HashMap<>();
+  private Map<DataMapType, Map<String, AbstractTableDataMap>> dataMapMappping = new HashMap<>();
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataMapStoreManager.class.getName());
@@ -46,10 +46,10 @@ public class DataMapStoreManager {
    * @param mapType
    * @return
    */
-  public TableDataMap getDataMap(AbsoluteTableIdentifier identifier, String dataMapName,
+  public AbstractTableDataMap getDataMap(AbsoluteTableIdentifier identifier, String dataMapName,
       DataMapType mapType) {
-    Map<String, TableDataMap> map = dataMapMappping.get(mapType);
-    TableDataMap dataMap = null;
+    Map<String, AbstractTableDataMap> map = dataMapMappping.get(mapType);
+    AbstractTableDataMap dataMap = null;
     if (map == null) {
       throw new RuntimeException("Datamap does not exist");
     } else {
@@ -69,14 +69,14 @@ public class DataMapStoreManager {
    * @param mapType
    * @return
    */
-  public TableDataMap createTableDataMap(AbsoluteTableIdentifier identifier, DataMapType mapType,
+  public AbstractTableDataMap createTableDataMap(AbsoluteTableIdentifier identifier, DataMapType mapType,
       String dataMapName) {
-    Map<String, TableDataMap> map = dataMapMappping.get(mapType);
+    Map<String, AbstractTableDataMap> map = dataMapMappping.get(mapType);
     if (map == null) {
       map = new HashMap<>();
       dataMapMappping.put(mapType, map);
     }
-    TableDataMap dataMap = map.get(dataMapName);
+    AbstractTableDataMap dataMap = map.get(dataMapName);
     if (dataMap != null) {
       throw new RuntimeException("Already datamap exists in that path with type " + mapType);
     }
@@ -92,7 +92,7 @@ public class DataMapStoreManager {
   }
 
   public void clearDataMap(String dataMapName, DataMapType mapType) {
-    Map<String, TableDataMap> map = dataMapMappping.get(mapType);
+    Map<String, AbstractTableDataMap> map = dataMapMappping.get(mapType);
     if (map != null && map.get(dataMapName) != null) {
       map.remove(dataMapName).clear();
     }

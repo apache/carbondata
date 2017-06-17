@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.metadata.index;
 
+import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 
 /**
@@ -45,6 +46,11 @@ public class BlockIndexInfo {
   private BlockletIndex blockletIndex;
 
   /**
+   * to store blocklet info like offsets and lengths of each column.
+   */
+  private BlockletInfo blockletInfo;
+
+  /**
    * Constructor
    *
    * @param numberOfRows  number of rows
@@ -58,6 +64,20 @@ public class BlockIndexInfo {
     this.fileName = fileName;
     this.offset = offset;
     this.blockletIndex = blockletIndex;
+  }
+
+  /**
+   *
+   * @param numberOfRows
+   * @param fileName
+   * @param offset
+   * @param blockletIndex
+   * @param blockletInfo
+   */
+  public BlockIndexInfo(long numberOfRows, String fileName, long offset,
+      BlockletIndex blockletIndex, BlockletInfo blockletInfo) {
+    this(numberOfRows, fileName, offset, blockletIndex);
+    this.blockletInfo = blockletInfo;
   }
 
   /**
@@ -86,5 +106,12 @@ public class BlockIndexInfo {
    */
   public BlockletIndex getBlockletIndex() {
     return blockletIndex;
+  }
+
+  /**
+   * @return BlockletInfo
+   */
+  public BlockletInfo getBlockletInfo() {
+    return blockletInfo;
   }
 }

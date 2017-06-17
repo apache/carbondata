@@ -88,6 +88,10 @@ public class TableBlockInfo implements Distributable, Serializable {
     this.deletedDeltaFilePath = deletedDeltaFilePath;
   }
 
+  public TableBlockInfo() {
+
+  }
+
   /**
    * constructor to initialize the TbaleBlockInfo with BlockletInfos
    *
@@ -318,5 +322,9 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   public String[] getDeletedDeltaFilePath() {
     return deletedDeltaFilePath;
+  }
+
+  public void setFilePath(String filePath) {
+    this.filePath = filePath;
   }
 }

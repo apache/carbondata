@@ -41,4 +41,5 @@ struct BlockIndex{
   2: required string file_name; // Block file name
   3: required i64 offset; // Offset of the footer
   4: required carbondata.BlockletIndex block_index;	// Blocklet index
+  5: optional carbondata.BlockletInfo3 blocklet_info;
 }
