@@ -86,29 +86,34 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
   }
 
   private def pushDownUDFToJoinLeftRelation(plan: LogicalPlan): LogicalPlan = {
-    val output = plan match {
+    val output = plan.transform {
       case proj@Project(cols, Join(
       left, right, jointype: org.apache.spark.sql.catalyst.plans.JoinType, condition)) =>
         var projectionToBeAdded: Seq[org.apache.spark.sql.catalyst.expressions.Alias] = Seq.empty
-        val newCols = cols.map { col =>
-          col match {
-            case a@Alias(s: ScalaUDF, name)
-              if (name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
-                  name.equalsIgnoreCase(
-                    CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)) =>
-              projectionToBeAdded :+= a
-              AttributeReference(name, StringType, true)().withExprId(a.exprId)
-            case other => other
-          }
-        }
-        val newLeft = left match {
-          case Project(columns, logicalPlan) =>
-            Project(columns ++ projectionToBeAdded, logicalPlan)
-          case filter: Filter =>
-            Project(filter.output ++ projectionToBeAdded, filter)
+        var udfExists = false
+        val newCols = cols.map {
+          case a@Alias(s: ScalaUDF, name)
+            if name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
+                name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
+            udfExists = true
+            projectionToBeAdded :+= a
+            AttributeReference(name, StringType, nullable = true)().withExprId(a.exprId)
           case other => other
         }
-        Project(newCols, Join(newLeft, right, jointype, condition))
+        if (udfExists) {
+          val newLeft = left match {
+            case Project(columns, logicalPlan) =>
+              Project(columns ++ projectionToBeAdded, logicalPlan)
+            case filter: Filter =>
+              Project(filter.output ++ projectionToBeAdded, filter)
+            case relation: LogicalRelation =>
+              Project(relation.output ++ projectionToBeAdded, relation)
+            case other => other
+          }
+          Project(newCols, Join(newLeft, right, jointype, condition))
+        } else {
+          proj
+        }
       case other => other
     }
     output
