@@ -23,6 +23,7 @@ import java.util.concurrent.{Callable, Executors}
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -93,7 +94,8 @@ class DataRetentionConcurrencyTestCase extends QueryTest with BeforeAndAfterAll 
         LOGGER.info("Executing :" + Thread.currentThread().getName)
         sql(query)
       } catch {
-        case _: Exception =>
+        case ex: Exception =>
+          LogServiceFactory.getLogService("QueryTask").error(ex, "DataRetentionConcurrencyTestCase Failed")
           result = "FAIL"
       }
       result

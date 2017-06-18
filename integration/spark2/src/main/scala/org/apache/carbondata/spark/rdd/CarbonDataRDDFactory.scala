@@ -869,8 +869,8 @@ object CarbonDataRDDFactory {
                 errorMessage = errorMessage + ": " + executorMessage
               }
           }
-          LOGGER.info(errorMessage)
-          LOGGER.error(ex)
+          LOGGER.error(errorMessage)
+          LOGGER.error(ex, "Data load error stack")
       }
       // handle the status file updation for the update cmd.
       if (updateModel.isDefined) {

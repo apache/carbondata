@@ -130,7 +130,7 @@ object CarbonStore {
       dbName: String,
       tableName: String,
       carbonTable: CarbonTable): Unit = {
-    LOGGER.audit(s"Delete segment by Id request has been received for $dbName.$tableName")
+    LOGGER.audit(s"Delete segment by Date request has been received for $dbName.$tableName")
 
     val time = validateTimeFormat(timestamp)
     val path = carbonTable.getMetaDataFilepath
