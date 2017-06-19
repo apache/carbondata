@@ -23,10 +23,9 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.util.ExampleUtils
 
-object CarbonShowPartitionInfo {
+object ShowPartitionInfoExample {
   def main(args: Array[String]) {
-
-    CarbonShowPartitionInfo.extracted("t3", args)
+    ShowPartitionInfoExample.extracted("t3", args)
   }
   def extracted(tableName: String, args: Array[String]): Unit = {
     val cc = ExampleUtils.createCarbonContext("CarbonShowPartitionInfo")
@@ -38,19 +37,17 @@ object CarbonShowPartitionInfo {
     cc.sql("""
                 | CREATE TABLE IF NOT EXISTS t1
                 | (
-                | vin String,
-                | phonenumber Int,
-                | country String,
-                | area String
+                | vin STRING,
+                | phonenumber INT,
+                | country STRING,
+                | area STRING
                 | )
-                | PARTITIONED BY (logdate Timestamp)
+                | PARTITIONED BY (logdate TIMESTAMP)
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-                | 'RANGE_INFO'='20140101, 2015/01/01 ,2016-01-01')
+                | 'RANGE_INFO'='2014/01/01,2015/01/01,2016/01/01')
               """.stripMargin)
-    cc.sql(s"""
-      SHOW PARTITIONS t1
-             """).show()
+    cc.sql("""SHOW PARTITIONS t1""").show()
 
     cc.sql("""
                 | CREATE TABLE IF NOT EXISTS t3
@@ -64,9 +61,7 @@ object CarbonShowPartitionInfo {
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='5')
                 """.stripMargin)
-    cc.sql(s"""
-      SHOW PARTITIONS t3
-             """).show()
+    cc.sql("""SHOW PARTITIONS t3""").show()
     // list partition
     cc.sql("DROP TABLE IF EXISTS t5")
 
@@ -83,9 +78,7 @@ object CarbonShowPartitionInfo {
        | TBLPROPERTIES('PARTITION_TYPE'='LIST',
        | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea ')
        """.stripMargin)
-    cc.sql(s"""
-      SHOW PARTITIONS t5
-             """).show()
+    cc.sql("""SHOW PARTITIONS t5""").show()
 
     cc.sql(s"DROP TABLE IF EXISTS partitionDB.$tableName")
     cc.sql(s"DROP DATABASE IF EXISTS partitionDB")
@@ -102,13 +95,14 @@ object CarbonShowPartitionInfo {
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='5')
                 """.stripMargin)
-    cc.sql(s"""
-      SHOW PARTITIONS partitionDB.$tableName
-             """).show()
+    cc.sql(s"""SHOW PARTITIONS partitionDB.$tableName""").show()
+    cc.sql(s"""SHOW PARTITIONS $tableName""").show()
 
-    cc.sql(s"""
-      SHOW PARTITIONS $tableName
-             """).show()
+    cc.sql("DROP TABLE IF EXISTS t1")
+    cc.sql("DROP TABLE IF EXISTS t3")
+    cc.sql("DROP TABLE IF EXISTS t5")
+    cc.sql(s"DROP TABLE IF EXISTS partitionDB.$tableName")
+    cc.sql(s"DROP DATABASE IF EXISTS partitionDB")
 
   }
 }
