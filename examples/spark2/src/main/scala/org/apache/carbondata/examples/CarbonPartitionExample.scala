@@ -70,6 +70,7 @@ object CarbonPartitionExample {
                 | CREATE TABLE IF NOT EXISTS t1
                 | (
                 | vin String,
+                | logdate Timestamp,
                 | phonenumber Long,
                 | country String,
                 | area String
@@ -86,6 +87,7 @@ object CarbonPartitionExample {
     spark.sql("""
                 | CREATE TABLE IF NOT EXISTS t3
                 | (
+                | vin String,
                 | logdate Timestamp,
                 | phonenumber Long,
                 | country String,
@@ -105,6 +107,7 @@ object CarbonPartitionExample {
        | vin String,
        | logdate Timestamp,
        | phonenumber Long,
+       | country String,
        | area String
        |)
        | PARTITIONED BY (country string)

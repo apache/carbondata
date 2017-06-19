@@ -21,10 +21,9 @@ import java.io.File
 
 import org.apache.spark.sql.SparkSession
 
-object CarbonShowPartitionInfo {
+object ShowPartitionInfoExample {
   def main(args: Array[String]) {
-
-    CarbonShowPartitionInfo.extracted("t3", args)
+    ShowPartitionInfoExample.extracted("t3", args)
   }
   def extracted(tableName: String, args: Array[String]): Unit = {
     val rootPath = new File(this.getClass.getResource("/").getPath
@@ -51,26 +50,26 @@ object CarbonShowPartitionInfo {
     spark.sql("""
                 | CREATE TABLE IF NOT EXISTS t1
                 | (
-                | vin String,
-                | phonenumber Long,
-                | country String,
-                | area String
+                | vin STRING,
+                | phonenumber LONG,
+                | country STRING,
+                | area STRING
                 | )
-                | PARTITIONED BY (logdate Timestamp)
+                | PARTITIONED BY (logdate TIMESTAMP)
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-                | 'RANGE_INFO'='20140101, 2015/01/01 ,2016-01-01')
+                | 'RANGE_INFO'='2014/01/01,2015/01/01,2016/01/01')
               """.stripMargin)
 
     spark.sql("""
                 | CREATE TABLE IF NOT EXISTS t3
                 | (
-                | logdate Timestamp,
-                | phonenumber Long,
-                | country String,
-                | area String
+                | logdate TIMESTAMP,
+                | phonenumber LONG,
+                | country STRING,
+                | area STRING
                 | )
-                | PARTITIONED BY (vin String)
+                | PARTITIONED BY (vin STRING)
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='5')
                 """.stripMargin)
@@ -78,27 +77,21 @@ object CarbonShowPartitionInfo {
     spark.sql("""
        | CREATE TABLE IF NOT EXISTS t5
        | (
-       | vin String,
-       | logdate Timestamp,
-       | phonenumber Long,
-       | area String
+       | vin STRING,
+       | logdate TIMESTAMP,
+       | phonenumber LONG,
+       | area STRING
        |)
-       | PARTITIONED BY (country string)
+       | PARTITIONED BY (country STRING)
        | STORED BY 'carbondata'
        | TBLPROPERTIES('PARTITION_TYPE'='LIST',
        | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea ')
        """.stripMargin)
 
     spark.sparkContext.setLogLevel("WARN")
-    spark.sql(s"""
-      SHOW PARTITIONS t1
-             """).show()
-    spark.sql(s"""
-      SHOW PARTITIONS t3
-             """).show()
-    spark.sql(s"""
-      SHOW PARTITIONS t5
-             """).show()
+    spark.sql("""SHOW PARTITIONS t1""").show()
+    spark.sql("""SHOW PARTITIONS t3""").show()
+    spark.sql("""SHOW PARTITIONS t5""").show()
 
     // range partition
     spark.sql("DROP TABLE IF EXISTS t1")
@@ -106,6 +99,9 @@ object CarbonShowPartitionInfo {
     spark.sql("DROP TABLE IF EXISTS t3")
     // list partition
     spark.sql("DROP TABLE IF EXISTS t5")
+
+    // close spark session
+    spark.close()
 
   }
 }

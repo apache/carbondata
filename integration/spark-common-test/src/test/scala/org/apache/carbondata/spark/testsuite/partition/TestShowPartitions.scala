@@ -26,7 +26,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-
 class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
   override def beforeAll = {
     dropTable
@@ -47,7 +46,8 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='3')
       """.stripMargin)
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE hashTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+       INTO TABLE hashTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     // EqualTo
     checkAnswer(sql("show partitions hashTable"), Seq(Row("HASH PARTITION", "", "3")))
@@ -67,10 +67,12 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
         |  'RANGE_INFO'='01-01-2010, 01-01-2015')
       """.stripMargin)
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE rangeTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+       INTO TABLE rangeTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     // EqualTo
-    checkAnswer(sql("show partitions rangeTable"), Seq(Row("0", "", "default"), Row("1", "", "< 01-01-2010"), Row("2", "", "< 01-01-2015")))
+    checkAnswer(sql("show partitions rangeTable"), Seq(Row("0", "", "default"),
+        Row("1", "", "< 01-01-2010"), Row("2", "", "< 01-01-2015")))
     sql("drop table rangeTable")
   }
 
@@ -86,20 +88,49 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('PARTITION_TYPE'='LIST',
         |  'LIST_INFO'='0, 1, (2, 3)')
       """.stripMargin)
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE listTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE
+       listTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     // EqualTo
-    checkAnswer(sql("show partitions listTable"), Seq(Row("0", "", "0"), Row("1", "", "1"), Row("2", "", "2, 3")))
+    checkAnswer(sql("show partitions listTable"), Seq(Row("0", "", "0"),
+        Row("1", "", "1"), Row("2", "", "2, 3")))
 
   sql("drop table listTable")
   }
   test("show partition table: not default db") {
     sql(s"CREATE DATABASE if not exists partitionDB")
-
+    sql("drop table if exists partitionDB.hashTable")
+    sql("drop table if exists partitionDB.rangeTable")
+    sql("drop table if exists partitionDB.listTable")
     sql(
       """
-        | CREATE TABLE partitionDB.listTable (empno int, empname String, designation String, doj Timestamp,
-        |  workgroupcategoryname String, deptno int, deptname String,
+        | CREATE TABLE partitionDB.hashTable (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (empno int)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='3')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+       INTO TABLE partitionDB.hashTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(
+      """
+        | CREATE TABLE partitionDB.rangeTable (empno int, empname String, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (doj Timestamp)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
+        |  'RANGE_INFO'='01-01-2010, 01-01-2015')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+       INTO TABLE partitionDB.rangeTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(
+      """
+        | CREATE TABLE partitionDB.listTable (empno int, empname String, designation String,
+        |   doj Timestamp,workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
         | PARTITIONED BY (workgroupcategory int)
@@ -107,11 +138,20 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('PARTITION_TYPE'='LIST',
         |  'LIST_INFO'='0, 1, (2, 3)')
       """.stripMargin)
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionDB.listTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE
+       partitionDB.listTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     // EqualTo
-    checkAnswer(sql("show partitions partitionDB.listTable"), Seq(Row("0", "", "0"), Row("1", "", "1"), Row("2", "", "2, 3")))
+    checkAnswer(sql("show partitions partitionDB.hashTable"), Seq(Row("HASH PARTITION", "", "3")))
+    // EqualTo
+    checkAnswer(sql("show partitions partitionDB.rangeTable"), Seq(Row("0", "", "default"),
+        Row("1", "", "< 01-01-2010"), Row("2", "", "< 01-01-2015")))
+    // EqualTo
+    checkAnswer(sql("show partitions partitionDB.listTable"), Seq(Row("0", "", "0"),
+        Row("1", "", "1"), Row("2", "", "2, 3")))
 
+    sql("drop table partitionDB.hashTable")
+    sql("drop table partitionDB.rangeTable")
     sql("drop table partitionDB.listTable")
     sql(s"DROP DATABASE partitionDB")
   }
