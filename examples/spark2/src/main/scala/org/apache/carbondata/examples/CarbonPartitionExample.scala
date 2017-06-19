@@ -109,10 +109,10 @@ object CarbonPartitionExample {
        | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea ')
        """.stripMargin)
 
-    // Show tables
+    // show tables
     spark.sql("SHOW TABLES").show()
 
-    // Drop table
+    // drop table
     spark.sql("DROP TABLE IF EXISTS t0")
     spark.sql("DROP TABLE IF EXISTS t1")
     spark.sql("DROP TABLE IF EXISTS t2")
