@@ -186,14 +186,12 @@ public class CarbonFooterWriterTest extends TestCase{
     metas[0] = new ValueEncoderMeta();
     metas[0].setMinValue(0);
     metas[0].setMaxValue(44d);
-    metas[0].setUniqueValue(0d);
     metas[0].setDecimal(0);
     metas[0].setType(CarbonCommonConstants.DOUBLE_MEASURE);
     metas[0].setDataTypeSelected((byte)0);
     metas[1] = new ValueEncoderMeta();
     metas[1].setMinValue(0);
     metas[1].setMaxValue(55d);
-    metas[1].setUniqueValue(0d);
     metas[1].setDecimal(0);
     metas[1].setType(CarbonCommonConstants.DOUBLE_MEASURE);
     metas[1].setDataTypeSelected((byte)0);

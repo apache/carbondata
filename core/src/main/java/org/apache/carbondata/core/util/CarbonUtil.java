@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.PrivilegedExceptionAction;
@@ -1421,17 +1422,15 @@ public final class CarbonUtil {
       case CarbonCommonConstants.DOUBLE_MEASURE:
         valueEncoderMeta.setMaxValue(buffer.getDouble());
         valueEncoderMeta.setMinValue(buffer.getDouble());
-        valueEncoderMeta.setUniqueValue(buffer.getDouble());
+        buffer.getDouble(); // unique value, deprecated. this is for backward compatibility
         break;
       case CarbonCommonConstants.BIG_DECIMAL_MEASURE:
-        valueEncoderMeta.setMaxValue(0.0);
-        valueEncoderMeta.setMinValue(0.0);
-        valueEncoderMeta.setUniqueValue(0.0);
+        valueEncoderMeta.setMaxValue(BigDecimal.ZERO); // unused, decimal is encoded as byte array
+        valueEncoderMeta.setMinValue(BigDecimal.ZERO); // unused, decimal is encoded as byte array
         break;
       case CarbonCommonConstants.BIG_INT_MEASURE:
         valueEncoderMeta.setMaxValue(buffer.getLong());
         valueEncoderMeta.setMinValue(buffer.getLong());
-        valueEncoderMeta.setUniqueValue(buffer.getLong());
         break;
       default:
         throw new IllegalArgumentException("invalid measure type");

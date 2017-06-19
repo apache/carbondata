@@ -20,19 +20,32 @@ package org.apache.carbondata.core.datastore.page;
 // Transformation type that can be applied to ColumnPage
 public interface PrimitiveCodec {
   void encode(int rowId, byte value);
+
   void encode(int rowId, short value);
+
   void encode(int rowId, int value);
+
   void encode(int rowId, long value);
+
   void encode(int rowId, float value);
+
   void encode(int rowId, double value);
 
   long decodeLong(byte value);
+
   long decodeLong(short value);
+
   long decodeLong(int value);
+
   double decodeDouble(byte value);
+
   double decodeDouble(short value);
+
   double decodeDouble(int value);
+
   double decodeDouble(long value);
+
   double decodeDouble(float value);
+
   double decodeDouble(double value);
 }
