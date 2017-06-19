@@ -17,16 +17,14 @@
 
 package org.apache.spark.sql.streaming
 
-import org.apache.carbondata.hadoop.streaming.{CarbonStreamingOutputFormat, CarbonStreamingRecordWriter}
-
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{NullWritable, Text}
 import org.apache.hadoop.mapreduce.TaskAttemptContext
-
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.datasources.OutputWriter
 import org.apache.spark.sql.Row
 
+import org.apache.carbondata.hadoop.streaming.{CarbonStreamingOutputFormat, CarbonStreamingRecordWriter}
 
 class CarbonStreamingOutputWriter (
     path: String,
@@ -52,7 +50,8 @@ class CarbonStreamingOutputWriter (
 
     }
 
-    outputFormat.getRecordWriter(context).asInstanceOf[CarbonStreamingRecordWriter[NullWritable, Text]]
+    outputFormat.
+      getRecordWriter(context).asInstanceOf[CarbonStreamingRecordWriter[NullWritable, Text]]
   }
 
   override def write(row: Row): Unit = {

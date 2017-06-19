@@ -17,36 +17,38 @@
 
 package org.apache.spark.sql.streaming
 
+
 import java.util.concurrent.ConcurrentHashMap
 
-import org.apache.carbondata.core.util.path.CarbonTablePath
-
 import org.apache.hadoop.mapreduce.TaskAttemptContext
-
 import org.apache.spark.sql.execution.datasources.OutputWriterFactory
 import org.apache.spark.sql.types.StructType
+
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 
 class CarbonStreamingOutputWriterFactory extends OutputWriterFactory {
 
-  /**
-    * When writing to a [[org.apache.spark.sql.execution.datasources.HadoopFsRelation]], this method gets called by each task on executor side
-    * to instantiate new [[org.apache.spark.sql.execution.datasources.OutputWriter]]s.
-    *
-    * @param path Path to write the file.
-    * @param dataSchema Schema of the rows to be written. Partition columns are not included in the
-    *        schema if the relation being written is partitioned.
-    * @param context The Hadoop MapReduce task context.
-    */
+ /**
+  * When writing to a [[org.apache.spark.sql.execution.datasources.HadoopFsRelation]],
+  * this method gets called by each task on executor side
+  * to instantiate new [[org.apache.spark.sql.execution.datasources.OutputWriter]]s.
+  *
+  * @param path Path to write the file.
+  * @param dataSchema Schema of the rows to be written. Partition columns are not
+  *                   included in the schema if the relation being written is
+  *                   partitioned.
+  * @param context The Hadoop MapReduce task context.
+  */
 
   override def newInstance(
-                            path: String,
+    path: String,
 
-                            dataSchema: StructType,
+    dataSchema: StructType,
 
-                            context: TaskAttemptContext) : CarbonStreamingOutputWriter = {
+    context: TaskAttemptContext) : CarbonStreamingOutputWriter = {
 
-    new CarbonStreamingOutputWriter(path, context)
+        new CarbonStreamingOutputWriter(path, context)
   }
 
   override def getFileExtension(context: TaskAttemptContext): String = {
