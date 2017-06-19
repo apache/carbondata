@@ -75,7 +75,7 @@ object CarbonPartitionExample {
                 | PARTITIONED BY (logdate TIMESTAMP)
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-                | 'RANGE_INFO'='2014/01/01, 2015/01/01 ,2016/01/01')
+                | 'RANGE_INFO'='2014/01/01, 2015/01/01, 2016/01/01')
               """.stripMargin)
 
     // hash partition
