@@ -52,7 +52,13 @@ public class ServerDictionaryGenerator implements DictionaryGenerator<Integer, D
             key.getTableUniqueName(), key.getColumnName());
     // initialize TableDictionaryGenerator first
     if (tableMap.get(key.getTableUniqueName()) == null) {
-      tableMap.put(key.getTableUniqueName(), new TableDictionaryGenerator(dimension));
+      synchronized (tableMap) {
+        if (tableMap.get(key.getTableUniqueName()) == null) {
+          tableMap.put(key.getTableUniqueName(), new TableDictionaryGenerator(dimension));
+        } else {
+          tableMap.get(key.getTableUniqueName()).updateGenerator(dimension);
+        }
+      }
     } else {
       tableMap.get(key.getTableUniqueName()).updateGenerator(dimension);
     }

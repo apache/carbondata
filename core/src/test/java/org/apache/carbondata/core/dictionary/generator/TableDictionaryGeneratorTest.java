@@ -65,8 +65,8 @@ public class TableDictionaryGeneratorTest {
     empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0, 0);
 
     ageColumnSchema = new ColumnSchema();
-    ageColumnSchema.setColumnName("empNameCol");
-    ageColumnSchema.setColumnUniqueId("empNameCol");
+    ageColumnSchema.setColumnName("ageNameCol");
+    ageColumnSchema.setColumnUniqueId("ageNameCol");
     ageColumnSchema.setDimensionColumn(true);
     ageColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
     ageDimension = new CarbonDimension(ageColumnSchema, 0, 0, 0, 0, 0);
