@@ -68,12 +68,11 @@ object CarbonPartitionExample {
     spark.sql("""
                 | CREATE TABLE IF NOT EXISTS t1(
                 | vin STRING,
-                | logdate TIMESTAMP,
                 | phonenumber LONG,
                 | country STRING,
                 | area STRING
                 | )
-                | PARTITIONED BY (timestampField TIMESTAMP)
+                | PARTITIONED BY (logdate TIMESTAMP)
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
                 | 'RANGE_INFO'='2014/01/01, 2015/01/01 ,2016/01/01')
@@ -84,13 +83,12 @@ object CarbonPartitionExample {
 
     spark.sql("""
                 | CREATE TABLE IF NOT EXISTS t2(
-                | vin STRING,
                 | logdate TIMESTAMP,
                 | phonenumber LONG,
                 | country STRING,
                 | area STRING
                 | )
-                | PARTITIONED BY (stringField STRING)
+                | PARTITIONED BY (vin STRING)
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='5')
                 """.stripMargin)
@@ -103,10 +101,9 @@ object CarbonPartitionExample {
        | vin STRING,
        | logdate TIMESTAMP,
        | phonenumber LONG,
-       | country STRING,
        | area STRING
        |)
-       | PARTITIONED BY (stringField STRING)
+       | PARTITIONED BY (country STRING)
        | STORED BY 'carbondata'
        | TBLPROPERTIES('PARTITION_TYPE'='LIST',
        | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea ')
