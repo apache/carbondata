@@ -19,54 +19,66 @@ package org.apache.spark.repl
 
 class CarbonSparkILoop extends SparkILoop {
 
+  private def initOriginSpark(): Unit = {
+    processLine("""
+        @transient val spark = if (org.apache.spark.repl.Main.sparkSession != null) {
+            org.apache.spark.repl.Main.sparkSession
+          } else {
+            org.apache.spark.repl.Main.createSparkSession()
+          }
+        @transient val sc = {
+          val _sc = spark.sparkContext
+          if (_sc.getConf.getBoolean("spark.ui.reverseProxy", false)) {
+            val proxyUrl = _sc.getConf.get("spark.ui.reverseProxyUrl", null)
+            if (proxyUrl != null) {
+              println(s"Spark Context Web UI is available at " +
+                s"${proxyUrl}/proxy/${_sc.applicationId}")
+            } else {
+              println(s"Spark Context Web UI is available at Spark Master Public URL")
+            }
+          } else {
+            _sc.uiWebUrl.foreach {
+              webUrl => println(s"Spark context Web UI available at ${webUrl}")
+            }
+          }
+          println("Spark context available as 'sc' " +
+            s"(master = ${_sc.master}, app id = ${_sc.applicationId}).")
+          println("Spark session available as 'spark'.")
+          _sc
+        }
+        """)
+    processLine("import org.apache.spark.SparkContext._")
+    processLine("import spark.implicits._")
+    processLine("import spark.sql")
+    processLine("import org.apache.spark.sql.functions._")
+  }
+
+  private def initCarbon(): Unit = {
+    processLine("""
+      import org.apache.spark.sql.SparkSession
+      import org.apache.spark.sql.CarbonSession._
+      @transient val carbon = {
+        val _carbon = {
+          import java.io.File
+          val path = System.getenv("CARBON_HOME") + "/bin/carbonshellstore"
+          val store = new File(path)
+          store.mkdirs()
+          val storePath = sc.getConf.getOption("spark.carbon.storepath")
+                 .getOrElse(store.getCanonicalPath)
+          SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession(storePath)
+        }
+        println("Carbon session available as carbon.")
+        _carbon
+      }
+      """)
+
+    processLine("import carbon.implicits._")
+    processLine("import carbon.sql")
+  }
   override def initializeSpark() {
     intp.beQuietDuring {
-      command("""
-         if(org.apache.spark.repl.carbon.Main.interp == null) {
-           org.apache.spark.repl.carbon.Main.main(Array[String]())
-         }
-              """)
-      command("val i1 = org.apache.spark.repl.carbon.Main.interp")
-      command("import i1._")
-      command("""
-         @transient val sc = {
-           val _sc = i1.createSparkContext()
-           println("Spark context available as sc.")
-           _sc
-         }
-              """)
-      command("import org.apache.spark.SparkContext._")
-      command("import org.apache.spark.sql.CarbonContext")
-      command("""
-         @transient val cc = {
-           val _cc = {
-             import java.io.File
-             val path = System.getenv("CARBON_HOME") + "/bin/carbonshellstore"
-             val store = new File(path)
-             store.mkdirs()
-             val storePath = sc.getConf.getOption("spark.carbon.storepath")
-                  .getOrElse(store.getCanonicalPath)
-             new CarbonContext(sc, storePath, store.getCanonicalPath)
-           }
-           println("Carbon context available as cc.")
-           _cc
-         }
-              """)
-
-      command("import org.apache.spark.sql.SQLContext")
-      command("""
-         @transient val sqlContext = {
-           val _sqlContext = new SQLContext(sc)
-           println("SQL context available as sqlContext.")
-           _sqlContext
-         }
-              """)
-      command("import sqlContext.implicits._")
-      command("import sqlContext.sql")
-
-      command("import cc.implicits._")
-      command("import cc.sql")
-      command("import org.apache.spark.sql.functions._")
+      initOriginSpark()
+      initCarbon()
     }
   }
 }
