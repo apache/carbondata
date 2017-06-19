@@ -117,7 +117,6 @@ object CarbonPartitionExample {
     spark.sql("DROP TABLE IF EXISTS t1")
     spark.sql("DROP TABLE IF EXISTS t2")
     spark.sql("DROP TABLE IF EXISTS t3")
-    
   }
 
 }
