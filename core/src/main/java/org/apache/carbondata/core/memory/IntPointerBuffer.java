@@ -44,8 +44,8 @@ public class IntPointerBuffer {
     pointerBlock = new int[length];
   }
 
-  public void set(int index, int value) {
-    pointerBlock[index] = value;
+  public void set(int rowId, int value) {
+    pointerBlock[rowId] = value;
   }
 
   public void set(int value) {
@@ -55,16 +55,16 @@ public class IntPointerBuffer {
   }
 
   /**
-   * Returns the value at position {@code index}.
+   * Returns the value at position {@code rowId}.
    */
-  public int get(int index) {
-    assert index >= 0 : "index (" + index + ") should >= 0";
-    assert index < length : "index (" + index + ") should < length (" + length + ")";
+  public int get(int rowId) {
+    assert rowId >= 0 : "rowId (" + rowId + ") should >= 0";
+    assert rowId < length : "rowId (" + rowId + ") should < length (" + length + ")";
     if (pointerBlock == null) {
       return CarbonUnsafe.unsafe.getInt(pointerMemoryBlock.getBaseObject(),
-          pointerMemoryBlock.getBaseOffset() + (index * 4));
+          pointerMemoryBlock.getBaseOffset() + (rowId << 2));
     }
-    return pointerBlock[index];
+    return pointerBlock[rowId];
   }
 
   public void loadToUnsafe() throws MemoryException {

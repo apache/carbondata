@@ -66,4 +66,7 @@ public enum DataType {
     return sizeInBytes;
   }
 
+  public int getSizeBits() {
+    return (int) (Math.log(getSizeInBytes()) / Math.log(2));
+  }
 }

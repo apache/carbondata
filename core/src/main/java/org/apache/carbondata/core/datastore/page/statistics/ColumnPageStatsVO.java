@@ -175,22 +175,23 @@ public class ColumnPageStatsVO {
   private byte[] getValueAsBytes(Object value) {
     ByteBuffer b;
     switch (dataType) {
+      case BYTE:
+      case SHORT:
+      case INT:
+      case LONG:
+        b = ByteBuffer.allocate(8);
+        b.putLong((Long) value);
+        b.flip();
+        return b.array();
       case DOUBLE:
         b = ByteBuffer.allocate(8);
         b.putDouble((Double) value);
         b.flip();
         return b.array();
-      case LONG:
-      case INT:
-      case SHORT:
-        b = ByteBuffer.allocate(8);
-        b.putLong((Long) value);
-        b.flip();
-        return b.array();
       case DECIMAL:
         return DataTypeUtil.bigDecimalToByte((BigDecimal) value);
       default:
-        throw new IllegalArgumentException("Invalid data type");
+        throw new IllegalArgumentException("Invalid data type: " + dataType);
     }
   }
 

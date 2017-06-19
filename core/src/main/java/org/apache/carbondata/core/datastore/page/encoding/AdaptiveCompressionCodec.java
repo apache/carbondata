@@ -20,6 +20,7 @@ package org.apache.carbondata.core.datastore.page.encoding;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsVO;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
@@ -52,9 +53,9 @@ public abstract class AdaptiveCompressionCodec implements ColumnPageCodec {
 
   public abstract String getName();
 
-  public abstract byte[] encode(ColumnPage input);
+  public abstract byte[] encode(ColumnPage input) throws MemoryException;
 
-  public abstract ColumnPage decode(byte[] input, int offset, int length);
+  public abstract ColumnPage decode(byte[] input, int offset, int length) throws MemoryException;
 
   @Override
   public String toString() {
