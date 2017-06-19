@@ -288,9 +288,8 @@ public abstract class AbstractScannedResult {
    * Fill the column data to vector
    */
   public void fillColumnarImplicitBatch(ColumnVectorInfo[] vectorInfo) {
-    int column = 0;
     for (int i = 0; i < vectorInfo.length; i++) {
-      ColumnVectorInfo columnVectorInfo = vectorInfo[column];
+      ColumnVectorInfo columnVectorInfo = vectorInfo[i];
       CarbonColumnVector vector = columnVectorInfo.vector;
       int offset = columnVectorInfo.offset;
       int vectorOffset = columnVectorInfo.vectorOffset;
