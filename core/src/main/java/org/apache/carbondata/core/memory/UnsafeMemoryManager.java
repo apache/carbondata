@@ -17,6 +17,9 @@
 
 package org.apache.carbondata.core.memory;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -74,6 +77,9 @@ public class UnsafeMemoryManager {
 
   private long minimumMemory;
 
+  // for debug purpose
+  private Set<MemoryBlock> set = new HashSet<>();
+
   private UnsafeMemoryManager(long totalMemory, MemoryAllocator allocator) {
     this.totalMemory = totalMemory;
     this.allocator = allocator;
@@ -91,12 +97,15 @@ public class UnsafeMemoryManager {
         + " and minimum reserve memory " + minimumMemory);
   }
 
-  public synchronized MemoryBlock allocateMemory(long memoryRequested) {
+  private synchronized MemoryBlock allocateMemory(long memoryRequested) {
     if (memoryUsed + memoryRequested <= totalMemory) {
       MemoryBlock allocate = allocator.allocate(memoryRequested);
       memoryUsed += allocate.size();
-      LOGGER.info("Memory block is created with size "  + allocate.size() +
-          " Total memory used " + memoryUsed + " memory left " + (getAvailableMemory()));
+      if (LOGGER.isDebugEnabled()) {
+        set.add(allocate);
+        LOGGER.error("Memory block (" + allocate + ") is created with size "  + allocate.size() +
+            ". Total memory used " + memoryUsed + "Bytes, left " + getAvailableMemory() + "Bytes");
+      }
       return allocate;
     }
     return null;
@@ -106,11 +115,14 @@ public class UnsafeMemoryManager {
     allocator.free(memoryBlock);
     memoryUsed -= memoryBlock.size();
     memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
-    LOGGER.info(
-        "Memory released, memory used " + memoryUsed + " memory left " + (getAvailableMemory()));
+    if (LOGGER.isDebugEnabled()) {
+      set.remove(memoryBlock);
+      LOGGER.error("Memory block (" + memoryBlock + ") released. Total memory used " + memoryUsed +
+          "Bytes, left " + getAvailableMemory() + "Bytes. Total allocated block: " + set.size());
+    }
   }
 
-  public synchronized long getAvailableMemory() {
+  private synchronized long getAvailableMemory() {
     return totalMemory - memoryUsed;
   }
 
@@ -142,8 +154,9 @@ public class UnsafeMemoryManager {
       tries++;
     }
     if (baseBlock == null) {
-      throw new MemoryException("Not enough memory to create page");
+      throw new MemoryException("Not enough memory");
     }
     return baseBlock;
   }
+
 }

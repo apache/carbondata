@@ -395,9 +395,11 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     long dimensionOffset = 0;
     long measureOffset = 0;
     int numberOfRows = 0;
+    long totalSize = 0;
     // calculate the number of rows in each blocklet
     for (int j = 0; j < nodeHolderList.size(); j++) {
       numberOfRows += nodeHolderList.get(j).getEntryCount();
+      totalSize += nodeHolderList.get(j).getHolderSize();
     }
     try {
       for (int i = 0; i < numberOfDimension; i++) {

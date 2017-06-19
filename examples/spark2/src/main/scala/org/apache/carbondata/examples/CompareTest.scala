@@ -314,7 +314,7 @@ object CompareTest {
     // check result by comparing output from parquet and carbon
     parquetResult.zipWithIndex.foreach { case (result, index) =>
       if (result._2 != carbonResult(index)._2) {
-        sys.error(s"result not matching for query ${index + 1}: " +
+        sys.error(s"result not matching for query ${index + 1} (${queries(index).desc}): " +
             s"${result._2} and ${carbonResult(index)._2}")
       }
     }
@@ -338,6 +338,7 @@ object CompareTest {
         .addProperty("carbon.enable.vector.reader", "true")
         .addProperty("enable.unsafe.sort", "true")
         .addProperty("carbon.blockletgroup.size.in.mb", "32")
+        .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true")
     import org.apache.spark.sql.CarbonSession._
     val rootPath = new File(this.getClass.getResource("/").getPath
         + "../../../..").getCanonicalPath
@@ -346,6 +347,7 @@ object CompareTest {
         .builder()
         .master("local")
         .enableHiveSupport()
+        .config("spark.driver.host", "127.0.0.1")
         .getOrCreateCarbonSession(storeLocation)
     spark.sparkContext.setLogLevel("warn")
 
