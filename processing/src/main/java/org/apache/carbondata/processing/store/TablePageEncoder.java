@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingStrateg
 import org.apache.carbondata.core.datastore.page.encoding.EncodedData;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingStrategy;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -54,7 +55,7 @@ public class TablePageEncoder {
   }
 
   // function to apply all columns in one table page
-  public EncodedData encode(TablePage tablePage) throws KeyGenException {
+  public EncodedData encode(TablePage tablePage) throws KeyGenException, MemoryException {
     EncodedData encodedData = new EncodedData();
     encodeAndCompressDimensions(tablePage, encodedData);
     encodeAndCompressMeasures(tablePage, encodedData);
@@ -62,7 +63,8 @@ public class TablePageEncoder {
   }
 
   // apply measure and set encodedData in `encodedData`
-  private void encodeAndCompressMeasures(TablePage tablePage, EncodedData encodedData) {
+  private void encodeAndCompressMeasures(TablePage tablePage, EncodedData encodedData)
+      throws MemoryException {
     ColumnPage[] measurePage = tablePage.getMeasurePage();
     byte[][] encodedMeasures = new byte[measurePage.length][];
     for (int i = 0; i < measurePage.length; i++) {

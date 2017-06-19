@@ -22,6 +22,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
 import org.apache.carbondata.core.datastore.page.PrimitiveCodec;
 import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsVO;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
@@ -48,18 +49,20 @@ class AdaptiveIntegerCodec extends AdaptiveCompressionCodec {
   }
 
   @Override
-  public byte[] encode(ColumnPage input) {
+  public byte[] encode(ColumnPage input) throws MemoryException {
     if (srcDataType.equals(targetDataType)) {
       return input.compress(compressor);
     } else {
       encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
       input.encode(codec);
-      return encodedPage.compress(compressor);
+      byte[] result = encodedPage.compress(compressor);
+      encodedPage.freeMemory();
+      return result;
     }
   }
 
   @Override
-  public ColumnPage decode(byte[] input, int offset, int length) {
+  public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
     if (srcDataType.equals(targetDataType)) {
       return ColumnPage.decompress(compressor, targetDataType, input, offset, length);
     } else {
