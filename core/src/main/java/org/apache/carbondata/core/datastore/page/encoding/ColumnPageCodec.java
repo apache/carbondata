@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.page.encoding;
 
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.memory.MemoryException;
 
 /**
  *  Codec for a column page data, implementation should not keep state across pages,
@@ -35,7 +36,7 @@ public interface ColumnPageCodec {
    * @param input column page to apply
    * @return encoded data
    */
-  byte[] encode(ColumnPage input);
+  byte[] encode(ColumnPage input) throws MemoryException;
 
   /**
    * decode byte array from offset to a column page
@@ -44,5 +45,5 @@ public interface ColumnPageCodec {
    * @param length length of data to decode
    * @return decoded data
    */
-  ColumnPage decode(byte[] input, int offset, int length);
+  ColumnPage decode(byte[] input, int offset, int length) throws MemoryException;
 }

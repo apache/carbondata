@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page.encoding;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
@@ -30,7 +31,7 @@ public class CompressionCodec implements ColumnPageCodec {
   private Compressor compressor;
   private DataType dataType;
 
-  protected CompressionCodec(DataType dataType, Compressor compressor) {
+  private CompressionCodec(DataType dataType, Compressor compressor) {
     this.compressor = compressor;
     this.dataType = dataType;
   }
@@ -50,7 +51,7 @@ public class CompressionCodec implements ColumnPageCodec {
   }
 
   @Override
-  public ColumnPage decode(byte[] input, int offset, int length) {
+  public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
     return ColumnPage.decompress(compressor, dataType, input, offset, length);
   }
 }

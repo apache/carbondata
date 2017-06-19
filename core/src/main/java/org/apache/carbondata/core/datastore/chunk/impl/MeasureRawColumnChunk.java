@@ -23,6 +23,7 @@ import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
+import org.apache.carbondata.core.memory.MemoryException;
 
 /**
  * Contains raw measure data
@@ -80,7 +81,7 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
       if (dataChunks[index] == null) {
         dataChunks[index] = chunkReader.convertToMeasureChunk(this, index);
       }
-    } catch (IOException e) {
+    } catch (IOException | MemoryException e) {
       throw new RuntimeException(e);
     }
 

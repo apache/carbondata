@@ -42,6 +42,7 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.apache.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -343,7 +344,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * generate the NodeHolder from the input rows (one page in case of V3 format)
    */
   private NodeHolder processDataRows(List<CarbonRow> dataRows)
-      throws CarbonDataWriterException, KeyGenException {
+      throws CarbonDataWriterException, KeyGenException, MemoryException {
     if (dataRows.size() == 0) {
       return new NodeHolder();
     }
@@ -364,10 +365,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     TablePageStatistics tablePageStatistics = new TablePageStatistics(
         model.getTableSpec(), tablePage, encodedData, tablePage.getMeasureStats());
 
-    LOGGER.info("Number Of records processed: " + dataRows.size());
+    NodeHolder nodeHolder = dataWriter.buildDataNodeHolder(encodedData, tablePageStatistics, keys);
+    tablePage.freeMemory();
 
-    // TODO: writer interface should be modified to use TablePage
-    return dataWriter.buildDataNodeHolder(encodedData, tablePageStatistics, keys);
+    LOGGER.info("Number Of records processed: " + dataRows.size());
+    return nodeHolder;
   }
 
   /**

@@ -78,7 +78,7 @@ public abstract class AbstractScannedResult {
   /**
    * dimension column data chunk
    */
-  protected DimensionColumnDataChunk[][] dataChunks;
+  protected DimensionColumnDataChunk[][] dimensionDataChunks;
 
   /**
    * Raw dimension chunks;
@@ -160,7 +160,7 @@ public abstract class AbstractScannedResult {
    * @param dataChunks dimension chunks used in query
    */
   public void setDimensionChunks(DimensionColumnDataChunk[][] dataChunks) {
-    this.dataChunks = dataChunks;
+    this.dimensionDataChunks = dataChunks;
   }
 
   /**
@@ -197,7 +197,7 @@ public abstract class AbstractScannedResult {
     byte[] completeKey = new byte[fixedLengthKeySize];
     int offset = 0;
     for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
-      offset += dataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
+      offset += dimensionDataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
           .fillChunkData(completeKey, offset, rowId,
               columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
     }
@@ -216,7 +216,7 @@ public abstract class AbstractScannedResult {
     int[] completeKey = new int[totalDimensionsSize];
     int column = 0;
     for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
-      column = dataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
+      column = dimensionDataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
           .fillConvertedChunkData(rowId, column, completeKey,
               columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
     }
@@ -230,7 +230,7 @@ public abstract class AbstractScannedResult {
   public void fillColumnarDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
     int column = 0;
     for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
-      column = dataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
+      column = dimensionDataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
           .fillConvertedChunkData(vectorInfo, column,
               columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
     }
@@ -242,7 +242,7 @@ public abstract class AbstractScannedResult {
   public void fillColumnarNoDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
     int column = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
-      column = dataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter]
+      column = dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter]
           .fillConvertedChunkData(vectorInfo, column,
               columnGroupKeyStructureInfo.get(noDictionaryColumnBlockIndexes[i]));
     }
@@ -360,7 +360,7 @@ public abstract class AbstractScannedResult {
    * @return dimension data based on row id
    */
   protected byte[] getDimensionData(int dimOrdinal, int rowId) {
-    return dataChunks[dimOrdinal][pageCounter].getChunkData(rowId);
+    return dimensionDataChunks[dimOrdinal][pageCounter].getChunkData(rowId);
   }
 
   /**
@@ -375,7 +375,7 @@ public abstract class AbstractScannedResult {
     int position = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
       noDictionaryColumnsKeys[position++] =
-          dataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId);
+          dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId);
     }
     return noDictionaryColumnsKeys;
   }
@@ -392,7 +392,7 @@ public abstract class AbstractScannedResult {
     int position = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
       noDictionaryColumnsKeys[position++] = new String(
-          dataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId));
+          dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId));
     }
     return noDictionaryColumnsKeys;
   }
@@ -492,12 +492,12 @@ public abstract class AbstractScannedResult {
    */
   public void freeMemory() {
     // first free the dimension chunks
-    if (null != dataChunks) {
-      for (int i = 0; i < dataChunks.length; i++) {
-        if (null != dataChunks[i]) {
-          for (int j = 0; j < dataChunks[i].length; j++) {
-            if (null != dataChunks[i][j]) {
-              dataChunks[i][j].freeMemory();
+    if (null != dimensionDataChunks) {
+      for (int i = 0; i < dimensionDataChunks.length; i++) {
+        if (null != dimensionDataChunks[i]) {
+          for (int j = 0; j < dimensionDataChunks[i].length; j++) {
+            if (null != dimensionDataChunks[i][j]) {
+              dimensionDataChunks[i][j].freeMemory();
             }
           }
         }
