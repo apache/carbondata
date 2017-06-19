@@ -372,9 +372,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
         // below code is to write the file header
         byte[] fileHeader = CarbonUtil.getByteArray(CarbonMetadataUtil
             .getFileHeader(true, thriftColumnSchemaList, dataWriterVo.getSchemaUpdatedTimeStamp()));
-        ByteBuffer buffer = ByteBuffer.allocate(fileHeader.length);
-        buffer.put(fileHeader);
-        buffer.flip();
+        ByteBuffer buffer = ByteBuffer.wrap(fileHeader);
         fileChannel.write(buffer);
       }
       offset = channel.size();
@@ -403,9 +401,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
       for (int i = 0; i < numberOfDimension; i++) {
         currentDataChunksOffset.add(offset);
         currentDataChunksLength.add(dataChunkBytes[i].length);
-        buffer = ByteBuffer.allocate(dataChunkBytes[i].length);
-        buffer.put(dataChunkBytes[i]);
-        buffer.flip();
+        buffer = ByteBuffer.wrap(dataChunkBytes[i]);
         fileChannel.write(buffer);
         offset += dataChunkBytes[i].length;
         for (int j = 0; j < nodeHolderList.size(); j++) {
@@ -438,18 +434,14 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
         nodeHolderList = dataWriterHolder.getNodeHolder();
         currentDataChunksOffset.add(offset);
         currentDataChunksLength.add(dataChunkBytes[dataChunkStartIndex].length);
-        buffer = ByteBuffer.allocate(dataChunkBytes[dataChunkStartIndex].length);
-        buffer.put(dataChunkBytes[dataChunkStartIndex]);
-        buffer.flip();
+        buffer = ByteBuffer.wrap(dataChunkBytes[dataChunkStartIndex]);
         fileChannel.write(buffer);
         offset += dataChunkBytes[dataChunkStartIndex].length;
         dataChunkStartIndex++;
         for (int j = 0; j < nodeHolderList.size(); j++) {
           nodeHolder = nodeHolderList.get(j);
           bufferSize = nodeHolder.getDataArray()[i].length;
-          buffer = ByteBuffer.allocate(bufferSize);
-          buffer.put(nodeHolder.getDataArray()[i]);
-          buffer.flip();
+          buffer = ByteBuffer.wrap(nodeHolder.getDataArray()[i]);
           fileChannel.write(buffer);
           offset += bufferSize;
         }
