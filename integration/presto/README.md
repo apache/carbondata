@@ -69,7 +69,7 @@ Please follow the below steps to query carbondata in presto
   Third:copy all jar from ./carbondata/integration/presto/target/carbondata-presto-1.2.0-SNAPSHOT
         to ./presto-server-0.166/plugin/carbondata
   
-### Generate CarbonData file
+### Generate carbondata file
 
 Please refer to quick start : https://github.com/apache/carbondata/blob/master/docs/quick-start-guide.md
 
