@@ -29,12 +29,17 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
 
   private static final Compressor compressor = CompressorFactory.getInstance().getCompressor();
 
+  private static final int THREE_BYTES_MAX = (int) Math.pow(2, 23) - 1;
+  private static final int THREE_BYTES_MIN = - THREE_BYTES_MAX;
+
   // fit the long input value into minimum data type
-  public static DataType fitDataType(long value) {
+  private static DataType fitDataType(long value) {
     if (value <= Byte.MAX_VALUE && value >= Byte.MIN_VALUE) {
       return DataType.BYTE;
     } else if (value <= Short.MAX_VALUE && value >= Short.MIN_VALUE) {
       return DataType.SHORT;
+    } else if (value <= THREE_BYTES_MAX && value >= THREE_BYTES_MIN) {
+      return DataType.SHORT_INT;
     } else if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
       return DataType.INT;
     } else {
@@ -42,11 +47,13 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
     }
   }
 
-  protected DataType fitDataType(long max, long min) {
+  private DataType fitDataType(long max, long min) {
     if (max <= Byte.MAX_VALUE && min >= Byte.MIN_VALUE) {
       return DataType.BYTE;
     } else if (max <= Short.MAX_VALUE && min >= Short.MIN_VALUE) {
       return DataType.SHORT;
+    } else if (max <= THREE_BYTES_MAX && min >= THREE_BYTES_MIN) {
+      return DataType.SHORT_INT;
     } else if (max <= Integer.MAX_VALUE && min >= Integer.MIN_VALUE) {
       return DataType.INT;
     } else {
@@ -55,13 +62,15 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
   }
 
   // fit the input double value into minimum data type
-  protected DataType fitDataType(double value, int decimal) {
+  private DataType fitDataType(double value, int decimal) {
     DataType dataType = DataType.DOUBLE;
     if (decimal == 0) {
       if (value <= Byte.MAX_VALUE && value >= Byte.MIN_VALUE) {
         dataType = DataType.BYTE;
       } else if (value <= Short.MAX_VALUE && value >= Short.MIN_VALUE) {
         dataType = DataType.SHORT;
+      } else if (value <= THREE_BYTES_MAX && value >= THREE_BYTES_MIN) {
+        return DataType.SHORT_INT;
       } else if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
         dataType = DataType.INT;
       } else if (value <= Long.MAX_VALUE && value >= Long.MIN_VALUE) {

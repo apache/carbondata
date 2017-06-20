@@ -465,6 +465,39 @@ public final class ByteUtil {
   }
 
   /**
+   * int => byte[3]
+   * supported range is [-8388607, 8388607], note that Math.pow(2, 24) == 8388608
+   */
+  public static byte[] to3Bytes(int val) {
+    assert val <= Math.pow(2, 23) && val >= (-Math.pow(2, 23) - 1);
+
+    int value = val < 0 ? -val : val;
+    byte[] b = new byte[3];
+    b[0] = (byte) (value & 0xFF);
+    b[1] = (byte) ((value >>> 8) & 0xFF);
+    b[2] = (byte) ((value >>> 16) & 0x7F);
+    if (val < 0) {
+      b[2] |= 0x80;
+    }
+    return b;
+  }
+
+  /**
+   * convert 3 bytes to int
+   */
+  public static int valueOf3Bytes(byte[] val, int offset) {
+    assert val.length >= offset + 3;
+    int out = (val[offset] & 0xFF);
+    out |= ((val[offset + 1] & 0xFF) << 8);
+    out |= ((val[offset + 2] & 0x7F) << 16);
+    if ((val[offset + 2] & 0x80) != 0) {
+      return -out;
+    } else {
+      return out;
+    }
+  }
+
+  /**
    * byte[] => int
    *
    * @param bytes

@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
@@ -25,6 +26,7 @@ import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.util.ByteUtil;
 
 import static org.apache.carbondata.core.metadata.datatype.DataType.BYTE;
 
@@ -61,6 +63,12 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
         baseAddress = memoryBlock.getBaseObject();
         baseOffset = memoryBlock.getBaseOffset();
         break;
+      case SHORT_INT:
+        size = pageSize * 3;
+        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(size);
+        baseAddress = memoryBlock.getBaseObject();
+        baseOffset = memoryBlock.getBaseOffset();
+        break;
       case DECIMAL:
       case STRING:
         throw new UnsupportedOperationException("invalid data type: " + dataType);
@@ -77,6 +85,15 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   public void putShort(int rowId, short value) {
     long offset = rowId << shortBits;
     CarbonUnsafe.unsafe.putShort(baseAddress, baseOffset + offset, value);
+  }
+
+  @Override
+  public void putShortInt(int rowId, int value) {
+    byte[] data = ByteUtil.to3Bytes(value);
+    long offset = rowId * 3;
+    CarbonUnsafe.unsafe.putByte(baseAddress, baseOffset + offset, data[0]);
+    CarbonUnsafe.unsafe.putByte(baseAddress, baseOffset + offset + 1, data[1]);
+    CarbonUnsafe.unsafe.putByte(baseAddress, baseOffset + offset + 2, data[2]);
   }
 
   @Override
@@ -117,6 +134,16 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   public short getShort(int rowId) {
     long offset = rowId << shortBits;
     return CarbonUnsafe.unsafe.getShort(baseAddress, baseOffset + offset);
+  }
+
+  @Override
+  public int getShortInt(int rowId) {
+    long offset = rowId * 3;
+    byte[] data = new byte[3];
+    data[0] = CarbonUnsafe.unsafe.getByte(baseAddress, baseOffset + offset);
+    data[1] = CarbonUnsafe.unsafe.getByte(baseAddress, baseOffset + offset + 1);
+    data[2] = CarbonUnsafe.unsafe.getByte(baseAddress, baseOffset + offset + 2);
+    return ByteUtil.valueOf3Bytes(data, 0);
   }
 
   @Override
@@ -165,6 +192,14 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
       long offset = i << shortBits;
       data[i] = CarbonUnsafe.unsafe.getShort(baseAddress, baseOffset + offset);
     }
+    return data;
+  }
+
+  @Override
+  public byte[] getShortIntPage() {
+    byte[] data = new byte[pageSize * 3];
+    CarbonUnsafe.unsafe.copyMemory(baseAddress, baseOffset,
+        data, CarbonUnsafe.BYTE_ARRAY_OFFSET, data.length);
     return data;
   }
 
@@ -220,50 +255,44 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void setBytePage(byte[] byteData) {
-    for (int i = 0; i < byteData.length; i++) {
-      long offset = i << byteBits;
-      CarbonUnsafe.unsafe.putByte(baseAddress, baseOffset + offset, byteData[i]);
-    }
+    CarbonUnsafe.unsafe.copyMemory(byteData, CarbonUnsafe.BYTE_ARRAY_OFFSET,
+        baseAddress, baseOffset, byteData.length << byteBits);
   }
 
   @Override
   public void setShortPage(short[] shortData) {
-    for (int i = 0; i < shortData.length; i++) {
-      long offset = i << shortBits;
-      CarbonUnsafe.unsafe.putShort(baseAddress, baseOffset + offset, shortData[i]);
-    }
+    CarbonUnsafe.unsafe.copyMemory(shortData, CarbonUnsafe.SHORT_ARRAY_OFFSET,
+        baseAddress, baseOffset, shortData.length << shortBits);
+  }
+
+  @Override
+  public void setShortIntPage(byte[] shortIntData) {
+    CarbonUnsafe.unsafe.copyMemory(shortIntData, CarbonUnsafe.BYTE_ARRAY_OFFSET,
+        baseAddress, baseOffset, shortIntData.length);
   }
 
   @Override
   public void setIntPage(int[] intData) {
-    for (int i = 0; i < intData.length; i++) {
-      long offset = i << intBits;
-      CarbonUnsafe.unsafe.putInt(baseAddress, baseOffset + offset, intData[i]);
-    }
+    CarbonUnsafe.unsafe.copyMemory(intData, CarbonUnsafe.INT_ARRAY_OFFSET,
+        baseAddress, baseOffset, intData.length << intBits);
   }
 
   @Override
   public void setLongPage(long[] longData) {
-    for (int i = 0; i < longData.length; i++) {
-      long offset = i << longBits;
-      CarbonUnsafe.unsafe.putLong(baseAddress, baseOffset + offset, longData[i]);
-    }
+    CarbonUnsafe.unsafe.copyMemory(longData, CarbonUnsafe.LONG_ARRAY_OFFSET,
+        baseAddress, baseOffset, longData.length << longBits);
   }
 
   @Override
   public void setFloatPage(float[] floatData) {
-    for (int i = 0; i < floatData.length; i++) {
-      long offset = i << floatBits;
-      CarbonUnsafe.unsafe.putFloat(baseAddress, baseOffset + offset, floatData[i]);
-    }
+    CarbonUnsafe.unsafe.copyMemory(floatData, CarbonUnsafe.FLOAT_ARRAY_OFFSET,
+        baseAddress, baseOffset, floatData.length << floatBits);
   }
 
   @Override
   public void setDoublePage(double[] doubleData) {
-    for (int i = 0; i < doubleData.length; i++) {
-      long offset = i << doubleBits;
-      CarbonUnsafe.unsafe.putDouble(baseAddress, baseOffset + offset, doubleData[i]);
-    }
+    CarbonUnsafe.unsafe.copyMemory(doubleData, CarbonUnsafe.DOUBLE_ARRAY_OFFSET,
+        baseAddress, baseOffset, doubleData.length << doubleBits);
   }
 
   @Override
