@@ -30,13 +30,14 @@ object ShowPartitionInfoExample {
   def extracted(tableName: String, args: Array[String]): Unit = {
     val cc = ExampleUtils.createCarbonContext("CarbonShowPartitionInfo")
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
     // range partition
     cc.sql("DROP TABLE IF EXISTS t1")
 
     cc.sql("""
-                | CREATE TABLE IF NOT EXISTS t1
-                | (
+                | CREATE TABLE IF NOT EXISTS t1(
                 | vin STRING,
                 | phonenumber INT,
                 | country STRING,
@@ -50,8 +51,7 @@ object ShowPartitionInfoExample {
     cc.sql("""SHOW PARTITIONS t1""").show()
 
     cc.sql("""
-                | CREATE TABLE IF NOT EXISTS t3
-                | (
+                | CREATE TABLE IF NOT EXISTS t3(
                 | logdate Timestamp,
                 | phonenumber Int,
                 | country String,
@@ -66,17 +66,16 @@ object ShowPartitionInfoExample {
     cc.sql("DROP TABLE IF EXISTS t5")
 
     cc.sql("""
-       | CREATE TABLE IF NOT EXISTS t5
-       | (
-       | vin String,
-       | logdate Timestamp,
-       | phonenumber Int,
-       | area String
-       |)
-       | PARTITIONED BY (country string)
-       | STORED BY 'carbondata'
-       | TBLPROPERTIES('PARTITION_TYPE'='LIST',
-       | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea ')
+               | CREATE TABLE IF NOT EXISTS t5(
+               | vin String,
+               | logdate Timestamp,
+               | phonenumber Int,
+               | area String
+               | )
+               | PARTITIONED BY (country string)
+               | STORED BY 'carbondata'
+               | TBLPROPERTIES('PARTITION_TYPE'='LIST',
+               | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea ')
        """.stripMargin)
     cc.sql("""SHOW PARTITIONS t5""").show()
 
@@ -84,8 +83,7 @@ object ShowPartitionInfoExample {
     cc.sql(s"DROP DATABASE IF EXISTS partitionDB")
     cc.sql(s"CREATE DATABASE partitionDB")
     cc.sql(s"""
-                | CREATE TABLE IF NOT EXISTS partitionDB.$tableName
-                | (
+                | CREATE TABLE IF NOT EXISTS partitionDB.$tableName(
                 | logdate Timestamp,
                 | phonenumber Int,
                 | country String,
