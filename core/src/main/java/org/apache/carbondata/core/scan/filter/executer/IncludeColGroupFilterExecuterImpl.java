@@ -53,7 +53,7 @@ public class IncludeColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl
    */
   public IncludeColGroupFilterExecuterImpl(DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
       SegmentProperties segmentProperties) {
-    super(dimColResolvedFilterInfo, segmentProperties);
+    super(dimColResolvedFilterInfo, null, segmentProperties, false);
   }
 
   /**

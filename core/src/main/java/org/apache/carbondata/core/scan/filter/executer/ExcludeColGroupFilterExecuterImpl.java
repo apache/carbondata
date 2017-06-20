@@ -49,7 +49,7 @@ public class ExcludeColGroupFilterExecuterImpl extends ExcludeFilterExecuterImpl
    */
   public ExcludeColGroupFilterExecuterImpl(DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
       SegmentProperties segmentProperties) {
-    super(dimColResolvedFilterInfo, segmentProperties);
+    super(dimColResolvedFilterInfo, null, segmentProperties, false);
   }
 
   /**

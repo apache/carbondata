@@ -23,8 +23,10 @@ import java.util.List;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.scan.filter.DimColumnFilterInfo;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
@@ -42,7 +44,7 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
   protected boolean isDimensionDefaultValuePresentInFilterValues(
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo) {
     boolean isDefaultValuePresentInFilterValues = false;
-    DimColumnFilterInfo filterValues = dimColumnEvaluatorInfo.getFilterValues();
+    ColumnFilterInfo filterValues = dimColumnEvaluatorInfo.getFilterValues();
     CarbonDimension dimension = dimColumnEvaluatorInfo.getDimension();
     byte[] defaultValue = dimension.getDefaultValue();
     if (!dimension.hasEncoding(Encoding.DICTIONARY)) {
@@ -74,6 +76,34 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
           isDefaultValuePresentInFilterValues = true;
           break;
         }
+      }
+    }
+    return isDefaultValuePresentInFilterValues;
+  }
+
+  /**
+   * This method will check whether a default value for the non-existing column is present
+   * in the filter values list
+   *
+   * @param measureColumnResolvedFilterInfo
+   * @return
+   */
+  protected boolean isMeasureDefaultValuePresentInFilterValues(
+      MeasureColumnResolvedFilterInfo measureColumnResolvedFilterInfo) {
+    boolean isDefaultValuePresentInFilterValues = false;
+    ColumnFilterInfo filterValues = measureColumnResolvedFilterInfo.getFilterValues();
+    CarbonMeasure measure = measureColumnResolvedFilterInfo.getMeasure();
+    byte[] defaultValue = measure.getDefaultValue();
+    if (null == defaultValue) {
+      // default value for case where user gives is Null condition
+      defaultValue = new byte[0];
+    }
+    List<byte[]> measureFilterValuesList = filterValues.getMeasuresFilterValuesList();
+    for (byte[] filterValue : measureFilterValuesList) {
+      int compare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(defaultValue, filterValue);
+      if (compare == 0) {
+        isDefaultValuePresentInFilterValues = true;
+        break;
       }
     }
     return isDefaultValuePresentInFilterValues;

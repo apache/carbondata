@@ -139,6 +139,13 @@ public class CarbonColumn implements Serializable {
   }
 
   /**
+   * @return true if column is measure, otherwise false
+   */
+  public Boolean isMeasure() {
+    return !isDimesion();
+  }
+
+  /**
    * return the visibility
    * @return
    */

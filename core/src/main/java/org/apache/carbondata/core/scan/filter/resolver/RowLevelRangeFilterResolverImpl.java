@@ -30,6 +30,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
@@ -37,12 +38,13 @@ import org.apache.carbondata.core.scan.expression.conditional.BinaryConditionalE
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.expression.logical.BinaryLogicalExpression;
-import org.apache.carbondata.core.scan.filter.DimColumnFilterInfo;
+import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverImpl {
 
@@ -56,7 +58,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
 
   public RowLevelRangeFilterResolverImpl(Expression exp, boolean isExpressionResolve,
       boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier) {
-    super(exp, isExpressionResolve, isIncludeFilter, tableIdentifier);
+    super(exp, isExpressionResolve, isIncludeFilter, tableIdentifier, false);
     dimColEvaluatorInfoList =
         new ArrayList<DimColumnResolvedFilterInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     msrColEvalutorInfoList = new ArrayList<MeasureColumnResolvedFilterInfo>(
@@ -72,19 +74,26 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    */
   public byte[][] getFilterRangeValues(SegmentProperties segmentProperties) {
 
-    if (null != dimColEvaluatorInfoList.get(0).getFilterValues() && !dimColEvaluatorInfoList.get(0)
-        .getDimension().hasEncoding(Encoding.DICTIONARY)) {
+    if (dimColEvaluatorInfoList.size() > 0 && null != dimColEvaluatorInfoList.get(0)
+        .getFilterValues() && !dimColEvaluatorInfoList.get(0).getDimension()
+        .hasEncoding(Encoding.DICTIONARY)) {
       List<byte[]> noDictFilterValuesList =
           dimColEvaluatorInfoList.get(0).getFilterValues().getNoDictionaryFilterValuesList();
       return noDictFilterValuesList.toArray((new byte[noDictFilterValuesList.size()][]));
-    } else if (null != dimColEvaluatorInfoList.get(0).getFilterValues() && dimColEvaluatorInfoList
-        .get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+    } else if (dimColEvaluatorInfoList.size() > 0 && null != dimColEvaluatorInfoList.get(0)
+        .getFilterValues() && dimColEvaluatorInfoList.get(0).getDimension()
+        .hasEncoding(Encoding.DIRECT_DICTIONARY)) {
       CarbonDimension dimensionFromCurrentBlock = segmentProperties
           .getDimensionFromCurrentBlock(this.dimColEvaluatorInfoList.get(0).getDimension());
       if (null != dimensionFromCurrentBlock) {
         return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(),
-            dimensionFromCurrentBlock, segmentProperties);
+            dimensionFromCurrentBlock, null, segmentProperties);
       }
+    } else if (msrColEvalutorInfoList.size() > 0 && null != msrColEvalutorInfoList.get(0)
+        .getFilterValues()) {
+      List<byte[]> measureFilterValuesList =
+          msrColEvalutorInfoList.get(0).getFilterValues().getMeasuresFilterValuesList();
+      return measureFilterValuesList.toArray((new byte[measureFilterValuesList.size()][]));
     }
     return null;
 
@@ -100,11 +109,13 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
     switch (exp.getFilterExpressionType()) {
       case GREATERTHAN:
       case GREATERTHAN_EQUALTO:
-        FilterUtil.getStartKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
-            segmentProperties, startKey, startKeyList);
-        FilterUtil
-            .getStartKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), segmentProperties,
-                noDictStartKeys);
+        if (dimColEvaluatorInfoList.size() > 0) {
+          FilterUtil
+              .getStartKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
+                  segmentProperties, startKey, startKeyList);
+          FilterUtil.getStartKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0),
+              segmentProperties, noDictStartKeys);
+        }
         break;
       default:
         //do nothing
@@ -121,12 +132,13 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
     switch (exp.getFilterExpressionType()) {
       case LESSTHAN:
       case LESSTHAN_EQUALTO:
-        FilterUtil
-            .getEndKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(), endKeys,
-                segmentProperties, endKeyList);
-        FilterUtil
-            .getEndKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), segmentProperties,
-                noDicEndKeys);
+        if (dimColEvaluatorInfoList.size() > 0) {
+          FilterUtil.getEndKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
+              endKeys, segmentProperties, endKeyList);
+          FilterUtil
+              .getEndKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), segmentProperties,
+                  noDicEndKeys);
+        }
         break;
       default:
         //do nothing
@@ -165,6 +177,40 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
     return filterValuesList;
   }
 
+  private List<byte[]> getMeasureRangeValues(CarbonMeasure carbonMeasure) {
+    List<ExpressionResult> listOfExpressionResults = new ArrayList<ExpressionResult>(20);
+    if (this.getFilterExpression() instanceof BinaryConditionalExpression) {
+      listOfExpressionResults =
+          ((BinaryConditionalExpression) this.getFilterExpression()).getLiterals();
+    }
+    List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
+    boolean invalidRowsPresent = false;
+    for (ExpressionResult result : listOfExpressionResults) {
+      try {
+        if (result.getString() == null) {
+          filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL.getBytes());
+          continue;
+        }
+        filterValuesList.add(DataTypeUtil
+            .getMeasureByteArrayBasedOnDataTypes(result.getString(),
+                result.getDataType(), carbonMeasure));
+      } catch (FilterIllegalMemberException e) {
+        // Any invalid member while evaluation shall be ignored, system will log the
+        // error only once since all rows the evaluation happens so inorder to avoid
+        // too much log inforation only once the log will be printed.
+        FilterUtil.logError(e, invalidRowsPresent);
+      }
+    }
+    Comparator<byte[]> filterMeasureComaparator = new Comparator<byte[]>() {
+      @Override public int compare(byte[] filterMember1, byte[] filterMember2) {
+        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterMember1, filterMember2);
+      }
+
+    };
+    Collections.sort(filterValuesList, filterMeasureComaparator);
+    return filterValuesList;
+  }
+
   /**
    * Method which will resolve the filter expression by converting the filter
    * member to its assigned dictionary values.
@@ -180,7 +226,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
       for (ColumnExpression columnExpression : columnList) {
         if (columnExpression.isDimension()) {
           dimColumnEvaluatorInfo = new DimColumnResolvedFilterInfo();
-          DimColumnFilterInfo filterInfo = new DimColumnFilterInfo();
+          ColumnFilterInfo filterInfo = new ColumnFilterInfo();
           dimColumnEvaluatorInfo.setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
           dimColumnEvaluatorInfo.setRowIndex(index++);
           dimColumnEvaluatorInfo.setDimension(columnExpression.getDimension());
@@ -197,10 +243,19 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           dimColEvaluatorInfoList.add(dimColumnEvaluatorInfo);
         } else {
           msrColumnEvalutorInfo = new MeasureColumnResolvedFilterInfo();
+          ColumnFilterInfo filterInfo = new ColumnFilterInfo();
+          msrColumnEvalutorInfo.setMeasure(columnExpression.getMeasure());
           msrColumnEvalutorInfo.setRowIndex(index++);
-          msrColumnEvalutorInfo
-              .setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
+          msrColumnEvalutorInfo.setCarbonColumn(columnExpression.getCarbonColumn());
+          msrColumnEvalutorInfo.setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
           msrColumnEvalutorInfo.setType(columnExpression.getCarbonColumn().getDataType());
+          msrColumnEvalutorInfo.setMeasureExistsInCurrentSilce(false);
+          filterInfo
+              .setMeasuresFilterValuesList(getMeasureRangeValues(columnExpression.getMeasure()));
+          filterInfo.setIncludeFilter(isIncludeFilter);
+          msrColumnEvalutorInfo.setFilterValues(filterInfo);
+          msrColumnEvalutorInfo
+              .addMeasureResolvedFilterInstance(columnExpression.getMeasure(), filterInfo);
           msrColEvalutorInfoList.add(msrColumnEvalutorInfo);
         }
       }
