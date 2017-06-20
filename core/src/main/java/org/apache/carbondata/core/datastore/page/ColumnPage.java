@@ -54,10 +54,6 @@ public abstract class ColumnPage {
 
   protected DecimalConverterFactory.DecimalConverter decimalConverter;
 
-  protected static final boolean unsafe = Boolean.parseBoolean(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
-          CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT));
-
   protected ColumnPage(DataType dataType, int pageSize, int scale, int precision) {
     this.dataType = dataType;
     this.pageSize = pageSize;
@@ -84,6 +80,9 @@ public abstract class ColumnPage {
 
   private static ColumnPage createVarLengthPage(DataType dataType, int pageSize, int scale,
       int precision) {
+    boolean unsafe = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
+            CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT));
     if (unsafe) {
       try {
         return new UnsafeVarLengthColumnPage(dataType, pageSize, scale, precision);
@@ -97,6 +96,9 @@ public abstract class ColumnPage {
 
   private static ColumnPage createFixLengthPage(DataType dataType, int pageSize, int scale,
       int precision) {
+    boolean unsafe = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
+            CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT));
     if (unsafe) {
       try {
         return new UnsafeFixLengthColumnPage(dataType, pageSize, scale, precision);
@@ -122,6 +124,9 @@ public abstract class ColumnPage {
 
   private static ColumnPage newVarLengthPage(DataType dataType, int pageSize, int scale,
       int precision) {
+    boolean unsafe = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
+            CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT));
     if (unsafe) {
       try {
         return new UnsafeVarLengthColumnPage(dataType, pageSize, scale, precision);
@@ -139,6 +144,9 @@ public abstract class ColumnPage {
   public static ColumnPage newPage(DataType dataType, int pageSize, int scale, int precision)
       throws MemoryException {
     ColumnPage instance;
+    boolean unsafe = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
+            CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT));
     if (unsafe) {
       switch (dataType) {
         case BYTE:
@@ -375,7 +383,6 @@ public abstract class ColumnPage {
    * Set byte array from offset to length at rowId
    */
   public abstract void putBytes(int rowId, byte[] bytes, int offset, int length);
-
 
   /**
    * Set null at rowId
