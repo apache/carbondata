@@ -59,18 +59,18 @@ private[sql] case class ShowCarbonPartitionsCommand(
     LOGGER.info("partition column name:" + columnName)
     partitionType match {
       case PartitionType.RANGE =>
-        result.+=(RowFactory.create("0", "", "default"))
+        result.+=(RowFactory.create("0", "default"))
         var id = 1
         var rangeInfo = partitionInfo.getRangeInfo
         var size = rangeInfo.size() - 1
         for (index <- 0 to size) {
-          result.+=(RowFactory.create(id.toString(), "", "< " + rangeInfo.get(index)))
+          result.+=(RowFactory.create(id.toString(), "< " + rangeInfo.get(index)))
           id += 1
         }
       case PartitionType.RANGE_INTERVAL =>
-        result.+=(RowFactory.create("", "", ""))
+        result.+=(RowFactory.create("", ""))
       case PartitionType.LIST =>
-        result.+=(RowFactory.create("0", "", "default"))
+        result.+=(RowFactory.create("0", "default"))
         var id = 1
         var listInfo = partitionInfo.getListInfo
         var size = listInfo.size() - 1
@@ -83,14 +83,14 @@ private[sql] case class ShowCarbonPartitionsCommand(
               listStr += ", " + x.toString()
             }
           }
-          result.+=(RowFactory.create(id.toString(), "", listStr))
+          result.+=(RowFactory.create(id.toString(), listStr))
           id += 1
         }
       case PartitionType.HASH =>
         var hashNumber = partitionInfo.getNumPartitions
-        result.+=(RowFactory.create("HASH PARTITION", "", hashNumber.toString()))
+        result.+=(RowFactory.create("HASH PARTITION", hashNumber.toString()))
       case others =>
-        result.+=(RowFactory.create("", "", ""))
+        result.+=(RowFactory.create("", ""))
     }
     result.result()
   }

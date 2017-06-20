@@ -49,7 +49,7 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
        INTO TABLE hashTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     // EqualTo
-    checkAnswer(sql("show partitions hashTable"), Seq(Row("HASH PARTITION", "", "3")))
+    checkAnswer(sql("show partitions hashTable"), Seq(Row("HASH PARTITION", "3")))
 
     sql("drop table hashTable")
   }
@@ -70,8 +70,8 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
        INTO TABLE rangeTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     // EqualTo
-    checkAnswer(sql("show partitions rangeTable"), Seq(Row("0", "", "default"),
-        Row("1", "", "< 01-01-2010"), Row("2", "", "< 01-01-2015")))
+    checkAnswer(sql("show partitions rangeTable"), Seq(Row("0", "default"),
+        Row("1", "< 01-01-2010"), Row("2", "< 01-01-2015")))
     sql("drop table rangeTable")
   }
 
@@ -91,8 +91,8 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
        listTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     // EqualTo
-    checkAnswer(sql("show partitions listTable"), Seq(Row("0", "", "default"),
-        Row("1", "", "0"), Row("2", "", "1"), Row("3", "", "2, 3")))
+    checkAnswer(sql("show partitions listTable"), Seq(Row("0", "default"),
+        Row("1", "0"), Row("2", "1"), Row("3", "2, 3")))
 
   sql("drop table listTable")
   }
@@ -141,13 +141,13 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
        partitionDB.listTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     // EqualTo
-    checkAnswer(sql("show partitions partitionDB.hashTable"), Seq(Row("HASH PARTITION", "", "3")))
+    checkAnswer(sql("show partitions partitionDB.hashTable"), Seq(Row("HASH PARTITION", "3")))
     // EqualTo
-    checkAnswer(sql("show partitions partitionDB.rangeTable"), Seq(Row("0", "", "default"),
-        Row("1", "", "< 01-01-2010"), Row("2", "", "< 01-01-2015")))
+    checkAnswer(sql("show partitions partitionDB.rangeTable"), Seq(Row("0", "default"),
+        Row("1", "< 01-01-2010"), Row("2", "< 01-01-2015")))
     // EqualTo
-    checkAnswer(sql("show partitions partitionDB.listTable"), Seq(Row("0", "", "default"),
-        Row("1", "", "0"), Row("2", "", "1"), Row("3", "", "2, 3")))
+    checkAnswer(sql("show partitions partitionDB.listTable"), Seq(Row("0", "default"),
+        Row("1", "0"), Row("2", "1"), Row("3", "2, 3")))
 
     sql("drop table partitionDB.hashTable")
     sql("drop table partitionDB.rangeTable")
