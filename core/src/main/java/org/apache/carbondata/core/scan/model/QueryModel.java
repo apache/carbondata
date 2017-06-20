@@ -186,13 +186,19 @@ public class QueryModel implements Serializable {
     String columnName;
     columnName = col.getColumnName();
     dim = CarbonUtil.findDimension(dimensions, columnName);
-    col.setCarbonColumn(dim);
-    col.setDimension(dim);
-    col.setDimension(true);
-    if (null == dim) {
-      msr = getCarbonMetadataMeasure(columnName, measures);
+    msr = getCarbonMetadataMeasure(columnName, measures);
+    col.setDimension(false);
+    col.setMeasure(false);
+
+    if (null != dim) {
+      // Dimension Column
+      col.setCarbonColumn(dim);
+      col.setDimension(dim);
+      col.setDimension(true);
+    } else {
       col.setCarbonColumn(msr);
-      col.setDimension(false);
+      col.setMeasure(msr);
+      col.setMeasure(true);
     }
   }
 

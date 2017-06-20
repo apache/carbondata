@@ -151,6 +151,8 @@ public class SegmentProperties {
    */
   private ColumnGroupModel colGroupModel;
 
+  private int lastDimensionColOrdinal;
+
   public SegmentProperties(List<ColumnSchema> columnsInTable, int[] columnCardinality) {
     dimensions = new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     complexDimensions =
@@ -392,6 +394,7 @@ public class SegmentProperties {
       }
       counter++;
     }
+    lastDimensionColOrdinal = dimensonOrdinal;
     dimColumnsCardinality = new int[cardinalityIndexForNormalDimensionColumn.size()];
     complexDimColumnCardinality = new int[cardinalityIndexForComplexDimensionColumn.size()];
     int index = 0;
@@ -795,6 +798,10 @@ public class SegmentProperties {
    */
   public CarbonMeasure getMeasureFromCurrentBlock(String columnId) {
     return CarbonUtil.getMeasureFromCurrentBlock(this.measures, columnId);
+  }
+
+  public int getLastDimensionColOrdinal() {
+    return lastDimensionColOrdinal;
   }
 
 }

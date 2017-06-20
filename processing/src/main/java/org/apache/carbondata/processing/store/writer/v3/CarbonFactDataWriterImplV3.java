@@ -185,6 +185,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     holder.setDataArray(measureArray);
     holder.setKeyArray(keyBlockData);
     holder.setMeasureNullValueIndex(nullValueIndexBitSet);
+    updateMinMaxForMeasures(measureMinValue, measureMaxValue, nullValueIndexBitSet, entryCount);
+    // TODO have to call updateMinMaxForMeasures Sounak
     // end key format will be <length of dictionary key><length of no
     // dictionary key><DictionaryKey><No Dictionary key>
     byte[] updatedNoDictionaryEndKey = updateNoDictionaryStartAndEndKey(noDictionaryEndKey);
@@ -242,6 +244,18 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     }
     holder.setHolderSize(calculateSize(holder, dimensionDataChunk2, measureDataChunk2));
     return holder;
+  }
+
+  private void updateMinMaxForMeasures(byte[][] measureMinValue, byte[][] measureMaxValue,
+      BitSet[] measureNullValueIndex, int entryCount) {
+    for (int i = 0; i < measureNullValueIndex.length; i++) {
+      if (!measureNullValueIndex[i].isEmpty()) {
+        measureMinValue[i] = new byte[0];
+      }
+      if (measureNullValueIndex[i].cardinality() == entryCount) {
+        measureMaxValue[i] = new byte[0];
+      }
+    }
   }
 
   private int calculateSize(NodeHolder holder, List<byte[]> dimensionDataChunk2,

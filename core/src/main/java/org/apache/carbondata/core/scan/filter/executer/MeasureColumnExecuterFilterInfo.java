@@ -14,22 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.carbondata.core.scan.filter.executer;
 
-package org.apache.carbondata.core.scan.expression.conditional;
+public class MeasureColumnExecuterFilterInfo {
 
-import java.util.List;
+  byte[][] filterKeys;
 
-import org.apache.carbondata.core.scan.expression.ColumnExpression;
-import org.apache.carbondata.core.scan.expression.ExpressionResult;
+  public void setFilterKeys(byte[][] filterKeys) {
+    this.filterKeys = filterKeys;
+  }
 
-public interface ConditionalExpression {
-
-  // Will get the column informations involved in the expressions by
-  // traversing the tree
-  List<ColumnExpression> getColumnList();
-
-  boolean isSingleColumn();
-
-  List<ExpressionResult> getLiterals();
-
+  public byte[][] getFilterKeys() {
+    return filterKeys;
+  }
 }

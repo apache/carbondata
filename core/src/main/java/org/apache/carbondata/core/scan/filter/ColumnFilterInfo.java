@@ -20,7 +20,7 @@ package org.apache.carbondata.core.scan.filter;
 import java.io.Serializable;
 import java.util.List;
 
-public class DimColumnFilterInfo implements Serializable {
+public class ColumnFilterInfo implements Serializable {
 
   private static final long serialVersionUID = 8181578747306832771L;
 
@@ -37,6 +37,8 @@ public class DimColumnFilterInfo implements Serializable {
    * maintain the no dictionary filter values list.
    */
   private List<byte[]> noDictionaryFilterValuesList;
+
+  private List<byte[]> measuresFilterValuesList;
 
   public List<byte[]> getNoDictionaryFilterValuesList() {
     return noDictionaryFilterValuesList;
@@ -74,5 +76,13 @@ public class DimColumnFilterInfo implements Serializable {
 
   public void setImplicitColumnFilterList(List<String> implicitColumnFilterList) {
     this.implicitColumnFilterList = implicitColumnFilterList;
+  }
+
+  public List<byte[]> getMeasuresFilterValuesList() {
+    return measuresFilterValuesList;
+  }
+
+  public void setMeasuresFilterValuesList(List<byte[]> measuresFilterValuesList) {
+    this.measuresFilterValuesList = measuresFilterValuesList;
   }
 }

@@ -15,21 +15,8 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.scan.expression.conditional;
+package org.apache.carbondata.core.scan.filter.resolver.resolverinfo;
 
-import java.util.List;
 
-import org.apache.carbondata.core.scan.expression.ColumnExpression;
-import org.apache.carbondata.core.scan.expression.ExpressionResult;
-
-public interface ConditionalExpression {
-
-  // Will get the column informations involved in the expressions by
-  // traversing the tree
-  List<ColumnExpression> getColumnList();
-
-  boolean isSingleColumn();
-
-  List<ExpressionResult> getLiterals();
-
+public class ColumnResolvedFilterInfo {
 }
