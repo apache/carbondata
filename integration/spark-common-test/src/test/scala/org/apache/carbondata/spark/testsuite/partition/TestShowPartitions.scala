@@ -28,7 +28,6 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
   override def beforeAll = {
-    dropTable
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
@@ -92,8 +91,8 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
        listTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     // EqualTo
-    checkAnswer(sql("show partitions listTable"), Seq(Row("0", "", "0"),
-        Row("1", "", "1"), Row("2", "", "2, 3")))
+    checkAnswer(sql("show partitions listTable"), Seq(Row("0", "", "default"),
+        Row("1", "", "0"), Row("2", "", "1"), Row("3", "", "2, 3")))
 
   sql("drop table listTable")
   }
@@ -147,21 +146,12 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("show partitions partitionDB.rangeTable"), Seq(Row("0", "", "default"),
         Row("1", "", "< 01-01-2010"), Row("2", "", "< 01-01-2015")))
     // EqualTo
-    checkAnswer(sql("show partitions partitionDB.listTable"), Seq(Row("0", "", "0"),
-        Row("1", "", "1"), Row("2", "", "2, 3")))
+    checkAnswer(sql("show partitions partitionDB.listTable"), Seq(Row("0", "", "default"),
+        Row("1", "", "0"), Row("2", "", "1"), Row("3", "", "2, 3")))
 
     sql("drop table partitionDB.hashTable")
     sql("drop table partitionDB.rangeTable")
     sql("drop table partitionDB.listTable")
     sql(s"DROP DATABASE partitionDB")
-  }
-  override def afterAll = {
-    dropTable
-  }
-
-  def dropTable = {
-    sql("drop table if exists hashTable")
-    sql("drop table if exists rangeTable")
-    sql("drop table if exists listTable")
   }
 }
