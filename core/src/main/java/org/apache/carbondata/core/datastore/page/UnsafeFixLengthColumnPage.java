@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
-import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
