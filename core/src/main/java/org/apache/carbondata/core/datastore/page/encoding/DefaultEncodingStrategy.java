@@ -130,8 +130,8 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
       }
     } else {
       // double
-      DataType upscaleAdaptiveDataType = fitDataType(Math.pow(10, decimal) * absMaxValue, 0);
-      DataType upscaleDiffDataType = fitDataType(Math.pow(10, decimal) * (maxValue - minValue), 0);
+      DataType upscaleAdaptiveDataType = fitDataType(Math.pow(10, decimal) * absMaxValue, decimal);
+      DataType upscaleDiffDataType = fitDataType(Math.pow(10, decimal) * (maxValue - minValue), decimal);
       if (upscaleAdaptiveDataType.getSizeInBytes() <= upscaleDiffDataType.getSizeInBytes()) {
         return UpscaleFloatingCodec.newInstance(
             srcDataType, upscaleAdaptiveDataType, stats, compressor);
