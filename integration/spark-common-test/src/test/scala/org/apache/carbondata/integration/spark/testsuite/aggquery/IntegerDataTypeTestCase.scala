@@ -22,6 +22,9 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 /**
  * Test Class for aggregate query on Integer datatypes
  *
@@ -29,6 +32,7 @@ import org.scalatest.BeforeAndAfterAll
 class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    sql("DROP TABLE IF EXISTS integertypetableAgg")
     sql("CREATE TABLE integertypetableAgg (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE integertypetableAgg OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
   }
@@ -39,7 +43,80 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row(11), Row(12), Row(13), Row(14), Row(15), Row(16), Row(17), Row(18), Row(19), Row(20)))
   }
 
+  test("short int table boundary test, safe column page") {
+    sql(
+      """
+        | DROP TABLE IF EXISTS short_int_table
+      """.stripMargin)
+    // value column is less than short int, value2 column is bigger than short int
+    sql(
+      """
+        | CREATE TABLE short_int_table
+        | (value int, value2 int, name string)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(
+      s"""
+        | LOAD DATA LOCAL INPATH '$resourcesPath/shortintboundary.csv'
+        | INTO TABLE short_int_table
+      """.stripMargin)
+    checkAnswer(
+      sql("select value from short_int_table"),
+      Seq(Row(0), Row(127), Row(128), Row(-127), Row(-128), Row(32767), Row(-32767), Row(32768), Row(-32768), Row(65535),
+        Row(-65535), Row(8388606), Row(-8388606), Row(8388607), Row(-8388607), Row(0), Row(0), Row(0), Row(0))
+    )
+    checkAnswer(
+      sql("select value2 from short_int_table"),
+      Seq(Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0),
+        Row(0), Row(0), Row(0), Row(0), Row(0), Row(8388608), Row(-8388608), Row(8388609), Row(-8388609))
+    )
+    sql(
+      """
+        | DROP TABLE short_int_table
+      """.stripMargin)
+  }
+
+  test("short int table boundary test, unsafe column page") {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true"
+    )
+    sql(
+      """
+        | DROP TABLE IF EXISTS short_int_table
+      """.stripMargin)
+    // value column is less than short int, value2 column is bigger than short int
+    sql(
+      """
+        | CREATE TABLE short_int_table
+        | (value int, value2 int, name string)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$resourcesPath/shortintboundary.csv'
+         | INTO TABLE short_int_table
+      """.stripMargin)
+    checkAnswer(
+      sql("select value from short_int_table"),
+      Seq(Row(0), Row(127), Row(128), Row(-127), Row(-128), Row(32767), Row(-32767), Row(32768), Row(-32768), Row(65535),
+        Row(-65535), Row(8388606), Row(-8388606), Row(8388607), Row(-8388607), Row(0), Row(0), Row(0), Row(0))
+    )
+    checkAnswer(
+      sql("select value2 from short_int_table"),
+      Seq(Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0), Row(0),
+        Row(0), Row(0), Row(0), Row(0), Row(0), Row(8388608), Row(-8388608), Row(8388609), Row(-8388609))
+    )
+    sql(
+      """
+        | DROP TABLE short_int_table
+      """.stripMargin)
+  }
+
   override def afterAll {
-    sql("drop table integertypetableAgg")
+    sql("drop table if exists integertypetableAgg")
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
+      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT
+    )
   }
 }
