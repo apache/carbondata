@@ -163,6 +163,8 @@ public class SegmentProperties {
 
   private int numberOfNoDictSortColumns = 0;
 
+  private int lastDimensionColOrdinal;
+
   public SegmentProperties(List<ColumnSchema> columnsInTable, int[] columnCardinality) {
     dimensions = new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     complexDimensions =
@@ -409,6 +411,7 @@ public class SegmentProperties {
       }
       counter++;
     }
+    lastDimensionColOrdinal = dimensonOrdinal;
     dimColumnsCardinality = new int[cardinalityIndexForNormalDimensionColumn.size()];
     complexDimColumnCardinality = new int[cardinalityIndexForComplexDimensionColumn.size()];
     int index = 0;
@@ -836,5 +839,9 @@ public class SegmentProperties {
 
   public int getNumberOfDictSortColumns() {
     return this.numberOfSortColumns - this.numberOfNoDictSortColumns;
+  }
+
+  public int getLastDimensionColOrdinal() {
+    return lastDimensionColOrdinal;
   }
 }

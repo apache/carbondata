@@ -14,25 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.carbondata.core.scan.filter.resolver.resolverinfo.visitor;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.scan.expression.ExpressionResult;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
-import org.apache.carbondata.core.scan.expression.logical.RangeExpression;
 import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.ColumnResolvedFilterInfo;
-import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 
-public class RangeNoDictionaryTypeVisitor extends NoDictionaryTypeVisitor
-    implements ResolvedFilterInfoVisitorIntf {
+public class MeasureColumnVisitor implements ResolvedFilterInfoVisitorIntf {
+
   /**
    * Visitor Method will update the filter related details in visitableObj, For no dictionary
    * type columns the filter members will resolved directly, no need to look up in dictionary
@@ -43,39 +41,37 @@ public class RangeNoDictionaryTypeVisitor extends NoDictionaryTypeVisitor
    * @param visitableObj
    * @param metadata
    * @throws FilterUnsupportedException,if exception occurs while evaluating
-   * filter models.
+   *                                       filter models.
    */
   public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
-    DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
+    MeasureColumnResolvedFilterInfo resolveDimension =
+        (MeasureColumnResolvedFilterInfo) visitableObj;
     ColumnFilterInfo resolvedFilterObject = null;
-    List<ExpressionResult> listOfExpressionResults = new ArrayList<ExpressionResult>(20);
-    List<String> evaluateResultListFinal = new ArrayList<String>();
+    List<String> evaluateResultListFinal = null;
     try {
-      // Add The Range Filter Values.
-      if (metadata.getExpression() instanceof RangeExpression) {
-        listOfExpressionResults = ((RangeExpression) metadata.getExpression()).getLiterals();
-      }
-
-      for (ExpressionResult result : listOfExpressionResults) {
-        if (result.getString() == null) {
+      // handling for is null case scenarios
+      if (metadata.getExpression() instanceof EqualToExpression) {
+        EqualToExpression expression = (EqualToExpression) metadata.getExpression();
+        if (expression.isNull) {
+          evaluateResultListFinal = new ArrayList<>(1);
           evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
-          continue;
         }
-        evaluateResultListFinal.add(result.getString());
+      } else {
+        evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
       }
-      // evaluateResultListFinal.add(metadata.getExpression().evaluate().getListAsString());
+      // Adding default  null member inorder to not display the same while
+      // displaying the report as per hive compatibility.
       if (!metadata.isIncludeFilter() && !evaluateResultListFinal
           .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
         evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
-
       }
     } catch (FilterIllegalMemberException e) {
       throw new FilterUnsupportedException(e);
     }
     resolvedFilterObject = FilterUtil
-        .getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal, metadata.isIncludeFilter(),
-            metadata.getColumnExpression().getDataType());
+        .getMeasureValKeyMemberForFilter(evaluateResultListFinal, metadata.isIncludeFilter(),
+            metadata.getColumnExpression().getDataType(), resolveDimension.getMeasure());
     resolveDimension.setFilterValues(resolvedFilterObject);
   }
 }

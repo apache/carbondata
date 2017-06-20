@@ -20,6 +20,7 @@ package org.apache.carbondata.core.util;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -32,6 +33,7 @@ import java.util.Map;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -117,6 +119,143 @@ public final class DataTypeUtil {
         return parsedValue;
     }
   }
+
+  public static Object getMeasureObjectFromDataType(byte[] data, DataType dataType) {
+    ByteBuffer bb = ByteBuffer.wrap(data);
+    switch (dataType) {
+      case SHORT:
+      case INT:
+      case LONG:
+        return bb.getLong();
+      case DECIMAL:
+        return byteToBigDecimal(data);
+      default:
+        return bb.getDouble();
+    }
+  }
+
+  /**
+   * This method will convert a given ByteArray to its specific type
+   *
+   * @param msrValue
+   * @param dataType
+   * @param carbonMeasure
+   * @return
+   */
+  //  public static byte[] getMeasureByteArrayBasedOnDataType(String msrValue, DataType dataType,
+  //      CarbonMeasure carbonMeasure) {
+  //    switch (dataType) {
+  //      case DECIMAL:
+  //        BigDecimal bigDecimal =
+  //            new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
+  //       return ByteUtil.toBytes(normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision()));
+  //      case SHORT:
+  //        return ByteUtil.toBytes((Short.parseShort(msrValue)));
+  //      case INT:
+  //        return ByteUtil.toBytes(Integer.parseInt(msrValue));
+  //      case LONG:
+  //        return ByteUtil.toBytes(Long.valueOf(msrValue));
+  //      default:
+  //        Double parsedValue = Double.valueOf(msrValue);
+  //        if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
+  //          return null;
+  //        }
+  //        return ByteUtil.toBytes(parsedValue);
+  //    }
+  //  }
+  public static byte[] getMeasureByteArrayBasedOnDataTypes(String msrValue, DataType dataType,
+      CarbonMeasure carbonMeasure) {
+    ByteBuffer b;
+    switch (dataType) {
+      case BYTE:
+      case SHORT:
+      case INT:
+      case LONG:
+        b = ByteBuffer.allocate(8);
+        b.putLong(Long.valueOf(msrValue));
+        b.flip();
+        return b.array();
+      case DOUBLE:
+        b = ByteBuffer.allocate(8);
+        b.putDouble(Double.valueOf(msrValue));
+        b.flip();
+        return b.array();
+      case DECIMAL:
+        BigDecimal bigDecimal =
+            new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
+        return DataTypeUtil
+            .bigDecimalToByte(normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision()));
+      default:
+        throw new IllegalArgumentException("Invalid data type: " + dataType);
+    }
+  }
+
+  /**
+   * This method will convert a given ByteArray to its specific type
+   *
+   * @param msrValue
+   * @param dataType
+   * @param carbonMeasure
+   * @return
+   */
+  public static byte[] getMeasureByteArrayBasedOnDataType(ColumnPage measurePage, int index,
+      DataType dataType, CarbonMeasure carbonMeasure) {
+    switch (dataType) {
+      case DECIMAL:
+        BigDecimal bigDecimal = new BigDecimal(measurePage.getDouble(index))
+            .setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
+        return ByteUtil.toBytes(normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision()));
+      case SHORT:
+        return ByteUtil.toBytes(measurePage.getShort(index));
+      case INT:
+        return ByteUtil.toBytes(measurePage.getInt(index));
+      case LONG:
+        return ByteUtil.toBytes(measurePage.getLong(index));
+      default:
+        Double parsedValue = Double.valueOf(measurePage.getDouble(index));
+        if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
+          return null;
+        }
+        return ByteUtil.toBytes(parsedValue);
+    }
+  }
+
+  public static Object getMeasureObjectBasedOnDataType(ColumnPage measurePage, int index,
+      DataType dataType, CarbonMeasure carbonMeasure) {
+    //    switch (dataType) {
+    //      case DECIMAL:
+    //        BigDecimal bigDecimal = new BigDecimal(measurePage.getDouble(index))
+    //            .setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
+    //        return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
+    //      case SHORT:
+    //      case INT:
+    //      case LONG:
+    //        return measurePage.getLong(index);
+    //      default:
+    //        Double parsedValue = Double.valueOf(measurePage.getDouble(index));
+    //        if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
+    //          return null;
+    //        }
+    //        return parsedValue;
+    //    }
+    switch (dataType) {
+      case SHORT:
+      case INT:
+      case LONG:
+        return measurePage.getLong(index);
+      case DECIMAL:
+        BigDecimal bigDecimalMsrValue = measurePage.getDecimal(index);
+        if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
+          bigDecimalMsrValue =
+              bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
+        }
+        //return org.apache.spark.sql.types.Decimal.apply(bigDecimalMsrValue);
+        return normalizeDecimalValue(bigDecimalMsrValue, carbonMeasure.getPrecision());
+      default:
+        return measurePage.getDouble(index);
+    }
+  }
+
 
   /**
    * @param dataType

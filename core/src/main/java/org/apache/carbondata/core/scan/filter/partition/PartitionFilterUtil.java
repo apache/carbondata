@@ -30,6 +30,8 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.comparator.Comparator;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
+import org.apache.spark.sql.types.Decimal;
+
 public class PartitionFilterUtil {
 
   /**
