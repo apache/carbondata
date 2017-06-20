@@ -51,6 +51,11 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   }
 
   @Override
+  public void setShortIntPage(byte[] shortIntData) {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override
   public void setIntPage(int[] intData) {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
@@ -135,6 +140,11 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   }
 
   @Override
+  public void putShortInt(int rowId, int value) {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override
   public void putInt(int rowId, int value) {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
@@ -172,6 +182,11 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   }
 
   @Override
+  public int getShortInt(int rowId) {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override
   public int getInt(int rowId) {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
@@ -198,6 +213,11 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   @Override
   public short[] getShortPage() {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override
+  public byte[] getShortIntPage() {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 

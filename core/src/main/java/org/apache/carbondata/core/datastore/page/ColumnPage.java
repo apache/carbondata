@@ -36,6 +36,7 @@ import static org.apache.carbondata.core.metadata.datatype.DataType.FLOAT;
 import static org.apache.carbondata.core.metadata.datatype.DataType.INT;
 import static org.apache.carbondata.core.metadata.datatype.DataType.LONG;
 import static org.apache.carbondata.core.metadata.datatype.DataType.SHORT;
+import static org.apache.carbondata.core.metadata.datatype.DataType.SHORT_INT;
 
 public abstract class ColumnPage {
 
@@ -124,6 +125,7 @@ public abstract class ColumnPage {
       switch (dataType) {
         case BYTE:
         case SHORT:
+        case SHORT_INT:
         case INT:
         case LONG:
         case FLOAT:
@@ -144,6 +146,9 @@ public abstract class ColumnPage {
           break;
         case SHORT:
           instance = newShortPage(new short[pageSize]);
+          break;
+        case SHORT_INT:
+          instance = newShortIntPage(new byte[pageSize * 3]);
           break;
         case INT:
           instance = newIntPage(new int[pageSize]);
@@ -176,6 +181,12 @@ public abstract class ColumnPage {
   private static ColumnPage newShortPage(short[] shortData) {
     ColumnPage columnPage = createPage(SHORT, shortData.length);
     columnPage.setShortPage(shortData);
+    return columnPage;
+  }
+
+  private static ColumnPage newShortIntPage(byte[] shortIntData) {
+    ColumnPage columnPage = createPage(SHORT_INT, shortIntData.length / 3);
+    columnPage.setShortIntPage(shortIntData);
     return columnPage;
   }
 
@@ -222,6 +233,11 @@ public abstract class ColumnPage {
    * Set short values to page
    */
   public abstract void setShortPage(short[] shortData);
+
+  /**
+   * Set short int values to page
+   */
+  public abstract void setShortIntPage(byte[] shortIntData);
 
   /**
    * Set int values to page
@@ -320,6 +336,11 @@ public abstract class ColumnPage {
   public abstract void putBytes(int rowId, byte[] bytes);
 
   /**
+   * Type cast int value to 3 bytes value and set at rowId
+   */
+  public abstract void putShortInt(int rowId, int value);
+
+  /**
    * Set byte array from offset to length at rowId
    */
   public abstract void putBytes(int rowId, byte[] bytes, int offset, int length);
@@ -371,6 +392,11 @@ public abstract class ColumnPage {
   public abstract short getShort(int rowId);
 
   /**
+   * Get short int value at rowId
+   */
+  public abstract int getShortInt(int rowId);
+
+  /**
    * Get int value at rowId
    */
   public abstract int getInt(int rowId);
@@ -404,6 +430,11 @@ public abstract class ColumnPage {
    * Get short value page
    */
   public abstract short[] getShortPage();
+
+  /**
+   * Get short int value page
+   */
+  public abstract byte[] getShortIntPage();
 
   /**
    * Get int value page
@@ -449,6 +480,8 @@ public abstract class ColumnPage {
         return compressor.compressByte(getBytePage());
       case SHORT:
         return compressor.compressShort(getShortPage());
+      case SHORT_INT:
+        return compressor.compressByte(getShortIntPage());
       case INT:
         return compressor.compressInt(getIntPage());
       case LONG:
@@ -478,6 +511,9 @@ public abstract class ColumnPage {
       case SHORT:
         short[] shortData = compressor.unCompressShort(compressedData, offset, length);
         return newShortPage(shortData);
+      case SHORT_INT:
+        byte[] shortIntData = compressor.unCompressByte(compressedData, offset, length);
+        return newShortIntPage(shortIntData);
       case INT:
         int[] intData = compressor.unCompressInt(compressedData, offset, length);
         return newIntPage(intData);

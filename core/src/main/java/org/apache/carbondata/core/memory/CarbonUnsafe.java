@@ -35,6 +35,8 @@ public final class CarbonUnsafe {
 
   public static final int DOUBLE_ARRAY_OFFSET;
 
+  public static final int FLOAT_ARRAY_OFFSET;
+
   public static final boolean ISLITTLEENDIAN =
       ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN);
 
@@ -53,12 +55,14 @@ public final class CarbonUnsafe {
       SHORT_ARRAY_OFFSET = unsafe.arrayBaseOffset(short[].class);
       INT_ARRAY_OFFSET = unsafe.arrayBaseOffset(int[].class);
       LONG_ARRAY_OFFSET = unsafe.arrayBaseOffset(long[].class);
+      FLOAT_ARRAY_OFFSET = unsafe.arrayBaseOffset(float[].class);
       DOUBLE_ARRAY_OFFSET = unsafe.arrayBaseOffset(double[].class);
     } else {
       BYTE_ARRAY_OFFSET = 0;
       SHORT_ARRAY_OFFSET = 0;
       INT_ARRAY_OFFSET = 0;
       LONG_ARRAY_OFFSET = 0;
+      FLOAT_ARRAY_OFFSET = 0;
       DOUBLE_ARRAY_OFFSET = 0;
     }
   }
