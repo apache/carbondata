@@ -47,7 +47,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
  * Carbon input split to allow distributed read of CarbonTableInputFormat.
  */
 public class CarbonInputSplit extends FileSplit
-    implements Distributable, Serializable, Writable, Block {
+    implements Distributable<CarbonInputSplit>, Serializable, Writable, Block {
 
   private static final long serialVersionUID = 3520344046772190207L;
   public String taskId;
@@ -295,21 +295,22 @@ public class CarbonInputSplit extends FileSplit
 
   public String getBlockletId() { return blockletId; }
 
-  @Override public int compareTo(Distributable o) {
+  @Override public int compareTo(CarbonInputSplit o) {
     if (o == null) {
       return -1;
     }
-    CarbonInputSplit other = (CarbonInputSplit) o;
+    CarbonInputSplit other = o;
     int compareResult = 0;
     // get the segment id
     // converr seg ID to double.
 
     double seg1 = Double.parseDouble(segmentId);
     double seg2 = Double.parseDouble(other.getSegmentId());
-    if (seg1 - seg2 < 0) {
+    int result = Double.compare(seg1, seg2);
+    if (result < 0) {
       return -1;
     }
-    if (seg1 - seg2 > 0) {
+    if (result > 0) {
       return 1;
     }
 

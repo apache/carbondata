@@ -30,7 +30,7 @@ import java.util.TreeMap;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 
-public class CarbonInputSplitTaskInfo implements Distributable {
+public class CarbonInputSplitTaskInfo implements Distributable<CarbonInputSplitTaskInfo> {
 
   private final List<CarbonInputSplit> carbonBlockInfoList;
 
@@ -63,8 +63,8 @@ public class CarbonInputSplitTaskInfo implements Distributable {
     return nodes.toArray(new String[nodes.size()]);
   }
 
-  @Override public int compareTo(Distributable o) {
-    return taskId.compareTo(((CarbonInputSplitTaskInfo) o).getTaskId());
+  @Override public int compareTo(CarbonInputSplitTaskInfo o) {
+    return taskId.compareTo(o.getTaskId());
   }
 
   @Override public boolean equals(Object obj) {

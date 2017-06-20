@@ -1043,7 +1043,7 @@ object CarbonDataRDDFactory {
       new TableBlockInfo(fileSplit.getPath.toString,
         fileSplit.getStart, "1",
         fileSplit.getLocations, fileSplit.getLength, ColumnarFormatVersion.V1, null
-      ).asInstanceOf[Distributable]
+      ).asInstanceOf[Distributable[_]]
     }
     // group blocks to nodes, tasks
     val startTime = System.currentTimeMillis

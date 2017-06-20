@@ -468,11 +468,11 @@ public final class CarbonLoaderUtil {
    * @param parallelism    total no of tasks to execute in parallel
    * @return
    */
-  public static Map<String, List<List<Distributable>>> nodeBlockTaskMapping(
-      List<Distributable> blockInfos, int noOfNodesInput, int parallelism,
+  public static <T extends Distributable> Map<String, List<List<T>>> nodeBlockTaskMapping(
+      List<T> blockInfos, int noOfNodesInput, int parallelism,
       List<String> activeNode) {
 
-    Map<String, List<Distributable>> mapOfNodes =
+    Map<String, List<T>> mapOfNodes =
         CarbonLoaderUtil.nodeBlockMapping(blockInfos, noOfNodesInput, activeNode);
     int taskPerNode = parallelism / mapOfNodes.size();
     //assigning non zero value to noOfTasksPerNode
@@ -487,7 +487,7 @@ public final class CarbonLoaderUtil {
    * @param blockInfos
    * @return
    */
-  public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos,
+  public static <T extends Distributable> Map<String, List<T>> nodeBlockMapping(List<T> blockInfos,
       int noOfNodesInput) {
     return nodeBlockMapping(blockInfos, noOfNodesInput, null);
   }
@@ -498,7 +498,8 @@ public final class CarbonLoaderUtil {
    * @param blockInfos
    * @return
    */
-  public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos) {
+  public static <T extends Distributable> Map<String, List<T>> nodeBlockMapping(
+      List<T> blockInfos) {
     // -1 if number of nodes has to be decided based on block location information
     return nodeBlockMapping(blockInfos, -1);
   }
@@ -509,10 +510,10 @@ public final class CarbonLoaderUtil {
    * @param blockInfos
    * @return
    */
-  public static Map<String, List<Distributable>> getRequiredExecutors(
-      List<Distributable> blockInfos) {
-    List<NodeBlockRelation> flattenedList =
-        new ArrayList<NodeBlockRelation>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  public static <T extends Distributable> Map<String, List<T>> getRequiredExecutors(
+      List<T> blockInfos) {
+    List<NodeBlockRelation<T>> flattenedList =
+        new ArrayList<NodeBlockRelation<T>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (Distributable blockInfo : blockInfos) {
       try {
         for (String eachNode : blockInfo.getLocations()) {
@@ -525,8 +526,8 @@ public final class CarbonLoaderUtil {
     }
     // sort the flattened data.
     Collections.sort(flattenedList);
-    Map<String, List<Distributable>> nodeAndBlockMapping =
-        new LinkedHashMap<String, List<Distributable>>(
+    Map<String, List<T>> nodeAndBlockMapping =
+        new LinkedHashMap<String, List<T>>(
             CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // from the flattened list create a mapping of node vs Data blocks.
     createNodeVsBlockMapping(flattenedList, nodeAndBlockMapping);
@@ -541,17 +542,17 @@ public final class CarbonLoaderUtil {
    *                       based on block location information
    * @return
    */
-  public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos,
+  public static <T extends Distributable> Map<String, List<T>> nodeBlockMapping(List<T> blockInfos,
       int noOfNodesInput, List<String> activeNodes) {
 
-    Map<String, List<Distributable>> nodeBlocksMap =
-        new HashMap<String, List<Distributable>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    Map<String, List<T>> nodeBlocksMap =
+        new HashMap<String, List<T>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    List<NodeBlockRelation> flattenedList =
-        new ArrayList<NodeBlockRelation>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<NodeBlockRelation<T>> flattenedList =
+        new ArrayList<NodeBlockRelation<T>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    Set<Distributable> uniqueBlocks =
-        new HashSet<Distributable>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    Set<T> uniqueBlocks =
+        new HashSet<T>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     Set<String> nodes = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     createFlattenedListFromMap(blockInfos, flattenedList, uniqueBlocks, nodes);
@@ -566,8 +567,8 @@ public final class CarbonLoaderUtil {
     // sort the flattened data.
     Collections.sort(flattenedList);
 
-    Map<String, List<Distributable>> nodeAndBlockMapping =
-        new LinkedHashMap<String, List<Distributable>>(
+    Map<String, List<T>> nodeAndBlockMapping =
+        new LinkedHashMap<String, List<T>>(
             CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     // from the flattened list create a mapping of node vs Data blocks.
@@ -589,16 +590,16 @@ public final class CarbonLoaderUtil {
    * @param noOfTasksPerNode
    * @return
    */
-  private static Map<String, List<List<Distributable>>> assignBlocksToTasksPerNode(
-      Map<String, List<Distributable>> nodeBlocksMap, int noOfTasksPerNode) {
-    Map<String, List<List<Distributable>>> outputMap =
-        new HashMap<String, List<List<Distributable>>>(
+  private static <T extends Distributable> Map<String, List<List<T>>> assignBlocksToTasksPerNode(
+      Map<String, List<T>> nodeBlocksMap, int noOfTasksPerNode) {
+    Map<String, List<List<T>>> outputMap =
+        new HashMap<String, List<List<T>>>(
             CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     // for each node
-    for (Map.Entry<String, List<Distributable>> eachNode : nodeBlocksMap.entrySet()) {
+    for (Map.Entry<String, List<T>> eachNode : nodeBlocksMap.entrySet()) {
 
-      List<Distributable> blockOfEachNode = eachNode.getValue();
+      List<T> blockOfEachNode = eachNode.getValue();
       //sorting the block so same block will be give to same executor
       Collections.sort(blockOfEachNode);
       // create the task list for each node.
@@ -618,13 +619,13 @@ public final class CarbonLoaderUtil {
    * @param key
    * @param blockOfEachNode
    */
-  private static void divideBlockToTasks(Map<String, List<List<Distributable>>> outputMap,
-      String key, List<Distributable> blockOfEachNode) {
+  private static <T extends Distributable> void divideBlockToTasks(
+      Map<String, List<List<T>>> outputMap, String key, List<T> blockOfEachNode) {
 
-    List<List<Distributable>> taskLists = outputMap.get(key);
+    List<List<T>> taskLists = outputMap.get(key);
     int tasksOfNode = taskLists.size();
     int i = 0;
-    for (Distributable block : blockOfEachNode) {
+    for (T block : blockOfEachNode) {
 
       taskLists.get(i % tasksOfNode).add(block);
       i++;
@@ -639,13 +640,13 @@ public final class CarbonLoaderUtil {
    * @param noOfTasksPerNode
    * @param key
    */
-  private static void createTaskListForNode(Map<String, List<List<Distributable>>> outputMap,
-      int noOfTasksPerNode, String key) {
-    List<List<Distributable>> nodeTaskList =
-        new ArrayList<List<Distributable>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  private static <T extends Distributable> void createTaskListForNode(
+      Map<String, List<List<T>>> outputMap, int noOfTasksPerNode, String key) {
+    List<List<T>> nodeTaskList =
+        new ArrayList<List<T>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (int i = 0; i < noOfTasksPerNode; i++) {
-      List<Distributable> eachTask =
-          new ArrayList<Distributable>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+      List<T> eachTask =
+          new ArrayList<T>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
       nodeTaskList.add(eachTask);
 
     }
@@ -659,14 +660,14 @@ public final class CarbonLoaderUtil {
    * @param outputMap
    * @param uniqueBlocks
    */
-  private static void assignLeftOverBlocks(Map<String, List<Distributable>> outputMap,
-      Set<Distributable> uniqueBlocks, int noOfBlocksPerNode, List<String> activeNodes) {
+  private static <T extends Distributable> void assignLeftOverBlocks(Map<String, List<T>> outputMap,
+      Set<T> uniqueBlocks, int noOfBlocksPerNode, List<String> activeNodes) {
 
     if (activeNodes != null) {
       for (String activeNode : activeNodes) {
-        List<Distributable> blockLst = outputMap.get(activeNode);
+        List<T> blockLst = outputMap.get(activeNode);
         if (null == blockLst) {
-          blockLst = new ArrayList<Distributable>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+          blockLst = new ArrayList<T>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         }
         populateBlocks(uniqueBlocks, noOfBlocksPerNode, blockLst);
         if (blockLst.size() > 0) {
@@ -674,18 +675,18 @@ public final class CarbonLoaderUtil {
         }
       }
     } else {
-      for (Map.Entry<String, List<Distributable>> entry : outputMap.entrySet()) {
-        List<Distributable> blockLst = entry.getValue();
+      for (Map.Entry<String, List<T>> entry : outputMap.entrySet()) {
+        List<T> blockLst = entry.getValue();
         populateBlocks(uniqueBlocks, noOfBlocksPerNode, blockLst);
       }
 
     }
 
-    for (Map.Entry<String, List<Distributable>> entry : outputMap.entrySet()) {
-      Iterator<Distributable> blocks = uniqueBlocks.iterator();
+    for (Map.Entry<String, List<T>> entry : outputMap.entrySet()) {
+      Iterator<T> blocks = uniqueBlocks.iterator();
       if (blocks.hasNext()) {
-        Distributable block = blocks.next();
-        List<Distributable> blockLst = entry.getValue();
+        T block = blocks.next();
+        List<T> blockLst = entry.getValue();
         blockLst.add(block);
         blocks.remove();
       }
@@ -698,15 +699,15 @@ public final class CarbonLoaderUtil {
    * @param noOfBlocksPerNode
    * @param blockLst
    */
-  private static void populateBlocks(Set<Distributable> uniqueBlocks, int noOfBlocksPerNode,
-      List<Distributable> blockLst) {
-    Iterator<Distributable> blocks = uniqueBlocks.iterator();
+  private static <T extends Distributable> void populateBlocks(Set<T> uniqueBlocks,
+      int noOfBlocksPerNode, List<T> blockLst) {
+    Iterator<T> blocks = uniqueBlocks.iterator();
     //if the node is already having the per block nodes then avoid assign the extra blocks
     if (blockLst.size() == noOfBlocksPerNode) {
       return;
     }
     while (blocks.hasNext()) {
-      Distributable block = blocks.next();
+      T block = blocks.next();
       blockLst.add(block);
       blocks.remove();
       if (blockLst.size() >= noOfBlocksPerNode) {
@@ -724,13 +725,13 @@ public final class CarbonLoaderUtil {
    * @param nodeAndBlockMapping
    * @param activeNodes
    */
-  private static void createOutputMap(Map<String, List<Distributable>> outputMap, int blocksPerNode,
-      Set<Distributable> uniqueBlocks, Map<String, List<Distributable>> nodeAndBlockMapping,
+  private static <T extends Distributable> void createOutputMap(Map<String, List<T>> outputMap,
+      int blocksPerNode, Set<T> uniqueBlocks, Map<String, List<T>> nodeAndBlockMapping,
       List<String> activeNodes) {
 
     ArrayList<NodeMultiBlockRelation> multiBlockRelations =
         new ArrayList<>(nodeAndBlockMapping.size());
-    for (Map.Entry<String, List<Distributable>> entry : nodeAndBlockMapping.entrySet()) {
+    for (Map.Entry<String, List<T>> entry : nodeAndBlockMapping.entrySet()) {
       multiBlockRelations.add(new NodeMultiBlockRelation(entry.getKey(), entry.getValue()));
     }
     // sort nodes based on number of blocks per node, so that nodes having lesser blocks
@@ -750,20 +751,20 @@ public final class CarbonLoaderUtil {
       // this loop will be for each NODE
       int nodeCapacity = 0;
       // loop thru blocks of each Node
-      for (Distributable block : nodeMultiBlockRelation.getBlocks()) {
+      for (Object block : nodeMultiBlockRelation.getBlocks()) {
 
         // check if this is already assigned.
         if (uniqueBlocks.contains(block)) {
 
           if (null == outputMap.get(activeExecutor)) {
-            List<Distributable> list =
-                new ArrayList<Distributable>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+            List<T> list =
+                new ArrayList<T>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
             outputMap.put(activeExecutor, list);
           }
           // assign this block to this node if node has capacity left
           if (nodeCapacity < blocksPerNode) {
-            List<Distributable> infos = outputMap.get(activeExecutor);
-            infos.add(block);
+            List<T> infos = outputMap.get(activeExecutor);
+            infos.add((T)block);
             nodeCapacity++;
             uniqueBlocks.remove(block);
           } else {
@@ -818,25 +819,25 @@ public final class CarbonLoaderUtil {
    * @param flattenedList
    * @param nodeAndBlockMapping
    */
-  private static void createNodeVsBlockMapping(List<NodeBlockRelation> flattenedList,
-      Map<String, List<Distributable>> nodeAndBlockMapping) {
+  private static <T extends Distributable> void createNodeVsBlockMapping(
+      List<NodeBlockRelation<T>> flattenedList, Map<String, List<T>> nodeAndBlockMapping) {
     for (NodeBlockRelation nbr : flattenedList) {
       String node = nbr.getNode();
-      List<Distributable> list;
+      List<T> list;
 
       if (null == nodeAndBlockMapping.get(node)) {
-        list = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        list.add(nbr.getBlock());
+        list = new ArrayList<T>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        list.add((T)nbr.getBlock());
         nodeAndBlockMapping.put(node, list);
       } else {
         list = nodeAndBlockMapping.get(node);
-        list.add(nbr.getBlock());
+        list.add((T)nbr.getBlock());
       }
     }
     /*for resolving performance issue, removed values() with entrySet () iterating the values and
     sorting it.entrySet will give the logical view for hashMap and we dont query the map twice for
     each key whereas values () iterate twice*/
-    Iterator<Map.Entry<String, List<Distributable>>> iterator =
+    Iterator<Map.Entry<String, List<T>>> iterator =
         nodeAndBlockMapping.entrySet().iterator();
     while (iterator.hasNext()) {
       Collections.sort(iterator.next().getValue());
@@ -850,10 +851,10 @@ public final class CarbonLoaderUtil {
    * @param flattenedList
    * @param uniqueBlocks
    */
-  private static void createFlattenedListFromMap(List<Distributable> blockInfos,
-      List<NodeBlockRelation> flattenedList, Set<Distributable> uniqueBlocks,
+  private static <T extends Distributable> void createFlattenedListFromMap(List<T> blockInfos,
+      List<NodeBlockRelation<T>> flattenedList, Set<T> uniqueBlocks,
       Set<String> nodeList) {
-    for (Distributable blockInfo : blockInfos) {
+    for (T blockInfo : blockInfos) {
       // put the blocks in the set
       uniqueBlocks.add(blockInfo);
 
@@ -915,4 +916,5 @@ public final class CarbonLoaderUtil {
     loadMetadataDetails.setIndexSize(String.valueOf(indexSize));
     return dataSize + indexSize;
   }
+
 }

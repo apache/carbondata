@@ -40,7 +40,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.FileSplit;
 
 public class CarbonHiveInputSplit extends FileSplit
-    implements Distributable, Serializable, Writable, Block {
+    implements Distributable<CarbonHiveInputSplit>, Serializable, Writable, Block {
 
   private static final long serialVersionUID = 3520344046772190208L;
   private String taskId;
@@ -212,11 +212,11 @@ public class CarbonHiveInputSplit extends FileSplit
     return bucketId;
   }
 
-  @Override public int compareTo(Distributable o) {
+  @Override public int compareTo(CarbonHiveInputSplit o) {
     if (o == null) {
       return -1;
     }
-    CarbonHiveInputSplit other = (CarbonHiveInputSplit) o;
+    CarbonHiveInputSplit other = o;
     int compareResult;
     // get the segment id
     // converr seg ID to double.

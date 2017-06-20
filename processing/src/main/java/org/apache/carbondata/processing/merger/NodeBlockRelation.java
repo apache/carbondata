@@ -21,18 +21,18 @@ import org.apache.carbondata.core.datastore.block.Distributable;
 /**
  * Block to Node mapping
  */
-public class NodeBlockRelation implements Comparable<NodeBlockRelation> {
+public class NodeBlockRelation<T extends Distributable> implements Comparable<NodeBlockRelation> {
 
-  private final Distributable block;
+  private final T block;
   private final String node;
 
-  public NodeBlockRelation(Distributable block, String node) {
+  public NodeBlockRelation(T block, String node) {
     this.block = block;
     this.node = node;
 
   }
 
-  public Distributable getBlock() {
+  public T getBlock() {
     return block;
   }
 

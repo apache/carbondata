@@ -22,7 +22,7 @@ import java.io.IOException;
 /**
  * interface to get the locations of node. Used for making task distribution based on locality
  */
-public interface Distributable extends Comparable<Distributable> {
+public interface Distributable<T extends Distributable<T>> extends Comparable<T> {
 
   String[] getLocations() throws IOException;
 }
