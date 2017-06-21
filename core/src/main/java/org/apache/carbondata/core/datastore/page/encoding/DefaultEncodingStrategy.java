@@ -30,7 +30,7 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
   private static final Compressor compressor = CompressorFactory.getInstance().getCompressor();
 
   private static final int THREE_BYTES_MAX = (int) Math.pow(2, 23) - 1;
-  private static final int THREE_BYTES_MIN = - THREE_BYTES_MAX;
+  private static final int THREE_BYTES_MIN = - THREE_BYTES_MAX - 1;
 
   // fit the long input value into minimum data type
   private static DataType fitDataType(long value) {

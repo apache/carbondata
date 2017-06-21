@@ -32,6 +32,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    sql("DROP TABLE IF EXISTS integertypetableAgg")
     sql("CREATE TABLE integertypetableAgg (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE integertypetableAgg OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
   }
@@ -116,6 +117,6 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop table integertypetableAgg")
+    sql("drop table if exists integertypetableAgg")
   }
 }

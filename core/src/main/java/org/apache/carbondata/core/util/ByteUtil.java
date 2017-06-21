@@ -466,20 +466,11 @@ public final class ByteUtil {
 
   /**
    * int => byte[3]
-   * supported range is [-8388607, 8388607], note that Math.pow(2, 24) == 8388608
+   * supported range is [-8388608, 8388607], note that Math.pow(2, 24) == 8388608
    */
   public static byte[] to3Bytes(int val) {
-    assert val <= (Math.pow(2, 23) - 1) && val >= (-Math.pow(2, 23) + 1);
-
-    int value = val < 0 ? -val : val;
-    byte[] b = new byte[3];
-    b[0] = (byte) (value & 0xFF);
-    b[1] = (byte) ((value >>> 8) & 0xFF);
-    b[2] = (byte) ((value >>> 16) & 0x7F);
-    if (val < 0) {
-      b[2] |= 0x80;
-    }
-    return b;
+    assert val <= (Math.pow(2, 23) - 1) && val >= (-Math.pow(2, 23));
+    return new byte[]{ (byte)(val >> 16), (byte)(val >> 8), (byte)val };
   }
 
   /**
@@ -487,13 +478,14 @@ public final class ByteUtil {
    */
   public static int valueOf3Bytes(byte[] val, int offset) {
     assert val.length >= offset + 3;
-    int out = (val[offset] & 0xFF);
-    out |= ((val[offset + 1] & 0xFF) << 8);
-    out |= ((val[offset + 2] & 0x7F) << 16);
-    if ((val[offset + 2] & 0x80) != 0) {
-      return -out;
+    if (val[offset] < 0) {
+      return (((val[offset] & 0xFFFF) << 16) |
+          ((val[offset + 1] & 0xFF) << 8) |
+          ((val[offset + 2] & 0xFF)));
     } else {
-      return out;
+      return (((val[offset] & 0xFF) << 16) |
+          ((val[offset + 1] & 0xFF) << 8) |
+          ((val[offset + 2] & 0xFF)));
     }
   }
 
