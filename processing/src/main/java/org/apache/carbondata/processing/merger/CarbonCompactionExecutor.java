@@ -58,7 +58,7 @@ public class CarbonCompactionExecutor {
   private final Map<String, List<DataFileFooter>> dataFileMetadataSegMapping;
   private final SegmentProperties destinationSegProperties;
   private final Map<String, TaskBlockInfo> segmentMapping;
-  private QueryExecutor queryExecutor;
+  private List<QueryExecutor> queryExecutorList;
   private CarbonTable carbonTable;
   private QueryModel queryModel;
 
@@ -86,6 +86,7 @@ public class CarbonCompactionExecutor {
     this.carbonTable = carbonTable;
     this.dataFileMetadataSegMapping = dataFileMetadataSegMapping;
     this.restructuredBlockExists = restructuredBlockExists;
+    queryExecutorList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   }
 
   /**
@@ -156,7 +157,8 @@ public class CarbonCompactionExecutor {
   private CarbonIterator<BatchResult> executeBlockList(List<TableBlockInfo> blockList)
       throws QueryExecutionException, IOException {
     queryModel.setTableBlockInfos(blockList);
-    this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
+    QueryExecutor queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
+    queryExecutorList.add(queryExecutor);
     return queryExecutor.execute(queryModel);
   }
 
@@ -166,7 +168,9 @@ public class CarbonCompactionExecutor {
    */
   public void finish() {
     try {
-      queryExecutor.finish();
+      for (QueryExecutor queryExecutor : queryExecutorList) {
+        queryExecutor.finish();
+      }
     } catch (QueryExecutionException e) {
       LOGGER.error(e, "Problem while finish: ");
     }
