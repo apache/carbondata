@@ -324,6 +324,9 @@ public abstract class AbstractScannedResult {
     rowCounter = 0;
     currentRow = -1;
     pageCounter++;
+    if (null != deletedRecordMap) {
+      currentDeleteDeltaVo = deletedRecordMap.get(blockletNumber + "_" + pageCounter);
+    }
   }
 
   public int numberOfpages() {
@@ -479,7 +482,7 @@ public abstract class AbstractScannedResult {
       rowCounter = 0;
       currentRow = -1;
       if (null != deletedRecordMap) {
-        currentDeleteDeltaVo = deletedRecordMap.get(blockletNumber + pageCounter + "");
+        currentDeleteDeltaVo = deletedRecordMap.get(blockletNumber + "_" + pageCounter);
       }
       return hasNext();
     }
