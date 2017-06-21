@@ -53,20 +53,17 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
 
-
 /**
  * A serde class for Carbondata.
  * It transparently passes the object to/from the Carbon file reader/writer.
  */
-@SerDeSpec(schemaProps = {serdeConstants.LIST_COLUMNS, serdeConstants.LIST_COLUMN_TYPES})
-public class CarbonHiveSerDe extends AbstractSerDe {
-  private SerDeStats stats;
+@SerDeSpec(schemaProps = { serdeConstants.LIST_COLUMNS, serdeConstants.LIST_COLUMN_TYPES })
+class CarbonHiveSerDe extends AbstractSerDe {
+  private final SerDeStats stats;
   private ObjectInspector objInspector;
 
   private enum LAST_OPERATION {
-    SERIALIZE,
-    DESERIALIZE,
-    UNKNOWN
+    SERIALIZE, DESERIALIZE, UNKNOWN
   }
 
   private LAST_OPERATION status;
@@ -77,8 +74,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     stats = new SerDeStats();
   }
 
-  @Override
-  public void initialize(@Nullable Configuration configuration, Properties tbl)
+  @Override public void initialize(@Nullable Configuration configuration, Properties tbl)
       throws SerDeException {
 
     final TypeInfo rowTypeInfo;
@@ -127,13 +123,12 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     }
   }
 
-  @Override
-  public Class<? extends Writable> getSerializedClass() {
+  @Override public Class<? extends Writable> getSerializedClass() {
     return ArrayWritable.class;
   }
 
-  @Override
-  public Writable serialize(Object obj, ObjectInspector objectInspector) throws SerDeException {
+  @Override public Writable serialize(Object obj, ObjectInspector objectInspector)
+      throws SerDeException {
     if (!objInspector.getCategory().equals(ObjectInspector.Category.STRUCT)) {
       throw new SerDeException("Cannot serialize " + objInspector.getCategory()
           + ". Can only serialize a struct");
@@ -143,7 +138,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     return createStruct(obj, (StructObjectInspector) objInspector);
   }
 
-  public ArrayWritable createStruct(Object obj, StructObjectInspector inspector)
+  private ArrayWritable createStruct(Object obj, StructObjectInspector inspector)
       throws SerDeException {
     List fields = inspector.getAllStructFieldRefs();
     Writable[] arr = new Writable[fields.size()];
@@ -175,7 +170,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
       ArrayWritable subArray = new ArrayWritable(((Writable) array.get(0)).getClass(),
           (Writable[]) array.toArray(new Writable[array.size()]));
 
-      return new ArrayWritable(Writable.class, new Writable[]{subArray});
+      return new ArrayWritable(Writable.class, new Writable[] { subArray });
     }
     return null;
   }
@@ -222,8 +217,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     throw new SerDeException("Unknown data type" + inspector.getCategory());
   }
 
-  @Override
-  public SerDeStats getSerDeStats() {
+  @Override public SerDeStats getSerDeStats() {
     // must be different
     assert (status != LAST_OPERATION.UNKNOWN);
     if (status == LAST_OPERATION.SERIALIZE) {
@@ -234,8 +228,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     return stats;
   }
 
-  @Override
-  public Object deserialize(Writable writable) throws SerDeException {
+  @Override public Object deserialize(Writable writable) throws SerDeException {
     status = LAST_OPERATION.DESERIALIZE;
     if (writable instanceof ArrayWritable) {
       deserializedSize += ((StructObjectInspector) objInspector).getAllStructFieldRefs().size();
@@ -245,8 +238,7 @@ public class CarbonHiveSerDe extends AbstractSerDe {
     }
   }
 
-  @Override
-  public ObjectInspector getObjectInspector() throws SerDeException {
+  @Override public ObjectInspector getObjectInspector() throws SerDeException {
     return objInspector;
   }
 }
