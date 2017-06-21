@@ -100,7 +100,8 @@ object CarbonPartitionExample {
     spark.sql("DROP TABLE IF EXISTS t5")
 
     spark.sql("""
-       | CREATE TABLE IF NOT EXISTS t5(
+       | CREATE TABLE IF NOT EXISTS t5
+       | (
        | vin String,
        | logdate Timestamp,
        | phonenumber Long,
