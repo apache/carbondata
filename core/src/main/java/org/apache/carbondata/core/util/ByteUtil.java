@@ -469,7 +469,7 @@ public final class ByteUtil {
    * supported range is [-8388607, 8388607], note that Math.pow(2, 24) == 8388608
    */
   public static byte[] to3Bytes(int val) {
-    assert val <= Math.pow(2, 23) && val >= (-Math.pow(2, 23) - 1);
+    assert val <= (Math.pow(2, 23) - 1) && val >= (-Math.pow(2, 23) + 1);
 
     int value = val < 0 ? -val : val;
     byte[] b = new byte[3];
