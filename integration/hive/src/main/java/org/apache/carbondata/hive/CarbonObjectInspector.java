@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.SettableStructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
@@ -34,18 +33,16 @@ import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
 import org.apache.hadoop.io.ArrayWritable;
 
-public class CarbonObjectInspector extends SettableStructObjectInspector {
+class CarbonObjectInspector extends SettableStructObjectInspector {
   private final TypeInfo typeInfo;
-  private final List<TypeInfo> fieldInfos;
-  private final List<String> fieldNames;
   private final List<StructField> fields;
   private final HashMap<String, StructFieldImpl> fieldsByName;
 
   public CarbonObjectInspector(final StructTypeInfo rowTypeInfo) {
 
     typeInfo = rowTypeInfo;
-    fieldNames = rowTypeInfo.getAllStructFieldNames();
-    fieldInfos = rowTypeInfo.getAllStructFieldTypeInfos();
+    List<String> fieldNames = rowTypeInfo.getAllStructFieldNames();
+    List<TypeInfo> fieldInfos = rowTypeInfo.getAllStructFieldTypeInfos();
     fields = new ArrayList<StructField>(fieldNames.size());
     fieldsByName = new HashMap<String, StructFieldImpl>();
 
@@ -59,7 +56,7 @@ public class CarbonObjectInspector extends SettableStructObjectInspector {
     }
   }
 
-  public ObjectInspector getObjectInspector(final TypeInfo typeInfo) {
+  private ObjectInspector getObjectInspector(final TypeInfo typeInfo) {
     if (typeInfo.equals(TypeInfoFactory.doubleTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableDoubleObjectInspector;
     } else if (typeInfo.equals(TypeInfoFactory.intTypeInfo)) {
@@ -69,8 +66,8 @@ public class CarbonObjectInspector extends SettableStructObjectInspector {
     } else if (typeInfo.equals(TypeInfoFactory.stringTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableStringObjectInspector;
     } else if (typeInfo instanceof DecimalTypeInfo) {
-      return PrimitiveObjectInspectorFactory.getPrimitiveWritableObjectInspector(
-          (DecimalTypeInfo) typeInfo);
+      return PrimitiveObjectInspectorFactory
+          .getPrimitiveWritableObjectInspector((DecimalTypeInfo) typeInfo);
     } else if (typeInfo.getCategory().equals(Category.STRUCT)) {
       return new CarbonObjectInspector((StructTypeInfo) typeInfo);
     } else if (typeInfo.getCategory().equals(Category.LIST)) {
@@ -82,31 +79,26 @@ public class CarbonObjectInspector extends SettableStructObjectInspector {
       return PrimitiveObjectInspectorFactory.writableTimestampObjectInspector;
     } else if (typeInfo.equals(TypeInfoFactory.dateTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableDateObjectInspector;
-    } else if (((CharTypeInfo) typeInfo).getPrimitiveCategory()
-        .name().equals("CHAR")) {
+    } else if (((CharTypeInfo) typeInfo).getPrimitiveCategory().name().equals("CHAR")) {
       return PrimitiveObjectInspectorFactory.writableStringObjectInspector;
     } else {
       throw new UnsupportedOperationException("Unknown field type: " + typeInfo);
     }
   }
 
-  @Override
-  public Category getCategory() {
+  @Override public Category getCategory() {
     return Category.STRUCT;
   }
 
-  @Override
-  public String getTypeName() {
+  @Override public String getTypeName() {
     return typeInfo.getTypeName();
   }
 
-  @Override
-  public List<? extends StructField> getAllStructFieldRefs() {
+  @Override public List<? extends StructField> getAllStructFieldRefs() {
     return fields;
   }
 
-  @Override
-  public Object getStructFieldData(final Object data, final StructField fieldRef) {
+  @Override public Object getStructFieldData(final Object data, final StructField fieldRef) {
     if (data == null) {
       return null;
     }
@@ -117,23 +109,18 @@ public class CarbonObjectInspector extends SettableStructObjectInspector {
     }
 
     boolean isArray = !(data instanceof List);
-    if (!isArray && !(data instanceof List)) {
-      return data;
-    } else {
-      int listSize = isArray ? ((Object[]) ((Object[]) data)).length : ((List) data).size();
-      int fieldID = fieldRef.getFieldID();
-      return fieldID >= listSize ? null :
-          (isArray ? ((Object[]) ((Object[]) data))[fieldID] : ((List) data).get(fieldID));
-    }
+    int listSize = isArray ? ((Object[]) data).length : ((List) data).size();
+    int fieldID = fieldRef.getFieldID();
+    return fieldID >= listSize ?
+        null :
+        (isArray ? ((Object[]) data)[fieldID] : ((List) data).get(fieldID));
   }
 
-  @Override
-  public StructField getStructFieldRef(final String name) {
+  @Override public StructField getStructFieldRef(final String name) {
     return fieldsByName.get(name);
   }
 
-  @Override
-  public List<Object> getStructFieldsDataAsList(final Object data) {
+  @Override public List<Object> getStructFieldsDataAsList(final Object data) {
     if (data == null) {
       return null;
     }
@@ -147,8 +134,7 @@ public class CarbonObjectInspector extends SettableStructObjectInspector {
     throw new UnsupportedOperationException("Cannot inspect " + data.getClass().getCanonicalName());
   }
 
-  @Override
-  public Object create() {
+  @Override public Object create() {
     final ArrayList<Object> list = new ArrayList<Object>(fields.size());
     for (int i = 0; i < fields.size(); ++i) {
       list.add(null);
@@ -156,15 +142,13 @@ public class CarbonObjectInspector extends SettableStructObjectInspector {
     return list;
   }
 
-  @Override
-  public Object setStructFieldData(Object struct, StructField field, Object fieldValue) {
+  @Override public Object setStructFieldData(Object struct, StructField field, Object fieldValue) {
     final ArrayList<Object> list = (ArrayList<Object>) struct;
     list.set(((StructFieldImpl) field).getIndex(), fieldValue);
     return list;
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (obj == null) {
       return false;
     }
@@ -172,15 +156,11 @@ public class CarbonObjectInspector extends SettableStructObjectInspector {
       return false;
     }
     final CarbonObjectInspector other = (CarbonObjectInspector) obj;
-    if (this.typeInfo != other.typeInfo &&
-        (this.typeInfo == null || !this.typeInfo.equals(other.typeInfo))) {
-      return false;
-    }
-    return true;
+    return !(this.typeInfo != other.typeInfo && (this.typeInfo == null || !this.typeInfo
+        .equals(other.typeInfo)));
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     int hash = 5;
     hash = 29 * hash + (this.typeInfo != null ? this.typeInfo.hashCode() : 0);
     return hash;
@@ -198,13 +178,11 @@ public class CarbonObjectInspector extends SettableStructObjectInspector {
       this.index = index;
     }
 
-    @Override
-    public String getFieldComment() {
+    @Override public String getFieldComment() {
       return "";
     }
 
-    @Override
-    public String getFieldName() {
+    @Override public String getFieldName() {
       return name;
     }
 
@@ -212,13 +190,11 @@ public class CarbonObjectInspector extends SettableStructObjectInspector {
       return index;
     }
 
-    @Override
-    public ObjectInspector getFieldObjectInspector() {
+    @Override public ObjectInspector getFieldObjectInspector() {
       return inspector;
     }
 
-    @Override
-    public int getFieldID() {
+    @Override public int getFieldID() {
       return index;
     }
   }
