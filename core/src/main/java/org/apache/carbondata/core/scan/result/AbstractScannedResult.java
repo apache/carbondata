@@ -304,7 +304,7 @@ public abstract class AbstractScannedResult {
               j :
               rowMapping[pageCounter][j]);
         }
-        vector.putBytes(vectorOffset++, offset, data.length(), data.getBytes());
+        vector.putBytes(vectorOffset++, data.getBytes());
       }
     }
   }
