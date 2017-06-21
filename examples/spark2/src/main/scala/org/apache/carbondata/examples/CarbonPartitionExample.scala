@@ -110,7 +110,7 @@ object CarbonPartitionExample {
        | PARTITIONED BY (country String)
        | STORED BY 'carbondata'
        | TBLPROPERTIES('PARTITION_TYPE'='LIST',
-       | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea')
+       | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea ')
        """.stripMargin)
 
     // show tables
