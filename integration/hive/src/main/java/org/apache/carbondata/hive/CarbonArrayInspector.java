@@ -34,7 +34,7 @@ class CarbonArrayInspector implements SettableListObjectInspector {
 
   private final ObjectInspector arrayElementInspector;
 
-  public CarbonArrayInspector(final ObjectInspector arrayElementInspector) {
+  CarbonArrayInspector(final ObjectInspector arrayElementInspector) {
     this.arrayElementInspector = arrayElementInspector;
   }
 
