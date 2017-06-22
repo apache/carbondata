@@ -39,6 +39,10 @@ import org.apache.carbondata.core.util.CarbonProperties;
  */
 public abstract class AbstractBlockletScanner implements BlockletScanner {
 
+  private static final int NUMBER_OF_ROWS_PER_PAGE = Integer.parseInt(CarbonProperties.getInstance()
+      .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
+          CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT));
+
   /**
    * block execution info
    */
@@ -47,10 +51,6 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
   public QueryStatisticsModel queryStatisticsModel;
 
   private AbstractScannedResult emptyResult;
-
-  private static int NUMBER_OF_ROWS_PER_PAGE = Integer.parseInt(CarbonProperties.getInstance()
-      .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
-          CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT));
 
   public AbstractBlockletScanner(BlockExecutionInfo tableBlockExecutionInfos) {
     this.blockExecutionInfo = tableBlockExecutionInfos;
