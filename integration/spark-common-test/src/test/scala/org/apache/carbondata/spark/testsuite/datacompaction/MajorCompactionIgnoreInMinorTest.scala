@@ -103,7 +103,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     */
   test("delete compacted segment and check status") {
     try {
-      sql("delete segment 2 from table ignoremajor")
+      sql("delete from table ignoremajor where segment.id in (2)")
       assert(false)
     }
     catch {
@@ -128,7 +128,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     */
   test("delete compacted segment by date and check status") {
     sql(
-      "DELETE SEGMENTS FROM TABLE ignoremajor where STARTTIME before" +
+      "delete from table ignoremajor where segment.starttime before " +
         " '2222-01-01 19:35:01'"
     )
     val carbontablePath = CarbonStorePath

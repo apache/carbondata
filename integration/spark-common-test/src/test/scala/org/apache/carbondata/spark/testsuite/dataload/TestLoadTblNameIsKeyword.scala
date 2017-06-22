@@ -78,7 +78,7 @@ class TestLoadTblNameIsKeyword extends QueryTest with BeforeAndAfterAll {
           LOAD DATA LOCAL INPATH '$testData' into table timestamp
         """)
     sql("show segments for table timestamp")
-    sql("delete segments from table timestamp where starttime before '2099-10-01 18:00:00'")
+    sql("delete from table timestamp where segment.starttime before '2099-10-01 18:00:00'")
     sql("clean files for table timestamp")
   }
 
