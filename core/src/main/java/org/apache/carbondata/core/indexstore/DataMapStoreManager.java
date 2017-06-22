@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.indexstore;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,12 +52,12 @@ public class DataMapStoreManager {
     Map<String, AbstractTableDataMap> map = dataMapMappping.get(mapType);
     AbstractTableDataMap dataMap = null;
     if (map == null) {
+      createTableDataMap(identifier, mapType, dataMapName);
+      map = dataMapMappping.get(mapType);
+    }
+    dataMap = map.get(dataMapName);
+    if (dataMap == null) {
       throw new RuntimeException("Datamap does not exist");
-    } else {
-      dataMap = map.get(dataMapName);
-      if (dataMap == null) {
-        throw new RuntimeException("Datamap does not exist");
-      }
     }
     // Initialize datamap
     dataMap.init(identifier, dataMapName);
@@ -69,8 +70,8 @@ public class DataMapStoreManager {
    * @param mapType
    * @return
    */
-  public AbstractTableDataMap createTableDataMap(AbsoluteTableIdentifier identifier, DataMapType mapType,
-      String dataMapName) {
+  public AbstractTableDataMap createTableDataMap(AbsoluteTableIdentifier identifier,
+      DataMapType mapType, String dataMapName) {
     Map<String, AbstractTableDataMap> map = dataMapMappping.get(mapType);
     if (map == null) {
       map = new HashMap<>();
@@ -82,7 +83,7 @@ public class DataMapStoreManager {
     }
 
     try {
-      //TODO create datamap using @mapType.getClassName())
+      dataMap = (AbstractTableDataMap) (Class.forName(mapType.getClassName()).newInstance());
     } catch (Exception e) {
       LOGGER.error(e);
     }
@@ -94,7 +95,7 @@ public class DataMapStoreManager {
   public void clearDataMap(String dataMapName, DataMapType mapType) {
     Map<String, AbstractTableDataMap> map = dataMapMappping.get(mapType);
     if (map != null && map.get(dataMapName) != null) {
-      map.remove(dataMapName).clear();
+      map.remove(dataMapName).clear(new ArrayList<String>());
     }
   }
 

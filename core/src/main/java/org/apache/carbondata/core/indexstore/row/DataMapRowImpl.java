@@ -78,6 +78,11 @@ public class DataMapRowImpl extends DataMapRow {
     data[ordinal] = value;
   }
 
+  @Override public void setRow(DataMapRow row, int ordinal) {
+    assert (schemas[ordinal].getDataType() == DataType.STRUCT);
+    data[ordinal] = row;
+  }
+
   @Override public double getDouble(int ordinal) {
     return (Double) data[ordinal];
   }

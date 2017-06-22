@@ -41,6 +41,7 @@ import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
+import org.apache.carbondata.core.indexstore.blockletindex.IndexWrapper;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -116,23 +117,26 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // so block will be loaded in sorted order this will be required for
     // query execution
     Collections.sort(queryModel.getTableBlockInfos());
-    // get the table blocks
-    CacheProvider cacheProvider = CacheProvider.getInstance();
-    BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex> cache =
-        (BlockIndexStore) cacheProvider
-            .createCache(CacheType.EXECUTOR_BTREE, queryModel.getTable().getStorePath());
-    // remove the invalid table blocks, block which is deleted or compacted
-    cache.removeTableBlocks(queryModel.getInvalidSegmentIds(),
-        queryModel.getAbsoluteTableIdentifier());
-    List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
-        prepareTableBlockUniqueIdentifier(queryModel.getTableBlockInfos(),
-            queryModel.getAbsoluteTableIdentifier());
-    cache.removeTableBlocksIfHorizontalCompactionDone(queryModel);
-    queryProperties.dataBlocks = cache.getAll(tableBlockUniqueIdentifiers);
-    queryStatistic
-        .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
-    queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
 
+    if (queryModel.getTableBlockInfos().get(0).getDetailInfo() != null) {
+      List<AbstractIndex> indexList = new ArrayList<>();
+      // TODO seperate index for each block
+      indexList.add(new IndexWrapper(queryModel.getTableBlockInfos()));
+      queryProperties.dataBlocks = indexList;
+    } else {
+      // get the table blocks
+      CacheProvider cacheProvider = CacheProvider.getInstance();
+      BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex> cache = (BlockIndexStore) cacheProvider
+          .createCache(CacheType.EXECUTOR_BTREE, queryModel.getTable().getStorePath());
+      // remove the invalid table blocks, block which is deleted or compacted
+      cache.removeTableBlocks(queryModel.getInvalidSegmentIds(), queryModel.getAbsoluteTableIdentifier());
+      List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
+          prepareTableBlockUniqueIdentifier(queryModel.getTableBlockInfos(), queryModel.getAbsoluteTableIdentifier());
+      cache.removeTableBlocksIfHorizontalCompactionDone(queryModel);
+      queryProperties.dataBlocks = cache.getAll(tableBlockUniqueIdentifiers);
+      queryStatistic.addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
+      queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
+    }
     // calculating the total number of aggeragted columns
     int aggTypeCount = queryModel.getQueryMeasures().size();
 

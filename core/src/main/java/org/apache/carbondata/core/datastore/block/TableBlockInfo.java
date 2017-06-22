@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -76,6 +77,8 @@ public class TableBlockInfo implements Distributable, Serializable {
    * delete delta files path for this block
    */
   private String[] deletedDeltaFilePath;
+
+  private BlockletDetailInfo detailInfo;
 
   public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
       long blockLength, ColumnarFormatVersion version, String[] deletedDeltaFilePath) {
@@ -326,5 +329,13 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   public void setFilePath(String filePath) {
     this.filePath = filePath;
+  }
+
+  public BlockletDetailInfo getDetailInfo() {
+    return detailInfo;
+  }
+
+  public void setDetailInfo(BlockletDetailInfo detailInfo) {
+    this.detailInfo = detailInfo;
   }
 }

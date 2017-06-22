@@ -28,6 +28,7 @@ public class UnsafeDataMapRow extends DataMapRow {
       case VARIABLE:
         length = unsafe.getShort(block.getBaseObject(), block.getBaseOffset() + pointer + position);
         position += 2;
+        break;
       default:
         length = schemas[ordinal].getLength();
     }
@@ -101,10 +102,14 @@ public class UnsafeDataMapRow extends DataMapRow {
         .getDouble(block.getBaseObject(), block.getBaseOffset() + pointer + getPosition(ordinal));
   }
 
+  @Override public void setRow(DataMapRow row, int ordinal) {
+    throw new UnsupportedOperationException("Not supported to set on unsafe row");
+  }
+
   private int getPosition(int ordinal) {
     int position = 0;
     for (int i = 0; i < ordinal; i++) {
-      position += getSizeInBytes(ordinal);
+      position += getSizeInBytes(i);
     }
     return position;
   }

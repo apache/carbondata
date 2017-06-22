@@ -62,10 +62,18 @@ public abstract class AbstractTableDataMap implements EventListener {
     for (String segmentId: segmentIds) {
       List<DataMap> dataMaps = getDataMaps(segmentId);
       for (DataMap dataMap: dataMaps) {
-        blocklets.addAll(dataMap.prune(filterExp));
+        List<Blocklet> pruneBlocklets = dataMap.prune(filterExp);
+        blocklets.addAll(addSegmentId(pruneBlocklets, segmentId));
       }
     }
     return blocklets;
+  }
+
+  private List<Blocklet> addSegmentId(List<Blocklet> pruneBlocklets, String segmentId) {
+    for (Blocklet blocklet : pruneBlocklets) {
+      blocklet.setSegmentId(segmentId);
+    }
+    return pruneBlocklets;
   }
 
   /**
@@ -115,6 +123,6 @@ public abstract class AbstractTableDataMap implements EventListener {
   /**
    * Clears table level datamap
    */
-  public abstract void clear();
+  public abstract void clear(List<String> segmentIds);
 
 }

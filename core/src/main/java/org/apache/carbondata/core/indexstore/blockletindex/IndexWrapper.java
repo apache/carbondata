@@ -1,0 +1,58 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.carbondata.core.indexstore.blockletindex;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.apache.carbondata.core.datastore.block.AbstractIndex;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.AbstractDataFileFooterConverter;
+import org.apache.carbondata.core.util.DataFileFooterConverterFactory;
+
+/**
+ * Wrapper of abstract index
+ * TODO it could be removed after refactor
+ */
+public class IndexWrapper extends AbstractIndex {
+
+  public IndexWrapper(List<TableBlockInfo> blockInfos) {
+    BlockletDetailInfo detailInfo = blockInfos.get(0).getDetailInfo();
+    int[] dimLens = detailInfo.getDimLens();
+    ColumnarFormatVersion version =
+        ColumnarFormatVersion.valueOf(detailInfo.getVersionNumber());
+    AbstractDataFileFooterConverter dataFileFooterConverter =
+        DataFileFooterConverterFactory.getInstance().getDataFileFooterConverter(version);
+    List<ColumnSchema> schema;
+    try {
+      schema = dataFileFooterConverter.getSchema(blockInfos.get(0));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    segmentProperties = new SegmentProperties(schema, dimLens);
+    dataRefNode = new BlockletDataRefNodeWrapper(blockInfos, 0,
+        segmentProperties.getDimensionColumnsValueSize());
+  }
+
+  @Override public void buildIndex(List<DataFileFooter> footerList) {
+  }
+}

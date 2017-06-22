@@ -19,7 +19,9 @@ package org.apache.carbondata.core.metadata.blocklet;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
 import java.io.DataInputStream;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -29,10 +31,12 @@ import java.util.List;
 import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 
+import org.apache.hadoop.io.Writable;
+
 /**
  * class to store the information about the blocklet
  */
-public class BlockletInfo implements Serializable {
+public class BlockletInfo implements Serializable, Writable {
 
   /**
    * serialization id
@@ -195,9 +199,7 @@ public class BlockletInfo implements Serializable {
     this.numberOfPages = numberOfPages;
   }
 
-  public byte[] getSerializedData() throws IOException {
-    ByteArrayOutputStream stream = new ByteArrayOutputStream();
-    DataOutputStream output = new DataOutputStream(stream);
+  @Override public void write(DataOutput output) throws IOException {
     output.writeLong(dimensionOffset);
     output.writeLong(measureOffsets);
     int dsize = dimensionChunkOffsets != null ? dimensionChunkOffsets.size() : 0;
@@ -216,15 +218,9 @@ public class BlockletInfo implements Serializable {
     for (int i = 0; i < mSize; i++) {
       output.writeInt(measureChunksLength.get(i));
     }
-
-    output.close();
-    return stream.toByteArray();
   }
 
-  public void writeSerializedData(byte[] data) throws IOException {
-    ByteArrayInputStream stream = new ByteArrayInputStream(data);
-    DataInputStream input = new DataInputStream(stream);
-
+  @Override public void readFields(DataInput input) throws IOException {
     dimensionOffset = input.readLong();
     measureOffsets = input.readLong();
     short dimensionChunkOffsetsSize = input.readShort();
@@ -247,7 +243,5 @@ public class BlockletInfo implements Serializable {
       measureChunksLength.add(input.readInt());
     }
 
-    input.close();
   }
-
 }

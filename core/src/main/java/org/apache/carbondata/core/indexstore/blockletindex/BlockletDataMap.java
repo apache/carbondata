@@ -1,5 +1,26 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.carbondata.core.indexstore.blockletindex;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -11,7 +32,9 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.indexstore.Blocklet;
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.indexstore.DataMap;
 import org.apache.carbondata.core.indexstore.DataMapWriter;
 import org.apache.carbondata.core.indexstore.UnsafeMemoryDMStore;
@@ -58,6 +81,8 @@ public class BlockletDataMap implements DataMap {
 
   private SegmentProperties segmentProperties;
 
+  private int[] columnCardinality;
+
   @Override public DataMapWriter getWriter() {
     return null;
   }
@@ -69,20 +94,22 @@ public class BlockletDataMap implements DataMap {
       for (DataFileFooter fileFooter : indexInfo) {
         List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
         if (segmentProperties == null) {
-          segmentProperties = new SegmentProperties(columnInTable,
-              fileFooter.getSegmentInfo().getColumnCardinality());
+          columnCardinality = fileFooter.getSegmentInfo().getColumnCardinality();
+          segmentProperties = new SegmentProperties(columnInTable, columnCardinality);
           createSchema(segmentProperties);
         }
-        fileFooter = CarbonUtil.readMetadatFile(fileFooter.getBlockInfo().getTableBlockInfo());
-        loadToUnsafe(fileFooter, segmentProperties);
-      }
+        TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
+        fileFooter = CarbonUtil.readMetadatFile(blockInfo);
 
+        loadToUnsafe(fileFooter, segmentProperties, blockInfo.getFilePath());
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private void loadToUnsafe(DataFileFooter fileFooter, SegmentProperties segmentProperties) {
+  private void loadToUnsafe(DataFileFooter fileFooter, SegmentProperties segmentProperties,
+      String filePath) {
     int[] minMaxLen = segmentProperties.getEachDimColumnValueSize();
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
     DataMapSchema[] schema = unsafeMemoryDMStore.getSchema();
@@ -95,14 +122,16 @@ public class BlockletDataMap implements DataMap {
       row.setByteArray(blockletInfo.getBlockletIndex().getBtreeIndex().getStartKey(), ordinal++);
 
       BlockletMinMaxIndex minMaxIndex = blockletInfo.getBlockletIndex().getMinMaxIndex();
-      addMinMax(minMaxLen, schema[ordinal++], minMaxIndex.getMinValues());
-      addMinMax(minMaxLen, schema[ordinal++], minMaxIndex.getMaxValues());
+      row.setRow(addMinMax(minMaxLen, schema[ordinal], minMaxIndex.getMinValues()), ordinal);
+      ordinal++;
+      row.setRow(addMinMax(minMaxLen, schema[ordinal], minMaxIndex.getMaxValues()), ordinal);
+      ordinal++;
 
       row.setInt(blockletInfo.getNumberOfRows(), ordinal++);
 
       // add file path
-      byte[] filePath = fileFooter.getBlockInfo().getTableBlockInfo().getFilePath().getBytes();
-      row.setByteArray(filePath, ordinal++);
+      byte[] filePathBytes = filePath.getBytes();
+      row.setByteArray(filePathBytes, ordinal++);
 
       // add pages
       row.setShort((short) blockletInfo.getNumberOfPages(), ordinal++);
@@ -113,7 +142,10 @@ public class BlockletDataMap implements DataMap {
       // add blocklet info
       byte[] serializedData;
       try {
-        serializedData = blockletInfo.getSerializedData();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        DataOutput dataOutput = new DataOutputStream(stream);
+        blockletInfo.write(dataOutput);
+        serializedData = stream.toByteArray();
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -123,7 +155,7 @@ public class BlockletDataMap implements DataMap {
     unsafeMemoryDMStore.finishWriting();
   }
 
-  private void addMinMax(int[] minMaxLen, DataMapSchema dataMapSchema, byte[][] minValues) {
+  private DataMapRow addMinMax(int[] minMaxLen, DataMapSchema dataMapSchema, byte[][] minValues) {
     DataMapSchema[] minSchemas =
         ((DataMapSchema.StructDataMapSchema) dataMapSchema).getChildSchemas();
     DataMapRow minRow = new DataMapRowImpl(minSchemas);
@@ -132,6 +164,7 @@ public class BlockletDataMap implements DataMap {
     for (int i = 0; i < minMaxLen.length; i++) {
       minRow.setByteArray(minValues[i], minOrdinal++);
     }
+    return minRow;
   }
 
   private void createSchema(SegmentProperties segmentProperties) {
@@ -145,9 +178,9 @@ public class BlockletDataMap implements DataMap {
       DataMapSchema[] mapSchemas = new DataMapSchema[minMaxLen.length];
       for (int i = 0; i < minMaxLen.length; i++) {
         if (minMaxLen[i] <= 0) {
-          indexSchemas.add(new DataMapSchema.VariableDataMapSchema(DataType.BYTE_ARRAY));
+          mapSchemas[i] = new DataMapSchema.VariableDataMapSchema(DataType.BYTE_ARRAY);
         } else {
-          indexSchemas.add(new DataMapSchema.FixedDataMapSchema(DataType.BYTE_ARRAY, minMaxLen[i]));
+          mapSchemas[i] = new DataMapSchema.FixedDataMapSchema(DataType.BYTE_ARRAY, minMaxLen[i]);
         }
       }
       DataMapSchema mapSchema = new DataMapSchema.StructDataMapSchema(DataType.STRUCT, mapSchemas);
@@ -210,28 +243,36 @@ public class BlockletDataMap implements DataMap {
               .getNoDictionaryKeys() + "Dictionary End Key: " + searchEndKey.getDictionaryKeys()
               + "No Dictionary End Key " + searchEndKey.getNoDictionaryKeys());
     }
-    int startIndex = findStartIndex(convertToRow(searchStartKey), comparator);
-    int endIndex = findEndIndex(convertToRow(searchEndKey), comparator);
-    FilterExecuter filterExecuter =
-        FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null);
-    while (startIndex <= endIndex) {
-      DataMapRow unsafeRow = unsafeMemoryDMStore.getUnsafeRow(startIndex);
-      BitSet bitSet = filterExecuter.isScanRequired(getMinMaxValue(unsafeRow, MAX_VALUES_INDEX),
-          getMinMaxValue(unsafeRow, MIN_VALUES_INDEX));
-      if (!bitSet.isEmpty()) {
-        blocklets.add(createBlocklet(unsafeRow, startIndex));
+    if (filterExp == null) {
+      int rowCount = unsafeMemoryDMStore.getRowCount();
+      for (int i = 0; i < rowCount; i++) {
+        DataMapRow unsafeRow = unsafeMemoryDMStore.getUnsafeRow(i);
+        blocklets.add(createBlocklet(unsafeRow, i));
       }
-      startIndex++;
+    } else {
+      int startIndex = findStartIndex(convertToRow(searchStartKey), comparator);
+      int endIndex = findEndIndex(convertToRow(searchEndKey), comparator);
+      FilterExecuter filterExecuter =
+          FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null);
+      while (startIndex <= endIndex) {
+        DataMapRow unsafeRow = unsafeMemoryDMStore.getUnsafeRow(startIndex);
+        BitSet bitSet = filterExecuter.isScanRequired(getMinMaxValue(unsafeRow, MAX_VALUES_INDEX),
+            getMinMaxValue(unsafeRow, MIN_VALUES_INDEX));
+        if (!bitSet.isEmpty()) {
+          blocklets.add(createBlocklet(unsafeRow, startIndex));
+        }
+        startIndex++;
+      }
     }
 
-    return null;
+    return blocklets;
   }
 
   private byte[][] getMinMaxValue(DataMapRow row, int index) {
     DataMapRow minMaxRow = row.getRow(index);
     byte[][] minMax = new byte[minMaxRow.getColumnCount()][];
     for (int i = 0; i < minMax.length; i++) {
-      minMax[i] = row.getByteArray(i);
+      minMax[i] = minMaxRow.getByteArray(i);
     }
     return minMax;
   }
@@ -239,13 +280,18 @@ public class BlockletDataMap implements DataMap {
   private Blocklet createBlocklet(DataMapRow row, int blockletId) {
     Blocklet blocklet =
         new Blocklet(new String(row.getByteArray(FILE_PATH_INDEX)), blockletId + "");
-    Blocklet.BlockletDetailInfo detailInfo = new Blocklet.BlockletDetailInfo();
+    BlockletDetailInfo detailInfo = new BlockletDetailInfo();
     detailInfo.setRowCount(row.getInt(ROW_COUNT_INDEX));
     detailInfo.setPagesCount(row.getShort(PAGE_COUNT_INDEX));
     detailInfo.setVersionNumber(row.getShort(VERSION_INDEX));
+    detailInfo.setDimLens(columnCardinality);
     BlockletInfo blockletInfo = new BlockletInfo();
     try {
-      blockletInfo.writeSerializedData(row.getByteArray(BLOCK_INFO_INDEX));
+      byte[] byteArray = row.getByteArray(BLOCK_INFO_INDEX);
+      ByteArrayInputStream stream = new ByteArrayInputStream(byteArray);
+      DataInputStream inputStream = new DataInputStream(stream);
+      blockletInfo.readFields(inputStream);
+      inputStream.close();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

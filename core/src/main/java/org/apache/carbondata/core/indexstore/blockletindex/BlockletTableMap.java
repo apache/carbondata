@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.carbondata.core.indexstore.blockletindex;
 
 import java.util.ArrayList;
@@ -18,7 +34,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
- * Created by root1 on 16/6/17.
+ * Table map for blocklet
  */
 public class BlockletTableMap extends AbstractTableDataMap {
 
@@ -46,7 +62,7 @@ public class BlockletTableMap extends AbstractTableDataMap {
     List<DataMap> dataMaps = map.get(segmentId);
     if (dataMaps == null) {
       dataMaps = new ArrayList<>();
-      String path = identifier.getTablePath() + "/Part0/Segment_" + segmentId;
+      String path = identifier.getTablePath() + "/Fact/Part0/Segment_" + segmentId;
       FileFactory.FileType fileType = FileFactory.getFileType(path);
       CarbonFile carbonFile = FileFactory.getCarbonFile(path, fileType);
       CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
@@ -72,10 +88,10 @@ public class BlockletTableMap extends AbstractTableDataMap {
   }
 
   @Override public boolean isFiltersSupported(FilterResolverIntf filterExp) {
-    return false;
+    return true;
   }
 
-  @Override public void clear() {
+  @Override public void clear(List<String> segmentIds) {
 
   }
 

@@ -16,27 +16,40 @@
  */
 package org.apache.carbondata.core.indexstore;
 
+import java.io.IOException;
 import java.io.Serializable;
 
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
+
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
 
 /**
  * Blocklet
  */
 public class Blocklet implements Serializable {
 
-  private String path;
+  private Path path;
+
+  private String segmentId;
 
   private String blockletId;
 
   private BlockletDetailInfo detailInfo;
 
+  private long length;
+
+  private String[] location;;
+
   public Blocklet(String path, String blockletId) {
-    this.path = path;
+    this.path = new Path(path);
     this.blockletId = blockletId;
   }
 
-  public String getPath() {
+  public Path getPath() {
     return path;
   }
 
@@ -52,46 +65,28 @@ public class Blocklet implements Serializable {
     this.detailInfo = detailInfo;
   }
 
-  public static class BlockletDetailInfo implements Serializable {
-
-    private int rowCount;
-
-    private int pagesCount;
-
-    private int versionNumber;
-
-    private BlockletInfo blockletInfo;
-
-    public int getRowCount() {
-      return rowCount;
-    }
-
-    public void setRowCount(int rowCount) {
-      this.rowCount = rowCount;
-    }
-
-    public int getPagesCount() {
-      return pagesCount;
-    }
-
-    public void setPagesCount(int pagesCount) {
-      this.pagesCount = pagesCount;
-    }
-
-    public int getVersionNumber() {
-      return versionNumber;
-    }
-
-    public void setVersionNumber(int versionNumber) {
-      this.versionNumber = versionNumber;
-    }
-
-    public BlockletInfo getBlockletInfo() {
-      return blockletInfo;
-    }
-
-    public void setBlockletInfo(BlockletInfo blockletInfo) {
-      this.blockletInfo = blockletInfo;
-    }
+  public void updateLocations() throws IOException {
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(path);
+    LocatedFileStatus fileStatus = iter.next();
+    location = fileStatus.getBlockLocations()[0].getHosts();
+    length = fileStatus.getLen();
   }
+
+  public String[] getLocations() throws IOException {
+    return location;
+  }
+
+  public long getLength() throws IOException {
+    return length;
+  }
+
+  public String getSegmentId() {
+    return segmentId;
+  }
+
+  public void setSegmentId(String segmentId) {
+    this.segmentId = segmentId;
+  }
+
 }

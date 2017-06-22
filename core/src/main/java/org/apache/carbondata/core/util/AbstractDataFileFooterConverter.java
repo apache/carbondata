@@ -199,6 +199,8 @@ public abstract class AbstractDataFileFooterConverter {
   public abstract DataFileFooter readDataFileFooter(TableBlockInfo tableBlockInfo)
       throws IOException;
 
+  public abstract List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException;
+
   /**
    * Below method will be used to get blocklet index for data file meta
    *

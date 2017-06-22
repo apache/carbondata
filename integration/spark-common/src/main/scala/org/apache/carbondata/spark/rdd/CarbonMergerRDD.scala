@@ -308,7 +308,8 @@ class CarbonMergerRDD[K, V](
           updateStatusManager.getDeleteDeltaFilePath(entry.getPath.toString)
         )
         ((!updated) || ((updated) && (!CarbonUtil
-          .isInvalidTableBlock(blockInfo, updateDetails, updateStatusManager))))
+          .isInvalidTableBlock(blockInfo.getSegmentId, blockInfo.getFilePath,
+            updateDetails, updateStatusManager))))
       })
     }
 

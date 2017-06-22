@@ -33,6 +33,8 @@ public abstract class DataMapRow {
 
   public abstract DataMapRow getRow(int ordinal);
 
+  public abstract void setRow(DataMapRow row, int ordinal);
+
   public abstract void setByteArray(byte[] byteArray, int ordinal);
 
   public abstract int getInt(int ordinal);
