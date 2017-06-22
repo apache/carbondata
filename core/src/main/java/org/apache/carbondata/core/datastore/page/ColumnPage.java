@@ -208,7 +208,7 @@ public abstract class ColumnPage {
     return columnPage;
   }
 
-  private static ColumnPage newDoublePage(double[] doubleData) {
+  public static ColumnPage newDoublePage(double[] doubleData) {
     ColumnPage columnPage = createPage(DOUBLE, doubleData.length);
     columnPage.setDoublePage(doubleData);
     return columnPage;

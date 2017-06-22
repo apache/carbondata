@@ -50,25 +50,17 @@ class AdaptiveIntegerCodec extends AdaptiveCompressionCodec {
 
   @Override
   public byte[] encode(ColumnPage input) throws MemoryException {
-    if (srcDataType.equals(targetDataType)) {
-      return input.compress(compressor);
-    } else {
-      encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
-      input.encode(codec);
-      byte[] result = encodedPage.compress(compressor);
-      encodedPage.freeMemory();
-      return result;
-    }
+    encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
+    input.encode(codec);
+    byte[] result = encodedPage.compress(compressor);
+    encodedPage.freeMemory();
+    return result;
   }
 
   @Override
   public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
-    if (srcDataType.equals(targetDataType)) {
-      return ColumnPage.decompress(compressor, targetDataType, input, offset, length);
-    } else {
-      ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
-      return LazyColumnPage.newPage(page, codec);
-    }
+    ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
+    return LazyColumnPage.newPage(page, codec);
   }
 
   // encoded value = (type cast page value to target data type)
