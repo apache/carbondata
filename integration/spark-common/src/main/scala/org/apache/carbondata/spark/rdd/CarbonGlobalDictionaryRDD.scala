@@ -155,7 +155,6 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
     delimiters: Array[String],
     highCardIdentifyEnable: Boolean,
     highCardThreshold: Int,
-    rowCountPercentage: Double,
     columnIdentifier: Array[ColumnIdentifier],
     isFirstLoad: Boolean,
     hdfsTempLocation: String,
@@ -382,7 +381,7 @@ class CarbonGlobalDictionaryGenerateRDD(
                 && !model.isComplexes(split.index)
                 && model.primDimensions(split.index).isColumnar) {
               isHighCardinalityColumn = GlobalDictionaryUtil.isHighCardinalityColumn(
-                valuesBuffer.size, rowCount, model)
+                valuesBuffer.size, model)
               if (isHighCardinalityColumn) {
                 break
               }
