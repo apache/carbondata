@@ -119,7 +119,6 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
       // it can use integer codec
       return newCodecForInteger(stats);
     } else {
-      //return SimpleCodec.newInstance();
       // need to use codec for floating point type
       DataType srcDataType = stats.getDataType();
       double maxValue = (double) stats.getMax();
