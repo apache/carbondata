@@ -22,13 +22,15 @@ import java.text.SimpleDateFormat
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.catalyst.expressions.{Cast, Literal}
 import org.apache.spark.sql.types.TimestampType
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.schema.PartitionInfo
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -172,6 +174,34 @@ object CarbonStore {
       throw new MalformedCarbonCommandException(errorMessage)
     }
     timeObj.asInstanceOf[Long]
+  }
+
+  def showPartitions(carbonTable: CarbonTable): Seq[Row] = {
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val databaseName = carbonTable.getDatabaseName
+    if (partitionInfo == null) {
+      throw new RuntimeException("SHOW PARTITIONS is not allowed on a table that is not " +
+                                  s"partitioned: $databaseName.${ carbonTable.getTableUniqueName }")
+    }
+    val partitions = getPartitionsBasedOnType(partitionInfo)
+    partitions.map { partition =>
+      Row(f"$partition%-9s")
+    }
+  }
+
+  private def getPartitionsBasedOnType(partitionInfo: PartitionInfo): Seq[String] = {
+    val columnSchema = partitionInfo.getColumnSchemaList.get(0)
+    partitionInfo.getPartitionType match {
+      case PartitionType.HASH =>
+        Seq(s"${ columnSchema.getColumnName } = HASH_NUMBER(${ partitionInfo.getNumPartitions })")
+      case PartitionType.LIST =>
+        partitionInfo.getListInfo.asScala.map { partitionList =>
+          s"${ columnSchema.getColumnName } = ${ partitionList.asScala.mkString(",") }"
+        }
+      case PartitionType.RANGE =>
+        partitionInfo.getRangeInfo.asScala.toList.sliding(2)
+          .map { case List(from, to) => s"$from <= ${ columnSchema.getColumnName } < $to" }.toSeq
+    }
   }
 
 }

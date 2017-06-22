@@ -75,6 +75,15 @@ case class DescribeFormattedCommand(sql: String, tblIdentifier: TableIdentifier)
     Seq(AttributeReference("result", StringType, nullable = false)())
 }
 
+case class ShowPartitionsCommand(tableIdentifier: TableIdentifier)
+  extends LogicalPlan with Command {
+
+  override def output: Seq[AttributeReference] =
+    Seq(AttributeReference("partitions", StringType, nullable = false)())
+
+  override def children: Seq[LogicalPlan] = Seq.empty
+}
+
 case class CarbonDictionaryCatalystDecoder(
     relations: Seq[CarbonDecoderRelation],
     profile: CarbonProfile,

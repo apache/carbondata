@@ -316,6 +316,8 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         } else {
           ExecutedCommand(HiveNativeCommand(sql)) :: Nil
         }
+      case ShowPartitionsCommand(tableIdentifier) =>
+        ExecutedCommand(ShowPartitions(tableIdentifier)) :: Nil
       case _ =>
         Nil
     }

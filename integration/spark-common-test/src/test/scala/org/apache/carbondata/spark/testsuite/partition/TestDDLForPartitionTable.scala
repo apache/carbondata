@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.testsuite.partition
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
@@ -135,6 +136,30 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists des")
   }
 
+  test("test show partition on list partition") {
+    sql("drop table if exists des")
+    sql(
+      """create table des(a int, b string) partitioned by (c string) stored by 'carbondata'
+        |tblproperties ('partition_type'='list','list_info'='1,(5,7),10')""".stripMargin)
+    checkExistence(sql("show partitions des"), true, "c = 1", "c = 10","c = 5,7")
+  }
+
+  test("test show partition on range partition") {
+    sql("drop table if exists des")
+    sql(
+      """create table des(a int, b string) partitioned by (c string) stored by 'carbondata'
+        |tblproperties ('partition_type'='range','range_info'='1,5,10')""".stripMargin)
+    checkExistence(sql("show partitions des"), true,  "1 <= c < 5","5 <= c < 10")
+  }
+
+  test("test show partition on hash partition") {
+    sql("drop table if exists des")
+    sql(
+      """create table des(a int, b string) partitioned by (c string) stored by 'carbondata'
+        |tblproperties ('partition_type'='hash','num_partitions'='10')""".stripMargin)
+    checkAnswer(sql("show partitions des"), Row("c = HASH_NUMBER(10)"))
+  }
+
   override def afterAll = {
     dropTable
     CarbonProperties.getInstance()
@@ -146,6 +171,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists rangeTable")
     sql("drop table if exists listTable")
     sql("drop table if exists test")
+    sql("drop table if exists des")
   }
 
 }

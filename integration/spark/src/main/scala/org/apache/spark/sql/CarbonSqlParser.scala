@@ -31,7 +31,6 @@ import org.apache.spark.sql.execution.ExplainCommand
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
-import org.apache.spark.sql.types.StructField
 
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
@@ -60,11 +59,18 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
   override protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
   protected lazy val startCommand: Parser[LogicalPlan] =
-    createDatabase | dropDatabase | loadManagement | describeTable |
+    createDatabase | dropDatabase | loadManagement | showPartitions | describeTable |
     showLoads | alterTable | updateTable | deleteRecords | useDatabase | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
+
+  protected lazy val showPartitions: Parser[LogicalPlan] =
+    SHOW ~> PARTITIONS ~> (ident <~ ".").? ~ ident ^^ {
+      case databaseName ~ tableName =>
+        val tableIdentifier = TableIdentifier.apply(tableName, databaseName)
+        ShowPartitionsCommand(tableIdentifier)
+    }
 
   protected lazy val createDatabase: Parser[LogicalPlan] =
     CREATE ~> (DATABASE | SCHEMA) ~> restInput ^^ {
