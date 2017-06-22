@@ -45,7 +45,7 @@ object DataManagementExample {
     cc.sql("SHOW SEGMENTS FOR TABLE t3 ").show
 
     // delete the first segment
-    cc.sql("DELETE SEGMENT 0 FROM TABLE t3")
+    cc.sql("delete from table t3 where segment.id in (0)")
     cc.sql("SHOW SEGMENTS FOR TABLE t3 LIMIT 10").show
 
     // this query will be executed on last 4 segments, it should return 4000 rows
@@ -63,7 +63,7 @@ object DataManagementExample {
     cc.sql("SELECT count(*) AS amount FROM t3").show
 
     // delete all segments whose loading time is before '2099-01-01 01:00:00'
-    cc.sql("DELETE SEGMENTS FROM TABLE t3 WHERE STARTTIME BEFORE '2099-01-01 01:00:00'")
+    cc.sql("delete from table t3 where segment.starttime BEFORE '2099-01-01 01:00:00'")
     cc.sql("SHOW SEGMENTS FOR TABLE t3 ").show
 
     // this query will be executed on 0 segments, it should return 0 rows
