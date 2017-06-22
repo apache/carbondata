@@ -66,7 +66,7 @@ Please follow the below steps to query carbondata in presto
   $ mvn clean package
   ```
   Second:create one folder "carbondata" under ./presto-server-0.166/plugin
-  Third:copy all jar from ./carbondata/integration/presto/target/carbondata-presto-1.2.0-SNAPSHOT
+  Third:copy all jar from ./carbondata/integration/presto/target/carbondata-presto-x.x.x-SNAPSHOT
         to ./presto-server-0.166/plugin/carbondata
   
 ### Generate CarbonData file

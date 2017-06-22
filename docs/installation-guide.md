@@ -150,7 +150,7 @@ $SPARK_HOME/carbonlib/$CARBON_ASSEMBLY_JAR <carbon_store_path>
 
 | Parameter | Description | Example |
 |---------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
-| CARBON_ASSEMBLY_JAR | CarbonData assembly jar name present in the `$SPARK_HOME/carbonlib/` folder. | carbondata_2.10-1.2.0-SNAPSHOT-shade-hadoop2.7.2.jar |
+| CARBON_ASSEMBLY_JAR | CarbonData assembly jar name present in the `$SPARK_HOME/carbonlib/` folder. | carbondata_2.xx-x.x.x-SNAPSHOT-shade-hadoop2.7.2.jar |
 | carbon_store_path | This is a parameter to the CarbonThriftServer class. This a HDFS path where CarbonData files will be kept. Strongly Recommended to put same as carbon.storelocation parameter of carbon.properties. | `hdfs://<host_name>:port/user/hive/warehouse/carbon.store` |
 
 **Examples**
@@ -162,7 +162,7 @@ $SPARK_HOME/carbonlib/$CARBON_ASSEMBLY_JAR <carbon_store_path>
 --conf spark.sql.hive.thriftServer.singleSession=true
 --class org.apache.carbondata.spark.thriftserver.CarbonThriftServer 
 $SPARK_HOME/carbonlib
-/carbondata_2.10-1.2.0-SNAPSHOT-shade-hadoop2.7.2.jar
+/carbondata_2.xx-x.x.x-SNAPSHOT-shade-hadoop2.7.2.jar
 hdfs://<host_name>:port/user/hive/warehouse/carbon.store
 ```
    
@@ -174,7 +174,7 @@ hdfs://<host_name>:port/user/hive/warehouse/carbon.store
 --num-executors 3 --driver-memory 20g --executor-memory 250g 
 --executor-cores 32 
 /srv/OSCON/BigData/HACluster/install/spark/sparkJdbc/lib
-/carbondata_2.10-1.2.0-SNAPSHOT-shade-hadoop2.7.2.jar
+/carbondata_2.xx-x.x.x-SNAPSHOT-shade-hadoop2.7.2.jar
 hdfs://<host_name>:port/user/hive/warehouse/carbon.store
 ```
   
