@@ -182,7 +182,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
   }
 
   private def needToConvertToLowerCase(key: String): Boolean = {
-    val noConvertList = Array("LIST_INFO", "RANGE_INFO")
+    val noConvertList = Array("LIST_INFO", "RANGE_INFO", "RANGE_INTERVAL_INFO")
     !noConvertList.exists(x => x.equalsIgnoreCase(key));
   }
 
