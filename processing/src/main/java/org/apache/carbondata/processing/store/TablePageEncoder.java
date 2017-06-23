@@ -37,6 +37,7 @@ import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class TablePageEncoder {
 
@@ -75,12 +76,12 @@ public class TablePageEncoder {
   }
 
   private IndexStorage encodeAndCompressDictDimension(byte[][] data, boolean isSort,
-      boolean isUseInvertedIndex) throws KeyGenException {
+      boolean isUseInvertedIndex, boolean isRleApplicable) throws KeyGenException {
     if (isUseInvertedIndex) {
       if (version == ColumnarFormatVersion.V3) {
-        return new BlockIndexerStorageForShort(data, true, false, isSort);
+        return new BlockIndexerStorageForShort(data, isRleApplicable, false, isSort);
       } else {
-        return new BlockIndexerStorageForInt(data, true, false, isSort);
+        return new BlockIndexerStorageForInt(data, isRleApplicable, false, isSort);
       }
     } else {
       if (version == ColumnarFormatVersion.V3) {
@@ -92,12 +93,12 @@ public class TablePageEncoder {
   }
 
   private IndexStorage encodeAndCompressDirectDictDimension(byte[][] data, boolean isSort,
-      boolean isUseInvertedIndex) throws KeyGenException {
+      boolean isUseInvertedIndex, boolean isRleApplicable) throws KeyGenException {
     if (isUseInvertedIndex) {
       if (version == ColumnarFormatVersion.V3) {
-        return new BlockIndexerStorageForShort(data, false, false, isSort);
+        return new BlockIndexerStorageForShort(data, isRleApplicable, false, isSort);
       } else {
-        return new BlockIndexerStorageForInt(data, false, false, isSort);
+        return new BlockIndexerStorageForInt(data, isRleApplicable, false, isSort);
       }
     } else {
       if (version == ColumnarFormatVersion.V3) {
@@ -117,12 +118,12 @@ public class TablePageEncoder {
   }
 
   private IndexStorage encodeAndCompressNoDictDimension(byte[][] data, boolean isSort,
-      boolean isUseInvertedIndex) {
+      boolean isUseInvertedIndex, boolean isRleApplicable) {
     if (isUseInvertedIndex) {
       if (version == ColumnarFormatVersion.V3) {
-        return new BlockIndexerStorageForShort(data, false, true, isSort);
+        return new BlockIndexerStorageForShort(data, isRleApplicable, true, isSort);
       } else {
-        return new BlockIndexerStorageForInt(data, false, true, isSort);
+        return new BlockIndexerStorageForInt(data, isRleApplicable, true, isSort);
       }
     } else {
       if (version == ColumnarFormatVersion.V3) {
@@ -149,29 +150,26 @@ public class TablePageEncoder {
       switch (dimensionSpec.getType(i)) {
         case GLOBAL_DICTIONARY:
           // dictionary dimension
-          indexStorages[indexStorageOffset] =
-              encodeAndCompressDictDimension(
-                  tablePage.getDictDimensionPage()[++dictionaryColumnCount].getByteArrayPage(),
-                  isSortColumn,
-                  isUseInvertedIndex[i] & isSortColumn);
+          indexStorages[indexStorageOffset] = encodeAndCompressDictDimension(
+              tablePage.getDictDimensionPage()[++dictionaryColumnCount].getByteArrayPage(),
+              isSortColumn, isUseInvertedIndex[i] & isSortColumn,
+              CarbonDataProcessorUtil.isRleApplicableForColumn(dimensionSpec.getType(i)));
           flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getDataPage());
           break;
         case DIRECT_DICTIONARY:
           // timestamp and date column
-          indexStorages[indexStorageOffset] =
-              encodeAndCompressDirectDictDimension(
-                  tablePage.getDictDimensionPage()[++dictionaryColumnCount].getByteArrayPage(),
-                  isSortColumn,
-                  isUseInvertedIndex[i] & isSortColumn);
+          indexStorages[indexStorageOffset] = encodeAndCompressDirectDictDimension(
+              tablePage.getDictDimensionPage()[++dictionaryColumnCount].getByteArrayPage(),
+              isSortColumn, isUseInvertedIndex[i] & isSortColumn,
+              CarbonDataProcessorUtil.isRleApplicableForColumn(dimensionSpec.getType(i)));
           flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getDataPage());
           break;
         case PLAIN_VALUE:
           // high cardinality dimension, encoded as plain string
-          indexStorages[indexStorageOffset] =
-              encodeAndCompressNoDictDimension(
-                  tablePage.getNoDictDimensionPage()[++noDictionaryColumnCount].getByteArrayPage(),
-                  isSortColumn,
-                  isUseInvertedIndex[i] & isSortColumn);
+          indexStorages[indexStorageOffset] = encodeAndCompressNoDictDimension(
+              tablePage.getNoDictDimensionPage()[++noDictionaryColumnCount].getByteArrayPage(),
+              isSortColumn, isUseInvertedIndex[i] & isSortColumn,
+              CarbonDataProcessorUtil.isRleApplicableForColumn(dimensionSpec.getType(i)));
           flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getDataPage());
           break;
         case COMPLEX:
