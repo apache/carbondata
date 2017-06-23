@@ -154,7 +154,7 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
               sortDataRows.getSortDataRow().addRowBatchWithOutSync(buffer, i);
               rowCounter.getAndAdd(i);
               if (!sortDataRows.getSortDataRow().canAdd()) {
-                sortDataRows.finish();
+                sortDataRows.finish(false);
                 sortDataRows.createSortDataRows();
               }
             }
@@ -245,7 +245,7 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
       return sortDataRow;
     }
 
-    public void finish() {
+    public void finish(boolean isFinalAttempt) {
       try {
         // if the mergerQue is empty and some CarbonDataLoadingException exception has occurred
         // then set stop process to true in the finalmerger instance
@@ -253,6 +253,9 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
             && threadStatusObserver.getThrowable() != null && threadStatusObserver
             .getThrowable() instanceof CarbonDataLoadingException) {
           finalMerger.setStopProcess(true);
+          if (isFinalAttempt) {
+            iteratorCount.decrementAndGet();
+          }
           mergerQueue.put(finalMerger);
           return;
         }
@@ -262,6 +265,9 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
         finalMerger.startFinalMerge(rowPages.toArray(new UnsafeCarbonRowPage[rowPages.size()]),
             unsafeIntermediateFileMerger.getMergedPages());
         unsafeIntermediateFileMerger.close();
+        if (isFinalAttempt) {
+          iteratorCount.decrementAndGet();
+        }
         mergerQueue.put(finalMerger);
         sortDataRow = null;
         unsafeIntermediateFileMerger = null;
@@ -283,8 +289,10 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
 
     public void finishThread() {
       synchronized (lock) {
-        if (iteratorCount.decrementAndGet() <= 0) {
-          finish();
+        if (iteratorCount.get() <= 1) {
+          finish(true);
+        } else {
+          iteratorCount.decrementAndGet();
         }
       }
     }
