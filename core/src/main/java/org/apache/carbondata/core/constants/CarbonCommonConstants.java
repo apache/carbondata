@@ -834,13 +834,6 @@ public final class CarbonCommonConstants {
   public static final int HIGH_CARDINALITY_THRESHOLD_MIN = 10000;
 
   /**
-   * percentage of cardinality in row count
-   */
-  public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE =
-      "high.cardinality.row.count.percentage";
-  public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT = "80";
-
-  /**
    * 16 mb size
    */
   public static final long CARBON_16MB = 16 * 1024 * 1024;
