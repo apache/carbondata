@@ -27,10 +27,16 @@ import org.apache.carbondata.processing.loading.BadRecordsLogger
 object GlobalSortHelper {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  def badRecordsLogger(loadModel: CarbonLoadModel, badRecordsAccum: Accumulator[Int]): Unit = {
-    val key = new CarbonTableIdentifier(loadModel.getDatabaseName, loadModel.getTableName, null)
-      .getBadRecordLoggerKey
-    if (null != BadRecordsLogger.hasBadRecord(key)) {
+  /**
+   *
+   * @param loadModel       Carbon load model instance
+   * @param badRecordsAccum Accumulator to maintain the load state if 0 then success id !0 then
+   *                        partial successfull
+   * @param hasBadRecord    if <code>true<code> then load bad records vice versa.
+   */
+  def badRecordsLogger(loadModel: CarbonLoadModel,
+      badRecordsAccum: Accumulator[Int], hasBadRecord: Boolean): Unit = {
+    if (hasBadRecord) {
       LOGGER.error("Data Load is partially success for table " + loadModel.getTableName)
       badRecordsAccum.add(1)
     } else {

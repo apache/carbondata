@@ -17,32 +17,26 @@
 
 package org.apache.carbondata.processing.loading.steps;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.constants.LoggerAction;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.BadRecordsLogger;
+import org.apache.carbondata.processing.loading.BadRecordsLoggerProvider;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
-import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.converter.RowConverter;
 import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl;
 import org.apache.carbondata.processing.loading.partition.Partitioner;
 import org.apache.carbondata.processing.loading.partition.impl.HashPartitionerImpl;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
 
 /**
  * Replace row data fields with dictionary values if column is configured dictionary encoded.
@@ -71,7 +65,7 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
     super.initialize();
     child.initialize();
     converters = new ArrayList<>();
-    badRecordLogger = createBadRecordLogger();
+    badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
     RowConverter converter =
         new RowConverterImpl(child.getOutput(), configuration, badRecordLogger);
     configuration.setCardinalityFinder(converter);
@@ -146,69 +140,13 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
     throw new UnsupportedOperationException();
   }
 
-  private BadRecordsLogger createBadRecordLogger() {
-    boolean badRecordsLogRedirect = false;
-    boolean badRecordConvertNullDisable = false;
-    boolean isDataLoadFail = false;
-    boolean badRecordsLoggerEnable = Boolean.parseBoolean(
-        configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ENABLE)
-            .toString());
-    Object bad_records_action =
-        configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ACTION)
-            .toString();
-    if (null != bad_records_action) {
-      LoggerAction loggerAction = null;
-      try {
-        loggerAction = LoggerAction.valueOf(bad_records_action.toString().toUpperCase());
-      } catch (IllegalArgumentException e) {
-        loggerAction = LoggerAction.FORCE;
-      }
-      switch (loggerAction) {
-        case FORCE:
-          badRecordConvertNullDisable = false;
-          break;
-        case REDIRECT:
-          badRecordsLogRedirect = true;
-          badRecordConvertNullDisable = true;
-          break;
-        case IGNORE:
-          badRecordsLogRedirect = false;
-          badRecordConvertNullDisable = true;
-          break;
-        case FAIL:
-          isDataLoadFail = true;
-          break;
-      }
-    }
-    CarbonTableIdentifier identifier =
-        configuration.getTableIdentifier().getCarbonTableIdentifier();
-    return new BadRecordsLogger(identifier.getBadRecordLoggerKey(),
-        identifier.getTableName() + '_' + System.currentTimeMillis(), getBadLogStoreLocation(
-        identifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-            .getTableName() + CarbonCommonConstants.FILE_SEPARATOR + configuration.getSegmentId()
-            + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo()),
-        badRecordsLogRedirect, badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail);
-  }
-
-  private String getBadLogStoreLocation(String storeLocation) {
-    String badLogStoreLocation = (String) configuration
-        .getDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH);
-    if (null == badLogStoreLocation) {
-      badLogStoreLocation =
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
-    }
-    badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
-
-    return badLogStoreLocation;
-  }
-
   @Override
   public void close() {
     if (!closed) {
       super.close();
       if (null != badRecordLogger) {
         badRecordLogger.closeStreams();
-        renameBadRecord(configuration);
+        CarbonBadRecordUtil.renameBadRecord(configuration);
       }
       if (converters != null) {
         for (RowConverter converter : converters) {
@@ -216,15 +154,6 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
         }
       }
     }
-  }
-  private static void renameBadRecord(CarbonDataLoadConfiguration configuration) {
-    // rename the bad record in progress to normal
-    CarbonTableIdentifier identifier =
-        configuration.getTableIdentifier().getCarbonTableIdentifier();
-    CarbonDataProcessorUtil.renameBadRecordsFromInProgressToNormal(configuration,
-        identifier.getDatabaseName() + File.separator + identifier.getTableName()
-            + File.separator + configuration.getSegmentId() + File.separator + configuration
-            .getTaskNo());
   }
   @Override protected String getStepName() {
     return "Data Converter with Bucketing";
