@@ -29,6 +29,7 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.processing.newflow.complexobjects.StructObject;
 
+
 /**
  * Struct DataType stateless object used in data loading
  */
@@ -145,7 +146,7 @@ public class StructDataType implements GenericDataType<StructObject> {
       throws IOException, DictionaryGenerationException {
     dataOutputStream.writeInt(children.size());
     if (input == null) {
-      dataOutputStream.writeInt(children.size());
+      // dataOutputStream.writeInt(children.size());
       for (int i = 0; i < children.size(); i++) {
         children.get(i).writeByteArray(null, dataOutputStream);
       }
