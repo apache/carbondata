@@ -46,24 +46,33 @@ public class UpscaleFloatingCodec extends AdaptiveCompressionCodec {
     this.factor = Math.pow(10, stats.getDecimal());
   }
 
-  @Override public String getName() {
+  @Override
+  public String getName() {
     return "UpscaleFloatingCodec";
   }
 
   @Override
   public byte[] encode(ColumnPage input) throws MemoryException {
-    encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
-    input.encode(codec);
-    byte[] result = encodedPage.compress(compressor);
-    encodedPage.freeMemory();
-    return result;
+    if (targetDataType.equals(srcDataType)) {
+      return input.compress(compressor);
+    } else {
+      encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
+      input.encode(codec);
+      byte[] result = encodedPage.compress(compressor);
+      encodedPage.freeMemory();
+      return result;
+    }
   }
 
 
   @Override
   public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
-    ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
-    return LazyColumnPage.newPage(page, codec);
+    if (srcDataType.equals(targetDataType)) {
+      return ColumnPage.decompress(compressor, targetDataType, input, offset, length);
+    } else {
+      ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
+      return LazyColumnPage.newPage(page, codec);
+    }
   }
 
   // encoded value = (10 power of decimal) * (page value)
