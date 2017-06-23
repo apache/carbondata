@@ -22,7 +22,7 @@ import scala.reflect.ClassTag
 import org.apache.spark.{Dependency, OneToOneDependency, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 
-import org.apache.carbondata.core.util.{SessionParams, ThreadLocalSessionParams}
+import org.apache.carbondata.core.util.{CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
 
 /**
  * This RDD maintains session level ThreadLocal
@@ -30,7 +30,7 @@ import org.apache.carbondata.core.util.{SessionParams, ThreadLocalSessionParams}
 abstract class CarbonRDD[T: ClassTag](@transient sc: SparkContext,
     @transient private var deps: Seq[Dependency[_]]) extends RDD[T](sc, deps) {
 
-  val sessionParams: SessionParams = ThreadLocalSessionParams.getSessionParams
+  val carbonSessionInfo: CarbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
 
   /** Construct an RDD with just a one-to-one dependency on one parent */
   def this(@transient oneParent: RDD[_]) =
@@ -40,7 +40,7 @@ abstract class CarbonRDD[T: ClassTag](@transient sc: SparkContext,
   def internalCompute(split: Partition, context: TaskContext): Iterator[T]
 
   final def compute(split: Partition, context: TaskContext): Iterator[T] = {
-    ThreadLocalSessionParams.setSessionParams(sessionParams)
+    ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
     internalCompute(split, context)
   }
 }

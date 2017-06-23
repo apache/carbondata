@@ -49,7 +49,7 @@ case class CarbonSetCommand(command: SetCommand)
   override val output = command.output
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    val sessionParms = CarbonEnv.getInstance(sparkSession).sessionParams
+    val sessionParms = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.getSessionParams
     command.kv match {
       case Some((key, Some(value))) =>
         val isCarbonProperty: Boolean = CarbonProperties.getInstance().isCarbonProperty(key)
@@ -68,7 +68,7 @@ case class CarbonResetCommand()
   override val output = ResetCommand.output
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    CarbonEnv.getInstance(sparkSession).sessionParams.clear()
+    CarbonEnv.getInstance(sparkSession).carbonSessionInfo.getSessionParams.clear()
     ResetCommand.run(sparkSession)
   }
 }

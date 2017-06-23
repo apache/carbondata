@@ -461,9 +461,13 @@ public final class CarbonProperties {
    */
   private String getSessionPropertyValue(String key) {
     String value = null;
-    SessionParams sessionParams = ThreadLocalSessionParams.getSessionParams();
-    if (null != sessionParams) {
-      value = sessionParams.getProperty(key);
+    CarbonSessionInfo carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo();
+    if (null != carbonSessionInfo) {
+      SessionParams sessionParams =
+          ThreadLocalSessionInfo.getCarbonSessionInfo().getSessionParams();
+      if (null != sessionParams) {
+        value = sessionParams.getProperty(key);
+      }
     }
     return value;
   }

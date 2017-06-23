@@ -17,18 +17,22 @@
 
 package org.apache.carbondata.core.util;
 
+import java.io.Serializable;
+
 /**
- * This class maintains ThreadLocal session params
+ * This class maintains carbon session information details
  */
-public class ThreadLocalSessionParams {
-  static final InheritableThreadLocal<SessionParams> threadLocal =
-      new InheritableThreadLocal<SessionParams>();
+public class CarbonSessionInfo implements Serializable {
 
-  public static void setSessionParams(SessionParams sessionParams) {
-    threadLocal.set(sessionParams);
+  // contains carbon session param details
+  private SessionParams sessionParams;
+
+  public SessionParams getSessionParams() {
+    return sessionParams;
   }
 
-  public static SessionParams getSessionParams() {
-    return threadLocal.get();
+  public void setSessionParams(SessionParams sessionParams) {
+    this.sessionParams = sessionParams;
   }
+
 }
