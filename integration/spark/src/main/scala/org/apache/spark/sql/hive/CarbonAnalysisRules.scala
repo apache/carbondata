@@ -171,7 +171,6 @@ object CarbonIUDAnalysisRule extends Rule[LogicalPlan] {
     logicalplan transform {
       case UpdateTable(t, cols, sel, where) => processUpdateQuery(t, cols, sel, where)
       case DeleteRecords(statement, table) => processDeleteRecordsQuery(statement, table)
-      case ShowPartitions(t) => ShowCarbonPartitionsCommand(t)
     }
   }
 }
