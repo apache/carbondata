@@ -82,13 +82,16 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
         int k = 0;
         while (iterator.hasNext()) {
           CarbonRowBatch next = iterator.next();
-          CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
-              .createCarbonFactDataHandlerModel(configuration, storeLocation, i, k++);
-          CarbonFactHandler dataHandler = CarbonFactHandlerFactory
-              .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
-          dataHandler.initialise();
-          processBatch(next, dataHandler);
-          finish(tableName, dataHandler);
+          // If no rows from merge sorter, then don't create a file in fact column handler
+          if (next.hasNext()) {
+            CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
+                .createCarbonFactDataHandlerModel(configuration, storeLocation, i, k++);
+            CarbonFactHandler dataHandler = CarbonFactHandlerFactory
+                .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
+            dataHandler.initialise();
+            processBatch(next, dataHandler);
+            finish(tableName, dataHandler);
+          }
         }
         i++;
       }
@@ -137,6 +140,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
       dataHandler.addDataToStore(row);
       batchSize++;
     }
+    batch.close();
     rowCounter.getAndAdd(batchSize);
   }
 

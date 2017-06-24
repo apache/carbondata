@@ -51,6 +51,8 @@ public class LazyColumnPage extends SafeFixLengthColumnPage {
         return codec.decodeLong(columnPage.getByte(rowId));
       case SHORT:
         return codec.decodeLong(columnPage.getShort(rowId));
+      case SHORT_INT:
+        return codec.decodeLong(columnPage.getShortInt(rowId));
       case INT:
         return codec.decodeLong(columnPage.getInt(rowId));
       case LONG:
@@ -67,6 +69,8 @@ public class LazyColumnPage extends SafeFixLengthColumnPage {
         return codec.decodeDouble(columnPage.getByte(rowId));
       case SHORT:
         return codec.decodeDouble(columnPage.getShort(rowId));
+      case SHORT_INT:
+        return codec.decodeDouble(columnPage.getShortInt(rowId));
       case INT:
         return codec.decodeDouble(columnPage.getInt(rowId));
       case LONG:

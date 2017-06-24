@@ -32,6 +32,7 @@ import java.util.Set;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.DimensionType;
 import org.apache.carbondata.core.datastore.GenericDataType;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
@@ -515,6 +516,19 @@ public final class CarbonDataProcessorUtil {
   public static String prepareFailureReason(String columnName, DataType dataType) {
     return "The value with column name " + columnName + " and column data type " + dataType
         .getName() + " is not a valid " + dataType + " type.";
+  }
+
+  /**
+   * This method will return a flag based on whether a column is applicable for RLE encoding
+   *
+   * @param dimensionType
+   * @return
+   */
+  public static boolean isRleApplicableForColumn(DimensionType dimensionType) {
+    if (dimensionType == DimensionType.GLOBAL_DICTIONARY) {
+      return true;
+    }
+    return false;
   }
 
 }
