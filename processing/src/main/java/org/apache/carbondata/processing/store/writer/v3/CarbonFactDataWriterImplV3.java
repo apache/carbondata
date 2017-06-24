@@ -114,10 +114,10 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
       totalKeySize += keyLengths[i];
       if (!isSortedData[i]) {
         dataAfterCompression[i] =
-            getByteArray((short[])encoded.indexStorages[i].getDataAfterComp());
-        if (null != encoded.indexStorages[i].getIndexMap() &&
-            ((short[])encoded.indexStorages[i].getIndexMap()).length > 0) {
-          indexMap[i] = getByteArray((short[])encoded.indexStorages[i].getIndexMap());
+            getByteArray((short[])encoded.indexStorages[i].getRowIdPage());
+        if (null != encoded.indexStorages[i].getRowIdRlePage() &&
+            ((short[])encoded.indexStorages[i].getRowIdRlePage()).length > 0) {
+          indexMap[i] = getByteArray((short[])encoded.indexStorages[i].getRowIdRlePage());
         } else {
           indexMap[i] = new byte[0];
         }
@@ -135,7 +135,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
       if (dataWriterVo.getRleEncodingForDictDim()[i]) {
         try {
           compressedDataIndex[i] =
-              getByteArray((short[])encoded.indexStorages[i].getDataIndexMap());
+              getByteArray((short[])encoded.indexStorages[i].getDataRlePage());
           dataIndexMapLength[i] = compressedDataIndex[i].length;
         } catch (Exception e) {
           throw new CarbonDataWriterException(e.getMessage(), e);
@@ -372,9 +372,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
         // below code is to write the file header
         byte[] fileHeader = CarbonUtil.getByteArray(CarbonMetadataUtil
             .getFileHeader(true, thriftColumnSchemaList, dataWriterVo.getSchemaUpdatedTimeStamp()));
-        ByteBuffer buffer = ByteBuffer.allocate(fileHeader.length);
-        buffer.put(fileHeader);
-        buffer.flip();
+        ByteBuffer buffer = ByteBuffer.wrap(fileHeader);
         fileChannel.write(buffer);
       }
       offset = channel.size();
@@ -395,17 +393,17 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     long dimensionOffset = 0;
     long measureOffset = 0;
     int numberOfRows = 0;
+    long totalSize = 0;
     // calculate the number of rows in each blocklet
     for (int j = 0; j < nodeHolderList.size(); j++) {
       numberOfRows += nodeHolderList.get(j).getEntryCount();
+      totalSize += nodeHolderList.get(j).getHolderSize();
     }
     try {
       for (int i = 0; i < numberOfDimension; i++) {
         currentDataChunksOffset.add(offset);
         currentDataChunksLength.add(dataChunkBytes[i].length);
-        buffer = ByteBuffer.allocate(dataChunkBytes[i].length);
-        buffer.put(dataChunkBytes[i]);
-        buffer.flip();
+        buffer = ByteBuffer.wrap(dataChunkBytes[i]);
         fileChannel.write(buffer);
         offset += dataChunkBytes[i].length;
         for (int j = 0; j < nodeHolderList.size(); j++) {
@@ -438,18 +436,14 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
         nodeHolderList = dataWriterHolder.getNodeHolder();
         currentDataChunksOffset.add(offset);
         currentDataChunksLength.add(dataChunkBytes[dataChunkStartIndex].length);
-        buffer = ByteBuffer.allocate(dataChunkBytes[dataChunkStartIndex].length);
-        buffer.put(dataChunkBytes[dataChunkStartIndex]);
-        buffer.flip();
+        buffer = ByteBuffer.wrap(dataChunkBytes[dataChunkStartIndex]);
         fileChannel.write(buffer);
         offset += dataChunkBytes[dataChunkStartIndex].length;
         dataChunkStartIndex++;
         for (int j = 0; j < nodeHolderList.size(); j++) {
           nodeHolder = nodeHolderList.get(j);
           bufferSize = nodeHolder.getDataArray()[i].length;
-          buffer = ByteBuffer.allocate(bufferSize);
-          buffer.put(nodeHolder.getDataArray()[i]);
-          buffer.flip();
+          buffer = ByteBuffer.wrap(nodeHolder.getDataArray()[i]);
           fileChannel.write(buffer);
           offset += bufferSize;
         }

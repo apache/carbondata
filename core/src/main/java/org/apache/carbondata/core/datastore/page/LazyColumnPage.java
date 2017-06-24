@@ -21,7 +21,7 @@ package org.apache.carbondata.core.datastore.page;
  * This is a decorator of column page, it performs transformation lazily (when caller calls getXXX
  * method to get the value from the page)
  */
-public class LazyColumnPage extends ColumnPage {
+public class LazyColumnPage extends SafeFixLengthColumnPage {
 
   // decorated column page
   private ColumnPage columnPage;
@@ -51,6 +51,8 @@ public class LazyColumnPage extends ColumnPage {
         return codec.decodeLong(columnPage.getByte(rowId));
       case SHORT:
         return codec.decodeLong(columnPage.getShort(rowId));
+      case SHORT_INT:
+        return codec.decodeLong(columnPage.getShortInt(rowId));
       case INT:
         return codec.decodeLong(columnPage.getInt(rowId));
       case LONG:
@@ -67,6 +69,8 @@ public class LazyColumnPage extends ColumnPage {
         return codec.decodeDouble(columnPage.getByte(rowId));
       case SHORT:
         return codec.decodeDouble(columnPage.getShort(rowId));
+      case SHORT_INT:
+        return codec.decodeDouble(columnPage.getShortInt(rowId));
       case INT:
         return codec.decodeDouble(columnPage.getInt(rowId));
       case LONG:
@@ -78,5 +82,10 @@ public class LazyColumnPage extends ColumnPage {
       default:
         throw new RuntimeException("internal error: " + this.toString());
     }
+  }
+
+  @Override
+  public void freeMemory() {
+    columnPage.freeMemory();
   }
 }

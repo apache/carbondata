@@ -47,7 +47,7 @@ import org.apache.hive.service.server.HiveServer2;
  */
 public class HiveEmbeddedServer2 {
   private static final String SCRATCH_DIR = "/tmp/hive";
-  private static Log log = LogFactory.getLog(Hive.class);
+  private static final Log log = LogFactory.getLog(Hive.class);
   private HiveServer2 hiveServer;
   private HiveConf config;
   private int port;
@@ -84,7 +84,6 @@ public class HiveEmbeddedServer2 {
         return;
       } catch (Exception e) {
         // service not started yet
-        continue;
       } finally {
         hs2Client.closeSession(sessionHandle);
       }

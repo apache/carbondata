@@ -834,13 +834,6 @@ public final class CarbonCommonConstants {
   public static final int HIGH_CARDINALITY_THRESHOLD_MIN = 10000;
 
   /**
-   * percentage of cardinality in row count
-   */
-  public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE =
-      "high.cardinality.row.count.percentage";
-  public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT = "80";
-
-  /**
    * 16 mb size
    */
   public static final long CARBON_16MB = 16 * 1024 * 1024;
@@ -1065,6 +1058,16 @@ public final class CarbonCommonConstants {
    * have been started
    */
   public static final int CARBON_EXECUTOR_STARTUP_THREAD_SLEEP_TIME = 250;
+
+  /**
+   * to enable unsafe column page in write step
+   */
+  public static final String ENABLE_UNSAFE_COLUMN_PAGE_LOADING = "enable.unsafe.columnpage";
+
+  /**
+   * default value of ENABLE_UNSAFE_COLUMN_PAGE_LOADING
+   */
+  public static final String ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT = "false";
 
   /**
    * to enable offheap sort

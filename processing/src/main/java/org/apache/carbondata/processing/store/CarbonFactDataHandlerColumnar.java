@@ -42,6 +42,7 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.apache.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -54,6 +55,7 @@ import org.apache.carbondata.processing.store.file.FileManager;
 import org.apache.carbondata.processing.store.file.IFileManagerComposite;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
  * Fact data handler class to handle the fact data
@@ -171,19 +173,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK,
             CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE));
     if (isAggKeyBlock) {
-      int noDictionaryValue = Integer.parseInt(
-          CarbonProperties.getInstance().getProperty(
-              CarbonCommonConstants.HIGH_CARDINALITY_VALUE,
-              CarbonCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
-      int[] columnSplits = colGrpModel.getColumnSplit();
-      int dimCardinalityIndex = -1;
-      int aggIndex = -1;
       int[] dimLens = model.getSegmentProperties().getDimColumnsCardinality();
-      for (int i = 0; i < columnSplits.length; i++) {
-        dimCardinalityIndex += columnSplits[i];
-        aggIndex++;
-        if (colGrpModel.isColumnar(i) && dimLens[dimCardinalityIndex] < noDictionaryValue) {
-          this.rleEncodingForDictDimension[aggIndex] = true;
+      for (int i = 0; i < model.getTableSpec().getDimensionSpec().getNumSimpleDimensions(); i++) {
+        if (CarbonDataProcessorUtil
+            .isRleApplicableForColumn(model.getTableSpec().getDimensionSpec().getType(i))) {
+          this.rleEncodingForDictDimension[i] = true;
         }
       }
 
@@ -203,7 +197,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           this.rleEncodingForDictDimension[i] = rleWithComplex.get(i);
         }
       }
-      rleEncodingForDictDimension = arrangeUniqueBlockType(rleEncodingForDictDimension);
     }
     this.version = CarbonProperties.getInstance().getFormatVersion();
     this.encoder = new TablePageEncoder(model);
@@ -343,7 +336,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * generate the NodeHolder from the input rows (one page in case of V3 format)
    */
   private NodeHolder processDataRows(List<CarbonRow> dataRows)
-      throws CarbonDataWriterException, KeyGenException {
+      throws CarbonDataWriterException, KeyGenException, MemoryException {
     if (dataRows.size() == 0) {
       return new NodeHolder();
     }
@@ -364,10 +357,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     TablePageStatistics tablePageStatistics = new TablePageStatistics(
         model.getTableSpec(), tablePage, encodedData, tablePage.getMeasureStats());
 
-    LOGGER.info("Number Of records processed: " + dataRows.size());
+    NodeHolder nodeHolder = dataWriter.buildDataNodeHolder(encodedData, tablePageStatistics, keys);
+    tablePage.freeMemory();
 
-    // TODO: writer interface should be modified to use TablePage
-    return dataWriter.buildDataNodeHolder(encodedData, tablePageStatistics, keys);
+    LOGGER.info("Number Of records processed: " + dataRows.size());
+    return nodeHolder;
   }
 
   /**

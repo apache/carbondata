@@ -194,7 +194,6 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     for (int i = 0; i < pageNumbers; i++) {
       BitSet set = new BitSet(numberOfRows[i]);
       RowIntf row = new RowImpl();
-      boolean invalidRowsPresent = false;
       for (int index = 0; index < numberOfRows[i]; index++) {
         createRow(blockChunkHolder, row ,i, index);
         Boolean rslt = false;
@@ -205,7 +204,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         // error only once since all rows the evaluation happens so inorder to avoid
         // too much log inforation only once the log will be printed.
         catch (FilterIllegalMemberException e) {
-          FilterUtil.logError(e, invalidRowsPresent);
+          FilterUtil.logError(e, false);
         }
         if (null != rslt && rslt) {
           set.set(index);
@@ -213,7 +212,6 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       }
       bitSetGroup.setBitSet(set, i);
     }
-
     return bitSetGroup;
   }
 
@@ -333,33 +331,28 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
               .convertToMeasureColDataChunk(pageIndex);
       switch (msrType) {
         case SHORT:
-          msrValue = (short) measureColumnDataChunk.getColumnPage()
-              .getLong(index);
+          msrValue = (short) measureColumnDataChunk.getColumnPage().getLong(index);
           break;
         case INT:
-          msrValue =
-              (int)measureColumnDataChunk.getColumnPage().getLong(index);
+          msrValue = (int) measureColumnDataChunk.getColumnPage().getLong(index);
           break;
         case LONG:
-          msrValue =
-              measureColumnDataChunk.getColumnPage().getLong(index);
+          msrValue = measureColumnDataChunk.getColumnPage().getLong(index);
           break;
         case DECIMAL:
-          BigDecimal bigDecimalValue =
-              measureColumnDataChunk.getColumnPage()
-                  .getDecimal(index);
-          if (null != bigDecimalValue
-              && msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema().getScale()
-              > bigDecimalValue.scale()) {
-            bigDecimalValue = bigDecimalValue
-                .setScale(msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema().getScale(),
+          BigDecimal bigDecimalValue = measureColumnDataChunk.getColumnPage().getDecimal(index);
+          if (null != bigDecimalValue &&
+              msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema().getScale() >
+                  bigDecimalValue.scale()) {
+            bigDecimalValue =
+                bigDecimalValue.setScale(
+                    msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema().getScale(),
                     RoundingMode.HALF_UP);
           }
           msrValue = bigDecimalValue;
           break;
         default:
-          msrValue =
-              measureColumnDataChunk.getColumnPage().getDouble(index);
+          msrValue = measureColumnDataChunk.getColumnPage().getDouble(index);
       }
       record[msrColumnEvalutorInfo.getRowIndex()] =
           measureColumnDataChunk.getNullValueIndexHolder().getBitSet().get(index) ? null : msrValue;

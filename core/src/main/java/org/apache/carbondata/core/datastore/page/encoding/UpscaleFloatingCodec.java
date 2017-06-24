@@ -22,6 +22,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
 import org.apache.carbondata.core.datastore.page.PrimitiveCodec;
 import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsVO;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
@@ -45,22 +46,33 @@ public class UpscaleFloatingCodec extends AdaptiveCompressionCodec {
     this.factor = Math.pow(10, stats.getDecimal());
   }
 
-  @Override public String getName() {
+  @Override
+  public String getName() {
     return "UpscaleFloatingCodec";
   }
 
   @Override
-  public byte[] encode(ColumnPage input) {
-    encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
-    input.encode(codec);
-    return encodedPage.compress(compressor);
+  public byte[] encode(ColumnPage input) throws MemoryException {
+    if (targetDataType.equals(srcDataType)) {
+      return input.compress(compressor);
+    } else {
+      encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
+      input.encode(codec);
+      byte[] result = encodedPage.compress(compressor);
+      encodedPage.freeMemory();
+      return result;
+    }
   }
 
 
   @Override
-  public ColumnPage decode(byte[] input, int offset, int length) {
-    ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
-    return LazyColumnPage.newPage(page, codec);
+  public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
+    if (srcDataType.equals(targetDataType)) {
+      return ColumnPage.decompress(compressor, targetDataType, input, offset, length);
+    } else {
+      ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
+      return LazyColumnPage.newPage(page, codec);
+    }
   }
 
   // encoded value = (10 power of decimal) * (page value)

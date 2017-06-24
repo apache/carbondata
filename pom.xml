@@ -128,10 +128,6 @@
         <enabled>true</enabled>
       </releases>
     </repository>
-    <repository>
-      <id>pentaho-releases</id>
-      <url>http://repository.pentaho.org/artifactory/repo/</url>
-    </repository>
   </repositories>
 
   <dependencyManagement>

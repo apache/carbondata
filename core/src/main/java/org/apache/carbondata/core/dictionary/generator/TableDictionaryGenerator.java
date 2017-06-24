@@ -115,7 +115,14 @@ public class TableDictionaryGenerator
   }
 
   public void updateGenerator(CarbonDimension dimension) {
-    columnMap.put(dimension.getColumnId(),
-            new IncrementalColumnDictionaryGenerator(dimension, 1));
+    // reuse dictionary generator
+    if (null == columnMap.get(dimension.getColumnId())) {
+      synchronized (columnMap) {
+        if (null == columnMap.get(dimension.getColumnId())) {
+          columnMap.put(dimension.getColumnId(),
+              new IncrementalColumnDictionaryGenerator(dimension, 1));
+        }
+      }
+    }
   }
 }

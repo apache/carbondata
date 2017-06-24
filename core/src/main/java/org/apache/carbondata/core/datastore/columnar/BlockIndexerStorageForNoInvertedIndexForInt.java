@@ -16,18 +16,17 @@
  */
 package org.apache.carbondata.core.datastore.columnar;
 
-import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
  * Below class will be used to for no inverted index
  */
-public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]> {
+public class BlockIndexerStorageForNoInvertedIndexForInt implements IndexStorage<int[]> {
 
   /**
    * column data
    */
-  private byte[][] keyBlock;
+  private byte[][] dataPage;
 
   /**
    * total number of rows
@@ -37,27 +36,27 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
   private byte[] min;
   private byte[] max;
 
-  public BlockIndexerStorageForNoInvertedIndex(byte[][] keyBlockInput) {
-    this.keyBlock = keyBlockInput;
-    min = keyBlock[0];
-    max = keyBlock[0];
-    totalSize += keyBlock[0].length;
+  public BlockIndexerStorageForNoInvertedIndexForInt(byte[][] dataPage) {
+    this.dataPage = dataPage;
+    min = this.dataPage[0];
+    max = this.dataPage[0];
+    totalSize += this.dataPage[0].length;
     int minCompare = 0;
     int maxCompare = 0;
-    for (int i = 1; i < keyBlock.length; i++) {
-      totalSize += keyBlock[i].length;
-      minCompare = ByteUtil.compare(min, keyBlock[i]);
-      maxCompare = ByteUtil.compare(max, keyBlock[i]);
+    for (int i = 1; i < this.dataPage.length; i++) {
+      totalSize += this.dataPage[i].length;
+      minCompare = ByteUtil.compare(min, this.dataPage[i]);
+      maxCompare = ByteUtil.compare(max, this.dataPage[i]);
       if (minCompare > 0) {
-        min = keyBlock[i];
+        min = this.dataPage[i];
       }
       if (maxCompare < 0) {
-        max = keyBlock[i];
+        max = this.dataPage[i];
       }
     }
   }
 
-  @Override public int[] getDataIndexMap() {
+  public int[] getDataRlePage() {
     return new int[0];
   }
 
@@ -74,7 +73,7 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
    *
    * @return
    */
-  @Override public int[] getDataAfterComp() {
+  public int[] getRowIdPage() {
     return new int[0];
   }
 
@@ -83,15 +82,15 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
    *
    * @return
    */
-  @Override public int[] getIndexMap() {
+  public int[] getRowIdRlePage() {
     return new int[0];
   }
 
   /**
-   * @return the keyBlock
+   * @return the dataPage
    */
-  public byte[][] getKeyBlock() {
-    return keyBlock;
+  public byte[][] getDataPage() {
+    return dataPage;
   }
 
   @Override public byte[] getMin() {

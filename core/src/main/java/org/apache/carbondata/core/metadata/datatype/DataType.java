@@ -35,8 +35,10 @@ public enum DataType {
   MAP(11, "MAP", -1),
   BYTE(12, "BYTE", 1),
 
-  // internal use only
-  BYTE_ARRAY(13, "BYTE_ARRAY", -1);
+  // internal use only, for variable length data type
+  BYTE_ARRAY(13, "BYTE_ARRAY", -1),
+  // internal use only, for value compression from integer/long to 3 bytes value
+  SHORT_INT(14, "SHORT_INT", 3);
 
   private int precedenceOrder;
   private String name;
@@ -66,4 +68,7 @@ public enum DataType {
     return sizeInBytes;
   }
 
+  public int getSizeBits() {
+    return (int) (Math.log(getSizeInBytes()) / Math.log(2));
+  }
 }

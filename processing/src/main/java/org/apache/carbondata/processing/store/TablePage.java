@@ -33,10 +33,12 @@ import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.spark.sql.types.Decimal;
+
 
 /**
  * Represent a page data for all columns, we store its data in columnar layout, so that
@@ -61,17 +63,17 @@ public class TablePage {
 
   private CarbonFactDataHandlerModel model;
 
-  public TablePage(CarbonFactDataHandlerModel model, int pageSize) {
+  TablePage(CarbonFactDataHandlerModel model, int pageSize) throws MemoryException {
     this.model = model;
     this.pageSize = pageSize;
     int numDictDimension = model.getMDKeyGenerator().getDimCount();
     dictDimensionPage = new ColumnPage[numDictDimension];
     for (int i = 0; i < dictDimensionPage.length; i++) {
-      dictDimensionPage[i] = ColumnPage.newPage(DataType.BYTE_ARRAY, pageSize);
+      dictDimensionPage[i] = ColumnPage.newVarLengthPath(DataType.BYTE_ARRAY, pageSize);
     }
     noDictDimensionPage = new ColumnPage[model.getNoDictionaryCount()];
     for (int i = 0; i < noDictDimensionPage.length; i++) {
-      noDictDimensionPage[i] = ColumnPage.newPage(DataType.BYTE_ARRAY, pageSize);
+      noDictDimensionPage[i] = ColumnPage.newVarLengthPath(DataType.BYTE_ARRAY, pageSize);
     }
     complexDimensionPage = new ComplexColumnPage[model.getComplexColumnCount()];
     for (int i = 0; i < complexDimensionPage.length; i++) {
@@ -190,38 +192,51 @@ public class TablePage {
     }
   }
 
+  void freeMemory() {
+    for (ColumnPage page : dictDimensionPage) {
+      page.freeMemory();
+    }
+    for (ColumnPage page : noDictDimensionPage) {
+      page.freeMemory();
+    }
+    for (ColumnPage page : measurePage) {
+      page.freeMemory();
+    }
+  }
+
   // Adds length as a short element (first 2 bytes) to the head of the input byte array
   private byte[] addLengthToByteArray(byte[] input) {
+    if (input.length > Short.MAX_VALUE) {
+      throw new RuntimeException("input data length " + input.length +
+          " bytes too long, maximum length supported is " + Short.MAX_VALUE + " bytes");
+    }
     byte[] output = new byte[input.length + 2];
     ByteBuffer buffer = ByteBuffer.wrap(output);
-    buffer.putShort((short) input.length);
+    buffer.putShort((short)input.length);
     buffer.put(input, 0, input.length);
     return output;
   }
 
-  public ColumnPage[] getDictDimensionPage() {
+  ColumnPage[] getDictDimensionPage() {
     return dictDimensionPage;
   }
 
-  public ColumnPage[] getNoDictDimensionPage() {
+  ColumnPage[] getNoDictDimensionPage() {
     return noDictDimensionPage;
   }
 
-  public ComplexColumnPage[] getComplexDimensionPage() {
+  ComplexColumnPage[] getComplexDimensionPage() {
     return complexDimensionPage;
   }
 
-  public ColumnPage[] getMeasurePage() {
+  ColumnPage[] getMeasurePage() {
     return measurePage;
   }
 
-  public MeasurePageStatsVO getMeasureStats() {
+  MeasurePageStatsVO getMeasureStats() {
     return measurePageStatistics;
   }
 
-  public int getPageSize() {
-    return pageSize;
-  }
 }
 
 
