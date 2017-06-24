@@ -17,79 +17,35 @@
 
 package org.apache.spark.sql.execution.command
 
-import java.util
-
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
-
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.RunnableCommand
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.metadata.schema.partition.PartitionType
-
+import org.apache.carbondata.spark.util.CommonUtil
 
 private[sql] case class ShowCarbonPartitionsCommand(
     tableIdentifier: TableIdentifier) extends RunnableCommand {
   val LOGGER = LogServiceFactory.getLogService(ShowCarbonPartitionsCommand.getClass.getName)
-  var columnName = ""
-  override val output: Seq[Attribute] = Seq(
-    // Column names are based on Hive.
-    AttributeReference("ID", StringType, nullable = false,
-      new MetadataBuilder().putString("comment", "partition id").build())(),
-    AttributeReference("Value", StringType, nullable = true,
-      new MetadataBuilder().putString("comment", "partition value").build())()
-  )
+  override val output = CommonUtil.partitionInfoOutput
   override def run(sqlContext: SQLContext): Seq[Row] = {
     val relation = CarbonEnv.get.carbonMetastore
       .lookupRelation1(tableIdentifier)(sqlContext).
       asInstanceOf[CarbonRelation]
     val carbonTable = relation.tableMeta.carbonTable
+    var tableName = carbonTable.getFactTableName
     var partitionInfo = carbonTable.getPartitionInfo(
       carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
-    var partitionType = partitionInfo.getPartitionType
-    var result = Seq.newBuilder[Row]
-    columnName = partitionInfo.getColumnSchemaList.get(0).getColumnName
-    LOGGER.info("partition column name:" + columnName)
-    partitionType match {
-      case PartitionType.RANGE =>
-        result.+=(RowFactory.create("0", "default"))
-        var id = 1
-        var rangeInfo = partitionInfo.getRangeInfo
-        var size = rangeInfo.size() - 1
-        for (index <- 0 to size) {
-          result.+=(RowFactory.create(id.toString(), "< " + rangeInfo.get(index)))
-          id += 1
-        }
-      case PartitionType.RANGE_INTERVAL =>
-        result.+=(RowFactory.create("", ""))
-      case PartitionType.LIST =>
-        result.+=(RowFactory.create("0", "default"))
-        var id = 1
-        var listInfo = partitionInfo.getListInfo
-        var size = listInfo.size() - 1
-        for (index <- 0 to size) {
-          var listStr = ""
-          listInfo.get(index).toArray().foreach { x =>
-            if (listStr.isEmpty()) {
-              listStr = x.toString()
-            } else {
-              listStr += ", " + x.toString()
-            }
-          }
-          result.+=(RowFactory.create(id.toString(), listStr))
-          id += 1
-        }
-      case PartitionType.HASH =>
-        var hashNumber = partitionInfo.getNumPartitions
-        result.+=(RowFactory.create("HASH PARTITION", hashNumber.toString()))
-      case others =>
-        result.+=(RowFactory.create("", ""))
+    if (partitionInfo == null) {
+      throw new AnalysisException(
+        s"SHOW PARTITIONS is not allowed on a table that is not partitioned: $tableName")
     }
-    result.result()
+    var partitionType = partitionInfo.getPartitionType
+    var columnName = partitionInfo.getColumnSchemaList.get(0).getColumnName
+    LOGGER.info("partition column name:" + columnName)
+    CommonUtil.getPartitionInfo(columnName, partitionType, partitionInfo)
   }
 }
 
