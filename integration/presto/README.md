@@ -61,17 +61,17 @@ Please follow the below steps to query carbondata in presto
   
   First:compile carbondata-presto integration module
   ```
-  $ git clone https://github.com/apache/incubator-carbondata
-  $ cd incubator-carbondata/integration/presto
+  $ git clone https://github.com/apache/carbondata
+  $ cd carbondata/integration/presto
   $ mvn clean package
   ```
   Second:create one folder "carbondata" under ./presto-server-0.166/plugin
-  Third:copy all jar from ./incubator-carbondata/integration/presto/target/carbondata-presto-1.1.0-incubating-SNAPSHOT
+  Third:copy all jar from ./carbondata/integration/presto/target/carbondata-presto-x.x.x-SNAPSHOT
         to ./presto-server-0.166/plugin/carbondata
   
 ### Generate CarbonData file
 
-Please refer to quick start : https://github.com/apache/incubator-carbondata/blob/master/docs/quick-start-guide.md
+Please refer to quick start : https://github.com/apache/carbondata/blob/master/docs/quick-start-guide.md
 
 ### Query carbondata in CLI of presto
 * Download presto-cli-0.166-executable.jar
