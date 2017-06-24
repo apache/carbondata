@@ -205,7 +205,6 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
     logicalplan transform {
       case UpdateTable(t, cols, sel, where) => processUpdateQuery(t, cols, sel, where)
       case DeleteRecords(statement, table) => processDeleteRecordsQuery(statement, table)
-      case ShowPartitionsCommand(t, cols) => ShowCarbonPartitionsCommand(t)
     }
   }
 }

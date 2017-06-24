@@ -19,23 +19,43 @@ package org.apache.carbondata.examples
 
 import scala.collection.mutable.LinkedHashMap
 
+import org.apache.spark.sql.AnalysisException
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.util.ExampleUtils
 
-object ShowPartitionInfoExample {
+object CarbonPartitionExample {
   def main(args: Array[String]) {
-    ShowPartitionInfoExample.extracted("t3", args)
+    CarbonPartitionExample.extracted("t3", args)
   }
   def extracted(tableName: String, args: Array[String]): Unit = {
-    val cc = ExampleUtils.createCarbonContext("CarbonShowPartitionInfo")
+    val cc = ExampleUtils.createCarbonContext("CarbonPartitionExample")
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
+    // none partition table
+    cc.sql("DROP TABLE IF EXISTS t0")
+    cc.sql("""
+                | CREATE TABLE IF NOT EXISTS t0
+                | (
+                | vin String,
+                | logdate Timestamp,
+                | phonenumber Int,
+                | country String,
+                | area String
+                | )
+                | STORED BY 'carbondata'
+              """.stripMargin)
+    try {
+      cc.sql("""SHOW PARTITIONS t0""").show()
+    } catch {
+      case ex: AnalysisException => print(ex.getMessage())
+    }
+
     // range partition
     cc.sql("DROP TABLE IF EXISTS t1")
-
     cc.sql("""
                 | CREATE TABLE IF NOT EXISTS t1(
                 | vin STRING,
@@ -50,6 +70,7 @@ object ShowPartitionInfoExample {
               """.stripMargin)
     cc.sql("""SHOW PARTITIONS t1""").show()
 
+    // hash partition
     cc.sql("""
                 | CREATE TABLE IF NOT EXISTS t3(
                 | logdate Timestamp,
@@ -62,9 +83,9 @@ object ShowPartitionInfoExample {
                 | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='5')
                 """.stripMargin)
     cc.sql("""SHOW PARTITIONS t3""").show()
+
     // list partition
     cc.sql("DROP TABLE IF EXISTS t5")
-
     cc.sql("""
                | CREATE TABLE IF NOT EXISTS t5(
                | vin String,
@@ -96,6 +117,7 @@ object ShowPartitionInfoExample {
     cc.sql(s"""SHOW PARTITIONS partitionDB.$tableName""").show()
     cc.sql(s"""SHOW PARTITIONS $tableName""").show()
 
+    cc.sql("DROP TABLE IF EXISTS t0")
     cc.sql("DROP TABLE IF EXISTS t1")
     cc.sql("DROP TABLE IF EXISTS t3")
     cc.sql("DROP TABLE IF EXISTS t5")
