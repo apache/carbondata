@@ -115,6 +115,14 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           sparkSession.sessionState.executePlan(UnresolvedRelation(identifier, None)).analyzed
         val resultPlan = sparkSession.sessionState.executePlan(resolvedTable).executedPlan
         ExecutedCommandExec(DescribeCommandFormatted(resultPlan, plan.output, identifier)) :: Nil
+      case ShowPartitionsCommand(t, cols) =>
+        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .tableExists(t)(sparkSession)
+        if (isCarbonTable) {
+          ExecutedCommandExec(ShowCarbonPartitionsCommand(t)) :: Nil
+        } else {
+          ExecutedCommandExec(ShowPartitionsCommand(t, cols)) :: Nil
+        }
       case set@SetCommand(kv) =>
         ExecutedCommandExec(CarbonSetCommand(set)) :: Nil
       case reset@ResetCommand =>

@@ -316,6 +316,22 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         } else {
           ExecutedCommand(HiveNativeCommand(sql)) :: Nil
         }
+      case ShowPartitions(t) =>
+        val isCarbonTable = CarbonEnv.get.carbonMetastore
+          .tableExists(t)(sqlContext)
+        if (isCarbonTable) {
+          ExecutedCommand(ShowCarbonPartitionsCommand(t)) :: Nil
+        } else {
+          var tableName = t.table
+          var database = t.database
+          var sql: String = null
+          if (database.isEmpty) {
+            sql = s"show partitions $tableName"
+          } else {
+            sql = s"show partitions $database.$tableName"
+          }
+          ExecutedCommand(HiveNativeCommand(sql)) :: Nil
+        }
       case _ =>
         Nil
     }
