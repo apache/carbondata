@@ -19,22 +19,23 @@ package org.apache.carbondata.spark.testsuite.partition
 
 import java.sql.Timestamp
 
+import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.spark.sql.AnalysisException
+
+
 
 class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
   override def beforeAll = {
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-  }
 
-  test("show partition table: exception when show not partition table") {
     sql("drop table if exists notPartitionTable")
     sql("""
                 | CREATE TABLE notPartitionTable
@@ -47,21 +48,7 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
                 | )
                 | STORED BY 'carbondata'
               """.stripMargin)
-    var exceptionFlg = false
-    try {
-      sql("show partitions notPartitionTable").show()
-    } catch {
-      case ex: AnalysisException => {
-        print(ex.getMessage())
-        exceptionFlg = true
-      }
-    }
-    // EqualTo
-    assert(exceptionFlg, true);
-    sql("drop table notPartitionTable")
-  }
 
-  test("show partition table: hash table") {
     sql("drop table if exists hashTable")
     sql(
       """
@@ -74,13 +61,6 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='3')
       """.stripMargin)
 
-    // EqualTo
-    checkAnswer(sql("show partitions hashTable"), Seq(Row("empno=HASH_NUMBER(3)")))
-
-    sql("drop table hashTable")
-  }
-
-  test("show partition table: range partition") {
     sql("drop table if exists rangeTable")
     sql(
       """
@@ -94,13 +74,6 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
         |  'RANGE_INFO'='01-01-2010, 01-01-2015')
       """.stripMargin)
 
-    // EqualTo
-    checkAnswer(sql("show partitions rangeTable"), Seq(Row("doj=default"),
-        Row("doj<01-01-2010"), Row("01-01-2010<=doj<01-01-2015")))
-    sql("drop table rangeTable")
-  }
-
-  test("show partition table: list partition") {
     sql("drop table if exists listTable")
     sql(
       """
@@ -114,13 +87,6 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
         |  'LIST_INFO'='0, 1, (2, 3)')
       """.stripMargin)
 
-    // EqualTo
-    checkAnswer(sql("show partitions listTable"), Seq(Row("workgroupcategory=default"),
-      Row("workgroupcategory=0"), Row("workgroupcategory=1"), Row("workgroupcategory=2, 3")))
-
-  sql("drop table listTable")
-  }
-  test("show partition table: not default db") {
     sql(s"CREATE DATABASE if not exists partitionDB")
     sql("drop table if exists partitionDB.hashTable")
     sql("drop table if exists partitionDB.rangeTable")
@@ -158,18 +124,65 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
         |  'LIST_INFO'='0, 1, (2, 3)')
       """.stripMargin)
 
+  }
+
+  test("show partition table: exception when show not partition table") {
+    var exceptionFlg = false
+    try {
+      sql("show partitions notPartitionTable").show()
+    } catch {
+      case ex: AnalysisException => {
+        print(ex.getMessage())
+        exceptionFlg = true
+      }
+    }
+    // EqualTo
+    assert(exceptionFlg, true)
+  }
+
+  test("show partition table: hash table") {
+    // EqualTo
+    checkAnswer(sql("show partitions hashTable"), Seq(Row("empno=HASH_NUMBER(3)")))
+
+  }
+
+  test("show partition table: range partition") {
+    // EqualTo
+    checkAnswer(sql("show partitions rangeTable"), Seq(Row("doj=default"),
+      Row("doj<01-01-2010"), Row("01-01-2010<=doj<01-01-2015")))
+
+  }
+
+  test("show partition table: list partition") {
+    // EqualTo
+    checkAnswer(sql("show partitions listTable"), Seq(Row("workgroupcategory=default"),
+      Row("workgroupcategory=0"), Row("workgroupcategory=1"), Row("workgroupcategory=2, 3")))
+
+  }
+  test("show partition table: not default db") {
     // EqualTo
     checkAnswer(sql("show partitions partitionDB.hashTable"), Seq(Row("empno=HASH_NUMBER(3)")))
     // EqualTo
     checkAnswer(sql("show partitions partitionDB.rangeTable"), Seq(Row("doj=default"),
-        Row("doj<01-01-2010"), Row("01-01-2010<=doj<01-01-2015")))
+      Row("doj<01-01-2010"), Row("01-01-2010<=doj<01-01-2015")))
     // EqualTo
     checkAnswer(sql("show partitions partitionDB.listTable"), Seq(Row("workgroupcategory=default"),
       Row("workgroupcategory=0"), Row("workgroupcategory=1"), Row("workgroupcategory=2, 3")))
 
-    sql("drop table partitionDB.hashTable")
-    sql("drop table partitionDB.rangeTable")
-    sql("drop table partitionDB.listTable")
-    sql("DROP DATABASE partitionDB")
+  }
+  override def afterAll = {
+    sql("drop table if exists notPartitionTable")
+    sql("drop table if exists  hashTable")
+    sql("drop table if exists  listTable")
+    sql("drop table if exists  rangeTable")
+    try {
+      sql("drop table if exists  partitionDB.hashTable")
+      sql("drop table if exists  partitionDB.rangeTable")
+      sql("drop table if exists  partitionDB.listTable")
+    } catch {
+      case ex: NoSuchDatabaseException => print(ex.getMessage())
+    }
+
+    sql("DROP DATABASE if exists partitionDB")
   }
 }
