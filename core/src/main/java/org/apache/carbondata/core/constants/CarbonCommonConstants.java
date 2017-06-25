@@ -1097,6 +1097,10 @@ public final class CarbonCommonConstants {
 
   public static final String OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT = "64";
 
+  public static final int OFFHEAP_SORT_CHUNK_SIZE_IN_MB_MIN = 1;
+
+  public static final int OFFHEAP_SORT_CHUNK_SIZE_IN_MB_MAX = 1024;
+
   public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB = "sort.inmemory.size.inmb";
 
   public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT = "1024";
