@@ -26,6 +26,8 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules._
 import org.apache.spark.sql.execution.{ProjectExec, SparkSqlParser, SubqueryExec}
 import org.apache.spark.sql.execution.command.ProjectForDeleteCommand
+import org.apache.spark.sql.execution.command.ShowCarbonPartitionsCommand
+import org.apache.spark.sql.execution.command.ShowPartitionsCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
