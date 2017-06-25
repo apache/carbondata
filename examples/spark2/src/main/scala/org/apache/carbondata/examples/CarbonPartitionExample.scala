@@ -19,6 +19,8 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
+import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -113,14 +115,48 @@ object CarbonPartitionExample {
        | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea ')
        """.stripMargin)
 
+    // not default db partition table
+    try {
+      spark.sql(s"DROP TABLE IF EXISTS partitionDB.t3")
+    } catch {
+      case ex: NoSuchDatabaseException => print(ex.getMessage())
+    }
+    spark.sql(s"DROP DATABASE IF EXISTS partitionDB")
+    spark.sql(s"CREATE DATABASE partitionDB")
+
+    spark.sql(s"""
+                | CREATE TABLE IF NOT EXISTS partitionDB.t3(
+                | logdate Timestamp,
+                | phonenumber Int,
+                | country String,
+                | area String
+                | )
+                | PARTITIONED BY (vin String)
+                | STORED BY 'carbondata'
+                | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='5')
+                """.stripMargin)
+
     // show tables
     spark.sql("SHOW TABLES").show()
+
+    // show partitions
+    try {
+      spark.sql("""SHOW PARTITIONS t0""").show()
+    } catch {
+      case ex: AnalysisException => print(ex.getMessage())
+    }
+    spark.sql("""SHOW PARTITIONS t1""").show()
+    spark.sql("""SHOW PARTITIONS t3""").show()
+    spark.sql("""SHOW PARTITIONS t5""").show()
+    spark.sql("""SHOW PARTITIONS partitionDB.t3""").show()
 
     // drop table
     spark.sql("DROP TABLE IF EXISTS t0")
     spark.sql("DROP TABLE IF EXISTS t1")
     spark.sql("DROP TABLE IF EXISTS t3")
     spark.sql("DROP TABLE IF EXISTS t5")
+    spark.sql("DROP TABLE IF EXISTS partitionDB.t3")
+    spark.sql(s"DROP DATABASE IF EXISTS partitionDB")
 
     spark.close()
 
