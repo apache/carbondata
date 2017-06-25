@@ -30,6 +30,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -56,7 +57,7 @@ import org.apache.carbondata.core.util.DataFileFooterConverter;
 /**
  * Datamap implementation for blocklet.
  */
-public class BlockletDataMap implements DataMap {
+public class BlockletDataMap implements DataMap, Cacheable {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(BlockletDataMap.class.getName());
@@ -102,6 +103,9 @@ public class BlockletDataMap implements DataMap {
         fileFooter = CarbonUtil.readMetadatFile(blockInfo);
 
         loadToUnsafe(fileFooter, segmentProperties, blockInfo.getFilePath());
+      }
+      if (unsafeMemoryDMStore != null) {
+        unsafeMemoryDMStore.finishWriting();
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -152,7 +156,6 @@ public class BlockletDataMap implements DataMap {
       row.setByteArray(serializedData, ordinal);
       unsafeMemoryDMStore.addIndexRowToUnsafe(row);
     }
-    unsafeMemoryDMStore.finishWriting();
   }
 
   private DataMapRow addMinMax(int[] minMaxLen, DataMapSchema dataMapSchema, byte[][] minValues) {
@@ -411,5 +414,17 @@ public class BlockletDataMap implements DataMap {
     unsafeMemoryDMStore.freeMemory();
     unsafeMemoryDMStore = null;
     segmentProperties = null;
+  }
+
+  @Override public long getFileTimeStamp() {
+    return 0;
+  }
+
+  @Override public int getAccessCount() {
+    return 0;
+  }
+
+  @Override public long getMemorySize() {
+    return unsafeMemoryDMStore.getMemoryUsed();
   }
 }

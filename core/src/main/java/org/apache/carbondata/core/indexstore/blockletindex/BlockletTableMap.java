@@ -16,20 +16,24 @@
  */
 package org.apache.carbondata.core.indexstore.blockletindex;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.cache.Cache;
+import org.apache.carbondata.core.cache.CacheProvider;
+import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.events.ChangeEvent;
-import org.apache.carbondata.core.indexstore.Blocklet;
+import org.apache.carbondata.core.indexstore.AbstractTableDataMap;
 import org.apache.carbondata.core.indexstore.DataMap;
 import org.apache.carbondata.core.indexstore.DataMapDistributable;
 import org.apache.carbondata.core.indexstore.DataMapWriter;
-import org.apache.carbondata.core.indexstore.AbstractTableDataMap;
+import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
@@ -42,11 +46,15 @@ public class BlockletTableMap extends AbstractTableDataMap {
 
   private AbsoluteTableIdentifier identifier;
 
-  private Map<String, List<DataMap>> map = new HashMap<>();
+  private Map<String, List<TableBlockIndexUniqueIdentifier>> segmentMap = new HashMap<>();
+
+  private Cache<TableBlockIndexUniqueIdentifier, DataMap> cache;
 
   @Override public void init(AbsoluteTableIdentifier identifier, String dataMapName) {
     this.identifier = identifier;
     this.dataMapName = dataMapName;
+    cache = CacheProvider.getInstance()
+        .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP, identifier.getStorePath());
   }
 
   @Override public DataMapWriter getMetaDataWriter() {
@@ -59,9 +67,10 @@ public class BlockletTableMap extends AbstractTableDataMap {
   }
 
   @Override protected List<DataMap> getDataMaps(String segmentId) {
-    List<DataMap> dataMaps = map.get(segmentId);
-    if (dataMaps == null) {
-      dataMaps = new ArrayList<>();
+    List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
+        segmentMap.get(segmentId);
+    if (tableBlockIndexUniqueIdentifiers == null) {
+      tableBlockIndexUniqueIdentifiers = new ArrayList<>();
       String path = identifier.getTablePath() + "/Fact/Part0/Segment_" + segmentId;
       FileFactory.FileType fileType = FileFactory.getFileType(path);
       CarbonFile carbonFile = FileFactory.getCarbonFile(path, fileType);
@@ -71,12 +80,16 @@ public class BlockletTableMap extends AbstractTableDataMap {
         }
       });
       for (int i = 0; i < listFiles.length; i++) {
-        BlockletDataMap dataMap = new BlockletDataMap();
-        dataMap.init(listFiles[i].getAbsolutePath());
-        dataMaps.add(dataMap);
+        tableBlockIndexUniqueIdentifiers.add(
+            new TableBlockIndexUniqueIdentifier(identifier, segmentId, listFiles[i].getName()));
       }
     }
-    return dataMaps;
+
+    try {
+      return cache.getAll(tableBlockIndexUniqueIdentifiers);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override public List<DataMapDistributable> toDistributable(List<String> segmentIds) {
@@ -92,7 +105,16 @@ public class BlockletTableMap extends AbstractTableDataMap {
   }
 
   @Override public void clear(List<String> segmentIds) {
-
+    for (String segmentId : segmentIds) {
+      List<TableBlockIndexUniqueIdentifier> blockIndexes = segmentMap.remove(segmentId);
+      if (blockIndexes != null) {
+        for (TableBlockIndexUniqueIdentifier blockIndex : blockIndexes) {
+          DataMap dataMap = cache.getIfPresent(blockIndex);
+          dataMap.clear();
+          cache.invalidate(blockIndex);
+        }
+      }
+    }
   }
 
   @Override public void fireEvent(ChangeEvent event) {

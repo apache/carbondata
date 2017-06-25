@@ -387,8 +387,8 @@ public class CarbonInputFormatNew<T> extends FileInputFormat<Void, T> {
 
     List<CarbonInputSplit> resultFilterredBlocks = new ArrayList<>();
     for (Blocklet blocklet : prunedBlocklets) {
-      int taskId = CarbonTablePath.DataFileUtil
-          .getTaskIdFromTaskNo(CarbonTablePath.DataFileUtil.getTaskNo(blocklet.getPath().toString()));
+      int taskId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(
+          CarbonTablePath.DataFileUtil.getTaskNo(blocklet.getPath().toString()));
 
       // matchedPartitions variable will be null in two cases as follows
       // 1. the table is not a partition table
@@ -512,27 +512,6 @@ public class CarbonInputFormatNew<T> extends FileInputFormat<Void, T> {
       return new String[0];
     }
     return segmentString.split(",");
-  }
-
-  /**
-   * return valid file to access
-   */
-  private String[] getFilesToAccess(JobContext job) {
-    String fileString = job.getConfiguration().get(INPUT_FILES, "");
-    if (fileString.trim().isEmpty()) {
-      return new String[0];
-    }
-    return fileString.split(",");
-  }
-
-  /**
-   * required to be moved to core
-   *
-   * @return updateExtension
-   */
-  private String[] getValidPartitions(JobContext job) {
-    //TODO: has to Identify partitions by partition pruning
-    return new String[] { "0" };
   }
 
 }

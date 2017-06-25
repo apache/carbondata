@@ -31,6 +31,7 @@ import org.apache.carbondata.core.datastore.BlockIndexStore;
 import org.apache.carbondata.core.datastore.SegmentTaskIndexStore;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
+import org.apache.carbondata.core.indexstore.BlockletDataMapIndexStore;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
@@ -126,6 +127,8 @@ public class CacheProvider {
     } else if (cacheType.equals(cacheType.DRIVER_BTREE)) {
       cacheObject =
           new SegmentTaskIndexStore(carbonStorePath, carbonLRUCache);
+    } else if (cacheType.equals(cacheType.DRIVER_BLOCKLET_DATAMAP)) {
+      cacheObject = new BlockletDataMapIndexStore(carbonStorePath, carbonLRUCache);
     }
     cacheTypeToCacheMap.put(cacheType, cacheObject);
   }

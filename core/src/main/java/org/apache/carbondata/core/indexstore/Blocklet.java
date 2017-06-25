@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
@@ -42,7 +41,7 @@ public class Blocklet implements Serializable {
 
   private long length;
 
-  private String[] location;;
+  private String[] location;
 
   public Blocklet(String path, String blockletId) {
     this.path = new Path(path);

@@ -29,7 +29,7 @@ import org.apache.spark.sql.execution.command.CarbonMergerMapping
 
 import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
-import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonMultiBlockSplit}
+import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputFormatNew, CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
 import org.apache.carbondata.processing.model.CarbonLoadModel
@@ -71,7 +71,7 @@ class CarbonIUDMergerRDD[K, V](
 
     var blocksOfLastSegment: List[TableBlockInfo] = null
 
-    CarbonInputFormat.setSegmentsToAccess(
+    CarbonInputFormatNew.setSegmentsToAccess(
       job.getConfiguration, carbonMergerMapping.validSegments.toList.asJava)
 
     // get splits

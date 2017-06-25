@@ -48,7 +48,8 @@ public abstract class AbstractTableDataMap implements EventListener {
    * @param segmentId
    * @return
    */
-  public abstract DataMapWriter getDataMapWriter(AbsoluteTableIdentifier identifier, String segmentId);
+  public abstract DataMapWriter getDataMapWriter(AbsoluteTableIdentifier identifier,
+      String segmentId);
 
   /**
    * Pass the valid segments and prune the datamap using filter expression
@@ -58,10 +59,10 @@ public abstract class AbstractTableDataMap implements EventListener {
    * @return
    */
   public List<Blocklet> prune(List<String> segmentIds, FilterResolverIntf filterExp) {
-    List<Blocklet> blocklets  = new ArrayList<>();
-    for (String segmentId: segmentIds) {
+    List<Blocklet> blocklets = new ArrayList<>();
+    for (String segmentId : segmentIds) {
       List<DataMap> dataMaps = getDataMaps(segmentId);
-      for (DataMap dataMap: dataMaps) {
+      for (DataMap dataMap : dataMaps) {
         List<Blocklet> pruneBlocklets = dataMap.prune(filterExp);
         blocklets.addAll(addSegmentId(pruneBlocklets, segmentId));
       }
@@ -78,6 +79,7 @@ public abstract class AbstractTableDataMap implements EventListener {
 
   /**
    * Get the datamap for segmentid
+   *
    * @param segmentId
    * @return
    */
@@ -106,6 +108,7 @@ public abstract class AbstractTableDataMap implements EventListener {
 
   /**
    * Get datamap for distributable object.
+   *
    * @param distributable
    * @return
    */

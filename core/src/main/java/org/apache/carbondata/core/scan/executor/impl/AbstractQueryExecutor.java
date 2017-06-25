@@ -21,8 +21,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -120,21 +122,35 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
 
     if (queryModel.getTableBlockInfos().get(0).getDetailInfo() != null) {
       List<AbstractIndex> indexList = new ArrayList<>();
-      // TODO seperate index for each block
-      indexList.add(new IndexWrapper(queryModel.getTableBlockInfos()));
+      Map<String, List<TableBlockInfo>> listMap = new LinkedHashMap<>();
+      for (TableBlockInfo blockInfo: queryModel.getTableBlockInfos()) {
+        List<TableBlockInfo> tableBlockInfos = listMap.get(blockInfo.getFilePath());
+        if (tableBlockInfos == null) {
+          tableBlockInfos = new ArrayList<>();
+          listMap.put(blockInfo.getFilePath(), tableBlockInfos);
+        }
+        tableBlockInfos.add(blockInfo);
+      }
+      for (List<TableBlockInfo> tableBlockInfos: listMap.values()) {
+        indexList.add(new IndexWrapper(tableBlockInfos));
+      }
       queryProperties.dataBlocks = indexList;
     } else {
       // get the table blocks
       CacheProvider cacheProvider = CacheProvider.getInstance();
-      BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex> cache = (BlockIndexStore) cacheProvider
-          .createCache(CacheType.EXECUTOR_BTREE, queryModel.getTable().getStorePath());
+      BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex> cache =
+          (BlockIndexStore) cacheProvider
+              .createCache(CacheType.EXECUTOR_BTREE, queryModel.getTable().getStorePath());
       // remove the invalid table blocks, block which is deleted or compacted
-      cache.removeTableBlocks(queryModel.getInvalidSegmentIds(), queryModel.getAbsoluteTableIdentifier());
+      cache.removeTableBlocks(queryModel.getInvalidSegmentIds(),
+          queryModel.getAbsoluteTableIdentifier());
       List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
-          prepareTableBlockUniqueIdentifier(queryModel.getTableBlockInfos(), queryModel.getAbsoluteTableIdentifier());
+          prepareTableBlockUniqueIdentifier(queryModel.getTableBlockInfos(),
+              queryModel.getAbsoluteTableIdentifier());
       cache.removeTableBlocksIfHorizontalCompactionDone(queryModel);
       queryProperties.dataBlocks = cache.getAll(tableBlockUniqueIdentifiers);
-      queryStatistic.addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
+      queryStatistic
+          .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
       queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
     }
     // calculating the total number of aggeragted columns

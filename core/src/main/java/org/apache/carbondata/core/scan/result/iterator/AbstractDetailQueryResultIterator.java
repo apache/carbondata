@@ -130,12 +130,13 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
       }
       DataRefNode dataRefNode = blockInfo.getDataBlock().getDataRefNode();
       if (dataRefNode instanceof BlockletDataRefNodeWrapper) {
-        BlockletDataRefNodeWrapper wrapper = (BlockletDataRefNodeWrapper)dataRefNode;
+        BlockletDataRefNodeWrapper wrapper = (BlockletDataRefNodeWrapper) dataRefNode;
         blockInfo.setFirstDataBlock(wrapper);
         blockInfo.setNumberOfBlockToScan(wrapper.numberOfNodes());
 
       } else {
-        DataRefNode startDataBlock = finder.findFirstDataBlock(dataRefNode, blockInfo.getStartKey());
+        DataRefNode startDataBlock =
+            finder.findFirstDataBlock(dataRefNode, blockInfo.getStartKey());
         while (startDataBlock.nodeNumber() < blockInfo.getStartBlockletIndex()) {
           startDataBlock = startDataBlock.getNextDataRefNode();
         }
