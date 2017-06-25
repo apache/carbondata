@@ -112,6 +112,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val PARTITION_COUNT = carbonKeyWord("PARTITION_COUNT")
   protected val PARTITIONDATA = carbonKeyWord("PARTITIONDATA")
   protected val PARTITIONER = carbonKeyWord("PARTITIONER")
+  protected val PARTITIONS = carbonKeyWord("PARTITIONS")
   protected val QUOTECHAR = carbonKeyWord("QUOTECHAR")
   protected val RELATION = carbonKeyWord("RELATION")
   protected val SCHEMA = carbonKeyWord("SCHEMA")

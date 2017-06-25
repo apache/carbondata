@@ -27,12 +27,20 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
+import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.RowFactory
+import org.apache.spark.sql.types.MetadataBuilder
+import org.apache.spark.sql.types.StringType
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.csvload.CSVInputFormat
@@ -544,4 +552,52 @@ object CommonUtil {
     }
   }
 
+  def getPartitionInfo(columnName: String, partitionType: PartitionType,
+      partitionInfo: PartitionInfo): Seq[Row] = {
+    var result = Seq.newBuilder[Row]
+    partitionType match {
+      case PartitionType.RANGE =>
+        result.+=(RowFactory.create(columnName + "=default"))
+        var rangeInfo = partitionInfo.getRangeInfo
+        var size = rangeInfo.size() - 1
+        for (index <- 0 to size) {
+          if (index == 0) {
+            result.+=(RowFactory.create(columnName + "<" + rangeInfo.get(index)))
+          } else {
+            result.+=(RowFactory.create(rangeInfo.get(index - 1) + "<=" +
+              columnName + "<" + rangeInfo.get(index)))
+          }
+        }
+      case PartitionType.RANGE_INTERVAL =>
+        result.+=(RowFactory.create(columnName + "="))
+      case PartitionType.LIST =>
+        result.+=(RowFactory.create(columnName + "=default"))
+        var id = 1
+        var listInfo = partitionInfo.getListInfo
+        var size = listInfo.size() - 1
+        for (index <- 0 to size) {
+          var listStr = ""
+          listInfo.get(index).toArray().foreach { x =>
+            if (listStr.isEmpty()) {
+              listStr = x.toString()
+            } else {
+              listStr += ", " + x.toString()
+            }
+          }
+          result.+=(RowFactory.create(columnName + "=" + listStr))
+          id += 1
+        }
+      case PartitionType.HASH =>
+        var hashNumber = partitionInfo.getNumPartitions
+        result.+=(RowFactory.create(columnName + "=HASH_NUMBER(" + hashNumber.toString() + ")"))
+      case others =>
+        result.+=(RowFactory.create(columnName + "="))
+    }
+    result.result()
+  }
+
+  def partitionInfoOutput: Seq[Attribute] = Seq(
+    AttributeReference("Partitions", StringType, nullable = false,
+      new MetadataBuilder().putString("comment", "partitions info").build())()
+  )
 }

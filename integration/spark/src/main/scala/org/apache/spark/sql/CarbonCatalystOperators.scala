@@ -137,6 +137,12 @@ case class DeleteRecords(
   override def output: Seq[AttributeReference] = Seq.empty
 }
 
+case class ShowPartitions(
+    table: TableIdentifier) extends LogicalPlan {
+  override def children: Seq[LogicalPlan] = Seq.empty
+  override def output: Seq[AttributeReference] = Seq.empty
+}
+
 /**
  * A logical plan representing insertion into Hive table.
  * This plan ignores nullability of ArrayType, MapType, StructType unlike InsertIntoTable
