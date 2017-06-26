@@ -254,14 +254,29 @@ public class SegmentUpdateStatusManager {
    * @return
    * @throws Exception
    */
-  public int[] getDeleteDeltaDataFromAllFiles(String tupleId) throws Exception {
+  public Map<Integer, Integer[]> getDeleteDeltaDataFromAllFiles(String tupleId) throws Exception {
     List<String> deltaFiles = getDeltaFiles(tupleId, CarbonCommonConstants.DELETE_DELTA_FILE_EXT);
     CarbonDeleteFilesDataReader dataReader = new CarbonDeleteFilesDataReader();
     String blockletId = CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.BLOCKLET_ID);
     return dataReader.getDeleteDataFromAllFiles(deltaFiles, blockletId);
   }
 
-
+  /**
+   * Below method will be used to get all the delete delta files based on block name
+   *
+   * @param blockFilePath actual block filePath
+   * @return all delete delta files
+   * @throws Exception
+   */
+  public String[] getDeleteDeltaFilePath(String blockFilePath) throws Exception {
+    int tableFactPathLength = CarbonStorePath
+        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+            absoluteTableIdentifier.getCarbonTableIdentifier()).getFactDir().length() + 1;
+    String blockame = blockFilePath.substring(tableFactPathLength);
+    String tupleId = CarbonTablePath.getShortBlockId(blockame);
+    return getDeltaFiles(tupleId, CarbonCommonConstants.DELETE_DELTA_FILE_EXT)
+        .toArray(new String[0]);
+  }
 
   /**
    * Returns all delta file paths of specified block
@@ -291,11 +306,8 @@ public class SegmentUpdateStatusManager {
       //blockName without timestamp
       final String blockNameFromTuple =
           blockNameWithoutExtn.substring(0, blockNameWithoutExtn.lastIndexOf("-"));
-      SegmentUpdateDetails[] listOfSegmentUpdateDetailsArray =
-          readLoadMetadata();
-      return getDeltaFiles(file, blockNameFromTuple, listOfSegmentUpdateDetailsArray, extension,
+      return getDeltaFiles(file, blockNameFromTuple, extension,
           segment);
-
     } catch (Exception ex) {
       String errorMsg = "Invalid tuple id " + tupleId;
       LOG.error(errorMsg);
@@ -345,12 +357,11 @@ public class SegmentUpdateStatusManager {
    * @param extension
    * @return
    */
-  public List<String> getDeltaFiles(CarbonFile blockDir, final String blockNameFromTuple,
-      SegmentUpdateDetails[] listOfSegmentUpdateDetailsArray,
+  private List<String> getDeltaFiles(CarbonFile blockDir, final String blockNameFromTuple,
       final String extension,
       String segment) {
-    List<String> deleteFileList = null;
-    for (SegmentUpdateDetails block : listOfSegmentUpdateDetailsArray) {
+    List<String> deleteFileList = new ArrayList<>();
+    for (SegmentUpdateDetails block : updateDetails) {
       if (block.getBlockName().equalsIgnoreCase(blockNameFromTuple) && block.getSegmentName()
           .equalsIgnoreCase(segment) && !CarbonUpdateUtil.isBlockInvalid(block.getStatus())) {
         final long deltaStartTimestamp = getStartTimeOfDeltaFile(extension, block);
@@ -912,6 +923,7 @@ public class SegmentUpdateStatusManager {
           range.setLatestUpdateTimestamp(
               CarbonUpdateUtil.getTimeStampAsLong(segment.getUpdateDeltaEndTimestamp()));
         }
+        return range;
       }
     }
     return range;

@@ -342,10 +342,13 @@ public class IntermediateFileMerger implements Callable<Void> {
           stream.write((byte) 1);
           switch (aggType[counter]) {
             case SHORT:
+              stream.writeShort((short)NonDictionaryUtil.getMeasure(fieldIndex, row));
+              break;
             case INT:
+              stream.writeInt((int)NonDictionaryUtil.getMeasure(fieldIndex, row));
+              break;
             case LONG:
-              Long val = (Long) NonDictionaryUtil.getMeasure(fieldIndex, row);
-              stream.writeLong(val);
+              stream.writeLong((long)NonDictionaryUtil.getMeasure(fieldIndex, row));
               break;
             case DOUBLE:
               stream.writeDouble((Double) NonDictionaryUtil.getMeasure(fieldIndex, row));

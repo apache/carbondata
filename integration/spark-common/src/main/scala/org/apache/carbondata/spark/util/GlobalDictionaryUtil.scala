@@ -279,11 +279,8 @@ object GlobalDictionaryUtil {
   }
 
   def isHighCardinalityColumn(columnCardinality: Int,
-      rowCount: Long,
       model: DictionaryLoadModel): Boolean = {
-    (columnCardinality > model.highCardThreshold) &&
-    (rowCount > 0) &&
-    (columnCardinality.toDouble / rowCount * 100 > model.rowCountPercentage)
+    columnCardinality > model.highCardThreshold
   }
 
   /**
@@ -329,9 +326,6 @@ object GlobalDictionaryUtil {
     val highCardThreshold = CarbonProperties.getInstance().getProperty(
       CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD,
       CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT).toInt
-    val rowCountPercentage = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE,
-      CarbonCommonConstants.HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT).toDouble
 
     val serializationNullFormat =
       carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
@@ -350,7 +344,6 @@ object GlobalDictionaryUtil {
       carbonLoadModel.getDelimiters,
       highCardIdentifyEnable,
       highCardThreshold,
-      rowCountPercentage,
       columnIdentifier,
       carbonLoadModel.getLoadMetadataDetails.size() == 0,
       hdfsTempLocation,

@@ -465,6 +465,31 @@ public final class ByteUtil {
   }
 
   /**
+   * int => byte[3]
+   * supported range is [-8388608, 8388607], note that Math.pow(2, 24) == 8388608
+   */
+  public static byte[] to3Bytes(int val) {
+    assert val <= (Math.pow(2, 23) - 1) && val >= (-Math.pow(2, 23));
+    return new byte[]{ (byte)(val >> 16), (byte)(val >> 8), (byte)val };
+  }
+
+  /**
+   * convert 3 bytes to int
+   */
+  public static int valueOf3Bytes(byte[] val, int offset) {
+    assert val.length >= offset + 3;
+    if (val[offset] < 0) {
+      return (((val[offset] & 0xFFFF) << 16) |
+          ((val[offset + 1] & 0xFF) << 8) |
+          ((val[offset + 2] & 0xFF)));
+    } else {
+      return (((val[offset] & 0xFF) << 16) |
+          ((val[offset + 1] & 0xFF) << 8) |
+          ((val[offset + 2] & 0xFF)));
+    }
+  }
+
+  /**
    * byte[] => int
    *
    * @param bytes
@@ -491,6 +516,18 @@ public final class ByteUtil {
       }
     }
     return n ^ Integer.MIN_VALUE;
+  }
+
+  public static int toInt(byte[] bytes, int offset) {
+    return (((int)bytes[offset]) << 24) + (((int)bytes[offset + 1]) << 16) +
+        (((int)bytes[offset + 2]) << 8) + bytes[offset + 3];
+  }
+
+  public static void setInt(byte[] data, int offset, int value) {
+    data[offset] = (byte) (value >> 24);
+    data[offset + 1] = (byte) (value >> 16);
+    data[offset + 2] = (byte) (value >> 8);
+    data[offset + 3] = (byte) value;
   }
 
   /**
@@ -670,4 +707,22 @@ public final class ByteUtil {
     System.arraycopy(srcBytes, srcOffset, tgtBytes, tgtOffset, srcLength);
     return tgtOffset + srcLength;
   }
+
+  /**
+   * flatten input byte[][] to byte[] and return
+   */
+  public static byte[] flatten(byte[][] input) {
+    int totalSize = 0;
+    for (int i = 0; i < input.length; i++) {
+      totalSize += input[i].length;
+    }
+    byte[] flattenedData = new byte[totalSize];
+    int pos = 0;
+    for (int i = 0; i < input.length; i++) {
+      System.arraycopy(input[i], 0, flattenedData, pos, input[i].length);
+      pos += input[i].length;
+    }
+    return flattenedData;
+  }
+
 }

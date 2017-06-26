@@ -171,8 +171,10 @@ public final class CarbonLRUCache {
    * @param cacheInfo
    */
   public boolean put(String columnIdentifier, Cacheable cacheInfo, long requiredSize) {
-    LOGGER.debug("Required size for entry " + columnIdentifier + " :: " + requiredSize
-        + " Current cache size :: " + currentSize);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Required size for entry " + columnIdentifier + " :: " + requiredSize
+          + " Current cache size :: " + currentSize);
+    }
     boolean columnKeyAddedSuccessfully = false;
     if (isLRUCacheSizeConfigured()) {
       synchronized (lruCacheMap) {
@@ -206,7 +208,9 @@ public final class CarbonLRUCache {
     if (null == lruCacheMap.get(columnIdentifier)) {
       lruCacheMap.put(columnIdentifier, cacheInfo);
     }
-    LOGGER.debug("Added entry to InMemory lru cache :: " + columnIdentifier);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Added entry to InMemory lru cache :: " + columnIdentifier);
+    }
   }
 
   /**

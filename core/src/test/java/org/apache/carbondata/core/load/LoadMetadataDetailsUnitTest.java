@@ -34,7 +34,7 @@ public class LoadMetadataDetailsUnitTest {
 
   private LoadMetadataDetails loadMetadataDetails;
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(LoadMetadataDetails.class.getName());
+      LogServiceFactory.getLogService(LoadMetadataDetailsUnitTest.class.getName());
 
   @Before public void setup() {
     loadMetadataDetails = new LoadMetadataDetails();

@@ -17,9 +17,11 @@
 package org.apache.carbondata.core.scan.collector.impl;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
-import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -90,8 +92,6 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     int[] surrogateResult;
     byte[][] noDictionaryKeys;
     byte[][] complexTypeKeyArray;
-    BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
-        scannedResult.getDeleteDeltaDataCache();
     while (scannedResult.hasNext() && rowCounter < batchSize) {
       Object[] row = new Object[queryDimensions.length + queryMeasures.length];
       if (isDimensionExists) {
@@ -108,8 +108,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       } else {
         scannedResult.incrementCounter();
       }
-      if (null != deleteDeltaDataCache && deleteDeltaDataCache
-          .contains(scannedResult.getCurrentRowId())) {
+      if (scannedResult.containsDeletedRow(scannedResult.getCurrentRowId())) {
         continue;
       }
       fillMeasureData(scannedResult, row);
@@ -128,6 +127,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
             .equals(queryDimensions[i].getDimension().getColName())) {
           row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
               scannedResult.getBlockletId() + CarbonCommonConstants.FILE_SEPARATOR + scannedResult
+                  .getCurrentPageCounter() + CarbonCommonConstants.FILE_SEPARATOR + scannedResult
                   .getCurrentRowId(), DataType.STRING);
         } else {
           row[order[i]] =

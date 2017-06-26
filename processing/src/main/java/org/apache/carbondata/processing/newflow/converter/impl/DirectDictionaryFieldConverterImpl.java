@@ -19,12 +19,13 @@ package org.apache.carbondata.processing.newflow.converter.impl;
 
 import java.util.List;
 
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.converter.BadRecordLogHolder;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldConverterImpl {
 
@@ -59,9 +60,7 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
     String value = row.getString(index);
     if (value == null) {
       logHolder.setReason(
-          "The value " + " \"" + row.getString(index) + "\"" + " with column name " + column
-              .getColName() + " and column data type " + column.getDataType() + " is not a valid "
-              + column.getDataType() + " type.");
+          CarbonDataProcessorUtil.prepareFailureReason(column.getColName(), column.getDataType()));
       row.update(1, index);
     } else if (value.equals(nullFormat)) {
       row.update(1, index);
@@ -69,10 +68,13 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
       int key = directDictionaryGenerator.generateDirectSurrogateKey(value);
       if (key == 1) {
         if ((value.length() > 0) || (value.length() == 0 && isEmptyBadRecord)) {
-          logHolder.setReason(
-              "The value " + " \"" + row.getString(index) + "\"" + " with column name " + column
-                  .getColName() + " and column data type " + column.getDataType()
-                  + " is not a valid " + column.getDataType() + " type.");
+          String message = logHolder.getColumnMessageMap().get(column.getColName());
+          if (null == message) {
+            message = CarbonDataProcessorUtil.prepareFailureReason(
+                column.getColName(), column.getDataType());
+            logHolder.getColumnMessageMap().put(column.getColName(), message);
+          }
+          logHolder.setReason(message);
         }
       }
       row.update(key, index);

@@ -26,8 +26,6 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
-import org.apache.carbondata.core.mutate.data.BlockletDeleteDeltaCacheLoader;
-import org.apache.carbondata.core.mutate.data.DeleteDeltaCacheLoaderIntf;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
@@ -89,7 +87,8 @@ public class FilterScanner extends AbstractBlockletScanner {
    */
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
       throws IOException, FilterUnsupportedException {
-    return fillScannedResult(blocksChunkHolder);
+    AbstractScannedResult result = fillScannedResult(blocksChunkHolder);
+    return result;
   }
 
   @Override public boolean isScanRequired(BlocksChunkHolder blocksChunkHolder) throws IOException {
@@ -198,17 +197,9 @@ public class FilterScanner extends AbstractBlockletScanner {
         indexesGroup[k] = indexes;
       }
     }
-    // loading delete data cache in blockexecutioninfo instance
-    DeleteDeltaCacheLoaderIntf deleteCacheLoader =
-        new BlockletDeleteDeltaCacheLoader(scannedResult.getBlockletId(),
-            blocksChunkHolder.getDataBlock(), blockExecutionInfo.getAbsoluteTableIdentifier());
-    deleteCacheLoader.loadDeleteDeltaFileDataToCache();
-    scannedResult
-        .setBlockletDeleteDeltaCache(blocksChunkHolder.getDataBlock().getDeleteDeltaDataCache());
     FileHolder fileReader = blocksChunkHolder.getFileReader();
     int[][] allSelectedDimensionBlocksIndexes =
         blockExecutionInfo.getAllSelectedDimensionBlocksIndexes();
-
     long dimensionReadTime = System.currentTimeMillis();
     DimensionRawColumnChunk[] projectionListDimensionChunk = blocksChunkHolder.getDataBlock()
         .getDimensionChunks(fileReader, allSelectedDimensionBlocksIndexes);
@@ -282,15 +273,15 @@ public class FilterScanner extends AbstractBlockletScanner {
     MeasureColumnDataChunk[][] measureColumnDataChunks =
         new MeasureColumnDataChunk[measureRawColumnChunks.length][indexesGroup.length];
     for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
-      for (int j = 0; j < indexesGroup.length; j++) {
-        if (dimensionRawColumnChunks[i] != null) {
+      if (dimensionRawColumnChunks[i] != null) {
+        for (int j = 0; j < indexesGroup.length; j++) {
           dimensionColumnDataChunks[i][j] = dimensionRawColumnChunks[i].convertToDimColDataChunk(j);
         }
       }
     }
     for (int i = 0; i < measureRawColumnChunks.length; i++) {
-      for (int j = 0; j < indexesGroup.length; j++) {
-        if (measureRawColumnChunks[i] != null) {
+      if (measureRawColumnChunks[i] != null) {
+        for (int j = 0; j < indexesGroup.length; j++) {
           measureColumnDataChunks[i][j] = measureRawColumnChunks[i].convertToMeasureColDataChunk(j);
         }
       }

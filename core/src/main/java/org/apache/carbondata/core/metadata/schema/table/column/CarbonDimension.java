@@ -85,13 +85,6 @@ public class CarbonDimension extends CarbonColumn {
     return listOfChildDimensions;
   }
 
-  /**
-   * @return return the number of child present in case of complex type
-   */
-  public int numberOfChild() {
-    return columnSchema.getNumberOfChild();
-  }
-
   public boolean hasEncoding(Encoding encoding) {
     return columnSchema.getEncodingList().contains(encoding);
   }
@@ -119,6 +112,22 @@ public class CarbonDimension extends CarbonColumn {
 
   public void setComplexTypeOridnal(int complexTypeOrdinal) {
     this.complexTypeOrdinal = complexTypeOrdinal;
+  }
+
+  public boolean isGlobalDictionaryEncoding() {
+    return getEncoder().contains(Encoding.DICTIONARY);
+  }
+
+  public int getNumDimensionsExpanded() {
+    if (listOfChildDimensions == null) {
+      // there is no child, return 1 column
+      return 1;
+    }
+    int columnCount = 1;
+    for (CarbonDimension dimension: listOfChildDimensions) {
+      columnCount += dimension.getNumDimensionsExpanded();
+    }
+    return columnCount;
   }
 
   /**

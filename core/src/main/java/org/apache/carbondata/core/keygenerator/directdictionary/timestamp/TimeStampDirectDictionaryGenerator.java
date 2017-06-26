@@ -163,9 +163,10 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
       }
       dateToStr = simpleDateFormat.parse(memberStr);
     } catch (ParseException e) {
-      LOGGER.debug(
-          "Cannot convert " + memberStr + " to Time/Long type value. Value considered as null." + e
-              .getMessage());
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Cannot convert value to Time/Long type value. Value considered as null." + e
+            .getMessage());
+      }
       dateToStr = null;
     }
     //adding +2 to reserve the first cuttOffDiff value for null or empty date
@@ -200,9 +201,11 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     try {
       timeValue = Long.valueOf(memberStr) / 1000;
     } catch (NumberFormatException e) {
-      LOGGER.debug(
-          "Cannot convert " + memberStr + " Long type value. Value considered as null." + e
-              .getMessage());
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug(
+            "Cannot convert " + memberStr + " Long type value. Value considered as null." + e
+                .getMessage());
+      }
     }
     if (timeValue == -1) {
       return 1;

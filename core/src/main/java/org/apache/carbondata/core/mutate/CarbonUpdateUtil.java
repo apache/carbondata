@@ -796,4 +796,20 @@ public class CarbonUpdateUtil {
 
   }
 
+  /**
+   * Below method will be used to get the latest delete delta file timestamp
+   * @param deleteDeltaFiles
+   * @return latest delete delta file time stamp
+   */
+  public static long getLatestDeleteDeltaTimestamp(String[] deleteDeltaFiles) {
+    long latestTimestamp = 0;
+    for (int i = 0; i < deleteDeltaFiles.length; i++) {
+      long convertTimeStampToLong = Long.parseLong(
+          CarbonTablePath.DataFileUtil.getTimeStampFromDeleteDeltaFile(deleteDeltaFiles[i]));
+      if (latestTimestamp < convertTimeStampToLong) {
+        latestTimestamp = convertTimeStampToLong;
+      }
+    }
+    return latestTimestamp;
+  }
 }

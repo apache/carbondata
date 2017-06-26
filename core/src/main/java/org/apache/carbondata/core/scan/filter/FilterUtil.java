@@ -503,7 +503,9 @@ public final class FilterUtil {
             }
           }
         } catch (FilterIllegalMemberException e) {
-          LOGGER.debug(e.getMessage());
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(e.getMessage());
+          }
         }
       }
       return getFilterValues(columnExpression, evaluateResultListFinal, forwardDictionary,

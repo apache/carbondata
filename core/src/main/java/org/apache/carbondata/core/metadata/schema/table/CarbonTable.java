@@ -169,13 +169,21 @@ public class CarbonTable implements Serializable {
     for (TableSchema aggTable : aggregateTableList) {
       this.aggregateTablesName.add(aggTable.getTableName());
       fillDimensionsAndMeasuresForTables(aggTable);
-      tableBucketMap.put(aggTable.getTableName(), aggTable.getBucketingInfo());
-      tablePartitionMap.put(aggTable.getTableName(), aggTable.getPartitionInfo());
+      if (aggTable.getBucketingInfo() != null) {
+        tableBucketMap.put(aggTable.getTableName(), aggTable.getBucketingInfo());
+      }
+      if (aggTable.getPartitionInfo() != null) {
+        tablePartitionMap.put(aggTable.getTableName(), aggTable.getPartitionInfo());
+      }
     }
-    tableBucketMap.put(tableInfo.getFactTable().getTableName(),
-        tableInfo.getFactTable().getBucketingInfo());
-    tablePartitionMap.put(tableInfo.getFactTable().getTableName(),
-        tableInfo.getFactTable().getPartitionInfo());
+    if (tableInfo.getFactTable().getBucketingInfo() != null) {
+      tableBucketMap.put(tableInfo.getFactTable().getTableName(),
+          tableInfo.getFactTable().getBucketingInfo());
+    }
+    if (tableInfo.getFactTable().getPartitionInfo() != null) {
+      tablePartitionMap.put(tableInfo.getFactTable().getTableName(),
+          tableInfo.getFactTable().getPartitionInfo());
+    }
   }
 
   /**

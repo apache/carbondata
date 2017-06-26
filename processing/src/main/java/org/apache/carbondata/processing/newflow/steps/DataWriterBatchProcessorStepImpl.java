@@ -22,13 +22,13 @@ import java.util.Iterator;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
@@ -82,13 +82,16 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
         int k = 0;
         while (iterator.hasNext()) {
           CarbonRowBatch next = iterator.next();
-          CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
-              .createCarbonFactDataHandlerModel(configuration, storeLocation, i, k++);
-          CarbonFactHandler dataHandler = CarbonFactHandlerFactory
-              .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
-          dataHandler.initialise();
-          processBatch(next, dataHandler);
-          finish(tableName, dataHandler);
+          // If no rows from merge sorter, then don't create a file in fact column handler
+          if (next.hasNext()) {
+            CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
+                .createCarbonFactDataHandlerModel(configuration, storeLocation, i, k++);
+            CarbonFactHandler dataHandler = CarbonFactHandlerFactory
+                .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
+            dataHandler.initialise();
+            processBatch(next, dataHandler);
+            finish(tableName, dataHandler);
+          }
         }
         i++;
       }
@@ -137,6 +140,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
       dataHandler.addDataToStore(row);
       batchSize++;
     }
+    batch.close();
     rowCounter.getAndAdd(batchSize);
   }
 

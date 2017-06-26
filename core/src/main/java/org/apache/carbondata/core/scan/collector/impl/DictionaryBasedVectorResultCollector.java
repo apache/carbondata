@@ -130,6 +130,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
   @Override public void collectVectorBatch(AbstractScannedResult scannedResult,
       CarbonColumnarBatch columnarBatch) {
     int numberOfPages = scannedResult.numberOfpages();
+    int filteredRows = 0;
     while (scannedResult.getCurrentPageCounter() < numberOfPages) {
       int currentPageRowCount = scannedResult.getCurrentPageRowCount();
       if (currentPageRowCount == 0) {
@@ -138,15 +139,17 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
       }
       int rowCounter = scannedResult.getRowCounter();
       int availableRows = currentPageRowCount - rowCounter;
-      int requiredRows = columnarBatch.getBatchSize() - columnarBatch.getActualSize();
+      int requiredRows =
+          columnarBatch.getBatchSize() - (columnarBatch.getActualSize() + filteredRows);
       requiredRows = Math.min(requiredRows, availableRows);
       if (requiredRows < 1) {
         return;
       }
       fillColumnVectorDetails(columnarBatch, rowCounter, requiredRows);
-      scannedResult.markFilteredRows(
-          columnarBatch, rowCounter, requiredRows, columnarBatch.getRowCounter());
+      filteredRows = scannedResult
+          .markFilteredRows(columnarBatch, rowCounter, requiredRows, columnarBatch.getRowCounter());
       scanAndFillResult(scannedResult, columnarBatch, rowCounter, availableRows, requiredRows);
+      columnarBatch.setActualSize(columnarBatch.getActualSize() + requiredRows - filteredRows);
     }
   }
 
@@ -164,8 +167,6 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
       // Or set the row counter.
       scannedResult.setRowCounter(rowCounter + requiredRows);
     }
-    columnarBatch.setActualSize(
-        columnarBatch.getActualSize() + requiredRows - columnarBatch.getRowsFilteredCount());
     columnarBatch.setRowCounter(columnarBatch.getRowCounter() + requiredRows);
   }
 

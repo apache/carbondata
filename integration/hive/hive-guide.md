@@ -20,12 +20,10 @@
 # Quick Start
 This tutorial provides a quick introduction to using current integration/hive module.
 
-## Prerequisites
-## Spark Version 2.1
-* Build integration/hive
-mvn -DskipTests -Pspark-2.1 -Dspark.version=2.1.0 clean package -Phadoop-2.7.2 -Phive-1.2
+## Build (In 1.2.0, hive integration only support spark2.1 and hadoop2.7.2)
+mvn -DskipTests -Pspark-2.1 -Phadoop-2.7.2 clean package
 
-
+## Prepare CarbonData in Spark
 * Create a sample.csv file using the following commands. The CSV file is required for loading data into CarbonData.
 
   ```
@@ -36,14 +34,17 @@ mvn -DskipTests -Pspark-2.1 -Dspark.version=2.1.0 clean package -Phadoop-2.7.2 -
   2,runlin,1.70,china,33000.2
   EOF
   ```
-  $HADOOP_HOME/bin/hadoop fs -put sample.csv /user/hadoop/sample.csv
 
-## Create hive carbon table in spark shell
-
-Start Spark shell by running the following command in the Spark directory:
+* copy data to HDFS
 
 ```
-./bin/spark-shell --jars <carbondata assembly jar path, carbondata hive jar path>
+$HADOOP_HOME/bin/hadoop fs -put sample.csv <hdfs store path>/sample.csv
+```
+
+* Start Spark shell by running the following command in the Spark directory
+
+```
+./bin/spark-shell --jars <carbondata assembly jar path>
 ```
 
 ```
@@ -54,21 +55,14 @@ val storeLocation = s"$rootPath/store"
 val warehouse = s"$rootPath/warehouse"
 val metastoredb = s"$rootPath/metastore_db"
 
- val carbon = SparkSession.builder().enableHiveSupport().config("spark.sql.warehouse.dir", warehouse).config(org.apache.carbondata.core.constants.CarbonCommonConstants.STORE_LOCATION, storeLocation).getOrCreateCarbonSession(storeLocation, metastoredb)
+val carbon = SparkSession.builder().enableHiveSupport().config("spark.sql.warehouse.dir", warehouse).config(org.apache.carbondata.core.constants.CarbonCommonConstants.STORE_LOCATION, storeLocation).getOrCreateCarbonSession(storeLocation, metastoredb)
 
 carbon.sql("create table hive_carbon(id int, name string, scale decimal, country string, salary double) STORED BY 'carbondata'")
-carbon.sql("LOAD DATA INPATH 'hdfs://mycluster/user/hadoop/sample.csv' INTO TABLE hive_carbon")
-
-```
-
-## Query Data from a Table
-
-```
+carbon.sql("LOAD DATA INPATH '<hdfs store path>/sample.csv' INTO TABLE hive_carbon")
 scala>carbon.sql("SELECT * FROM hive_carbon").show()
 ```
 
 ## Query Data in Hive
-
 ### Configure hive classpath
 ```
 mkdir hive/auxlibs/
@@ -77,29 +71,36 @@ cp carbondata/integration/hive/target/carbondata-hive-*.jar hive/auxlibs/
 cp $SPARK_HOME/jars/spark-catalyst*.jar hive/auxlibs/
 export HIVE_AUX_JARS_PATH=hive/auxlibs/
 ```
+### Fix snappy issue
+```
+copy snappy-java-xxx.jar from "./<SPARK_HOME>/jars/" to "./Library/Java/Extensions"
+export HADOOP_OPTS="-Dorg.xerial.snappy.lib.path=/Library/Java/Extensions -Dorg.xerial.snappy.lib.name=libsnappyjava.jnilib -Dorg.xerial.snappy.tempdir=/Users/apple/DEMO/tmp"
+```
 
-### Alter schema in Hive
+### Start hive client
 $HIVE_HOME/bin/hive
 
+### Initialize schema in hive
 ```
+create table in hive:
+CREATE TABLE IF NOT EXISTS hive_carbon(id int, name string, scale decimal, country string, salary double) row format delimited fields terminated by ',' stored as textfile;
+
 alter table hive_carbon set FILEFORMAT
 INPUTFORMAT "org.apache.carbondata.hive.MapredCarbonInputFormat"
 OUTPUTFORMAT "org.apache.carbondata.hive.MapredCarbonOutputFormat"
 SERDE "org.apache.carbondata.hive.CarbonHiveSerDe";
 
-alter table hive_carbon set LOCATION 'hdfs://mycluster-tj/user/hadoop/carbon/store/default/hive_carbon';
-alter table hive_carbon change col id INT;
-alter table hive_carbon add columns(name string, scale decimal(10, 2), country string, salary double);
-
+alter table hive_carbon set LOCATION '<hdfs store path>/carbon/store/default/hive_carbon';
 ```
 
 ### Query data from hive table
+
 ```
 set hive.mapred.supports.subdirectories=true;
 set mapreduce.input.fileinputformat.input.dir.recursive=true;
 
 select * from hive_carbon;
-
+select count(*) from hive_carbon;
 select * from hive_carbon order by id;
 ```
 
