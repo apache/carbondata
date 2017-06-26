@@ -43,7 +43,7 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(ForwardDictionaryCache.class.getName());
+      LogServiceFactory.getLogService(ReverseDictionaryCache.class.getName());
 
   /**
    * @param carbonStorePath

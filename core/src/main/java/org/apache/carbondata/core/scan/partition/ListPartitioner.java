@@ -17,16 +17,27 @@
 
 package org.apache.carbondata.core.scan.partition;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * List Partitioner
  */
 public class ListPartitioner implements Partitioner {
+
+  private SimpleDateFormat timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+
+  private SimpleDateFormat dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
 
   /**
    * map the value of ListPartition to partition id.
@@ -41,7 +52,8 @@ public class ListPartitioner implements Partitioner {
     numPartitions = values.size();
     for (int i = 0; i < numPartitions; i++) {
       for (String value : values.get(i)) {
-        map.put(PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType), i);
+        map.put(PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
+            timestampFormatter, dateFormatter), i);
       }
     }
   }

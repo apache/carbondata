@@ -24,13 +24,12 @@ import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReader;
-import org.apache.carbondata.core.datastore.compression.ReaderCompressModel;
-import org.apache.carbondata.core.datastore.compression.ValueCompressionHolder;
-import org.apache.carbondata.core.datastore.dataholder.CarbonReadDataHolder;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
-import org.apache.carbondata.core.util.ValueCompressionUtil;
 
 /**
  * Compressed measure chunk reader
@@ -94,28 +93,21 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
 
   @Override
   public MeasureColumnDataChunk convertToMeasureChunk(MeasureRawColumnChunk measureRawColumnChunk,
-      int pageNumber) throws IOException {
+      int pageNumber) throws IOException, MemoryException {
     int blockIndex = measureRawColumnChunk.getBlockletId();
     DataChunk dataChunk = measureColumnChunks.get(blockIndex);
     ValueEncoderMeta meta = dataChunk.getValueEncoderMeta().get(0);
-    ReaderCompressModel compressModel = ValueCompressionUtil.getReaderCompressModel(meta);
 
-    ValueCompressionHolder values = compressModel.getValueCompressionHolder();
-    ByteBuffer rawData = measureRawColumnChunk.getRawData();
-
-    // unCompress data
-    values.uncompress(compressModel.getConvertedDataType(), rawData.array(),
-        measureRawColumnChunk.getOffSet(), dataChunk.getDataPageLength(),
-        compressModel.getMantissa(), compressModel.getMaxValue(), numberOfRows);
-
-    CarbonReadDataHolder measureDataHolder = new CarbonReadDataHolder(values);
+    ColumnPageCodec codec = strategy.createCodec(meta);
+    ColumnPage page = codec.decode(measureRawColumnChunk.getRawData().array(),
+        measureRawColumnChunk.getOffSet(), dataChunk.getDataPageLength());
 
     // create and set the data chunk
-    MeasureColumnDataChunk datChunk = new MeasureColumnDataChunk();
-    datChunk.setMeasureDataHolder(measureDataHolder);
+    MeasureColumnDataChunk decodedChunk = new MeasureColumnDataChunk();
+    decodedChunk.setColumnPage(page);
     // set the enun value indexes
-    datChunk
+    decodedChunk
         .setNullValueIndexHolder(dataChunk.getNullValueIndexForColumn());
-    return datChunk;
+    return decodedChunk;
   }
 }

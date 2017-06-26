@@ -25,11 +25,13 @@ import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
+import org.apache.carbondata.core.mutate.DeleteDeltaVo;
+import org.apache.carbondata.core.mutate.TupleIdEnum;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
@@ -76,7 +78,7 @@ public abstract class AbstractScannedResult {
   /**
    * dimension column data chunk
    */
-  protected DimensionColumnDataChunk[][] dataChunks;
+  protected DimensionColumnDataChunk[][] dimensionDataChunks;
 
   /**
    * Raw dimension chunks;
@@ -125,7 +127,20 @@ public abstract class AbstractScannedResult {
    */
   private int[] complexParentBlockIndexes;
 
-  protected BlockletLevelDeleteDeltaDataCache blockletDeleteDeltaCache;
+  /**
+   * blockletid+pageumber to deleted reocrd map
+   */
+  private Map<String, DeleteDeltaVo> deletedRecordMap;
+
+  /**
+   * current page delete delta vo
+   */
+  private DeleteDeltaVo currentDeleteDeltaVo;
+
+  /**
+   * actual blocklet number
+   */
+  private String blockletNumber;
 
   public AbstractScannedResult(BlockExecutionInfo blockExecutionInfo) {
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
@@ -135,6 +150,7 @@ public abstract class AbstractScannedResult {
     this.complexParentIndexToQueryMap = blockExecutionInfo.getComlexDimensionInfoMap();
     this.complexParentBlockIndexes = blockExecutionInfo.getComplexColumnParentBlockIndexes();
     this.totalDimensionsSize = blockExecutionInfo.getQueryDimensions().length;
+    this.deletedRecordMap = blockExecutionInfo.getDeletedRecordsMap();
   }
 
   /**
@@ -144,7 +160,7 @@ public abstract class AbstractScannedResult {
    * @param dataChunks dimension chunks used in query
    */
   public void setDimensionChunks(DimensionColumnDataChunk[][] dataChunks) {
-    this.dataChunks = dataChunks;
+    this.dimensionDataChunks = dataChunks;
   }
 
   /**
@@ -181,7 +197,7 @@ public abstract class AbstractScannedResult {
     byte[] completeKey = new byte[fixedLengthKeySize];
     int offset = 0;
     for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
-      offset += dataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
+      offset += dimensionDataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
           .fillChunkData(completeKey, offset, rowId,
               columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
     }
@@ -200,7 +216,7 @@ public abstract class AbstractScannedResult {
     int[] completeKey = new int[totalDimensionsSize];
     int column = 0;
     for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
-      column = dataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
+      column = dimensionDataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
           .fillConvertedChunkData(rowId, column, completeKey,
               columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
     }
@@ -214,7 +230,7 @@ public abstract class AbstractScannedResult {
   public void fillColumnarDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
     int column = 0;
     for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
-      column = dataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
+      column = dimensionDataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
           .fillConvertedChunkData(vectorInfo, column,
               columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
     }
@@ -226,7 +242,7 @@ public abstract class AbstractScannedResult {
   public void fillColumnarNoDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
     int column = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
-      column = dataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter]
+      column = dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter]
           .fillConvertedChunkData(vectorInfo, column,
               columnGroupKeyStructureInfo.get(noDictionaryColumnBlockIndexes[i]));
     }
@@ -272,9 +288,8 @@ public abstract class AbstractScannedResult {
    * Fill the column data to vector
    */
   public void fillColumnarImplicitBatch(ColumnVectorInfo[] vectorInfo) {
-    int column = 0;
     for (int i = 0; i < vectorInfo.length; i++) {
-      ColumnVectorInfo columnVectorInfo = vectorInfo[column];
+      ColumnVectorInfo columnVectorInfo = vectorInfo[i];
       CarbonColumnVector vector = columnVectorInfo.vector;
       int offset = columnVectorInfo.offset;
       int vectorOffset = columnVectorInfo.vectorOffset;
@@ -284,10 +299,12 @@ public abstract class AbstractScannedResult {
         String data = getBlockletId();
         if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
             .equals(columnVectorInfo.dimension.getColumnName())) {
-          data = data + CarbonCommonConstants.FILE_SEPARATOR +
-              (rowMapping == null ? j : rowMapping[pageCounter][j]);
+          data = data + CarbonCommonConstants.FILE_SEPARATOR + pageCounter
+              + CarbonCommonConstants.FILE_SEPARATOR + (rowMapping == null ?
+              j :
+              rowMapping[pageCounter][j]);
         }
-        vector.putBytes(vectorOffset++, offset, data.length(), data.getBytes());
+        vector.putBytes(vectorOffset++, data.getBytes());
       }
     }
   }
@@ -307,6 +324,9 @@ public abstract class AbstractScannedResult {
     rowCounter = 0;
     currentRow = -1;
     pageCounter++;
+    if (null != deletedRecordMap) {
+      currentDeleteDeltaVo = deletedRecordMap.get(blockletNumber + "_" + pageCounter);
+    }
   }
 
   public int numberOfpages() {
@@ -342,7 +362,7 @@ public abstract class AbstractScannedResult {
    * @return dimension data based on row id
    */
   protected byte[] getDimensionData(int dimOrdinal, int rowId) {
-    return dataChunks[dimOrdinal][pageCounter].getChunkData(rowId);
+    return dimensionDataChunks[dimOrdinal][pageCounter].getChunkData(rowId);
   }
 
   /**
@@ -357,7 +377,7 @@ public abstract class AbstractScannedResult {
     int position = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
       noDictionaryColumnsKeys[position++] =
-          dataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId);
+          dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId);
     }
     return noDictionaryColumnsKeys;
   }
@@ -374,7 +394,7 @@ public abstract class AbstractScannedResult {
     int position = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
       noDictionaryColumnsKeys[position++] = new String(
-          dataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId));
+          dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId));
     }
     return noDictionaryColumnsKeys;
   }
@@ -391,6 +411,12 @@ public abstract class AbstractScannedResult {
    */
   public void setBlockletId(String blockletId) {
     this.blockletId = CarbonTablePath.getShortBlockId(blockletId);
+    blockletNumber = CarbonUpdateUtil.getRequiredFieldFromTID(blockletId, TupleIdEnum.BLOCKLET_ID);
+    // if deleted recors map is present for this block
+    // then get the first page deleted vo
+    if (null != deletedRecordMap) {
+      currentDeleteDeltaVo = deletedRecordMap.get(blockletNumber + '_' + pageCounter);
+    }
   }
 
   /**
@@ -455,6 +481,9 @@ public abstract class AbstractScannedResult {
       pageCounter++;
       rowCounter = 0;
       currentRow = -1;
+      if (null != deletedRecordMap) {
+        currentDeleteDeltaVo = deletedRecordMap.get(blockletNumber + "_" + pageCounter);
+      }
       return hasNext();
     }
     return false;
@@ -465,12 +494,12 @@ public abstract class AbstractScannedResult {
    */
   public void freeMemory() {
     // first free the dimension chunks
-    if (null != dataChunks) {
-      for (int i = 0; i < dataChunks.length; i++) {
-        if (null != dataChunks[i]) {
-          for (int j = 0; j < dataChunks[i].length; j++) {
-            if (null != dataChunks[i][j]) {
-              dataChunks[i][j].freeMemory();
+    if (null != dimensionDataChunks) {
+      for (int i = 0; i < dimensionDataChunks.length; i++) {
+        if (null != dimensionDataChunks[i]) {
+          for (int j = 0; j < dimensionDataChunks[i].length; j++) {
+            if (null != dimensionDataChunks[i][j]) {
+              dimensionDataChunks[i][j].freeMemory();
             }
           }
         }
@@ -552,8 +581,8 @@ public abstract class AbstractScannedResult {
    * @return measure value of long type
    */
   protected long getLongMeasureValue(int ordinal, int rowIndex) {
-    return measureDataChunks[ordinal][pageCounter].getMeasureDataHolder()
-        .getReadableLongValueByIndex(rowIndex);
+    return measureDataChunks[ordinal][pageCounter].getColumnPage()
+        .getLong(rowIndex);
   }
 
   /**
@@ -564,8 +593,8 @@ public abstract class AbstractScannedResult {
    * @return measure value of double type
    */
   protected double getDoubleMeasureValue(int ordinal, int rowIndex) {
-    return measureDataChunks[ordinal][pageCounter].getMeasureDataHolder()
-        .getReadableDoubleValueByIndex(rowIndex);
+    return measureDataChunks[ordinal][pageCounter].getColumnPage()
+        .getDouble(rowIndex);
   }
 
   /**
@@ -576,8 +605,8 @@ public abstract class AbstractScannedResult {
    * @return measure of big decimal type
    */
   protected BigDecimal getBigDecimalMeasureValue(int ordinal, int rowIndex) {
-    return measureDataChunks[ordinal][pageCounter].getMeasureDataHolder()
-        .getReadableBigDecimalValueByIndex(rowIndex);
+    return measureDataChunks[ordinal][pageCounter].getColumnPage()
+        .getDecimal(rowIndex);
   }
 
   public int getRowCounter() {
@@ -627,38 +656,39 @@ public abstract class AbstractScannedResult {
   public abstract String[] getNoDictionaryKeyStringArray();
 
   /**
-   * @return BlockletLevelDeleteDeltaDataCache.
-   */
-  public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
-    return blockletDeleteDeltaCache;
-  }
-
-  /**
-   * @param blockletDeleteDeltaCache
-   */
-  public void setBlockletDeleteDeltaCache(
-      BlockletLevelDeleteDeltaDataCache blockletDeleteDeltaCache) {
-    this.blockletDeleteDeltaCache = blockletDeleteDeltaCache;
-  }
-
-  /**
    * Mark the filtered rows in columnar batch. These rows will not be added to vector batches later.
    * @param columnarBatch
    * @param startRow
    * @param size
    * @param vectorOffset
    */
-  public void markFilteredRows(CarbonColumnarBatch columnarBatch, int startRow, int size,
+  public int markFilteredRows(CarbonColumnarBatch columnarBatch, int startRow, int size,
       int vectorOffset) {
-    if (blockletDeleteDeltaCache != null) {
+    int rowsFiltered = 0;
+    if (currentDeleteDeltaVo != null) {
       int len = startRow + size;
       for (int i = startRow; i < len; i++) {
         int rowId = rowMapping != null ? rowMapping[pageCounter][i] : i;
-        if (blockletDeleteDeltaCache.contains(rowId)) {
+        if (currentDeleteDeltaVo.containsRow(rowId)) {
           columnarBatch.markFiltered(vectorOffset);
+          rowsFiltered++;
         }
         vectorOffset++;
       }
     }
+    return rowsFiltered;
+  }
+
+  /**
+   * Below method will be used to check row got deleted
+   *
+   * @param rowId
+   * @return is present in deleted row
+   */
+  public boolean containsDeletedRow(int rowId) {
+    if (null != currentDeleteDeltaVo) {
+      return currentDeleteDeltaVo.containsRow(rowId);
+    }
+    return false;
   }
 }

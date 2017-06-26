@@ -834,13 +834,6 @@ public final class CarbonCommonConstants {
   public static final int HIGH_CARDINALITY_THRESHOLD_MIN = 10000;
 
   /**
-   * percentage of cardinality in row count
-   */
-  public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE =
-      "high.cardinality.row.count.percentage";
-  public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT = "80";
-
-  /**
    * 16 mb size
    */
   public static final long CARBON_16MB = 16 * 1024 * 1024;
@@ -1067,6 +1060,16 @@ public final class CarbonCommonConstants {
   public static final int CARBON_EXECUTOR_STARTUP_THREAD_SLEEP_TIME = 250;
 
   /**
+   * to enable unsafe column page in write step
+   */
+  public static final String ENABLE_UNSAFE_COLUMN_PAGE_LOADING = "enable.unsafe.columnpage";
+
+  /**
+   * default value of ENABLE_UNSAFE_COLUMN_PAGE_LOADING
+   */
+  public static final String ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT = "false";
+
+  /**
    * to enable offheap sort
    */
   public static final String ENABLE_UNSAFE_SORT = "enable.unsafe.sort";
@@ -1108,6 +1111,8 @@ public final class CarbonCommonConstants {
    * thus loading is faster but query maybe slower.
    * If set to LOCAL_SORT, the sorting scope is bigger and one index tree per data node will be
    * created, thus loading is slower but query is faster.
+   * If set to GLOBAL_SORT, the sorting scope is bigger and one index tree per task will be
+   * created, thus loading is slower but query is faster.
    */
   public static final String LOAD_SORT_SCOPE_DEFAULT = "LOCAL_SORT";
 
@@ -1116,6 +1121,15 @@ public final class CarbonCommonConstants {
    * to be less than 45% of sort.inmemory.size.inmb otherwise it may spill intermediate data to disk
    */
   public static final String LOAD_BATCH_SORT_SIZE_INMB = "carbon.load.batch.sort.size.inmb";
+
+  /**
+   * The Number of partitions to use when shuffling data for sort. If user don't configurate or
+   * configurate it less than 1, it uses the number of map tasks as reduce tasks. In general, we
+   * recommend 2-3 tasks per CPU core in your cluster.
+   */
+  public static final String LOAD_GLOBAL_SORT_PARTITIONS = "carbon.load.global.sort.partitions";
+
+  public static final String LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT = "0";
 
   public static final String ENABLE_VECTOR_READER = "carbon.enable.vector.reader";
 

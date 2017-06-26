@@ -93,7 +93,7 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
   public void fillColumnarDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
     int column = 0;
     for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
-      column = dataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
+      column = dimensionDataChunks[dictionaryColumnBlockIndexes[i]][pageCounter]
           .fillConvertedChunkData(rowMapping[pageCounter], vectorInfo, column,
               columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
     }
@@ -105,7 +105,7 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
   public void fillColumnarNoDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
     int column = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
-      column = dataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter]
+      column = dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter]
           .fillConvertedChunkData(rowMapping[pageCounter], vectorInfo, column,
               columnGroupKeyStructureInfo.get(noDictionaryColumnBlockIndexes[i]));
     }

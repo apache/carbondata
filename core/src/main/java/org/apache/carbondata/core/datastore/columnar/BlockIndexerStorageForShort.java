@@ -27,58 +27,57 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
 
   private boolean alreadySorted;
 
-  private short[] dataAfterComp;
+  private short[] rowIdPage;
 
-  private short[] indexMap;
+  private short[] rowIdRlePage;
 
-  private byte[][] keyBlock;
+  private byte[][] dataPage;
 
-  private short[] dataIndexMap;
+  private short[] dataRlePage;
 
   private int totalSize;
 
-  public BlockIndexerStorageForShort(byte[][] keyBlock, boolean compressData,
+  public BlockIndexerStorageForShort(byte[][] dataPage, boolean rleOnData,
       boolean isNoDictionary, boolean isSortRequired) {
-    ColumnWithShortIndex[] columnWithIndexs = createColumnWithIndexArray(keyBlock, isNoDictionary);
+    ColumnWithRowId<Short>[] dataWithRowId = createColumnWithRowId(dataPage, isNoDictionary);
     if (isSortRequired) {
-      Arrays.sort(columnWithIndexs);
+      Arrays.sort(dataWithRowId);
     }
-    compressMyOwnWay(extractDataAndReturnIndexes(columnWithIndexs, keyBlock));
-    if (compressData) {
-      compressDataMyOwnWay(columnWithIndexs);
+    short[] rowIds = extractDataAndReturnRowId(dataWithRowId, dataPage);
+    rleEncodeOnRowId(rowIds);
+    if (rleOnData) {
+      rleEncodeOnData(dataWithRowId);
     }
   }
 
   /**
-   * Create an object with each column array and respective index
+   * Create an object with each column array and respective rowId
    *
    * @return
    */
-  private ColumnWithShortIndex[] createColumnWithIndexArray(byte[][] keyBlock,
+  private ColumnWithRowId<Short>[] createColumnWithRowId(byte[][] dataPage,
       boolean isNoDictionary) {
-    ColumnWithShortIndex[] columnWithIndexs;
+    ColumnWithRowId<Short>[] columnWithIndexs = new ColumnWithRowId[dataPage.length];
     if (isNoDictionary) {
-      columnWithIndexs = new ColumnWithShortIndex[keyBlock.length];
       for (short i = 0; i < columnWithIndexs.length; i++) {
-        columnWithIndexs[i] = new ColumnWithShortIndexForNoDictionay(keyBlock[i], i);
+        columnWithIndexs[i] = new ColumnWithRowIdForHighCard<>(dataPage[i], i);
       }
     } else {
-      columnWithIndexs = new ColumnWithShortIndex[keyBlock.length];
       for (short i = 0; i < columnWithIndexs.length; i++) {
-        columnWithIndexs[i] = new ColumnWithShortIndex(keyBlock[i], i);
+        columnWithIndexs[i] = new ColumnWithRowId<>(dataPage[i], i);
       }
     }
     return columnWithIndexs;
   }
 
-  private short[] extractDataAndReturnIndexes(ColumnWithShortIndex[] columnWithIndexs,
-      byte[][] keyBlock) {
-    short[] indexes = new short[columnWithIndexs.length];
+  private short[] extractDataAndReturnRowId(ColumnWithRowId<Short>[] dataWithRowId,
+      byte[][] dataPage) {
+    short[] indexes = new short[dataWithRowId.length];
     for (int i = 0; i < indexes.length; i++) {
-      indexes[i] = columnWithIndexs[i].getIndex();
-      keyBlock[i] = columnWithIndexs[i].getColumn();
+      indexes[i] = dataWithRowId[i].getIndex();
+      dataPage[i] = dataWithRowId[i].getColumn();
     }
-    this.keyBlock = keyBlock;
+    this.dataPage = dataPage;
     return indexes;
   }
 
@@ -90,46 +89,46 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
    * sequential numbers then the same array it returns with empty second
    * array.
    *
-   * @param indexes
+   * @param rowIds
    */
-  private void compressMyOwnWay(short[] indexes) {
+  private void rleEncodeOnRowId(short[] rowIds) {
     List<Short> list = new ArrayList<Short>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     List<Short> map = new ArrayList<Short>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     int k = 0;
     int i = 1;
-    for (; i < indexes.length; i++) {
-      if (indexes[i] - indexes[i - 1] == 1) {
+    for (; i < rowIds.length; i++) {
+      if (rowIds[i] - rowIds[i - 1] == 1) {
         k++;
       } else {
         if (k > 0) {
           map.add(((short) list.size()));
-          list.add(indexes[i - k - 1]);
-          list.add(indexes[i - 1]);
+          list.add(rowIds[i - k - 1]);
+          list.add(rowIds[i - 1]);
         } else {
-          list.add(indexes[i - 1]);
+          list.add(rowIds[i - 1]);
         }
         k = 0;
       }
     }
     if (k > 0) {
       map.add(((short) list.size()));
-      list.add(indexes[i - k - 1]);
-      list.add(indexes[i - 1]);
+      list.add(rowIds[i - k - 1]);
+      list.add(rowIds[i - 1]);
     } else {
-      list.add(indexes[i - 1]);
+      list.add(rowIds[i - 1]);
     }
-    double compressionPercentage = (((list.size() + map.size()) * 100) / indexes.length);
+    double compressionPercentage = (((list.size() + map.size()) * 100) / rowIds.length);
     if (compressionPercentage > 70) {
-      dataAfterComp = indexes;
+      rowIdPage = rowIds;
     } else {
-      dataAfterComp = convertToArray(list);
+      rowIdPage = convertToArray(list);
     }
-    if (indexes.length == dataAfterComp.length) {
-      indexMap = new short[0];
+    if (rowIds.length == rowIdPage.length) {
+      rowIdRlePage = new short[0];
     } else {
-      indexMap = convertToArray(map);
+      rowIdRlePage = convertToArray(map);
     }
-    if (dataAfterComp.length == 2 && indexMap.length == 1) {
+    if (rowIdPage.length == 2 && rowIdRlePage.length == 1) {
       alreadySorted = true;
     }
   }
@@ -150,37 +149,37 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
   }
 
   /**
-   * @return the dataAfterComp
+   * @return the rowIdPage
    */
-  public short[] getDataAfterComp() {
-    return dataAfterComp;
+  public short[] getRowIdPage() {
+    return rowIdPage;
   }
 
   /**
-   * @return the indexMap
+   * @return the rowIdRlePage
    */
-  public short[] getIndexMap() {
-    return indexMap;
+  public short[] getRowIdRlePage() {
+    return rowIdRlePage;
   }
 
   /**
-   * @return the keyBlock
+   * @return the dataPage
    */
-  public byte[][] getKeyBlock() {
-    return keyBlock;
+  public byte[][] getDataPage() {
+    return dataPage;
   }
 
-  private void compressDataMyOwnWay(ColumnWithShortIndex[] indexes) {
-    byte[] prvKey = indexes[0].getColumn();
-    List<ColumnWithShortIndex> list = new ArrayList<ColumnWithShortIndex>(indexes.length / 2);
-    list.add(indexes[0]);
+  private void rleEncodeOnData(ColumnWithRowId<Short>[] dataWithRowId) {
+    byte[] prvKey = dataWithRowId[0].getColumn();
+    List<ColumnWithRowId> list = new ArrayList<>(dataWithRowId.length / 2);
+    list.add(dataWithRowId[0]);
     short counter = 1;
     short start = 0;
     List<Short> map = new ArrayList<Short>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    for (int i = 1; i < indexes.length; i++) {
-      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(prvKey, indexes[i].getColumn()) != 0) {
-        prvKey = indexes[i].getColumn();
-        list.add(indexes[i]);
+    for (int i = 1; i < dataWithRowId.length; i++) {
+      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(prvKey, dataWithRowId[i].getColumn()) != 0) {
+        prvKey = dataWithRowId[i].getColumn();
+        list.add(dataWithRowId[i]);
         map.add(start);
         map.add(counter);
         start += counter;
@@ -193,17 +192,17 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     map.add(counter);
     // if rle is index size is more than 70% then rle wont give any benefit
     // so better to avoid rle index and write data as it is
-    boolean useRle = (((list.size() + map.size()) * 100) / indexes.length) < 70;
+    boolean useRle = (((list.size() + map.size()) * 100) / dataWithRowId.length) < 70;
     if (useRle) {
-      this.keyBlock = convertToKeyArray(list);
-      dataIndexMap = convertToArray(map);
+      this.dataPage = convertToDataPage(list);
+      dataRlePage = convertToArray(map);
     } else {
-      this.keyBlock = convertToKeyArray(indexes);
-      dataIndexMap = new short[0];
+      this.dataPage = convertToDataPage(dataWithRowId);
+      dataRlePage = new short[0];
     }
   }
 
-  private byte[][] convertToKeyArray(ColumnWithShortIndex[] indexes) {
+  private byte[][] convertToDataPage(ColumnWithRowId[] indexes) {
     byte[][] shortArray = new byte[indexes.length][];
     for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = indexes[i].getColumn();
@@ -212,7 +211,7 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     return shortArray;
   }
 
-  private byte[][] convertToKeyArray(List<ColumnWithShortIndex> list) {
+  private byte[][] convertToDataPage(List<ColumnWithRowId> list) {
     byte[][] shortArray = new byte[list.size()][];
     for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = list.get(i).getColumn();
@@ -221,8 +220,8 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     return shortArray;
   }
 
-  @Override public short[] getDataIndexMap() {
-    return dataIndexMap;
+  public short[] getDataRlePage() {
+    return dataRlePage;
   }
 
   @Override public int getTotalSize() {
@@ -230,11 +229,11 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
   }
 
   @Override public byte[] getMin() {
-    return keyBlock[0];
+    return dataPage[0];
   }
 
   @Override public byte[] getMax() {
-    return keyBlock[keyBlock.length - 1];
+    return dataPage[dataPage.length - 1];
   }
 
 }

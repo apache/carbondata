@@ -86,29 +86,34 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
   }
 
   private def pushDownUDFToJoinLeftRelation(plan: LogicalPlan): LogicalPlan = {
-    val output = plan match {
+    val output = plan.transform {
       case proj@Project(cols, Join(
       left, right, jointype: org.apache.spark.sql.catalyst.plans.JoinType, condition)) =>
         var projectionToBeAdded: Seq[org.apache.spark.sql.catalyst.expressions.Alias] = Seq.empty
-        val newCols = cols.map { col =>
-          col match {
-            case a@Alias(s: ScalaUDF, name)
-              if (name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
-                  name.equalsIgnoreCase(
-                    CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)) =>
-              projectionToBeAdded :+= a
-              AttributeReference(name, StringType, true)().withExprId(a.exprId)
-            case other => other
-          }
-        }
-        val newLeft = left match {
-          case Project(columns, logicalPlan) =>
-            Project(columns ++ projectionToBeAdded, logicalPlan)
-          case filter: Filter =>
-            Project(filter.output ++ projectionToBeAdded, filter)
+        var udfExists = false
+        val newCols = cols.map {
+          case a@Alias(s: ScalaUDF, name)
+            if name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
+                name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
+            udfExists = true
+            projectionToBeAdded :+= a
+            AttributeReference(name, StringType, nullable = true)().withExprId(a.exprId)
           case other => other
         }
-        Project(newCols, Join(newLeft, right, jointype, condition))
+        if (udfExists) {
+          val newLeft = left match {
+            case Project(columns, logicalPlan) =>
+              Project(columns ++ projectionToBeAdded, logicalPlan)
+            case filter: Filter =>
+              Project(filter.output ++ projectionToBeAdded, filter)
+            case relation: LogicalRelation =>
+              Project(relation.output ++ projectionToBeAdded, relation)
+            case other => other
+          }
+          Project(newCols, Join(newLeft, right, jointype, condition))
+        } else {
+          proj
+        }
       case other => other
     }
     output
@@ -174,7 +179,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
    * Steps for changing the plan.
    * 1. It finds out the join condition columns and dimension aggregate columns which are need to
    * be decoded just before that plan executes.
-   * 2. Plan starts transform by adding the decoder to the plan where it needs the decoded data
+   * 2. Plan starts encode by adding the decoder to the plan where it needs the decoded data
    * like dimension aggregate columns decoder under aggregator and join condition decoder under
    * join children.
    */

@@ -87,7 +87,7 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty("carbon.blockletgroup.size.in.mb", "16")
       .addProperty("carbon.enable.vector.reader", "true")
-      .addProperty("enable.unsafe.sort", "true")
+      //.addProperty("enable.unsafe.sort", "true")
 
     val rdd = sqlContext.sparkContext
       .parallelize(1 to 1200000, 4)

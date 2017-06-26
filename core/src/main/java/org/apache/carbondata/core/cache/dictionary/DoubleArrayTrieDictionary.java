@@ -109,7 +109,7 @@ public class DoubleArrayTrieDictionary {
   }
 
   /**
-   * Get encode value of key
+   * Get apply value of key
    *
    * @param key
    * @return
@@ -121,7 +121,7 @@ public class DoubleArrayTrieDictionary {
   }
 
   /**
-   * Get encode value of bKeys
+   * Get apply value of bKeys
    *
    * @param bKeys
    * @return

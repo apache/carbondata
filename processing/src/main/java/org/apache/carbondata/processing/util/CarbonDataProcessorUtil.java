@@ -32,6 +32,8 @@ import java.util.Set;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.DimensionType;
+import org.apache.carbondata.core.datastore.GenericDataType;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -47,7 +49,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datatypes.ArrayDataType;
-import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
 import org.apache.carbondata.processing.datatypes.StructDataType;
 import org.apache.carbondata.processing.model.CarbonDataLoadSchema;
@@ -444,9 +445,11 @@ public final class CarbonDataProcessorUtil {
             configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
                 .toString());
       }
+      LOGGER.warn("sort scope is set to " + sortScope);
     } catch (Exception e) {
       sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
-      LOGGER.warn("sort scope is set to " + sortScope);
+      LOGGER.warn("Exception occured while resolving sort scope. " +
+          "sort scope is set to " + sortScope);
     }
     return sortScope;
   }
@@ -469,10 +472,63 @@ public final class CarbonDataProcessorUtil {
             configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB)
                 .toString());
       }
+      LOGGER.warn("batch sort size is set to " + batchSortSizeInMb);
     } catch (Exception e) {
       batchSortSizeInMb = 0;
+      LOGGER.warn("Exception occured while resolving batch sort size. " +
+          "batch sort size is set to " + batchSortSizeInMb);
     }
     return batchSortSizeInMb;
+  }
+
+  /**
+   * Get the number of partitions in global sort
+   * @param configuration
+   * @return the number of partitions
+   */
+  public static int getGlobalSortPartitions(CarbonDataLoadConfiguration configuration) {
+    int numPartitions;
+    try {
+      // First try to get the number from ddl, otherwise get it from carbon properties.
+      if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS)
+          == null) {
+        numPartitions = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
+            CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT));
+      } else {
+        numPartitions = Integer.parseInt(
+          configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS)
+            .toString());
+      }
+    } catch (Exception e) {
+      numPartitions = 0;
+    }
+    return numPartitions;
+  }
+
+  /**
+   * the method prepares and return the message mentioning the reason of badrecord
+   *
+   * @param columnName
+   * @param dataType
+   * @return
+   */
+  public static String prepareFailureReason(String columnName, DataType dataType) {
+    return "The value with column name " + columnName + " and column data type " + dataType
+        .getName() + " is not a valid " + dataType + " type.";
+  }
+
+  /**
+   * This method will return a flag based on whether a column is applicable for RLE encoding
+   *
+   * @param dimensionType
+   * @return
+   */
+  public static boolean isRleApplicableForColumn(DimensionType dimensionType) {
+    if (dimensionType == DimensionType.GLOBAL_DICTIONARY) {
+      return true;
+    }
+    return false;
   }
 
 }

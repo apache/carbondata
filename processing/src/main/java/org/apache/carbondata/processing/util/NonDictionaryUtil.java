@@ -19,7 +19,7 @@ package org.apache.carbondata.processing.util;
 
 import java.nio.ByteBuffer;
 
-import org.apache.carbondata.processing.newflow.row.WriteStepRowUtil;
+import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 
 /**
  * This is the utility class for No Dictionary changes.

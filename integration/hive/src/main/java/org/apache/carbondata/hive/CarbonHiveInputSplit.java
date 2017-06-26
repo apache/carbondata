@@ -113,10 +113,10 @@ public class CarbonHiveInputSplit extends FileSplit
   }
 
   public static CarbonHiveInputSplit from(String segmentId, FileSplit split,
-                                          ColumnarFormatVersion version)
-    throws IOException {
+      ColumnarFormatVersion version)
+      throws IOException {
     return new CarbonHiveInputSplit(segmentId, split.getPath(), split.getStart(), split.getLength(),
-      split.getLocations(), version);
+        split.getLocations(), version);
   }
 
   public static List<TableBlockInfo> createBlocks(List<CarbonHiveInputSplit> splitList) {
@@ -127,7 +127,7 @@ public class CarbonHiveInputSplit extends FileSplit
       try {
         tableBlockInfoList.add(
             new TableBlockInfo(split.getPath().toString(), split.getStart(), split.getSegmentId(),
-            split.getLocations(), split.getLength(), blockletInfos, split.getVersion()));
+                split.getLocations(), split.getLength(), blockletInfos, split.getVersion(), null));
       } catch (IOException e) {
         throw new RuntimeException("fail to get location of split: " + split, e);
       }
@@ -140,8 +140,8 @@ public class CarbonHiveInputSplit extends FileSplit
         new BlockletInfos(inputSplit.getNumberOfBlocklets(), 0, inputSplit.getNumberOfBlocklets());
     try {
       return new TableBlockInfo(inputSplit.getPath().toString(), inputSplit.getStart(),
-        inputSplit.getSegmentId(), inputSplit.getLocations(), inputSplit.getLength(),
-        blockletInfos, inputSplit.getVersion());
+          inputSplit.getSegmentId(), inputSplit.getLocations(), inputSplit.getLength(),
+          blockletInfos, inputSplit.getVersion(), null);
     } catch (IOException e) {
       throw new RuntimeException("fail to get location of split: " + inputSplit, e);
     }
@@ -219,7 +219,7 @@ public class CarbonHiveInputSplit extends FileSplit
       return -1;
     }
     CarbonHiveInputSplit other = (CarbonHiveInputSplit) o;
-    int compareResult = 0;
+    int compareResult;
     // get the segment id
     // converr seg ID to double.
 
