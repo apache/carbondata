@@ -137,7 +137,7 @@ public class UpscaleFloatingCodec extends AdaptiveCompressionCodec {
           encodedPage.putLong(rowId, (long)(Math.round(factor * value)));
           break;
         case DOUBLE:
-          encodedPage.putDouble(rowId, (Math.round(factor * value)));
+          encodedPage.putDouble(rowId, value);
           break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());
