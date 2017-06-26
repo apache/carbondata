@@ -17,41 +17,43 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
-import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.util.ByteUtil;
 
 /**
- * Codec for variable length data type (decimal, string).
- * This codec will flatten the variable length data before applying compression.
+ * This codec convert input data into byte array without any compression
  */
-public class CompressionCodec implements ColumnPageCodec {
+public class SimpleCodec implements ColumnPageCodec {
 
-  private Compressor compressor;
-  private DataType dataType;
-
-  private CompressionCodec(DataType dataType, Compressor compressor) {
-    this.compressor = compressor;
-    this.dataType = dataType;
+  private SimpleCodec() {
   }
 
-  public static CompressionCodec newInstance(DataType dataType, Compressor compressor) {
-    return new CompressionCodec(dataType, compressor);
+  public static SimpleCodec newInstance() {
+    return new SimpleCodec();
   }
 
   @Override
   public String getName() {
-    return "CompressionCodec";
+    return "SimpleCodec";
   }
 
   @Override
   public byte[] encode(ColumnPage input) {
-    return input.compress(compressor);
+    double[] data = input.getDoublePage();
+    byte[] out = new byte[data.length * 8];
+    for (int i = 0; i < data.length; i++) {
+      System.arraycopy(ByteUtil.toBytes(data[i]), 0, out, i * 8, 8);
+    }
+    return out;
   }
 
   @Override
   public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
-    return ColumnPage.decompress(compressor, dataType, input, offset, length);
+    double[] data = new double[length / 8];
+    for (int i = 0; i < data.length; i++) {
+      data[i] = ByteUtil.toDouble(input, offset + i * 8);
+    }
+    return ColumnPage.newDoublePage(data);
   }
 }

@@ -62,28 +62,22 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
   }
 
   // fit the input double value into minimum data type
-  private DataType fitDataType(double value, int decimal) {
+  private DataType fitDataType(double value) {
     DataType dataType = DataType.DOUBLE;
-    if (decimal == 0) {
-      if (value <= Byte.MAX_VALUE && value >= Byte.MIN_VALUE) {
-        dataType = DataType.BYTE;
-      } else if (value <= Short.MAX_VALUE && value >= Short.MIN_VALUE) {
-        dataType = DataType.SHORT;
-      } else if (value <= THREE_BYTES_MAX && value >= THREE_BYTES_MIN) {
-        return DataType.SHORT_INT;
-      } else if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
-        dataType = DataType.INT;
-      } else if (value <= Long.MAX_VALUE && value >= Long.MIN_VALUE) {
-        dataType = DataType.LONG;
-      }
+    if (value <= Byte.MAX_VALUE && value >= Byte.MIN_VALUE) {
+      dataType = DataType.BYTE;
+    } else if (value <= Short.MAX_VALUE && value >= Short.MIN_VALUE) {
+      dataType = DataType.SHORT;
+    } else if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
+      dataType = DataType.INT;
+    } else if (value <= Long.MAX_VALUE && value >= Long.MIN_VALUE) {
+      dataType = DataType.LONG;
     }
     return dataType;
   }
 
-  // choose between adaptive encoder or delta adaptive encoder, based on whose target data type
-  // size is smaller
-  @Override
-  ColumnPageCodec newCodecForIntegerType(ColumnPageStatsVO stats) {
+  private ColumnPageCodec newCodecForInteger(ColumnPageStatsVO stats) {
+    DataType srcDataType = stats.getDataType();
     DataType adaptiveDataType = fitDataType((long)stats.getMax(), (long)stats.getMin());
     DataType deltaDataType;
 
@@ -93,6 +87,11 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
       deltaDataType = DataType.LONG;
     } else {
       deltaDataType = fitDataType((long) stats.getMax() - (long) stats.getMin());
+    }
+    if (Math.min(adaptiveDataType.getSizeInBytes(), deltaDataType.getSizeInBytes()) ==
+        srcDataType.getSizeInBytes()) {
+      // no room to convert data type, use direct compression codec
+      return DirectCompressCodec.newInstance(srcDataType, compressor);
     }
     if (adaptiveDataType.getSizeInBytes() <= deltaDataType.getSizeInBytes()) {
       // choose adaptive encoding
@@ -104,35 +103,32 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
     }
   }
 
+  // choose between adaptive encoder or delta adaptive encoder, based on whose target data type
+  // size is smaller
+  @Override
+  ColumnPageCodec newCodecForIntegerType(ColumnPageStatsVO stats) {
+    return newCodecForInteger(stats);
+  }
+
   // choose between upscale adaptive encoder or upscale delta adaptive encoder,
   // based on whose target data type size is smaller
   @Override
   ColumnPageCodec newCodecForFloatingType(ColumnPageStatsVO stats) {
-    DataType srcDataType = stats.getDataType();
-    double maxValue = (double) stats.getMax();
-    double minValue = (double) stats.getMin();
     int decimal = stats.getDecimal();
-
-    //Here we should use the Max abs as max to getDatatype, let's say -1 and -10000000, -1 is max,
-    //but we can't use -1 to getDatatype, we should use -10000000.
-    double absMaxValue = Math.abs(maxValue) >= Math.abs(minValue) ? maxValue : minValue;
-
     if (decimal == 0) {
-      // short, int, long
-      DataType adaptiveDataType = fitDataType(absMaxValue, decimal);
-      DataType deltaDataType = fitDataType(maxValue - minValue, decimal);
-      if (adaptiveDataType.getSizeInBytes() <= deltaDataType.getSizeInBytes()) {
-        // choose adaptive encoding
-        return AdaptiveIntegerCodec.newInstance(srcDataType, adaptiveDataType, stats, compressor);
-      } else {
-        // choose delta adaptive encoding
-        return DeltaIntegerCodec.newInstance(srcDataType, deltaDataType, stats, compressor);
-      }
+      // it can use integer codec
+      return newCodecForInteger(stats);
     } else {
-      // double
-      DataType upscaleAdaptiveDataType = fitDataType(Math.pow(10, decimal) * absMaxValue, decimal);
-      DataType upscaleDiffDataType =
-          fitDataType(Math.pow(10, decimal) * (maxValue - minValue), decimal);
+      // need to use codec for floating point type
+      DataType srcDataType = stats.getDataType();
+      double maxValue = (double) stats.getMax();
+      double minValue = (double) stats.getMin();
+
+      //Here we should use the Max abs as max to getDatatype, let's say -1 and -10000000, -1 is max,
+      //but we can't use -1 to getDatatype, we should use -10000000.
+      double absMaxValue = Math.abs(maxValue) >= Math.abs(minValue) ? maxValue : minValue;
+      DataType upscaleAdaptiveDataType = fitDataType(Math.pow(10, decimal) * absMaxValue);
+      DataType upscaleDiffDataType = fitDataType(Math.pow(10, decimal) * (maxValue - minValue));
       if (upscaleAdaptiveDataType.getSizeInBytes() <= upscaleDiffDataType.getSizeInBytes()) {
         return UpscaleFloatingCodec.newInstance(
             srcDataType, upscaleAdaptiveDataType, stats, compressor);
@@ -146,11 +142,11 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
   // for decimal, currently it is a very basic implementation
   @Override
   ColumnPageCodec newCodecForDecimalType(ColumnPageStatsVO stats) {
-    return CompressionCodec.newInstance(stats.getDataType(), compressor);
+    return DirectCompressCodec.newInstance(stats.getDataType(), compressor);
   }
 
   @Override
   ColumnPageCodec newCodecForByteArrayType(ColumnPageStatsVO stats) {
-    return CompressionCodec.newInstance(stats.getDataType(), compressor);
+    return DirectCompressCodec.newInstance(stats.getDataType(), compressor);
   }
 }
