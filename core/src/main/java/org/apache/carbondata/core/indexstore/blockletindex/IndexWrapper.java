@@ -22,12 +22,8 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
-import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.AbstractDataFileFooterConverter;
-import org.apache.carbondata.core.util.DataFileFooterConverterFactory;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * Wrapper of abstract index
@@ -36,19 +32,14 @@ import org.apache.carbondata.core.util.DataFileFooterConverterFactory;
 public class IndexWrapper extends AbstractIndex {
 
   public IndexWrapper(List<TableBlockInfo> blockInfos) {
-    BlockletDetailInfo detailInfo = blockInfos.get(0).getDetailInfo();
-    int[] dimLens = detailInfo.getDimLens();
-    ColumnarFormatVersion version =
-        ColumnarFormatVersion.valueOf(detailInfo.getVersionNumber());
-    AbstractDataFileFooterConverter dataFileFooterConverter =
-        DataFileFooterConverterFactory.getInstance().getDataFileFooterConverter(version);
-    List<ColumnSchema> schema;
+    DataFileFooter fileFooter = null;
     try {
-      schema = dataFileFooterConverter.getSchema(blockInfos.get(0));
+      fileFooter = CarbonUtil.readMetadatFile(blockInfos.get(0));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    segmentProperties = new SegmentProperties(schema, dimLens);
+    segmentProperties = new SegmentProperties(fileFooter.getColumnInTable(),
+        fileFooter.getSegmentInfo().getColumnCardinality());
     dataRefNode = new BlockletDataRefNodeWrapper(blockInfos, 0,
         segmentProperties.getDimensionColumnsValueSize());
   }

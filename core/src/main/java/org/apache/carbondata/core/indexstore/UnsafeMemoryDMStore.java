@@ -27,7 +27,7 @@ import static org.apache.carbondata.core.memory.CarbonUnsafe.BYTE_ARRAY_OFFSET;
 import static org.apache.carbondata.core.memory.CarbonUnsafe.unsafe;
 
 /**
- * Store the data to unsafe
+ * Store the data map row @{@link DataMapRow} data to unsafe.
  */
 public class UnsafeMemoryDMStore {
 

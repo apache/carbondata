@@ -76,7 +76,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private static int VERSION_INDEX = 6;
 
-  private static int BLOCK_INFO_INDEX = 7;
+  private static int SCHEMA_UPADATED_TIME_INDEX = 7;
+
+  private static int BLOCK_INFO_INDEX = 8;
 
   private UnsafeMemoryDMStore unsafeMemoryDMStore;
 
@@ -143,6 +145,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
       // add version number
       row.setShort(fileFooter.getVersionId().number(), ordinal++);
 
+      // add schema updated time
+      row.setLong(fileFooter.getSchemaUpdatedTimeStamp(), ordinal++);
+
       // add blocklet info
       byte[] serializedData;
       try {
@@ -201,6 +206,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
     // for version number.
     indexSchemas.add(new DataMapSchema.FixedDataMapSchema(DataType.SHORT));
+
+    // for schema updated time.
+    indexSchemas.add(new DataMapSchema.FixedDataMapSchema(DataType.LONG));
 
     //for blocklet info
     indexSchemas.add(new DataMapSchema.VariableDataMapSchema(DataType.BYTE_ARRAY));
@@ -288,6 +296,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
     detailInfo.setPagesCount(row.getShort(PAGE_COUNT_INDEX));
     detailInfo.setVersionNumber(row.getShort(VERSION_INDEX));
     detailInfo.setDimLens(columnCardinality);
+    detailInfo.setSchemaUpdatedTimeStamp(row.getLong(SCHEMA_UPADATED_TIME_INDEX));
     BlockletInfo blockletInfo = new BlockletInfo();
     try {
       byte[] byteArray = row.getByteArray(BLOCK_INFO_INDEX);

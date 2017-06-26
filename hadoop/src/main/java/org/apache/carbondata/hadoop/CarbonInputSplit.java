@@ -158,9 +158,12 @@ public class CarbonInputSplit extends FileSplit
     BlockletInfos blockletInfos =
         new BlockletInfos(inputSplit.getNumberOfBlocklets(), 0, inputSplit.getNumberOfBlocklets());
     try {
-      return new TableBlockInfo(inputSplit.getPath().toString(), inputSplit.getStart(),
-          inputSplit.getSegmentId(), inputSplit.getLocations(), inputSplit.getLength(),
-          blockletInfos, inputSplit.getVersion(), inputSplit.getDeleteDeltaFiles());
+      TableBlockInfo blockInfo =
+          new TableBlockInfo(inputSplit.getPath().toString(), inputSplit.getStart(),
+              inputSplit.getSegmentId(), inputSplit.getLocations(), inputSplit.getLength(),
+              blockletInfos, inputSplit.getVersion(), inputSplit.getDeleteDeltaFiles());
+      blockInfo.setDetailInfo(inputSplit.getDetailInfo());
+      return blockInfo;
     } catch (IOException e) {
       throw new RuntimeException("fail to get location of split: " + inputSplit, e);
     }

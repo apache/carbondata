@@ -21,19 +21,26 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.AbstractTableDataMap;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.DataMapStoreManager;
 import org.apache.carbondata.core.indexstore.DataMapType;
+import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
+import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.mutate.UpdateVO;
+import org.apache.carbondata.core.mutate.data.BlockMappingVO;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -217,85 +224,78 @@ public class CarbonInputFormatNew<T> extends FileInputFormat<Void, T> {
    */
   @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
-    CacheClient cacheClient = new CacheClient(identifier.getStorePath());
     AbstractTableDataMap blockletMap =
         DataMapStoreManager.getInstance().getDataMap(identifier, "blocklet", DataMapType.BLOCKLET);
-    try {
-      List<String> invalidSegments = new ArrayList<>();
-      List<UpdateVO> invalidTimestampsList = new ArrayList<>();
+    List<String> invalidSegments = new ArrayList<>();
+    List<UpdateVO> invalidTimestampsList = new ArrayList<>();
 
-      // get all valid segments and set them into the configuration
-      if (getSegmentsToAccess(job).length == 0) {
-        SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
-        SegmentStatusManager.ValidAndInvalidSegmentsInfo segments =
-            segmentStatusManager.getValidAndInvalidSegments();
-        SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
-        setSegmentsToAccess(job.getConfiguration(), segments.getValidSegments());
-        if (segments.getValidSegments().size() == 0) {
-          return new ArrayList<>(0);
-        }
-
-        // remove entry in the segment index if there are invalid segments
-        invalidSegments.addAll(segments.getInvalidSegments());
-        for (String invalidSegmentId : invalidSegments) {
-          invalidTimestampsList.add(updateStatusManager.getInvalidTimestampRange(invalidSegmentId));
-        }
-        if (invalidSegments.size() > 0) {
-          List<TableSegmentUniqueIdentifier> invalidSegmentsIds =
-              new ArrayList<>(invalidSegments.size());
-          for (String segId : invalidSegments) {
-            invalidSegmentsIds.add(new TableSegmentUniqueIdentifier(identifier, segId));
-          }
-          cacheClient.getSegmentAccessClient().invalidateAll(invalidSegmentsIds);
-          blockletMap.clear(invalidSegments);
-        }
+    // get all valid segments and set them into the configuration
+    if (getSegmentsToAccess(job).length == 0) {
+      SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
+      SegmentStatusManager.ValidAndInvalidSegmentsInfo segments =
+          segmentStatusManager.getValidAndInvalidSegments();
+      SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
+      setSegmentsToAccess(job.getConfiguration(), segments.getValidSegments());
+      if (segments.getValidSegments().size() == 0) {
+        return new ArrayList<>(0);
       }
 
-      // process and resolve the expression
-      Expression filter = getFilterPredicates(job.getConfiguration());
-      CarbonTable carbonTable = getCarbonTable(job.getConfiguration());
-      // this will be null in case of corrupt schema file.
-      if (null == carbonTable) {
-        throw new IOException("Missing/Corrupt schema file for table.");
+      // remove entry in the segment index if there are invalid segments
+      invalidSegments.addAll(segments.getInvalidSegments());
+      for (String invalidSegmentId : invalidSegments) {
+        invalidTimestampsList.add(updateStatusManager.getInvalidTimestampRange(invalidSegmentId));
       }
-
-      CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
-
-      // prune partitions for filter query on partition table
-      BitSet matchedPartitions = null;
-      if (null != filter) {
-        PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName());
-        if (null != partitionInfo) {
-          Partitioner partitioner = PartitionUtil.getPartitioner(partitionInfo);
-          matchedPartitions = new FilterExpressionProcessor()
-              .getFilteredPartitions(filter, partitionInfo, partitioner);
-          if (matchedPartitions.cardinality() == 0) {
-            // no partition is required
-            return new ArrayList<InputSplit>();
-          }
-          if (matchedPartitions.cardinality() == partitioner.numPartitions()) {
-            // all partitions are required, no need to prune partitions
-            matchedPartitions = null;
-          }
-        }
-      }
-
-      FilterResolverIntf filterInterface = CarbonInputFormatUtil.resolveFilter(filter, identifier);
-
-      // do block filtering and get split
-      List<InputSplit> splits = getSplits(job, filterInterface, matchedPartitions, cacheClient);
-      // pass the invalid segment to task side in order to remove index entry in task side
       if (invalidSegments.size() > 0) {
-        for (InputSplit split : splits) {
-          ((CarbonInputSplit) split).setInvalidSegments(invalidSegments);
-          ((CarbonInputSplit) split).setInvalidTimestampRange(invalidTimestampsList);
+        List<TableSegmentUniqueIdentifier> invalidSegmentsIds =
+            new ArrayList<>(invalidSegments.size());
+        for (String segId : invalidSegments) {
+          invalidSegmentsIds.add(new TableSegmentUniqueIdentifier(identifier, segId));
+        }
+        blockletMap.clear(invalidSegments);
+      }
+    }
+
+    // process and resolve the expression
+    Expression filter = getFilterPredicates(job.getConfiguration());
+    CarbonTable carbonTable = getCarbonTable(job.getConfiguration());
+    // this will be null in case of corrupt schema file.
+    if (null == carbonTable) {
+      throw new IOException("Missing/Corrupt schema file for table.");
+    }
+
+    CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
+
+    // prune partitions for filter query on partition table
+    BitSet matchedPartitions = null;
+    if (null != filter) {
+      PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName());
+      if (null != partitionInfo) {
+        Partitioner partitioner = PartitionUtil.getPartitioner(partitionInfo);
+        matchedPartitions = new FilterExpressionProcessor()
+            .getFilteredPartitions(filter, partitionInfo, partitioner);
+        if (matchedPartitions.cardinality() == 0) {
+          // no partition is required
+          return new ArrayList<InputSplit>();
+        }
+        if (matchedPartitions.cardinality() == partitioner.numPartitions()) {
+          // all partitions are required, no need to prune partitions
+          matchedPartitions = null;
         }
       }
-      return splits;
-    } finally {
-      // close the cache cache client to clear LRU cache memory
-      cacheClient.close();
     }
+
+    FilterResolverIntf filterInterface = CarbonInputFormatUtil.resolveFilter(filter, identifier);
+
+    // do block filtering and get split
+    List<InputSplit> splits = getSplits(job, filterInterface, matchedPartitions);
+    // pass the invalid segment to task side in order to remove index entry in task side
+    if (invalidSegments.size() > 0) {
+      for (InputSplit split : splits) {
+        ((CarbonInputSplit) split).setInvalidSegments(invalidSegments);
+        ((CarbonInputSplit) split).setInvalidTimestampRange(invalidTimestampsList);
+      }
+    }
+    return splits;
   }
 
   /**
@@ -307,10 +307,9 @@ public class CarbonInputFormatNew<T> extends FileInputFormat<Void, T> {
    * @throws IOException
    */
   private List<InputSplit> getSplits(JobContext job, FilterResolverIntf filterResolver,
-      BitSet matchedPartitions, CacheClient cacheClient) throws IOException {
+      BitSet matchedPartitions) throws IOException {
 
     List<InputSplit> result = new LinkedList<InputSplit>();
-    FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
     UpdateVO invalidBlockVOForSegmentId = null;
     Boolean isIUDTable = false;
 
@@ -512,6 +511,56 @@ public class CarbonInputFormatNew<T> extends FileInputFormat<Void, T> {
       return new String[0];
     }
     return segmentString.split(",");
+  }
+
+  /**
+   * Get the row count of the Block and mapping of segment and Block count.
+   *
+   * @param job
+   * @param identifier
+   * @return
+   * @throws IOException
+   * @throws KeyGenException
+   */
+  public BlockMappingVO getBlockRowCount(JobContext job, AbsoluteTableIdentifier identifier)
+      throws IOException, KeyGenException {
+    AbstractTableDataMap blockletMap =
+        DataMapStoreManager.getInstance().getDataMap(identifier, "blocklet", DataMapType.BLOCKLET);
+    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
+    SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegments =
+        new SegmentStatusManager(identifier).getValidAndInvalidSegments();
+    Map<String, Long> blockRowCountMapping =
+        new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    Map<String, Long> segmentAndBlockCountMapping =
+        new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<Blocklet> blocklets = blockletMap.prune(validAndInvalidSegments.getValidSegments(), null);
+    for (Blocklet blocklet : blocklets) {
+      String blockName = blocklet.getPath().toString();
+      blockName = CarbonTablePath.getCarbonDataFileName(blockName);
+      blockName = blockName + CarbonTablePath.getCarbonDataExtension();
+
+      long rowCount = blocklet.getDetailInfo().getRowCount();
+
+      String key = CarbonUpdateUtil.getSegmentBlockNameKey(blocklet.getSegmentId(), blockName);
+
+      // if block is invalid then dont add the count
+      SegmentUpdateDetails details = updateStatusManager.getDetailsForABlock(key);
+
+      if (null == details || !CarbonUpdateUtil.isBlockInvalid(details.getStatus())) {
+        Long blockCount = blockRowCountMapping.get(key);
+        if (blockCount == null) {
+          blockCount = 0L;
+          Long count = segmentAndBlockCountMapping.get(blocklet.getSegmentId());
+          if (count == null) {
+            count = 0L;
+          }
+          segmentAndBlockCountMapping.put(blocklet.getSegmentId(), count + 1);
+        }
+        blockCount += rowCount;
+        blockRowCountMapping.put(key, blockCount);
+      }
+    }
+    return new BlockMappingVO(blockRowCountMapping, segmentAndBlockCountMapping);
   }
 
 }
