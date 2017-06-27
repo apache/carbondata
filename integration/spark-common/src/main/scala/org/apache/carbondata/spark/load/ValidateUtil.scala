@@ -28,11 +28,8 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 object ValidateUtil {
   def validateDateFormat(dateFormat: String, table: CarbonTable, tableName: String): Unit = {
     val dimensions = table.getDimensionByTableName(tableName).asScala
-    if (dateFormat != null) {
-      if (dateFormat.trim == "") {
-        throw new MalformedCarbonCommandException("Error: Option DateFormat is set an empty " +
-          "string.")
-      } else {
+    // allowing empty value to be configured for dateformat option.
+    if (dateFormat != null && dateFormat.trim != "") {
         val dateFormats: Array[String] = dateFormat.split(CarbonCommonConstants.COMMA)
         for (singleDateFormat <- dateFormats) {
           val dateFormatSplits: Array[String] = singleDateFormat.split(":", 2)
@@ -49,7 +46,6 @@ object ValidateUtil {
           }
         }
       }
-    }
   }
 
   def validateSortScope(carbonTable: CarbonTable, sortScope: String): Unit = {

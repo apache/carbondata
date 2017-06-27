@@ -22,7 +22,6 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
-import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordsLogger;
 
@@ -38,7 +37,6 @@ public class DataLoadExecutor {
       CarbonIterator<Object[]>[] inputIterators) throws Exception {
     AbstractDataLoadProcessorStep loadProcessorStep = null;
     try {
-
       loadProcessorStep =
           new DataLoadProcessBuilder().build(loadModel, storeLocation, inputIterators);
       // 1. initialize
@@ -46,6 +44,13 @@ public class DataLoadExecutor {
       LOGGER.info("Data Loading is started for table " + loadModel.getTableName());
       // 2. execute the step
       loadProcessorStep.execute();
+      // check and remove any bad record key from bad record entry logger static map
+      if (badRecordFound(
+          loadModel.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier())) {
+        LOGGER.error("Data Load is partially success for table " + loadModel.getTableName());
+      } else {
+        LOGGER.info("Data loading is successful for table " + loadModel.getTableName());
+      }
     } catch (CarbonDataLoadingException e) {
       throw e;
     } catch (Exception e) {
@@ -53,20 +58,37 @@ public class DataLoadExecutor {
       throw new CarbonDataLoadingException(
           "Data Loading failed for table " + loadModel.getTableName(), e);
     } finally {
+      removeBadRecordKey(
+          loadModel.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier());
       if (loadProcessorStep != null) {
         // 3. Close the step
         loadProcessorStep.close();
       }
     }
+  }
 
-    String key =
-        new CarbonTableIdentifier(loadModel.getDatabaseName(), loadModel.getTableName(), null)
-            .getBadRecordLoggerKey();
-    if (null != BadRecordsLogger.hasBadRecord(key)) {
-      LOGGER.error("Data Load is partially success for table " + loadModel.getTableName());
-      throw new BadRecordFoundException("Bad records found during load");
-    } else {
-      LOGGER.info("Data loading is successful for table " + loadModel.getTableName());
+  /**
+   * This method will remove any bad record key from the map entry
+   *
+   * @param carbonTableIdentifier
+   * @return
+   */
+  private boolean badRecordFound(CarbonTableIdentifier carbonTableIdentifier) {
+    String badRecordLoggerKey = carbonTableIdentifier.getBadRecordLoggerKey();
+    boolean badRecordKeyFound = false;
+    if (null != BadRecordsLogger.hasBadRecord(badRecordLoggerKey)) {
+      badRecordKeyFound = true;
     }
+    return badRecordKeyFound;
+  }
+
+  /**
+   * This method will remove the bad record key from bad record logger
+   *
+   * @param carbonTableIdentifier
+   */
+  private void removeBadRecordKey(CarbonTableIdentifier carbonTableIdentifier) {
+    String badRecordLoggerKey = carbonTableIdentifier.getBadRecordLoggerKey();
+    BadRecordsLogger.removeBadRecordKey(badRecordLoggerKey);
   }
 }

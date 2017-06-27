@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.spark.testsuite.iud
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{Row, SaveMode}
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -384,6 +384,29 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
     }
+  }
+
+  test("More records after update operation ") {
+    sql("DROP TABLE IF EXISTS default.carbon1")
+    import sqlContext.implicits._
+    val df = sqlContext.sparkContext.parallelize(1 to 36000)
+      .map(x => (x+"a", "b", x))
+      .toDF("c1", "c2", "c3")
+    df.write
+      .format("carbondata")
+      .option("tableName", "carbon1")
+      .option("tempCSV", "true")
+      .option("compress", "true")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    checkAnswer(sql("select count(*) from default.carbon1"), Seq(Row(36000)))
+
+    sql("update default.carbon1 set (c1)=('test123') where c1='9999a'").show()
+
+    checkAnswer(sql("select count(*) from default.carbon1"), Seq(Row(36000)))
+
+    sql("DROP TABLE IF EXISTS default.carbon1")
   }
 
   override def afterAll {

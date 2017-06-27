@@ -101,6 +101,9 @@ class AdaptiveIntegerCodec extends AdaptiveCompressionCodec {
         case SHORT:
           encodedPage.putShort(rowId, (short) value);
           break;
+        case SHORT_INT:
+          encodedPage.putShortInt(rowId, value);
+          break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());
       }
@@ -114,6 +117,9 @@ class AdaptiveIntegerCodec extends AdaptiveCompressionCodec {
           break;
         case SHORT:
           encodedPage.putShort(rowId, (short) value);
+          break;
+        case SHORT_INT:
+          encodedPage.putShortInt(rowId, (int) value);
           break;
         case INT:
           encodedPage.putInt(rowId, (int) value);
@@ -132,6 +138,9 @@ class AdaptiveIntegerCodec extends AdaptiveCompressionCodec {
         case SHORT:
           encodedPage.putShort(rowId, (short) value);
           break;
+        case SHORT_INT:
+          encodedPage.putShortInt(rowId, (int) value);
+          break;
         case INT:
           encodedPage.putInt(rowId, (int) value);
           break;
@@ -148,6 +157,9 @@ class AdaptiveIntegerCodec extends AdaptiveCompressionCodec {
           break;
         case SHORT:
           encodedPage.putShort(rowId, (short) value);
+          break;
+        case SHORT_INT:
+          encodedPage.putShortInt(rowId, (int) value);
           break;
         case INT:
           encodedPage.putInt(rowId, (int) value);

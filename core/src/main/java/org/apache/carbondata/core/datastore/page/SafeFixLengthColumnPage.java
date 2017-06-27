@@ -20,6 +20,7 @@ package org.apache.carbondata.core.datastore.page;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.util.ByteUtil;
 
 /**
  * Represent a columnar data in one page for one column.
@@ -33,8 +34,9 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   private long[] longData;
   private float[] floatData;
   private double[] doubleData;
+  private byte[] shortIntData;
 
-  public SafeFixLengthColumnPage(DataType dataType, int pageSize) {
+  SafeFixLengthColumnPage(DataType dataType, int pageSize) {
     super(dataType, pageSize);
   }
 
@@ -87,6 +89,12 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override
+  public void putShortInt(int rowId, int value) {
+    byte[] converted = ByteUtil.to3Bytes(value);
+    System.arraycopy(converted, 0, shortIntData, rowId * 3, 3);
+  }
+
+  @Override
   public void putBytes(int rowId, byte[] bytes, int offset, int length) {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
@@ -105,6 +113,14 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   @Override
   public short getShort(int rowId) {
     return shortData[rowId];
+  }
+
+  /**
+   * Get short int value at rowId
+   */
+  @Override
+  public int getShortInt(int rowId) {
+    return ByteUtil.valueOf3Bytes(shortIntData, rowId * 3);
   }
 
   /**
@@ -158,6 +174,14 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   @Override
   public short[] getShortPage() {
     return shortData;
+  }
+
+  /**
+   * Get short value page
+   */
+  @Override
+  public byte[] getShortIntPage() {
+    return shortIntData;
   }
 
   /**
@@ -219,6 +243,14 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   @Override
   public void setShortPage(short[] shortData) {
     this.shortData = shortData;
+  }
+
+  /**
+   * Set short values to page
+   */
+  @Override
+  public void setShortIntPage(byte[] shortIntData) {
+    this.shortIntData = shortIntData;
   }
 
   /**

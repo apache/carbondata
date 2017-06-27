@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
+import java.math.BigDecimal;
+
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
@@ -46,24 +48,33 @@ public class UpscaleFloatingCodec extends AdaptiveCompressionCodec {
     this.factor = Math.pow(10, stats.getDecimal());
   }
 
-  @Override public String getName() {
+  @Override
+  public String getName() {
     return "UpscaleFloatingCodec";
   }
 
   @Override
   public byte[] encode(ColumnPage input) throws MemoryException {
-    encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
-    input.encode(codec);
-    byte[] result = encodedPage.compress(compressor);
-    encodedPage.freeMemory();
-    return result;
+    if (targetDataType.equals(srcDataType)) {
+      return input.compress(compressor);
+    } else {
+      encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
+      input.encode(codec);
+      byte[] result = encodedPage.compress(compressor);
+      encodedPage.freeMemory();
+      return result;
+    }
   }
 
 
   @Override
   public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
-    ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
-    return LazyColumnPage.newPage(page, codec);
+    if (srcDataType.equals(targetDataType)) {
+      return ColumnPage.decompress(compressor, targetDataType, input, offset, length);
+    } else {
+      ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
+      return LazyColumnPage.newPage(page, codec);
+    }
   }
 
   // encoded value = (10 power of decimal) * (page value)
@@ -96,16 +107,20 @@ public class UpscaleFloatingCodec extends AdaptiveCompressionCodec {
     public void encode(int rowId, float value) {
       switch (targetDataType) {
         case BYTE:
-          encodedPage.putByte(rowId, (byte)(Math.round(factor * value)));
+          encodedPage.putByte(rowId,
+              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).byteValue());
           break;
         case SHORT:
-          encodedPage.putShort(rowId, (short)(Math.round(factor * value)));
+          encodedPage.putShort(rowId,
+              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).shortValue());
           break;
         case INT:
-          encodedPage.putInt(rowId, (int)(Math.round(factor * value)));
+          encodedPage.putInt(rowId,
+              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).intValue());
           break;
         case LONG:
-          encodedPage.putLong(rowId, (long)(Math.round(factor * value)));
+          encodedPage.putLong(rowId,
+              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).longValue());
           break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());
@@ -116,19 +131,23 @@ public class UpscaleFloatingCodec extends AdaptiveCompressionCodec {
     public void encode(int rowId, double value) {
       switch (targetDataType) {
         case BYTE:
-          encodedPage.putByte(rowId, (byte)(Math.round(factor * value)));
+          encodedPage.putByte(rowId,
+              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).byteValue());
           break;
         case SHORT:
-          encodedPage.putShort(rowId, (short)(Math.round(factor * value)));
+          encodedPage.putShort(rowId,
+              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).shortValue());
           break;
         case INT:
-          encodedPage.putInt(rowId, (int)(Math.round(factor * value)));
+          encodedPage.putInt(rowId,
+              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).intValue());
           break;
         case LONG:
-          encodedPage.putLong(rowId, (long)(Math.round(factor * value)));
+          encodedPage.putLong(rowId,
+              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).longValue());
           break;
         case DOUBLE:
-          encodedPage.putDouble(rowId, (Math.round(factor * value)));
+          encodedPage.putDouble(rowId, value);
           break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());
@@ -152,22 +171,22 @@ public class UpscaleFloatingCodec extends AdaptiveCompressionCodec {
 
     @Override
     public double decodeDouble(byte value) {
-      return value / factor;
+      return BigDecimal.valueOf(value).divide(BigDecimal.valueOf(factor)).doubleValue();
     }
 
     @Override
     public double decodeDouble(short value) {
-      return value / factor;
+      return BigDecimal.valueOf(value).divide(BigDecimal.valueOf(factor)).doubleValue();
     }
 
     @Override
     public double decodeDouble(int value) {
-      return value / factor;
+      return BigDecimal.valueOf(value).divide(BigDecimal.valueOf(factor)).doubleValue();
     }
 
     @Override
     public double decodeDouble(long value) {
-      return value / factor;
+      return BigDecimal.valueOf(value).divide(BigDecimal.valueOf(factor)).doubleValue();
     }
 
     @Override

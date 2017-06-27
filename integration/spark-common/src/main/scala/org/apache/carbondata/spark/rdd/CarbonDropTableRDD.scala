@@ -30,7 +30,7 @@ class CarbonDropTableRDD[V: ClassTag](
     valueClass: Value[V],
     databaseName: String,
     tableName: String)
-  extends RDD[V](sc, Nil) {
+  extends CarbonRDD[V](sc, Nil) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
@@ -41,9 +41,9 @@ class CarbonDropTableRDD[V: ClassTag](
     }
   }
 
-  override def compute(theSplit: Partition, context: TaskContext): Iterator[V] = {
+  override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[V] = {
 
-    val iter = new Iterator[V] {
+      val iter = new Iterator[V] {
       // TODO: Clear Btree from memory
 
       var havePair = false
