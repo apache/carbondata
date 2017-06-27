@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.page;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
@@ -354,9 +355,22 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override
-  public byte[] compress(Compressor compressor) {
-    // TODO: use zero-copy raw compression
-    return super.compress(compressor);
+  public byte[] compress(Compressor compressor) throws MemoryException, IOException {
+    if (UnsafeMemoryManager.isOffHeap()) {
+      // use raw compression and copy to byte[]
+      int inputSize = pageSize << dataType.getSizeBits();
+      int compressedMaxSize = compressor.maxCompressedLength(inputSize);
+      MemoryBlock compressed = UnsafeMemoryManager.allocateMemoryWithRetry(compressedMaxSize);
+      long outSize = compressor.rawCompress(baseOffset, inputSize, compressed.getBaseOffset());
+      assert outSize < Integer.MAX_VALUE;
+      byte[] output = new byte[(int) outSize];
+      CarbonUnsafe.unsafe.copyMemory(compressed.getBaseObject(), compressed.getBaseOffset(), output,
+          CarbonUnsafe.BYTE_ARRAY_OFFSET, outSize);
+      UnsafeMemoryManager.INSTANCE.freeMemory(compressed);
+      return output;
+    } else {
+      return super.compress(compressor);
+    }
   }
 
 }

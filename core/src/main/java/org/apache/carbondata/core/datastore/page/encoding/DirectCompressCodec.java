@@ -17,36 +17,37 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
+import java.io.IOException;
+
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
- * Codec for variable length data type (decimal, string).
- * This codec will flatten the variable length data before applying compression.
+ * This codec directly apply compression on the input data
  */
-public class CompressionCodec implements ColumnPageCodec {
+public class DirectCompressCodec implements ColumnPageCodec {
 
   private Compressor compressor;
   private DataType dataType;
 
-  private CompressionCodec(DataType dataType, Compressor compressor) {
+  private DirectCompressCodec(DataType dataType, Compressor compressor) {
     this.compressor = compressor;
     this.dataType = dataType;
   }
 
-  public static CompressionCodec newInstance(DataType dataType, Compressor compressor) {
-    return new CompressionCodec(dataType, compressor);
+  public static DirectCompressCodec newInstance(DataType dataType, Compressor compressor) {
+    return new DirectCompressCodec(dataType, compressor);
   }
 
   @Override
   public String getName() {
-    return "CompressionCodec";
+    return "DirectCompressCodec";
   }
 
   @Override
-  public byte[] encode(ColumnPage input) {
+  public byte[] encode(ColumnPage input) throws IOException, MemoryException {
     return input.compress(compressor);
   }
 
