@@ -441,7 +441,9 @@ object GlobalDictionaryUtil {
                                        " should be columnName:columnPath, please check")
       }
       setPredefineDict(carbonLoadModel, dimensions, table, colNameWithPath(0),
-        FileUtils.getPaths(colPathMapTrim.substring(colNameWithPath(0).length + 1)))
+        FileUtils
+          .getPaths(CarbonUtil
+            .checkAndAppendHDFSUrl(colPathMapTrim.substring(colNameWithPath(0).length + 1))))
     }
   }
 
@@ -773,7 +775,8 @@ object GlobalDictionaryUtil {
       dimensions: Array[CarbonDimension],
       allDictionaryPath: String): Unit = {
     LOGGER.info("Generate global dictionary from dictionary files!")
-    val isNonempty = validateAllDictionaryPath(allDictionaryPath)
+    val allDictionaryPathAppended = CarbonUtil.checkAndAppendHDFSUrl(allDictionaryPath)
+    val isNonempty = validateAllDictionaryPath(allDictionaryPathAppended)
     if (isNonempty) {
       var headers = carbonLoadModel.getCsvHeaderColumns
       headers = headers.map(headerName => headerName.trim)
@@ -786,7 +789,7 @@ object GlobalDictionaryUtil {
         val accumulator = sqlContext.sparkContext.accumulator(0)
         // read local dictionary file, and group by key
         val allDictionaryRdd = readAllDictionaryFiles(sqlContext, headers,
-          requireColumnNames, allDictionaryPath, accumulator)
+          requireColumnNames, allDictionaryPathAppended, accumulator)
         // read exist dictionary and combine
         val inputRDD = new CarbonAllDictionaryCombineRDD(allDictionaryRdd, model)
           .partitionBy(new ColumnPartitioner(model.primDimensions.length))
