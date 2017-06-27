@@ -27,6 +27,12 @@ import org.apache.carbondata.core.util.CarbonProperties
 object CarbonSessionExample {
 
   def main(args: Array[String]) {
+    println(BigDecimal.valueOf(7756787654567891.8988687675775d).scale)
+    println(BigDecimal.valueOf(7756787654567891.8988687675775d).longValue())
+    println(7756787654567891.8988687675775d)
+    println(BigDecimal.valueOf(0.77567876545678918988687675775d).scale)
+    println(0.77567876545678918988687675775d)
+
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"

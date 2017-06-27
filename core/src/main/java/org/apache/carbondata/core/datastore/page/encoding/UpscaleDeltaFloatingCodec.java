@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
@@ -29,43 +30,41 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
  * Codec for floating point (float, double) data type page.
- * This codec will upscale the diff from page max value to integer value,
+ * This codec will upscale (multiple page value by decimal) to integer value,
  * and do type casting to make storage minimum.
  */
-public class UpscaleFloatingCodec extends AdaptiveCompressionCodec {
+public class UpscaleDeltaFloatingCodec extends AdaptiveCompressionCodec {
 
   private ColumnPage encodedPage;
+
+  private BigDecimal max;
   private double factor;
 
   public static ColumnPageCodec newInstance(DataType srcDataType, DataType targetDataType,
       ColumnPageStatsVO stats, Compressor compressor) {
-    return new UpscaleFloatingCodec(srcDataType, targetDataType, stats, compressor);
+    return new UpscaleDeltaFloatingCodec(srcDataType, targetDataType, stats, compressor);
   }
 
-  private UpscaleFloatingCodec(DataType srcDataType, DataType targetDataType,
+  private UpscaleDeltaFloatingCodec(DataType srcDataType, DataType targetDataType,
       ColumnPageStatsVO stats, Compressor compressor) {
     super(srcDataType, targetDataType, stats, compressor);
+    this.max = BigDecimal.valueOf((double) stats.getMax());
     this.factor = Math.pow(10, stats.getDecimal());
   }
 
   @Override
   public String getName() {
-    return "UpscaleFloatingCodec";
+    return "UpscaleDeltaFloatingCodec";
   }
 
   @Override
-  public byte[] encode(ColumnPage input) throws MemoryException {
-    if (targetDataType.equals(srcDataType)) {
-      return input.compress(compressor);
-    } else {
-      encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
-      input.encode(codec);
-      byte[] result = encodedPage.compress(compressor);
-      encodedPage.freeMemory();
-      return result;
-    }
+  public byte[] encode(ColumnPage input) throws MemoryException, IOException {
+    encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
+    input.encode(codec);
+    byte[] result = encodedPage.compress(compressor);
+    encodedPage.freeMemory();
+    return result;
   }
-
 
   @Override
   public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
@@ -77,7 +76,7 @@ public class UpscaleFloatingCodec extends AdaptiveCompressionCodec {
     }
   }
 
-  // encoded value = (10 power of decimal) * (page value)
+  // encoded value = (10 power of decimal) * ((max value of page) - (page value))
   private PrimitiveCodec codec = new PrimitiveCodec() {
     @Override
     public void encode(int rowId, byte value) {
@@ -105,22 +104,19 @@ public class UpscaleFloatingCodec extends AdaptiveCompressionCodec {
 
     @Override
     public void encode(int rowId, float value) {
+      double diff = max.subtract(BigDecimal.valueOf(value)).doubleValue();
       switch (targetDataType) {
         case BYTE:
-          encodedPage.putByte(rowId,
-              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).byteValue());
+          encodedPage.putByte(rowId, (byte)(Math.round(factor * diff)));
           break;
         case SHORT:
-          encodedPage.putShort(rowId,
-              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).shortValue());
+          encodedPage.putShort(rowId, (short)(Math.round(factor * diff)));
           break;
         case INT:
-          encodedPage.putInt(rowId,
-              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).intValue());
+          encodedPage.putInt(rowId, (int)(Math.round(factor * diff)));
           break;
         case LONG:
-          encodedPage.putLong(rowId,
-              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).longValue());
+          encodedPage.putLong(rowId, (long)(Math.round(factor * diff)));
           break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());
@@ -129,25 +125,19 @@ public class UpscaleFloatingCodec extends AdaptiveCompressionCodec {
 
     @Override
     public void encode(int rowId, double value) {
+      double diff = max.subtract(BigDecimal.valueOf(value)).doubleValue();
       switch (targetDataType) {
         case BYTE:
-          encodedPage.putByte(rowId,
-              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).byteValue());
+          encodedPage.putByte(rowId, (byte)(Math.round(factor * diff)));
           break;
         case SHORT:
-          encodedPage.putShort(rowId,
-              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).shortValue());
+          encodedPage.putShort(rowId, (short)(Math.round(factor * diff)));
           break;
         case INT:
-          encodedPage.putInt(rowId,
-              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).intValue());
+          encodedPage.putInt(rowId, (int)(Math.round(factor * diff)));
           break;
         case LONG:
-          encodedPage.putLong(rowId,
-              BigDecimal.valueOf(value).multiply(BigDecimal.valueOf(factor)).longValue());
-          break;
-        case DOUBLE:
-          encodedPage.putDouble(rowId, value);
+          encodedPage.putLong(rowId, (long)(Math.round(factor * diff)));
           break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());
@@ -156,37 +146,40 @@ public class UpscaleFloatingCodec extends AdaptiveCompressionCodec {
 
     @Override
     public long decodeLong(byte value) {
+      // this codec is for floating point type only
       throw new RuntimeException("internal error: " + debugInfo());
     }
 
     @Override
     public long decodeLong(short value) {
+      // this codec is for floating point type only
       throw new RuntimeException("internal error: " + debugInfo());
     }
 
     @Override
     public long decodeLong(int value) {
+      // this codec is for floating point type only
       throw new RuntimeException("internal error: " + debugInfo());
     }
 
     @Override
     public double decodeDouble(byte value) {
-      return BigDecimal.valueOf(value).divide(BigDecimal.valueOf(factor)).doubleValue();
+      return max.subtract(BigDecimal.valueOf(value / factor)).doubleValue();
     }
 
     @Override
     public double decodeDouble(short value) {
-      return BigDecimal.valueOf(value).divide(BigDecimal.valueOf(factor)).doubleValue();
+      return max.subtract(BigDecimal.valueOf(value / factor)).doubleValue();
     }
 
     @Override
     public double decodeDouble(int value) {
-      return BigDecimal.valueOf(value).divide(BigDecimal.valueOf(factor)).doubleValue();
+      return max.subtract(BigDecimal.valueOf(value / factor)).doubleValue();
     }
 
     @Override
     public double decodeDouble(long value) {
-      return BigDecimal.valueOf(value).divide(BigDecimal.valueOf(factor)).doubleValue();
+      return max.subtract(BigDecimal.valueOf(value / factor)).doubleValue();
     }
 
     @Override

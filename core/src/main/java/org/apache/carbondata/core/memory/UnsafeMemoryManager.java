@@ -33,6 +33,9 @@ public class UnsafeMemoryManager {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(UnsafeMemoryManager.class.getName());
 
+  private static boolean offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
+          CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
   static {
     long size;
     try {
@@ -50,9 +53,6 @@ public class UnsafeMemoryManager {
           + "so setting default value to " + size);
     }
 
-    boolean offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
-            CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
     long takenSize = size * 1024 * 1024;
     MemoryAllocator allocator;
     if (offHeap) {
@@ -159,4 +159,7 @@ public class UnsafeMemoryManager {
     return baseBlock;
   }
 
+  public static boolean isOffHeap() {
+    return offHeap;
+  }
 }
