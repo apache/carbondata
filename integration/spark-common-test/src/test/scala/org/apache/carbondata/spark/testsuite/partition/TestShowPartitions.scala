@@ -28,8 +28,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-
-
 class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
   override def beforeAll = {
 
@@ -141,17 +139,10 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
   }
 
   test("show partition table: exception when show not partition table") {
-    var exceptionFlg = false
-    try {
-      sql("show partitions notPartitionTable").show()
-    } catch {
-      case ex: AnalysisException => {
-        print(ex.getMessage())
-        exceptionFlg = true
-      }
-    }
-    // EqualTo
-    assert(exceptionFlg, true)
+    val errorMessage =
+      intercept[AnalysisException] { sql("show partitions notPartitionTable").show() }
+    assert(errorMessage.getMessage.contains(
+      "SHOW PARTITIONS is not allowed on a table that is not partitioned: notpartitiontable"))
   }
 
   test("show partition table: hash table") {
