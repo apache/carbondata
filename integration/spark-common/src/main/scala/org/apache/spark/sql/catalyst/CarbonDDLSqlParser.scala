@@ -371,6 +371,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       var rangeInfo = List[String]()
       var listInfo = ListBuffer[List[String]]()
       var templist = ListBuffer[String]()
+      var rangeIntervalInfo = List[String]()
       if (tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).isDefined) {
         partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).get
       }
@@ -381,6 +382,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       if (tableProperties.get(CarbonCommonConstants.RANGE_INFO).isDefined) {
         rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO).get.split(",")
           .map(_.trim()).toList
+      }
+      if (tableProperties.get(CarbonCommonConstants.RANGE_INTERVAL_INFO).isDefined) {
+        rangeIntervalInfo = tableProperties.get(CarbonCommonConstants.RANGE_INTERVAL_INFO)
+          .get.split(",").map(_.trim()).toList
       }
       if (tableProperties.get(CarbonCommonConstants.LIST_INFO).isDefined) {
         val arr = tableProperties.get(CarbonCommonConstants.LIST_INFO).get.split(",")
@@ -418,6 +423,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           partitionInfo.setRangeInfo(rangeInfo.asJava)
         case "LIST" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.LIST)
           partitionInfo.setListInfo(listInfo.map(_.asJava).toList.asJava)
+        case "RANGE_INTERVAL" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.RANGE_INTERVAL)
+          partitionInfo.setRangeIntervalInfo(rangeIntervalInfo.asJava)
       }
       Some(partitionInfo)
     }
@@ -816,7 +823,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   private def needToConvertToLowerCase(key: String): Boolean = {
-    val noConvertList = Array("LIST_INFO", "RANGE_INFO")
+    val noConvertList = Array("LIST_INFO", "RANGE_INFO", "RANGE_INTERVAL_INFO")
     !noConvertList.exists(x => x.equalsIgnoreCase(key))
   }
 

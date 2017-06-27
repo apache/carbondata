@@ -862,6 +862,7 @@ public final class CarbonCommonConstants {
   public static final String PARTITION_TYPE = "partition_type";
   public static final String NUM_PARTITIONS = "num_partitions";
   public static final String RANGE_INFO = "range_info";
+  public static final String RANGE_INTERVAL_INFO = "range_interval_info";
   public static final String LIST_INFO = "list_info";
   public static final String COLUMN_PROPERTIES = "columnproperties";
   // table block size in MB

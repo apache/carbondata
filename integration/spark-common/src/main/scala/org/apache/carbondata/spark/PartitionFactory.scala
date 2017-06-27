@@ -21,7 +21,7 @@ import org.apache.spark.Partitioner
 
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
-import org.apache.carbondata.core.scan.partition.{HashPartitioner => JavaHashPartitioner, ListPartitioner => JavaListPartitioner, RangePartitioner => JavaRangePartitioner}
+import org.apache.carbondata.core.scan.partition.{HashPartitioner => JavaHashPartitioner, ListPartitioner => JavaListPartitioner, RangeIntervalPartitioner => JavaRangeIntervalPartitioner, RangePartitioner => JavaRangePartitioner}
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
 
 object PartitionFactory {
@@ -31,6 +31,7 @@ object PartitionFactory {
       case PartitionType.HASH => new HashPartitioner(partitionInfo.getNumPartitions)
       case PartitionType.LIST => new ListPartitioner(partitionInfo)
       case PartitionType.RANGE => new RangePartitioner(partitionInfo)
+      case PartitionType.RANGE_INTERVAL => new RangeIntervalPartitioner(partitionInfo)
       case partitionType =>
         throw new CarbonDataLoadingException(s"Unsupport partition type: ${partitionType}")
     }
@@ -62,4 +63,14 @@ class RangePartitioner(partitionInfo: PartitionInfo) extends Partitioner {
   override def numPartitions: Int = partitioner.numPartitions()
 
   override def getPartition(key: Any): Int = partitioner.getPartition(key)
+}
+
+class RangeIntervalPartitioner(partitionInfo: PartitionInfo) extends Partitioner {
+
+  private val partitioner = new JavaRangeIntervalPartitioner(partitionInfo)
+
+  override def numPartitions: Int = partitioner.numPartitions()
+
+  override def getPartition(key: Any): Int = partitioner.getPartition(key)
+
 }
