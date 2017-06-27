@@ -20,7 +20,7 @@ package org.apache.carbondata.core.indexstore;
  * Datamap type
  */
 public enum DataMapType {
-  BLOCKLET("org.apache.carbondata.datamap.BlockletDataMap");
+  BLOCKLET("org.apache.carbondata.core.indexstore.blockletindex.BlockletTableMap");
 
   private String className;
 

@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.indexstore;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.events.EventListener;
@@ -26,28 +27,29 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
  * DataMap at the table level, user can add any number of datamaps for one table. Depends
  * on the filter condition it can prune the blocklets.
  */
-public interface TableDataMap extends EventListener {
+public abstract class AbstractTableDataMap implements EventListener {
 
   /**
    * It is called to initialize and load the required table datamap metadata.
    */
-  void init(AbsoluteTableIdentifier identifier, String dataMapName);
+  public abstract void init(AbsoluteTableIdentifier identifier, String dataMapName);
 
   /**
    * Gives the writer to write the metadata information of this datamap at table level.
    *
    * @return
    */
-  DataMapWriter getWriter();
+  public abstract DataMapWriter getMetaDataWriter();
 
   /**
-   * Create the datamap using the segmentid  and name.
+   * Get the datamap writer for each segmentid.
    *
    * @param identifier
    * @param segmentId
    * @return
    */
-  DataMap createDataMap(AbsoluteTableIdentifier identifier, String segmentId);
+  public abstract DataMapWriter getDataMapWriter(AbsoluteTableIdentifier identifier,
+      String segmentId);
 
   /**
    * Pass the valid segments and prune the datamap using filter expression
@@ -56,7 +58,32 @@ public interface TableDataMap extends EventListener {
    * @param filterExp
    * @return
    */
-  List<Blocklet> prune(List<String> segmentIds, FilterResolverIntf filterExp);
+  public List<Blocklet> prune(List<String> segmentIds, FilterResolverIntf filterExp) {
+    List<Blocklet> blocklets = new ArrayList<>();
+    for (String segmentId : segmentIds) {
+      List<DataMap> dataMaps = getDataMaps(segmentId);
+      for (DataMap dataMap : dataMaps) {
+        List<Blocklet> pruneBlocklets = dataMap.prune(filterExp);
+        blocklets.addAll(addSegmentId(pruneBlocklets, segmentId));
+      }
+    }
+    return blocklets;
+  }
+
+  private List<Blocklet> addSegmentId(List<Blocklet> pruneBlocklets, String segmentId) {
+    for (Blocklet blocklet : pruneBlocklets) {
+      blocklet.setSegmentId(segmentId);
+    }
+    return pruneBlocklets;
+  }
+
+  /**
+   * Get the datamap for segmentid
+   *
+   * @param segmentId
+   * @return
+   */
+  protected abstract List<DataMap> getDataMaps(String segmentId);
 
   /**
    * This is used for making the datamap distributable.
@@ -65,7 +92,7 @@ public interface TableDataMap extends EventListener {
    *
    * @return
    */
-  List<DataMapDistributable> toDistributable(List<String> segmentIds);
+  public abstract List<DataMapDistributable> toDistributable(List<String> segmentIds);
 
   /**
    * This method is used from any machine after it is distributed. It takes the distributable object
@@ -75,7 +102,17 @@ public interface TableDataMap extends EventListener {
    * @param filterExp
    * @return
    */
-  List<Blocklet> prune(DataMapDistributable distributable, FilterResolverIntf filterExp);
+  public List<Blocklet> prune(DataMapDistributable distributable, FilterResolverIntf filterExp) {
+    return getDataMap(distributable).prune(filterExp);
+  }
+
+  /**
+   * Get datamap for distributable object.
+   *
+   * @param distributable
+   * @return
+   */
+  protected abstract DataMap getDataMap(DataMapDistributable distributable);
 
   /**
    * This method checks whether the columns and the type of filters supported
@@ -84,11 +121,11 @@ public interface TableDataMap extends EventListener {
    * @param filterExp
    * @return
    */
-  boolean isFiltersSupported(FilterResolverIntf filterExp);
+  public abstract boolean isFiltersSupported(FilterResolverIntf filterExp);
 
   /**
    * Clears table level datamap
    */
-  void clear();
+  public abstract void clear(List<String> segmentIds);
 
 }

@@ -245,21 +245,22 @@ class CarbonScanRDD(
     iterator.asInstanceOf[Iterator[InternalRow]]
   }
 
-  private def prepareInputFormatForDriver(conf: Configuration): CarbonInputFormat[Object] = {
-    CarbonInputFormat.setCarbonTable(conf, carbonTable)
+  private def prepareInputFormatForDriver(conf: Configuration): CarbonInputFormatNew[Object] = {
+    CarbonInputFormatNew.setCarbonTable(conf, carbonTable)
     createInputFormat(conf)
   }
 
-  private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormat[Object] = {
-    CarbonInputFormat.setCarbonReadSupport(conf, readSupport)
+  private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormatNew[Object] = {
+    CarbonInputFormatNew.setCarbonReadSupport(conf, readSupport)
     createInputFormat(conf)
   }
 
-  private def createInputFormat(conf: Configuration): CarbonInputFormat[Object] = {
-    val format = new CarbonInputFormat[Object]
-    CarbonInputFormat.setTablePath(conf, identifier.appendWithLocalPrefix(identifier.getTablePath))
-    CarbonInputFormat.setFilterPredicates(conf, filterExpression)
-    CarbonInputFormat.setColumnProjection(conf, columnProjection)
+  private def createInputFormat(conf: Configuration): CarbonInputFormatNew[Object] = {
+    val format = new CarbonInputFormatNew[Object]
+    CarbonInputFormatNew.setTablePath(conf,
+      identifier.appendWithLocalPrefix(identifier.getTablePath))
+    CarbonInputFormatNew.setFilterPredicates(conf, filterExpression)
+    CarbonInputFormatNew.setColumnProjection(conf, columnProjection)
     format
   }
 

@@ -38,7 +38,7 @@ import org.apache.spark.util.SerializableConfiguration
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
+import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputFormatNew, CarbonInputSplit, CarbonProjection}
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, SchemaReader}
 import org.apache.carbondata.processing.merger.TableMeta
 import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
@@ -88,17 +88,17 @@ private[sql] case class CarbonDatasourceHadoopRelation(
     filters.flatMap { filter =>
       CarbonFilters.createCarbonFilter(dataSchema, filter)
     }.reduceOption(new AndExpression(_, _))
-      .foreach(CarbonInputFormat.setFilterPredicates(conf, _))
+      .foreach(CarbonInputFormatNew.setFilterPredicates(conf, _))
 
     val projection = new CarbonProjection
     requiredColumns.foreach(projection.addColumn)
-    CarbonInputFormat.setColumnProjection(conf, projection)
-    CarbonInputFormat.setCarbonReadSupport(conf, classOf[SparkRowReadSupportImpl])
+    CarbonInputFormatNew.setColumnProjection(conf, projection)
+    CarbonInputFormatNew.setCarbonReadSupport(conf, classOf[SparkRowReadSupportImpl])
 
     new CarbonHadoopFSRDD[Row](sqlContext.sparkContext,
       new SerializableConfiguration(conf),
       absIdentifier,
-      classOf[CarbonInputFormat[Row]],
+      classOf[CarbonInputFormatNew[Row]],
       classOf[Row]
     )
   }
@@ -118,7 +118,7 @@ class CarbonHadoopFSRDD[V: ClassTag](
   @transient sc: SparkContext,
   conf: SerializableConfiguration,
   identifier: AbsoluteTableIdentifier,
-  inputFormatClass: Class[_ <: CarbonInputFormat[V]],
+  inputFormatClass: Class[_ <: CarbonInputFormatNew[V]],
   valueClass: Class[V])
   extends RDD[V](sc, Nil) with SparkHadoopMapReduceUtil {
 
