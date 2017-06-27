@@ -692,14 +692,20 @@ public final class CarbonUtil {
    * @param filePath
    */
   public static String checkAndAppendHDFSUrl(String filePath) {
+    if (!filePath.startsWith("/")) {
+      filePath = "/" + filePath;
+    }
     String currentPath = filePath;
     if (null != filePath && filePath.length() != 0
         && FileFactory.getFileType(filePath) != FileFactory.FileType.HDFS
         && FileFactory.getFileType(filePath) != FileFactory.FileType.VIEWFS) {
       String baseDFSUrl = CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL);
+      String dfsUrl = conf.get(FS_DEFAULT_FS);
       if (null != baseDFSUrl) {
-        String dfsUrl = conf.get(FS_DEFAULT_FS);
+        if (!baseDFSUrl.startsWith("/")) {
+          baseDFSUrl = "/" + baseDFSUrl;
+        }
         if (null != dfsUrl && (dfsUrl.startsWith(HDFS_PREFIX) || dfsUrl
             .startsWith(VIEWFS_PREFIX))) {
           baseDFSUrl = dfsUrl + baseDFSUrl;
@@ -707,10 +713,9 @@ public final class CarbonUtil {
         if (baseDFSUrl.endsWith("/")) {
           baseDFSUrl = baseDFSUrl.substring(0, baseDFSUrl.length() - 1);
         }
-        if (!filePath.startsWith("/")) {
-          filePath = "/" + filePath;
-        }
         currentPath = baseDFSUrl + filePath;
+      } else {
+        currentPath = dfsUrl + filePath;
       }
     }
     return currentPath;
