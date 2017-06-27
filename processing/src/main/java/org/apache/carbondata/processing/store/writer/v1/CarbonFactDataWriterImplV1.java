@@ -309,7 +309,7 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
     info.setColumnMinData(nodeHolder.getDimensionColumnMinData());
     long[] keyOffSets = new long[nodeHolder.getKeyLengths().length];
 
-    for (int i = 0; i < keyOffSets.length; i++) {l
+    for (int i = 0; i < keyOffSets.length; i++) {
       keyOffSets[i] = offset;
       offset += nodeHolder.getKeyLengths()[i];
     }
