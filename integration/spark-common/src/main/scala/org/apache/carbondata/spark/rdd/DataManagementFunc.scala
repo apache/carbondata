@@ -361,7 +361,7 @@ object DataManagementFunc {
         LOGGER.info("Clean files lock has been successfully acquired.")
         deleteLoadsAndUpdateMetadata(dbName, tableName, storePath,
           isForceDeletion = true, carbonTable)
-        CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable,true)
+        CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
       } else {
         val errorMsg = "Clean files request is failed for " +
             s"$dbName.$tableName" +
