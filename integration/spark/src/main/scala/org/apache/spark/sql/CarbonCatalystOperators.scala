@@ -20,12 +20,13 @@ package org.apache.spark.sql
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
+import org.apache.spark.sql.catalyst.plans.logical.{ UnaryNode, _ }
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
+import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * Top command
@@ -140,7 +141,7 @@ case class DeleteRecords(
 case class ShowPartitions(
     table: TableIdentifier) extends LogicalPlan {
   override def children: Seq[LogicalPlan] = Seq.empty
-  override def output: Seq[AttributeReference] = Seq.empty
+  override def output: Seq[Attribute] = CommonUtil.partitionInfoOutput
 }
 
 /**

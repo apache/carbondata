@@ -597,7 +597,7 @@ object CommonUtil {
   }
 
   def partitionInfoOutput: Seq[Attribute] = Seq(
-    AttributeReference("Partitions", StringType, nullable = false,
+    AttributeReference("partition", StringType, nullable = false,
       new MetadataBuilder().putString("comment", "partitions info").build())()
   )
 }

@@ -124,6 +124,20 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
         |  'LIST_INFO'='0, 1, (2, 3)')
       """.stripMargin)
 
+    sql("DROP TABLE IF EXISTS hiveTable")
+    sql("""
+       | create table hiveTable(id int, name string) partitioned by (city string)
+       | row format delimited fields terminated by ','
+       """.stripMargin)
+    sql("alter table hiveTable add partition (city = 'Hangzhou')")
+
+    sql(s"CREATE DATABASE if not exists hiveDB")
+    sql("DROP TABLE IF EXISTS hiveDB.hiveTable")
+    sql("""
+       | create table hiveDB.hiveTable(id int, name string) partitioned by (city string)
+       | row format delimited fields terminated by ','
+       """.stripMargin)
+    sql("alter table hiveDB.hiveTable add partition (city = 'Shanghai')")
   }
 
   test("show partition table: exception when show not partition table") {
@@ -150,7 +164,6 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
     // EqualTo
     checkAnswer(sql("show partitions rangeTable"), Seq(Row("doj=default"),
       Row("doj<01-01-2010"), Row("01-01-2010<=doj<01-01-2015")))
-
   }
 
   test("show partition table: list partition") {
@@ -170,19 +183,43 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
       Row("workgroupcategory=0"), Row("workgroupcategory=1"), Row("workgroupcategory=2, 3")))
 
   }
+
+  test("show partition table: hive partition table") {
+    // EqualTo
+    checkAnswer(sql("show partitions hiveTable"), Seq(Row("city=Hangzhou")))
+    sql("use hiveDB").show()
+    checkAnswer(sql("show partitions hiveTable"), Seq(Row("city=Shanghai")))
+    sql("use default").show()
+  }
+
   override def afterAll = {
     sql("drop table if exists notPartitionTable")
     sql("drop table if exists  hashTable")
     sql("drop table if exists  listTable")
     sql("drop table if exists  rangeTable")
+    sql("drop table if exists  hiveTable")
     try {
       sql("drop table if exists  partitionDB.hashTable")
+
+    } catch {
+      case ex: NoSuchDatabaseException => print(ex.getMessage())
+    }
+    try {
       sql("drop table if exists  partitionDB.rangeTable")
+    } catch {
+      case ex: NoSuchDatabaseException => print(ex.getMessage())
+    }
+    try {
       sql("drop table if exists  partitionDB.listTable")
     } catch {
       case ex: NoSuchDatabaseException => print(ex.getMessage())
     }
-
+    try {
+      sql("drop table if exists  hiveDB.hiveTable")
+    } catch {
+      case ex: NoSuchDatabaseException => print(ex.getMessage())
+    }
     sql("DROP DATABASE if exists partitionDB")
+    sql("DROP DATABASE if exists hiveDB")
   }
 }
