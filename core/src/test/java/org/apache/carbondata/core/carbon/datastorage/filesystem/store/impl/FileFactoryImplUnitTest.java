@@ -139,6 +139,10 @@ public class FileFactoryImplUnitTest {
     assertNotNull(FileFactory.getDataOutputStream(filePath, FileFactory.FileType.VIEWFS));
   }
 
+  @Test public void getDataOutputStreamForCFSType() throws IOException {
+    assertNotNull(FileFactory.getDataOutputStream(filePath, FileFactory.FileType.CFS));
+  }
+
   @Test public void getDataOutputStreamForLocalType() throws IOException {
     assertNotNull(FileFactory.getDataOutputStream(filePath, FileFactory.FileType.LOCAL));
   }

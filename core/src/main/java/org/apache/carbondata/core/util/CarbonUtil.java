@@ -86,6 +86,7 @@ public final class CarbonUtil {
 
   public static final String HDFS_PREFIX = "hdfs://";
   public static final String VIEWFS_PREFIX = "viewfs://";
+  public static final String CFS_PREFIX = "cfs://";
   public static final String ALLUXIO_PREFIX = "alluxio://";
   private static final String FS_DEFAULT_FS = "fs.defaultFS";
 
@@ -702,7 +703,8 @@ public final class CarbonUtil {
     String currentPath = filePath;
     if (null != filePath && filePath.length() != 0
         && FileFactory.getFileType(filePath) != FileFactory.FileType.HDFS
-        && FileFactory.getFileType(filePath) != FileFactory.FileType.VIEWFS) {
+        && FileFactory.getFileType(filePath) != FileFactory.FileType.VIEWFS
+        && FileFactory.getFileType(filePath) != FileFactory.FileType.CFS) {
       String baseDFSUrl = CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL);
       String dfsUrl = conf.get(FS_DEFAULT_FS);
@@ -711,7 +713,7 @@ public final class CarbonUtil {
           baseDFSUrl = "/" + baseDFSUrl;
         }
         if (null != dfsUrl && (dfsUrl.startsWith(HDFS_PREFIX) || dfsUrl
-            .startsWith(VIEWFS_PREFIX))) {
+            .startsWith(VIEWFS_PREFIX) || dfsUrl.startsWith(CFS_PREFIX))) {
           baseDFSUrl = dfsUrl + baseDFSUrl;
         }
         if (baseDFSUrl.endsWith("/")) {
