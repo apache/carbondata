@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.processing.store;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.carbondata.core.datastore.TableSpec;
@@ -39,7 +40,7 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
-public class TablePageEncoder {
+class TablePageEncoder {
 
   private ColumnarFormatVersion version;
 
@@ -49,14 +50,15 @@ public class TablePageEncoder {
 
   private static final EncodingStrategy encodingStrategy = new DefaultEncodingStrategy();
 
-  public TablePageEncoder(CarbonFactDataHandlerModel model) {
+  TablePageEncoder(CarbonFactDataHandlerModel model) {
     this.version = CarbonProperties.getInstance().getFormatVersion();
     this.model = model;
     this.isUseInvertedIndex = model.getIsUseInvertedIndex();
   }
 
   // function to apply all columns in one table page
-  public EncodedData encode(TablePage tablePage) throws KeyGenException, MemoryException {
+  EncodedData encode(TablePage tablePage)
+      throws KeyGenException, MemoryException, IOException {
     EncodedData encodedData = new EncodedData();
     encodeAndCompressDimensions(tablePage, encodedData);
     encodeAndCompressMeasures(tablePage, encodedData);
@@ -65,7 +67,7 @@ public class TablePageEncoder {
 
   // apply measure and set encodedData in `encodedData`
   private void encodeAndCompressMeasures(TablePage tablePage, EncodedData encodedData)
-      throws MemoryException {
+      throws MemoryException, IOException {
     ColumnPage[] measurePage = tablePage.getMeasurePage();
     byte[][] encodedMeasures = new byte[measurePage.length][];
     for (int i = 0; i < measurePage.length; i++) {
