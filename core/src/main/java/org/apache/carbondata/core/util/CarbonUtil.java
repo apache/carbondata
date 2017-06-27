@@ -40,6 +40,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -326,10 +327,13 @@ public final class CarbonUtil {
   }
 
   public static String getBadLogPath(String storeLocation) {
-    String badLogStoreLocation =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
+    String badLogStoreLocation = CarbonProperties.getInstance()
+        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH);
+    if (null == badLogStoreLocation) {
+      badLogStoreLocation =
+          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
+    }
     badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
-
     return badLogStoreLocation;
   }
 
@@ -1646,6 +1650,70 @@ public final class CarbonUtil {
       default:
         throw new IllegalArgumentException("Int cannot me more than 4 bytes");
     }
+  }
+  /**
+   * Validate boolean value configuration
+   *
+   * @param value
+   * @return
+   */
+  public static boolean validateBoolean(String value) {
+    if (null == value) {
+      return false;
+    } else if (!("false".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value))) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * validate the sort scope
+   * @param sortScope
+   * @return
+   */
+  public static boolean isValidSortOption(String sortScope) {
+    if (sortScope == null) {
+      return false;
+    }
+    switch (sortScope.toUpperCase()) {
+      case "BATCH_SORT":
+        return true;
+      case "LOCAL_SORT":
+        return true;
+      case "NO_SORT":
+        return true;
+      case "GLOBAL_SORT":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * validate teh batch size
+   *
+   * @param value
+   * @return
+   */
+  public static boolean validateValidIntType(String value) {
+    if (null == value) {
+      return false;
+    }
+    try {
+      Integer.parseInt(value);
+    } catch (NumberFormatException nfe) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * is valid store path
+   * @param badRecordsLocation
+   * @return
+   */
+  public static boolean isValidBadStorePath(String badRecordsLocation) {
+    return !(null == badRecordsLocation || badRecordsLocation.length() == 0);
   }
 }
 

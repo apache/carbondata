@@ -238,7 +238,6 @@ class DataLoadFailAllTypeSortTest extends QueryTest with BeforeAndAfterAll {
           CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
     }
   }
-
   //
   override def afterAll {
     sql("drop table IF EXISTS data_pm")

@@ -42,6 +42,7 @@ import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, Carbon
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, SchemaReader}
 import org.apache.carbondata.processing.merger.TableMeta
 import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
+import org.apache.carbondata.spark.rdd.CarbonRDD
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
 private[sql] case class CarbonDatasourceHadoopRelation(
@@ -94,7 +95,6 @@ private[sql] case class CarbonDatasourceHadoopRelation(
     requiredColumns.foreach(projection.addColumn)
     CarbonInputFormat.setColumnProjection(conf, projection)
     CarbonInputFormat.setCarbonReadSupport(conf, classOf[SparkRowReadSupportImpl])
-
     new CarbonHadoopFSRDD[Row](sqlContext.sparkContext,
       new SerializableConfiguration(conf),
       absIdentifier,
@@ -120,7 +120,7 @@ class CarbonHadoopFSRDD[V: ClassTag](
   identifier: AbsoluteTableIdentifier,
   inputFormatClass: Class[_ <: CarbonInputFormat[V]],
   valueClass: Class[V])
-  extends RDD[V](sc, Nil) with SparkHadoopMapReduceUtil {
+  extends CarbonRDD[V](sc, Nil) with SparkHadoopMapReduceUtil {
 
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
@@ -128,8 +128,7 @@ class CarbonHadoopFSRDD[V: ClassTag](
   }
   @transient protected val jobId = new JobID(jobTrackerId, id)
 
-  @DeveloperApi
-  override def compute(split: Partition,
+  override def internalCompute(split: Partition,
     context: TaskContext): Iterator[V] = {
     val attemptId = newTaskAttemptID(jobTrackerId, id, isMap = true, split.index, 0)
     val hadoopAttemptContext = newTaskAttemptContext(conf.value, attemptId)

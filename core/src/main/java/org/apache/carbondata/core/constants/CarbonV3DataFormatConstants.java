@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.core.constants;
 
+import org.apache.carbondata.core.util.CarbonProperty;
+
 /**
  * Constants for V3 data format
  */
@@ -24,6 +26,7 @@ public interface CarbonV3DataFormatConstants {
   /**
    * each blocklet group size in mb
    */
+  @CarbonProperty
   String BLOCKLET_SIZE_IN_MB = "carbon.blockletgroup.size.in.mb";
 
   /**
@@ -39,6 +42,7 @@ public interface CarbonV3DataFormatConstants {
   /**
    * number of column to be read in one IO in query
    */
+  @CarbonProperty
   String NUMBER_OF_COLUMN_TO_READ_IN_IO = "number.of.column.to.read.in.io";
 
   /**
@@ -59,6 +63,7 @@ public interface CarbonV3DataFormatConstants {
   /**
    * number of rows per blocklet column page
    */
+  @CarbonProperty
   String NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE = "number.of.rows.per.blocklet.column.page";
 
   /**

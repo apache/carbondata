@@ -32,6 +32,7 @@ import java.util.Set;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.DimensionType;
 import org.apache.carbondata.core.datastore.GenericDataType;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -90,12 +91,18 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
+   * @param configuration
    * @param storeLocation
    */
-  public static void renameBadRecordsFromInProgressToNormal(String storeLocation) {
+  public static void renameBadRecordsFromInProgressToNormal(
+      CarbonDataLoadConfiguration configuration, String storeLocation) {
     // get the base store location
-    String badLogStoreLocation =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
+    String badLogStoreLocation = (String) configuration
+        .getDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH);
+    if (null == badLogStoreLocation) {
+      badLogStoreLocation =
+          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
+    }
     badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
 
     FileType fileType = FileFactory.getFileType(badLogStoreLocation);
@@ -466,7 +473,8 @@ public final class CarbonDataProcessorUtil {
       if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB)
           == null) {
         batchSortSizeInMb = Integer.parseInt(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB, "0"));
+            .getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
+                CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT));
       } else {
         batchSortSizeInMb = Integer.parseInt(
             configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB)
