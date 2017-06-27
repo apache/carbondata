@@ -113,6 +113,23 @@ object CarbonPartitionExample {
        | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea ')
        """.stripMargin)
 
+    // range interval partition
+    spark.sql("DROP TABLE IF EXISTS t7")
+
+    spark.sql("""
+                | CREATE TABLE IF NOT EXISTS t7
+                | (
+                | vin String,
+                | phonenumber Long,
+                | country String,
+                | area String
+                | )
+                | PARTITIONED BY (logdate Timestamp)
+                | STORED BY 'carbondata'
+                | TBLPROPERTIES('PARTITION_TYPE'='RANGE_INTERVAL',
+                | 'RANGE_INTERVAL_INFO'='2014/01/01, 2015/01/01, month')
+              """.stripMargin)
+
     // show tables
     spark.sql("SHOW TABLES").show()
 
@@ -120,7 +137,7 @@ object CarbonPartitionExample {
     spark.sql("DROP TABLE IF EXISTS t0")
     spark.sql("DROP TABLE IF EXISTS t1")
     spark.sql("DROP TABLE IF EXISTS t3")
-    spark.sql("DROP TABLE IF EXISTS t5")
+    spark.sql("DROP TABLE IF EXISTS t7")
 
     spark.close()
 

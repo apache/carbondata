@@ -1077,7 +1077,8 @@ object CarbonDataRDDFactory {
 
     val partitioner = PartitionFactory.getPartitioner(partitionInfo)
     if (partitionColumnDataType == DataType.STRING) {
-      if (partitionInfo.getPartitionType == PartitionType.RANGE) {
+      if (partitionInfo.getPartitionType == PartitionType.RANGE
+          || partitionInfo.getPartitionType == PartitionType.RANGE_INTERVAL) {
         inputRDD.map { row => (ByteUtil.toBytes(row._1), row._2) }
           .partitionBy(partitioner)
           .map(_._2)
