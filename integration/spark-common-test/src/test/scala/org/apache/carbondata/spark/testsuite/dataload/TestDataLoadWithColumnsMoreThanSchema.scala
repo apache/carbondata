@@ -30,6 +30,10 @@ class TestDataLoadWithColumnsMoreThanSchema extends QueryTest with BeforeAndAfte
   override def beforeAll {
     sql("DROP TABLE IF EXISTS char_test")
     sql("DROP TABLE IF EXISTS hive_char_test")
+    sql("DROP TABLE IF EXISTS max_columns_value_test")
+    sql("DROP TABLE IF EXISTS boundary_max_columns_test")
+    sql("DROP TABLE IF EXISTS valid_max_columns_test")
+    sql("DROP TABLE IF EXISTS max_columns_test")
     sql("DROP TABLE IF EXISTS smart_500_DE")
     sql("CREATE TABLE char_test (imei string,age int,task bigint,num double,level decimal(10,3),productdate timestamp,mark int,name string)STORED BY 'org.apache.carbondata.format'")
     sql("CREATE TABLE hive_char_test (imei string,age int,task bigint,num double,level decimal(10,3),productdate timestamp,mark int,name string)row format delimited fields terminated by ','")

@@ -39,7 +39,7 @@ import org.apache.carbondata.processing.loading.sort.SortStepRowUtil
 import org.apache.carbondata.processing.loading.steps.{DataConverterProcessorStepImpl, DataWriterProcessorStepImpl}
 import org.apache.carbondata.processing.sort.sortdata.SortParameters
 import org.apache.carbondata.processing.store.{CarbonFactHandler, CarbonFactHandlerFactory}
-import org.apache.carbondata.processing.util.CarbonLoaderUtil
+import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.rdd.{NewRddIterator, StringArrayRow}
 import org.apache.carbondata.spark.util.Util
 
@@ -71,7 +71,7 @@ object DataLoadProcessorStepOnSpark {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
     val rowParser = new RowParserImpl(conf.getDataFields, conf)
-
+    val isRawDataRequired = CarbonDataProcessorUtil.isRawDataRequired(conf)
     TaskContext.get().addTaskFailureListener { (t: TaskContext, e: Throwable) =>
       wrapException(e, model)
     }
@@ -79,8 +79,16 @@ object DataLoadProcessorStepOnSpark {
     new Iterator[CarbonRow] {
       override def hasNext: Boolean = rows.hasNext
 
+
+
       override def next(): CarbonRow = {
-        val row = new CarbonRow(rowParser.parseRow(rows.next()))
+        var row : CarbonRow = null
+        if(isRawDataRequired) {
+          val rawRow = rows.next()
+           row = new CarbonRow(rowParser.parseRow(rawRow), rawRow)
+        } else {
+          row = new CarbonRow(rowParser.parseRow(rows.next()))
+        }
         rowCounter.add(1)
         row
       }
