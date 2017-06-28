@@ -71,12 +71,12 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
     try {
       sql(s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/timeStampFormatData1.csv' into table t3
-           OPTIONS('dateformat' = '')
+           OPTIONS('dateformat' = 'date')
            """)
       assert(false)
     } catch {
       case ex: MalformedCarbonCommandException =>
-        assertResult(ex.getMessage)("Error: Option DateFormat is set an empty string.")
+        assertResult(ex.getMessage)("Error: Option DateFormat is not provided for Column date.")
       case _: Throwable=> assert(false)
     }
 

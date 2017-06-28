@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
+import java.io.IOException;
+
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
@@ -49,16 +51,12 @@ class AdaptiveIntegerCodec extends AdaptiveCompressionCodec {
   }
 
   @Override
-  public byte[] encode(ColumnPage input) throws MemoryException {
-    if (srcDataType.equals(targetDataType)) {
-      return input.compress(compressor);
-    } else {
-      encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
-      input.encode(codec);
-      byte[] result = encodedPage.compress(compressor);
-      encodedPage.freeMemory();
-      return result;
-    }
+  public byte[] encode(ColumnPage input) throws MemoryException, IOException {
+    encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
+    input.encode(codec);
+    byte[] result = encodedPage.compress(compressor);
+    encodedPage.freeMemory();
+    return result;
   }
 
   @Override
@@ -101,6 +99,9 @@ class AdaptiveIntegerCodec extends AdaptiveCompressionCodec {
         case SHORT:
           encodedPage.putShort(rowId, (short) value);
           break;
+        case SHORT_INT:
+          encodedPage.putShortInt(rowId, value);
+          break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());
       }
@@ -114,6 +115,9 @@ class AdaptiveIntegerCodec extends AdaptiveCompressionCodec {
           break;
         case SHORT:
           encodedPage.putShort(rowId, (short) value);
+          break;
+        case SHORT_INT:
+          encodedPage.putShortInt(rowId, (int) value);
           break;
         case INT:
           encodedPage.putInt(rowId, (int) value);
@@ -132,6 +136,9 @@ class AdaptiveIntegerCodec extends AdaptiveCompressionCodec {
         case SHORT:
           encodedPage.putShort(rowId, (short) value);
           break;
+        case SHORT_INT:
+          encodedPage.putShortInt(rowId, (int) value);
+          break;
         case INT:
           encodedPage.putInt(rowId, (int) value);
           break;
@@ -148,6 +155,9 @@ class AdaptiveIntegerCodec extends AdaptiveCompressionCodec {
           break;
         case SHORT:
           encodedPage.putShort(rowId, (short) value);
+          break;
+        case SHORT_INT:
+          encodedPage.putShortInt(rowId, (int) value);
           break;
         case INT:
           encodedPage.putInt(rowId, (int) value);

@@ -104,9 +104,17 @@ public class BadRecordsLogger {
 
   /**
    * @param key DatabaseNaame/TableName/tablename
-   * @return return "Partially" and remove from map
+   * @return return "Partially"
    */
   public static String hasBadRecord(String key) {
+    return badRecordEntry.get(key);
+  }
+
+  /**
+   * @param key DatabaseNaame/TableName/tablename
+   * @return remove key from the map
+   */
+  public static String removeBadRecordKey(String key) {
     return badRecordEntry.remove(key);
   }
 

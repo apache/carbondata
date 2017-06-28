@@ -15,24 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.constants;
+package org.apache.carbondata.core.util;
+
+import java.io.Serializable;
 
 /**
- * enum to hold the bad record logger action
+ * This class maintains carbon session information details
  */
-public enum LoggerAction {
+public class CarbonSessionInfo implements Serializable {
 
-  FORCE("FORCE"), // data will be converted to null
-  REDIRECT("REDIRECT"), // no null conversion moved to bad record and written to raw csv
-  IGNORE("IGNORE"), // no null conversion moved to bad record and not written to raw csv
-  FAIL("FAIL");  //data loading will fail if a bad record is found
-  private String name;
+  // contains carbon session param details
+  private SessionParams sessionParams;
 
-  LoggerAction(String name) {
-    this.name = name;
+  public SessionParams getSessionParams() {
+    return sessionParams;
   }
 
-  @Override public String toString() {
-    return this.name;
+  public void setSessionParams(SessionParams sessionParams) {
+    this.sessionParams = sessionParams;
   }
+
 }

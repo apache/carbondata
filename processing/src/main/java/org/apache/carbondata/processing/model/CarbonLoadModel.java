@@ -158,6 +158,10 @@ public class CarbonLoadModel implements Serializable {
    * Batch sort size in mb.
    */
   private String batchSortSizeInMb;
+  /**
+   * bad record location
+   */
+  private String badRecordsLocation;
 
   /**
    * Number of partitions in global sort.
@@ -363,6 +367,7 @@ public class CarbonLoadModel implements Serializable {
     copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
     copy.sortScope = sortScope;
     copy.batchSortSizeInMb = batchSortSizeInMb;
+    copy.badRecordsLocation = badRecordsLocation;
     return copy;
   }
 
@@ -464,6 +469,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.isEmptyDataBadRecord = isEmptyDataBadRecord;
     copyObj.sortScope = sortScope;
     copyObj.batchSortSizeInMb = batchSortSizeInMb;
+    copyObj.badRecordsLocation = badRecordsLocation;
     return copyObj;
   }
 
@@ -763,5 +769,13 @@ public class CarbonLoadModel implements Serializable {
 
   public void setGlobalSortPartitions(String globalSortPartitions) {
     this.globalSortPartitions = globalSortPartitions;
+  }
+
+  public String getBadRecordsLocation() {
+    return badRecordsLocation;
+  }
+
+  public void setBadRecordsLocation(String badRecordsLocation) {
+    this.badRecordsLocation = badRecordsLocation;
   }
 }

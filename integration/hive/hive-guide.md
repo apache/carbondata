@@ -77,19 +77,20 @@ copy snappy-java-xxx.jar from "./<SPARK_HOME>/jars/" to "./Library/Java/Extensio
 export HADOOP_OPTS="-Dorg.xerial.snappy.lib.path=/Library/Java/Extensions -Dorg.xerial.snappy.lib.name=libsnappyjava.jnilib -Dorg.xerial.snappy.tempdir=/Users/apple/DEMO/tmp"
 ```
 
-### Alter schema in Hive
+### Start hive client
 $HIVE_HOME/bin/hive
 
+### Initialize schema in hive
 ```
+create table in hive:
+CREATE TABLE IF NOT EXISTS hive_carbon(id int, name string, scale decimal, country string, salary double) row format delimited fields terminated by ',' stored as textfile;
+
 alter table hive_carbon set FILEFORMAT
 INPUTFORMAT "org.apache.carbondata.hive.MapredCarbonInputFormat"
 OUTPUTFORMAT "org.apache.carbondata.hive.MapredCarbonOutputFormat"
 SERDE "org.apache.carbondata.hive.CarbonHiveSerDe";
 
 alter table hive_carbon set LOCATION '<hdfs store path>/carbon/store/default/hive_carbon';
-alter table hive_carbon change col id INT;
-alter table hive_carbon add columns(name string, scale decimal(10, 2), country string, salary double);
-
 ```
 
 ### Query data from hive table
