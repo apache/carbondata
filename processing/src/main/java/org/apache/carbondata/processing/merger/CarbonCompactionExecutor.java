@@ -46,6 +46,7 @@ import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.BatchResult;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * Executor class for executing the query on the selected segments to be merged.
@@ -203,6 +204,7 @@ public class CarbonCompactionExecutor {
     model.setTableBlockInfos(blockList);
     model.setForcedDetailRawQuery(true);
     model.setFilterExpressionResolverTree(null);
+    model.setConverter(DataTypeUtil.getDataTypeConverter());
 
     List<QueryDimension> dims = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 

@@ -26,7 +26,6 @@ import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 
-
 /**
  * It is not a collector it is just a scanned result holder.
  */
