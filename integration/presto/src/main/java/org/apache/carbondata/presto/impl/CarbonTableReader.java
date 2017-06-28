@@ -72,15 +72,39 @@ import static java.util.Objects.requireNonNull;
  * 2:FileFactory, (physic table file)
  * 3:CarbonCommonFactory, (offer some )
  * 4:DictionaryFactory, (parse dictionary util)
+ *
+ * Currently, it is mainly used to parse metadata of tables under
+ * the configured carbondata-store path and filter the relevant
+ * input splits with given query predicates.
  */
 public class CarbonTableReader {
 
   private CarbonTableConfig config;
+
+  /**
+   * The names of the tables under the schema (this.carbonFileList).
+   */
   private List<SchemaTableName> tableList;
+
+  /**
+   * carbonFileList represents the store path of the schema, which is configured as carbondata-store
+   * in the CarbonData catalog file ($PRESTO_HOME$/etc/catalog/carbondata.properties).
+   * Under the schema store path, there should be a directory named as the schema name.
+   * And under each schema directory, there are directories named as the table names.
+   * For example, the schema is named 'default' and there is two table named 'foo' and 'bar' in it, then the
+   * structure of the store path should be:
+   * default
+   *   foo
+   *   bar
+   *   ...
+   */
   private CarbonFile carbonFileList;
   private FileFactory.FileType fileType;
 
-  // A cache for Carbon reader
+  /**
+   * A cache for Carbon reader, with this cache,
+   * metadata of a table is only read from file system once.
+   */
   private ConcurrentHashMap<SchemaTableName, CarbonTableCacheModel> cc;
 
   @Inject public CarbonTableReader(CarbonTableConfig config) {
@@ -88,15 +112,14 @@ public class CarbonTableReader {
     this.cc = new ConcurrentHashMap<>();
   }
 
-  // for worker node to initialize carbon metastore
-
   /**
-   *
-   * @param table
+   * For presto worker node to initialize the metadata cache of a table.
+   * @param table the name of the table and schema.
    * @return
    */
   public CarbonTableCacheModel getCarbonCache(SchemaTableName table) {
     if (!cc.containsKey(table)) {
+      // if this table is not cached, try to read the metadata of the table and cache it.
       try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(
           FileFactory.class.getClassLoader())) {
         if (carbonFileList == null) {
@@ -116,11 +139,15 @@ public class CarbonTableReader {
     else return null;
   }
 
+  /**
+   * Return the schema names under a schema store path (this.carbonFileList).
+   * @return
+   */
   public List<String> getSchemaNames() {
     return updateSchemaList();
   }
 
-  // default PathFilter
+  // default PathFilter, accepts files in carbondata format (with .carbondata extension).
   private static final PathFilter DefaultFilter = new PathFilter() {
     @Override public boolean accept(Path path) {
       return CarbonTablePath.isCarbonDataFile(path.getName());
@@ -128,8 +155,8 @@ public class CarbonTableReader {
   };
 
   /**
-   * BHQ: Get the CarbonFile instance which represents the store path in the configuration, and assign it to
-   * carbonFileList.
+   * Get the CarbonFile instance which represents the store path in the configuration, and assign it to
+   * this.carbonFileList.
    * @return
    */
   public boolean updateCarbonFile() {
@@ -145,9 +172,7 @@ public class CarbonTableReader {
   }
 
   /**
-   * BHQ: return the schema names under a database path (carbonFileList).
-   * The carbonFileList represents the root of CarbonData store path. Under the store path, there are
-   * some directories named with the schema names.
+   * Return the schema names under a schema store path (this.carbonFileList).
    * @return
    */
   public List<String> updateSchemaList() {
@@ -165,13 +190,23 @@ public class CarbonTableReader {
     } else return ImmutableList.of();
   }
 
+  /**
+   * Get the names of the tables in the given schema.
+   * @param schema name of the schema
+   * @return
+   */
   public Set<String> getTableNames(String schema) {
     requireNonNull(schema, "schema is null");
     return updateTableList(schema);
   }
 
-  public Set<String> updateTableList(String dbName) {
-    List<CarbonFile> schema = Stream.of(carbonFileList.listFiles()).filter(a -> dbName.equals(a.getName()))
+  /**
+   * Get the names of the tables in the given schema.
+   * @param schemaName name of the schema
+   * @return
+   */
+  public Set<String> updateTableList(String schemaName) {
+    List<CarbonFile> schema = Stream.of(carbonFileList.listFiles()).filter(a -> schemaName.equals(a.getName()))
         .collect(Collectors.toList());
     if (schema.size() > 0) {
       return Stream.of((schema.get(0)).listFiles()).map(a -> a.getName())
@@ -179,6 +214,11 @@ public class CarbonTableReader {
     } else return ImmutableSet.of();
   }
 
+  /**
+   * Get the CarbonTable instance of the given table.
+   * @param schemaTableName name of the given table.
+   * @return
+   */
   public CarbonTable getTable(SchemaTableName schemaTableName) {
     try {
       updateSchemaTables();
@@ -193,10 +233,9 @@ public class CarbonTableReader {
   }
 
   /**
-   * BHQ: This function will add all the carbon tables' schema-table name into tableList.
-   * carbonFileList represents the CarbonData store path. Under carbonFileList, there are some directories
-   * named with the schema name. And under each schema directory, there are directories named with the table
-   * name.
+   * Find all the tables under the schema store path (this.carbonFileList)
+   * and cache all the table names in this.tableList. Notice that whenever this method
+   * is called, it clears this.tableList and populate the list by reading the files.
    */
   public void updateSchemaTables() {
     // update logic determine later
@@ -213,6 +252,12 @@ public class CarbonTableReader {
     }
   }
 
+  /**
+   * Find the table with the given name and build a CarbonTable instance for it.
+   * This method should be called after this.updateSchemaTables().
+   * @param schemaTableName name of the given table.
+   * @return
+   */
   private CarbonTable loadTableMetadata(SchemaTableName schemaTableName) {
     for (SchemaTableName table : tableList) {
       if (!table.equals(schemaTableName)) continue;
@@ -223,7 +268,9 @@ public class CarbonTableReader {
   }
 
   /**
-   * parse carbon metadata into cc(CarbonTableReader cache)
+   * Read the metadata of the given table and cache it in this.cc (CarbonTableReader cache).
+   * @param table name of the given table.
+   * @return the CarbonTable instance which contains all the needed metadata for a table.
    */
   public CarbonTable parseCarbonMetadata(SchemaTableName table) {
     CarbonTable result = null;
@@ -231,20 +278,25 @@ public class CarbonTableReader {
       CarbonTableCacheModel cache = cc.getOrDefault(table, new CarbonTableCacheModel());
       if (cache.isValid()) return cache.carbonTable;
 
-      // BHQ: if table is not previously cached:
+      // If table is not previously cached, then:
 
-      // Step1: get table meta path, load carbon table param
+      // Step 1: get store path of the table and cache it.
       String storePath = config.getStorePath();
-      // table identifier is randomly generated.
+        // create table identifier. the table id is randomly generated.
       cache.carbonTableIdentifier =
           new CarbonTableIdentifier(table.getSchemaName(), table.getTableName(),
               UUID.randomUUID().toString());
+        // get the store path of the table.
       cache.carbonTablePath =
           PathFactory.getInstance().getCarbonTablePath(storePath, cache.carbonTableIdentifier);
+        // cache the table
       cc.put(table, cache);
 
-      //Step2: check file existed? read schema file
+      //Step 2: read the metadata (tableInfo) of the table.
       ThriftReader.TBaseCreator createTBase = new ThriftReader.TBaseCreator() {
+        // TBase is used to read and write thrift objects.
+        // TableInfo is a kind of TBase used to read and write table information.
+        // TableInfo is generated by thrift, see schema.thrift under format/src/main/thrift for details.
         public TBase create() {
           return new org.apache.carbondata.format.TableInfo();
         }
@@ -256,14 +308,16 @@ public class CarbonTableReader {
           (org.apache.carbondata.format.TableInfo) thriftReader.read();
       thriftReader.close();
 
-      // Step3: Transform Format Level TableInfo to Code Level TableInfo
+      // Step 3: convert format level TableInfo to code level TableInfo
       SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
+        // wrapperTableInfo is the code level information of a table in carbondata core, different from the Thrift TableInfo.
       TableInfo wrapperTableInfo = schemaConverter
           .fromExternalToWrapperTableInfo(tableInfo, table.getSchemaName(), table.getTableName(),
               storePath);
       wrapperTableInfo.setMetaDataFilepath(
           CarbonTablePath.getFolderContainingFile(cache.carbonTablePath.getSchemaFilePath()));
-      // Step4: Load metadata info into CarbonMetadata
+
+      // Step 4: Load metadata info into CarbonMetadata
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
 
       cache.tableInfo = wrapperTableInfo;
@@ -278,10 +332,9 @@ public class CarbonTableReader {
   }
 
   /**
-   * BHQ: apply filters to the carbon table been cached in the tableCacheModel, and get
-   * valid input splits of the table.
-   * @param tableCacheModel
-   * @param filters
+   * Apply filters to the table and get valid input splits of the table.
+   * @param tableCacheModel the table
+   * @param filters the filters
    * @return
    * @throws Exception
    */
@@ -371,7 +424,16 @@ public class CarbonTableReader {
   }
 
   /**
-   * get data blocks of given segment.
+   * Get all the data blocks of a given segment.
+   * @param filterExpressionProcessor
+   * @param absoluteTableIdentifier
+   * @param tablePath
+   * @param resolver
+   * @param segmentId
+   * @param cacheClient
+   * @param updateStatusManager
+   * @return
+   * @throws IOException
    */
   private List<DataRefNode> getDataBlocksOfSegment(
       FilterExpressionProcessor filterExpressionProcessor,
@@ -420,7 +482,7 @@ public class CarbonTableReader {
   }
 
   /**
-   * BHQ: build and load the b trees of the segment.
+   * Build and load the B-trees of the segment.
    * @param absoluteTableIdentifier
    * @param tablePath
    * @param segmentId
@@ -541,7 +603,7 @@ public class CarbonTableReader {
   }
 
   /**
-   * BHQ: get the input splits of a set of carbondata files.
+   * Get the input splits of a set of carbondata files.
    * @param fileStatusList the file statuses of the set of carbondata files.
    * @param targetSystem hdfs FileSystem
    * @return
@@ -610,7 +672,7 @@ public class CarbonTableReader {
   }
 
   /**
-   * BHQ: get all file statuses of the carbondata files with a segmentId in segmentsToConsider
+   * Get all file statuses of the carbondata files with a segmentId in segmentsToConsider
    * under the tablePath, and add them to the result.
    * @param segmentsToConsider
    * @param tablePath
@@ -666,7 +728,7 @@ public class CarbonTableReader {
   }
 
   /**
-   * BHQ: get the FileStatus of all carbondata files under the path recursively,
+   * Get the FileStatus of all carbondata files under the path recursively,
    * and add the file statuses into the result
    * @param result
    * @param fs
@@ -692,7 +754,7 @@ public class CarbonTableReader {
   }
 
   /**
-   * BHQ: get the data blocks of a b tree. the root node of the b tree is abstractIndex.dataRefNode.
+   * Get the data blocks of a b tree. the root node of the b tree is abstractIndex.dataRefNode.
    * BTreeNode is a sub class of DataRefNode.
    * @param abstractIndex
    * @return
