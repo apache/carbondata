@@ -81,7 +81,7 @@ public class CarbonTableIdentifier implements Serializable {
    *Creates the key for bad record lgger.
    */
   public String getBadRecordLoggerKey() {
-    return databaseName + File.separator + tableName + '_' + tableName;
+    return databaseName + File.separator + tableName + '_' + tableId;
   }
 
   @Override public int hashCode() {

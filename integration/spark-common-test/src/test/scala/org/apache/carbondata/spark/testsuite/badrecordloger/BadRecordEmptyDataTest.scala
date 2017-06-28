@@ -42,6 +42,7 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
       sql("drop table IF EXISTS empty_timestamp")
       sql("drop table IF EXISTS empty_timestamp_false")
       sql("drop table IF EXISTS dataloadOptionTests")
+      sql("drop table IF EXISTS bigtab")
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
           new File("./target/test/badRecords")
@@ -155,12 +156,26 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("test load multiple loads- pne with valid record and one with invalid") {
+    sql("create table bigtab (val string, bal int) STORED BY 'carbondata'")
+    intercept[Exception] {
+      sql(s"load data  inpath '$resourcesPath/badrecords/bigtabbad.csv' into table bigtab " +
+        "options('DELIMITER'=',','QUOTECHAR'='\"','BAD_RECORDS_ACTION'='FAIL'," +
+        "'FILEHEADER'='val,bal')")
+    }
+    sql(s"load data  inpath '$resourcesPath/badrecords/bigtab.csv' into table bigtab " +
+        "options('DELIMITER'=',','QUOTECHAR'='\"','BAD_RECORDS_ACTION'='FAIL'," +
+        "'FILEHEADER'='val,bal')")
+    checkAnswer(sql("select count(*) from bigtab"), Seq(Row(1)))
+  }
+
   override def afterAll {
-    sql("drop table emptyColumnValues")
-    sql("drop table emptyColumnValues_false")
-    sql("drop table empty_timestamp")
-    sql("drop table empty_timestamp_false")
-    sql("drop table dataloadOptionTests")
+    sql("drop table IF EXISTS emptyColumnValues")
+    sql("drop table IF EXISTS emptyColumnValues_false")
+    sql("drop table IF EXISTS empty_timestamp")
+    sql("drop table IF EXISTS empty_timestamp_false")
+    sql("drop table IF EXISTS dataloadOptionTests")
+    sql("drop table IF EXISTS bigtab")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }

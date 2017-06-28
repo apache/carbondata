@@ -33,6 +33,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 
 public class BadRecordsLogger {
 
@@ -104,13 +105,22 @@ public class BadRecordsLogger {
 
   /**
    * @param key DatabaseNaame/TableName/tablename
-   * @return return "Partially" and remove from map
+   * @return return "Partially"
    */
   public static String hasBadRecord(String key) {
+    return badRecordEntry.get(key);
+  }
+
+  /**
+   * @param key DatabaseNaame/TableName/tablename
+   * @return remove key from the map
+   */
+  public static String removeBadRecordKey(String key) {
     return badRecordEntry.remove(key);
   }
 
-  public void addBadRecordsToBuilder(Object[] row, String reason) {
+  public void addBadRecordsToBuilder(Object[] row, String reason)
+      throws CarbonDataLoadingException {
     if (badRecordsLogRedirect || badRecordLoggerEnable) {
       StringBuilder logStrings = new StringBuilder();
       int size = row.length;
@@ -158,7 +168,8 @@ public class BadRecordsLogger {
   /**
    *
    */
-  private synchronized void writeBadRecordsToFile(StringBuilder logStrings) {
+  private synchronized void writeBadRecordsToFile(StringBuilder logStrings)
+      throws CarbonDataLoadingException {
     if (null == logFilePath) {
       logFilePath =
           this.storePath + File.separator + this.fileName + CarbonCommonConstants.LOG_FILE_EXTENSION
@@ -185,8 +196,10 @@ public class BadRecordsLogger {
       bufferedWriter.newLine();
     } catch (FileNotFoundException e) {
       LOGGER.error("Bad Log Files not found");
+      throw new CarbonDataLoadingException("Bad Log Files not found", e);
     } catch (IOException e) {
-      LOGGER.error("Error While writing bad log File");
+      LOGGER.error("Error While writing bad record log File");
+      throw new CarbonDataLoadingException("Error While writing bad record log File", e);
     } finally {
       // if the Bad record file is created means it partially success
       // if any entry present with key that means its have bad record for
@@ -200,7 +213,8 @@ public class BadRecordsLogger {
    *
    * @param logStrings
    */
-  private synchronized void writeBadRecordsToCSVFile(StringBuilder logStrings) {
+  private synchronized void writeBadRecordsToCSVFile(StringBuilder logStrings)
+      throws CarbonDataLoadingException {
     if (null == csvFilePath) {
       csvFilePath =
           this.storePath + File.separator + this.fileName + CarbonCommonConstants.CSV_FILE_EXTENSION
@@ -227,8 +241,10 @@ public class BadRecordsLogger {
       bufferedCSVWriter.newLine();
     } catch (FileNotFoundException e) {
       LOGGER.error("Bad record csv Files not found");
+      throw new CarbonDataLoadingException("Bad record csv Files not found", e);
     } catch (IOException e) {
       LOGGER.error("Error While writing bad record csv File");
+      throw new CarbonDataLoadingException("Error While writing bad record csv File", e);
     }
     finally {
       badRecordEntry.put(taskKey, "Partially");

@@ -342,7 +342,7 @@ public class CarbonUtilTest {
       }
     };
     String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("../core/src/test/resources/testDatabase");
-    assertEquals(hdfsURL, "BASE_URL/../core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "/BASE_URL/../core/src/test/resources/testDatabase");
   }
 
   @Test public void testToCheckAndAppendHDFSUrlWithBlackSlash() {
@@ -357,7 +357,7 @@ public class CarbonUtilTest {
       }
     };
     String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("../core/src/test/resources/testDatabase");
-    assertEquals(hdfsURL, "BASE_URL/../core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "/BASE_URL/../core/src/test/resources/testDatabase");
   }
 
   @Test public void testToCheckAndAppendHDFSUrlWithNull() {
@@ -372,7 +372,7 @@ public class CarbonUtilTest {
       }
     };
     String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("../core/src/test/resources/testDatabase");
-    assertEquals(hdfsURL, "../core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "file:////../core/src/test/resources/testDatabase");
   }
 
   @Test public void testForisFileExists() {

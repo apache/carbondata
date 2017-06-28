@@ -50,7 +50,8 @@ class AddColumnPartition(rddId: Int, idx: Int, schema: ColumnSchema) extends Par
 class AlterTableAddColumnRDD[K, V](sc: SparkContext,
     @transient newColumns: Seq[ColumnSchema],
     carbonTableIdentifier: CarbonTableIdentifier,
-    carbonStorePath: String) extends RDD[(Int, String)](sc, Nil) {
+    carbonStorePath: String)
+  extends CarbonRDD[(Int, String)](sc, Nil) {
 
   val lockType: String = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.LOCK_TYPE,
     CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
@@ -61,7 +62,7 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
     }.toArray
   }
 
-  override def compute(split: Partition,
+  override def internalCompute(split: Partition,
       context: TaskContext): Iterator[(Int, String)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS

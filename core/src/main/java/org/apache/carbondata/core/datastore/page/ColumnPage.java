@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.page;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.BitSet;
 
@@ -474,7 +475,7 @@ public abstract class ColumnPage {
   /**
    * Compress page data using specified compressor
    */
-  public byte[] compress(Compressor compressor) {
+  public byte[] compress(Compressor compressor) throws MemoryException, IOException {
     switch (dataType) {
       case BYTE:
         return compressor.compressByte(getBytePage());

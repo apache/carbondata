@@ -197,10 +197,13 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    */
   @Override public void close() throws IOException {
     if (null != dictionaryThriftWriter && dictionaryThriftWriter.isOpen()) {
-      // if stream is open then only need to write dictionary file.
-      writeDictionaryFile();
-      // close the thrift writer for dictionary file
-      closeThriftWriter();
+      try {
+        // if stream is open then only need to write dictionary file.
+        writeDictionaryFile();
+      } finally {
+        // close the thrift writer for dictionary file
+        closeThriftWriter();
+      }
     }
   }
 
@@ -335,12 +338,15 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     ColumnDictionaryChunkMeta dictionaryChunkMeta =
         new ColumnDictionaryChunkMeta(min_surrogate_key, max_surrogate_key, chunk_start_offset,
             chunk_end_offset, chunk_count);
-    openThriftWriter(this.dictionaryMetaFilePath);
-    // write dictionary metadata file
-    writeThriftObject(dictionaryChunkMeta);
-    closeThriftWriter();
-    LOGGER.info("Dictionary metadata file written successfully for column " + this.columnIdentifier
-            + " at path " + this.dictionaryMetaFilePath);
+    try {
+      openThriftWriter(this.dictionaryMetaFilePath);
+      // write dictionary metadata file
+      writeThriftObject(dictionaryChunkMeta);
+      LOGGER.info("Dictionary metadata file written successfully for column "
+          + this.columnIdentifier + " at path " + this.dictionaryMetaFilePath);
+    } finally {
+      closeThriftWriter();
+    }
   }
 
   /**

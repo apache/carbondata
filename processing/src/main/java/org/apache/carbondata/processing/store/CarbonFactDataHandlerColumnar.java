@@ -18,6 +18,7 @@
 package org.apache.carbondata.processing.store;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -336,7 +337,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * generate the NodeHolder from the input rows (one page in case of V3 format)
    */
   private NodeHolder processDataRows(List<CarbonRow> dataRows)
-      throws CarbonDataWriterException, KeyGenException, MemoryException {
+      throws CarbonDataWriterException, KeyGenException, MemoryException, IOException {
     if (dataRows.size() == 0) {
       return new NodeHolder();
     }
