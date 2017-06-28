@@ -423,7 +423,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           partitionInfo.setRangeInfo(rangeInfo.asJava)
         case "LIST" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.LIST)
           partitionInfo.setListInfo(listInfo.map(_.asJava).toList.asJava)
-        case "RANGE_INTERVAL" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.RANGE_INTERVAL)
+        case "RANGE_INTERVAL" => partitionInfo =
+          new PartitionInfo(cols.asJava, PartitionType.RANGE_INTERVAL)
           partitionInfo.setRangeIntervalInfo(rangeIntervalInfo.asJava)
       }
       Some(partitionInfo)
