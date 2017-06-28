@@ -18,6 +18,7 @@
 package org.apache.carbondata.processing.store;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -55,6 +56,7 @@ import org.apache.carbondata.processing.store.file.FileManager;
 import org.apache.carbondata.processing.store.file.IFileManagerComposite;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
  * Fact data handler class to handle the fact data
@@ -172,19 +174,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK,
             CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE));
     if (isAggKeyBlock) {
-      int noDictionaryValue = Integer.parseInt(
-          CarbonProperties.getInstance().getProperty(
-              CarbonCommonConstants.HIGH_CARDINALITY_VALUE,
-              CarbonCommonConstants.HIGH_CARDINALITY_VALUE_DEFAULTVALUE));
-      int[] columnSplits = colGrpModel.getColumnSplit();
-      int dimCardinalityIndex = -1;
-      int aggIndex = -1;
       int[] dimLens = model.getSegmentProperties().getDimColumnsCardinality();
-      for (int i = 0; i < columnSplits.length; i++) {
-        dimCardinalityIndex += columnSplits[i];
-        aggIndex++;
-        if (colGrpModel.isColumnar(i) && dimLens[dimCardinalityIndex] < noDictionaryValue) {
-          this.rleEncodingForDictDimension[aggIndex] = true;
+      for (int i = 0; i < model.getTableSpec().getDimensionSpec().getNumSimpleDimensions(); i++) {
+        if (CarbonDataProcessorUtil
+            .isRleApplicableForColumn(model.getTableSpec().getDimensionSpec().getType(i))) {
+          this.rleEncodingForDictDimension[i] = true;
         }
       }
 
@@ -204,7 +198,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           this.rleEncodingForDictDimension[i] = rleWithComplex.get(i);
         }
       }
-      rleEncodingForDictDimension = arrangeUniqueBlockType(rleEncodingForDictDimension);
     }
     this.version = CarbonProperties.getInstance().getFormatVersion();
     this.encoder = new TablePageEncoder(model);
@@ -344,7 +337,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * generate the NodeHolder from the input rows (one page in case of V3 format)
    */
   private NodeHolder processDataRows(List<CarbonRow> dataRows)
-      throws CarbonDataWriterException, KeyGenException, MemoryException {
+      throws CarbonDataWriterException, KeyGenException, MemoryException, IOException {
     if (dataRows.size() == 0) {
       return new NodeHolder();
     }

@@ -269,6 +269,11 @@ public final class DataTypeUtil {
             return null;
           }
           return Short.parseShort(data);
+        case FLOAT:
+          if (data.isEmpty()) {
+            return null;
+          }
+          return Float.parseFloat(data);
         case DOUBLE:
           if (data.isEmpty()) {
             return null;

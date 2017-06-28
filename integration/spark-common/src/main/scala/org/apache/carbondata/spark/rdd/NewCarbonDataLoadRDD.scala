@@ -172,7 +172,7 @@ class NewCarbonDataLoadRDD[K, V](
     loadCount: Integer,
     blocksGroupBy: Array[(String, Array[BlockDetails])],
     isTableSplitPartition: Boolean)
-  extends RDD[(K, V)](sc, Nil) {
+  extends CarbonRDD[(K, V)](sc, Nil) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
@@ -215,7 +215,7 @@ class NewCarbonDataLoadRDD[K, V](
     // Do nothing. Hadoop RDD should not be checkpointed.
   }
 
-  override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
+  override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       var partitionID = "0"
@@ -384,16 +384,16 @@ class NewCarbonDataLoadRDD[K, V](
  *  @see org.apache.carbondata.processing.newflow.DataLoadExecutor
  */
 class NewDataFrameLoaderRDD[K, V](
-                                   sc: SparkContext,
-                                   result: DataLoadResult[K, V],
-                                   carbonLoadModel: CarbonLoadModel,
-                                   loadCount: Integer,
-                                   tableCreationTime: Long,
-                                   schemaLastUpdatedTime: Long,
-                                   prev: DataLoadCoalescedRDD[Row]) extends RDD[(K, V)](prev) {
+    sc: SparkContext,
+    result: DataLoadResult[K, V],
+    carbonLoadModel: CarbonLoadModel,
+    loadCount: Integer,
+    tableCreationTime: Long,
+    schemaLastUpdatedTime: Long,
+    prev: DataLoadCoalescedRDD[Row]) extends CarbonRDD[(K, V)](prev) {
 
+  override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
 
-  override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       val partitionID = "0"
@@ -585,10 +585,9 @@ class PartitionTableDataLoaderRDD[K, V](
     loadCount: Integer,
     tableCreationTime: Long,
     schemaLastUpdatedTime: Long,
-    prev: RDD[Row]) extends RDD[(K, V)](prev) {
+    prev: RDD[Row]) extends CarbonRDD[(K, V)](prev) {
 
-
-  override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
+  override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       val partitionID = "0"

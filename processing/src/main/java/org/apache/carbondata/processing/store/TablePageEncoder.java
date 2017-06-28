@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.processing.store;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.carbondata.core.datastore.TableSpec;
@@ -37,8 +38,9 @@ import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
-public class TablePageEncoder {
+class TablePageEncoder {
 
   private ColumnarFormatVersion version;
 
@@ -48,14 +50,15 @@ public class TablePageEncoder {
 
   private static final EncodingStrategy encodingStrategy = new DefaultEncodingStrategy();
 
-  public TablePageEncoder(CarbonFactDataHandlerModel model) {
+  TablePageEncoder(CarbonFactDataHandlerModel model) {
     this.version = CarbonProperties.getInstance().getFormatVersion();
     this.model = model;
     this.isUseInvertedIndex = model.getIsUseInvertedIndex();
   }
 
   // function to apply all columns in one table page
-  public EncodedData encode(TablePage tablePage) throws KeyGenException, MemoryException {
+  EncodedData encode(TablePage tablePage)
+      throws KeyGenException, MemoryException, IOException {
     EncodedData encodedData = new EncodedData();
     encodeAndCompressDimensions(tablePage, encodedData);
     encodeAndCompressMeasures(tablePage, encodedData);
@@ -64,7 +67,7 @@ public class TablePageEncoder {
 
   // apply measure and set encodedData in `encodedData`
   private void encodeAndCompressMeasures(TablePage tablePage, EncodedData encodedData)
-      throws MemoryException {
+      throws MemoryException, IOException {
     ColumnPage[] measurePage = tablePage.getMeasurePage();
     byte[][] encodedMeasures = new byte[measurePage.length][];
     for (int i = 0; i < measurePage.length; i++) {
@@ -75,12 +78,12 @@ public class TablePageEncoder {
   }
 
   private IndexStorage encodeAndCompressDictDimension(byte[][] data, boolean isSort,
-      boolean isUseInvertedIndex) throws KeyGenException {
+      boolean isUseInvertedIndex, boolean isRleApplicable) throws KeyGenException {
     if (isUseInvertedIndex) {
       if (version == ColumnarFormatVersion.V3) {
-        return new BlockIndexerStorageForShort(data, true, false, isSort);
+        return new BlockIndexerStorageForShort(data, isRleApplicable, false, isSort);
       } else {
-        return new BlockIndexerStorageForInt(data, true, false, isSort);
+        return new BlockIndexerStorageForInt(data, isRleApplicable, false, isSort);
       }
     } else {
       if (version == ColumnarFormatVersion.V3) {
@@ -92,12 +95,12 @@ public class TablePageEncoder {
   }
 
   private IndexStorage encodeAndCompressDirectDictDimension(byte[][] data, boolean isSort,
-      boolean isUseInvertedIndex) throws KeyGenException {
+      boolean isUseInvertedIndex, boolean isRleApplicable) throws KeyGenException {
     if (isUseInvertedIndex) {
       if (version == ColumnarFormatVersion.V3) {
-        return new BlockIndexerStorageForShort(data, false, false, isSort);
+        return new BlockIndexerStorageForShort(data, isRleApplicable, false, isSort);
       } else {
-        return new BlockIndexerStorageForInt(data, false, false, isSort);
+        return new BlockIndexerStorageForInt(data, isRleApplicable, false, isSort);
       }
     } else {
       if (version == ColumnarFormatVersion.V3) {
@@ -117,12 +120,12 @@ public class TablePageEncoder {
   }
 
   private IndexStorage encodeAndCompressNoDictDimension(byte[][] data, boolean isSort,
-      boolean isUseInvertedIndex) {
+      boolean isUseInvertedIndex, boolean isRleApplicable) {
     if (isUseInvertedIndex) {
       if (version == ColumnarFormatVersion.V3) {
-        return new BlockIndexerStorageForShort(data, false, true, isSort);
+        return new BlockIndexerStorageForShort(data, isRleApplicable, true, isSort);
       } else {
-        return new BlockIndexerStorageForInt(data, false, true, isSort);
+        return new BlockIndexerStorageForInt(data, isRleApplicable, true, isSort);
       }
     } else {
       if (version == ColumnarFormatVersion.V3) {
@@ -149,29 +152,26 @@ public class TablePageEncoder {
       switch (dimensionSpec.getType(i)) {
         case GLOBAL_DICTIONARY:
           // dictionary dimension
-          indexStorages[indexStorageOffset] =
-              encodeAndCompressDictDimension(
-                  tablePage.getDictDimensionPage()[++dictionaryColumnCount].getByteArrayPage(),
-                  isSortColumn,
-                  isUseInvertedIndex[i] & isSortColumn);
+          indexStorages[indexStorageOffset] = encodeAndCompressDictDimension(
+              tablePage.getDictDimensionPage()[++dictionaryColumnCount].getByteArrayPage(),
+              isSortColumn, isUseInvertedIndex[i] & isSortColumn,
+              CarbonDataProcessorUtil.isRleApplicableForColumn(dimensionSpec.getType(i)));
           flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getDataPage());
           break;
         case DIRECT_DICTIONARY:
           // timestamp and date column
-          indexStorages[indexStorageOffset] =
-              encodeAndCompressDirectDictDimension(
-                  tablePage.getDictDimensionPage()[++dictionaryColumnCount].getByteArrayPage(),
-                  isSortColumn,
-                  isUseInvertedIndex[i] & isSortColumn);
+          indexStorages[indexStorageOffset] = encodeAndCompressDirectDictDimension(
+              tablePage.getDictDimensionPage()[++dictionaryColumnCount].getByteArrayPage(),
+              isSortColumn, isUseInvertedIndex[i] & isSortColumn,
+              CarbonDataProcessorUtil.isRleApplicableForColumn(dimensionSpec.getType(i)));
           flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getDataPage());
           break;
         case PLAIN_VALUE:
           // high cardinality dimension, encoded as plain string
-          indexStorages[indexStorageOffset] =
-              encodeAndCompressNoDictDimension(
-                  tablePage.getNoDictDimensionPage()[++noDictionaryColumnCount].getByteArrayPage(),
-                  isSortColumn,
-                  isUseInvertedIndex[i] & isSortColumn);
+          indexStorages[indexStorageOffset] = encodeAndCompressNoDictDimension(
+              tablePage.getNoDictDimensionPage()[++noDictionaryColumnCount].getByteArrayPage(),
+              isSortColumn, isUseInvertedIndex[i] & isSortColumn,
+              CarbonDataProcessorUtil.isRleApplicableForColumn(dimensionSpec.getType(i)));
           flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getDataPage());
           break;
         case COMPLEX:

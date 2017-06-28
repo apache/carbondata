@@ -279,11 +279,8 @@ object GlobalDictionaryUtil {
   }
 
   def isHighCardinalityColumn(columnCardinality: Int,
-      rowCount: Long,
       model: DictionaryLoadModel): Boolean = {
-    (columnCardinality > model.highCardThreshold) &&
-    (rowCount > 0) &&
-    (columnCardinality.toDouble / rowCount * 100 > model.rowCountPercentage)
+    columnCardinality > model.highCardThreshold
   }
 
   /**
@@ -329,9 +326,6 @@ object GlobalDictionaryUtil {
     val highCardThreshold = CarbonProperties.getInstance().getProperty(
       CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD,
       CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT).toInt
-    val rowCountPercentage = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE,
-      CarbonCommonConstants.HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT).toDouble
 
     val serializationNullFormat =
       carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
@@ -350,7 +344,6 @@ object GlobalDictionaryUtil {
       carbonLoadModel.getDelimiters,
       highCardIdentifyEnable,
       highCardThreshold,
-      rowCountPercentage,
       columnIdentifier,
       carbonLoadModel.getLoadMetadataDetails.size() == 0,
       hdfsTempLocation,
@@ -448,7 +441,9 @@ object GlobalDictionaryUtil {
                                        " should be columnName:columnPath, please check")
       }
       setPredefineDict(carbonLoadModel, dimensions, table, colNameWithPath(0),
-        FileUtils.getPaths(colPathMapTrim.substring(colNameWithPath(0).length + 1)))
+        FileUtils
+          .getPaths(CarbonUtil
+            .checkAndAppendHDFSUrl(colPathMapTrim.substring(colNameWithPath(0).length + 1))))
     }
   }
 
@@ -780,7 +775,8 @@ object GlobalDictionaryUtil {
       dimensions: Array[CarbonDimension],
       allDictionaryPath: String): Unit = {
     LOGGER.info("Generate global dictionary from dictionary files!")
-    val isNonempty = validateAllDictionaryPath(allDictionaryPath)
+    val allDictionaryPathAppended = CarbonUtil.checkAndAppendHDFSUrl(allDictionaryPath)
+    val isNonempty = validateAllDictionaryPath(allDictionaryPathAppended)
     if (isNonempty) {
       var headers = carbonLoadModel.getCsvHeaderColumns
       headers = headers.map(headerName => headerName.trim)
@@ -793,7 +789,7 @@ object GlobalDictionaryUtil {
         val accumulator = sqlContext.sparkContext.accumulator(0)
         // read local dictionary file, and group by key
         val allDictionaryRdd = readAllDictionaryFiles(sqlContext, headers,
-          requireColumnNames, allDictionaryPath, accumulator)
+          requireColumnNames, allDictionaryPathAppended, accumulator)
         // read exist dictionary and combine
         val inputRDD = new CarbonAllDictionaryCombineRDD(allDictionaryRdd, model)
           .partitionBy(new ColumnPartitioner(model.primDimensions.length))

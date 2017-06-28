@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
+import java.io.IOException;
+
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
@@ -64,7 +66,7 @@ public class DeltaIntegerCodec extends AdaptiveCompressionCodec {
   }
 
   @Override
-  public byte[] encode(ColumnPage input) throws MemoryException {
+  public byte[] encode(ColumnPage input) throws MemoryException, IOException {
     encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
     input.encode(codec);
     byte[] result = encodedPage.compress(compressor);
@@ -74,8 +76,12 @@ public class DeltaIntegerCodec extends AdaptiveCompressionCodec {
 
   @Override
   public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
-    ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
-    return LazyColumnPage.newPage(page, codec);
+    if (srcDataType.equals(targetDataType)) {
+      return ColumnPage.decompress(compressor, targetDataType, input, offset, length);
+    } else {
+      ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
+      return LazyColumnPage.newPage(page, codec);
+    }
   }
 
   // encoded value = (max value of page) - (page value)

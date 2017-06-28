@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.datastore.compression;
 
+import java.io.IOException;
+
 public interface Compressor {
 
   byte[] compressByte(byte[] unCompInput);
@@ -55,4 +57,7 @@ public interface Compressor {
 
   double[] unCompressDouble(byte[] compInput, int offset, int length);
 
+  long rawCompress(long inputAddress, int inputSize, long outputAddress) throws IOException;
+
+  int maxCompressedLength(int inputSize);
 }

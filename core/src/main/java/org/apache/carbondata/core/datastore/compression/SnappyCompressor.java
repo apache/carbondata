@@ -217,4 +217,14 @@ public class SnappyCompressor implements Compressor {
     }
     return null;
   }
+
+  @Override
+  public long rawCompress(long inputAddress, int inputSize, long outputAddress) throws IOException {
+    return snappyNative.rawCompress(inputAddress, inputSize, outputAddress);
+  }
+
+  @Override
+  public int maxCompressedLength(int inputSize) {
+    return snappyNative.maxCompressedLength(inputSize);
+  }
 }

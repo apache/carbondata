@@ -18,6 +18,7 @@
 package org.apache.carbondata.processing.newflow.sort;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * Sort scope options
@@ -43,21 +44,7 @@ public class SortScopeOptions {
   }
 
   public static boolean isValidSortOption(String sortScope) {
-    if (sortScope == null) {
-      return false;
-    }
-    switch (sortScope.toUpperCase()) {
-      case "BATCH_SORT":
-        return true;
-      case "LOCAL_SORT":
-        return true;
-      case "GLOBAL_SORT":
-        return true;
-      case "NO_SORT":
-        return true;
-      default:
-        return false;
-    }
+    return CarbonUtil.isValidSortOption(sortScope);
   }
 
   public enum SortScope {
