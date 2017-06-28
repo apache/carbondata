@@ -22,7 +22,6 @@ package org.apache.carbondata.core.metadata.schema.partition;
  */
 public enum RangeIntervalType {
   YEAR,
-  SEASON,
   MONTH,
   WEEK,
   DAY,

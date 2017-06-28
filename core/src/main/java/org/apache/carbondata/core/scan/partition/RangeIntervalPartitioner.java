@@ -18,10 +18,9 @@
 package org.apache.carbondata.core.scan.partition;
 
 import java.io.Serializable;
-import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -37,7 +36,7 @@ public class RangeIntervalPartitioner implements Partitioner {
 
   private int numPartitions;
   private RangeIntervalComparator comparator;
-  private List<Object> boundsList;
+  private List<Object> boundsList = new ArrayList<>();
   private String intervalType;
   private DataType partitionColumnDataType;
 
@@ -53,9 +52,10 @@ public class RangeIntervalPartitioner implements Partitioner {
     List<String> values = partitionInfo.getRangeIntervalInfo();
     partitionColumnDataType = partitionInfo.getColumnSchemaList().get(0).getDataType();
     numPartitions = values.size() - 1;
-    boundsList.add(0, null);
-    for (int i = 1; i <= numPartitions; i++) {
-      boundsList.add(i, PartitionUtil.getDataBasedOnDataType(values.get(i), partitionColumnDataType,
+    // -1 is just for instead of null
+    boundsList.add(-1L);
+    for (int i = 0; i < numPartitions; i++) {
+      boundsList.add(PartitionUtil.getDataBasedOnDataType(values.get(i), partitionColumnDataType,
           timestampFormatter, dateFormatter));
     }
     comparator = new RangeIntervalComparator();
@@ -63,12 +63,12 @@ public class RangeIntervalPartitioner implements Partitioner {
   }
 
   @Override public int numPartitions() {
-    return numPartitions + 1;
+    return numPartitions + 10; // add partition for temporary solution
   }
 
   @Override public int getPartition(Object key) {
     int partitionIndex = -1;
-    Object lastBound = boundsList.get(numPartitions);
+    Object lastBound = boundsList.get(boundsList.size() - 1);
     if (key == null) {
       return 0;
     } else {
@@ -106,12 +106,12 @@ public class RangeIntervalPartitioner implements Partitioner {
     Calendar keyCal = Calendar.getInstance();
     keyCal.setTimeInMillis((long)key);
     lastCalendar.setTimeInMillis((long)lastBound);
-    for (int addYear = 1;;addYear++) {
+    while (true) {
       lastCalendar.add(Calendar.YEAR, 1);
-      boundsList.add(numPartitions + addYear, lastCalendar.getTimeInMillis());
+      boundsList.add(boundsList.size(), lastCalendar.getTimeInMillis());
       ++numPartitions;
       if (keyCal.compareTo(lastCalendar) == -1) {
-        partitionId = numPartitions + addYear;
+        partitionId = numPartitions;
         break;
       }
     }
@@ -124,12 +124,12 @@ public class RangeIntervalPartitioner implements Partitioner {
     Calendar keyCal = Calendar.getInstance();
     keyCal.setTimeInMillis((long)key);
     lastCalendar.setTimeInMillis((long)lastBound);
-    for (int addMonth = 1;;addMonth++) {
+    while (true) {
       lastCalendar.add(Calendar.MONTH, 1);
-      boundsList.add(numPartitions + addMonth, lastCalendar.getTimeInMillis());
+      boundsList.add(boundsList.size(), lastCalendar.getTimeInMillis());
       ++numPartitions;
       if (keyCal.compareTo(lastCalendar) == -1) {
-        partitionId = numPartitions + addMonth;
+        partitionId = numPartitions;
         break;
       }
     }
@@ -142,12 +142,12 @@ public class RangeIntervalPartitioner implements Partitioner {
     Calendar keyCal = Calendar.getInstance();
     keyCal.setTimeInMillis((long)key);
     lastCalendar.setTimeInMillis((long)lastBound);
-    for (int addWeek = 1;;addWeek++) {
+    while (true) {
       lastCalendar.add(Calendar.WEEK_OF_MONTH, 1);
-      boundsList.add(numPartitions + addWeek, lastCalendar.getTimeInMillis());
+      boundsList.add(boundsList.size(), lastCalendar.getTimeInMillis());
       ++numPartitions;
       if (keyCal.compareTo(lastCalendar) == -1) {
-        partitionId = numPartitions + addWeek;
+        partitionId = numPartitions;
         break;
       }
     }
@@ -160,12 +160,12 @@ public class RangeIntervalPartitioner implements Partitioner {
     Calendar keyCal = Calendar.getInstance();
     keyCal.setTimeInMillis((long)key);
     lastCalendar.setTimeInMillis((long)lastBound);
-    for (int addDay = 1;;addDay++) {
+    while (true) {
       lastCalendar.add(Calendar.DAY_OF_WEEK, 1);
-      boundsList.add(numPartitions + addDay, lastCalendar.getTimeInMillis());
+      boundsList.add(boundsList.size(), lastCalendar.getTimeInMillis());
       ++numPartitions;
       if (keyCal.compareTo(lastCalendar) == -1) {
-        partitionId = numPartitions + addDay;
+        partitionId = numPartitions;
         break;
       }
     }
@@ -178,22 +178,16 @@ public class RangeIntervalPartitioner implements Partitioner {
     Calendar keyCal = Calendar.getInstance();
     keyCal.setTimeInMillis((long)key);
     lastCalendar.setTimeInMillis((long)lastBound);
-    for (int addHour = 1;;addHour++) {
+    while (true) {
       lastCalendar.add(Calendar.HOUR_OF_DAY, 1);
-      boundsList.add(numPartitions + addHour, lastCalendar.getTimeInMillis());
+      boundsList.add(boundsList.size(), lastCalendar.getTimeInMillis());
       ++numPartitions;
       if (keyCal.compareTo(lastCalendar) == -1) {
-        partitionId = numPartitions + addHour;
+        partitionId = numPartitions;
         break;
       }
     }
     return partitionId;
-  }
-
-  public Timestamp date2Timestamp(Date date, SimpleDateFormat dateFormatter) {
-    String time = dateFormatter.format(date);
-    Timestamp ts = Timestamp.valueOf(time);
-    return ts;
   }
 
 }

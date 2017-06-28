@@ -275,7 +275,8 @@ public class PartitionFilterUtil {
    * @return
    */
   public static BitSet getPartitionMapForRangeIntervalFilter(PartitionInfo partitionInfo,
-      RangeIntervalPartitioner partitioner, Object filterValue, boolean isGreaterThan, boolean isEqualTo,
+      RangeIntervalPartitioner partitioner, Object filterValue,
+      boolean isGreaterThan, boolean isEqualTo,
       DateFormat timestampFormatter, DateFormat dateFormatter) {
 
     List<String> values = partitionInfo.getRangeInfo();
@@ -284,7 +285,8 @@ public class PartitionFilterUtil {
     Comparator comparator =
         PartitionFilterUtil.getComparatorByDataType(partitionColumnDataType);
 
-    BitSet partitionMap = PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), false);
+    BitSet partitionMap = PartitionUtil
+        .generateBitSetBySize(partitioner.numPartitions(), false);
 
     int numPartitions = values.size() - 1;
     int result = 0;

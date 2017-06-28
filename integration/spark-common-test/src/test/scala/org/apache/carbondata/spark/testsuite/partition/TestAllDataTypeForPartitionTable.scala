@@ -81,6 +81,9 @@ class TestAllDataTypeForPartitionTable extends QueryTest with BeforeAndAfterAll 
     sql("drop table if exists allTypeTable_range_string")
     sql("drop table if exists allTypeTable_range_varchar")
     sql("drop table if exists allTypeTable_range_char")
+
+    sql("drop table if exists allTypeTable_range_interval_date")
+    sql("drop table if exists allTypeTable_range_interval_timestamp")
   }
 
 
@@ -1233,6 +1236,76 @@ class TestAllDataTypeForPartitionTable extends QueryTest with BeforeAndAfterAll 
       Seq(Row(128, 32768, 2147483648L, 2147483647.1, 9223372036854775807.1, BigDecimal("9223372036854775807.1234"), Timestamp.valueOf("2017-06-12 23:59:59"), Date.valueOf("2017-06-12"), "abc2", "abcd2", "abcde2", new mutable.WrappedArray.ofRef[String](Array("a", "b", "c", "2")), Row("a", "b", "2"))))
 
     checkAnswer(sql(s"select smallIntField,intField,bigIntField,floatField,doubleField,decimalField,timestampField,dateField,stringField,varcharField,charField,arrayField,structField from $tableName where varcharField = 'abcd3'"),
+      Seq(Row(32767, 2147483647, 9223372036854775807L, 2147483648.1, 9223372036854775808.1, BigDecimal("9223372036854775808.1234"), Timestamp.valueOf("2017-06-13 23:59:59"), Date.valueOf("2017-06-13"), "abc3", "abcd3", "abcde3", new mutable.WrappedArray.ofRef[String](Array("a", "b", "c", "3")), Row("a", "b", "3"))))
+  }
+
+  test("allTypeTable_range_interval_timestamp") {
+    val tableName = "allTypeTable_range_interval_timestamp"
+
+    sql(
+      s"""create table $tableName(
+         | smallIntField smallInt,
+         | intField int,
+         | bigIntField bigint,
+         | floatField float,
+         | doubleField double,
+         | decimalField decimal(25, 4),
+         | dateField date,
+         | stringField string,
+         | varcharField varchar(10),
+         | charField char(10),
+         | arrayField array<string>,
+         | structField struct<col1:string, col2:string, col3:string>)
+         | partitioned by(timestampField timestamp)
+         | stored by 'carbondata'
+         | tblproperties('partition_type'='range_interval','range_interval_info'='2017-06-11 00:00:02, 2017-06-13 23:59:59, month')
+      """.stripMargin)
+
+    sql(s"load data local inpath '$resourcesPath/alldatatypeforpartition.csv' into table $tableName " +
+        "options ('COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
+
+    checkAnswer(sql(s"select smallIntField,intField,bigIntField,floatField,doubleField,decimalField,timestampField,dateField,stringField,varcharField,charField,arrayField,structField from $tableName where timestampField = '2017-06-11 00:00:01'"),
+      Seq(Row(-32768, -2147483648, -9223372036854775808L, -2147483648.1, -9223372036854775808.1, BigDecimal("-9223372036854775808.1234"), Timestamp.valueOf("2017-06-11 00:00:01"), Date.valueOf("2017-06-11"), "abc1", "abcd1", "abcde1", new mutable.WrappedArray.ofRef[String](Array("a", "b", "c", "1")), Row("a", "b", "1"))))
+
+    checkAnswer(sql(s"select smallIntField,intField,bigIntField,floatField,doubleField,decimalField,timestampField,dateField,stringField,varcharField,charField,arrayField,structField from $tableName where timestampField = '2017-06-12 23:59:59'"),
+      Seq(Row(128, 32768, 2147483648L, 2147483647.1, 9223372036854775807.1, BigDecimal("9223372036854775807.1234"), Timestamp.valueOf("2017-06-12 23:59:59"), Date.valueOf("2017-06-12"), "abc2", "abcd2", "abcde2", new mutable.WrappedArray.ofRef[String](Array("a", "b", "c", "2")), Row("a", "b", "2"))))
+
+    checkAnswer(sql(s"select smallIntField,intField,bigIntField,floatField,doubleField,decimalField,timestampField,dateField,stringField,varcharField,charField,arrayField,structField from $tableName where timestampField = '2017-06-13 23:59:59'"),
+      Seq(Row(32767, 2147483647, 9223372036854775807L, 2147483648.1, 9223372036854775808.1, BigDecimal("9223372036854775808.1234"), Timestamp.valueOf("2017-06-13 23:59:59"), Date.valueOf("2017-06-13"), "abc3", "abcd3", "abcde3", new mutable.WrappedArray.ofRef[String](Array("a", "b", "c", "3")), Row("a", "b", "3"))))
+  }
+
+  test("allTypeTable_range_interval_date") {
+    val tableName = "allTypeTable_range_interval_date"
+
+    sql(
+      s"""create table $tableName(
+         | smallIntField smallInt,
+         | intField int,
+         | bigIntField bigint,
+         | floatField float,
+         | doubleField double,
+         | decimalField decimal(25, 4),
+         | timestampField timestamp,
+         | stringField string,
+         | varcharField varchar(10),
+         | charField char(10),
+         | arrayField array<string>,
+         | structField struct<col1:string, col2:string, col3:string>)
+         | partitioned by(dateField date)
+         | stored by 'carbondata'
+         | tblproperties('partition_type'='range_interval','range_interval_info'='2017-06-12,2017-06-13, month')
+      """.stripMargin)
+
+    sql(s"load data local inpath '$resourcesPath/alldatatypeforpartition.csv' into table $tableName " +
+        "options ('COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
+
+    checkAnswer(sql(s"select smallIntField,intField,bigIntField,floatField,doubleField,decimalField,timestampField,dateField,stringField,varcharField,charField,arrayField,structField from $tableName where dateField = '2017-06-11'"),
+      Seq(Row(-32768, -2147483648, -9223372036854775808L, -2147483648.1, -9223372036854775808.1, BigDecimal("-9223372036854775808.1234"), Timestamp.valueOf("2017-06-11 00:00:01"), Date.valueOf("2017-06-11"), "abc1", "abcd1", "abcde1", new mutable.WrappedArray.ofRef[String](Array("a", "b", "c", "1")), Row("a", "b", "1"))))
+
+    checkAnswer(sql(s"select smallIntField,intField,bigIntField,floatField,doubleField,decimalField,timestampField,dateField,stringField,varcharField,charField,arrayField,structField from $tableName where dateField = '2017-06-12'"),
+      Seq(Row(128, 32768, 2147483648L, 2147483647.1, 9223372036854775807.1, BigDecimal("9223372036854775807.1234"), Timestamp.valueOf("2017-06-12 23:59:59"), Date.valueOf("2017-06-12"), "abc2", "abcd2", "abcde2", new mutable.WrappedArray.ofRef[String](Array("a", "b", "c", "2")), Row("a", "b", "2"))))
+
+    checkAnswer(sql(s"select smallIntField,intField,bigIntField,floatField,doubleField,decimalField,timestampField,dateField,stringField,varcharField,charField,arrayField,structField from $tableName where dateField = '2017-06-13'"),
       Seq(Row(32767, 2147483647, 9223372036854775807L, 2147483648.1, 9223372036854775808.1, BigDecimal("9223372036854775808.1234"), Timestamp.valueOf("2017-06-13 23:59:59"), Date.valueOf("2017-06-13"), "abc3", "abcd3", "abcde3", new mutable.WrappedArray.ofRef[String](Array("a", "b", "c", "3")), Row("a", "b", "3"))))
   }
 }

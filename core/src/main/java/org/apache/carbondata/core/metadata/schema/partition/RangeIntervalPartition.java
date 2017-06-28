@@ -28,7 +28,8 @@ public class RangeIntervalPartition extends AbstractPartition {
 
   private String interval;
 
-  public RangeIntervalPartition(int id, String lowerBoundary, String upperBoundary, String interval) {
+  public RangeIntervalPartition(int id, String lowerBoundary,
+      String upperBoundary, String interval) {
     this.partitionId = id;
     this.lowerBoundary = lowerBoundary;
     this.upperBoundary = upperBoundary;

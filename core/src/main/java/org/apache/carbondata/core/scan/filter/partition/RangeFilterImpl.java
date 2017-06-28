@@ -85,8 +85,8 @@ public class RangeFilterImpl implements PartitionFilterIntf {
           filterValueOfRangeInterval = ByteUtil.toBytes((String)filterValueOfRangeInterval);
         }
         return PartitionFilterUtil.getPartitionMapForRangeIntervalFilter(partitionInfo,
-            (RangeIntervalPartitioner) partitioner, filterValueOfRangeInterval, isGreaterThan, isEqualTo,
-            timestampFormatter, dateFormatter);
+            (RangeIntervalPartitioner) partitioner, filterValueOfRangeInterval,
+            isGreaterThan, isEqualTo, timestampFormatter, dateFormatter);
       default:
         return PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), true);
     }
