@@ -103,7 +103,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
       }
       int rowCounter = scannedResult.getRowCounter();
       int availableRows = currentPageRowCount - rowCounter;
-      int requiredRows = columnarBatch.getBatchSize() - columnarBatch.getActualSize();
+      int requiredRows = columnarBatch.getBatchSize() - columnarBatch.getRowCounter();
       requiredRows = Math.min(requiredRows, availableRows);
       if (requiredRows < 1) {
         return;
