@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.util;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -155,23 +156,26 @@ public class SessionParams implements Serializable {
           isValid = true;
         } catch (IllegalArgumentException iae) {
           throw new InvalidConfigurationException(
-              "The key " + key + " can have only either FORCE or IGNORE or REDIRECT.");
+              "The key " + key + " can have only either FORCE or IGNORE or REDIRECT or FAIL.");
         }
         break;
       case CARBON_OPTIONS_SORT_SCOPE:
         isValid = CarbonUtil.isValidSortOption(value);
         if (!isValid) {
           throw new InvalidConfigurationException("The sort scope " + key
-              + " can have only either BATCH_SORT or LOCAL_SORT or NO_SORT.");
+              + " can have only either BATCH_SORT or LOCAL_SORT or NO_SORT or GLOBAL_SORT.");
         }
         break;
       case CARBON_OPTIONS_BATCH_SORT_SIZE_INMB:
-      case CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS:
         isValid = CarbonUtil.validateValidIntType(value);
         if (!isValid) {
           throw new InvalidConfigurationException(
               "The configured value for key " + key + " must be valid integer.");
         }
+        break;
+      case CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS:
+
+        isValid = CarbonUtil.validateRange(value, 1, Integer.MAX_VALUE);
         break;
       case CARBON_OPTIONS_BAD_RECORD_PATH:
         isValid = CarbonUtil.isValidBadStorePath(value);
@@ -179,13 +183,15 @@ public class SessionParams implements Serializable {
           throw new InvalidConfigurationException("Invalid bad records location.");
         }
         break;
-      // no validation needed while set for CARBON_OPTIONS_DATEFORMAT
       case CARBON_OPTIONS_DATEFORMAT:
-        isValid = true;
-        break;
-      // no validation needed while set for CARBON_OPTIONS_TIMESTAMPFORMAT
       case CARBON_OPTIONS_TIMESTAMPFORMAT:
-        isValid = true;
+        try {
+          new SimpleDateFormat(value);
+          isValid = true;
+        } catch (Exception e) {
+          throw new InvalidConfigurationException(
+              "The value \"" + value + "\" configured for key " + key + " is invalid.");
+        }
         break;
       // no validation needed while set for CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT
       case CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT:

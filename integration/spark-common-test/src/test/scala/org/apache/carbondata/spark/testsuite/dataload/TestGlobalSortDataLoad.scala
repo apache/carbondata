@@ -30,6 +30,7 @@ import org.apache.spark.sql.test.TestQueryExecutor.projectPath
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
+import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.path.CarbonStorePath
@@ -143,12 +144,12 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
   }
 
   test("Number of partitions should be greater than 0") {
-    intercept[MalformedCarbonCommandException] {
+    intercept[InvalidConfigurationException] {
       sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
         "OPTIONS('GLOBAL_SORT_PARTITIONS'='0')")
     }
 
-    intercept[MalformedCarbonCommandException] {
+    intercept[InvalidConfigurationException] {
       sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
         "OPTIONS('GLOBAL_SORT_PARTITIONS'='a')")
     }
