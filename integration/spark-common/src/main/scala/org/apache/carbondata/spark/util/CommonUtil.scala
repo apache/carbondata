@@ -572,20 +572,11 @@ object CommonUtil {
         result.+=(RowFactory.create(columnName + "="))
       case PartitionType.LIST =>
         result.+=(RowFactory.create(columnName + "=default"))
-        var id = 1
         var listInfo = partitionInfo.getListInfo
-        var size = listInfo.size() - 1
-        for (index <- 0 to size) {
-          var listStr = ""
-          listInfo.get(index).toArray().foreach { x =>
-            if (listStr.isEmpty()) {
-              listStr = x.toString()
-            } else {
-              listStr += ", " + x.toString()
-            }
-          }
-          result.+=(RowFactory.create(columnName + "=" + listStr))
-          id += 1
+        listInfo.asScala.foreach {
+          f =>
+            result.+=(RowFactory.create(columnName + "=" +
+              f.toArray().mkString(", ")))
         }
       case PartitionType.HASH =>
         var hashNumber = partitionInfo.getNumPartitions
