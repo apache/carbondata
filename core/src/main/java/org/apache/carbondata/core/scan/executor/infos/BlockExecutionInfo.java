@@ -224,7 +224,6 @@ public class BlockExecutionInfo {
   private String[] deleteDeltaFilePath;
 
   private Map<String, DeleteDeltaVo> deletedRecordsMap;
-
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
     return absoluteTableIdentifier;
   }

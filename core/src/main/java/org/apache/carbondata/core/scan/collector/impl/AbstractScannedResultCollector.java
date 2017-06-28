@@ -32,6 +32,7 @@ import org.apache.carbondata.core.scan.executor.infos.MeasureInfo;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * It is not a collector it is just a scanned result holder.
@@ -83,8 +84,8 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
         // if not then get the default value and use that value in aggregation
         Object defaultValue = measureInfo.getDefaultValues()[i];
         if (null != defaultValue && measureInfo.getMeasureDataTypes()[i] == DataType.DECIMAL) {
-          // convert java big decimal to spark decimal type
-          defaultValue = org.apache.spark.sql.types.Decimal.apply((BigDecimal) defaultValue);
+          // convert data type as per the computing engine
+          defaultValue = DataTypeUtil.getDataTypeConverter().convertToDecimal(defaultValue);
         }
         msrValues[i + offset] = defaultValue;
       }
@@ -108,7 +109,8 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
             bigDecimalMsrValue =
                 bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
           }
-          return org.apache.spark.sql.types.Decimal.apply(bigDecimalMsrValue);
+          // convert data type as per the computing engine
+          return DataTypeUtil.getDataTypeConverter().convertToDecimal(bigDecimalMsrValue);
         default:
           return dataChunk.getColumnPage().getDouble(index);
       }

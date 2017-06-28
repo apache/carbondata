@@ -56,6 +56,8 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeConverter;
+import org.apache.carbondata.core.util.DataTypeConverterImp;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
@@ -103,6 +105,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String COLUMN_PROJECTION = "mapreduce.input.carboninputformat.projection";
   private static final String CARBON_TABLE = "mapreduce.input.carboninputformat.table";
   private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
+  private static final String CARBON_CONVERTER = "mapreduce.input.carboninputformat.converter";
 
   /**
    * It is optional, if user does not set then it reads from store
@@ -130,6 +133,30 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   /**
+   * It is optional, if user does not set then it reads from store
+   *
+   * @param configuration
+   * @param converter is the Data type converter for different computing engine
+   * @throws IOException
+   */
+  public static void setDataTypeConverter(Configuration configuration, DataTypeConverter converter)
+      throws IOException {
+    if (null != converter) {
+      configuration.set(CARBON_CONVERTER,
+          ObjectSerializationUtil.convertObjectToString(converter));
+    }
+  }
+
+  public static DataTypeConverter getDataTypeConverter(Configuration configuration)
+      throws IOException {
+    String converter = configuration.get(CARBON_CONVERTER);
+    if (converter == null) {
+      return new DataTypeConverterImp();
+    }
+    return (DataTypeConverter) ObjectSerializationUtil.convertStringToObject(converter);
+  }
+
+  /**
    * this method will read the schema from the physical file and populate into CARBON_TABLE
    * @param configuration
    * @throws IOException
@@ -147,10 +174,13 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
     setCarbonTable(configuration, carbonTable);
   }
-
   public static void setTablePath(Configuration configuration, String tablePath)
       throws IOException {
     configuration.set(FileInputFormat.INPUT_DIR, tablePath);
+  }
+
+  private static CarbonTablePath getTablePath(AbsoluteTableIdentifier absIdentifier) {
+    return CarbonStorePath.getCarbonTablePath(absIdentifier);
   }
 
   /**
@@ -168,6 +198,19 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       configuration.set(FILTER_PREDICATE, filterString);
     } catch (Exception e) {
       throw new RuntimeException("Error while setting filter expression to Job", e);
+    }
+  }
+
+  protected Expression getFilterPredicates(Configuration configuration) {
+    try {
+      String filterExprString = configuration.get(FILTER_PREDICATE);
+      if (filterExprString == null) {
+        return null;
+      }
+      Object filter = ObjectSerializationUtil.convertStringToObject(filterExprString);
+      return (Expression) filter;
+    } catch (IOException e) {
+      throw new RuntimeException("Error while reading filter expression", e);
     }
   }
 
@@ -196,8 +239,27 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     }
   }
 
-  private static CarbonTablePath getTablePath(AbsoluteTableIdentifier absIdentifier) {
-    return CarbonStorePath.getCarbonTablePath(absIdentifier);
+  public CarbonReadSupport<T> getReadSupportClass(Configuration configuration) {
+    String readSupportClass = configuration.get(CARBON_READ_SUPPORT);
+    //By default it uses dictionary decoder read class
+    CarbonReadSupport<T> readSupport = null;
+    if (readSupportClass != null) {
+      try {
+        Class<?> myClass = Class.forName(readSupportClass);
+        Constructor<?> constructor = myClass.getConstructors()[0];
+        Object object = constructor.newInstance();
+        if (object instanceof CarbonReadSupport) {
+          readSupport = (CarbonReadSupport) object;
+        }
+      } catch (ClassNotFoundException ex) {
+        LOG.error("Class " + readSupportClass + "not found", ex);
+      } catch (Exception ex) {
+        LOG.error("Error while creating " + readSupportClass, ex);
+      }
+    } else {
+      readSupport = new DictionaryDecodeReadSupport<>();
+    }
+    return readSupport;
   }
 
   /**
@@ -386,19 +448,6 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       }
     }
     return result;
-  }
-
-  protected Expression getFilterPredicates(Configuration configuration) {
-    try {
-      String filterExprString = configuration.get(FILTER_PREDICATE);
-      if (filterExprString == null) {
-        return null;
-      }
-      Object filter = ObjectSerializationUtil.convertStringToObject(filterExprString);
-      return (Expression) filter;
-    } catch (IOException e) {
-      throw new RuntimeException("Error while reading filter expression", e);
-    }
   }
 
   /**
@@ -707,7 +756,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     // query plan includes projection column
     String projection = getColumnProjection(configuration);
     CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(carbonTable, projection);
-    QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable);
+    QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable,
+        getDataTypeConverter(configuration));
 
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
@@ -729,29 +779,6 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       }
     }
     return queryModel;
-  }
-
-  public CarbonReadSupport<T> getReadSupportClass(Configuration configuration) {
-    String readSupportClass = configuration.get(CARBON_READ_SUPPORT);
-    //By default it uses dictionary decoder read class
-    CarbonReadSupport<T> readSupport = null;
-    if (readSupportClass != null) {
-      try {
-        Class<?> myClass = Class.forName(readSupportClass);
-        Constructor<?> constructor = myClass.getConstructors()[0];
-        Object object = constructor.newInstance();
-        if (object instanceof CarbonReadSupport) {
-          readSupport = (CarbonReadSupport) object;
-        }
-      } catch (ClassNotFoundException ex) {
-        LOG.error("Class " + readSupportClass + "not found", ex);
-      } catch (Exception ex) {
-        LOG.error("Error while creating " + readSupportClass, ex);
-      }
-    } else {
-      readSupport = new DictionaryDecodeReadSupport<>();
-    }
-    return readSupport;
   }
 
   @Override protected List<FileStatus> listStatus(JobContext job) throws IOException {

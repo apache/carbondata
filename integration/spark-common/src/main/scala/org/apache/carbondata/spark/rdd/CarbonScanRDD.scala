@@ -26,7 +26,6 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark._
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.hive.DistributionUtil
 
@@ -41,7 +40,7 @@ import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstant
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
 import org.apache.carbondata.hadoop._
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
-
+import org.apache.carbondata.spark.util.SparkDataTypeConverterImp
 
 /**
  * This RDD is used to perform query on CarbonData file. Before sending tasks to scan
@@ -252,6 +251,7 @@ class CarbonScanRDD(
 
   private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormat[Object] = {
     CarbonInputFormat.setCarbonReadSupport(conf, readSupport)
+    CarbonInputFormat.setDataTypeConverter(conf, new SparkDataTypeConverterImp)
     createInputFormat(conf)
   }
 
