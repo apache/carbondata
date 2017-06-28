@@ -18,7 +18,6 @@ package org.apache.carbondata.processing.newflow.steps;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,7 +32,6 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
@@ -257,17 +255,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
     Object[] measures = new Object[outputLength];
     for (int i = 0; i < this.measureCount; i++) {
-      Object value = row.getObject(i + this.dimensionWithComplexCount);
-      if (null != value) {
-        if (measureDataType[i] == DataType.DECIMAL) {
-          BigDecimal val = (BigDecimal) value;
-          measures[i] = DataTypeUtil.bigDecimalToByte(val);
-        } else {
-          measures[i] = value;
-        }
-      } else {
-        measures[i] = null;
-      }
+      measures[i] = row.getObject(i + this.dimensionWithComplexCount);
     }
 
     return WriteStepRowUtil.fromColumnCategory(dim, nonDicArray, measures);

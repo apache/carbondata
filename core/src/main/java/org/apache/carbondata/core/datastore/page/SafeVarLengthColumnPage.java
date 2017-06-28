@@ -20,15 +20,14 @@ package org.apache.carbondata.core.datastore.page;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.DataTypeUtil;
 
 public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   // for string and decimal data
   private byte[][] byteArrayData;
 
-  SafeVarLengthColumnPage(DataType dataType, int pageSize) {
-    super(dataType, pageSize);
+  SafeVarLengthColumnPage(DataType dataType, int pageSize, int scale, int precision) {
+    super(dataType, pageSize, scale, precision);
     byteArrayData = new byte[pageSize][];
   }
 
@@ -47,10 +46,14 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
     System.arraycopy(bytes, offset, byteArrayData[rowId], 0, length);
   }
 
+  @Override public void putDecimal(int rowId, BigDecimal decimal) {
+    putBytes(rowId, decimalConverter.convert(decimal));
+  }
+
   @Override
   public BigDecimal getDecimal(int rowId) {
     byte[] bytes = byteArrayData[rowId];
-    return DataTypeUtil.byteToBigDecimal(bytes);
+    return decimalConverter.getDecimal(bytes);
   }
 
   @Override
