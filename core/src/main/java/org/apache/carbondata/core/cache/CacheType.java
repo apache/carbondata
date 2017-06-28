@@ -35,25 +35,25 @@ public class CacheType<K, V> {
    * Forward dictionary cache which maintains surrogate key to byte array mapping
    */
   public static final CacheType<DictionaryColumnUniqueIdentifier, Dictionary> FORWARD_DICTIONARY =
-      new CacheType<>("forward_dictionary");
+      new CacheType("forward_dictionary");
 
   /**
    * Reverse dictionary cache which maintains byte array to surrogate key mapping
    */
   public static final CacheType<DictionaryColumnUniqueIdentifier, Dictionary> REVERSE_DICTIONARY =
-      new CacheType<>("reverse_dictionary");
+      new CacheType("reverse_dictionary");
 
   /**
    * Executor BTree cache which maintains size of BTree metadata
    */
   public static final CacheType<TableBlockUniqueIdentifier, AbstractIndex> EXECUTOR_BTREE =
-      new CacheType<>("executor_btree");
+      new CacheType("executor_btree");
 
   /**
    * Executor BTree cache which maintains size of BTree metadata
    */
   public static final CacheType<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
-      DRIVER_BTREE = new CacheType<>("driver_btree");
+      DRIVER_BTREE = new CacheType("driver_btree");
 
   /**
    * cacheName which is unique name for a cache

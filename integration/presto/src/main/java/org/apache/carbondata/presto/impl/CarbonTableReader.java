@@ -145,7 +145,7 @@ public class CarbonTableReader {
   }
 
   /**
-   * return the schema names under a database path (carbonFileList).
+   * BHQ: return the schema names under a database path (carbonFileList).
    * The carbonFileList represents the root of CarbonData store path. Under the store path, there are
    * some directories named with the schema names.
    * @return
@@ -154,8 +154,13 @@ public class CarbonTableReader {
     updateCarbonFile();
 
     if (carbonFileList != null) {
-      List<String> schemaList =
-          Stream.of(carbonFileList.listFiles()).map(a -> a.getName()).collect(Collectors.toList());
+      /*List<String> schemaList =
+          Stream.of(carbonFileList.listFiles()).map(a -> a.getName()).collect(Collectors.toList());*/
+      List<String> schemaList = new ArrayList<>();
+      for (CarbonFile file : carbonFileList.listFiles())
+      {
+        schemaList.add(file.getName());
+      }
       return schemaList;
     } else return ImmutableList.of();
   }

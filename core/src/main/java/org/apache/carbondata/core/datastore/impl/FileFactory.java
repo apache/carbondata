@@ -17,9 +17,21 @@
 
 package org.apache.carbondata.core.datastore.impl;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.zip.GZIPInputStream;
+
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.filesystem.*;
 import org.apache.carbondata.core.util.CarbonUtil;
+
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -32,12 +44,6 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.io.compress.GzipCodec;
 
-import java.io.*;
-import java.util.zip.GZIPInputStream;
-
-/**
- * This is the function factory which provides a set of operations on a file.
- */
 public final class FileFactory {
   private static Configuration configuration = null;
 
@@ -173,7 +179,6 @@ public final class FileFactory {
         long actualSkipSize = 0;
         long skipSize = offset;
         while (actualSkipSize != offset) {
-          // skip method of FileInputStream is likely to perform seek, but it is not guaranteed.
           actualSkipSize += fis.skip(skipSize);
           skipSize = skipSize - actualSkipSize;
         }

@@ -28,7 +28,6 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
  */
 public class DictionaryColumnUniqueIdentifier implements Serializable {
 
-  private static final long serialVersionUID = 6457878691563138855L;
   /**
    * table fully qualified name
    */
