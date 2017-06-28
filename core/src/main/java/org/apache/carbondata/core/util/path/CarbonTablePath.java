@@ -55,7 +55,7 @@ public class CarbonTablePath extends Path {
    * Streaming ingest related paths
    */
   protected static final String STREAM_PREFIX = "Streaming";
-  public static final String STREAM_FILE_NAME_EXT = ".carbondata.stream";
+  protected static final String STREAM_FILE_NAME_EXT = ".carbondata.stream";
   protected static final String STREAM_FILE_BEING_WRITTEN = "in-progress.carbondata.stream";
   protected static final String STREAM_FILE_BEING_WRITTEN_META = "in-progress.meta";
   protected static final String STREAM_COMPACTION_STATUS = "streaming_compaction_status";

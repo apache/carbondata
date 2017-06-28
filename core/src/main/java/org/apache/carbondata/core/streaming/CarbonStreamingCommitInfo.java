@@ -17,12 +17,11 @@
 
 package org.apache.carbondata.core.streaming;
 
-/*
+/**
  * Commit info for streaming writes
  * The commit info can be used to recover valid offset in the file
  * in the case of write failure.
  */
-
 public class CarbonStreamingCommitInfo {
 
   private String dataBase;

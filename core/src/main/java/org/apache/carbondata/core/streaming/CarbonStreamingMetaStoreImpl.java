@@ -19,8 +19,9 @@ package org.apache.carbondata.core.streaming;
 
 import java.io.IOException;
 
-/* JSON format can be used to store the metadata */
-
+/**
+ *  JSON format can be used to store the metadata
+ */
 public class CarbonStreamingMetaStoreImpl implements CarbonStreamingMetaStore {
 
   /**

@@ -35,22 +35,18 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 public class CarbonStreamingOutputFormat<K, V> extends FileOutputFormat<K, V> {
 
   public static long getBlockSize(Configuration conf) {
-
     return conf.getLong("dfs.block.size",
             CarbonStreamingConstants.DEFAULT_CARBON_STREAM_FILE_BLOCK_SIZE);
   }
 
   public static void setBlockSize(Configuration conf, long blockSize) {
-
     conf.setLong("dfs.block.size", blockSize);
-
   }
 
   /**
    * When getRecordWriter may need to override
    * to provide correct path including streaming segment name
    */
-
   @Override
   public CarbonStreamingRecordWriter<K, V> getRecordWriter(TaskAttemptContext job)
           throws IOException, InterruptedException {
