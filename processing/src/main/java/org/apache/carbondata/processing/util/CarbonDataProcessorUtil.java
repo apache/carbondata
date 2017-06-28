@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -56,6 +57,7 @@ import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
 import org.apache.carbondata.processing.datatypes.StructDataType;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.model.CarbonDataLoadSchema;
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
 
@@ -622,4 +624,30 @@ public final class CarbonDataProcessorUtil {
     }
     return errorMessage;
   }
+  /**
+   * The method returns true is either logger is enabled or action is redirect
+   * @param configuration
+   * @return
+   */
+  public static boolean isRawDataRequired(CarbonDataLoadConfiguration configuration) {
+    boolean isRawDataRequired = Boolean.parseBoolean(
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ENABLE)
+            .toString());
+    // if logger is disabled then check if action is redirect then raw data will be required.
+    if (!isRawDataRequired) {
+      Object bad_records_action =
+          configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ACTION);
+      if (null != bad_records_action) {
+        LoggerAction loggerAction = null;
+        try {
+          loggerAction = LoggerAction.valueOf(bad_records_action.toString().toUpperCase());
+        } catch (IllegalArgumentException e) {
+          loggerAction = LoggerAction.FORCE;
+        }
+        isRawDataRequired = loggerAction == LoggerAction.REDIRECT;
+      }
+    }
+    return isRawDataRequired;
+  }
+
 }

@@ -27,10 +27,22 @@ public class CarbonRow implements Serializable {
 
   private Object[] data;
 
+  private Object[] rawData;
+
   public short bucketNumber;
 
   public CarbonRow(Object[] data) {
     this.data = data;
+  }
+
+  /**
+   *
+   * @param data contains column values for only schema columns
+   * @param rawData contains complete row of the rawData
+   */
+  public CarbonRow(Object[] data, Object[] rawData) {
+    this.data = data;
+    this.rawData = rawData;
   }
 
   public Object[] getData() {
@@ -61,14 +73,14 @@ public class CarbonRow implements Serializable {
     data[ordinal] = value;
   }
 
-  public CarbonRow getCopy() {
-    Object[] copy = new Object[data.length];
-    System.arraycopy(data, 0, copy, 0, copy.length);
-    return new CarbonRow(copy);
-  }
-
   @Override public String toString() {
     return Arrays.toString(data);
   }
 
+  public Object[] getRawData() {
+    return rawData;
+  }
+  public void setRawData(Object[] rawData) {
+    this.rawData = rawData;
+  }
 }

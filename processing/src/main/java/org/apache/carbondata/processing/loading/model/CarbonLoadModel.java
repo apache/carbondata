@@ -422,6 +422,7 @@ public class CarbonLoadModel implements Serializable {
     copy.sortScope = sortScope;
     copy.batchSortSizeInMb = batchSortSizeInMb;
     copy.isAggLoadRequest = isAggLoadRequest;
+    copy.badRecordsLocation = badRecordsLocation;
     return copy;
   }
 
