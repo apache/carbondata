@@ -17,10 +17,6 @@
 
 package org.apache.carbondata.processing.newflow.sort;
 
-import java.math.BigDecimal;
-
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
@@ -60,21 +56,10 @@ public class SortStepRowUtil {
 
       index = 0;
 
-      DataType[] measureDataType = parameters.getMeasureDataType();
       // read measure values
       for (int i = 0; i < measureCount; i++) {
         if (needConvertDecimalToByte) {
-          Object value = data[allCount];
-          if (null != value) {
-            if (measureDataType[i] == DataType.DECIMAL) {
-              BigDecimal decimal = (BigDecimal) value;
-              measures[index++] = DataTypeUtil.bigDecimalToByte(decimal);
-            } else {
-              measures[index++] = value;
-            }
-          } else {
-            measures[index++] = null;
-          }
+          measures[index++] = data[allCount];
         } else {
           measures[index++] = data[allCount];
         }

@@ -238,7 +238,7 @@ public class UnsafeCarbonRowPage {
             CarbonUnsafe.unsafe.copyMemory(baseObject, address + size, bigDecimalInBytes,
                 CarbonUnsafe.BYTE_ARRAY_OFFSET, bigDecimalInBytes.length);
             size += bigDecimalInBytes.length;
-            rowToFill[dimensionSize + mesCount] = bigDecimalInBytes;
+            rowToFill[dimensionSize + mesCount] = DataTypeUtil.byteToBigDecimal(bigDecimalInBytes);
             break;
         }
       } else {

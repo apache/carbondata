@@ -188,18 +188,27 @@ public class TableSpec {
     // data type of each measure, in schema order
     private DataType[] types;
 
+    private int[] scale;
+
+    private int[] precision;
+
     MeasureSpec(List<CarbonMeasure> measures) {
       fieldName = new String[measures.size()];
       types = new DataType[measures.size()];
+      scale = new int[measures.size()];
+      precision = new int[measures.size()];
       int i = 0;
       for (CarbonMeasure measure: measures) {
-        add(i++, measure.getColName(), measure.getDataType());
+        add(i++, measure.getColName(), measure.getDataType(), measure.getScale(),
+            measure.getPrecision());
       }
     }
 
-    private void add(int index, String name, DataType type) {
+    private void add(int index, String name, DataType type, int scale, int precision) {
       fieldName[index] = name;
       types[index] = type;
+      this.scale[index] = scale;
+      this.precision[index] = precision;
     }
 
     /**
@@ -208,6 +217,16 @@ public class TableSpec {
     public DataType getType(int index) {
       assert (index >= 0 && index < types.length);
       return types[index];
+    }
+
+    public int getScale(int index) {
+      assert (index >= 0 && index < precision.length);
+      return scale[index];
+    }
+
+    public int getPrecision(int index) {
+      assert (index >= 0 && index < precision.length);
+      return precision[index];
     }
 
     /**

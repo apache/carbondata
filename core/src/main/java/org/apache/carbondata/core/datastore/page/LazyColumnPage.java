@@ -32,7 +32,8 @@ public class LazyColumnPage extends ColumnPage {
   private PrimitiveCodec codec;
 
   private LazyColumnPage(ColumnPage columnPage, PrimitiveCodec codec) {
-    super(columnPage.getDataType(), columnPage.getPageSize());
+    super(columnPage.getDataType(), columnPage.getPageSize(), columnPage.scale,
+        columnPage.precision);
     this.columnPage = columnPage;
     this.codec = codec;
   }
@@ -133,6 +134,16 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public byte[][] getByteArrayPage() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void putDecimal(int rowId, BigDecimal decimal) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public byte[] getDecimalPage() {
     throw new UnsupportedOperationException("internal error");
   }
 

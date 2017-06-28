@@ -51,8 +51,8 @@ public abstract class EncodingStrategy {
   /**
    * create codec based on the page data type and statistics contained by ValueEncoderMeta
    */
-  public ColumnPageCodec createCodec(ValueEncoderMeta meta) {
-    ColumnPageStatsVO stats = ColumnPageStatsVO.copyFrom(meta);
+  public ColumnPageCodec createCodec(ValueEncoderMeta meta, int scale, int precision) {
+    ColumnPageStatsVO stats = ColumnPageStatsVO.copyFrom(meta, scale, precision);
     return createCodec(stats);
   }
 

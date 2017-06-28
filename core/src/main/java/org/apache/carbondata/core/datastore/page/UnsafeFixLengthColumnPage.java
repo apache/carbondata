@@ -52,8 +52,9 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   private static final int floatBits = DataType.FLOAT.getSizeBits();
   private static final int doubleBits = DataType.DOUBLE.getSizeBits();
 
-  UnsafeFixLengthColumnPage(DataType dataType, int pageSize) throws MemoryException {
-    super(dataType, pageSize);
+  UnsafeFixLengthColumnPage(DataType dataType, int pageSize, int scale, int precision)
+      throws MemoryException {
+    super(dataType, pageSize, scale, precision);
     switch (dataType) {
       case BYTE:
       case SHORT:
@@ -127,6 +128,10 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
+  @Override public void putDecimal(int rowId, BigDecimal decimal) {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
   @Override
   public byte getByte(int rowId) {
     long offset = rowId << byteBits;
@@ -175,6 +180,10 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public BigDecimal getDecimal(int rowId) {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override public byte[] getDecimalPage() {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 

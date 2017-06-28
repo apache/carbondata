@@ -35,6 +35,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
@@ -356,7 +357,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
               int len = stream.readInt();
               byte[] buff = new byte[len];
               stream.readFully(buff);
-              measures[index++] = buff;
+              measures[index++] = DataTypeUtil.byteToBigDecimal(buff);
               break;
           }
         } else {

@@ -24,6 +24,7 @@ import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -431,6 +432,29 @@ public class CarbonMetadataUtil {
     return false;
   }
 
+  private static ByteBuffer writeInfoIfDecimal(int blockIndex,
+      SegmentProperties segmentProperties) {
+    Map<Integer, Integer> blockMapping = segmentProperties.getMeasuresOrdinalToBlockMapping();
+    List<CarbonMeasure> measures = segmentProperties.getMeasures();
+    CarbonMeasure selectedMeasure = null;
+    for (CarbonMeasure measure : measures) {
+      Integer blockId = blockMapping.get(measure.getOrdinal());
+      selectedMeasure = measure;
+      if (blockId == blockIndex) {
+        break;
+      }
+    }
+    assert (selectedMeasure != null);
+    if (selectedMeasure.getDataType() == DataType.DECIMAL) {
+      ByteBuffer buffer = ByteBuffer.allocate(8);
+      buffer.putInt(selectedMeasure.getScale());
+      buffer.putInt(selectedMeasure.getPrecision());
+      buffer.flip();
+      return buffer;
+    }
+    return null;
+  }
+
   private static byte[] serializeEncoderMeta(ValueEncoderMeta encoderMeta) throws IOException {
     // TODO : should remove the unnecessary fields.
     ByteArrayOutputStream aos = new ByteArrayOutputStream();
@@ -788,6 +812,10 @@ public class CarbonMetadataUtil {
         List<ByteBuffer> encoderMetaList = new ArrayList<ByteBuffer>();
         encoderMetaList.add(ByteBuffer.wrap(serializeEncodeMetaUsingByteBuffer(
             createValueEncoderMeta(nodeHolder.getStats(), index))));
+        ByteBuffer decimalMeta = writeInfoIfDecimal(index, segmentProperties);
+        if (decimalMeta != null) {
+          encoderMetaList.add(decimalMeta);
+        }
         dataChunk.setEncoder_meta(encoderMetaList);
         dataChunk.min_max
             .addToMax_values(ByteBuffer.wrap(nodeHolder.getMeasureColumnMaxData()[index]));

@@ -35,6 +35,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.NewRowComparator;
@@ -341,7 +342,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
               short aShort = stream.readShort();
               byte[] bigDecimalInBytes = new byte[aShort];
               stream.readFully(bigDecimalInBytes);
-              row[dimensionCount + mesCount] = bigDecimalInBytes;
+              row[dimensionCount + mesCount] = DataTypeUtil.byteToBigDecimal(bigDecimalInBytes);
               break;
           }
         }
