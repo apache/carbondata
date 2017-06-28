@@ -40,6 +40,10 @@ public class ColumnPageStatsVO {
   /** decimal count of the measures */
   private int decimal;
 
+  private int scale;
+
+  private int precision;
+
   public ColumnPageStatsVO(DataType dataType) {
     this.dataType = dataType;
     switch (dataType) {
@@ -64,12 +68,14 @@ public class ColumnPageStatsVO {
     decimal = 0;
   }
 
-  public static ColumnPageStatsVO copyFrom(ValueEncoderMeta meta) {
+  public static ColumnPageStatsVO copyFrom(ValueEncoderMeta meta, int scale, int precision) {
     ColumnPageStatsVO instance = new ColumnPageStatsVO(meta.getType());
     instance.min = meta.getMinValue();
     instance.max = meta.getMaxValue();
     instance.decimal = meta.getDecimal();
     instance.nonExistValue = meta.getUniqueValue();
+    instance.scale = scale;
+    instance.precision = precision;
     return instance;
   }
 
@@ -213,6 +219,14 @@ public class ColumnPageStatsVO {
 
   public DataType getDataType() {
     return dataType;
+  }
+
+  public int getScale() {
+    return scale;
+  }
+
+  public int getPrecision() {
+    return precision;
   }
 
   @Override

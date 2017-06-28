@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.util.ByteUtil;
 
 import static org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL;
@@ -33,6 +34,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   // the length of bytes added in the page
   int totalLength;
+
+  protected DecimalConverterFactory.DecimalConverter decimalConverter;
 
   VarLengthColumnPageBase(DataType dataType, int pageSize) {
     super(dataType, pageSize);
@@ -240,6 +243,10 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   @Override
   public double[] getDoublePage() {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  public void setDecimalConverter(DecimalConverterFactory.DecimalConverter decimalConverter) {
+    this.decimalConverter = decimalConverter;
   }
 
   /**
