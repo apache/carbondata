@@ -227,7 +227,7 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
         return new Text(obj.toString());
       case DECIMAL:
         return new HiveDecimalWritable(
-            HiveDecimal.create(((org.apache.spark.sql.types.Decimal) obj).toJavaBigDecimal()));
+            HiveDecimal.create((java.math.BigDecimal) obj));
     }
     throw new SerDeException("Unknown primitive : " + inspector.getPrimitiveCategory());
   }

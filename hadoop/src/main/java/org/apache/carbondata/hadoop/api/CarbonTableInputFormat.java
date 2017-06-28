@@ -57,6 +57,8 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeConverter;
+import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
@@ -102,6 +104,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String COLUMN_PROJECTION = "mapreduce.input.carboninputformat.projection";
   private static final String TABLE_INFO = "mapreduce.input.carboninputformat.tableinfo";
   private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
+  private static final String CARBON_CONVERTER = "mapreduce.input.carboninputformat.converter";
 
   // a cache for carbon table, it will be used in task side
   private CarbonTable carbonTable;
@@ -443,7 +446,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     // query plan includes projection column
     String projection = getColumnProjection(configuration);
     CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(carbonTable, projection);
-    QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable);
+    QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable,
+        getDataTypeConverter(configuration));
 
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
@@ -572,5 +576,29 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       }
     }
     return new BlockMappingVO(blockRowCountMapping, segmentAndBlockCountMapping);
+  }
+
+  /**
+   * It is optional, if user does not set then it reads from store
+   *
+   * @param configuration
+   * @param converter is the Data type converter for different computing engine
+   * @throws IOException
+   */
+  public static void setDataTypeConverter(Configuration configuration, DataTypeConverter converter)
+      throws IOException {
+    if (null != converter) {
+      configuration.set(CARBON_CONVERTER,
+          ObjectSerializationUtil.convertObjectToString(converter));
+    }
+  }
+
+  public static DataTypeConverter getDataTypeConverter(Configuration configuration)
+      throws IOException {
+    String converter = configuration.get(CARBON_CONVERTER);
+    if (converter == null) {
+      return new DataTypeConverterImpl();
+    }
+    return (DataTypeConverter) ObjectSerializationUtil.convertStringToObject(converter);
   }
 }
