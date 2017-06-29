@@ -691,6 +691,25 @@ public class CarbonTable implements Serializable {
     tableMeasuresMap.put(tableName, visibleMeasures);
   }
 
+  /**
+   * Method to get the list of sort columns
+   *
+   * @param tableName
+   * @return List of Sort column
+   */
+  public List<String> getSortColumns(String tableName) {
+    List<String> sort_columsList = new ArrayList<String>(allDimensions.size());
+    List<CarbonDimension> carbonDimensions = tableDimensionsMap.get(tableName);
+    for (CarbonDimension dim : carbonDimensions) {
+      if (dim.isSortColumn()) {
+        sort_columsList.add(dim.getColName());
+      }
+    }
+    return sort_columsList;
+  }
+
+
+
   public int getNumberOfSortColumns() {
     return numberOfSortColumns;
   }
