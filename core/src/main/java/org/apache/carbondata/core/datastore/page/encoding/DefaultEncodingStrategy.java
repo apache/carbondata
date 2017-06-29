@@ -79,7 +79,7 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
     if (Math.min(adaptiveDataType.getSizeInBytes(), deltaDataType.getSizeInBytes()) ==
         srcDataType.getSizeInBytes()) {
       // no effect to use adaptive or delta, use compression only
-      return DirectCompressCodec.newInstance(srcDataType, compressor);
+      return DirectCompressCodec.newInstance(stats, compressor);
     }
     if (adaptiveDataType.getSizeInBytes() <= deltaDataType.getSizeInBytes()) {
       // choose adaptive encoding
@@ -93,17 +93,17 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
 
   @Override
   ColumnPageCodec newCodecForFloatingType(ColumnPageStatsVO stats) {
-    return DirectCompressCodec.newInstance(stats.getDataType(), compressor);
+    return DirectCompressCodec.newInstance(stats, compressor);
   }
 
   // for decimal, currently it is a very basic implementation
   @Override
   ColumnPageCodec newCodecForDecimalType(ColumnPageStatsVO stats) {
-    return DirectCompressCodec.newInstance(stats.getDataType(), compressor);
+    return DirectCompressCodec.newInstance(stats, compressor);
   }
 
   @Override
   ColumnPageCodec newCodecForByteArrayType(ColumnPageStatsVO stats) {
-    return DirectCompressCodec.newInstance(stats.getDataType(), compressor);
+    return DirectCompressCodec.newInstance(stats, compressor);
   }
 }

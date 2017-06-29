@@ -33,8 +33,6 @@ public final class DecimalConverterFactory {
 
   private int[] minBytesForPrecision = minBytesForPrecision();
 
-  private byte[] decimalBuffer = new byte[minBytesForPrecision[38]];
-
   private DecimalConverterFactory() {
 
   }
@@ -150,9 +148,12 @@ public final class DecimalConverterFactory {
   public class DecimalUnscaledConverter implements DecimalConverter {
 
     private int precision;
+
     private int scale;
 
     private int numBytes;
+
+    private byte[] decimalBuffer = new byte[minBytesForPrecision[38]];
 
     public DecimalUnscaledConverter(int precision, int scale) {
       this.precision = precision;
@@ -222,7 +223,9 @@ public final class DecimalConverterFactory {
   }
 
   public DecimalConverter getDecimalConverter(int precision, int scale) {
-    if (precision <= 9) {
+    if (precision < 0) {
+      return new LegacyDecimalConverter();
+    } else if (precision <= 9) {
       return new DecimalIntConverter(precision, scale);
     } else if (precision <= 18) {
       return new DecimalLongConverter(precision, scale);

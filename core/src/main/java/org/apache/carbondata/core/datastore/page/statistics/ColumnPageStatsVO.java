@@ -107,7 +107,7 @@ public class ColumnPageStatsVO {
         nonExistValue = (double) min - 1;
         break;
       case DECIMAL:
-        BigDecimal decimalValue = DataTypeUtil.byteToBigDecimal((byte[]) value);
+        BigDecimal decimalValue = (BigDecimal) value;
         decimal = decimalValue.scale();
         BigDecimal val = (BigDecimal) min;
         nonExistValue = (val.subtract(new BigDecimal(1.0)));

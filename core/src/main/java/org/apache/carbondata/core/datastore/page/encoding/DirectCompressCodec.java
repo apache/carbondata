@@ -21,8 +21,8 @@ import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsVO;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
  * This codec directly apply compression on the input data
@@ -30,15 +30,15 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 public class DirectCompressCodec implements ColumnPageCodec {
 
   private Compressor compressor;
-  private DataType dataType;
+  private ColumnPageStatsVO stats;
 
-  private DirectCompressCodec(DataType dataType, Compressor compressor) {
+  private DirectCompressCodec(ColumnPageStatsVO stats, Compressor compressor) {
     this.compressor = compressor;
-    this.dataType = dataType;
+    this.stats = stats;
   }
 
-  public static DirectCompressCodec newInstance(DataType dataType, Compressor compressor) {
-    return new DirectCompressCodec(dataType, compressor);
+  public static DirectCompressCodec newInstance(ColumnPageStatsVO stats, Compressor compressor) {
+    return new DirectCompressCodec(stats, compressor);
   }
 
   @Override
@@ -53,6 +53,8 @@ public class DirectCompressCodec implements ColumnPageCodec {
 
   @Override
   public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
-    return ColumnPage.decompress(compressor, dataType, input, offset, length);
+    return ColumnPage
+        .decompress(compressor, stats.getDataType(), input, offset, length, stats.getScale(),
+            stats.getPrecision());
   }
 }

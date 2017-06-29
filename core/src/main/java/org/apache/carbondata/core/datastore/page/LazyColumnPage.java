@@ -32,7 +32,8 @@ public class LazyColumnPage extends ColumnPage {
   private PrimitiveCodec codec;
 
   private LazyColumnPage(ColumnPage columnPage, PrimitiveCodec codec) {
-    super(columnPage.getDataType(), columnPage.getPageSize());
+    super(columnPage.getDataType(), columnPage.getPageSize(), columnPage.scale,
+        columnPage.precision);
     this.columnPage = columnPage;
     this.codec = codec;
   }

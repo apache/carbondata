@@ -36,8 +36,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   private double[] doubleData;
   private byte[] shortIntData;
 
-  SafeFixLengthColumnPage(DataType dataType, int pageSize) {
-    super(dataType, pageSize);
+  SafeFixLengthColumnPage(DataType dataType, int pageSize, int scale, int precision) {
+    super(dataType, pageSize, scale, precision);
   }
 
   /**
@@ -96,6 +96,14 @@ public class SafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public void putBytes(int rowId, byte[] bytes, int offset, int length) {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override public void putDecimal(int rowId, BigDecimal decimal) {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override public byte[] getDecimalPage() {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 

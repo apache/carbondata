@@ -449,6 +449,7 @@ public class CarbonMetadataUtil {
       ByteBuffer buffer = ByteBuffer.allocate(8);
       buffer.putInt(selectedMeasure.getScale());
       buffer.putInt(selectedMeasure.getPrecision());
+      buffer.flip();
       return buffer;
     }
     return null;
