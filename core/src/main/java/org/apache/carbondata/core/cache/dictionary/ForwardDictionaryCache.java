@@ -32,6 +32,9 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
+import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
+import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.ObjectSizeCalculator;
 
 /**
  * This class implements methods to create dictionary cache which will hold
@@ -48,6 +51,11 @@ public class ForwardDictionaryCache<K extends
 
   private static final Map<DictionaryColumnUniqueIdentifier, Object> DICTIONARY_LOCK_OBJECT =
       new HashMap<>();
+
+  private static final long sizeOfEmptyDictChunks =
+      ObjectSizeCalculator.estimate(new ArrayList<byte[]>(CarbonUtil.getDictionaryChunkSize()), 16);
+
+  private static final long byteArraySize = ObjectSizeCalculator.estimate(new byte[0], 16);
 
   /**
    * @param carbonStorePath
@@ -230,5 +238,39 @@ public class ForwardDictionaryCache<K extends
               CacheType.FORWARD_DICTIONARY));
       cacheable.clear();
     }
+  }
+
+  @Override protected long getEstimatedDictionarySize(DictionaryInfo dictionaryInfo,
+      CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk,
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier, boolean
+      readSortIndexSize) throws IOException {
+    // required size will be size total size of file - offset till file is
+    // already read
+    long requiredSize =
+        carbonDictionaryColumnMetaChunk.getEnd_offset() -
+            dictionaryInfo.getOffsetTillFileIsRead();
+
+    long numOfRecords = dictionaryInfo.getOffsetTillFileIsRead() == 0 ?
+        carbonDictionaryColumnMetaChunk.getMax_surrogate_key() :
+        carbonDictionaryColumnMetaChunk.getMax_surrogate_key()
+            - getNumRecordsInCarbonDictionaryColumnMetaChunk(
+            dictionaryColumnUniqueIdentifier,
+            dictionaryInfo.getOffsetTillFileIsRead());
+
+    if (numOfRecords > 0) {
+      long avgRecordsSize = requiredSize / numOfRecords;
+      long bytesPerRecord = (long)Math.ceil(avgRecordsSize / 8.0) * 8;
+
+      requiredSize = (bytesPerRecord + byteArraySize) * numOfRecords;
+    }
+
+    if (readSortIndexSize) {
+      // every time we are loading all the sort index files.Hence memory calculation for all
+      // the records
+      requiredSize = requiredSize + getSortIndexSize(
+          carbonDictionaryColumnMetaChunk.getMax_surrogate_key());
+    }
+
+    return requiredSize + sizeOfEmptyDictChunks;
   }
 }

@@ -199,6 +199,35 @@ public final class CarbonLRUCache {
   }
 
   /**
+   * This method will check if required size is available in the memory
+   * @param columnIdentifier
+   * @param requiredSize
+   * @return
+   */
+  public boolean tryPut(String columnIdentifier, long requiredSize) {
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("checking Required size for entry " + columnIdentifier + " :: " + requiredSize
+          + " Current cache size :: " + currentSize);
+    }
+    boolean columnKeyCanBeAdded = false;
+    if (isLRUCacheSizeConfigured()) {
+      synchronized (lruCacheMap) {
+        if (freeMemorySizeForAddingCache(requiredSize)) {
+          columnKeyCanBeAdded = true;
+        } else {
+          LOGGER.error(
+              "Size check failed.Size not available. Entry cannot be added to lru cache :: "
+                  + columnIdentifier + " .Required Size = " + requiredSize + " Size available " + (
+                  lruCacheMemorySize - currentSize));
+        }
+      }
+    } else {
+      columnKeyCanBeAdded = true;
+    }
+    return columnKeyCanBeAdded;
+  }
+
+  /**
    * The method will add the cache entry to LRU cache map
    *
    * @param columnIdentifier

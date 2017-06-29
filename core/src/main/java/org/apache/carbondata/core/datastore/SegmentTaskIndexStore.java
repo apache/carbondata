@@ -43,6 +43,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.ObjectSizeCalculator;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath.DataFileUtil;
 
@@ -233,11 +234,10 @@ public class SegmentTaskIndexStore
                   taskIdToTableBlockInfoMap.entrySet().iterator();
               long requiredSize =
                   calculateRequiredSize(taskIdToTableBlockInfoMap, absoluteTableIdentifier);
-              segmentTaskIndexWrapper
-                  .setMemorySize(requiredSize + segmentTaskIndexWrapper.getMemorySize());
-              boolean isAddedToLruCache =
-                  lruCache.put(lruCacheKey, segmentTaskIndexWrapper, requiredSize);
-              if (isAddedToLruCache) {
+              segmentTaskIndexWrapper.setMemorySize(requiredSize);
+              boolean canAddToLruCache =
+                  lruCache.tryPut(lruCacheKey, requiredSize);
+              if (canAddToLruCache) {
                 while (iterator.hasNext()) {
                   Map.Entry<TaskBucketHolder, List<TableBlockInfo>> taskToBlockInfoList =
                       iterator.next();
@@ -246,6 +246,15 @@ public class SegmentTaskIndexStore
                       loadBlocks(taskBucketHolder, taskToBlockInfoList.getValue(),
                           absoluteTableIdentifier));
                 }
+                long updatedRequiredSize =
+                    ObjectSizeCalculator.estimate(segmentTaskIndexWrapper, requiredSize);
+                // update the actual size of object
+                segmentTaskIndexWrapper.setMemorySize(updatedRequiredSize);
+                if (!lruCache.put(lruCacheKey, segmentTaskIndexWrapper, updatedRequiredSize)) {
+                  throw new IndexBuilderException(
+                          "Can not load the segment. No Enough space available.");
+                }
+
               } else {
                 throw new IndexBuilderException(
                     "Can not load the segment. No Enough space available.");
