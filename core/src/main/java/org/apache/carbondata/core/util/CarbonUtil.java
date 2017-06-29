@@ -697,32 +697,32 @@ public final class CarbonUtil {
    */
   public static String checkAndAppendHDFSUrl(String filePath) {
     String currentPath = filePath;
-    if (null != filePath && filePath.length() != 0
-        && FileFactory.getFileType(filePath) != FileFactory.FileType.HDFS
-        && FileFactory.getFileType(filePath) != FileFactory.FileType.VIEWFS) {
-      if (!filePath.startsWith("/")) {
-        filePath = "/" + filePath;
-      }
-      String baseDFSUrl = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL);
-      String dfsUrl = conf.get(FS_DEFAULT_FS);
-      if (null != baseDFSUrl) {
-        if (!baseDFSUrl.startsWith("/")) {
-          baseDFSUrl = "/" + baseDFSUrl;
-        }
-        if (null != dfsUrl && (dfsUrl.startsWith(HDFS_PREFIX) || dfsUrl
-            .startsWith(VIEWFS_PREFIX))) {
-          baseDFSUrl = dfsUrl + baseDFSUrl;
-        }
-        if (baseDFSUrl.endsWith("/")) {
-          baseDFSUrl = baseDFSUrl.substring(0, baseDFSUrl.length() - 1);
-        }
-        currentPath = baseDFSUrl + filePath;
-      } else {
-        currentPath = dfsUrl + filePath;
-      }
+    String defaultFsUrl = conf.get(FS_DEFAULT_FS);
+    String baseDFSUrl = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL, "");
+    if (checkIfPrefixExists(filePath)) {
+      return currentPath;
     }
-    return currentPath;
+    if (baseDFSUrl.endsWith("/")) {
+      baseDFSUrl = baseDFSUrl.substring(0, baseDFSUrl.length() - 1);
+    }
+    if (!filePath.startsWith("/")) {
+      filePath = "/" + filePath;
+    }
+    currentPath = baseDFSUrl + filePath;
+    if (checkIfPrefixExists(currentPath)) {
+      return currentPath;
+    }
+    if (defaultFsUrl == null) {
+      return currentPath;
+    }
+    return defaultFsUrl + currentPath;
+  }
+
+  private static boolean checkIfPrefixExists(String path) {
+    final String lowerPath = path.toLowerCase();
+    return lowerPath.startsWith(HDFS_PREFIX) || lowerPath.startsWith(VIEWFS_PREFIX) || lowerPath
+        .startsWith("file://") || lowerPath.startsWith(ALLUXIO_PREFIX);
   }
 
   public static String getCarbonStorePath() {
