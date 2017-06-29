@@ -36,6 +36,8 @@ public class PartitionUtil {
         return new ListPartitioner(partitionInfo);
       case RANGE:
         return new RangePartitioner(partitionInfo);
+      case RANGE_INTERVAL:
+        return new RangeIntervalPartitioner(partitionInfo);
       default:
         throw new UnsupportedOperationException(
             "unsupport partition type: " + partitionInfo.getPartitionType().name());

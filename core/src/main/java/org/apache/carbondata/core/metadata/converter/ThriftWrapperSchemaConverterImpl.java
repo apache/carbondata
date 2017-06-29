@@ -218,6 +218,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
             fromWrapperToExternalPartitionType(wrapperPartitionInfo.getPartitionType()));
     externalPartitionInfo.setList_info(wrapperPartitionInfo.getListInfo());
     externalPartitionInfo.setRange_info(wrapperPartitionInfo.getRangeInfo());
+    externalPartitionInfo.setRange_interval_info(wrapperPartitionInfo.getRangeIntervalInfo());
     externalPartitionInfo.setNum_partitions(wrapperPartitionInfo.getNumPartitions());
     return externalPartitionInfo;
   }
@@ -452,6 +453,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         fromExternalToWrapperPartitionType(externalPartitionInfo.getPartition_type()));
     wrapperPartitionInfo.setListInfo(externalPartitionInfo.getList_info());
     wrapperPartitionInfo.setRangeInfo(externalPartitionInfo.getRange_info());
+    wrapperPartitionInfo.setRangeIntervalInfo(externalPartitionInfo.getRange_interval_info());
     wrapperPartitionInfo.setNumPartitions(externalPartitionInfo.getNum_partitions());
     return wrapperPartitionInfo;
   }

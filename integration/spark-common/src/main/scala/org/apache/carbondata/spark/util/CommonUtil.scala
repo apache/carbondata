@@ -166,6 +166,7 @@ object CommonUtil {
     val numPartitions = tableProperties.get(CarbonCommonConstants.NUM_PARTITIONS)
     val rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO)
     val listInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO)
+    val rangeIntervalInfo = tableProperties.get(CarbonCommonConstants.RANGE_INTERVAL_INFO)
 
     if (partitionType.isEmpty) {
       isValid = false
@@ -188,7 +189,7 @@ object CommonUtil {
           rangeInfo.get.split(",").map(_.trim).foreach(
             isValid &= validateTypeConvert(partitionerFields(0), _))
         }
-        case "RANGE_INTERVAL" => isValid = false
+        case "RANGE_INTERVAL" => isValid = rangeIntervalInfo.isDefined
         case _ => isValid = false
       }
       // only support one partition column for now
