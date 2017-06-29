@@ -27,6 +27,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.scan.partition.ListPartitioner;
 import org.apache.carbondata.core.scan.partition.PartitionUtil;
+import org.apache.carbondata.core.scan.partition.RangeIntervalPartitioner;
 import org.apache.carbondata.core.scan.partition.RangePartitioner;
 import org.apache.carbondata.core.util.ByteUtil;
 
@@ -264,4 +265,81 @@ public class PartitionFilterUtil {
     return partitionMap;
   }
 
+  /**
+   * get partition map of range interval filter on range interval partition table
+   * @param partitionInfo
+   * @param partitioner
+   * @param filterValue
+   * @param isGreaterThan
+   * @param isEqualTo
+   * @return
+   */
+  public static BitSet getPartitionMapForRangeIntervalFilter(PartitionInfo partitionInfo,
+      RangeIntervalPartitioner partitioner, Object filterValue,
+      boolean isGreaterThan, boolean isEqualTo,
+      DateFormat timestampFormatter, DateFormat dateFormatter) {
+
+    List<String> values = partitionInfo.getRangeInfo();
+    DataType partitionColumnDataType = partitionInfo.getColumnSchemaList().get(0).getDataType();
+
+    Comparator comparator =
+        PartitionFilterUtil.getComparatorByDataType(partitionColumnDataType);
+
+    BitSet partitionMap = PartitionUtil
+        .generateBitSetBySize(partitioner.numPartitions(), false);
+
+    int numPartitions = values.size() - 1;
+    int result = 0;
+    // the partition index of filter value
+    int partitionIndex = 0;
+    // find the partition of filter value
+    for (; partitionIndex < numPartitions; partitionIndex++) {
+      result = comparator.compare(filterValue, PartitionUtil.getDataBasedOnDataType(
+          values.get(partitionIndex), partitionColumnDataType, timestampFormatter, dateFormatter));
+      if (result <= 0) {
+        break;
+      }
+    }
+    if (partitionIndex == numPartitions) {
+      // filter value is not in given partition, should get partitionId dynamically
+      int partitionId = partitioner.getPartition(filterValue);
+      partitionMap.set(0);
+      if (isGreaterThan) {
+        // GreaterThan(>), GreaterThanEqualTo(>=)
+        partitionMap.set(partitionId, partitioner.numPartitions());
+      } else {
+        // LessThan(<), LessThanEqualTo(<=)
+        partitionMap.set(1, partitionId + 1);
+      }
+    } else {
+      // filter value is in given partition and is a bound of range interval partition
+      if (result == 0) {
+        // if result is 0, the filter value is a bound value of range partition.
+        if (isGreaterThan) {
+          // GreaterThan(>), GreaterThanEqualTo(>=)
+          partitionMap.set(partitionIndex, partitioner.numPartitions());
+          partitionMap.set(0);
+        } else {
+          if (isEqualTo) {
+            // LessThanEqualTo(<=)
+            partitionMap.set(1, partitionIndex + 1);
+          } else {
+            // LessThan(<)
+            partitionMap.set(1, partitionIndex);
+          }
+        }
+      } else {
+        // the filter value is in given parition and is not a bound value of range partition
+        if (isGreaterThan) {
+          // GreaterThan(>), GreaterThanEqualTo(>=)
+          partitionMap.set(partitionIndex, partitioner.numPartitions());
+          partitionMap.set(0);
+        } else {
+          // LessThan(<), LessThanEqualTo(<=)
+          partitionMap.set(1, partitionIndex + 1);
+        }
+      }
+    }
+    return partitionMap;
+  }
 }

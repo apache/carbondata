@@ -26,6 +26,7 @@ import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.partition.ListPartitioner;
 import org.apache.carbondata.core.scan.partition.PartitionUtil;
 import org.apache.carbondata.core.scan.partition.Partitioner;
+import org.apache.carbondata.core.scan.partition.RangeIntervalPartitioner;
 import org.apache.carbondata.core.scan.partition.RangePartitioner;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -76,6 +77,16 @@ public class RangeFilterImpl implements PartitionFilterIntf {
         return PartitionFilterUtil.getPartitionMapForRangeFilter(partitionInfo,
             (RangePartitioner) partitioner, filterValueOfRange, isGreaterThan, isEqualTo,
             timestampFormatter, dateFormatter);
+      case RANGE_INTERVAL:
+        Object filterValueOfRangeInterval = PartitionUtil.getDataBasedOnDataTypeForFilter(
+            literal.getLiteralExpValue().toString(),
+            partitionInfo.getColumnSchemaList().get(0).getDataType());
+        if (filterValueOfRangeInterval instanceof String) {
+          filterValueOfRangeInterval = ByteUtil.toBytes((String)filterValueOfRangeInterval);
+        }
+        return PartitionFilterUtil.getPartitionMapForRangeIntervalFilter(partitionInfo,
+            (RangeIntervalPartitioner) partitioner, filterValueOfRangeInterval,
+            isGreaterThan, isEqualTo, timestampFormatter, dateFormatter);
       default:
         return PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), true);
     }

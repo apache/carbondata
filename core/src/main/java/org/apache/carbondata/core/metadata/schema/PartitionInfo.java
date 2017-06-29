@@ -47,6 +47,12 @@ public class PartitionInfo implements Serializable {
    */
   private int numPartitions;
 
+  /**
+   * range interval information defined for range interval partition table
+   */
+  private List<String> rangeIntervalInfo;
+
+
   public PartitionInfo(List<ColumnSchema> columnSchemaList, PartitionType partitionType) {
     this.columnSchemaList = columnSchemaList;
     this.partitionType = partitionType;
@@ -76,8 +82,16 @@ public class PartitionInfo implements Serializable {
     this.rangeInfo = rangeInfo;
   }
 
+  public void setRangeIntervalInfo(List<String> rangeIntervalInfo) {
+    this.rangeIntervalInfo = rangeIntervalInfo;
+  }
+
   public List<String> getRangeInfo() {
     return rangeInfo;
+  }
+
+  public List<String> getRangeIntervalInfo() {
+    return rangeIntervalInfo;
   }
 
   public void setListInfo(List<List<String>> listInfo) {
