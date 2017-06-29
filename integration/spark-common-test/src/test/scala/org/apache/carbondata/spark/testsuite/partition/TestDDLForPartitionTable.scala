@@ -532,6 +532,11 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test_range_date")
     sql("DROP TABLE IF EXISTS test_range_timestamp")
     sql("DROP TABLE IF EXISTS test_range_decimal")
+    sql("DROP TABLE IF EXISTS default.rangeIntervalYearTable")
+    sql("DROP TABLE IF EXISTS default.rangeIntervalMonthTable")
+    sql("DROP TABLE IF EXISTS default.rangeIntervalWeekTable")
+    sql("DROP TABLE IF EXISTS default.rangeIntervalDayTable")
+    sql("DROP TABLE IF EXISTS default.rangeIntervalHourTable")
   }
 
 }
