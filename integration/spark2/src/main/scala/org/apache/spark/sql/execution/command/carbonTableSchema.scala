@@ -73,6 +73,34 @@ object Checker {
 }
 
 /**
+ * Command for show table partitions Command
+ *
+ * @param tableIdentifier
+ */
+private[sql] case class ShowCarbonPartitionsCommand(
+    tableIdentifier: TableIdentifier) extends RunnableCommand {
+  val LOGGER = LogServiceFactory.getLogService(ShowCarbonPartitionsCommand.getClass.getName)
+  override val output = CommonUtil.partitionInfoOutput
+  override def run(sparkSession: SparkSession): Seq[Row] = {
+    val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      .lookupRelation(tableIdentifier)(sparkSession).
+      asInstanceOf[CarbonRelation]
+    val carbonTable = relation.tableMeta.carbonTable
+    var tableName = carbonTable.getFactTableName
+    var partitionInfo = carbonTable.getPartitionInfo(
+      carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
+    if (partitionInfo == null) {
+      throw new AnalysisException(
+        s"SHOW PARTITIONS is not allowed on a table that is not partitioned: $tableName")
+    }
+    var partitionType = partitionInfo.getPartitionType
+    var columnName = partitionInfo.getColumnSchemaList.get(0).getColumnName
+    LOGGER.info("partition column name:" + columnName)
+    CommonUtil.getPartitionInfo(columnName, partitionType, partitionInfo)
+  }
+}
+
+/**
  * Command for the compaction in alter table command
  *
  * @param alterTableModel
