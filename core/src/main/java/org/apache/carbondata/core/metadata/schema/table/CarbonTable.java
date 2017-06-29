@@ -593,6 +593,10 @@ public class CarbonTable implements Serializable {
     return tablePartitionMap.get(tableName);
   }
 
+  public boolean isPartitionTable() {
+    return null != tablePartitionMap.get(getFactTableName());
+  }
+
   public PartitionStatistic getPartitionStatistic() {
     return partitionStatistic;
   }
