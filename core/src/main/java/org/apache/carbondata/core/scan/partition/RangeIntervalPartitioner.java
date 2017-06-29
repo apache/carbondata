@@ -63,7 +63,10 @@ public class RangeIntervalPartitioner implements Partitioner {
   }
 
   @Override public int numPartitions() {
-    return numPartitions + 10; // add partition for temporary solution
+    String numParStr = CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.MAX_PARTITION_FOR_RANGE_INTERVAL,
+        CarbonCommonConstants.DEFAULT_MAX_PARTITION_FOR_RANGE_INTERVAL);
+    return Integer.parseInt(numParStr);
   }
 
   @Override public int getPartition(Object key) {
@@ -95,6 +98,10 @@ public class RangeIntervalPartitioner implements Partitioner {
           break;
         default:
           partitionIndex = -1;
+      }
+      // if value's partitionId is great than max partition, return 0 for it.
+      if (partitionIndex >= numPartitions()) {
+        return 0;
       }
       return partitionIndex;
     }

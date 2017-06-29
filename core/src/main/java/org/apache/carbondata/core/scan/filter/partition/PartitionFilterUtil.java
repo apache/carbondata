@@ -303,6 +303,7 @@ public class PartitionFilterUtil {
     if (partitionIndex == numPartitions) {
       // filter value is not in given partition, should get partitionId dynamically
       int partitionId = partitioner.getPartition(filterValue);
+      partitionMap.set(0);
       if (isGreaterThan) {
         // GreaterThan(>), GreaterThanEqualTo(>=)
         partitionMap.set(partitionId, partitioner.numPartitions());
@@ -317,6 +318,7 @@ public class PartitionFilterUtil {
         if (isGreaterThan) {
           // GreaterThan(>), GreaterThanEqualTo(>=)
           partitionMap.set(partitionIndex, partitioner.numPartitions());
+          partitionMap.set(0);
         } else {
           if (isEqualTo) {
             // LessThanEqualTo(<=)
@@ -331,6 +333,7 @@ public class PartitionFilterUtil {
         if (isGreaterThan) {
           // GreaterThan(>), GreaterThanEqualTo(>=)
           partitionMap.set(partitionIndex, partitioner.numPartitions());
+          partitionMap.set(0);
         } else {
           // LessThan(<), LessThanEqualTo(<=)
           partitionMap.set(1, partitionIndex + 1);

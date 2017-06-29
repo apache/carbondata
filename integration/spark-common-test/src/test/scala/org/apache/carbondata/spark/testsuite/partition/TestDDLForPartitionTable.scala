@@ -355,6 +355,153 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     assert(exception_test_range_decimal.getMessage.contains("Invalid partition definition"))
   }
 
+  test("create partition table: range interval partition in year") {
+    sql(
+      """
+        | CREATE TABLE IF NOT EXISTS default.rangeIntervalYearTable (empno int, empname String, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (doj Timestamp)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('PARTITION_TYPE'='RANGE_INTERVAL',
+        | 'RANGE_INTERVAL_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59, year')
+      """.stripMargin)
+
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_rangeIntervalYearTable")
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    assert(partitionInfo != null)
+    assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("doj"))
+    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataType.TIMESTAMP)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 3)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(0) == Encoding.DICTIONARY)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(1) == Encoding.DIRECT_DICTIONARY)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(2) == Encoding.INVERTED_INDEX)
+    assert(partitionInfo.getPartitionType == PartitionType.RANGE_INTERVAL)
+    assert(partitionInfo.getRangeIntervalInfo.size == 3)
+    assert(partitionInfo.getRangeIntervalInfo.get(0).equals("2017-06-11 00:00:02"))
+    assert(partitionInfo.getRangeIntervalInfo.get(1).equals("2017-06-13 23:59:59"))
+    assert(partitionInfo.getRangeIntervalInfo.get(2).equals("year"))
+  }
+
+  test("create partition table: range interval partition in month") {
+    sql(
+      """
+        | CREATE TABLE IF NOT EXISTS default.rangeIntervalMonthTable (empno int, empname String, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (doj Timestamp)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('PARTITION_TYPE'='RANGE_INTERVAL',
+        | 'RANGE_INTERVAL_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59, month')
+      """.stripMargin)
+
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_rangeIntervalMonthTable")
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    assert(partitionInfo != null)
+    assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("doj"))
+    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataType.TIMESTAMP)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 3)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(0) == Encoding.DICTIONARY)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(1) == Encoding.DIRECT_DICTIONARY)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(2) == Encoding.INVERTED_INDEX)
+    assert(partitionInfo.getPartitionType == PartitionType.RANGE_INTERVAL)
+    assert(partitionInfo.getRangeIntervalInfo.size == 3)
+    assert(partitionInfo.getRangeIntervalInfo.get(0).equals("2017-06-11 00:00:02"))
+    assert(partitionInfo.getRangeIntervalInfo.get(1).equals("2017-06-13 23:59:59"))
+    assert(partitionInfo.getRangeIntervalInfo.get(2).equals("month"))
+  }
+
+  test("create partition table: range interval partition in week") {
+    sql(
+      """
+        | CREATE TABLE IF NOT EXISTS default.rangeIntervalWeekTable (empno int, empname String, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (doj Timestamp)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('PARTITION_TYPE'='RANGE_INTERVAL',
+        | 'RANGE_INTERVAL_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59, week')
+      """.stripMargin)
+
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_rangeIntervalWeekTable")
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    assert(partitionInfo != null)
+    assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("doj"))
+    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataType.TIMESTAMP)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 3)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(0) == Encoding.DICTIONARY)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(1) == Encoding.DIRECT_DICTIONARY)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(2) == Encoding.INVERTED_INDEX)
+    assert(partitionInfo.getPartitionType == PartitionType.RANGE_INTERVAL)
+    assert(partitionInfo.getRangeIntervalInfo.size == 3)
+    assert(partitionInfo.getRangeIntervalInfo.get(0).equals("2017-06-11 00:00:02"))
+    assert(partitionInfo.getRangeIntervalInfo.get(1).equals("2017-06-13 23:59:59"))
+    assert(partitionInfo.getRangeIntervalInfo.get(2).equals("week"))
+  }
+
+  test("create partition table: range interval partition in day") {
+    sql(
+      """
+        | CREATE TABLE IF NOT EXISTS default.rangeIntervalDayTable (empno int, empname String, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (doj Timestamp)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('PARTITION_TYPE'='RANGE_INTERVAL',
+        | 'RANGE_INTERVAL_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59, day')
+      """.stripMargin)
+
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_rangeIntervalDayTable")
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    assert(partitionInfo != null)
+    assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("doj"))
+    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataType.TIMESTAMP)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 3)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(0) == Encoding.DICTIONARY)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(1) == Encoding.DIRECT_DICTIONARY)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(2) == Encoding.INVERTED_INDEX)
+    assert(partitionInfo.getPartitionType == PartitionType.RANGE_INTERVAL)
+    assert(partitionInfo.getRangeIntervalInfo.size == 3)
+    assert(partitionInfo.getRangeIntervalInfo.get(0).equals("2017-06-11 00:00:02"))
+    assert(partitionInfo.getRangeIntervalInfo.get(1).equals("2017-06-13 23:59:59"))
+    assert(partitionInfo.getRangeIntervalInfo.get(2).equals("day"))
+  }
+
+  test("create partition table: range interval partition in hour") {
+    sql(
+      """
+        | CREATE TABLE IF NOT EXISTS default.rangeIntervalHourTable (empno int, empname String, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (doj Timestamp)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('PARTITION_TYPE'='RANGE_INTERVAL',
+        | 'RANGE_INTERVAL_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59, hour')
+      """.stripMargin)
+
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_rangeIntervalHourTable")
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    assert(partitionInfo != null)
+    assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("doj"))
+    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataType.TIMESTAMP)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 3)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(0) == Encoding.DICTIONARY)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(1) == Encoding.DIRECT_DICTIONARY)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(2) == Encoding.INVERTED_INDEX)
+    assert(partitionInfo.getPartitionType == PartitionType.RANGE_INTERVAL)
+    assert(partitionInfo.getRangeIntervalInfo.size == 3)
+    assert(partitionInfo.getRangeIntervalInfo.get(0).equals("2017-06-11 00:00:02"))
+    assert(partitionInfo.getRangeIntervalInfo.get(1).equals("2017-06-13 23:59:59"))
+    assert(partitionInfo.getRangeIntervalInfo.get(2).equals("hour"))
+  }
+
+
+
   override def afterAll = {
     dropTable
     CarbonProperties.getInstance()
