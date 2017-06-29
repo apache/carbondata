@@ -409,29 +409,6 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS default.carbon1")
   }
 
-  test("Records more than one pagesize after update operation ") {
-    sql("DROP TABLE IF EXISTS default.carbon2")
-    import sqlContext.implicits._
-    val df = sqlContext.sparkContext.parallelize(1 to 20000000)
-      .map(x => (x+"a", "b", x))
-      .toDF("c1", "c2", "c3")
-    df.write
-      .format("carbondata")
-      .option("tableName", "carbon2")
-      .option("tempCSV", "true")
-      .option("compress", "true")
-      .mode(SaveMode.Overwrite)
-      .save()
-
-    checkAnswer(sql("select count(*) from default.carbon2"), Seq(Row(20000000)))
-
-    sql("update default.carbon2 set (c1)=('test123') where c1='99999a'").show()
-
-    checkAnswer(sql("select count(*) from default.carbon2"), Seq(Row(20000000)))
-
-    sql("DROP TABLE IF EXISTS default.carbon2")
-  }
-
   override def afterAll {
     sql("use default")
     sql("drop database  if exists iud cascade")
