@@ -406,6 +406,8 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(sql("select count(*) from default.carbon1"), Seq(Row(36000)))
 
+    checkAnswer(sql("select * from default.carbon1 where c1 = 'test123'"), Row("test123","b",9999))
+
     sql("DROP TABLE IF EXISTS default.carbon1")
   }
 
