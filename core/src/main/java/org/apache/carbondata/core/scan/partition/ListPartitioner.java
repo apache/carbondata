@@ -53,7 +53,7 @@ public class ListPartitioner implements Partitioner {
     for (int i = 0; i < numPartitions; i++) {
       for (String value : values.get(i)) {
         map.put(PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
-            timestampFormatter, dateFormatter), i);
+            timestampFormatter, dateFormatter), i + 1);
       }
     }
   }
@@ -70,7 +70,7 @@ public class ListPartitioner implements Partitioner {
   @Override public int getPartition(Object key) {
     Integer partition = map.get(key);
     if (partition == null) {
-      return numPartitions;
+      return 0;
     }
     return partition;
   }
