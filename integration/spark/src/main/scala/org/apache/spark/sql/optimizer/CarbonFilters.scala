@@ -20,7 +20,7 @@ package org.apache.carbondata.spark
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression, Literal, StartsWith, _}
-import org.apache.spark.sql.optimizer.AttributeReferenceWrapper
+import org.apache.spark.sql.optimizer.{AttributeReferenceWrapper, CastExpressionOptimization}
 import org.apache.spark.sql.sources
 import org.apache.spark.sql.types._
 
@@ -30,7 +30,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
 import org.apache.carbondata.core.scan.expression.conditional.{GreaterThanEqualToExpression, LessThanExpression, _}
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
-import org.apache.carbondata.spark.util.CarbonScalaUtil
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
 
 /**
  * All filter conversions are done here.
@@ -229,6 +229,7 @@ object CarbonFilters {
       case FloatType => true
       case BooleanType => true
       case TimestampType => true
+      case DateType => true
       case ArrayType(_, _) => true
       case StructType(_) => true
       case DecimalType() => true
@@ -381,13 +382,19 @@ object CarbonFilters {
               CarbonScalaUtil.convertSparkToCarbonDataType(dataType)))
           Some(new AndExpression(l, r))
         case others =>
-          if (!or) {
-            others.collect {
-              case attr: AttributeReference => attributesNeedToDecode.add(attr)
-            }
-            unprocessedExprs += others
+          val result = CastExpressionOptimization.checkIfCastCanBeRemoved(expr)
+          result match {
+            case None =>
+              if (!or) {
+                others.collect {
+                  case attr: AttributeReference => attributesNeedToDecode.add(attr)
+                }
+                unprocessedExprs += others
+              }
+              None
+            case _ =>
+              transformExpression(result.get)
           }
-          None
       }
     }
     exprs.flatMap(transformExpression(_, false)).reduceOption(new AndExpression(_, _))
