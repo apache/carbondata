@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.scan.partition;
 
-import java.io.Serializable;
-import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
@@ -27,6 +25,8 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.comparator.Comparator;
+import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
 /**
  * Range Partitioner
@@ -60,28 +60,7 @@ public class RangePartitioner implements Partitioner {
             timestampFormatter, dateFormatter);
       }
     }
-
-    switch (partitionColumnDataType) {
-      case INT:
-        comparator = new IntSerializableComparator();
-        break;
-      case SHORT:
-        comparator = new ShortSerializableComparator();
-        break;
-      case DOUBLE:
-        comparator = new DoubleSerializableComparator();
-        break;
-      case LONG:
-      case DATE:
-      case TIMESTAMP:
-        comparator = new LongSerializableComparator();
-        break;
-      case DECIMAL:
-        comparator = new BigDecimalSerializableComparator();
-        break;
-      default:
-        comparator = new ByteArraySerializableComparator();
-    }
+    comparator = Comparator.getComparator(partitionColumnDataType);
   }
 
   /**
@@ -96,55 +75,14 @@ public class RangePartitioner implements Partitioner {
 
   @Override public int getPartition(Object key) {
     if (key == null) {
-      return numPartitions;
+      return 0;
     } else {
       for (int i = 0; i < numPartitions; i++) {
-        if (comparator.compareTo(key, bounds[i])) {
-          return i;
+        if (comparator.compare(key, bounds[i]) < 0) {
+          return i + 1;
         }
       }
-      return numPartitions;
+      return 0;
     }
   }
-
-  interface SerializableComparator extends Serializable {
-    boolean compareTo(Object key1, Object key2);
-  }
-
-  class ByteArraySerializableComparator implements SerializableComparator {
-    @Override public boolean compareTo(Object key1, Object key2) {
-      return ByteUtil.compare((byte[]) key1, (byte[]) key2) < 0;
-    }
-  }
-
-  class IntSerializableComparator implements SerializableComparator {
-    @Override public boolean compareTo(Object key1, Object key2) {
-      return (int) key1 - (int) key2 < 0;
-    }
-  }
-
-  class ShortSerializableComparator implements SerializableComparator {
-    @Override public boolean compareTo(Object key1, Object key2) {
-      return (short) key1 - (short) key2 < 0;
-    }
-  }
-
-  class DoubleSerializableComparator implements SerializableComparator {
-    @Override public boolean compareTo(Object key1, Object key2) {
-      return (double) key1 - (double) key2 < 0;
-    }
-  }
-
-  class LongSerializableComparator implements SerializableComparator {
-    @Override public boolean compareTo(Object key1, Object key2) {
-      return (long) key1 - (long) key2 < 0;
-    }
-  }
-
-  class BigDecimalSerializableComparator implements SerializableComparator {
-    @Override public boolean compareTo(Object key1, Object key2) {
-      return ((BigDecimal) key1).compareTo((BigDecimal) key2) < 0;
-    }
-  }
-
 }

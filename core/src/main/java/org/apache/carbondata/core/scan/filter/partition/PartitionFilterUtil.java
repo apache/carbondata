@@ -17,10 +17,8 @@
 
 package org.apache.carbondata.core.scan.filter.partition;
 
-import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.util.BitSet;
-import java.util.Comparator;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -28,84 +26,10 @@ import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.scan.partition.ListPartitioner;
 import org.apache.carbondata.core.scan.partition.PartitionUtil;
 import org.apache.carbondata.core.scan.partition.RangePartitioner;
-import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.comparator.Comparator;
+import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
 public class PartitionFilterUtil {
-
-  /**
-   * create Comparator for range filter
-   * @param dataType
-   * @return
-   */
-  public static Comparator getComparatorByDataType(DataType dataType) {
-    switch (dataType) {
-      case INT:
-        return new IntComparator();
-      case SHORT:
-        return new ShortComparator();
-      case DOUBLE:
-        return new DoubleComparator();
-      case LONG:
-      case DATE:
-      case TIMESTAMP:
-        return new LongComparator();
-      case DECIMAL:
-        return new BigDecimalComparator();
-      default:
-        return new ByteArrayComparator();
-    }
-  }
-
-  static class ByteArrayComparator implements Comparator<Object> {
-    @Override public int compare(Object key1, Object key2) {
-      return ByteUtil.compare((byte[]) key1, (byte[]) key2);
-    }
-  }
-
-  static class IntComparator implements Comparator<Object> {
-    @Override public int compare(Object key1, Object key2) {
-      return (int) key1 - (int) key2;
-    }
-  }
-
-  static class ShortComparator implements Comparator<Object> {
-    @Override public int compare(Object key1, Object key2) {
-      return (short) key1 - (short) key2;
-    }
-  }
-
-  static class DoubleComparator implements Comparator<Object> {
-    @Override public int compare(Object key1, Object key2) {
-      double result = (double) key1 - (double) key2;
-      if (result < 0) {
-        return -1;
-      } else if (result > 0) {
-        return 1;
-      } else {
-        return 0;
-      }
-
-    }
-  }
-
-  static class LongComparator implements Comparator<Object> {
-    @Override public int compare(Object key1, Object key2) {
-      long result = (long) key1 - (long) key2;
-      if (result < 0) {
-        return -1;
-      } else if (result > 0) {
-        return 1;
-      } else {
-        return 0;
-      }
-    }
-  }
-
-  static class BigDecimalComparator implements Comparator<Object> {
-    @Override public int compare(Object key1, Object key2) {
-      return ((BigDecimal) key1).compareTo((BigDecimal) key2);
-    }
-  }
 
   /**
    * get partition map of range filter on list partition table
@@ -123,12 +47,12 @@ public class PartitionFilterUtil {
     List<List<String>> values = partitionInfo.getListInfo();
     DataType partitionColumnDataType = partitionInfo.getColumnSchemaList().get(0).getDataType();
 
-    Comparator comparator =
-        PartitionFilterUtil.getComparatorByDataType(partitionColumnDataType);
+    SerializableComparator comparator =
+        Comparator.getComparator(partitionColumnDataType);
 
     BitSet partitionMap = PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), false);
     // add default partition
-    partitionMap.set(partitioner.numPartitions() - 1);
+    partitionMap.set(0);
 
     int partitions = values.size();
     if (isGreaterThan) {
@@ -140,7 +64,7 @@ public class PartitionFilterUtil {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
             if (comparator.compare(listValue, filterValue) >= 0) {
-              partitionMap.set(i);
+              partitionMap.set(i + 1);
               continue outer1;
             }
           }
@@ -153,7 +77,7 @@ public class PartitionFilterUtil {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
             if (comparator.compare(listValue, filterValue) > 0) {
-              partitionMap.set(i);
+              partitionMap.set(i + 1);
               continue outer2;
             }
           }
@@ -168,7 +92,7 @@ public class PartitionFilterUtil {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
             if (comparator.compare(listValue, filterValue) <= 0) {
-              partitionMap.set(i);
+              partitionMap.set(i + 1);
               continue outer3;
             }
           }
@@ -181,7 +105,7 @@ public class PartitionFilterUtil {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
             if (comparator.compare(listValue, filterValue) < 0) {
-              partitionMap.set(i);
+              partitionMap.set(i + 1);
               continue outer4;
             }
           }
@@ -208,8 +132,8 @@ public class PartitionFilterUtil {
     List<String> values = partitionInfo.getRangeInfo();
     DataType partitionColumnDataType = partitionInfo.getColumnSchemaList().get(0).getDataType();
 
-    Comparator comparator =
-        PartitionFilterUtil.getComparatorByDataType(partitionColumnDataType);
+    SerializableComparator comparator =
+        Comparator.getComparator(partitionColumnDataType);
 
     BitSet partitionMap = PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), false);
 
@@ -229,7 +153,7 @@ public class PartitionFilterUtil {
       // filter value is in default partition
       if (isGreaterThan) {
         // GreaterThan(>), GreaterThanEqualTo(>=)
-        partitionMap.set(numPartitions);
+        partitionMap.set(0);
       } else {
         // LessThan(<), LessThanEqualTo(<=)
         partitionMap.set(0, partitioner.numPartitions());
@@ -240,24 +164,26 @@ public class PartitionFilterUtil {
         // if result is 0, the filter value is a bound value of range partition.
         if (isGreaterThan) {
           // GreaterThan(>), GreaterThanEqualTo(>=)
-          partitionMap.set(partitionIndex + 1, partitioner.numPartitions());
+          partitionMap.set(partitionIndex + 2, partitioner.numPartitions());
+          partitionMap.set(0);
         } else {
           if (isEqualTo) {
             // LessThanEqualTo(<=)
-            partitionMap.set(0, partitionIndex + 2);
+            partitionMap.set(1, partitionIndex + 3);
           } else {
             // LessThan(<)
-            partitionMap.set(0, partitionIndex + 1);
+            partitionMap.set(1, partitionIndex + 2);
           }
         }
       } else {
         // the filter value is not a bound value of range partition
         if (isGreaterThan) {
           // GreaterThan(>), GreaterThanEqualTo(>=)
-          partitionMap.set(partitionIndex, partitioner.numPartitions());
+          partitionMap.set(partitionIndex + 1, partitioner.numPartitions());
+          partitionMap.set(0);
         } else {
           // LessThan(<), LessThanEqualTo(<=)
-          partitionMap.set(0, partitionIndex + 1);
+          partitionMap.set(1, partitionIndex + 2);
         }
       }
     }

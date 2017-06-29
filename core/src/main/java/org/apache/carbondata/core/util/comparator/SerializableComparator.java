@@ -14,23 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.metadata.schema.partition;
 
-import java.util.List;
+package org.apache.carbondata.core.util.comparator;
 
-public class ListPartition extends AbstractPartition {
+import java.io.Serializable;
 
-  /**
-   * value list for list partition table
-   */
-  private List<String> listInfo;
-
-  public ListPartition(int id, List<String> listInfo) {
-    this.partitionId = id;
-    this.listInfo = listInfo;
-  }
-
-  public List<String> getListInfo() {
-    return listInfo;
-  }
+public interface SerializableComparator extends Serializable {
+  int compare(Object key1, Object key2);
 }
