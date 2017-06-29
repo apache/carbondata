@@ -423,7 +423,22 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     sql("alter table Default.uniqdata rename to uniqdata1")
     checkAnswer(sql("select * from Default.uniqdata1"), Row(1,"hello"))
   }
-
+  test("describe formatted for default sort_columns pre and post alter") {
+    sql("CREATE TABLE defaultSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED BY 'org.apache.carbondata.format' " +
+        "tblproperties('DICTIONARY_INCLUDE'='empno','DICTIONARY_EXCLUDE'='role')")
+    sql("alter table defaultSortColumnsWithAlter drop columns (designation)")
+    sql("alter table defaultSortColumnsWithAlter add columns (designation12 String)")
+    checkExistence(sql("describe formatted defaultSortColumnsWithAlter"),true,"SORT_COLUMNS")
+    checkExistence(sql("describe formatted defaultSortColumnsWithAlter"),true,"empno,empname,role,doj")
+  }
+  test("describe formatted for specified sort_columns pre and post alter") {
+    sql("CREATE TABLE specifiedSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED BY 'org.apache.carbondata.format' " +
+        "tblproperties('sort_columns'='empno,empname,designation,role,doj','DICTIONARY_INCLUDE'='empno','DICTIONARY_EXCLUDE'='role')")
+    sql("alter table specifiedSortColumnsWithAlter drop columns (designation)")
+    sql("alter table specifiedSortColumnsWithAlter add columns (designation12 String)")
+    checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),true,"SORT_COLUMNS")
+    checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),true,"empno,empname,role,doj")
+  }
   override def afterAll {
     sql("DROP TABLE IF EXISTS restructure")
     sql("DROP TABLE IF EXISTS restructure_new")
@@ -432,5 +447,7 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS restructure_badnew")
     sql("DROP TABLE IF EXISTS lock_rename")
     sql("drop table if exists uniqdata")
+    sql("drop table if exists defaultSortColumnsWithAlter")
+    sql("drop table if exists specifiedSortColumnsWithAlter")
   }
 }
