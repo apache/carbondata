@@ -61,14 +61,14 @@ Please follow the below steps to query carbondata in presto
   $ cd carbondata
   $ mvn -DskipTests -P{spark-version} -Dspark.version={spark-version-number} -Dhadoop.version={hadoop-version-number} clean package
   ```
-  Replace the spark and hadoop version with you the version you used in your cluster.
+  Replace the spark and hadoop version with the version used in your cluster.
   For example, if you use Spark2.1.0 and Hadoop 2.7.3, you would like to compile using:
   ```
   mvn -DskipTests -Pspark-2.1 -Dspark.version=2.1.0 -Dhadoop.version=2.7.3 clean package
   ```
 
   Secondly: Create a folder named 'carbondata' under $PRESTO_HOME$/plugin and
-  copy all jar from carbondata/integration/presto/target/carbondata-presto-x.x.x-SNAPSHOT
+  copy all jars from carbondata/integration/presto/target/carbondata-presto-x.x.x-SNAPSHOT
         to $PRESTO_HOME$/plugin/carbondata
 
   Thirdly: Create a carbondata.properties file under $PRESTO_HOME$/etc/catalog/ containing the following contents:
@@ -87,7 +87,7 @@ Please follow the below steps to query carbondata in presto
 ### Generate CarbonData file
 
 Please refer to quick start: https://github.com/apache/carbondata/blob/master/docs/quick-start-guide.md
-Load data statement in Spark can be used to create carbondata tables. And you can easily find the creaed
+Load data statement in Spark can be used to create carbondata tables. And you can easily find the created
 carbondata files after the load data statement.
 
 ### Query carbondata in CLI of presto

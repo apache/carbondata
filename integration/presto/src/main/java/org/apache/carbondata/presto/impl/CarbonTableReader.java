@@ -89,14 +89,6 @@ public class CarbonTableReader {
   /**
    * carbonFileList represents the store path of the schema, which is configured as carbondata-store
    * in the CarbonData catalog file ($PRESTO_HOME$/etc/catalog/carbondata.properties).
-   * Under the schema store path, there should be a directory named as the schema name.
-   * And under each schema directory, there are directories named as the table names.
-   * For example, the schema is named 'default' and there is two table named 'foo' and 'bar' in it, then the
-   * structure of the store path should be:
-   * default
-   *   foo
-   *   bar
-   *   ...
    */
   private CarbonFile carbonFileList;
   private FileFactory.FileType fileType;
