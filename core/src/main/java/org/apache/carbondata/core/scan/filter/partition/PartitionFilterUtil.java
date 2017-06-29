@@ -279,7 +279,7 @@ public class PartitionFilterUtil {
       boolean isGreaterThan, boolean isEqualTo,
       DateFormat timestampFormatter, DateFormat dateFormatter) {
 
-    List<String> values = partitionInfo.getRangeInfo();
+    List<String> values = partitionInfo.getRangeIntervalInfo();
     DataType partitionColumnDataType = partitionInfo.getColumnSchemaList().get(0).getDataType();
 
     Comparator comparator =

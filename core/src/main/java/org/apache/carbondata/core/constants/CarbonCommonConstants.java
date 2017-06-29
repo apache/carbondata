@@ -555,7 +555,7 @@ public final class CarbonCommonConstants {
   /**
    * MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK
    */
-  public static final int MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK_DEFAULT = 5;
+  public static final int MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK_DEFAULT = 100;
   /**
    * NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK
    */

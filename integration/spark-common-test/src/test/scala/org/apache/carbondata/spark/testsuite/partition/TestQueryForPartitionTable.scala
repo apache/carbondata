@@ -140,10 +140,46 @@ class TestQueryForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     sql("drop table listTable")
   }
 
-  test("detail query on partition table: range interval partition") {
+  test("detail query on partition table: range interval partition in year") {
     sql(
       """
-        | CREATE TABLE rangeIntervalTable (empno int, empname String, designation String,
+        | CREATE TABLE rangeIntervalYearTable (empno int, empname String, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (doj Timestamp)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('PARTITION_TYPE'='RANGE_INTERVAL',
+        |  'RANGE_INTERVAL_INFO'='01-01-2010, 01-01-2015, year')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE rangeIntervalYearTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    // EqualTo
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalYearTable where doj = '2009-07-07 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj = '2009-07-07 00:00:00'"))
+    // In
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalYearTable where doj in (cast('2014-08-15 00:00:00' as timestamp), cast('2009-07-07 00:00:00' as timestamp))"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj in (cast('2014-08-15 00:00:00' as timestamp), cast('2009-07-07 00:00:00' as timestamp))"))
+    // Range
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalYearTable where doj >= '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj >= '2014-08-15 00:00:00'"))
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalYearTable where doj <= '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj <= '2014-08-15 00:00:00'"))
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalYearTable where doj > '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj > '2014-08-15 00:00:00'"))
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalYearTable where doj < '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj < '2014-08-15 00:00:00'"))
+
+    sql("drop table rangeIntervalYearTable")
+  }
+
+  test("detail query on partition table: range interval partition in month") {
+    sql(
+      """
+        | CREATE TABLE rangeIntervalMonthTable (empno int, empname String, designation String,
         |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
         |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
         |  utilization int,salary int)
@@ -152,29 +188,138 @@ class TestQueryForPartitionTable  extends QueryTest with BeforeAndAfterAll {
         | TBLPROPERTIES('PARTITION_TYPE'='RANGE_INTERVAL',
         |  'RANGE_INTERVAL_INFO'='01-01-2010, 01-01-2015, month')
       """.stripMargin)
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE rangeTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE rangeIntervalMonthTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     // EqualTo
-    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalTable where doj = '2009-07-07 00:00:00'"),
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalMonthTable where doj = '2009-07-07 00:00:00'"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj = '2009-07-07 00:00:00'"))
     // In
-    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalTable where doj in (cast('2014-08-15 00:00:00' as timestamp), cast('2009-07-07 00:00:00' as timestamp))"),
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalMonthTable where doj in (cast('2014-08-15 00:00:00' as timestamp), cast('2009-07-07 00:00:00' as timestamp))"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj in (cast('2014-08-15 00:00:00' as timestamp), cast('2009-07-07 00:00:00' as timestamp))"))
     // Range
-    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalTable where doj >= '2014-08-15 00:00:00'"),
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalMonthTable where doj >= '2014-08-15 00:00:00'"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj >= '2014-08-15 00:00:00'"))
 
-    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalTable where doj <= '2014-08-15 00:00:00'"),
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalMonthTable where doj <= '2014-08-15 00:00:00'"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj <= '2014-08-15 00:00:00'"))
 
-    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalTable where doj > '2014-08-15 00:00:00'"),
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalMonthTable where doj > '2014-08-15 00:00:00'"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj > '2014-08-15 00:00:00'"))
 
-    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalTable where doj < '2014-08-15 00:00:00'"),
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalMonthTable where doj < '2014-08-15 00:00:00'"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj < '2014-08-15 00:00:00'"))
 
-    sql("drop table rangeIntervalTable")
+    sql("drop table rangeIntervalMonthTable")
   }
+
+  test("detail query on partition table: range interval partition in week") {
+    sql(
+      """
+        | CREATE TABLE rangeIntervalWeekTable (empno int, empname String, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (doj Timestamp)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('PARTITION_TYPE'='RANGE_INTERVAL',
+        |  'RANGE_INTERVAL_INFO'='01-01-2010, 01-01-2015, week')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE rangeIntervalWeekTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    // EqualTo
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalWeekTable where doj = '2009-07-07 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj = '2009-07-07 00:00:00'"))
+    // In
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalWeekTable where doj in (cast('2014-08-15 00:00:00' as timestamp), cast('2009-07-07 00:00:00' as timestamp))"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj in (cast('2014-08-15 00:00:00' as timestamp), cast('2009-07-07 00:00:00' as timestamp))"))
+    // Range
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalWeekTable where doj >= '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj >= '2014-08-15 00:00:00'"))
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalWeekTable where doj <= '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj <= '2014-08-15 00:00:00'"))
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalWeekTable where doj > '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj > '2014-08-15 00:00:00'"))
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalWeekTable where doj < '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj < '2014-08-15 00:00:00'"))
+
+    sql("drop table rangeIntervalWeekTable")
+  }
+
+  test("detail query on partition table: range interval partition in day") {
+    sql(
+      """
+        | CREATE TABLE rangeIntervalDayTable (empno int, empname String, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (doj Timestamp)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('PARTITION_TYPE'='RANGE_INTERVAL',
+        |  'RANGE_INTERVAL_INFO'='01-01-2010, 01-01-2015, day')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE rangeIntervalDayTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    // EqualTo
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalDayTable where doj = '2009-07-07 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj = '2009-07-07 00:00:00'"))
+    // In
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalDayTable where doj in (cast('2014-08-15 00:00:00' as timestamp), cast('2009-07-07 00:00:00' as timestamp))"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj in (cast('2014-08-15 00:00:00' as timestamp), cast('2009-07-07 00:00:00' as timestamp))"))
+    // Range
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalDayTable where doj >= '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj >= '2014-08-15 00:00:00'"))
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalDayTable where doj <= '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj <= '2014-08-15 00:00:00'"))
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalDayTable where doj > '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj > '2014-08-15 00:00:00'"))
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalDayTable where doj < '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj < '2014-08-15 00:00:00'"))
+
+    sql("drop table rangeIntervalDayTable")
+  }
+
+  test("detail query on partition table: range interval partition in hour") {
+    sql(
+      """
+        | CREATE TABLE rangeIntervalHourTable (empno int, empname String, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (doj Timestamp)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('PARTITION_TYPE'='RANGE_INTERVAL',
+        |  'RANGE_INTERVAL_INFO'='01-01-2010, 01-01-2015, hour')
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE rangeIntervalHourTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    // EqualTo
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalHourTable where doj = '2009-07-07 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj = '2009-07-07 00:00:00'"))
+    // In
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalHourTable where doj in (cast('2014-08-15 00:00:00' as timestamp), cast('2009-07-07 00:00:00' as timestamp))"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj in (cast('2014-08-15 00:00:00' as timestamp), cast('2009-07-07 00:00:00' as timestamp))"))
+    // Range
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalHourTable where doj >= '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj >= '2014-08-15 00:00:00'"))
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalHourTable where doj <= '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj <= '2014-08-15 00:00:00'"))
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalHourTable where doj > '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj > '2014-08-15 00:00:00'"))
+
+    checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeIntervalHourTable where doj < '2014-08-15 00:00:00'"),
+      sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj < '2014-08-15 00:00:00'"))
+
+    sql("drop table rangeIntervalHourTable")
+  }
+
 
   override def afterAll = {
     dropTable
@@ -187,6 +332,10 @@ class TestQueryForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hashTable")
     sql("drop table if exists rangeTable")
     sql("drop table if exists listTable")
-    sql("drop table if exists rangeIntervalTable")
+    sql("drop table if exists rangeIntervalYearTable")
+    sql("drop table if exists rangeIntervalMonthTable")
+    sql("drop table if exists rangeIntervalWeekTable")
+    sql("drop table if exists rangeIntervalDayTable")
+    sql("drop table if exists rangeIntervalHourTable")
   }
 }
