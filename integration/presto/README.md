@@ -20,7 +20,7 @@
 Please follow the below steps to query carbondata in presto
 
 ### Config presto server
-* Download presto server ( >= 0.166) : https://repo1.maven.org/maven2/com/facebook/presto/presto-server/
+* Download presto server (0.166 is suggested and supported) : https://repo1.maven.org/maven2/com/facebook/presto/presto-server/
 * Finish presto configuration following https://prestodb.io/docs/current/installation/deployment.html
   A configuration example:
   ```
@@ -62,9 +62,9 @@ Please follow the below steps to query carbondata in presto
   $ mvn -DskipTests -P{spark-version} -Dspark.version={spark-version-number} -Dhadoop.version={hadoop-version-number} clean package
   ```
   Replace the spark and hadoop version with the version used in your cluster.
-  For example, if you use Spark2.1.0 and Hadoop 2.7.3, you would like to compile using:
+  For example, if you are using Spark 2.1.0 and Hadoop 2.7.2, you would like to compile using:
   ```
-  mvn -DskipTests -Pspark-2.1 -Dspark.version=2.1.0 -Dhadoop.version=2.7.3 clean package
+  mvn -DskipTests -Pspark-2.1 -Dspark.version=2.1.0 -Dhadoop.version=2.7.2 clean package
   ```
 
   Secondly: Create a folder named 'carbondata' under $PRESTO_HOME$/plugin and

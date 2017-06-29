@@ -30,9 +30,9 @@ public class CarbonLocalInputSplit {
   private static final long serialVersionUID = 3520344046772190207L;
   private String segmentId;
   private String path;
-  private long start; // BHQ: the start offset of the block in a carbondata file.
-  private long length; // BHQ: the length of the block.
-  private List<String> locations;// BHQ: locations are the locations for different replicas.
+  private long start; // the start offset of the block in a carbondata file.
+  private long length; // the length of the block.
+  private List<String> locations;// locations are the locations for different replicas.
   private short version;
 
   /**

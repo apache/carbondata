@@ -171,13 +171,8 @@ public class CarbonTableReader {
     updateCarbonFile();
 
     if (carbonFileList != null) {
-      /*List<String> schemaList =
-          Stream.of(carbonFileList.listFiles()).map(a -> a.getName()).collect(Collectors.toList());*/
-      List<String> schemaList = new ArrayList<>();
-      for (CarbonFile file : carbonFileList.listFiles())
-      {
-        schemaList.add(file.getName());
-      }
+      List<String> schemaList =
+          Stream.of(carbonFileList.listFiles()).map(a -> a.getName()).collect(Collectors.toList());
       return schemaList;
     } else return ImmutableList.of();
   }
