@@ -35,6 +35,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -90,7 +91,7 @@ public class AlluxioCarbonFileTest {
     @Test
     public void testListFilesWithOutDirectoryPermission() {
         alluxioCarbonFile = new AlluxioCarbonFile(fileStatusWithOutDirectoryPermission);
-        assertTrue(alluxioCarbonFile.listFiles() == null);
+        assertArrayEquals(alluxioCarbonFile.listFiles(), new CarbonFile[0]);
     }
 
     @Test
