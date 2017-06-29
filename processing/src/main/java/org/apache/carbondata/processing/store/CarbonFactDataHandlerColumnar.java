@@ -48,6 +48,7 @@ import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.NodeHolder;
@@ -201,6 +202,13 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
     this.version = CarbonProperties.getInstance().getFormatVersion();
     this.encoder = new TablePageEncoder(model);
+    String noInvertedIdxCol = "";
+    for (CarbonDimension cd : model.getSegmentProperties().getDimensions()) {
+      if (!cd.isUseInvertedIndex()) {
+        noInvertedIdxCol += (cd.getColName() + ",");
+      }
+    }
+    LOGGER.info("Columns considered as NoInverted Index are " + noInvertedIdxCol);
   }
 
   private void initParameters(CarbonFactDataHandlerModel model) {
