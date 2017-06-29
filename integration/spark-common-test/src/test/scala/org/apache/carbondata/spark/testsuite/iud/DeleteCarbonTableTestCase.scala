@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.spark.testsuite.iud
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{Row, SaveMode}
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -105,6 +105,31 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row(3))
     )
   }
+
+  test("Records more than one pagesize after delete operation ") {
+    sql("DROP TABLE IF EXISTS default.carbon2")
+    import sqlContext.implicits._
+    val df = sqlContext.sparkContext.parallelize(1 to 20000000)
+      .map(x => (x+"a", "b", x))
+      .toDF("c1", "c2", "c3")
+    df.write
+      .format("carbondata")
+      .option("tableName", "carbon2")
+      .option("tempCSV", "true")
+      .option("compress", "true")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    checkAnswer(sql("select count(*) from default.carbon2"), Seq(Row(20000000)))
+
+    sql("delete from default.carbon2 where c1='99999a'").show()
+
+    checkAnswer(sql("select count(*) from default.carbon2"), Seq(Row(19999999)))
+
+    sql("DROP TABLE IF EXISTS default.carbon2")
+  }
+
+
   override def afterAll {
     sql("use default")
     sql("drop database  if exists iud_db cascade")
