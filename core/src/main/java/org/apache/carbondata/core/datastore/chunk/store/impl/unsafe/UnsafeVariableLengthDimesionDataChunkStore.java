@@ -26,10 +26,6 @@ import org.apache.carbondata.core.util.ByteUtil;
 
 import org.apache.spark.sql.types.BooleanType;
 import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.Decimal;
-import org.apache.spark.sql.types.DecimalType;
-import org.apache.spark.sql.types.DoubleType;
-import org.apache.spark.sql.types.FloatType;
 import org.apache.spark.sql.types.IntegerType;
 import org.apache.spark.sql.types.LongType;
 import org.apache.spark.sql.types.ShortType;
@@ -184,16 +180,8 @@ public class UnsafeVariableLengthDimesionDataChunkStore
         vector.putShort(vectorRow, ByteUtil.toShort(value, 0, value.length));
       } else if (dt instanceof IntegerType) {
         vector.putInt(vectorRow, ByteUtil.toInt(value, 0, value.length));
-      } else if (dt instanceof FloatType) {
-        vector.putFloat(vectorRow, ByteUtil.toFloat(value, 0));
-      } else if (dt instanceof DoubleType) {
-        vector.putDouble(vectorRow, ByteUtil.toDouble(value, 0));
       } else if (dt instanceof LongType) {
         vector.putLong(vectorRow, ByteUtil.toLong(value, 0, value.length));
-      } else if (dt instanceof DecimalType) {
-        vector.putDecimal(vectorRow,
-            Decimal.apply(ByteUtil.toBigDecimal(value, 0, value.length)),
-            DecimalType.MAX_PRECISION());
       }
     }
   }
