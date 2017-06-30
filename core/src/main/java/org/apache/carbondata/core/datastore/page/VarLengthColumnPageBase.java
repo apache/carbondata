@@ -105,8 +105,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     int numRows = rowId;
 
     VarLengthColumnPageBase page;
+    int inputDataLength = lvEncodedOffset;
     if (unsafe) {
-      page = new UnsafeVarLengthColumnPage(DECIMAL, numRows, lvEncodedBytes.length);
+      page = new UnsafeVarLengthColumnPage(DECIMAL, numRows, inputDataLength);
     } else {
       page = new SafeVarLengthColumnPage(DECIMAL, numRows);
     }
