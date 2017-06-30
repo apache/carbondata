@@ -18,8 +18,6 @@
 package org.apache.carbondata.core.util;
 
 import java.io.UnsupportedEncodingException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
@@ -38,8 +36,6 @@ public final class ByteUtil {
   public static final int SIZEOF_SHORT = 2;
 
   public static final String UTF8_CSN = StandardCharsets.UTF_8.name();
-
-  public static final byte[] ZERO_IN_BYTES = toBytes(0);
 
   private ByteUtil() {
 
@@ -531,28 +527,6 @@ public final class ByteUtil {
   }
 
   /**
-   * float => byte[]
-   *
-   * @param f
-   * @return
-   */
-  public static byte[] toBytes(final float f) {
-    // Encode it as int
-    return toBytes(Float.floatToRawIntBits(f));
-  }
-
-  /**
-   * byte[] => float
-   *
-   * @param bytes
-   * @param offset
-   * @return
-   */
-  public static float toFloat(byte[] bytes, int offset) {
-    return Float.intBitsToFloat(toInt(bytes, offset, SIZEOF_INT));
-  }
-
-  /**
    * long => byte[]
    *
    * @param val
@@ -591,61 +565,6 @@ public final class ByteUtil {
       }
     }
     return l ^ Long.MIN_VALUE;
-  }
-
-  /**
-   * doube => byte[]
-   *
-   * @param d
-   * @return
-   */
-  public static byte[] toBytes(final double d) {
-    // Encode it as a long
-    return toBytes(Double.doubleToRawLongBits(d));
-  }
-
-  /**
-   * byte[] => double
-   *
-   * @param bytes
-   * @param offset
-   * @return
-   */
-  public static double toDouble(final byte[] bytes, final int offset) {
-    return Double.longBitsToDouble(toLong(bytes, offset, SIZEOF_LONG));
-  }
-
-  /**
-   * BigDecimal => byte[]
-   *
-   * @param val
-   * @return
-   */
-  public static byte[] toBytes(BigDecimal val) {
-    byte[] valueBytes = val.unscaledValue().toByteArray();
-    byte[] result = new byte[valueBytes.length + SIZEOF_INT];
-    int offset = putInt(result, 0, val.scale());
-    putBytes(result, offset, valueBytes, 0, valueBytes.length);
-    return result;
-  }
-
-  /**
-   * byte[] => BigDecimal
-   *
-   * @param bytes
-   * @param offset
-   * @param length
-   * @return
-   */
-  public static BigDecimal toBigDecimal(byte[] bytes, int offset, final int length) {
-    if (bytes == null || length < SIZEOF_INT + 1 || (offset + length > bytes.length)) {
-      return null;
-    }
-
-    int scale = toInt(bytes, offset, bytes.length);
-    byte[] tcBytes = new byte[length - SIZEOF_INT];
-    System.arraycopy(bytes, offset + SIZEOF_INT, tcBytes, 0, length - SIZEOF_INT);
-    return new BigDecimal(new BigInteger(tcBytes), scale);
   }
 
   private static IllegalArgumentException explainWrongLengthOrOffset(final byte[] bytes,
