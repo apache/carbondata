@@ -90,7 +90,7 @@ public class LazyColumnPage extends ColumnPage {
   public float getFloat(int rowId) {
     throw new UnsupportedOperationException("internal error");
   }
-  
+
   @Override
   public BigDecimal getDecimal(int rowId) {
     throw new UnsupportedOperationException("internal error");
