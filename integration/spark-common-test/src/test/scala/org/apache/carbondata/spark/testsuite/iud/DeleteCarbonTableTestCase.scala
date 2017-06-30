@@ -20,8 +20,6 @@ import org.apache.spark.sql.{Row, SaveMode}
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
