@@ -189,13 +189,47 @@ object CommonUtil {
           rangeInfo.get.split(",").map(_.trim).foreach(
             isValid &= validateTypeConvert(partitionerFields(0), _))
         }
-        case "RANGE_INTERVAL" => isValid = rangeIntervalInfo.isDefined
+        case "RANGE_INTERVAL" => if (!rangeIntervalInfo.isDefined) {
+          isValid = false
+        } else {
+          isValid = validateForRangeInterval(rangeIntervalInfo, partitionerFields)
+
+        }
         case _ => isValid = false
       }
       // only support one partition column for now
       if (partitionerFields.length > 1) isValid = false
     }
     isValid
+  }
+
+  def validateForRangeInterval(rangeIntervalInfo: Option[String],
+      partitionerFields: Seq[PartitionerField]): Boolean = {
+    var isValidForRangeInterval: Boolean = true
+    val info = rangeIntervalInfo.get.split(",").map(_.trim)
+    val intervalType = info(info.length - 1)
+    val dataType = partitionerFields(0).dataType.get
+    if (intervalType.equalsIgnoreCase("year")
+        || intervalType.equalsIgnoreCase("month")
+        || intervalType.equalsIgnoreCase("week")
+        || intervalType.equalsIgnoreCase("day")
+        || intervalType.equalsIgnoreCase("hour")) {
+      if (dataType.equalsIgnoreCase("timestamp")
+          || dataType.equalsIgnoreCase("timestamptype")
+          || dataType.equalsIgnoreCase("date")
+          || dataType.equalsIgnoreCase("datetype")) {
+        val validInfoLen = info.length - 1
+        val validInfo = new Array[String](validInfoLen)
+        info.copyToArray(validInfo, 0, info.length - 1)
+        validInfo.map(_.trim).foreach(
+          isValidForRangeInterval &= validateTypeConvert(partitionerFields(0), _))
+      } else {
+        isValidForRangeInterval = false
+      }
+    } else {
+      isValidForRangeInterval = false
+    }
+    return isValidForRangeInterval
   }
 
   def validateTypeConvertForSpark2(partitionerField: PartitionerField, value: String): Boolean = {

@@ -59,7 +59,7 @@ public class RangeIntervalPartitioner implements Partitioner {
           timestampFormatter, dateFormatter));
     }
     comparator = new RangeIntervalComparator();
-    intervalType = values.get(numPartitions);
+    intervalType = values.get(numPartitions).trim();
   }
 
   @Override public int numPartitions() {

@@ -499,8 +499,44 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     assert(partitionInfo.getRangeIntervalInfo.get(1).equals("2017-06-13 23:59:59"))
     assert(partitionInfo.getRangeIntervalInfo.get(2).equals("hour"))
   }
+  test("Test in some unsupported cases") {
+    sql("DROP TABLE IF EXISTS test_interval_int")
+    val exception_test_interval_bigint: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_interval_int(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 int) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE_INTERVAL',
+          | 'RANGE_INTERVAL_INFO'='0, 100, year')
+        """.stripMargin)
+    }
+    assert(exception_test_interval_bigint.getMessage.contains("Invalid partition definition"))
 
+    sql("DROP TABLE IF EXISTS test_interval_season")
+    val exception_test_interval_season: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_interval_int(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 timestamp) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE_INTERVAL',
+          | 'RANGE_INTERVAL_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59, season')
+        """.stripMargin)
+    }
+    assert(exception_test_interval_season.getMessage.contains("Invalid partition definition"))
 
+    sql("DROP TABLE IF EXISTS test_interval_wrong_info")
+    val exception_test_interval_wrong_info: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_interval_wrong_info(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 timestamp) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE_INTERVAL',
+          | 'RANGE_INTERVAL_INFO'='2017-06-11 00:00:02, abc, year')
+        """.stripMargin)
+    }
+    assert(exception_test_interval_wrong_info.getMessage.contains("Invalid partition definition"))
+
+  }
 
   override def afterAll = {
     dropTable
@@ -537,6 +573,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS default.rangeIntervalWeekTable")
     sql("DROP TABLE IF EXISTS default.rangeIntervalDayTable")
     sql("DROP TABLE IF EXISTS default.rangeIntervalHourTable")
+    sql("DROP TABLE IF EXISTS test_interval_int")
+    sql("DROP TABLE IF EXISTS test_interval_season")
+    sql("DROP TABLE IF EXISTS test_interval_wrong_info")
   }
 
 }
