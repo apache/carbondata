@@ -59,7 +59,7 @@ public class ListPartitioner implements Partitioner {
   }
 
   /**
-   * number of partitions
+   * Number of partitions
    * add extra default partition
    * @return
    */
