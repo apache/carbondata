@@ -106,7 +106,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
     VarLengthColumnPageBase page;
     if (unsafe) {
-      page = new UnsafeVarLengthColumnPage(DECIMAL, numRows);
+      page = new UnsafeVarLengthColumnPage(DECIMAL, numRows, lvEncodedBytes.length);
     } else {
       page = new SafeVarLengthColumnPage(DECIMAL, numRows);
     }
