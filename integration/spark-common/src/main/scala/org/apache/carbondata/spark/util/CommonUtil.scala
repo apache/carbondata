@@ -27,22 +27,21 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.expressions.AttributeReference
+import org.apache.spark.sql.{Row, RowFactory}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.RowFactory
-import org.apache.spark.sql.types.MetadataBuilder
-import org.apache.spark.sql.types.StringType
+import org.apache.spark.sql.types.{MetadataBuilder, StringType}
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataType
-import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.comparator.Comparator
 import org.apache.carbondata.processing.csvload.CSVInputFormat
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
@@ -54,6 +53,12 @@ object CommonUtil {
 
   val FIXED_DECIMAL = """decimal\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
   val FIXED_DECIMALTYPE = """decimaltype\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
+  val timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance
+    .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+  val dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance
+    .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
 
   def validateColumnGroup(colGroup: String, noDictionaryDims: Seq[String],
       msrs: Seq[Field], retrievedColGrps: Seq[String], dims: Seq[Field]) {
@@ -294,6 +299,32 @@ object CommonUtil {
         validateTypeConvertForSpark2(partitionerField, value)
     }
     result
+  }
+  /**
+   * To verify the range info is in correct order
+   * @param rangeInfo
+   * @param columnDataType
+   */
+  def validateRangeInfo(rangeInfo: List[String], columnDataType: DataType): Unit = {
+    val comparator = Comparator.getComparator(columnDataType)
+    var head = columnDataType match {
+      case DataType.STRING => ByteUtil.toBytes(rangeInfo.head)
+      case _ => PartitionUtil.getDataBasedOnDataType(rangeInfo.head, columnDataType,
+        timestampFormatter, dateFormatter)
+    }
+    val iterator = rangeInfo.tail.toIterator
+    while(iterator.hasNext) {
+      val next = columnDataType match {
+        case DataType.STRING => ByteUtil.toBytes(iterator.next())
+        case _ => PartitionUtil.getDataBasedOnDataType(iterator.next(), columnDataType,
+          timestampFormatter, dateFormatter)
+      }
+      if (comparator.compareTo(head, next)) {
+        head = next
+      } else {
+        sys.error("Range info must be in ascending order, please check again!")
+      }
+    }
   }
 
   def validateFields(key: String, fields: Seq[Field]): Boolean = {
@@ -579,7 +610,7 @@ object CommonUtil {
               f.toArray().mkString(", ")))
         }
       case PartitionType.HASH =>
-        var hashNumber = partitionInfo.getNumPartitions
+        var hashNumber = partitionInfo.getHashNumber
         result.+=(RowFactory.create(columnName + "=HASH_NUMBER(" + hashNumber.toString() + ")"))
       case others =>
         result.+=(RowFactory.create(columnName + "="))

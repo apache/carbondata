@@ -132,9 +132,12 @@ struct SchemaEvolution{
 struct PartitionInfo{
     1: required list<ColumnSchema> partition_columns;
     2: required PartitionType partition_type;
-    3: optional i32 num_partitions;  // number of partitions defined in hash partition table
+    3: optional i32 hash_number;  // number of partitions defined in hash partition table
     4: optional list<list<string>> list_info; // value list of list partition table
     5: optional list<string> range_info;  // range value list of range partition table
+    6: optional list<i32> partitionIdList; // partition Id list
+    7: optional i32 numOfPartitions;  // total partition count
+    8: optional i32 max_partition;  // max task id for now
 }
 
 /**

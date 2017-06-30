@@ -40,7 +40,7 @@ public class ListPartitioner implements Partitioner {
           CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
 
   /**
-   * map the value of ListPartition to partition id.
+   * Map the value of ListPartition to partition id.
    */
   private Map<Object, Integer> map = new java.util.HashMap<Object, Integer>();
 
@@ -59,7 +59,7 @@ public class ListPartitioner implements Partitioner {
   }
 
   /**
-   * number of partitions
+   * Number of partitions
    * add extra default partition
    * @return
    */

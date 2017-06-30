@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.scan.partition;
 
-import java.io.Serializable;
-import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
@@ -26,7 +24,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.util.ByteUtil;
-
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.comparator.Comparator;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
@@ -88,5 +85,4 @@ public class RangePartitioner implements Partitioner {
       return 0;
     }
   }
-
 }

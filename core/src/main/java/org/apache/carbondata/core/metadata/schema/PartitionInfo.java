@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata.schema;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
@@ -43,13 +44,30 @@ public class PartitionInfo implements Serializable {
   private List<List<String>> listInfo;
 
   /**
-   * number of partitions
+   * number of hash partitions
    */
-  private int numPartitions;
+  private int hashNumber;
+
+  /**
+   * total count of partitions
+   */
+  private int numberOfPartitions;
+
+  /**
+   * current max partition id, increase only, will be used in alter table partition operation
+   */
+  private int MAX_PARTITION;
+
+  /**
+   * record the partitionId in the logical ascending order
+   * initiate when table created and changed when alter table
+   */
+  private List<Integer> partitionIdList;
 
   public PartitionInfo(List<ColumnSchema> columnSchemaList, PartitionType partitionType) {
     this.columnSchemaList = columnSchemaList;
     this.partitionType = partitionType;
+    this.partitionIdList = new ArrayList<>();
   }
 
   public List<ColumnSchema> getColumnSchemaList() {
@@ -64,12 +82,12 @@ public class PartitionInfo implements Serializable {
     return partitionType;
   }
 
-  public void setNumPartitions(int numPartitions) {
-    this.numPartitions = numPartitions;
+  public void setHashNumber(int numPartitions) {
+    this.hashNumber = numPartitions;
   }
 
-  public int getNumPartitions() {
-    return numPartitions;
+  public int getHashNumber() {
+    return hashNumber;
   }
 
   public void setRangeInfo(List<String> rangeInfo) {
@@ -86,6 +104,42 @@ public class PartitionInfo implements Serializable {
 
   public List<List<String>> getListInfo() {
     return listInfo;
+  }
+
+  public void initialize(int partitionNum) {
+    for (int i = 0; i < partitionNum; i++) {
+      partitionIdList.add(i);
+    }
+    MAX_PARTITION = partitionNum - 1;
+    numberOfPartitions = partitionNum;
+  }
+
+  public int getNumberOfPartitions() {
+    return numberOfPartitions;
+  }
+
+  public int getMAX_PARTITION() {
+    return MAX_PARTITION;
+  }
+
+  public void setMAX_PARTITION(int max_partition) {
+    this.MAX_PARTITION = max_partition;
+  }
+
+  public List<Integer> getPartitionIdList() {
+    return partitionIdList;
+  }
+
+  public void setPartitionIdList(List<Integer> partitionIdList) {
+    this.partitionIdList = partitionIdList;
+  }
+
+  public void setNumberOfPartitions(int numberOfPartitions) {
+    this.numberOfPartitions = numberOfPartitions;
+  }
+
+  public int getPartitionId(int index) {
+    return partitionIdList.get(index);
   }
 
 }

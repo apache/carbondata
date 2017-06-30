@@ -21,7 +21,7 @@ import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer, LinkedHashSet, ListBuffer, Map}
+import scala.collection.mutable.{ArrayBuffer, LinkedHashSet, Map}
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 
@@ -29,6 +29,7 @@ import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -103,12 +104,14 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val LOCAL = carbonKeyWord("LOCAL")
   protected val MAPPED = carbonKeyWord("MAPPED")
   protected val MEASURES = carbonKeyWord("MEASURES")
+  protected val MERGE = carbonKeyWord("MERGE")
   protected val MULTILINE = carbonKeyWord("MULTILINE")
   protected val COMPLEX_DELIMITER_LEVEL_1 = carbonKeyWord("COMPLEX_DELIMITER_LEVEL_1")
   protected val COMPLEX_DELIMITER_LEVEL_2 = carbonKeyWord("COMPLEX_DELIMITER_LEVEL_2")
   protected val OPTIONS = carbonKeyWord("OPTIONS")
   protected val OUTPATH = carbonKeyWord("OUTPATH")
   protected val OVERWRITE = carbonKeyWord("OVERWRITE")
+  protected val PARTITION = carbonKeyWord("PARTITION")
   protected val PARTITION_COUNT = carbonKeyWord("PARTITION_COUNT")
   protected val PARTITIONDATA = carbonKeyWord("PARTITIONDATA")
   protected val PARTITIONER = carbonKeyWord("PARTITIONER")
@@ -119,6 +122,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val SCHEMAS = carbonKeyWord("SCHEMAS")
   protected val SET = Keyword("SET")
   protected val SHOW = carbonKeyWord("SHOW")
+  protected val SPLIT = carbonKeyWord("SPLIT")
   protected val TABLES = carbonKeyWord("TABLES")
   protected val TABLE = carbonKeyWord("TABLE")
   protected val TERMINATED = carbonKeyWord("TERMINATED")
@@ -371,8 +375,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       var partitionType: String = ""
       var numPartitions = 0
       var rangeInfo = List[String]()
-      var listInfo = ListBuffer[List[String]]()
-      var templist = ListBuffer[String]()
+      var listInfo = List[List[String]]()
+
+      val columnDataType = DataTypeConverterUtil.
+        convertToCarbonType(partitionCols.head.dataType.get)
       if (tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).isDefined) {
         partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).get
       }
@@ -383,25 +389,11 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       if (tableProperties.get(CarbonCommonConstants.RANGE_INFO).isDefined) {
         rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO).get.split(",")
           .map(_.trim()).toList
+        CommonUtil.validateRangeInfo(rangeInfo, columnDataType)
       }
       if (tableProperties.get(CarbonCommonConstants.LIST_INFO).isDefined) {
-        val arr = tableProperties.get(CarbonCommonConstants.LIST_INFO).get.split(",")
-          .map(_.trim())
-        val iter = arr.iterator
-        while (iter.hasNext) {
-          val value = iter.next()
-          if (value.startsWith("(")) {
-            templist += value.replace("(", "").trim()
-          } else if (value.endsWith(")")) {
-            templist += value.replace(")", "").trim()
-            listInfo += templist.toList
-            templist.clear()
-          } else {
-            templist += value
-            listInfo += templist.toList
-            templist.clear()
-          }
-        }
+        val originListInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO).get
+        listInfo = PartitionUtils.getListInfo(originListInfo)
       }
       val cols : ArrayBuffer[ColumnSchema] = new ArrayBuffer[ColumnSchema]()
       partitionCols.foreach(partition_col => {
@@ -415,11 +407,14 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       var partitionInfo : PartitionInfo = null
       partitionType.toUpperCase() match {
         case "HASH" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.HASH)
-          partitionInfo.setNumPartitions(numPartitions)
+          partitionInfo.setHashNumber(numPartitions)
+          partitionInfo.initialize(numPartitions)
         case "RANGE" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.RANGE)
           partitionInfo.setRangeInfo(rangeInfo.asJava)
+          partitionInfo.initialize(rangeInfo.size + 1)
         case "LIST" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.LIST)
-          partitionInfo.setListInfo(listInfo.map(_.asJava).toList.asJava)
+          partitionInfo.setListInfo(listInfo.map(_.asJava).asJava)
+          partitionInfo.initialize(listInfo.size + 1)
       }
       Some(partitionInfo)
     }
