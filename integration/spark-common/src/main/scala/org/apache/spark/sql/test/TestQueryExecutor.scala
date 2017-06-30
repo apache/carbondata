@@ -52,7 +52,8 @@ object TestQueryExecutor {
   val masterUrl = {
     val property = System.getProperty("spark.master.url")
     if (property == null) {
-      "local[2]"
+      "spark://root1-ThinkPad-T440p:7077"
+//      "local[2]"
     } else {
       property
     }
