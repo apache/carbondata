@@ -99,10 +99,6 @@ public class CarbonTable implements Serializable {
   private Map<String, PartitionInfo> tablePartitionMap;
 
   /**
-   * statistic information of partition table
-   */
-  private PartitionStatistic partitionStatistic;
-  /**
    * tableUniqueName
    */
   private String tableUniqueName;
@@ -595,10 +591,6 @@ public class CarbonTable implements Serializable {
 
   public boolean isPartitionTable() {
     return null != tablePartitionMap.get(getFactTableName());
-  }
-
-  public PartitionStatistic getPartitionStatistic() {
-    return partitionStatistic;
   }
 
   /**

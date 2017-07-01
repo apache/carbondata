@@ -17,43 +17,7 @@
 package org.apache.carbondata.core.stats;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.carbondata.core.metadata.schema.partition.AbstractPartition;
 
 public class PartitionStatistic implements Serializable {
 
-  /**
-   * total count of partitions
-   */
-  private int numberOfPartitions;
-
-  /**
-   * partition id, increase only
-   */
-  private int partitionIndex;
-
-  private Map<Integer, AbstractPartition> partitionMap;
-
-  public PartitionStatistic() {
-    this.partitionIndex = 0;
-    this.numberOfPartitions = 0;
-    this.partitionMap = new HashMap<>();
-  }
-
-  public void addNewPartition(int id, AbstractPartition partition) {
-    partitionMap.put(id, partition);
-    partitionIndex ++;
-    numberOfPartitions ++;
-  }
-
-  public void deletePartition(int id) {
-    partitionMap.remove(id);
-    numberOfPartitions --;
-  }
-
-  public int getNumberOfPartitions() {
-    return numberOfPartitions;
-  }
 }
