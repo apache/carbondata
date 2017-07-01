@@ -47,9 +47,28 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   private static final double FACTOR = 1.25;
 
+  /**
+   * create a page
+   * @param dataType data type
+   * @param pageSize number of row
+   */
   UnsafeVarLengthColumnPage(DataType dataType, int pageSize) throws MemoryException {
     super(dataType, pageSize);
     capacity = (int) (pageSize * DEFAULT_ROW_SIZE * FACTOR);
+    memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry((long)(capacity));
+    baseAddress = memoryBlock.getBaseObject();
+    baseOffset = memoryBlock.getBaseOffset();
+  }
+
+  /**
+   * create a page with initial capacity
+   * @param dataType data type
+   * @param pageSize number of row
+   * @param capacity initial capacity of the page, in bytes
+   */
+  UnsafeVarLengthColumnPage(DataType dataType, int pageSize, int capacity) throws MemoryException {
+    super(dataType, pageSize);
+    this.capacity = capacity;
     memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry((long)(capacity));
     baseAddress = memoryBlock.getBaseObject();
     baseOffset = memoryBlock.getBaseOffset();
@@ -65,6 +84,9 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
     }
   }
 
+  /**
+   * reallocate memory if capacity length than current size + request size
+   */
   private void ensureMemory(int requestSize) throws MemoryException {
     if (totalLength + requestSize > capacity) {
       int newSize = 2 * capacity;
@@ -81,17 +103,16 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   @Override
   public void putBytesAtRow(int rowId, byte[] bytes) {
-    try {
-      ensureMemory(bytes.length);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
-    CarbonUnsafe.unsafe.copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET,
-        baseAddress, baseOffset + rowOffset[rowId], bytes.length);
+    putBytes(rowId, bytes, 0, bytes.length);
   }
 
   @Override
   public void putBytes(int rowId, byte[] bytes, int offset, int length) {
+    try {
+      ensureMemory(length);
+    } catch (MemoryException e) {
+      throw new RuntimeException(e);
+    }
     CarbonUnsafe.unsafe.copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET + offset,
         baseAddress, baseOffset + rowOffset[rowId], length);
   }
