@@ -17,11 +17,13 @@
 
 package org.apache.carbondata.core.datastore.page;
 
+import java.math.BigDecimal;
+
 /**
  * This is a decorator of column page, it performs transformation lazily (when caller calls getXXX
  * method to get the value from the page)
  */
-public class LazyColumnPage extends SafeFixLengthColumnPage {
+public class LazyColumnPage extends ColumnPage {
 
   // decorated column page
   private ColumnPage columnPage;
@@ -85,7 +87,167 @@ public class LazyColumnPage extends SafeFixLengthColumnPage {
   }
 
   @Override
+  public float getFloat(int rowId) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public BigDecimal getDecimal(int rowId) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public byte[] getBytePage() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public short[] getShortPage() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public byte[] getShortIntPage() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public int[] getIntPage() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public long[] getLongPage() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public float[] getFloatPage() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public double[] getDoublePage() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public byte[][] getByteArrayPage() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public byte[] getFlattenedBytePage() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void encode(PrimitiveCodec codec) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void setBytePage(byte[] byteData) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void setShortPage(short[] shortData) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void setShortIntPage(byte[] shortIntData) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void setIntPage(int[] intData) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void setLongPage(long[] longData) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void setFloatPage(float[] floatData) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void setDoublePage(double[] doubleData) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void setByteArrayPage(byte[][] byteArray) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
   public void freeMemory() {
     columnPage.freeMemory();
+  }
+
+  @Override
+  public void putByte(int rowId, byte value) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void putShort(int rowId, short value) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void putInt(int rowId, int value) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void putLong(int rowId, long value) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void putDouble(int rowId, double value) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void putBytes(int rowId, byte[] bytes) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void putShortInt(int rowId, int value) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void putBytes(int rowId, byte[] bytes, int offset, int length) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public byte getByte(int rowId) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public short getShort(int rowId) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public int getShortInt(int rowId) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public int getInt(int rowId) {
+    throw new UnsupportedOperationException("internal error");
   }
 }
