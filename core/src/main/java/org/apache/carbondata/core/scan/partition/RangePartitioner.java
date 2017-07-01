@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.scan.partition;
 
-import java.io.Serializable;
-import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
