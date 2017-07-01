@@ -17,10 +17,12 @@
 
 package org.apache.carbondata.presto;
 
-import com.facebook.presto.spi.*;
-import com.facebook.presto.spi.predicate.TupleDomain;
-import com.facebook.presto.spi.type.Type;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -33,11 +35,14 @@ import org.apache.carbondata.core.scan.result.BatchResult;
 import org.apache.carbondata.core.scan.result.iterator.ChunkRowIterator;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
-//import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodedReadSupportImpl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.facebook.presto.spi.ColumnHandle;
+import com.facebook.presto.spi.ConnectorSession;
+import com.facebook.presto.spi.ConnectorSplit;
+import com.facebook.presto.spi.RecordCursor;
+import com.facebook.presto.spi.RecordSet;
+import com.facebook.presto.spi.predicate.TupleDomain;
+import com.facebook.presto.spi.type.Type;
 
 import static org.apache.carbondata.presto.Types.checkType;
 
@@ -83,8 +88,7 @@ public class CarbondataRecordSet implements RecordSet {
     tableBlockInfoList.add(new TableBlockInfo(split.getLocalInputSplit().getPath().toString(),
         split.getLocalInputSplit().getStart(), split.getLocalInputSplit().getSegmentId(),
         split.getLocalInputSplit().getLocations().toArray(new String[0]),
-        split.getLocalInputSplit().getLength(),
-        //blockletInfos,
+        split.getLocalInputSplit().getLength(), new BlockletInfos(),
         ColumnarFormatVersion.valueOf(split.getLocalInputSplit().getVersion()), null));
     queryModel.setTableBlockInfos(tableBlockInfoList);
 
@@ -99,8 +103,8 @@ public class CarbondataRecordSet implements RecordSet {
       RecordCursor rc = new CarbondataRecordCursor(readSupport, carbonIterator, columns, split);
       return rc;
     } catch (QueryExecutionException e) {
-       throw new RuntimeException(e.getMessage(), e);
-   } catch (Exception ex) {
+      throw new RuntimeException(e.getMessage(), e);
+    } catch (Exception ex) {
       throw new RuntimeException(ex.getMessage(), ex);
     }
   }
