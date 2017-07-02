@@ -330,40 +330,6 @@ object CommonUtil {
     }
   }
 
-  def validateSplitListInfo(originListInfo: List[String], newListInfo: List[String],
-      originList: List[List[String]]): Unit = {
-    if (originListInfo.size == 1) {
-      sys.error("The target list partition cannot be split, please check again!")
-    }
-    if (newListInfo.size == 1) {
-      sys.error("Can't split list to one partition, please check again!")
-    }
-    if (!(newListInfo.size < originListInfo.size)) {
-      sys.error("The size of new list must be smaller than original list, please check again!")
-    }
-    val tempList = newListInfo.mkString(",").split(",")
-      .map(_.toLowerCase().trim.replace("(","").replace(")",""))
-    if (tempList.length != originListInfo.size) {
-      sys.error("The total number of elements in new list must equal to original list!")
-    }
-    if (!originListInfo.sameElements(tempList)) {
-      sys.error("The elements in new list must exist in original list")
-    }
-  }
-
-  def validateAddListInfo(newListInfo: List[String], originList: List[List[String]]): Unit = {
-    if (newListInfo.size < 1) {
-      sys.error("Please add at least one new partition")
-    }
-    for (originElementGroup <- originList) {
-      for (newElement <- newListInfo ) {
-        if (originElementGroup.contains(newElement)) {
-          sys.error(s"The partition $newElement is already exist! Please check again!")
-        }
-      }
-    }
-  }
-
   def validateFields(key: String, fields: Seq[Field]): Boolean = {
     var isValid: Boolean = false
     fields.foreach { field =>
