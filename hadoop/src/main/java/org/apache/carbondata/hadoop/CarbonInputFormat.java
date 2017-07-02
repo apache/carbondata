@@ -444,7 +444,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
             segmentIndexMap.entrySet()) {
           SegmentTaskIndexStore.TaskBucketHolder taskHolder = entry.getKey();
           int taskId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskHolder.taskNo);
-            partitionIndex = taskIdGroup.indexOf(taskId);
+          partitionIndex = taskIdGroup.indexOf(taskId);
           // matchedPartitions variable will be null in two cases as follows
           // 1. the table is not a partition table
           // 2. the table is a partition table, and all partitions are matched by query
