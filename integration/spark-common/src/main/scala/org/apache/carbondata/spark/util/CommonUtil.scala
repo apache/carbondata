@@ -41,8 +41,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
+import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.comparator.Comparator
+import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
 import org.apache.carbondata.processing.csvload.CSVInputFormat
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
@@ -54,6 +56,12 @@ object CommonUtil {
 
   val FIXED_DECIMAL = """decimal\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
   val FIXED_DECIMALTYPE = """decimaltype\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
+  val timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance
+    .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+  val dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance
+    .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
 
   def validateColumnGroup(colGroup: String, noDictionaryDims: Seq[String],
       msrs: Seq[Field], retrievedColGrps: Seq[String], dims: Seq[Field]) {
@@ -294,6 +302,66 @@ object CommonUtil {
         validateTypeConvertForSpark2(partitionerField, value)
     }
     result
+  }
+  /**
+   * To verify the range info is in correct order
+   * @param rangeInfo
+   * @param columnDataType
+   */
+  def validateRangeInfo(rangeInfo: List[String], columnDataType: DataType): Unit = {
+    val comparator = Comparator.getComparator(columnDataType)
+    var head = columnDataType match {
+      case DataType.STRING => ByteUtil.toBytes(rangeInfo.head)
+      case _ => PartitionUtil.getDataBasedOnDataType(rangeInfo.head, columnDataType,
+        timestampFormatter, dateFormatter)
+    }
+    val iterator = rangeInfo.tail.toIterator
+    while(iterator.hasNext) {
+      val next = columnDataType match {
+        case DataType.STRING => ByteUtil.toBytes(iterator.next())
+        case _ => PartitionUtil.getDataBasedOnDataType(iterator.next(), columnDataType,
+          timestampFormatter, dateFormatter)
+      }
+      if (comparator.compareTo(head, next)) {
+        head = next
+      } else {
+        sys.error("Range info must be in ascending order, please check again!")
+      }
+    }
+  }
+
+  def validateSplitListInfo(originListInfo: List[String], newListInfo: List[String],
+      originList: List[List[String]]): Unit = {
+    if (originListInfo.size == 1) {
+      sys.error("The target list partition cannot be split, please check again!")
+    }
+    if (newListInfo.size == 1) {
+      sys.error("Can't split list to one partition, please check again!")
+    }
+    if (!(newListInfo.size < originListInfo.size)) {
+      sys.error("The size of new list must be smaller than original list, please check again!")
+    }
+    val tempList = newListInfo.mkString(",").split(",")
+      .map(_.toLowerCase().trim.replace("(","").replace(")",""))
+    if (tempList.length != originListInfo.size) {
+      sys.error("The total number of elements in new list must equal to original list!")
+    }
+    if (!originListInfo.sameElements(tempList)) {
+      sys.error("The elements in new list must exist in original list")
+    }
+  }
+
+  def validateAddListInfo(newListInfo: List[String], originList: List[List[String]]): Unit = {
+    if (newListInfo.size < 1) {
+      sys.error("Please add at least one new partition")
+    }
+    for (originElementGroup <- originList) {
+      for (newElement <- newListInfo ) {
+        if (originElementGroup.contains(newElement)) {
+          sys.error(s"The partition $newElement is already exist! Please check again!")
+        }
+      }
+    }
   }
 
   def validateFields(key: String, fields: Seq[Field]): Boolean = {

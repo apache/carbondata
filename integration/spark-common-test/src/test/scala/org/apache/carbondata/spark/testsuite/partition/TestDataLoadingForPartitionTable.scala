@@ -114,7 +114,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE rangeTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    validateDataFiles("default_rangeTable", "0", Seq(0, 1, 3, 4))
+    validateDataFiles("default_rangeTable", "0", Seq(0, 1, 2, 4))
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeTable order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
@@ -135,7 +135,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE listTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    validateDataFiles("default_listTable", "0", Seq(1, 2))
+    validateDataFiles("default_listTable", "0", Seq(2, 3))
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from listTable order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
@@ -175,7 +175,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE rangeTableSinglePass OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"', 'SINGLE_PASS'='TRUE')""")
 
-    validateDataFiles("default_rangeTableSinglePass", "0", Seq(0, 1, 3, 4))
+    validateDataFiles("default_rangeTableSinglePass", "0", Seq(0, 1, 2, 4))
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeTableSinglePass order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
@@ -196,7 +196,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE listTableSinglePass OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"', 'SINGLE_PASS'='TRUE')""")
 
-    validateDataFiles("default_listTableSinglePass", "0", Seq(1, 2))
+    validateDataFiles("default_listTableSinglePass", "0", Seq(2, 3))
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from listTableSinglePass order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
@@ -236,7 +236,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
       """.stripMargin)
     sql("insert into rangeTableForInsert select empno, empname, designation, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary, doj from originTable")
 
-    validateDataFiles("default_rangeTableForInsert", "0", Seq(0, 1, 3, 4))
+    validateDataFiles("default_rangeTableForInsert", "0", Seq(0, 1, 2, 4))
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeTableForInsert order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
@@ -257,7 +257,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
       """.stripMargin)
     sql("insert into listTableForInsert select empno, empname, designation, doj, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary, workgroupcategory from originTable")
 
-    validateDataFiles("default_listTableForInsert", "0", Seq(1, 2))
+    validateDataFiles("default_listTableForInsert", "0", Seq(2, 3))
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from listTableForInsert order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
