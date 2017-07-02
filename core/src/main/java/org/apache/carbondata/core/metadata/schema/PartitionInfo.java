@@ -114,31 +114,6 @@ public class PartitionInfo implements Serializable {
     numberOfPartitions = partitionNum;
   }
 
-  /**
-   * add partition means split default partition, add in last directly
-   */
-  public void  addPartition(int addPartitionCount) {
-    for (int i = 0; i < addPartitionCount; i++) {
-      taskIdInPartitionOrder.add(++MAX_PARTITION);
-      numberOfPartitions++;
-    }
-  }
-
-  /**
-   * e.g. original partition[0,1,2,3,4,5]
-   * split partition 2 to partition 6,7,8
-   * then sourcePartitionId is 2, newPartitionNumbers is 3
-   * @param sourcePartitionId
-   * @param newPartitionNumbers
-   */
-  public void splitPartition(int sourcePartitionId, int newPartitionNumbers) {
-    taskIdInPartitionOrder.remove(sourcePartitionId);
-    for (int i = 0; i < newPartitionNumbers; i++) {
-      taskIdInPartitionOrder.add(sourcePartitionId + i, ++MAX_PARTITION);
-    }
-    numberOfPartitions = numberOfPartitions - 1 + newPartitionNumbers;
-  }
-
   public int getNumberOfPartitions() {
     return numberOfPartitions;
   }
