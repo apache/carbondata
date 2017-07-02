@@ -128,7 +128,7 @@ public class PartitionFilterUtil {
 
     BitSet partitionMap = PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), false);
     // add default partition
-    partitionMap.set(partitioner.numPartitions() - 1);
+    partitionMap.set(0);
 
     int partitions = values.size();
     if (isGreaterThan) {
@@ -140,7 +140,7 @@ public class PartitionFilterUtil {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
             if (comparator.compare(listValue, filterValue) >= 0) {
-              partitionMap.set(i);
+              partitionMap.set(i + 1);
               continue outer1;
             }
           }
@@ -153,7 +153,7 @@ public class PartitionFilterUtil {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
             if (comparator.compare(listValue, filterValue) > 0) {
-              partitionMap.set(i);
+              partitionMap.set(i + 1);
               continue outer2;
             }
           }
@@ -168,7 +168,7 @@ public class PartitionFilterUtil {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
             if (comparator.compare(listValue, filterValue) <= 0) {
-              partitionMap.set(i);
+              partitionMap.set(i + 1);
               continue outer3;
             }
           }
@@ -181,7 +181,7 @@ public class PartitionFilterUtil {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
             if (comparator.compare(listValue, filterValue) < 0) {
-              partitionMap.set(i);
+              partitionMap.set(i + 1);
               continue outer4;
             }
           }
@@ -229,10 +229,10 @@ public class PartitionFilterUtil {
       // filter value is in default partition
       if (isGreaterThan) {
         // GreaterThan(>), GreaterThanEqualTo(>=)
-        partitionMap.set(numPartitions);
+        partitionMap.set(0);
       } else {
         // LessThan(<), LessThanEqualTo(<=)
-        partitionMap.set(0, partitioner.numPartitions());
+        partitionMap.set(1, partitioner.numPartitions());
       }
     } else {
       // filter value is not in default partition
@@ -240,24 +240,26 @@ public class PartitionFilterUtil {
         // if result is 0, the filter value is a bound value of range partition.
         if (isGreaterThan) {
           // GreaterThan(>), GreaterThanEqualTo(>=)
-          partitionMap.set(partitionIndex + 1, partitioner.numPartitions());
+          partitionMap.set(partitionIndex + 1, partitioner.numPartitions() - 1);
+          partitionMap.set(0);
         } else {
           if (isEqualTo) {
             // LessThanEqualTo(<=)
-            partitionMap.set(0, partitionIndex + 2);
+            partitionMap.set(1, partitionIndex + 3);
           } else {
             // LessThan(<)
-            partitionMap.set(0, partitionIndex + 1);
+            partitionMap.set(1, partitionIndex + 2);
           }
         }
       } else {
         // the filter value is not a bound value of range partition
         if (isGreaterThan) {
           // GreaterThan(>), GreaterThanEqualTo(>=)
-          partitionMap.set(partitionIndex, partitioner.numPartitions());
+          partitionMap.set(partitionIndex + 1, partitioner.numPartitions() - 1);
+          partitionMap.set(0);
         } else {
           // LessThan(<), LessThanEqualTo(<=)
-          partitionMap.set(0, partitionIndex + 1);
+          partitionMap.set(1, partitionIndex + 2);
         }
       }
     }
