@@ -276,16 +276,20 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
       // prune partitions for filter query on partition table
       BitSet matchedPartitions = setMatchedPartitions(null, carbonTable, filter);
-      Partitioner partitioner = PartitionUtil.getPartitioner(partitionInfo);
-      if (matchedPartitions != null) {
-        if (matchedPartitions.cardinality() == 0) {
-          // no partition is required
-          return new ArrayList<InputSplit>();
-        } else if (matchedPartitions.cardinality() == partitioner.numPartitions()) {
-          // all partitions are required, no need to prune partitions
-          matchedPartitions = null;
+      if (partitionInfo != null) {
+        Partitioner partitioner = PartitionUtil.getPartitioner(partitionInfo);
+        if (matchedPartitions != null) {
+          if (matchedPartitions.cardinality() == 0) {
+            // no partition is required
+            return new ArrayList<InputSplit>();
+          } else if (matchedPartitions.cardinality() == partitioner.numPartitions()) {
+            // all partitions are required, no need to prune partitions
+            matchedPartitions = null;
+          }
         }
       }
+
+
 
       FilterResolverIntf filterInterface = CarbonInputFormatUtil.resolveFilter(filter, identifier);
 
@@ -437,18 +441,23 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
           getSegmentAbstractIndexs(job, absoluteTableIdentifier, segmentId, cacheClient,
               updateStatusManager);
       List<DataRefNode> resultFilterredBlocks = new LinkedList<DataRefNode>();
-      int partitionIndex;
-      List<Integer> taskIdGroup = partitionInfo.getTaskIdInPartitionOrder();
+      int partitionIndex = -1;
+      List<Integer> taskIdGroup = new ArrayList<>();
+      if (partitionInfo != null) {
+        taskIdGroup = partitionInfo.getTaskIdInPartitionOrder();
+      }
       if (null != segmentIndexMap) {
         for (Map.Entry<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> entry :
             segmentIndexMap.entrySet()) {
           SegmentTaskIndexStore.TaskBucketHolder taskHolder = entry.getKey();
           int taskId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskHolder.taskNo);
-          partitionIndex = taskIdGroup.indexOf(taskId);
+          if (partitionInfo != null) {
+            partitionIndex = taskIdGroup.indexOf(taskId);
+          }
           // matchedPartitions variable will be null in two cases as follows
           // 1. the table is not a partition table
           // 2. the table is a partition table, and all partitions are matched by query
-          // for partition table, the task id of carbaondata file name is the partition id.
+          // for partition table, the task id could map to partition id.
           // if this partition is not required, here will skip it.
 
           if (matchedPartitions == null || matchedPartitions.get(partitionIndex)) {
