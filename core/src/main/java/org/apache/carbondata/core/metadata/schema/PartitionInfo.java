@@ -144,20 +144,6 @@ public class PartitionInfo implements Serializable {
     numberOfPartitions = numberOfPartitions - 1 + newPartitionNumbers;
   }
 
-  public void dropPartition(int partitionId) {
-    taskIdInPartitionOrder.remove(partitionId);
-    numberOfPartitions--;
-  }
-
-  public void mergePartition(int startId, int endId) {
-    int size = endId - startId + 1;
-    int j = startId;
-    for (int i = 0; i < size; i++) {
-      taskIdInPartitionOrder.remove(j);
-    }
-    taskIdInPartitionOrder.add(j, ++MAX_PARTITION);
-  }
-
   public int getNumberOfPartitions() {
     return numberOfPartitions;
   }
