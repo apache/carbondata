@@ -112,7 +112,7 @@ public class PartitionInfo implements Serializable {
   }
 
   public void initialize(int partitionNum) {
-    for (int i = 0; i < partitionNum; i++ ) {
+    for (int i = 0; i < partitionNum; i++) {
       taskIdInPartitionOrder.add(i);
     }
     MAX_PARTITION = partitionNum - 1;
