@@ -61,11 +61,6 @@ public class PartitionInfo implements Serializable {
   /**
    * record the task id in partition order
    * initiate when table created and changed when alter table
-   * e.g. origin partition is [0,1,2,3,4]
-   * after [add partition], it is [0,1,2,3,4,5]
-   * after [split partition] 2 into 2,6,7, it is [0,1,2,6,7,3,4,5]
-   * after [drop partition] 2, it is [0,1,6,7,3,4,5]
-   * after [merge partition] 6,7, it is [0,1,8,3,4,5]
    */
   private List<Integer> taskIdInPartitionOrder;
 
