@@ -58,7 +58,7 @@ object CarbonSessionExample {
 
     spark.sparkContext.setLogLevel("WARN")
     val selectQuery = ExcelFeed
-      .inputFeed("/home/root1/Downloads/Query-updated.xls", "Queries_combined2.1", 4)
+      .inputFeed("/home/root1/Downloads/21Machine_Query.xls", "Queries_combined2.1", 4)
 
     var i = 0
     while (i < selectQuery.size()) {

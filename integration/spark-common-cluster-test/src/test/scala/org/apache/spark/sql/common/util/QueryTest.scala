@@ -135,7 +135,6 @@ object QueryTest {
         val errorMessage =
           s"""
              |Exception thrown while executing query:
-             |${df.queryExecution}
              |== Exception ==
              |$e
              |${org.apache.spark.sql.catalyst.util.stackTraceToString(e)}
@@ -147,7 +146,6 @@ object QueryTest {
       val errorMessage =
         s"""
            |Results do not match for query:
-           |${df.queryExecution}
            |== Results ==
            |${
           sideBySide(

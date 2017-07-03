@@ -69,7 +69,10 @@ object Spark2TestQueryExecutor {
     files.foreach(jars += _.getAbsolutePath)
   }
 
-  val conf = new SparkConf().setJars(jars)
+  val conf = new SparkConf().setJars(jars).
+    set("spark.driver.memory", "2g").
+    set("spark.executor.memory","4g").
+    set("spark.executor.cores", "4")
 
   val spark = SparkSession
     .builder().config(conf)
