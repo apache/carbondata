@@ -118,7 +118,9 @@ public final class DataTypeUtil {
   }
 
   public static Object getMeasureObjectFromDataType(byte[] data, DataType dataType) {
-
+    if (data == null || data.length == 0) {
+      return null;
+    }
     switch (dataType) {
       case SHORT:
       case INT:

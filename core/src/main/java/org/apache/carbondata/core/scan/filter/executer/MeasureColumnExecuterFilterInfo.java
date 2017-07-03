@@ -18,13 +18,13 @@ package org.apache.carbondata.core.scan.filter.executer;
 
 public class MeasureColumnExecuterFilterInfo {
 
-  byte[][] filterKeys;
+  Object[] filterKeys;
 
-  public void setFilterKeys(byte[][] filterKeys) {
+  public void setFilterKeys(Object[] filterKeys) {
     this.filterKeys = filterKeys;
   }
 
-  public byte[][] getFilterKeys() {
+  public Object[] getFilterKeys() {
     return filterKeys;
   }
 }

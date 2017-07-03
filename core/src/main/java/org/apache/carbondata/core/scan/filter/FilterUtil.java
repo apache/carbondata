@@ -437,33 +437,26 @@ public final class FilterUtil {
   public static ColumnFilterInfo getMeasureValKeyMemberForFilter(
       List<String> evaluateResultListFinal, boolean isIncludeFilter, DataType dataType,
       CarbonMeasure carbonMeasure) throws FilterUnsupportedException {
-    List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
+    List<Object> filterValuesList = new ArrayList<>(20);
     String result = null;
     try {
       int length = evaluateResultListFinal.size();
       for (int i = 0; i < length; i++) {
         result = evaluateResultListFinal.get(i);
         if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(result)) {
-          filterValuesList.add(new byte[0]);
+          filterValuesList.add(null);
           continue;
         }
 
         filterValuesList
-            .add(DataTypeUtil.getMeasureByteArrayBasedOnDataTypes(result, dataType, carbonMeasure));
+            .add(DataTypeUtil.getMeasureValueBasedOnDataType(result, dataType, carbonMeasure));
 
       }
     } catch (Throwable ex) {
       throw new FilterUnsupportedException("Unsupported Filter condition: " + result, ex);
     }
 
-    Comparator<byte[]> filterMeasureComaparator = new Comparator<byte[]>() {
-
-      @Override public int compare(byte[] filterMember1, byte[] filterMember2) {
-        // TODO Auto-generated method stub
-        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterMember1, filterMember2);
-      }
-
-    };
+    Comparator filterMeasureComaparator = FilterUtil.getComparatorByDataTypeForMeasure(dataType);
     Collections.sort(filterValuesList, filterMeasureComaparator);
     ColumnFilterInfo columnFilterInfo = null;
     if (filterValuesList.size() > 0) {
@@ -717,12 +710,7 @@ public final class FilterUtil {
    * @return
    */
   public static byte[][] getKeyArray(ColumnFilterInfo columnFilterInfo,
-      CarbonDimension carbonDimension, CarbonMeasure carbonMeasure,
-      SegmentProperties segmentProperties) {
-    if (null != carbonMeasure) {
-      return columnFilterInfo.getMeasuresFilterValuesList()
-          .toArray((new byte[columnFilterInfo.getMeasuresFilterValuesList().size()][]));
-    }
+      CarbonDimension carbonDimension, SegmentProperties segmentProperties) {
     if (!carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
       return columnFilterInfo.getNoDictionaryFilterValuesList()
           .toArray((new byte[columnFilterInfo.getNoDictionaryFilterValuesList().size()][]));
@@ -1127,10 +1115,11 @@ public final class FilterUtil {
       DimColumnExecuterFilterInfo dimColumnExecuterInfo, CarbonMeasure measures,
       MeasureColumnExecuterFilterInfo msrColumnExecuterInfo) {
     if (null != measures) {
-      byte[][] keysBasedOnFilter = getKeyArray(filterValues, null, measures, segmentProperties);
+      Object[] keysBasedOnFilter = filterValues.getMeasuresFilterValuesList()
+          .toArray((new Object[filterValues.getMeasuresFilterValuesList().size()]));
       msrColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
     } else {
-      byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, null, segmentProperties);
+      byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, segmentProperties);
       dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
     }
   }
@@ -1603,6 +1592,13 @@ public final class FilterUtil {
 
   static class DoubleComparator implements Comparator<Object> {
     @Override public int compare(Object key1, Object key2) {
+      if (key1 == null && key2 == null) {
+        return 0;
+      } else if (key1 == null) {
+        return -1;
+      } else if (key2 == null) {
+        return 1;
+      }
       double key1Double1 = (double)key1;
       double key1Double2 = (double)key2;
       if (key1Double1 < key1Double2) {
@@ -1617,6 +1613,13 @@ public final class FilterUtil {
 
   static class LongComparator implements Comparator<Object> {
     @Override public int compare(Object key1, Object key2) {
+      if (key1 == null && key2 == null) {
+        return 0;
+      } else if (key1 == null) {
+        return -1;
+      } else if (key2 == null) {
+        return 1;
+      }
       long longKey1 = (long) key1;
       long longKey2 = (long) key2;
       if (longKey1 < longKey2) {
@@ -1631,6 +1634,13 @@ public final class FilterUtil {
 
   static class BigDecimalComparator implements Comparator<Object> {
     @Override public int compare(Object key1, Object key2) {
+      if (key1 == null && key2 == null) {
+        return 0;
+      } else if (key1 == null) {
+        return -1;
+      } else if (key2 == null) {
+        return 1;
+      }
       return ((BigDecimal) key1).compareTo((BigDecimal) key2);
     }
   }

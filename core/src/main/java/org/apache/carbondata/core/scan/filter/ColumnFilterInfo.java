@@ -38,7 +38,7 @@ public class ColumnFilterInfo implements Serializable {
    */
   private List<byte[]> noDictionaryFilterValuesList;
 
-  private List<byte[]> measuresFilterValuesList;
+  private List<Object> measuresFilterValuesList;
 
   public List<byte[]> getNoDictionaryFilterValuesList() {
     return noDictionaryFilterValuesList;
@@ -78,11 +78,11 @@ public class ColumnFilterInfo implements Serializable {
     this.implicitColumnFilterList = implicitColumnFilterList;
   }
 
-  public List<byte[]> getMeasuresFilterValuesList() {
+  public List<Object> getMeasuresFilterValuesList() {
     return measuresFilterValuesList;
   }
 
-  public void setMeasuresFilterValuesList(List<byte[]> measuresFilterValuesList) {
+  public void setMeasuresFilterValuesList(List<Object> measuresFilterValuesList) {
     this.measuresFilterValuesList = measuresFilterValuesList;
   }
 }
