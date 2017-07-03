@@ -85,4 +85,3 @@ public class CarbondataSplit implements ConnectorSplit {
     return this;
   }
 }
-
