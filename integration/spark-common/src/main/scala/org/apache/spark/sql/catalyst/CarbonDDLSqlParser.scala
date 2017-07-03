@@ -551,8 +551,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         } else {
           val dataType = fields.find(x =>
             x.column.equalsIgnoreCase(column)).get.dataType.get
-          if (isComplexDimDictionaryExclude(dataType)) {
-            val errormsg = "sort_columns is unsupported for complex datatype column: " + column
+          if (isDataTypeSupportedForSortColumn(dataType)) {
+            val errormsg = s"sort_columns is unsupported for ${dataType} datatype column: " + column
             throw new MalformedCarbonCommandException(errormsg)
           }
         }
@@ -688,6 +688,14 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   def isComplexDimDictionaryExclude(dimensionDataType: String): Boolean = {
     val dimensionType = Array("array", "struct")
     dimensionType.exists(x => x.equalsIgnoreCase(dimensionDataType))
+  }
+
+  /**
+   * detects whether datatype is part of sort_column
+   */
+  private def isDataTypeSupportedForSortColumn(columnDataType: String): Boolean = {
+    val dataTypes = Array("array", "struct", "double", "float", "decimal")
+    dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 
   /**
