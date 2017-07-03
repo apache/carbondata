@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata.schema;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
@@ -43,13 +44,30 @@ public class PartitionInfo implements Serializable {
   private List<List<String>> listInfo;
 
   /**
-   * number of partitions
+   * number of hash partitions
    */
   private int numPartitions;
+
+  /**
+   * total count of partitions
+   */
+  private int numberOfPartitions;
+
+  /**
+   * task id of max partition
+   */
+  private int MAX_PARTITION;
+
+  /**
+   * record the task id in partition order
+   * initiate when table created and changed when alter table
+   */
+  private List<Integer> taskIdInPartitionOrder;
 
   public PartitionInfo(List<ColumnSchema> columnSchemaList, PartitionType partitionType) {
     this.columnSchemaList = columnSchemaList;
     this.partitionType = partitionType;
+    this.taskIdInPartitionOrder = new ArrayList<>();
   }
 
   public List<ColumnSchema> getColumnSchemaList() {
@@ -86,6 +104,42 @@ public class PartitionInfo implements Serializable {
 
   public List<List<String>> getListInfo() {
     return listInfo;
+  }
+
+  public void initialize(int partitionNum) {
+    for (int i = 0; i < partitionNum; i++) {
+      taskIdInPartitionOrder.add(i);
+    }
+    MAX_PARTITION = partitionNum - 1;
+    numberOfPartitions = partitionNum;
+  }
+
+  public int getNumberOfPartitions() {
+    return numberOfPartitions;
+  }
+
+  public int getMAX_PARTITION() {
+    return MAX_PARTITION;
+  }
+
+  public void setMAX_PARTITION(int max_partition) {
+    this.MAX_PARTITION = max_partition;
+  }
+
+  public List<Integer> getTaskIdInPartitionOrder() {
+    return taskIdInPartitionOrder;
+  }
+
+  public void setTaskIdInPartitionOrder(List<Integer> taskIdInPartitionOrder) {
+    this.taskIdInPartitionOrder = taskIdInPartitionOrder;
+  }
+
+  public void setNumberOfPartitions(int numberOfPartitions) {
+    this.numberOfPartitions = numberOfPartitions;
+  }
+
+  public int getTaskId(int partitionId) {
+    return taskIdInPartitionOrder.get(partitionId);
   }
 
 }

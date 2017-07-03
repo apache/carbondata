@@ -327,7 +327,7 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * get copy with parition
+   * get copy with partition
    *
    * @param uniqueId
    * @return
