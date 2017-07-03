@@ -318,7 +318,7 @@ public final class CarbonLoaderUtil {
                 // For insert overwrite, we will delete the old segment folder immediately
                 // So collect the old segments here
                 String path = carbonTablePath.getCarbonDataDirectoryPath("0", entry.getLoadName());
-                staleFolders.add(FileFactory.getCarbonFile(path));
+                staleFolders.add(FileFactory.getCarbonFile(path, FileFactory.getFileType(path)));
               }
             }
           }

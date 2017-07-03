@@ -38,6 +38,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.BZip2Codec;
@@ -87,8 +88,17 @@ public final class FileFactory {
     return FileType.LOCAL;
   }
 
-  public static CarbonFile getCarbonFile(String path) {
-    return getCarbonFile(path, getFileType(path));
+  public static CarbonFile getCarbonFile(FileStatus listStatus, FileType fileType) {
+    switch (fileType) {
+      case HDFS:
+        return new HDFSCarbonFile(listStatus);
+      case ALLUXIO:
+        return new AlluxioCarbonFile(listStatus);
+      case VIEWFS:
+        return new ViewFSCarbonFile(listStatus);
+      default:
+        return null;
+    }
   }
 
   public static CarbonFile getCarbonFile(String path, FileType fileType) {

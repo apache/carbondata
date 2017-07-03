@@ -1,7 +1,6 @@
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
@@ -24,7 +23,6 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.viewfs.ViewFileSystem;
-import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.hdfs.web.WebHdfsFileSystem;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -230,7 +228,7 @@ public class ViewFsCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
-                return new DistributedFileSystem();
+                return new ViewFileSystem();
             }
 
         };
@@ -249,7 +247,7 @@ public class ViewFsCarbonFileTest {
             }
 
         };
-        new MockUp<DistributedFileSystem>() {
+        new MockUp<ViewFileSystem>() {
             @Mock
             public FileStatus getFileStatus(Path f) throws IOException {
 

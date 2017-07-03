@@ -720,7 +720,8 @@ object CommonUtil {
                             load.getLoadStatus.equals(LoadStatusType.INSERT_OVERWRITE.getMessage)) {
                           load.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE)
                           staleFolders :+ FileFactory.getCarbonFile(
-                            carbonTablePath.getCarbonDataDirectoryPath("0", load.getLoadName))
+                            carbonTablePath.getCarbonDataDirectoryPath("0", load.getLoadName),
+                            FileFactory.getFileType(carbonTablePath.toString))
                           loadInprogressExist = true
                         }
                       }

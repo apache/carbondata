@@ -20,6 +20,8 @@ package org.apache.carbondata.core.datastore.filesystem;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -30,8 +32,10 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.viewfs.ViewFileSystem;
+import org.apache.hadoop.hdfs.DistributedFileSystem;
 
-public abstract  class AbstractDFSCarbonFile implements CarbonFile {
+public abstract class AbstractDFSCarbonFile implements CarbonFile {
   /**
    * LOGGER
    */
@@ -122,6 +126,77 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
       LOGGER.error("Exception occurred:" + e.getMessage());
       return false;
     }
+  }
+
+  @Override public boolean renameForce(String changetoName) {
+    FileSystem fs;
+    try {
+      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      if (fs instanceof DistributedFileSystem) {
+        ((DistributedFileSystem) fs).rename(fileStatus.getPath(), new Path(changetoName),
+            org.apache.hadoop.fs.Options.Rename.OVERWRITE);
+        return true;
+      } else if (fs instanceof ViewFileSystem) {
+        fs.delete(new Path(changetoName), true);
+        fs.rename(fileStatus.getPath(), new Path(changetoName));
+        return true;
+      } else {
+        return false;
+      }
+    } catch (IOException e) {
+      LOGGER.error("Exception occured" + e.getMessage());
+      return false;
+    }
+  }
+
+  public CarbonFile[] getFiles(FileStatus[] listStatus, FileFactory.FileType fileType) {
+    if (listStatus == null) {
+      return new CarbonFile[0];
+    }
+    CarbonFile[] files = new CarbonFile[listStatus.length];
+    for (int i = 0; i < files.length; i++) {
+      files[i] = FileFactory.getCarbonFile(listStatus[i], fileType);
+    }
+    return files;
+  }
+
+  public CarbonFile[] listFiles(FileFactory.FileType fileType) {
+    FileStatus[] listStatus = null;
+    try {
+      if (null != fileStatus && fileStatus.isDirectory()) {
+        Path path = fileStatus.getPath();
+        listStatus = path.getFileSystem(FileFactory.getConfiguration()).listStatus(path);
+      } else {
+        return new CarbonFile[0];
+      }
+    } catch (IOException ex) {
+      LOGGER.error("Exception occured" + ex.getMessage());
+      return new CarbonFile[0];
+    }
+    return getFiles(listStatus, fileType);
+  }
+
+  @Override public CarbonFile[] listFiles(final CarbonFileFilter fileFilter) {
+    CarbonFile[] files = listFiles();
+    if (files != null && files.length >= 1) {
+      List<CarbonFile> fileList = new ArrayList<CarbonFile>(files.length);
+      for (int i = 0; i < files.length; i++) {
+        if (fileFilter.accept(files[i])) {
+          fileList.add(files[i]);
+        }
+      }
+      if (fileList.size() >= 1) {
+        return fileList.toArray(new CarbonFile[fileList.size()]);
+      } else {
+        return new CarbonFile[0];
+      }
+    }
+    return files;
+  }
+
+  public CarbonFile getParentFile(FileFactory.FileType fileType) {
+    Path parent = fileStatus.getPath().getParent();
+    return null == parent ? null : FileFactory.getCarbonFile(parent.toString(), fileType);
   }
 
   public boolean delete() {
