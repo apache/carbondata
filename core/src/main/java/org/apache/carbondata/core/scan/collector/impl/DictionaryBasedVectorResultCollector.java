@@ -139,8 +139,9 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
       }
       int rowCounter = scannedResult.getRowCounter();
       int availableRows = currentPageRowCount - rowCounter;
-      int requiredRows =
-          columnarBatch.getBatchSize() - (columnarBatch.getActualSize() + filteredRows);
+      // getRowCounter holds total number or rows being placed in Vector. Calculate the
+      // Left over space through getRowCounter only.
+      int requiredRows = columnarBatch.getBatchSize() - columnarBatch.getRowCounter();
       requiredRows = Math.min(requiredRows, availableRows);
       if (requiredRows < 1) {
         return;
