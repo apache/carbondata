@@ -144,7 +144,6 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
       List<Object> singleValues = new ArrayList<>();
       List<Expression> disjuncts = new ArrayList<>();
       for (Range range : domain.getValues().getRanges().getOrderedRanges()) {
-        checkState(!range.isAll()); // Already checked
         if (range.isSingleValue()) {
           singleValues.add(range.getLow().getValue());
         } else {
