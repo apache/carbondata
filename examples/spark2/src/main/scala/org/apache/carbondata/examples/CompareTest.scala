@@ -69,7 +69,7 @@ object CompareTest {
   private def generateDataFrame(spark: SparkSession): DataFrame = {
     val r = new Random()
     val rdd = spark.sparkContext
-        .parallelize(1 to 3, 4)
+        .parallelize(1 to 10 * 1000 * 1000, 4)
         .map { x =>
           ("city" + x % 8, "country" + x % 1103, "planet" + x % 10007, "IDENTIFIER" + x.toString,
               (x % 16).toShort, x / 2, (x << 1).toLong, x.toDouble / 13,
@@ -144,12 +144,12 @@ object CompareTest {
     // ==                      FULL SCAN GROUP BY AGGREGATE                     ==
     // ===========================================================================
     Query(
-      "select country, sum(m1) from $table group by country",
+      "select country, sum(m1) as metric from $table group by country order by metric",
       "aggregate",
       "group by on big data, on medium card column, medium result set,"
     ),
     Query(
-      "select city, sum(m1) from $table group by city",
+      "select city, sum(m1) as metric from $table group by city order by metric",
       "aggregate",
       "group by on big data, on low card column, small result set,"
     ),
@@ -172,17 +172,17 @@ object CompareTest {
     // ==                  FILTER SCAN GROUP BY AGGREGATION                     ==
     // ===========================================================================
     Query(
-      "select country, sum(m1) from $table where city='city8' group by country ",
+      "select country, sum(m1) as metric from $table where city='city8' group by country order by metric",
       "filter scan and aggregate",
       "group by on large data, small result set"
     ),
     Query(
-      "select id, sum(m1) from $table where planet='planet10' group by id",
+      "select id, sum(m1) as metric from $table where planet='planet10' group by id order by metric",
       "filter scan and aggregate",
       "group by on medium data, large result set"
     ),
     Query(
-      "select city, sum(m1) from $table where country='country12' group by city ",
+      "select city, sum(m1) as metric from $table where country='country12' group by city order by metric",
       "filter scan and aggregate",
       "group by on medium data, small result set"
     ),
