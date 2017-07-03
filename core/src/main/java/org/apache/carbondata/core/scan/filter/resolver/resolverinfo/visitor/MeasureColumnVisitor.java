@@ -27,9 +27,9 @@ import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.ColumnResolvedFilterInfo;
-import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 
-public class NoDictionaryTypeVisitor implements ResolvedFilterInfoVisitorIntf {
+public class MeasureColumnVisitor implements ResolvedFilterInfoVisitorIntf {
 
   /**
    * Visitor Method will update the filter related details in visitableObj, For no dictionary
@@ -41,11 +41,12 @@ public class NoDictionaryTypeVisitor implements ResolvedFilterInfoVisitorIntf {
    * @param visitableObj
    * @param metadata
    * @throws FilterUnsupportedException,if exception occurs while evaluating
-   * filter models.
+   *                                       filter models.
    */
   public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
-    DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
+    MeasureColumnResolvedFilterInfo resolveDimension =
+        (MeasureColumnResolvedFilterInfo) visitableObj;
     ColumnFilterInfo resolvedFilterObject = null;
     List<String> evaluateResultListFinal = null;
     try {
@@ -69,7 +70,8 @@ public class NoDictionaryTypeVisitor implements ResolvedFilterInfoVisitorIntf {
       throw new FilterUnsupportedException(e);
     }
     resolvedFilterObject = FilterUtil
-        .getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal, metadata.isIncludeFilter());
+        .getMeasureValKeyMemberForFilter(evaluateResultListFinal, metadata.isIncludeFilter(),
+            metadata.getColumnExpression().getDataType(), resolveDimension.getMeasure());
     resolveDimension.setFilterValues(resolvedFilterObject);
   }
 }

@@ -49,37 +49,42 @@ public class RowLevelRangeTypeExecuterFacory {
             filterExpressionResolverTree.getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
-                .getFilterRangeValues(segmentProperties), segmentProperties);
+                .getFilterRangeValues(segmentProperties),
+            ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
+                .getMeasureFilterRangeValues(), segmentProperties);
       case ROWLEVEL_LESSTHAN_EQUALTO:
         return new RowLevelRangeLessThanEqualFilterExecuterImpl(
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getDimColEvaluatorInfoList(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
-                .getMsrColEvalutorInfoList(),
-            filterExpressionResolverTree.getFilterExpression(),
+                .getMsrColEvalutorInfoList(), filterExpressionResolverTree.getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
-                .getFilterRangeValues(segmentProperties), segmentProperties);
+                .getFilterRangeValues(segmentProperties),
+            ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
+                .getMeasureFilterRangeValues(), segmentProperties);
       case ROWLEVEL_GREATERTHAN_EQUALTO:
         return new RowLevelRangeGrtrThanEquaToFilterExecuterImpl(
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getDimColEvaluatorInfoList(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
-                .getMsrColEvalutorInfoList(),
-            filterExpressionResolverTree.getFilterExpression(),
+                .getMsrColEvalutorInfoList(), filterExpressionResolverTree.getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
-                .getFilterRangeValues(segmentProperties), segmentProperties);
+                .getFilterRangeValues(segmentProperties),
+            ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
+                .getMeasureFilterRangeValues(), segmentProperties);
       case ROWLEVEL_GREATERTHAN:
         return new RowLevelRangeGrtThanFiterExecuterImpl(
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
                 .getDimColEvaluatorInfoList(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
-                .getMsrColEvalutorInfoList(),
-            filterExpressionResolverTree.getFilterExpression(),
+                .getMsrColEvalutorInfoList(), filterExpressionResolverTree.getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
-                .getFilterRangeValues(segmentProperties), segmentProperties);
+                .getFilterRangeValues(segmentProperties),
+            ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
+                .getMeasureFilterRangeValues(), segmentProperties);
       default:
         // Scenario wont come logic must break
         return null;

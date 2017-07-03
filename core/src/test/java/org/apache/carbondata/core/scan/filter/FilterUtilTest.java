@@ -273,7 +273,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     };
     assertTrue(FilterUtil
         .getFilterListForAllMembersRS(expression, columnExpression, defaultValues, defaultSurrogate,
-            isIncludeFilter) instanceof DimColumnFilterInfo);
+            isIncludeFilter) instanceof ColumnFilterInfo);
   }
 
   @Test public void testGetFilterListForAllMembersRSWithDefaultValuesEqualsToNull()
@@ -304,7 +304,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     };
     assertTrue(FilterUtil
         .getFilterListForAllMembersRS(expression, columnExpression, defaultValues, defaultSurrogate,
-            isIncludeFilter) instanceof DimColumnFilterInfo);
+            isIncludeFilter) instanceof ColumnFilterInfo);
   }
 
   @Test public void testgetFilterListForRS() throws Exception {
@@ -326,7 +326,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
       }
     };
     assertTrue(FilterUtil.getFilterListForRS(expression, columnExpression, defaultValues,
-        defaultSurrogate) instanceof DimColumnFilterInfo);
+        defaultSurrogate) instanceof ColumnFilterInfo);
   }
 
   @Test public void testCheckIfDataTypeNotTimeStamp() {
@@ -371,7 +371,8 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     List<String> evaluateResultListFinal = new ArrayList<>();
     evaluateResultListFinal.add("test1");
     evaluateResultListFinal.add("test2");
-    assertTrue(FilterUtil.getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal, isIncludeFilter) instanceof DimColumnFilterInfo);
+    assertTrue(FilterUtil.getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal,
+        isIncludeFilter) instanceof ColumnFilterInfo);
   }
 
   @Test public void testPrepareDefaultStartIndexKey() throws KeyGenException {

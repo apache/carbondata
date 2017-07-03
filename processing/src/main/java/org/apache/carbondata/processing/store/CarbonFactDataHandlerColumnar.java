@@ -556,6 +556,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             BigDecimal value = DataTypeUtil.byteToBigDecimal(buff);
             decimal[count] = value.scale();
             BigDecimal val = (BigDecimal) min[count];
+            BigDecimal maxVal = (BigDecimal) max[count];
+            BigDecimal minVal = (BigDecimal) min[count];
+            max[count] = (value.compareTo(maxVal)) > 0 ? value : maxVal;
+            min[count] = (value.compareTo(minVal) < 0) ? value : minVal;
             uniqueValue[count] = (val.subtract(new BigDecimal(1.0)));
           }
         }

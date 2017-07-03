@@ -20,6 +20,7 @@ package org.apache.carbondata.core.util;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -32,6 +33,7 @@ import java.util.Map;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -114,6 +116,73 @@ public final class DataTypeUtil {
         return parsedValue;
     }
   }
+
+  public static Object getMeasureObjectFromDataType(byte[] data, DataType dataType) {
+    if (data == null || data.length == 0) {
+      return null;
+    }
+    switch (dataType) {
+      case SHORT:
+      case INT:
+      case LONG:
+        ByteBuffer blong = ByteBuffer.wrap(data);
+        return blong.getLong();
+      case DECIMAL:
+        return byteToBigDecimal(data);
+      default:
+        ByteBuffer bb = ByteBuffer.wrap(data);
+        return bb.getDouble();
+    }
+  }
+
+
+  public static byte[] getMeasureByteArrayBasedOnDataTypes(String msrValue, DataType dataType,
+      CarbonMeasure carbonMeasure) {
+    ByteBuffer b;
+    switch (dataType) {
+      case SHORT:
+      case INT:
+      case LONG:
+        b = ByteBuffer.allocate(8);
+        b.putLong(Long.valueOf(msrValue));
+        b.flip();
+        return b.array();
+      case DOUBLE:
+        b = ByteBuffer.allocate(8);
+        b.putDouble(Double.valueOf(msrValue));
+        b.flip();
+        return b.array();
+      case DECIMAL:
+        BigDecimal bigDecimal =
+            new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
+        return DataTypeUtil
+            .bigDecimalToByte(normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision()));
+      default:
+        throw new IllegalArgumentException("Invalid data type: " + dataType);
+    }
+  }
+
+
+  public static Object getMeasureObjectBasedOnDataType(MeasureColumnDataChunk dataChunk, int index,
+      CarbonMeasure carbonMeasure) {
+    switch (carbonMeasure.getDataType()) {
+      case SHORT:
+      case INT:
+      case LONG:
+        return dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
+      case DECIMAL:
+        BigDecimal bigDecimalMsrValue =
+            dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
+        if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
+          bigDecimalMsrValue =
+              bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
+        }
+        return normalizeDecimalValue(bigDecimalMsrValue, carbonMeasure.getPrecision());
+      default:
+        return dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
+    }
+  }
+
 
   /**
    * @param dataType

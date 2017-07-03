@@ -20,6 +20,7 @@ package org.apache.carbondata.core.scan.expression;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 
@@ -31,11 +32,15 @@ public class ColumnExpression extends LeafExpression {
 
   private boolean isDimension;
 
+  private boolean isMeasure;
+
   private int colIndex = -1;
 
   private DataType dataType;
 
   private CarbonDimension dimension;
+
+  private CarbonMeasure measure;
 
   private CarbonColumn carbonColumn;
 
@@ -53,6 +58,14 @@ public class ColumnExpression extends LeafExpression {
     this.dimension = dimension;
   }
 
+  public CarbonMeasure getMeasure() {
+    return measure;
+  }
+
+  public void setMeasure(CarbonMeasure measure) {
+    this.measure = measure;
+  }
+
   public String getColumnName() {
     return columnName;
   }
@@ -67,6 +80,14 @@ public class ColumnExpression extends LeafExpression {
 
   public void setDimension(boolean isDimension) {
     this.isDimension = isDimension;
+  }
+
+  public boolean isMeasure() {
+    return isMeasure;
+  }
+
+  public void setMeasure(boolean isMeasure) {
+    this.isMeasure = isMeasure;
   }
 
   public int getColIndex() {

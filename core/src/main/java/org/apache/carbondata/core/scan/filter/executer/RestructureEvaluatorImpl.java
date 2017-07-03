@@ -18,14 +18,19 @@
 package org.apache.carbondata.core.scan.filter.executer;
 
 import java.nio.charset.Charset;
+import java.util.Comparator;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.scan.filter.DimColumnFilterInfo;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
+import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * Abstract class for restructure
@@ -42,7 +47,7 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
   protected boolean isDimensionDefaultValuePresentInFilterValues(
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo) {
     boolean isDefaultValuePresentInFilterValues = false;
-    DimColumnFilterInfo filterValues = dimColumnEvaluatorInfo.getFilterValues();
+    ColumnFilterInfo filterValues = dimColumnEvaluatorInfo.getFilterValues();
     CarbonDimension dimension = dimColumnEvaluatorInfo.getDimension();
     byte[] defaultValue = dimension.getDefaultValue();
     if (!dimension.hasEncoding(Encoding.DICTIONARY)) {
@@ -74,6 +79,37 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
           isDefaultValuePresentInFilterValues = true;
           break;
         }
+      }
+    }
+    return isDefaultValuePresentInFilterValues;
+  }
+
+  /**
+   * This method will check whether a default value for the non-existing column is present
+   * in the filter values list
+   *
+   * @param measureColumnResolvedFilterInfo
+   * @return
+   */
+  protected boolean isMeasureDefaultValuePresentInFilterValues(
+      MeasureColumnResolvedFilterInfo measureColumnResolvedFilterInfo) {
+    boolean isDefaultValuePresentInFilterValues = false;
+    ColumnFilterInfo filterValues = measureColumnResolvedFilterInfo.getFilterValues();
+    CarbonMeasure measure = measureColumnResolvedFilterInfo.getMeasure();
+    Comparator comparator =
+        FilterUtil.getComparatorByDataTypeForMeasure(measure.getDataType());
+    Object defaultValue = null;
+    if (null != measure.getDefaultValue()) {
+      // default value for case where user gives is Null condition
+      defaultValue = DataTypeUtil
+          .getMeasureObjectFromDataType(measure.getDefaultValue(), measure.getDataType());
+    }
+    List<Object> measureFilterValuesList = filterValues.getMeasuresFilterValuesList();
+    for (Object filterValue : measureFilterValuesList) {
+      int compare = comparator.compare(defaultValue, filterValue);
+      if (compare == 0) {
+        isDefaultValuePresentInFilterValues = true;
+        break;
       }
     }
     return isDefaultValuePresentInFilterValues;

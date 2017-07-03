@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -1657,5 +1658,12 @@ public final class CarbonUtil {
         throw new IllegalArgumentException("Int cannot me more than 4 bytes");
     }
   }
+
+  public static void updateBitSetForNull(BitSet nullBitSet, BitSet filterBitSet) {
+    for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
+      filterBitSet.flip(j);
+    }
+  }
+
 }
 
