@@ -71,14 +71,7 @@ The following DDL operations are supported in CarbonData :
 
    Here, DICTIONARY_EXCLUDE will exclude dictionary creation. This is applicable for high-cardinality columns and is an optional parameter. DICTIONARY_INCLUDE will generate dictionary for the columns specified in the list.
 
-   - **Row/Column Format Configuration**
 
-       Column groups with more than one column are stored in row format, instead of columnar format. By default, each column is a separate column group.
-
-```
-       TBLPROPERTIES ('COLUMN_GROUPS'='(column1, column2),
-       (Column3,Column4,Column5)')
-```
 
    - **Table Block Size Configuration**
 
@@ -120,8 +113,7 @@ The following DDL operations are supported in CarbonData :
                                    saleQuantity Int,
                                    revenue Int)
       STORED BY 'carbondata'
-      TBLPROPERTIES ('COLUMN_GROUPS'='(productNumber,productName)',
-                     'DICTIONARY_EXCLUDE'='storeCity',
+      TBLPROPERTIES ('DICTIONARY_EXCLUDE'='storeCity',
                      'DICTIONARY_INCLUDE'='productNumber',
                      'NO_INVERTED_INDEX'='productBatch')
 ```
@@ -402,8 +394,7 @@ of columns is used.
                                 productBatch String,
                                 revenue Int)
    STORED BY 'carbondata'
-   TBLPROPERTIES ('COLUMN_GROUPS'='(productNumber,saleQuantity)',
-                  'DICTIONARY_EXCLUDE'='productName',
+   TBLPROPERTIES ('DICTIONARY_EXCLUDE'='productName',
                   'DICTIONARY_INCLUDE'='productNumber,saleQuantity',
                   'NO_INVERTED_INDEX'='productBatch',
                   'BUCKETNUMBER'='4',
