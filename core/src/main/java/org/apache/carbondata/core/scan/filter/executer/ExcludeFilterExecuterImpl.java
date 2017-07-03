@@ -135,24 +135,23 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     // the filter values. The one that matches sets it Bitset.
     BitSet bitSet = new BitSet(numerOfRows);
     bitSet.flip(0, numerOfRows);
-    byte[][] filterValues = msrColumnExecutorInfo.getFilterKeys();
+    Object[] filterValues = msrColumnExecutorInfo.getFilterKeys();
     Comparator comparator = FilterUtil.getComparatorByDataTypeForMeasure(msrType);
     for (int i = 0; i < filterValues.length; i++) {
-      if (filterValues[i].length == 0) {
+      if (filterValues[i] == null) {
         BitSet nullBitSet = measureColumnDataChunk.getNullValueIndexHolder().getBitSet();
         for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
           bitSet.flip(j);
         }
         continue;
       }
-      Object filter = DataTypeUtil.getMeasureObjectFromDataType(filterValues[i], msrType);
       for (int startIndex = 0; startIndex < numerOfRows; startIndex++) {
         // Check if filterValue[i] matches with measure Values.
         Object msrValue = DataTypeUtil
             .getMeasureObjectBasedOnDataType(measureColumnDataChunk, startIndex,
                  msrColumnEvaluatorInfo.getMeasure());
 
-        if (comparator.compare(msrValue, filter) == 0) {
+        if (comparator.compare(msrValue, filterValues[i]) == 0) {
           // This is a match.
           bitSet.flip(startIndex);
         }

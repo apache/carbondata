@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.scan.filter.executer;
 
 import java.nio.charset.Charset;
+import java.util.Comparator;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -25,9 +26,11 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
+import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * Abstract class for restructure
@@ -93,14 +96,17 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
     boolean isDefaultValuePresentInFilterValues = false;
     ColumnFilterInfo filterValues = measureColumnResolvedFilterInfo.getFilterValues();
     CarbonMeasure measure = measureColumnResolvedFilterInfo.getMeasure();
-    byte[] defaultValue = measure.getDefaultValue();
-    if (null == defaultValue) {
+    Comparator comparator =
+        FilterUtil.getComparatorByDataTypeForMeasure(measure.getDataType());
+    Object defaultValue = null;
+    if (null != measure.getDefaultValue()) {
       // default value for case where user gives is Null condition
-      defaultValue = new byte[0];
+      defaultValue = DataTypeUtil
+          .getMeasureObjectFromDataType(measure.getDefaultValue(), measure.getDataType());
     }
-    List<byte[]> measureFilterValuesList = filterValues.getMeasuresFilterValuesList();
-    for (byte[] filterValue : measureFilterValuesList) {
-      int compare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(defaultValue, filterValue);
+    List<Object> measureFilterValuesList = filterValues.getMeasuresFilterValuesList();
+    for (Object filterValue : measureFilterValuesList) {
+      int compare = comparator.compare(defaultValue, filterValue);
       if (compare == 0) {
         isDefaultValuePresentInFilterValues = true;
         break;

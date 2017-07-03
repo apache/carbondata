@@ -87,16 +87,20 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           .getDimensionFromCurrentBlock(this.dimColEvaluatorInfoList.get(0).getDimension());
       if (null != dimensionFromCurrentBlock) {
         return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(),
-            dimensionFromCurrentBlock, null, segmentProperties);
+            dimensionFromCurrentBlock, segmentProperties);
       }
-    } else if (msrColEvalutorInfoList.size() > 0 && null != msrColEvalutorInfoList.get(0)
-        .getFilterValues()) {
-      List<byte[]> measureFilterValuesList =
-          msrColEvalutorInfoList.get(0).getFilterValues().getMeasuresFilterValuesList();
-      return measureFilterValuesList.toArray((new byte[measureFilterValuesList.size()][]));
     }
     return null;
+  }
 
+  public Object[] getMeasureFilterRangeValues() {
+    if (msrColEvalutorInfoList.size() > 0 && null != msrColEvalutorInfoList.get(0)
+        .getFilterValues()) {
+      List<Object> measureFilterValuesList =
+          msrColEvalutorInfoList.get(0).getFilterValues().getMeasuresFilterValuesList();
+      return measureFilterValuesList.toArray((new Object[measureFilterValuesList.size()]));
+    }
+    return null;
   }
 
   /**
@@ -177,22 +181,21 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
     return filterValuesList;
   }
 
-  private List<byte[]> getMeasureRangeValues(CarbonMeasure carbonMeasure) {
+  private List<Object> getMeasureRangeValues(CarbonMeasure carbonMeasure) {
     List<ExpressionResult> listOfExpressionResults = new ArrayList<ExpressionResult>(20);
     if (this.getFilterExpression() instanceof BinaryConditionalExpression) {
       listOfExpressionResults =
           ((BinaryConditionalExpression) this.getFilterExpression()).getLiterals();
     }
-    List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
+    List<Object> filterValuesList = new ArrayList<>(20);
     boolean invalidRowsPresent = false;
     for (ExpressionResult result : listOfExpressionResults) {
       try {
         if (result.getString() == null) {
-          filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL.getBytes());
+          filterValuesList.add(null);
           continue;
         }
-        filterValuesList.add(DataTypeUtil
-            .getMeasureByteArrayBasedOnDataTypes(result.getString(),
+        filterValuesList.add(DataTypeUtil.getMeasureValueBasedOnDataType(result.getString(),
                 result.getDataType(), carbonMeasure));
       } catch (FilterIllegalMemberException e) {
         // Any invalid member while evaluation shall be ignored, system will log the
@@ -201,13 +204,8 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
         FilterUtil.logError(e, invalidRowsPresent);
       }
     }
-    Comparator<byte[]> filterMeasureComaparator = new Comparator<byte[]>() {
-      @Override public int compare(byte[] filterMember1, byte[] filterMember2) {
-        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterMember1, filterMember2);
-      }
-
-    };
-    Collections.sort(filterValuesList, filterMeasureComaparator);
+    Collections.sort(filterValuesList,
+        FilterUtil.getComparatorByDataTypeForMeasure(carbonMeasure.getDataType()));
     return filterValuesList;
   }
 
