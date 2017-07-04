@@ -840,7 +840,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       "SERIALIZATION_NULL_FORMAT", "BAD_RECORDS_LOGGER_ENABLE", "BAD_RECORDS_ACTION",
       "ALL_DICTIONARY_PATH", "MAXCOLUMNS", "COMMENTCHAR", "DATEFORMAT", "BAD_RECORD_PATH",
       "SINGLE_PASS", "IS_EMPTY_DATA_BAD_RECORD", "SORT_SCOPE", "BATCH_SORT_SIZE_INMB",
-      "GLOBAL_SORT_PARTITIONS"
+      "GLOBAL_SORT_PARTITIONS", "HEADER"
     )
     var isSupported = true
     val invalidOptions = StringBuilder.newBuilder

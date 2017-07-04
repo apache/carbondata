@@ -537,6 +537,36 @@ case class LoadTable(
       carbonLoadModel.setEscapeChar(checkDefaultValue(optionsFinal.get("escapechar").get, "\\"))
       carbonLoadModel.setQuoteChar(checkDefaultValue(optionsFinal.get("quotechar").get, "\""))
       carbonLoadModel.setCommentChar(checkDefaultValue(optionsFinal.get("commentchar").get, "#"))
+
+      // if there isn't file header in csv file and load sql doesn't provide FILEHEADER option,
+      // we should use table schema to generate file header.
+      var fileHeader = optionsFinal.get("fileheader").get
+      val headerOption = options.get("header")
+      if (headerOption.isDefined) {
+        // whether the csv file has file header
+        // the default value is true
+        val header = try {
+          headerOption.get.toBoolean
+        } catch {
+          case ex: IllegalArgumentException =>
+            throw new MalformedCarbonCommandException(
+              "'header' option should be either 'true' or 'false'. " + ex.getMessage)
+        }
+        header match {
+          case true =>
+            if (fileHeader.nonEmpty) {
+              throw new MalformedCarbonCommandException(
+                "When 'header' option is true, 'fileheader' option is not required.")
+            }
+          case false =>
+            // generate file header
+            if (fileHeader.isEmpty) {
+              fileHeader = table.getCreateOrderColumn(table.getFactTableName)
+                .asScala.map(_.getColName).mkString(",")
+            }
+        }
+      }
+
       carbonLoadModel.setDateFormat(dateFormat)
       carbonLoadModel.setDefaultTimestampFormat(carbonProperty.getProperty(
         CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
@@ -582,7 +612,7 @@ case class LoadTable(
         LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
         carbonLoadModel.setFactFilePath(factPath)
         carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimeter))
-        carbonLoadModel.setCsvHeader(optionsFinal.get("fileheader").get)
+        carbonLoadModel.setCsvHeader(fileHeader)
         carbonLoadModel.setColDictFilePath(column_dict)
         carbonLoadModel.setDirectLoad(true)
         carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
