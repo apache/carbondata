@@ -47,7 +47,7 @@ object AllDictionaryExample {
 
     cc.sql(s"""
            LOAD DATA LOCAL INPATH '$testData' into table t3
-           options('ALL_DICTIONARY_PATH'='$allDictFile')
+           options('ALL_DICTIONARY_PATH'='$allDictFile', 'single_pass'='true')
            """)
 
     cc.sql("""
