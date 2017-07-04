@@ -87,7 +87,7 @@
 //    assertEquals("deserialization gives the wrong object", t, row);
 //
 //    // Serialize
-//    final ArrayWritable serializedArr = (ArrayWritable) serDe.serialize(row, oi);
+//    final ArrayWritable serializedArr = (ArrayWritable) serDe.serializeStartKey(row, oi);
 //    assertEquals("size correct after serialization", serDe.getSerDeStats().getRawDataSize(),
 //        serializedArr.get().length);
 //    assertTrue("serialized object should be equal to starting object",

@@ -19,11 +19,10 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.compression.Compressor;
-import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsVO;
+import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsCollector;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
@@ -46,11 +45,8 @@ public abstract class ColumnPage {
   protected int scale;
   protected int precision;
 
-  // statistics of this column page
-  private ColumnPageStatsVO stats;
-
-  // The index of the rowId whose value is null, will be set to 1
-  private BitSet nullBitSet;
+  // statistics collector for this column page
+  private ColumnPageStatsCollector statsCollector;
 
   protected DecimalConverterFactory.DecimalConverter decimalConverter;
 
@@ -74,12 +70,16 @@ public abstract class ColumnPage {
     return dataType;
   }
 
-  public ColumnPageStatsVO getStatistics() {
-    return stats;
+  public Object getStatistics() {
+    return statsCollector.getPageStats();
   }
 
   public int getPageSize() {
     return pageSize;
+  }
+
+  public void setStatsCollector(ColumnPageStatsCollector statsCollector) {
+    this.statsCollector = statsCollector;
   }
 
   private static ColumnPage createVarLengthPage(DataType dataType, int pageSize, int scale,
@@ -299,36 +299,40 @@ public abstract class ColumnPage {
   public void putData(int rowId, Object value) {
     if (value == null) {
       putNull(rowId);
-      stats.updateNull();
+      statsCollector.updateNull(rowId);
       return;
     }
     switch (dataType) {
       case BYTE:
-        // TODO: change sort step to store as exact data type
         putByte(rowId, (byte) value);
+        statsCollector.update((byte) value);
         break;
       case SHORT:
         putShort(rowId, (short) value);
+        statsCollector.update((short) value);
         break;
       case INT:
         putInt(rowId, (int) value);
+        statsCollector.update((int) value);
         break;
       case LONG:
         putLong(rowId, (long) value);
+        statsCollector.update((long) value);
         break;
       case DOUBLE:
         putDouble(rowId, (double) value);
+        statsCollector.update((double) value);
         break;
       case DECIMAL:
         putDecimal(rowId, (BigDecimal) value);
         break;
       case BYTE_ARRAY:
         putBytes(rowId, (byte[]) value);
+        statsCollector.update((byte[]) value);
         break;
       default:
         throw new RuntimeException("unsupported data type: " + dataType);
     }
-    stats.update(value);
   }
 
   /**
@@ -381,7 +385,6 @@ public abstract class ColumnPage {
    * Set null at rowId
    */
   private void putNull(int rowId) {
-    nullBitSet.set(rowId);
     switch (dataType) {
       case BYTE:
         putByte(rowId, (byte) 0);
@@ -402,13 +405,6 @@ public abstract class ColumnPage {
         putDecimal(rowId, BigDecimal.ZERO);
         break;
     }
-  }
-
-  /**
-   * Get null bitset page
-   */
-  public BitSet getNullBitSet() {
-    return nullBitSet;
   }
 
   /**

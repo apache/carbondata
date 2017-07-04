@@ -53,8 +53,6 @@ import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
-import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -826,15 +824,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * Below method will be used to get the stats of the measure data page
-   */
-  public static MeasurePageStatsVO getMeasurePageStats(
-      List<ValueEncoderMeta> encodeMetaList) {
-    return MeasurePageStatsVO.build(
-        encodeMetaList.toArray(new ValueEncoderMeta[encodeMetaList.size()]));
-  }
-
-  /**
    * Below method will be used to check whether particular encoding is present
    * in the dimension or not
    *
@@ -1350,20 +1339,6 @@ public final class CarbonUtil {
     return thriftByteArray;
   }
 
-  /**
-   * Below method will be used to convert the bytearray to data chunk object
-   *
-   * @param dataChunkBytes datachunk thrift object in bytes
-   * @return data chunk thrift object
-   */
-  public static DataChunk2 readDataChunk(byte[] dataChunkBytes, int offset, int length)
-      throws IOException {
-    return (DataChunk2) read(dataChunkBytes, new ThriftReader.TBaseCreator() {
-      @Override public TBase create() {
-        return new DataChunk2();
-      }
-    }, offset, length);
-  }
 
   public static DataChunk3 readDataChunk3(ByteBuffer dataChunkBuffer, int offset, int length)
       throws IOException {
@@ -1460,6 +1435,38 @@ public final class CarbonUtil {
     valueEncoderMeta.setDecimal(buffer.getInt());
     valueEncoderMeta.setDataTypeSelected(buffer.get());
     return valueEncoderMeta;
+  }
+
+  public static byte[] serializeEncodeMetaUsingByteBuffer(ValueEncoderMeta valueEncoderMeta) {
+    ByteBuffer buffer = null;
+    switch (valueEncoderMeta.getType()) {
+      case LONG:
+        buffer = ByteBuffer.allocate(
+            (CarbonCommonConstants.LONG_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
+                + 3);
+        buffer.putChar(valueEncoderMeta.getTypeInChar());
+        buffer.putLong((Long) valueEncoderMeta.getMaxValue());
+        buffer.putLong((Long) valueEncoderMeta.getMinValue());
+        buffer.putLong(0L); // unique value, not used
+        break;
+      case DOUBLE:
+        buffer = ByteBuffer.allocate(
+            (CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
+                + 3);
+        buffer.putChar(valueEncoderMeta.getTypeInChar());
+        buffer.putDouble((Double) valueEncoderMeta.getMaxValue());
+        buffer.putDouble((Double) valueEncoderMeta.getMinValue());
+        buffer.putDouble(0d); // unique value, not used
+        break;
+      case DECIMAL:
+        buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + 3);
+        buffer.putChar(valueEncoderMeta.getTypeInChar());
+        break;
+    }
+    buffer.putInt(0); // decimal point, not used
+    buffer.put(valueEncoderMeta.getDataTypeSelected());
+    buffer.flip();
+    return buffer.array();
   }
 
   /**
@@ -1870,6 +1877,48 @@ public final class CarbonUtil {
     if (FileFactory.isFileExist(databasePath, fileType)) {
       CarbonFile dbPath = FileFactory.getCarbonFile(databasePath, fileType);
       CarbonUtil.deleteFoldersAndFiles(dbPath);
+    }
+  }
+
+  public static byte[] getMaxValueAsBytes(ValueEncoderMeta meta) {
+    ByteBuffer b;
+    switch (meta.getType()) {
+      case LONG:
+        b = ByteBuffer.allocate(8);
+        b.putLong((long) meta.getMaxValue());
+        b.flip();
+        return b.array();
+      case DOUBLE:
+        b = ByteBuffer.allocate(8);
+        b.putDouble((double) meta.getMaxValue());
+        b.flip();
+        return b.array();
+      case DECIMAL:
+      case BYTE_ARRAY:
+        return new byte[8];
+      default:
+        throw new IllegalArgumentException("Invalid data type: " + meta.getType());
+    }
+  }
+
+  public static byte[] getMinValueAsBytes(ValueEncoderMeta meta) {
+    ByteBuffer b;
+    switch (meta.getType()) {
+      case LONG:
+        b = ByteBuffer.allocate(8);
+        b.putLong((long) meta.getMinValue());
+        b.flip();
+        return b.array();
+      case DOUBLE:
+        b = ByteBuffer.allocate(8);
+        b.putDouble((double) meta.getMinValue());
+        b.flip();
+        return b.array();
+      case DECIMAL:
+      case BYTE_ARRAY:
+        return new byte[8];
+      default:
+        throw new IllegalArgumentException("Invalid data type: " + meta.getType());
     }
   }
 }

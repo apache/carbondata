@@ -19,9 +19,12 @@ package org.apache.carbondata.core.metadata;
 
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
+import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 
+// It is used for V1 and V2 format only
 public class BlockletInfoColumnar {
+
+  private EncodedTablePage encodedTablePage;
 
   /**
    * measureOffset.
@@ -85,8 +88,6 @@ public class BlockletInfoColumnar {
 
   private boolean[] aggKeyBlock;
 
-  private MeasurePageStatsVO stats;
-
   /**
    * column min array
    */
@@ -96,11 +97,6 @@ public class BlockletInfoColumnar {
    * column max array
    */
   private byte[][] columnMinData;
-
-  /**
-   * true if given index is colgroup block
-   */
-  private boolean[] colGrpBlock;
 
   /**
    * bit set which will holds the measure
@@ -317,20 +313,6 @@ public class BlockletInfoColumnar {
   }
 
   /**
-   * @return
-   */
-  public boolean[] getColGrpBlocks() {
-    return this.colGrpBlock;
-  }
-
-  /**
-   * @param colGrpBlock
-   */
-  public void setColGrpBlocks(boolean[] colGrpBlock) {
-    this.colGrpBlock = colGrpBlock;
-  }
-
-  /**
    * @return the measureNullValueIndex
    */
   public BitSet[] getMeasureNullValueIndex() {
@@ -344,11 +326,11 @@ public class BlockletInfoColumnar {
     this.measureNullValueIndex = measureNullValueIndex;
   }
 
-  public MeasurePageStatsVO getStats() {
-    return stats;
+  public void setEncodedTablePage(EncodedTablePage encodedData) {
+    this.encodedTablePage = encodedData;
   }
 
-  public void setStats(MeasurePageStatsVO stats) {
-    this.stats = stats;
+  public EncodedTablePage getEncodedTablePage() {
+    return encodedTablePage;
   }
 }

@@ -44,6 +44,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
@@ -583,7 +584,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    *
    * @throws CarbonDataWriterException
    */
-  @Override public void writeBlockletInfoToFile() throws CarbonDataWriterException {
+  @Override public void writeFooterToFile() throws CarbonDataWriterException {
     if (this.blockletInfoList.size() > 0) {
       writeBlockletInfoToFile(fileChannel, carbonDataFileTempPath);
     }
@@ -597,7 +598,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * @throws CarbonDataWriterException
    * @throws CarbonDataWriterException throws new CarbonDataWriterException if any problem
    */
-  public abstract void writeBlockletData(NodeHolder nodeHolder) throws CarbonDataWriterException;
+  public abstract void writeTablePage(EncodedTablePage encodedTablePage)
+      throws CarbonDataWriterException;
 
   /**
    * Below method will be used to update the min or max value
@@ -610,36 +612,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     byte[] actualValue = new byte[buffer.getShort()];
     buffer.get(actualValue);
     return actualValue;
-  }
-
-  /**
-   * Below method will be used to update the no dictionary start and end key
-   *
-   * @param key key to be updated
-   * @return return no dictionary key
-   */
-  protected byte[] updateNoDictionaryStartAndEndKey(byte[] key) {
-    if (key.length == 0) {
-      return key;
-    }
-    // add key to byte buffer remove the length part of the data
-    ByteBuffer buffer = ByteBuffer.wrap(key, 2, key.length - 2);
-    // create a output buffer without length
-    ByteBuffer output = ByteBuffer.allocate(key.length - 2);
-    short numberOfByteToStorLength = 2;
-    // as length part is removed, so each no dictionary value index
-    // needs to be reshuffled by 2 bytes
-    int numberOfNoDictSortColumns =
-        dataWriterVo.getSegmentProperties().getNumberOfNoDictSortColumns();
-    for (int i = 0; i < numberOfNoDictSortColumns; i++) {
-      output.putShort((short) (buffer.getShort() - numberOfByteToStorLength));
-    }
-    // copy the data part
-    while (buffer.hasRemaining()) {
-      output.put(buffer.get());
-    }
-    output.rewind();
-    return output.array();
   }
 
   /**

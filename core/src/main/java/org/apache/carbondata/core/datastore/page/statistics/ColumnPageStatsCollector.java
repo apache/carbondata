@@ -15,42 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.chunk.store.impl.safe;
+package org.apache.carbondata.core.datastore.page.statistics;
 
-/**
- * Below class will be used to store the measure values of long data type
- *
- */
-public class SafeLongMeasureChunkStore extends
-    SafeAbstractMeasureDataChunkStore<long[]> {
-
-  /**
-   * data
-   */
-  private long[] data;
-
-  public SafeLongMeasureChunkStore(int numberOfRows) {
-    super(numberOfRows);
-  }
+public interface ColumnPageStatsCollector {
+  void updateNull(int rowId);
+  void update(byte value);
+  void update(short value);
+  void update(int value);
+  void update(long value);
+  void update(double value);
+  void update(byte[] value);
 
   /**
-   * Below method will be used to store long array data
-   *
-   * @param data
+   * return the collected statistics
    */
-  @Override
-  public void putData(long[] data) {
-    this.data = data;
-  }
-
-  /**
-   * to get the long value
-   *
-   * @param index
-   * @return long value based on index
-   */
-  @Override
-  public long getLong(int index) {
-    return this.data[index];
-  }
+  Object getPageStats();
 }

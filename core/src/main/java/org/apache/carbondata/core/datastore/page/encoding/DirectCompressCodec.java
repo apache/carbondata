@@ -21,8 +21,11 @@ import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsVO;
+import org.apache.carbondata.core.datastore.page.LazyColumnPage;
+import org.apache.carbondata.core.datastore.page.PrimitiveCodec;
+import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.CodecMetaFactory;
 
 /**
  * This codec directly apply compression on the input data
@@ -30,14 +33,14 @@ import org.apache.carbondata.core.memory.MemoryException;
 public class DirectCompressCodec implements ColumnPageCodec {
 
   private Compressor compressor;
-  private ColumnPageStatsVO stats;
+  private SimpleStatsResult stats;
 
-  private DirectCompressCodec(ColumnPageStatsVO stats, Compressor compressor) {
+  private DirectCompressCodec(SimpleStatsResult stats, Compressor compressor) {
     this.compressor = compressor;
     this.stats = stats;
   }
 
-  public static DirectCompressCodec newInstance(ColumnPageStatsVO stats, Compressor compressor) {
+  public static DirectCompressCodec newInstance(SimpleStatsResult stats, Compressor compressor) {
     return new DirectCompressCodec(stats, compressor);
   }
 
@@ -47,14 +50,89 @@ public class DirectCompressCodec implements ColumnPageCodec {
   }
 
   @Override
-  public byte[] encode(ColumnPage input) throws IOException, MemoryException {
-    return input.compress(compressor);
+  public EncodedColumnPage encode(ColumnPage input) throws IOException, MemoryException {
+    byte[] result = input.compress(compressor);
+    return new EncodedMeasurePage(input.getPageSize(), result,
+        CodecMetaFactory.createMeta(stats, stats.getDataType()),
+        ((SimpleStatsResult)input.getStatistics()).getNullBits());
   }
 
   @Override
   public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
-    return ColumnPage
+    ColumnPage page = ColumnPage
         .decompress(compressor, stats.getDataType(), input, offset, length, stats.getScale(),
             stats.getPrecision());
+    return LazyColumnPage.newPage(page, codec);
   }
+
+  private PrimitiveCodec codec = new PrimitiveCodec() {
+    @Override
+    public void encode(int rowId, byte value) {
+    }
+
+    @Override
+    public void encode(int rowId, short value) {
+    }
+
+    @Override
+    public void encode(int rowId, int value) {
+    }
+
+    @Override
+    public void encode(int rowId, long value) {
+    }
+
+    @Override
+    public void encode(int rowId, float value) {
+    }
+
+    @Override
+    public void encode(int rowId, double value) {
+    }
+
+    @Override
+    public long decodeLong(byte value) {
+      return value;
+    }
+
+    @Override
+    public long decodeLong(short value) {
+      return value;
+    }
+
+    @Override
+    public long decodeLong(int value) {
+      return value;
+    }
+
+    @Override
+    public double decodeDouble(byte value) {
+      return value;
+    }
+
+    @Override
+    public double decodeDouble(short value) {
+      return value;
+    }
+
+    @Override
+    public double decodeDouble(int value) {
+      return value;
+    }
+
+    @Override
+    public double decodeDouble(long value) {
+      return value;
+    }
+
+    @Override
+    public double decodeDouble(float value) {
+      return value;
+    }
+
+    @Override
+    public double decodeDouble(double value) {
+      return value;
+    }
+  };
 }

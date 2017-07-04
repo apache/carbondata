@@ -693,12 +693,10 @@ public final class CarbonCommonConstants {
    * BIG_DECIMAL_MEASURE
    */
   public static final char BIG_DECIMAL_MEASURE = 'b';
-
   /**
    * BIG_INT_MEASURE
    */
   public static final char BIG_INT_MEASURE = 'd';
-
   /**
    * CARBON_PREFETCH_BUFFERSIZE
    */

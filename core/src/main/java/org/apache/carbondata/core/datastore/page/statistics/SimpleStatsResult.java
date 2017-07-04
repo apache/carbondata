@@ -15,18 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page.encoding;
+package org.apache.carbondata.core.datastore.page.statistics;
 
-import org.apache.carbondata.core.datastore.columnar.IndexStorage;
+import java.util.BitSet;
 
-// result result of all columns
-public class EncodedData {
-  // dimension data that include rowid (index)
-  public IndexStorage[] indexStorages;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 
-  // encoded and compressed dimension data
-  public byte[][] dimensions;
+public interface SimpleStatsResult {
 
-  // encoded and compressed measure data
-  public byte[][] measures;
+  Object getMin();
+
+  Object getMax();
+
+  BitSet getNullBits();
+
+  int getDecimalPoint();
+
+  DataType getDataType();
 }
