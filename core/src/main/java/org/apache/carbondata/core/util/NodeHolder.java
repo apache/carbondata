@@ -19,9 +19,12 @@ package org.apache.carbondata.core.util;
 
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
+import org.apache.carbondata.core.datastore.page.EncodedTablePage;
+import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 
 public class NodeHolder {
+  private EncodedTablePage encodedData;
+
   /**
    * keyArray
    */
@@ -94,7 +97,7 @@ public class NodeHolder {
 
   private byte[][] measureColumnMinData;
 
-  private MeasurePageStatsVO stats;
+  private SimpleStatsResult stats;
 
   /**
    * array of rleEncodingForDictDim flag to identify the rleEncodingForDictDim
@@ -418,11 +421,37 @@ public class NodeHolder {
     return this.writeAll;
   }
 
-  public MeasurePageStatsVO getStats() {
+  public SimpleStatsResult getStats() {
     return stats;
   }
 
-  public void setMeasureStats(MeasurePageStatsVO stats) {
+  public void setMeasureStats(SimpleStatsResult stats) {
     this.stats = stats;
+  }
+
+  public static byte[][] getKeyArray(EncodedTablePage encodedTablePage) {
+    int numDimensions = encodedTablePage.getNumDimensions();
+    byte[][] keyArray = new byte[numDimensions][];
+    for (int i = 0; i < numDimensions; i++) {
+      keyArray[i] = encodedTablePage.getDimension(i).getEncodedData();
+    }
+    return keyArray;
+  }
+
+  public static byte[][] getDataArray(EncodedTablePage encodedTablePage) {
+    int numMeasures = encodedTablePage.getNumMeasures();
+    byte[][] dataArray = new byte[numMeasures][];
+    for (int i = 0; i < numMeasures; i++) {
+      dataArray[i] = encodedTablePage.getMeasure(i).getEncodedData();
+    }
+    return dataArray;
+  }
+
+  public void setEncodedData(EncodedTablePage encodedData) {
+    this.encodedData = encodedData;
+  }
+
+  public EncodedTablePage getEncodedData() {
+    return encodedData;
   }
 }

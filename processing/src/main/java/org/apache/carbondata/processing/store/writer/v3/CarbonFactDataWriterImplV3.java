@@ -26,9 +26,10 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
-import org.apache.carbondata.core.datastore.columnar.ColGroupBlockStorage;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
-import org.apache.carbondata.core.datastore.page.encoding.EncodedData;
+import org.apache.carbondata.core.datastore.page.EncodedTablePage;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedDimensionPage;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
@@ -36,11 +37,8 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.NodeHolder;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.FileFooter3;
-import org.apache.carbondata.processing.store.TablePageKey;
-import org.apache.carbondata.processing.store.TablePageStatistics;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 
@@ -77,181 +75,6 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     dataWriterHolder = new DataWriterHolder();
   }
 
-  /**
-   * Below method will be used to build the node holder object
-   * This node holder object will be used to persist data which will
-   * be written in carbon data file
-   */
-  @Override public NodeHolder buildDataNodeHolder(EncodedData encoded,
-      TablePageStatistics stats, TablePageKey key) throws CarbonDataWriterException {
-    // if there are no NO-Dictionary column present in the table then
-    // set the empty byte array
-    byte[] startKey = key.getStartKey();
-    byte[] endKey = key.getEndKey();
-    byte[] noDictionaryStartKey = key.getNoDictStartKey();
-    byte[] noDictionaryEndKey = key.getNoDictEndKey();
-    if (null == noDictionaryEndKey) {
-      noDictionaryEndKey = new byte[0];
-    }
-    if (null == noDictionaryStartKey) {
-      noDictionaryStartKey = new byte[0];
-    }
-    // total measure length;
-    int totalMsrArrySize = 0;
-    // current measure length;
-    int currentMsrLenght = 0;
-    int numDimensions = encoded.dimensions.length;
-    int totalKeySize = 0;
-    boolean[] isSortedData = new boolean[numDimensions];
-    int[] keyLengths = new int[numDimensions];
-    boolean[] colGrpBlock = new boolean[numDimensions];
-    int[] keyBlockIdxLengths = new int[numDimensions];
-    byte[][] dataAfterCompression = new byte[numDimensions][];
-    byte[][] indexMap = new byte[numDimensions][];
-    for (int i = 0; i < numDimensions; i++) {
-      isSortedData[i] = encoded.indexStorages[i].isAlreadySorted();
-      keyLengths[i] = encoded.dimensions[i].length;
-      totalKeySize += keyLengths[i];
-      if (!isSortedData[i]) {
-        dataAfterCompression[i] =
-            getByteArray((short[])encoded.indexStorages[i].getRowIdPage());
-        if (null != encoded.indexStorages[i].getRowIdRlePage() &&
-            ((short[])encoded.indexStorages[i].getRowIdRlePage()).length > 0) {
-          indexMap[i] = getByteArray((short[])encoded.indexStorages[i].getRowIdRlePage());
-        } else {
-          indexMap[i] = new byte[0];
-        }
-        keyBlockIdxLengths[i] = (dataAfterCompression[i].length + indexMap[i].length)
-            + CarbonCommonConstants.INT_SIZE_IN_BYTE;
-      }
-      // if keyStorageArray is instance of ColGroupBlockStorage than it's colGroup chunk
-      if (encoded.indexStorages[i] instanceof ColGroupBlockStorage) {
-        colGrpBlock[i] = true;
-      }
-    }
-    byte[][] compressedDataIndex = new byte[numDimensions][];
-    int[] dataIndexMapLength = new int[numDimensions];
-    for (int i = 0; i < dataWriterVo.getRleEncodingForDictDim().length; i++) {
-      if (dataWriterVo.getRleEncodingForDictDim()[i]) {
-        try {
-          compressedDataIndex[i] =
-              getByteArray((short[])encoded.indexStorages[i].getDataRlePage());
-          dataIndexMapLength[i] = compressedDataIndex[i].length;
-        } catch (Exception e) {
-          throw new CarbonDataWriterException(e.getMessage(), e);
-        }
-      }
-    }
-    int[] msrLength = new int[dataWriterVo.getMeasureCount()];
-    // calculate the total size required for all the measure and get the
-    // each measure size
-    for (int i = 0; i < encoded.measures.length; i++) {
-      currentMsrLenght = encoded.measures[i].length;
-      totalMsrArrySize += currentMsrLenght;
-      msrLength[i] = currentMsrLenght;
-    }
-    NodeHolder holder = new NodeHolder();
-    holder.setDataArray(encoded.measures);
-    holder.setKeyArray(encoded.dimensions);
-    holder.setMeasureNullValueIndex(stats.getNullBitSet());
-    // end key format will be <length of dictionary key><length of no
-    // dictionary key><DictionaryKey><No Dictionary key>
-    byte[] updatedNoDictionaryEndKey = updateNoDictionaryStartAndEndKey(noDictionaryEndKey);
-    ByteBuffer buffer = ByteBuffer.allocate(
-        CarbonCommonConstants.INT_SIZE_IN_BYTE + CarbonCommonConstants.INT_SIZE_IN_BYTE
-            + endKey.length + updatedNoDictionaryEndKey.length);
-    buffer.putInt(endKey.length);
-    buffer.putInt(updatedNoDictionaryEndKey.length);
-    buffer.put(endKey);
-    buffer.put(updatedNoDictionaryEndKey);
-    buffer.rewind();
-    holder.setEndKey(buffer.array());
-    holder.setMeasureLenght(msrLength);
-    byte[] updatedNoDictionaryStartKey = updateNoDictionaryStartAndEndKey(noDictionaryStartKey);
-    // start key format will be <length of dictionary key><length of no
-    // dictionary key><DictionaryKey><No Dictionary key>
-    buffer = ByteBuffer.allocate(
-        CarbonCommonConstants.INT_SIZE_IN_BYTE + CarbonCommonConstants.INT_SIZE_IN_BYTE
-            + startKey.length + updatedNoDictionaryStartKey.length);
-    buffer.putInt(startKey.length);
-    buffer.putInt(updatedNoDictionaryStartKey.length);
-    buffer.put(startKey);
-    buffer.put(updatedNoDictionaryStartKey);
-    buffer.rewind();
-    holder.setStartKey(buffer.array());
-    holder.setEntryCount(key.getPageSize());
-    holder.setKeyLengths(keyLengths);
-    holder.setKeyBlockIndexLength(keyBlockIdxLengths);
-    holder.setIsSortedKeyBlock(isSortedData);
-    holder.setCompressedIndex(dataAfterCompression);
-    holder.setCompressedIndexMap(indexMap);
-    holder.setDataIndexMapLength(dataIndexMapLength);
-    holder.setCompressedDataIndex(compressedDataIndex);
-    holder.setMeasureStats(stats.getMeasurePageStatistics());
-    holder.setTotalDimensionArrayLength(totalKeySize);
-    holder.setTotalMeasureArrayLength(totalMsrArrySize);
-    holder.setMeasureColumnMaxData(stats.getMeasureMaxValue());
-    holder.setMeasureColumnMinData(stats.getMeasureMinValue());
-    holder.setDimensionColumnMaxData(stats.getDimensionMaxValue());
-    holder.setDimensionColumnMinData(stats.getDimensionMinValue());
-    holder.setRleEncodingForDictDim(dataWriterVo.getRleEncodingForDictDim());
-    holder.setColGrpBlocks(colGrpBlock);
-    List<byte[]> dimensionDataChunk2 = null;
-    List<byte[]> measureDataChunk2 = null;
-    try {
-      dimensionDataChunk2 = CarbonMetadataUtil
-          .getDataChunk2(holder, thriftColumnSchemaList, dataWriterVo.getSegmentProperties(), true);
-      measureDataChunk2 = CarbonMetadataUtil
-          .getDataChunk2(holder, thriftColumnSchemaList, dataWriterVo.getSegmentProperties(),
-              false);
-
-    } catch (IOException e) {
-      throw new CarbonDataWriterException(e.getMessage());
-    }
-    holder.setHolderSize(calculateSize(holder, dimensionDataChunk2, measureDataChunk2));
-    return holder;
-  }
-
-  private int calculateSize(NodeHolder holder, List<byte[]> dimensionDataChunk2,
-      List<byte[]> measureDataChunk2) {
-    int size = 0;
-    // add row id index length
-    for (int i = 0; i < holder.getKeyBlockIndexLength().length; i++) {
-      if (!holder.getIsSortedKeyBlock()[i]) {
-        size += holder.getKeyBlockIndexLength()[i];
-      }
-    }
-    // add rle index length
-    for (int i = 0; i < holder.getDataIndexMapLength().length; i++) {
-      if (holder.getRleEncodingForDictDim()[i]) {
-        size += holder.getDataIndexMapLength()[i];
-      }
-    }
-    for (int i = 0; i < dimensionDataChunk2.size(); i++) {
-      size += dimensionDataChunk2.get(i).length;
-    }
-    for (int i = 0; i < measureDataChunk2.size(); i++) {
-      size += measureDataChunk2.get(i).length;
-    }
-    size += holder.getTotalDimensionArrayLength() + holder.getTotalMeasureArrayLength();
-    return size;
-  }
-
-  /**
-   * Below method will be used to convert short array to byte array
-   *
-   * @param data in short data
-   * @return byte array
-   */
-  private byte[] getByteArray(short[] data) {
-    ByteBuffer buffer = ByteBuffer.allocate(data.length * 2);
-    for (int i = 0; i < data.length; i++) {
-      buffer.putShort(data[i]);
-    }
-    buffer.flip();
-    return buffer.array();
-  }
-
   @Override protected void writeBlockletInfoToFile(FileChannel channel, String filePath)
       throws CarbonDataWriterException {
     try {
@@ -277,65 +100,65 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
   }
 
   /**
-   * Below method will be used to write blocklet data to file
+   * Below method will be used to write one table page data
    */
-  @Override public void writeBlockletData(NodeHolder holder) throws CarbonDataWriterException {
-    // check the number of pages present in data holder, if pages is exceeding threshold
-    // it will write the pages to file
+  @Override public void writeTablePage(EncodedTablePage encodedTablePage)
+      throws CarbonDataWriterException {
     // condition for writting all the pages
-    if (!holder.isWriteAll()) {
+    if (!encodedTablePage.isLastPage()) {
       boolean isAdded = false;
-      // check if size more than blocklet size then write the page
-      if (dataWriterHolder.getSize() + holder.getHolderSize() >= blockletSize) {
+      // check if size more than blocklet size then write the page to file
+      if (dataWriterHolder.getSize() + encodedTablePage.getEncodedSize() >= blockletSize) {
         // if one page size is more than blocklet size
-        if (dataWriterHolder.getNodeHolder().size() == 0) {
+        if (dataWriterHolder.getEncodedTablePages().size() == 0) {
           isAdded = true;
-          dataWriterHolder.addNodeHolder(holder);
+          dataWriterHolder.addPage(encodedTablePage);
         }
 
         LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getNumberOfPagesAdded()
             + " :Rows Added: " + dataWriterHolder.getTotalRows());
         // write the data
-        writeDataToFile(fileChannel);
+        writeBlockletToFile();
       }
       if (!isAdded) {
-        dataWriterHolder.addNodeHolder(holder);
+        dataWriterHolder.addPage(encodedTablePage);
       }
     } else {
       //for last blocklet check if the last page will exceed the blocklet size then write
       // existing pages and then last page
-      if (holder.getEntryCount() > 0) {
-        dataWriterHolder.addNodeHolder(holder);
+      if (encodedTablePage.getPageSize() > 0) {
+        dataWriterHolder.addPage(encodedTablePage);
       }
       if (dataWriterHolder.getNumberOfPagesAdded() > 0) {
         LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getNumberOfPagesAdded()
             + " :Rows Added: " + dataWriterHolder.getTotalRows());
-        writeDataToFile(fileChannel);
+        writeBlockletToFile();
       }
     }
   }
 
-  private void writeDataToFile(FileChannel channel) {
-    // get the list of node holder list
-    List<NodeHolder> nodeHolderList = dataWriterHolder.getNodeHolder();
+  /**
+   * Write one blocklet data to file
+   */
+  private void writeBlockletToFile() {
+    // get the list of all encoded table page
+    List<EncodedTablePage> encodedTablePageList = dataWriterHolder.getEncodedTablePages();
+    int numDimensions = encodedTablePageList.get(0).getNumDimensions();
+    int numMeasures = encodedTablePageList.get(0).getNumMeasures();
     long blockletDataSize = 0;
     // get data chunks for all the column
-    byte[][] dataChunkBytes =
-        new byte[nodeHolderList.get(0).getKeyArray().length + nodeHolderList.get(0)
-            .getDataArray().length][];
-    int measureStartIndex = nodeHolderList.get(0).getKeyArray().length;
+    byte[][] dataChunkBytes = new byte[numDimensions + numMeasures][];
+    int measureStartIndex = numDimensions;
     // calculate the size of data chunks
     try {
-      for (int i = 0; i < nodeHolderList.get(0).getKeyArray().length; i++) {
+      for (int i = 0; i < numDimensions; i++) {
         dataChunkBytes[i] = CarbonUtil.getByteArray(
-            CarbonMetadataUtil.getDataChunk3(nodeHolderList, thriftColumnSchemaList,
-                dataWriterVo.getSegmentProperties(), i, true));
+            EncodedDimensionPage.getDataChunk3(encodedTablePageList, i));
         blockletDataSize += dataChunkBytes[i].length;
       }
-      for (int i = 0; i < nodeHolderList.get(0).getDataArray().length; i++) {
-        dataChunkBytes[measureStartIndex] = CarbonUtil.getByteArray(CarbonMetadataUtil
-            .getDataChunk3(nodeHolderList, thriftColumnSchemaList,
-                dataWriterVo.getSegmentProperties(), i, false));
+      for (int i = 0; i < numMeasures; i++) {
+        dataChunkBytes[measureStartIndex] = CarbonUtil.getByteArray(
+            EncodedMeasurePage.getDataChunk3(encodedTablePageList, i));
         blockletDataSize += dataChunkBytes[measureStartIndex].length;
         measureStartIndex++;
       }
@@ -346,117 +169,96 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     blockletDataSize += dataWriterHolder.getSize();
     // to check if data size will exceed the block size then create a new file
     updateBlockletFileChannel(blockletDataSize);
+
     // write data to file
-    writeDataToFile(fileChannel, dataChunkBytes);
+    try {
+      if (fileChannel.size() == 0) {
+        // write the header if file is empty
+        writeHeaderToFile(fileChannel);
+      }
+      writeBlockletToFile(fileChannel, dataChunkBytes);
+    } catch (IOException e) {
+      throw new CarbonDataWriterException("Problem when writing file", e);
+    }
     // clear the data holder
     dataWriterHolder.clear();
   }
 
   /**
-   * Below method will be used to write data in carbon data file
-   * Data Format
+   * write file header
+   */
+  private void writeHeaderToFile(FileChannel channel) throws IOException {
+    byte[] fileHeader = CarbonUtil.getByteArray(
+        CarbonMetadataUtil.getFileHeader(
+            true, thriftColumnSchemaList, dataWriterVo.getSchemaUpdatedTimeStamp()));
+    ByteBuffer buffer = ByteBuffer.wrap(fileHeader);
+    channel.write(buffer);
+  }
+
+  /**
+   * Write one blocklet data into file
+   * File format:
    * <Column1 Data ChunkV3><Column1<Page1><Page2><Page3><Page4>>
    * <Column2 Data ChunkV3><Column2<Page1><Page2><Page3><Page4>>
    * <Column3 Data ChunkV3><Column3<Page1><Page2><Page3><Page4>>
    * <Column4 Data ChunkV3><Column4<Page1><Page2><Page3><Page4>>
-   * Each page will contain column data, Inverted index and rle index
-   *
-   * @param channel
-   * @param dataChunkBytes
    */
-  private void writeDataToFile(FileChannel channel, byte[][] dataChunkBytes) {
-    long offset = 0;
-    // write the header
-    try {
-      if (fileChannel.size() == 0) {
-        // below code is to write the file header
-        byte[] fileHeader = CarbonUtil.getByteArray(CarbonMetadataUtil
-            .getFileHeader(true, thriftColumnSchemaList, dataWriterVo.getSchemaUpdatedTimeStamp()));
-        ByteBuffer buffer = ByteBuffer.wrap(fileHeader);
-        fileChannel.write(buffer);
-      }
-      offset = channel.size();
-    } catch (IOException e) {
-      throw new CarbonDataWriterException("Problem while getting the file channel size");
-    }
+  private void writeBlockletToFile(FileChannel channel, byte[][] dataChunkBytes)
+      throws IOException {
+    long offset = channel.size();
     // to maintain the offset of each data chunk in blocklet
     List<Long> currentDataChunksOffset = new ArrayList<>();
     // to maintain the length of each data chunk in blocklet
     List<Integer> currentDataChunksLength = new ArrayList<>();
-    // get the node holder list
-    List<NodeHolder> nodeHolderList = dataWriterHolder.getNodeHolder();
-    int numberOfDimension = nodeHolderList.get(0).getKeyArray().length;
-    int numberOfMeasures = nodeHolderList.get(0).getDataArray().length;
-    NodeHolder nodeHolder = null;
+    List<EncodedTablePage> encodedTablePages = dataWriterHolder.getEncodedTablePages();
+    int numberOfDimension = encodedTablePages.get(0).getNumDimensions();
+    int numberOfMeasures = encodedTablePages.get(0).getNumMeasures();
     ByteBuffer buffer = null;
-    int bufferSize = 0;
     long dimensionOffset = 0;
     long measureOffset = 0;
     int numberOfRows = 0;
-    long totalSize = 0;
     // calculate the number of rows in each blocklet
-    for (int j = 0; j < nodeHolderList.size(); j++) {
-      numberOfRows += nodeHolderList.get(j).getEntryCount();
-      totalSize += nodeHolderList.get(j).getHolderSize();
+    for (EncodedTablePage encodedTablePage : encodedTablePages) {
+      numberOfRows += encodedTablePage.getPageSize();
     }
-    try {
-      for (int i = 0; i < numberOfDimension; i++) {
-        currentDataChunksOffset.add(offset);
-        currentDataChunksLength.add(dataChunkBytes[i].length);
-        buffer = ByteBuffer.wrap(dataChunkBytes[i]);
-        fileChannel.write(buffer);
-        offset += dataChunkBytes[i].length;
-        for (int j = 0; j < nodeHolderList.size(); j++) {
-          nodeHolder = nodeHolderList.get(j);
-          bufferSize = nodeHolder.getKeyLengths()[i] + (!nodeHolder.getIsSortedKeyBlock()[i] ?
-              nodeHolder.getKeyBlockIndexLength()[i] :
-              0) + (dataWriterVo.getRleEncodingForDictDim()[i] ?
-              nodeHolder.getCompressedDataIndex()[i].length :
-              0);
-          buffer = ByteBuffer.allocate(bufferSize);
-          buffer.put(nodeHolder.getKeyArray()[i]);
-          if (!nodeHolder.getIsSortedKeyBlock()[i]) {
-            buffer.putInt(nodeHolder.getCompressedIndex()[i].length);
-            buffer.put(nodeHolder.getCompressedIndex()[i]);
-            if (nodeHolder.getCompressedIndexMap()[i].length > 0) {
-              buffer.put(nodeHolder.getCompressedIndexMap()[i]);
-            }
-          }
-          if (nodeHolder.getRleEncodingForDictDim()[i]) {
-            buffer.put(nodeHolder.getCompressedDataIndex()[i]);
-          }
-          buffer.flip();
-          fileChannel.write(buffer);
-          offset += bufferSize;
-        }
+    for (int i = 0; i < numberOfDimension; i++) {
+      currentDataChunksOffset.add(offset);
+      currentDataChunksLength.add(dataChunkBytes[i].length);
+      buffer = ByteBuffer.wrap(dataChunkBytes[i]);
+      channel.write(buffer);
+      offset += dataChunkBytes[i].length;
+      for (EncodedTablePage encodedTablePage : encodedTablePages) {
+        EncodedDimensionPage dimension = encodedTablePage.getDimension(i);
+        int bufferSize = dimension.getSerializedSize();
+        buffer = dimension.serialize();
+        channel.write(buffer);
+        offset += bufferSize;
       }
-      dimensionOffset = offset;
-      int dataChunkStartIndex = nodeHolderList.get(0).getKeyArray().length;
-      for (int i = 0; i < numberOfMeasures; i++) {
-        nodeHolderList = dataWriterHolder.getNodeHolder();
-        currentDataChunksOffset.add(offset);
-        currentDataChunksLength.add(dataChunkBytes[dataChunkStartIndex].length);
-        buffer = ByteBuffer.wrap(dataChunkBytes[dataChunkStartIndex]);
-        fileChannel.write(buffer);
-        offset += dataChunkBytes[dataChunkStartIndex].length;
-        dataChunkStartIndex++;
-        for (int j = 0; j < nodeHolderList.size(); j++) {
-          nodeHolder = nodeHolderList.get(j);
-          bufferSize = nodeHolder.getDataArray()[i].length;
-          buffer = ByteBuffer.wrap(nodeHolder.getDataArray()[i]);
-          fileChannel.write(buffer);
-          offset += bufferSize;
-        }
-      }
-      measureOffset = offset;
-    } catch (IOException e) {
-      throw new CarbonDataWriterException("Problem while writing the data", e);
     }
-    blockletIndex.add(CarbonMetadataUtil
-        .getBlockletIndex(nodeHolderList, dataWriterVo.getSegmentProperties().getMeasures()));
+    dimensionOffset = offset;
+    int dataChunkStartIndex = encodedTablePages.get(0).getNumDimensions();
+    for (int i = 0; i < numberOfMeasures; i++) {
+      currentDataChunksOffset.add(offset);
+      currentDataChunksLength.add(dataChunkBytes[dataChunkStartIndex].length);
+      buffer = ByteBuffer.wrap(dataChunkBytes[dataChunkStartIndex]);
+      channel.write(buffer);
+      offset += dataChunkBytes[dataChunkStartIndex].length;
+      dataChunkStartIndex++;
+      for (EncodedTablePage encodedTablePage : encodedTablePages) {
+        EncodedMeasurePage measure = encodedTablePage.getMeasure(i);
+        int bufferSize = measure.getSerializedSize();
+        buffer = measure.serialize();
+        channel.write(buffer);
+        offset += bufferSize;
+      }
+    }
+    measureOffset = offset;
+    blockletIndex.add(
+        CarbonMetadataUtil.getBlockletIndex(
+            encodedTablePages, dataWriterVo.getSegmentProperties().getMeasures()));
     BlockletInfo3 blockletInfo3 =
         new BlockletInfo3(numberOfRows, currentDataChunksOffset, currentDataChunksLength,
-            dimensionOffset, measureOffset, dataWriterHolder.getNodeHolder().size());
+            dimensionOffset, measureOffset, dataWriterHolder.getEncodedTablePages().size());
     blockletMetadata.add(blockletInfo3);
   }
 
@@ -538,7 +340,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     closeExecutorService();
   }
 
-  @Override public void writeBlockletInfoToFile() throws CarbonDataWriterException {
+  @Override public void writeFooterToFile() throws CarbonDataWriterException {
     if (this.blockletMetadata.size() > 0) {
       writeBlockletInfoToFile(fileChannel, carbonDataFileTempPath);
     }

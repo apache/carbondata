@@ -23,22 +23,44 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
+import org.apache.carbondata.core.datastore.DimensionType;
 import org.apache.carbondata.core.datastore.GenericDataType;
+import org.apache.carbondata.core.datastore.TableSpec;
+import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForInt;
+import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForInt;
+import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForShort;
+import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort;
+import org.apache.carbondata.core.datastore.columnar.IndexStorage;
+import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
-import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
+import org.apache.carbondata.core.datastore.page.EncodedTablePage;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
+import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingStrategy;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedDimensionPage;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
+import org.apache.carbondata.core.datastore.page.encoding.EncodingStrategy;
+import org.apache.carbondata.core.datastore.page.key.TablePageKey;
+import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
+import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
+import org.apache.carbondata.core.datastore.page.statistics.VarLengthPageStatsCollector;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.apache.spark.sql.types.Decimal;
-
 
 /**
  * Represent a page data for all columns, we store its data in columnar layout, so that
@@ -56,12 +78,14 @@ public class TablePage {
   private ComplexColumnPage[] complexDimensionPage;
   private ColumnPage[] measurePage;
 
-  private MeasurePageStatsVO measurePageStatistics;
-
   // the num of rows in this page, it must be less than short value (65536)
   private int pageSize;
 
   private CarbonFactDataHandlerModel model;
+
+  private TablePageKey key;
+
+  private ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
 
   TablePage(CarbonFactDataHandlerModel model, int pageSize) throws MemoryException {
     this.model = model;
@@ -69,11 +93,15 @@ public class TablePage {
     int numDictDimension = model.getMDKeyGenerator().getDimCount();
     dictDimensionPage = new ColumnPage[numDictDimension];
     for (int i = 0; i < dictDimensionPage.length; i++) {
-      dictDimensionPage[i] = ColumnPage.newVarLengthPath(DataType.BYTE_ARRAY, pageSize);
+      ColumnPage page = ColumnPage.newVarLengthPath(DataType.BYTE_ARRAY, pageSize);
+      page.setStatsCollector(VarLengthPageStatsCollector.newInstance());
+      dictDimensionPage[i] = page;
     }
     noDictDimensionPage = new ColumnPage[model.getNoDictionaryCount()];
     for (int i = 0; i < noDictDimensionPage.length; i++) {
-      noDictDimensionPage[i] = ColumnPage.newVarLengthPath(DataType.BYTE_ARRAY, pageSize);
+      ColumnPage page = ColumnPage.newVarLengthPath(DataType.BYTE_ARRAY, pageSize);
+      page.setStatsCollector(VarLengthPageStatsCollector.newInstance());
+      noDictDimensionPage[i] = page;
     }
     complexDimensionPage = new ComplexColumnPage[model.getComplexColumnCount()];
     for (int i = 0; i < complexDimensionPage.length; i++) {
@@ -84,19 +112,28 @@ public class TablePage {
     measurePage = new ColumnPage[model.getMeasureCount()];
     DataType[] dataTypes = model.getMeasureDataType();
     for (int i = 0; i < measurePage.length; i++) {
-      measurePage[i] = ColumnPage.newPage(dataTypes[i], pageSize);
+      ColumnPage page = ColumnPage.newPage(dataTypes[i], pageSize);
+      page.setStatsCollector(PrimitivePageStatsCollector.newInstance(dataTypes[i], pageSize));
+      measurePage[i] = page;
     }
+    boolean hasNoDictionary = noDictDimensionPage.length > 0;
+    this.key = new TablePageKey(pageSize, model.getMDKeyGenerator(), model.getSegmentProperties(),
+        hasNoDictionary);
   }
 
   /**
-   * Add one row to the internal store, it will be converted into columnar layout
+   * Add one row to the internal store
    *
    * @param rowId Id of the input row
    * @param row   row object
    */
   public void addRow(int rowId, CarbonRow row) throws KeyGenException {
-    // convert each column category
+    // convert each column category, update key and stats
+    convertToColumnar(rowId, row);
+    key.update(rowId, row);
+  }
 
+  private void convertToColumnar(int rowId, CarbonRow row) throws KeyGenException {
     // 1. convert dictionary columns
     byte[] mdk = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
     byte[][] keys = model.getSegmentProperties().getFixedLengthKeySplitter().splitKey(mdk);
@@ -137,11 +174,6 @@ public class TablePage {
       }
       measurePage[i].putData(rowId, value);
     }
-
-    // update statistics if it is last row
-    if (rowId + 1 == pageSize) {
-      this.measurePageStatistics = new MeasurePageStatsVO(measurePage);
-    }
   }
 
   /**
@@ -160,10 +192,10 @@ public class TablePage {
     // initialize the page if first row
     if (rowId == 0) {
       int depthInComplexColumn = complexDataType.getColsCount();
-      getComplexDimensionPage()[index] = new ComplexColumnPage(pageSize, depthInComplexColumn);
+      complexDimensionPage[index] = new ComplexColumnPage(pageSize, depthInComplexColumn);
     }
 
-    int depthInComplexColumn = getComplexDimensionPage()[index].getDepth();
+    int depthInComplexColumn = complexDimensionPage[index].getDepth();
     // this is the result columnar data which will be added to page,
     // size of this list is the depth of complex column, we will fill it by input data
     List<ArrayList<byte[]>> encodedComplexColumnar = new ArrayList<>();
@@ -187,8 +219,7 @@ public class TablePage {
     }
 
     for (int depth = 0; depth < depthInComplexColumn; depth++) {
-      getComplexDimensionPage()[index]
-          .putComplexData(rowId, depth, encodedComplexColumnar.get(depth));
+      complexDimensionPage[index].putComplexData(rowId, depth, encodedComplexColumnar.get(depth));
     }
   }
 
@@ -217,26 +248,159 @@ public class TablePage {
     return output;
   }
 
-  ColumnPage[] getDictDimensionPage() {
-    return dictDimensionPage;
+  EncodedTablePage encode() throws KeyGenException, MemoryException, IOException {
+    // encode dimensions and measure
+    EncodedDimensionPage[] dimensions = encodeAndCompressDimensions();
+    EncodedMeasurePage[] measures = encodeAndCompressMeasures();
+    return EncodedTablePage.newInstance(pageSize, dimensions, measures, key);
   }
 
-  ColumnPage[] getNoDictDimensionPage() {
-    return noDictDimensionPage;
+  private EncodingStrategy encodingStrategy = new DefaultEncodingStrategy();
+
+  // apply measure and set encodedData in `encodedData`
+  private EncodedMeasurePage[] encodeAndCompressMeasures()
+      throws MemoryException, IOException {
+    EncodedMeasurePage[] encodedMeasures = new EncodedMeasurePage[measurePage.length];
+    for (int i = 0; i < measurePage.length; i++) {
+      ColumnPageCodec encoder =
+          encodingStrategy.createCodec((SimpleStatsResult)(measurePage[i].getStatistics()));
+      encodedMeasures[i] = (EncodedMeasurePage) encoder.encode(measurePage[i]);
+    }
+    return encodedMeasures;
   }
 
-  ComplexColumnPage[] getComplexDimensionPage() {
-    return complexDimensionPage;
+  private IndexStorage encodeAndCompressDictDimension(byte[][] data, boolean isSort,
+      boolean isUseInvertedIndex, boolean isRleApplicable) throws KeyGenException {
+    if (isUseInvertedIndex) {
+      if (version == ColumnarFormatVersion.V3) {
+        return new BlockIndexerStorageForShort(data, isRleApplicable, false, isSort);
+      } else {
+        return new BlockIndexerStorageForInt(data, isRleApplicable, false, isSort);
+      }
+    } else {
+      if (version == ColumnarFormatVersion.V3) {
+        return new BlockIndexerStorageForNoInvertedIndexForShort(data, false);
+      } else {
+        return new BlockIndexerStorageForNoInvertedIndexForInt(data);
+      }
+    }
   }
 
-  ColumnPage[] getMeasurePage() {
-    return measurePage;
+  private IndexStorage encodeAndCompressDirectDictDimension(byte[][] data, boolean isSort,
+      boolean isUseInvertedIndex, boolean isRleApplicable) throws KeyGenException {
+    if (isUseInvertedIndex) {
+      if (version == ColumnarFormatVersion.V3) {
+        return new BlockIndexerStorageForShort(data, isRleApplicable, false, isSort);
+      } else {
+        return new BlockIndexerStorageForInt(data, isRleApplicable, false, isSort);
+      }
+    } else {
+      if (version == ColumnarFormatVersion.V3) {
+        return new BlockIndexerStorageForNoInvertedIndexForShort(data, false);
+      } else {
+        return new BlockIndexerStorageForNoInvertedIndexForInt(data);
+      }
+    }
   }
 
-  MeasurePageStatsVO getMeasureStats() {
-    return measurePageStatistics;
+  private IndexStorage encodeAndCompressComplexDimension(byte[][] data) {
+    if (version == ColumnarFormatVersion.V3) {
+      return new BlockIndexerStorageForShort(data, false, false, false);
+    } else {
+      return new BlockIndexerStorageForInt(data, false, false, false);
+    }
   }
 
+  private IndexStorage encodeAndCompressNoDictDimension(byte[][] data, boolean isSort,
+      boolean isUseInvertedIndex, boolean isRleApplicable) {
+    if (isUseInvertedIndex) {
+      if (version == ColumnarFormatVersion.V3) {
+        return new BlockIndexerStorageForShort(data, isRleApplicable, true, isSort);
+      } else {
+        return new BlockIndexerStorageForInt(data, isRleApplicable, true, isSort);
+      }
+    } else {
+      if (version == ColumnarFormatVersion.V3) {
+        return new BlockIndexerStorageForNoInvertedIndexForShort(data, true);
+      } else {
+        return new BlockIndexerStorageForNoInvertedIndexForInt(data);
+      }
+    }
+  }
+
+  // apply and compress each dimension, set encoded data in `encodedData`
+  private EncodedDimensionPage[] encodeAndCompressDimensions()
+      throws KeyGenException {
+    TableSpec.DimensionSpec dimensionSpec = model.getTableSpec().getDimensionSpec();
+    int dictionaryColumnCount = -1;
+    int noDictionaryColumnCount = -1;
+    int indexStorageOffset = 0;
+    IndexStorage[] indexStorages = new IndexStorage[dimensionSpec.getNumExpandedDimensions()];
+    Compressor compressor = CompressorFactory.getInstance().getCompressor();
+    EncodedDimensionPage[] compressedColumns = new EncodedDimensionPage[indexStorages.length];
+    boolean[] isUseInvertedIndex = model.getIsUseInvertedIndex();
+    for (int i = 0; i < dimensionSpec.getNumSimpleDimensions(); i++) {
+      ColumnPage page;
+      byte[] flattened;
+      boolean isSortColumn = model.isSortColumn(i);
+      switch (dimensionSpec.getType(i)) {
+        case GLOBAL_DICTIONARY:
+          // dictionary dimension
+          page = dictDimensionPage[++dictionaryColumnCount];
+          indexStorages[indexStorageOffset] = encodeAndCompressDictDimension(
+              page.getByteArrayPage(),
+              isSortColumn,
+              isUseInvertedIndex[i] & isSortColumn,
+              CarbonDataProcessorUtil.isRleApplicableForColumn(dimensionSpec.getType(i)));
+          flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getDataPage());
+          break;
+        case DIRECT_DICTIONARY:
+          // timestamp and date column
+          page = dictDimensionPage[++dictionaryColumnCount];
+          indexStorages[indexStorageOffset] = encodeAndCompressDirectDictDimension(
+              page.getByteArrayPage(),
+              isSortColumn,
+              isUseInvertedIndex[i] & isSortColumn,
+              CarbonDataProcessorUtil.isRleApplicableForColumn(dimensionSpec.getType(i)));
+          flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getDataPage());
+          break;
+        case PLAIN_VALUE:
+          // high cardinality dimension, encoded as plain string
+          page = noDictDimensionPage[++noDictionaryColumnCount];
+          indexStorages[indexStorageOffset] = encodeAndCompressNoDictDimension(
+              page.getByteArrayPage(),
+              isSortColumn,
+              isUseInvertedIndex[i] & isSortColumn,
+              CarbonDataProcessorUtil.isRleApplicableForColumn(dimensionSpec.getType(i)));
+          flattened = ByteUtil.flatten(indexStorages[indexStorageOffset].getDataPage());
+          break;
+        case COMPLEX:
+          // we need to add complex column at last, so skipping it here
+          continue;
+        default:
+          throw new RuntimeException("unsupported dimension type: " + dimensionSpec.getType(i));
+      }
+      byte[] compressedData = compressor.compressByte(flattened);
+      compressedColumns[indexStorageOffset] = new EncodedDimensionPage(
+          pageSize, compressedData, indexStorages[indexStorageOffset], dimensionSpec.getType(i));
+      indexStorageOffset++;
+    }
+
+    // handle complex type column
+    for (int i = 0; i < dimensionSpec.getNumComplexDimensions(); i++) {
+      Iterator<byte[][]> iterator = complexDimensionPage[i].iterator();
+      while (iterator.hasNext()) {
+        byte[][] data = iterator.next();
+        indexStorages[indexStorageOffset] = encodeAndCompressComplexDimension(data);
+        byte[] flattened = ByteUtil.flatten(data);
+        byte[] compressedData = compressor.compressByte(flattened);
+        compressedColumns[indexStorageOffset] = new EncodedDimensionPage(
+            pageSize, compressedData, indexStorages[indexStorageOffset], DimensionType.COMPLEX);
+        indexStorageOffset++;
+      }
+    }
+    return compressedColumns;
+  }
 }
 
 

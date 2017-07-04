@@ -21,7 +21,7 @@ import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsVO;
+import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
@@ -37,7 +37,7 @@ public abstract class AdaptiveCompressionCodec implements ColumnPageCodec {
   protected final Compressor compressor;
 
   // statistics of this page, can be used by subclass
-  protected final ColumnPageStatsVO stats;
+  protected final SimpleStatsResult stats;
 
   // the data type used for storage
   protected final DataType targetDataType;
@@ -46,7 +46,7 @@ public abstract class AdaptiveCompressionCodec implements ColumnPageCodec {
   protected final DataType srcDataType;
 
   protected AdaptiveCompressionCodec(DataType srcDataType, DataType targetDataType,
-      ColumnPageStatsVO stats, Compressor compressor) {
+      SimpleStatsResult stats, Compressor compressor) {
     this.stats = stats;
     this.srcDataType = srcDataType;
     this.targetDataType = targetDataType;
@@ -55,7 +55,7 @@ public abstract class AdaptiveCompressionCodec implements ColumnPageCodec {
 
   public abstract String getName();
 
-  public abstract byte[] encode(ColumnPage input) throws MemoryException, IOException;
+  public abstract EncodedColumnPage encode(ColumnPage input) throws MemoryException, IOException;
 
   public abstract ColumnPage decode(byte[] input, int offset, int length) throws MemoryException;
 

@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -38,7 +38,12 @@ import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import junit.framework.TestCase;
+
+import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.format.ColumnSchema;
+
+import mockit.Mock;
+import mockit.MockUp;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -87,9 +92,7 @@ public class CarbonFooterWriterTest extends TestCase{
     int[] colCardinality = CarbonUtil.getFormattedCardinality(cardinalities, wrapperColumnSchema);
     SegmentProperties segmentProperties = new SegmentProperties(wrapperColumnSchema, colCardinality);
 		writer.writeFooter(CarbonMetadataUtil.convertFileFooter(
-				infoColumnars,
-				6,
-				cardinalities,columnSchema, segmentProperties
+				infoColumnars, cardinalities,columnSchema, segmentProperties
 				), 0);
 
     CarbonFooterReader metaDataReader = new CarbonFooterReader(filePath, 0);
@@ -125,40 +128,6 @@ public class CarbonFooterWriterTest extends TestCase{
     return dimColumn;
  }
 
-  /**
-   * test writing fact metadata.
-   */
-  @Test public void testReadFactMetadata() throws IOException {
-    deleteFile();
-    createFile();
-    CarbonFooterWriter writer = new CarbonFooterWriter(filePath);
-    List<BlockletInfoColumnar> infoColumnars = getBlockletInfoColumnars();
-    int[] cardinalities = new int[] { 2, 4, 5, 7, 9, 10};
-    List<ColumnSchema> columnSchema = Arrays.asList(new ColumnSchema[]{getDimensionColumn("IMEI1"),
-						getDimensionColumn("IMEI2"),
-						getDimensionColumn("IMEI3"),
-						getDimensionColumn("IMEI4"),
-						getDimensionColumn("IMEI5"),
-						getDimensionColumn("IMEI6")});
-    List<org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema> wrapperColumnSchema = Arrays.asList(new org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema[]{getWrapperDimensionColumn("IMEI1"),
-    	getWrapperDimensionColumn("IMEI2"),
-    	getWrapperDimensionColumn("IMEI3"),
-    	getWrapperDimensionColumn("IMEI4"),
-    	getWrapperDimensionColumn("IMEI5"),
-    	getWrapperDimensionColumn("IMEI6")});
-    int[] colCardinality = CarbonUtil.getFormattedCardinality(cardinalities, wrapperColumnSchema);
-    SegmentProperties segmentProperties = new SegmentProperties(wrapperColumnSchema, cardinalities);
-    writer.writeFooter(CarbonMetadataUtil
-        .convertFileFooter(infoColumnars, 6, colCardinality,
-        		columnSchema,segmentProperties), 0);
-
-    CarbonFooterReader metaDataReader = new CarbonFooterReader(filePath, 0);
-    List<BlockletInfoColumnar> nodeInfoColumnars =
-        CarbonMetadataUtil.convertBlockletInfo(metaDataReader.readFooter());
-
-    assertTrue(nodeInfoColumnars.size() == infoColumnars.size());
-  }
-
   private List<BlockletInfoColumnar> getBlockletInfoColumnars() {
     BlockletInfoColumnar infoColumnar = new BlockletInfoColumnar();
     infoColumnar.setStartKey(new byte[] { 1, 2, 3 });
@@ -179,27 +148,42 @@ public class CarbonFooterWriterTest extends TestCase{
     infoColumnar.setMeasureLength(new int[] { 6, 7 });
     infoColumnar.setMeasureOffset(new long[] { 33, 99 });
     infoColumnar.setAggKeyBlock(new boolean[] { true, true, true, true });
-    infoColumnar.setColGrpBlocks(new boolean[] { false, false, false, false });
     infoColumnar.setMeasureNullValueIndex(new BitSet[] {new BitSet(),new BitSet()});
+    infoColumnar.setEncodedTablePage(EncodedTablePage.newEmptyInstance());
 
-    ValueEncoderMeta[] metas = new ValueEncoderMeta[2];
-    metas[0] = new ValueEncoderMeta();
-    metas[0].setMinValue(0);
-    metas[0].setMaxValue(44d);
-    metas[0].setUniqueValue(0d);
-    metas[0].setDecimal(0);
-    metas[0].setType(CarbonCommonConstants.DOUBLE_MEASURE);
-    metas[0].setDataTypeSelected((byte)0);
-    metas[1] = new ValueEncoderMeta();
-    metas[1].setMinValue(0);
-    metas[1].setMaxValue(55d);
-    metas[1].setUniqueValue(0d);
-    metas[1].setDecimal(0);
-    metas[1].setType(CarbonCommonConstants.DOUBLE_MEASURE);
-    metas[1].setDataTypeSelected((byte)0);
+    final ValueEncoderMeta meta = ValueEncoderMeta.newInstance();
+    meta.setNullBitSet(new BitSet(0));
 
-    MeasurePageStatsVO stats = MeasurePageStatsVO.build(metas);
-    infoColumnar.setStats(stats);
+    new MockUp<ValueEncoderMeta>() {
+      @SuppressWarnings("unused") @Mock
+      public byte[] serialize() {
+        return new byte[]{1,2};
+      }
+      @SuppressWarnings("unused") @Mock
+      public byte[] getMaxAsBytes() {
+        return new byte[]{1,2};
+      }
+      @SuppressWarnings("unused") @Mock
+      public byte[] getMinAsBytes() {
+        return new byte[]{1,2};
+      }
+    };
+
+    new MockUp<EncodedMeasurePage>() {
+      @SuppressWarnings("unused") @Mock
+      public ValueEncoderMeta getMetaData() {
+        return meta;
+      }
+    };
+
+    final EncodedMeasurePage measure = new EncodedMeasurePage(2, new byte[]{0,1}, meta);
+    new MockUp<EncodedTablePage>() {
+      @SuppressWarnings("unused") @Mock
+      public EncodedMeasurePage getMeasure(int measureIndex) {
+        return measure;
+      }
+    };
+
     List<BlockletInfoColumnar> infoColumnars = new ArrayList<BlockletInfoColumnar>();
     infoColumnars.add(infoColumnar);
     return infoColumnars;

@@ -15,12 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.store;
+package org.apache.carbondata.core.datastore.page.key;
 
+import java.nio.ByteBuffer;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.processing.util.NonDictionaryUtil;
+import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.util.NonDictionaryUtil;
 
 public class TablePageKey {
   private int pageSize;
@@ -45,17 +50,22 @@ public class TablePageKey {
   // endkey for no dictionary columns after packing into one column
   private byte[] packedNoDictEndKey;
 
-  private CarbonFactDataHandlerModel model;
+  private KeyGenerator mdkGenerator;
+  private SegmentProperties segmentProperties;
+  private boolean hasNoDictionary;
 
-  TablePageKey(CarbonFactDataHandlerModel model, int pageSize) {
-    this.model = model;
+  public TablePageKey(int pageSize, KeyGenerator mdkGenerator, SegmentProperties segmentProperties,
+      boolean hasNoDictionary) {
     this.pageSize = pageSize;
+    this.mdkGenerator = mdkGenerator;
+    this.segmentProperties = segmentProperties;
+    this.hasNoDictionary = hasNoDictionary;
   }
 
   /** update all keys based on the input row */
-  void update(int rowId, CarbonRow row) throws KeyGenException {
-    byte[] currentMDKey = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
-    if (model.getNoDictionaryCount() > 0 || model.getComplexIndexMap().size() > 0) {
+  public void update(int rowId, CarbonRow row) throws KeyGenException {
+    byte[] currentMDKey = WriteStepRowUtil.getMdk(row, mdkGenerator);
+    if (hasNoDictionary) {
       currentNoDictionaryKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
     }
     if (rowId == 0) {
@@ -69,15 +79,19 @@ public class TablePageKey {
     }
   }
 
+  public Object getKey() {
+    return this;
+  }
+
   /** update all keys if SORT_COLUMNS option is used when creating table */
   private void finalizeKeys() {
     // If SORT_COLUMNS is used, may need to update start/end keys since the they may
     // contains dictionary columns that are not in SORT_COLUMNS, which need to be removed from
     // start/end key
-    int numberOfDictSortColumns = model.getSegmentProperties().getNumberOfDictSortColumns();
+    int numberOfDictSortColumns = segmentProperties.getNumberOfDictSortColumns();
     if (numberOfDictSortColumns > 0) {
       // if SORT_COLUMNS contain dictionary columns
-      int[] keySize = model.getSegmentProperties().getFixedLengthKeySplitter().getBlockKeySize();
+      int[] keySize = segmentProperties.getFixedLengthKeySplitter().getBlockKeySize();
       if (keySize.length > numberOfDictSortColumns) {
         // if there are some dictionary columns that are not in SORT_COLUMNS, it will come to here
         int newMdkLength = 0;
@@ -97,7 +111,7 @@ public class TablePageKey {
     }
 
     // Do the same update for noDictionary start/end Key
-    int numberOfNoDictSortColumns = model.getSegmentProperties().getNumberOfNoDictSortColumns();
+    int numberOfNoDictSortColumns = segmentProperties.getNumberOfNoDictSortColumns();
     if (numberOfNoDictSortColumns > 0) {
       // if sort_columns contain no-dictionary columns
       if (noDictStartKey.length > numberOfNoDictSortColumns) {
@@ -114,6 +128,11 @@ public class TablePageKey {
           NonDictionaryUtil.packByteBufferIntoSingleByteArray(noDictStartKey);
       packedNoDictEndKey =
           NonDictionaryUtil.packByteBufferIntoSingleByteArray(noDictEndKey);
+    } else {
+      noDictStartKey = new byte[0][];
+      noDictEndKey = new byte[0][];
+      packedNoDictStartKey = new byte[0];
+      packedNoDictEndKey = new byte[0];
     }
   }
 
@@ -135,5 +154,60 @@ public class TablePageKey {
 
   public int getPageSize() {
     return pageSize;
+  }
+
+  public byte[] serializeStartKey() {
+    byte[] updatedNoDictionaryStartKey = updateNoDictionaryStartAndEndKey(getNoDictStartKey());
+    ByteBuffer buffer = ByteBuffer.allocate(
+        CarbonCommonConstants.INT_SIZE_IN_BYTE + CarbonCommonConstants.INT_SIZE_IN_BYTE
+            + startKey.length + updatedNoDictionaryStartKey.length);
+    buffer.putInt(startKey.length);
+    buffer.putInt(updatedNoDictionaryStartKey.length);
+    buffer.put(startKey);
+    buffer.put(updatedNoDictionaryStartKey);
+    buffer.rewind();
+    return buffer.array();
+  }
+
+  public byte[] serializeEndKey() {
+    byte[] updatedNoDictionaryEndKey = updateNoDictionaryStartAndEndKey(getNoDictEndKey());
+    ByteBuffer buffer = ByteBuffer.allocate(
+        CarbonCommonConstants.INT_SIZE_IN_BYTE + CarbonCommonConstants.INT_SIZE_IN_BYTE
+            + endKey.length + updatedNoDictionaryEndKey.length);
+    buffer.putInt(endKey.length);
+    buffer.putInt(updatedNoDictionaryEndKey.length);
+    buffer.put(endKey);
+    buffer.put(updatedNoDictionaryEndKey);
+    buffer.rewind();
+    return buffer.array();
+  }
+
+  /**
+   * Below method will be used to update the no dictionary start and end key
+   *
+   * @param key key to be updated
+   * @return return no dictionary key
+   */
+  public byte[] updateNoDictionaryStartAndEndKey(byte[] key) {
+    if (key.length == 0) {
+      return key;
+    }
+    // add key to byte buffer remove the length part of the data
+    ByteBuffer buffer = ByteBuffer.wrap(key, 2, key.length - 2);
+    // create a output buffer without length
+    ByteBuffer output = ByteBuffer.allocate(key.length - 2);
+    short numberOfByteToStorLength = 2;
+    // as length part is removed, so each no dictionary value index
+    // needs to be reshuffled by 2 bytes
+    int NumberOfNoDictSortColumns = segmentProperties.getNumberOfNoDictSortColumns();
+    for (int i = 0; i < NumberOfNoDictSortColumns; i++) {
+      output.putShort((short) (buffer.getShort() - numberOfByteToStorLength));
+    }
+    // copy the data part
+    while (buffer.hasRemaining()) {
+      output.put(buffer.get());
+    }
+    output.rewind();
+    return output.array();
   }
 }

@@ -20,7 +20,7 @@ package org.apache.carbondata.core.datastore.page;
 import java.math.BigDecimal;
 
 /**
- * This is a decorator of column page, it performs transformation lazily (when caller calls getXXX
+ * This is a decorator of column page, it performs decoding lazily (when caller calls getXXX
  * method to get the value from the page)
  */
 public class LazyColumnPage extends ColumnPage {
@@ -37,8 +37,8 @@ public class LazyColumnPage extends ColumnPage {
     this.codec = codec;
   }
 
-  public static ColumnPage newPage(ColumnPage columnPage, PrimitiveCodec transform) {
-    return new LazyColumnPage(columnPage, transform);
+  public static ColumnPage newPage(ColumnPage columnPage, PrimitiveCodec codec) {
+    return new LazyColumnPage(columnPage, codec);
   }
 
   @Override
@@ -93,7 +93,7 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public BigDecimal getDecimal(int rowId) {
-    throw new UnsupportedOperationException("internal error");
+    return columnPage.getDecimal(rowId);
   }
 
   @Override

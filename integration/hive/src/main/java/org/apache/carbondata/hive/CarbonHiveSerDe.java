@@ -130,8 +130,8 @@ class CarbonHiveSerDe extends AbstractSerDe {
   @Override public Writable serialize(Object obj, ObjectInspector objectInspector)
       throws SerDeException {
     if (!objInspector.getCategory().equals(ObjectInspector.Category.STRUCT)) {
-      throw new SerDeException("Cannot serialize " + objInspector.getCategory()
-          + ". Can only serialize a struct");
+      throw new SerDeException("Cannot serializeStartKey " + objInspector.getCategory()
+          + ". Can only serializeStartKey a struct");
     }
     serializedSize += ((StructObjectInspector) objInspector).getAllStructFieldRefs().size();
     status = LAST_OPERATION.SERIALIZE;

@@ -51,7 +51,6 @@ import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
@@ -830,15 +829,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * Below method will be used to get the stats of the measure data page
-   */
-  public static MeasurePageStatsVO getMeasurePageStats(
-      List<ValueEncoderMeta> encodeMetaList) {
-    return MeasurePageStatsVO.build(
-        encodeMetaList.toArray(new ValueEncoderMeta[encodeMetaList.size()]));
-  }
-
-  /**
    * Below method will be used to check whether particular encoding is present
    * in the dimension or not
    *
@@ -1338,20 +1328,6 @@ public final class CarbonUtil {
     return thriftByteArray;
   }
 
-  /**
-   * Below method will be used to convert the bytearray to data chunk object
-   *
-   * @param dataChunkBytes datachunk thrift object in bytes
-   * @return data chunk thrift object
-   */
-  public static DataChunk2 readDataChunk(byte[] dataChunkBytes, int offset, int length)
-      throws IOException {
-    return (DataChunk2) read(dataChunkBytes, new ThriftReader.TBaseCreator() {
-      @Override public TBase create() {
-        return new DataChunk2();
-      }
-    }, offset, length);
-  }
 
   public static DataChunk3 readDataChunk3(ByteBuffer dataChunkBuffer, int offset, int length)
       throws IOException {
@@ -1421,34 +1397,6 @@ public final class CarbonUtil {
     return meta;
   }
 
-  public static ValueEncoderMeta deserializeEncoderMetaV3(byte[] encodeMeta) {
-    ByteBuffer buffer = ByteBuffer.wrap(encodeMeta);
-    char measureType = buffer.getChar();
-    ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
-    valueEncoderMeta.setType(measureType);
-    switch (measureType) {
-      case CarbonCommonConstants.DOUBLE_MEASURE:
-        valueEncoderMeta.setMaxValue(buffer.getDouble());
-        valueEncoderMeta.setMinValue(buffer.getDouble());
-        valueEncoderMeta.setUniqueValue(buffer.getDouble());
-        break;
-      case CarbonCommonConstants.BIG_DECIMAL_MEASURE:
-        valueEncoderMeta.setMaxValue(0.0);
-        valueEncoderMeta.setMinValue(0.0);
-        valueEncoderMeta.setUniqueValue(0.0);
-        break;
-      case CarbonCommonConstants.BIG_INT_MEASURE:
-        valueEncoderMeta.setMaxValue(buffer.getLong());
-        valueEncoderMeta.setMinValue(buffer.getLong());
-        valueEncoderMeta.setUniqueValue(buffer.getLong());
-        break;
-      default:
-        throw new IllegalArgumentException("invalid measure type");
-    }
-    valueEncoderMeta.setDecimal(buffer.getInt());
-    valueEncoderMeta.setDataTypeSelected(buffer.get());
-    return valueEncoderMeta;
-  }
 
   /**
    * Below method will be used to convert indexes in range

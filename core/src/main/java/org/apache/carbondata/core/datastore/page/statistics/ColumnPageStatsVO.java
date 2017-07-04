@@ -20,7 +20,6 @@ package org.apache.carbondata.core.datastore.page.statistics;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
-import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -62,15 +61,6 @@ public class ColumnPageStatsVO {
         break;
     }
     decimal = 0;
-  }
-
-  public static ColumnPageStatsVO copyFrom(ValueEncoderMeta meta) {
-    ColumnPageStatsVO instance = new ColumnPageStatsVO(meta.getType());
-    instance.min = meta.getMinValue();
-    instance.max = meta.getMaxValue();
-    instance.decimal = meta.getDecimal();
-    instance.nonExistValue = meta.getUniqueValue();
-    return instance;
   }
 
   /**

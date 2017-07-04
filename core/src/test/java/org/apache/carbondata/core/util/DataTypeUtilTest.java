@@ -50,14 +50,6 @@ public class DataTypeUtilTest {
 
   }
 
-  @Test public void testGetAggType() {
-    assertTrue(getAggType(DataType.DECIMAL) == 'b');
-    assertTrue(getAggType(DataType.INT) == 'd');
-    assertTrue(getAggType(DataType.LONG) == 'd');
-    assertTrue(getAggType(DataType.NULL) == 'n');
-
-  }
-
   @Test public void testBigDecimalToByte() {
     byte[] result = bigDecimalToByte(BigDecimal.ONE);
     assertTrue(result == result);

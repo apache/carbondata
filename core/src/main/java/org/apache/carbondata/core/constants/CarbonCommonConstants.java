@@ -665,23 +665,6 @@ public final class CarbonCommonConstants {
    * max lru cache size default value in MB
    */
   public static final String CARBON_MAX_LRU_CACHE_SIZE_DEFAULT = "-1";
-  /**
-   * DOUBLE_VALUE_MEASURE
-   */
-  public static final char DOUBLE_MEASURE = 'n';
-  /**
-   * BYTE_VALUE_MEASURE
-   */
-  public static final char BYTE_VALUE_MEASURE = 'c';
-  /**
-   * BIG_DECIMAL_MEASURE
-   */
-  public static final char BIG_DECIMAL_MEASURE = 'b';
-
-  /**
-   * BIG_INT_MEASURE
-   */
-  public static final char BIG_INT_MEASURE = 'd';
 
   /**
    * CARBON_PREFETCH_BUFFERSIZE

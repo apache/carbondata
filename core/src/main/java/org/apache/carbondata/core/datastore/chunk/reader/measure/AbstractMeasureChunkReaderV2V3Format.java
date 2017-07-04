@@ -29,7 +29,6 @@ import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.datachunk.PresenceMeta;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
 
 /**
@@ -134,7 +133,7 @@ public abstract class AbstractMeasureChunkReaderV2V3Format extends AbstractMeasu
     // for measure, it should have only one ValueEncoderMeta
     assert (measureColumnChunk.getEncoder_meta().size() == 1);
     byte[] encodedMeta = measureColumnChunk.getEncoder_meta().get(0).array();
-    ValueEncoderMeta meta = CarbonUtil.deserializeEncoderMetaV3(encodedMeta);
+    ValueEncoderMeta meta = ValueEncoderMeta.deserialize(encodedMeta);
     ColumnPageCodec codec = strategy.createCodec(meta);
     byte[] rawData = measureRawColumnChunk.getRawData().array();
     return codec.decode(rawData, copyPoint, measureColumnChunk.data_page_length);

@@ -15,18 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page.encoding;
+package org.apache.carbondata.core.datastore.page.statistics;
 
-import org.apache.carbondata.core.datastore.columnar.IndexStorage;
+public interface ColumnPageStatsCollector {
+  void updateNull(int rowId);
+  void update(byte value);
+  void update(short value);
+  void update(int value);
+  void update(long value);
+  void update(double value);
+  void update(byte[] value);
 
-// result result of all columns
-public class EncodedData {
-  // dimension data that include rowid (index)
-  public IndexStorage[] indexStorages;
-
-  // encoded and compressed dimension data
-  public byte[][] dimensions;
-
-  // encoded and compressed measure data
-  public byte[][] measures;
+  /**
+   * return the collected statistics
+   */
+  Object getPageStats();
 }

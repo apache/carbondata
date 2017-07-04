@@ -15,17 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.processing.store;
+package org.apache.carbondata.core.datastore.page.statistics;
 
 import java.nio.ByteBuffer;
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
-import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.datastore.page.encoding.EncodedData;
-import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsVO;
-import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedDimensionPage;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
+import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 
 // Statistics of dimension and measure column in a TablePage
 public class TablePageStatistics {
@@ -48,58 +46,44 @@ public class TablePageStatistics {
   // null bit set for each measure column
   private BitSet[] nullBitSet;
 
-  // measure stats
-  // TODO: there are redundant stats
-  private MeasurePageStatsVO measurePageStatistics;
-
-  private TableSpec tableSpec;
-
-  TablePageStatistics(TableSpec tableSpec, TablePage tablePage,
-      EncodedData encodedData, MeasurePageStatsVO measurePageStatistics) {
-    this.numDimensionsExpanded = tableSpec.getDimensionSpec().getNumExpandedDimensions();
-    int numMeasures = tableSpec.getMeasureSpec().getNumMeasures();
+  public TablePageStatistics(EncodedDimensionPage[] dimensions,
+      EncodedMeasurePage[] measures) {
+    this.numDimensionsExpanded = dimensions.length;
+    int numMeasures = measures.length;
     this.dimensionMinValue = new byte[numDimensionsExpanded][];
     this.dimensionMaxValue = new byte[numDimensionsExpanded][];
     this.measureMinValue = new byte[numMeasures][];
     this.measureMaxValue = new byte[numMeasures][];
     this.nullBitSet = new BitSet[numMeasures];
-    this.tableSpec = tableSpec;
-    this.measurePageStatistics = measurePageStatistics;
-    updateMinMax(tablePage, encodedData);
-    updateNullBitSet(tablePage);
+    updateDimensionMinMax(dimensions);
+    updateMeasureMinMax(measures);
   }
 
-  private void updateMinMax(TablePage tablePage, EncodedData encodedData) {
-    IndexStorage[] keyStorageArray = encodedData.indexStorages;
-    byte[][] measureArray = encodedData.measures;
-
-    for (int i = 0; i < numDimensionsExpanded; i++) {
-      switch (tableSpec.getDimensionSpec().getType(i)) {
+  private void updateDimensionMinMax(EncodedDimensionPage[] dimensions) {
+    for (int i = 0; i < dimensions.length; i++) {
+      IndexStorage keyStorageArray = dimensions[i].getIndexStorage();
+      switch (dimensions[i].getDimensionType()) {
         case GLOBAL_DICTIONARY:
         case DIRECT_DICTIONARY:
         case COLUMN_GROUP:
         case COMPLEX:
-          dimensionMinValue[i] = keyStorageArray[i].getMin();
-          dimensionMaxValue[i] = keyStorageArray[i].getMax();
+          dimensionMinValue[i] = keyStorageArray.getMin();
+          dimensionMaxValue[i] = keyStorageArray.getMax();
           break;
         case PLAIN_VALUE:
-          dimensionMinValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMin());
-          dimensionMaxValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMax());
+          dimensionMinValue[i] = updateMinMaxForNoDictionary(keyStorageArray.getMin());
+          dimensionMaxValue[i] = updateMinMaxForNoDictionary(keyStorageArray.getMax());
           break;
       }
     }
-    for (int i = 0; i < measureArray.length; i++) {
-      ColumnPageStatsVO stats = tablePage.getMeasurePage()[i].getStatistics();
-      measureMaxValue[i] = stats.minBytes();
-      measureMinValue[i] = stats.maxBytes();
-    }
   }
 
-  private void updateNullBitSet(TablePage tablePage) {
-    nullBitSet = new BitSet[tablePage.getMeasurePage().length];
-    ColumnPage[] measurePages = tablePage.getMeasurePage();
-    for (int i = 0; i < nullBitSet.length; i++) {
-      nullBitSet[i] = measurePages[i].getNullBitSet();
+  private void updateMeasureMinMax(EncodedMeasurePage[] measures) {
+    for (int i = 0; i < measures.length; i++) {
+      ValueEncoderMeta meta = measures[i].getMetaData();
+      measureMaxValue[i] = meta.getMaxAsBytes();
+      measureMinValue[i] = meta.getMinAsBytes();
+      nullBitSet[i] = meta.getNullBitSet();
     }
   }
 
@@ -109,7 +93,7 @@ public class TablePageStatistics {
    *
    * @return min max value without length
    */
-  private byte[] updateMinMaxForNoDictionary(byte[] valueWithLength) {
+  public static byte[] updateMinMaxForNoDictionary(byte[] valueWithLength) {
     ByteBuffer buffer = ByteBuffer.wrap(valueWithLength);
     byte[] actualValue = new byte[buffer.getShort()];
     buffer.get(actualValue);
@@ -134,9 +118,5 @@ public class TablePageStatistics {
 
   public BitSet[] getNullBitSet() {
     return nullBitSet;
-  }
-
-  public MeasurePageStatsVO getMeasurePageStatistics() {
-    return measurePageStatistics;
   }
 }

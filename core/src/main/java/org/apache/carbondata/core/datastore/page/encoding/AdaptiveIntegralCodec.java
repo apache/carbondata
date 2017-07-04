@@ -23,50 +23,48 @@ import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
 import org.apache.carbondata.core.datastore.page.PrimitiveCodec;
-import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsVO;
+import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
  * Codec for integer (byte, short, int, long) data type page.
  * This codec will do type casting on page data to make storage minimum.
  */
-class AdaptiveIntegerCodec extends AdaptiveCompressionCodec {
+class AdaptiveIntegralCodec extends AdaptiveCompressionCodec {
 
   private ColumnPage encodedPage;
 
   public static ColumnPageCodec newInstance(DataType srcDataType, DataType targetDataType,
-      ColumnPageStatsVO stats, Compressor compressor) {
-    return new AdaptiveIntegerCodec(srcDataType, targetDataType, stats, compressor);
+      SimpleStatsResult stats, Compressor compressor) {
+    return new AdaptiveIntegralCodec(srcDataType, targetDataType, stats, compressor);
   }
 
-  private AdaptiveIntegerCodec(DataType srcDataType, DataType targetDataType,
-      ColumnPageStatsVO stats, Compressor compressor) {
+  private AdaptiveIntegralCodec(DataType srcDataType, DataType targetDataType,
+      SimpleStatsResult stats, Compressor compressor) {
     super(srcDataType, targetDataType, stats, compressor);
   }
 
   @Override
   public String getName() {
-    return "AdaptiveIntegerCodec";
+    return "AdaptiveIntegralCodec";
   }
 
   @Override
-  public byte[] encode(ColumnPage input) throws MemoryException, IOException {
+  public EncodedColumnPage encode(ColumnPage input) throws MemoryException, IOException {
     encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
     input.encode(codec);
     byte[] result = encodedPage.compress(compressor);
     encodedPage.freeMemory();
-    return result;
+    return new EncodedMeasurePage(input.getPageSize(), result,
+        ValueEncoderMeta.newInstance(stats, targetDataType));
   }
 
   @Override
   public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
-    if (srcDataType.equals(targetDataType)) {
-      return ColumnPage.decompress(compressor, targetDataType, input, offset, length);
-    } else {
-      ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
-      return LazyColumnPage.newPage(page, codec);
-    }
+    ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
+    return LazyColumnPage.newPage(page, codec);
   }
 
   // encoded value = (type cast page value to target data type)
