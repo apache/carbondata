@@ -419,7 +419,7 @@ case class LoadTable(
 
       val delimiter = options.getOrElse("delimiter", ",")
       val quoteChar = options.getOrElse("quotechar", "\"")
-      val fileHeader = options.getOrElse("fileheader", "")
+      var fileHeader = options.getOrElse("fileheader", "")
       val escapeChar = options.getOrElse("escapechar", "\\")
       val commentchar = options.getOrElse("commentchar", "#")
       val columnDict = options.getOrElse("columndict", null)
@@ -441,6 +441,35 @@ case class LoadTable(
       val batchSortSizeInMB = options.getOrElse("batch_sort_size_inmb", null)
       val globalSortPartitions = options.getOrElse("global_sort_partitions", null)
       ValidateUtil.validateGlobalSortPartitions(globalSortPartitions)
+
+      // if there isn't file header in csv file and load sql doesn't provide FILEHEADER option,
+      // we should use table schema to generate file header.
+      val headerOption = options.get("header")
+      if (headerOption.isDefined) {
+        // whether the csv file has file header
+        // the default value is true
+        val header = try {
+          headerOption.get.toBoolean
+        } catch {
+          case ex: IllegalArgumentException =>
+            throw new MalformedCarbonCommandException(
+              "'header' option should be either 'true' or 'false'. " + ex.getMessage)
+        }
+        header match {
+          case true =>
+            if (fileHeader.nonEmpty) {
+              throw new MalformedCarbonCommandException(
+                "When 'header' option is true, 'fileheader' option is not required.")
+            }
+          case false =>
+            // generate file header
+            if (fileHeader.isEmpty) {
+              fileHeader = table.getCreateOrderColumn(table.getFactTableName)
+                .asScala.map(_.getColName).mkString(",")
+            }
+        }
+      }
+
       val bad_record_path = options.getOrElse("bad_record_path",
           CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
             CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))
