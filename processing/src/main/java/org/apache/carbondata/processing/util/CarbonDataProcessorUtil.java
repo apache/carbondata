@@ -468,9 +468,7 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
-   * Check whether batch sort is enabled or not.
-   * @param configuration
-   * @return
+   * Return the sort scope enum.
    */
   public static SortScopeOptions.SortScope getSortScope(CarbonDataLoadConfiguration configuration) {
     SortScopeOptions.SortScope sortScope;
@@ -494,6 +492,29 @@ public final class CarbonDataProcessorUtil {
     return sortScope;
   }
 
+  public static SortScopeOptions.SortScope getSortScope(String sortScopeString) {
+    SortScopeOptions.SortScope sortScope;
+    try {
+      // first check whether user input it from ddl, otherwise get from carbon properties
+      if (sortScopeString == null) {
+        sortScope = SortScopeOptions.getSortScope(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+                CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT));
+      } else {
+        sortScope = SortScopeOptions.getSortScope(sortScopeString);
+      }
+      LOGGER.warn("sort scope is set to " + sortScope);
+    } catch (Exception e) {
+      sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
+      LOGGER.warn("Exception occured while resolving sort scope. " +
+          "sort scope is set to " + sortScope);
+    }
+    return sortScope;
+  }
+
+  /**
+   * Return the sort scope enum.
+   */
   public static SortScopeOptions.SortScope getSortScope(String sortScopeString) {
     SortScopeOptions.SortScope sortScope;
     try {
