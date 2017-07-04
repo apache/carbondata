@@ -26,6 +26,7 @@ import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
@@ -46,7 +47,6 @@ object Spark2TestQueryExecutor {
     .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
     .addProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
       System.getProperty("java.io.tmpdir"))
-    .addProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL)
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
 
 
@@ -82,6 +82,7 @@ object Spark2TestQueryExecutor {
     .config("spark.sql.warehouse.dir", TestQueryExecutor.warehouse)
     .config("spark.sql.crossJoin.enabled", "true")
     .getOrCreateCarbonSession(null, TestQueryExecutor.metastoredb)
+  FileFactory.getConfiguration.set("dfs.client.block.write.replace-datanode-on-failure.policy","NEVER")
   spark.sparkContext.setLogLevel("ERROR")
 
 }

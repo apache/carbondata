@@ -25,6 +25,7 @@ import org.apache.spark.util.Utils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
@@ -44,9 +45,6 @@ object TestQueryExecutor {
     .getCanonicalPath
   LOGGER.info(s"project path: $projectPath")
   val integrationPath = s"$projectPath/integration"
-  val resourcesPath = s"$integrationPath/spark-common-test/src/test/resources"
-  val storeLocation = s"$integrationPath/spark-common/target/store"
-  val warehouse = s"$integrationPath/spark-common/target/warehouse"
   val metastoredb = s"$integrationPath/spark-common/target"
   val timestampFormat = "dd-MM-yyyy"
   val masterUrl = {
@@ -59,6 +57,48 @@ object TestQueryExecutor {
     }
   }
 
+  val hdfsUrl = {
+    val property = System.getProperty("hdfs.url")
+    if (property == null) {
+            "local"
+    } else {
+      println("HDFS PATH given : "+property)
+      property
+    }
+  }
+
+  val resourcesPath = if (hdfsUrl.startsWith("hdfs://")) {
+    ResourceRegisterAndCopier.
+      copyResourcesifNotExists(hdfsUrl, s"$integrationPath/spark-common-test/src/test/resources")
+    hdfsUrl
+  } else {
+    s"$integrationPath/spark-common-test/src/test/resources"
+  }
+
+  val storeLocation = if (hdfsUrl.startsWith("hdfs://")) {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
+        CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
+    val carbonFile = FileFactory.
+      getCarbonFile(s"$hdfsUrl/store", FileFactory.getFileType(s"$hdfsUrl/store"))
+    FileFactory.deleteAllCarbonFilesOfDir(carbonFile)
+    s"$hdfsUrl/store"
+  } else {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
+      CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL)
+    s"$integrationPath/spark-common/target/store"
+  }
+  val warehouse = if (hdfsUrl.startsWith("hdfs://")) {
+    val carbonFile = FileFactory.
+      getCarbonFile(s"$hdfsUrl/warehouse", FileFactory.getFileType(s"$hdfsUrl/warehouse"))
+    FileFactory.deleteAllCarbonFilesOfDir(carbonFile)
+    s"$hdfsUrl/warehouse"
+  } else {
+    s"$integrationPath/spark-common/target/warehouse"
+  }
+
+  println(s"""Store path taken $storeLocation""")
+  println(s"""Warehouse path taken $warehouse""")
+  println(s"""Resource path taken $resourcesPath""")
 
   val INSTANCE = lookupQueryExecutor.newInstance().asInstanceOf[TestQueryExecutorRegister]
   CarbonProperties.getInstance()
