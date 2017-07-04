@@ -70,8 +70,8 @@ object Spark2TestQueryExecutor {
   }
 
   val conf = new SparkConf().setJars(jars).
-    set("spark.driver.memory", "2g").
-    set("spark.executor.memory","4g").
+    set("spark.driver.memory", "4g").
+    set("spark.executor.memory","8g").
     set("spark.executor.cores", "4")
 
   val spark = SparkSession
