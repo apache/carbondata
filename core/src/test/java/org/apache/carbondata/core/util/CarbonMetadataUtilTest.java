@@ -17,23 +17,6 @@
 
 package org.apache.carbondata.core.util;
 
-import mockit.Mock;
-import mockit.MockUp;
-
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
-import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
-import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
-import org.apache.carbondata.core.metadata.ValueEncoderMeta;
-import org.apache.carbondata.format.*;
-import org.apache.carbondata.format.BlockletMinMaxIndex;
-import org.apache.carbondata.format.ColumnSchema;
-import org.apache.carbondata.format.DataType;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -41,10 +24,34 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static junit.framework.TestCase.*;
-import static org.apache.carbondata.core.util.CarbonMetadataUtil.getIndexHeader;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.page.EncodedTablePage;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
+import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
+import org.apache.carbondata.core.metadata.CodecMetaFactory;
+import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
+import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
+import org.apache.carbondata.format.BlockIndex;
+import org.apache.carbondata.format.BlockletInfo;
+import org.apache.carbondata.format.BlockletMinMaxIndex;
+import org.apache.carbondata.format.ColumnSchema;
+import org.apache.carbondata.format.DataChunk;
+import org.apache.carbondata.format.DataType;
+import org.apache.carbondata.format.Encoding;
+import org.apache.carbondata.format.FileFooter;
+import org.apache.carbondata.format.IndexHeader;
+import org.apache.carbondata.format.SegmentInfo;
+
+import mockit.Mock;
+import mockit.MockUp;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static junit.framework.TestCase.assertEquals;
 import static org.apache.carbondata.core.util.CarbonMetadataUtil.convertFileFooter;
 import static org.apache.carbondata.core.util.CarbonMetadataUtil.getBlockIndexInfo;
+import static org.apache.carbondata.core.util.CarbonMetadataUtil.getIndexHeader;
 
 public class CarbonMetadataUtilTest {
   static List<ByteBuffer> byteBufferList;
@@ -57,8 +64,6 @@ public class CarbonMetadataUtilTest {
   static int[] objDecimal;
 
   @BeforeClass public static void setUp() {
-    Long lngObj = new Long("11221");
-    byte byt = 1;
     objMaxArr = new Long[6];
     objMaxArr[0] = new Long("111111");
     objMaxArr[1] = new Long("121111");
@@ -113,13 +118,11 @@ public class CarbonMetadataUtilTest {
     blockletInfoList.add(blockletInfo);
     blockletInfoList.add(blockletInfo);
 
-    ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
-    valueEncoderMeta.setDecimal(5);
-    valueEncoderMeta.setMinValue(objMinArr);
-    valueEncoderMeta.setMaxValue(objMaxArr);
-    valueEncoderMeta.setUniqueValue(lngObj);
-    valueEncoderMeta.setType('a');
-    valueEncoderMeta.setDataTypeSelected(byt);
+    ValueEncoderMeta meta = CodecMetaFactory.createMeta();
+    meta.setDecimal(5);
+    meta.setMinValue(objMinArr);
+    meta.setMaxValue(objMaxArr);
+    meta.setType(ColumnPageCodecMeta.DOUBLE_MEASURE);
 
     List<Encoding> encoders = new ArrayList<>();
     encoders.add(Encoding.INVERTED_INDEX);
@@ -199,18 +202,51 @@ public class CarbonMetadataUtilTest {
 
     ValueEncoderMeta[] metas = new ValueEncoderMeta[6];
     for (int i = 0; i < metas.length; i++) {
-      metas[i] = new ValueEncoderMeta();
+      metas[i] = CodecMetaFactory.createMeta();
       metas[i].setMinValue(objMinArr[i]);
       metas[i].setMaxValue(objMaxArr[i]);
-      metas[i].setUniqueValue(objMinArr[i]);
       metas[i].setDecimal(objDecimal[i]);
-      metas[i].setType(CarbonCommonConstants.BIG_INT_MEASURE);
-      metas[i].setDataTypeSelected(byteArr[i]);
+      metas[i].setType(ColumnPageCodecMeta.BIG_INT_MEASURE);
     }
 
-    MeasurePageStatsVO stats = MeasurePageStatsVO.build(metas);
-
     BlockletInfoColumnar blockletInfoColumnar = new BlockletInfoColumnar();
+
+    final ValueEncoderMeta meta = CodecMetaFactory.createMeta();
+
+    new MockUp<ColumnPageCodecMeta>() {
+      @SuppressWarnings("unused") @Mock
+      public byte[] serialize() {
+        return new byte[]{1,2};
+      }
+      @SuppressWarnings("unused") @Mock
+      public byte[] getMaxAsBytes() {
+        return new byte[]{1,2};
+      }
+      @SuppressWarnings("unused") @Mock
+      public byte[] getMinAsBytes() {
+        return new byte[]{1,2};
+      }
+      @SuppressWarnings("unused") @Mock
+      public org.apache.carbondata.core.metadata.datatype.DataType getSrcDataType() {
+        return org.apache.carbondata.core.metadata.datatype.DataType.DOUBLE;
+      }
+    };
+
+    new MockUp<EncodedMeasurePage>() {
+      @SuppressWarnings("unused") @Mock
+      public ValueEncoderMeta getMetaData() {
+        return meta;
+      }
+    };
+
+    final EncodedMeasurePage measure = new EncodedMeasurePage(6, new byte[]{0,1}, meta,
+        new BitSet());
+    new MockUp<EncodedTablePage>() {
+      @SuppressWarnings("unused") @Mock
+      public EncodedMeasurePage getMeasure(int measureIndex) {
+        return measure;
+      }
+    };
 
     BitSet[] bitSetArr = new BitSet[6];
     bitSetArr[0] = new BitSet();
@@ -222,7 +258,6 @@ public class CarbonMetadataUtilTest {
     blockletInfoColumnar.setColumnMaxData(maxByteArr);
     blockletInfoColumnar.setColumnMinData(maxByteArr);
     blockletInfoColumnar.setKeyLengths(intArr);
-    blockletInfoColumnar.setColGrpBlocks(boolArr);
     blockletInfoColumnar.setKeyOffSets(longArr);
     blockletInfoColumnar.setDataIndexMapOffsets(longArr);
     blockletInfoColumnar.setAggKeyBlock(boolArr);
@@ -232,7 +267,8 @@ public class CarbonMetadataUtilTest {
     blockletInfoColumnar.setMeasureLength(intArr);
     blockletInfoColumnar.setMeasureOffset(longArr);
     blockletInfoColumnar.setMeasureNullValueIndex(bitSetArr);
-    blockletInfoColumnar.setStats(stats);
+    EncodedTablePage encodedTablePage = EncodedTablePage.newEmptyInstance();
+    blockletInfoColumnar.setEncodedTablePage(encodedTablePage);
 
     BlockletInfoColumnar blockletInfoColumnar1 = new BlockletInfoColumnar();
     blockletInfoColumnar1.setColumnMaxData(maxByteArr);
@@ -243,13 +279,11 @@ public class CarbonMetadataUtilTest {
     blockletInfoColumnar1.setAggKeyBlock(boolArr);
     blockletInfoColumnar1.setDataIndexMapLength(intArr);
     blockletInfoColumnar1.setIsSortedKeyColumn(boolArr);
-    blockletInfoColumnar1.setColGrpBlocks(boolArr);
     blockletInfoColumnar1.setKeyOffSets(longArr);
     blockletInfoColumnar1.setMeasureLength(intArr);
     blockletInfoColumnar1.setMeasureOffset(longArr);
     blockletInfoColumnar1.setMeasureNullValueIndex(bitSetArr);
-    blockletInfoColumnar1.setStats(stats);
-    blockletInfoColumnar1.setColGrpBlocks(boolArr);
+    blockletInfoColumnar1.setEncodedTablePage(encodedTablePage);
 
     List<BlockletInfoColumnar> blockletInfoColumnarList = new ArrayList<>();
     blockletInfoColumnarList.add(blockletInfoColumnar);
@@ -285,7 +319,7 @@ public class CarbonMetadataUtilTest {
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
     blockletMinMaxIndex.addToMax_values(ByteBuffer.wrap(byteMaxArr));
     blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(byteMinArr));
-    FileFooter result = convertFileFooter(blockletInfoColumnarList, 4, cardinality, columnSchemas,
+    FileFooter result = convertFileFooter(blockletInfoColumnarList, cardinality, columnSchemas,
         segmentProperties);
     assertEquals(result.getTable_columns(), columnSchemas);
 

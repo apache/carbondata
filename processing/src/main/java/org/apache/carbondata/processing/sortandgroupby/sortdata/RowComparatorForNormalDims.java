@@ -18,7 +18,7 @@ package org.apache.carbondata.processing.sortandgroupby.sortdata;
 
 import java.util.Comparator;
 
-import org.apache.carbondata.processing.util.NonDictionaryUtil;
+import org.apache.carbondata.core.util.NonDictionaryUtil;
 
 /**
  * This class is used as comparator for comparing dims which are non high cardinality dims.

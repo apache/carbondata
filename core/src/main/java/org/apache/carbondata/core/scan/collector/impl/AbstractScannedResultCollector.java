@@ -27,7 +27,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.collector.ScannedResultCollector;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.infos.DimensionInfo;
-import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.executor.infos.MeasureInfo;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
@@ -40,11 +39,6 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(AbstractScannedResultCollector.class.getName());
-
-  /**
-   * restructuring info
-   */
-  private KeyStructureInfo restructureInfos;
 
   /**
    * table block execution infos

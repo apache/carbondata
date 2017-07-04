@@ -34,11 +34,9 @@ public interface ColumnPageCodec {
   String getName();
 
   /**
-   * apply a column page and output encoded byte array
-   * @param input column page to apply
-   * @return encoded data
+   * encode a column page and return the encoded data
    */
-  byte[] encode(ColumnPage input) throws MemoryException, IOException;
+  EncodedColumnPage encode(ColumnPage input) throws MemoryException, IOException;
 
   /**
    * decode byte array from offset to a column page
@@ -48,4 +46,5 @@ public interface ColumnPageCodec {
    * @return decoded data
    */
   ColumnPage decode(byte[] input, int offset, int length) throws MemoryException;
+
 }

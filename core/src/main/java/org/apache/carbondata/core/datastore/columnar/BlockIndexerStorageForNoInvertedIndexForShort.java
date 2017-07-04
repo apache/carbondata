@@ -77,6 +77,11 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
     return new short[0];
   }
 
+  @Override
+  public int getDataRlePageLengthInBytes() {
+    return 0;
+  }
+
   @Override public int getTotalSize() {
     return totalSize;
   }
@@ -94,6 +99,11 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
     return new short[0];
   }
 
+  @Override
+  public int getRowIdPageLengthInBytes() {
+    return 0;
+  }
+
   /**
    * no use
    *
@@ -101,6 +111,11 @@ public class BlockIndexerStorageForNoInvertedIndexForShort implements IndexStora
    */
   public short[] getRowIdRlePage() {
     return new short[0];
+  }
+
+  @Override
+  public int getRowIdRlePageLengthInBytes() {
+    return 0;
   }
 
   /**

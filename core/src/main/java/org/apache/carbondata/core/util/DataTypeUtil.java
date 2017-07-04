@@ -136,25 +136,6 @@ public final class DataTypeUtil {
   }
 
   /**
-   * This method will return the type of measure based on its data type
-   *
-   * @param dataType
-   * @return
-   */
-  public static char getAggType(DataType dataType) {
-    switch (dataType) {
-      case DECIMAL:
-        return CarbonCommonConstants.BIG_DECIMAL_MEASURE;
-      case SHORT:
-      case INT:
-      case LONG:
-        return CarbonCommonConstants.BIG_INT_MEASURE;
-      default:
-        return CarbonCommonConstants.DOUBLE_MEASURE;
-    }
-  }
-
-  /**
    * This method will convert a big decimal value to bytes
    *
    * @param num

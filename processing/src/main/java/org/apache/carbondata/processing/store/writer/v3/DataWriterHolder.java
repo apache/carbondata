@@ -19,24 +19,24 @@ package org.apache.carbondata.processing.store.writer.v3;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.core.util.NodeHolder;
+import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 
 public class DataWriterHolder {
-  private List<NodeHolder> nodeHolder;
+  private List<EncodedTablePage> encodedTablePage;
   private long currentSize;
 
   public DataWriterHolder() {
-    this.nodeHolder = new ArrayList<NodeHolder>();
+    this.encodedTablePage = new ArrayList<EncodedTablePage>();
   }
 
   public void clear() {
-    nodeHolder.clear();
+    encodedTablePage.clear();
     currentSize = 0;
   }
 
-  public void addNodeHolder(NodeHolder holder) {
-    this.nodeHolder.add(holder);
-    currentSize += holder.getHolderSize();
+  public void addPage(EncodedTablePage encodedTablePage) {
+    this.encodedTablePage.add(encodedTablePage);
+    currentSize += encodedTablePage.getEncodedSize();
   }
 
   public long getSize() {
@@ -45,18 +45,18 @@ public class DataWriterHolder {
   }
 
   public int getNumberOfPagesAdded() {
-    return nodeHolder.size();
+    return encodedTablePage.size();
   }
 
   public int getTotalRows() {
     int rows = 0;
-    for (NodeHolder nh : nodeHolder) {
-      rows += nh.getEntryCount();
+    for (EncodedTablePage nh : encodedTablePage) {
+      rows += nh.getPageSize();
     }
     return rows;
   }
 
-  public List<NodeHolder> getNodeHolder() {
-    return nodeHolder;
+  public List<EncodedTablePage> getEncodedTablePages() {
+    return encodedTablePage;
   }
 }

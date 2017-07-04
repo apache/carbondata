@@ -178,6 +178,7 @@ public class TableSpec {
     public int getNumExpandedDimensions() {
       return numDimensionExpanded;
     }
+
   }
 
   public class MeasureSpec {

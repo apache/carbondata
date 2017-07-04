@@ -26,6 +26,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
@@ -61,17 +62,19 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
   /**
    * Below method will be used to write the data to carbon data file
    *
-   * @param holder
+   * @param encodedTablePage
    * @throws CarbonDataWriterException any problem in writing operation
    */
-  @Override public void writeBlockletData(NodeHolder holder) throws CarbonDataWriterException {
-    if (holder.getEntryCount() == 0) {
+  @Override public void writeTablePage(EncodedTablePage encodedTablePage)
+      throws CarbonDataWriterException {
+    NodeHolder nodeHolder = buildNodeHolder(encodedTablePage);
+    if (encodedTablePage.getPageSize() == 0) {
       return;
     }
     // size to calculate the size of the blocklet
     int size = 0;
     // get the blocklet info object
-    BlockletInfoColumnar blockletInfo = getBlockletInfo(holder, 0);
+    BlockletInfoColumnar blockletInfo = getBlockletInfo(encodedTablePage, 0);
 
     List<DataChunk2> datachunks = null;
     try {
@@ -89,16 +92,16 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
       size += dataChunkByteArray[i].length;
     }
     // add row id index length
-    for (int i = 0; i < holder.getKeyBlockIndexLength().length; i++) {
-      size += holder.getKeyBlockIndexLength()[i];
+    for (int i = 0; i < nodeHolder.getKeyBlockIndexLength().length; i++) {
+      size += nodeHolder.getKeyBlockIndexLength()[i];
     }
     // add rle index length
-    for (int i = 0; i < holder.getDataIndexMapLength().length; i++) {
-      size += holder.getDataIndexMapLength()[i];
+    for (int i = 0; i < nodeHolder.getDataIndexMapLength().length; i++) {
+      size += nodeHolder.getDataIndexMapLength()[i];
     }
     // add dimension column data page and measure column data page size
     long blockletDataSize =
-        holder.getTotalDimensionArrayLength() + holder.getTotalMeasureArrayLength() + size;
+        nodeHolder.getTotalDimensionArrayLength() + nodeHolder.getTotalMeasureArrayLength() + size;
     // if size of the file already reached threshold size then create a new file and get the file
     // channel object
     updateBlockletFileChannel(blockletDataSize);
@@ -117,7 +120,7 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
       throw new CarbonDataWriterException("Problem while getting the file channel size", e);
     }
     // write data to file and get its offset
-    writeDataToFile(holder, dataChunkByteArray, fileChannel);
+    writeDataToFile(nodeHolder, dataChunkByteArray, fileChannel);
     // add blocklet info to list
     blockletInfoList.add(blockletInfo);
     LOGGER.info("A new blocklet is added, its data size is: " + blockletDataSize + " Byte");
@@ -132,10 +135,6 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
    * <MColumn1DataChunk><MColumn1DataPage>
    * <MColumn2DataChunk><MColumn2DataPage>
    * <MColumn2DataChunk><MColumn2DataPage>
-   *
-   * @param nodeHolder
-   * @param dataChunksBytes
-   * @param channel
    * @throws CarbonDataWriterException
    */
   private void writeDataToFile(NodeHolder nodeHolder, byte[][] dataChunksBytes, FileChannel channel)
@@ -156,11 +155,15 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
     for (int i = 0; i < nodeHolder.getIsSortedKeyBlock().length; i++) {
       currentDataChunksOffset.add(offset);
       currentDataChunksLength.add((short) dataChunksBytes[i].length);
-      bufferSize += dataChunksBytes[i].length + nodeHolder.getKeyLengths()[i] + (!nodeHolder
-          .getIsSortedKeyBlock()[i] ? nodeHolder.getKeyBlockIndexLength()[rowIdIndex] : 0) + (
-          dataWriterVo.getRleEncodingForDictDim()[i] ?
-              nodeHolder.getCompressedDataIndex()[rleIndex].length :
-              0);
+      int size1 = (!nodeHolder.getIsSortedKeyBlock()[i] ?
+          nodeHolder.getKeyBlockIndexLength()[rowIdIndex] :
+          0);
+      int size2 = (dataWriterVo.getRleEncodingForDictDim()[i] ?
+          nodeHolder.getCompressedDataIndex()[rleIndex].length :
+          0);
+      bufferSize += dataChunksBytes[i].length +
+          nodeHolder.getKeyLengths()[i] +
+          size1 + size2;
       offset += dataChunksBytes[i].length;
       offset += nodeHolder.getKeyLengths()[i];
       if (!nodeHolder.getIsSortedKeyBlock()[i]) {
@@ -180,14 +183,16 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
       buffer.put(nodeHolder.getKeyArray()[i]);
       if (!nodeHolder.getIsSortedKeyBlock()[i]) {
         buffer.putInt(nodeHolder.getCompressedIndex()[rowIdIndex].length);
-        buffer.put(nodeHolder.getCompressedIndex()[rowIdIndex]);
+        byte[] b1 = nodeHolder.getCompressedIndex()[rowIdIndex];
+        buffer.put(b1);
         if (nodeHolder.getCompressedIndexMap()[rowIdIndex].length > 0) {
           buffer.put(nodeHolder.getCompressedIndexMap()[rowIdIndex]);
         }
         rowIdIndex++;
       }
       if (dataWriterVo.getRleEncodingForDictDim()[i]) {
-        buffer.put(nodeHolder.getCompressedDataIndex()[rleIndex]);
+        byte[] b2 = nodeHolder.getCompressedDataIndex()[rleIndex];
+        buffer.put(b2);
         rleIndex++;
       }
     }
@@ -230,7 +235,9 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
    *
    * @return BlockletInfo - blocklet metadata
    */
-  protected BlockletInfoColumnar getBlockletInfo(NodeHolder nodeHolder, long offset) {
+  protected BlockletInfoColumnar getBlockletInfo(EncodedTablePage encodedTablePage, long offset) {
+    NodeHolder nodeHolder = buildNodeHolder(encodedTablePage);
+
     // create the info object for leaf entry
     BlockletInfoColumnar info = new BlockletInfoColumnar();
     //add rleEncodingForDictDim array
@@ -256,12 +263,7 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
     info.setStartKey(nodeHolder.getStartKey());
     // set end key
     info.setEndKey(nodeHolder.getEndKey());
-    info.setStats(nodeHolder.getStats());
-    // return leaf metadata
-
-    //colGroup Blocks
-    info.setColGrpBlocks(nodeHolder.getColGrpBlocks());
-
+    info.setEncodedTablePage(encodedTablePage);
     return info;
   }
 
