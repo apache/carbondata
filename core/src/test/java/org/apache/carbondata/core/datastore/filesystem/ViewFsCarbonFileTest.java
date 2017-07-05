@@ -35,6 +35,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -91,7 +92,7 @@ public class ViewFsCarbonFileTest {
     @Test
     public void testListFilesWithOutDirectoryPermission() {
         viewFSCarbonFile = new ViewFSCarbonFile(fileStatusWithOutDirectoryPermission);
-        assertTrue(viewFSCarbonFile.listFiles() == null);
+        assertArrayEquals(viewFSCarbonFile.listFiles(), new CarbonFile[0]);
     }
 
     @Test

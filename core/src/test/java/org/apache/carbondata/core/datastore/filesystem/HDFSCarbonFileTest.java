@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -132,7 +133,7 @@ public class HDFSCarbonFileTest {
             }
 
         };
-        assertEquals(hdfsCarbonFile.listFiles(), null);
+        assertArrayEquals(hdfsCarbonFile.listFiles(), new CarbonFile[0]);
     }
 
     @Test

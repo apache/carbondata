@@ -30,6 +30,7 @@ import java.io.*;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Objects;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -102,7 +103,7 @@ public class LocalCarbonFileTest {
                 return false;
             }
         };
-        assertTrue(localCarbonFile.listFiles() == null);
+        assertArrayEquals(localCarbonFile.listFiles(), new CarbonFile[0]);
     }
 
     @Test
