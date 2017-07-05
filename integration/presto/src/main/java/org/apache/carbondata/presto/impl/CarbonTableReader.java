@@ -65,6 +65,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
+import com.facebook.presto.spi.TableNotFoundException;
 
 /** CarbonTableReader will be a facade of these utils
  *
@@ -251,7 +252,7 @@ public class CarbonTableReader {
 
       return parseCarbonMetadata(table);
     }
-    return null;
+    throw new TableNotFoundException(schemaTableName);
   }
 
   /**
