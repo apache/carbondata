@@ -27,8 +27,9 @@ import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.execution.command.LoadDataCommand
 import org.apache.spark.sql.test.{ResourceRegisterAndCopier, TestQueryExecutor}
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.scalatest.Suite
 
-class QueryTest extends PlanTest {
+class QueryTest extends PlanTest with Suite {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 

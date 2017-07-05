@@ -36,6 +36,8 @@ import org.apache.carbondata.core.util.CarbonProperties
 trait TestQueryExecutorRegister {
   def sql(sqlText: String): DataFrame
 
+  def stop()
+
   def sqlContext: SQLContext
 }
 
@@ -52,8 +54,8 @@ object TestQueryExecutor {
   val masterUrl = {
     val property = System.getProperty("spark.master.url")
     if (property == null) {
-      "spark://root1-ThinkPad-T440p:7077"
-//      "local[2]"
+//      "spark://root1-ThinkPad-T440p:7077"
+      "local[2]"
     } else {
       property
     }

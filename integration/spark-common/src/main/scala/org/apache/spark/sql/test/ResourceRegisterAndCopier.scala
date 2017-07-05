@@ -51,6 +51,7 @@ object ResourceRegisterAndCopier {
                   "Data/pushdownJoin/vardhandaterestruct.csv"::
                   "Data/pushdownJoin/vardhandaterestruct2.csv"::
                   "Data/pushdownJoin/vardhandaterestruct3.csv"::
+                  "Data/HiveData/100_hive_test (1).csv" ::
                   "Data/SEQ500/seq_500Records.csv"::
                   "Data/sequencedata/100.csv"::
                   "Data/sequencedata/dict.csv"::

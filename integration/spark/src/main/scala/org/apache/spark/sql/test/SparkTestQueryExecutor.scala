@@ -32,6 +32,8 @@ class SparkTestQueryExecutor extends TestQueryExecutorRegister {
   override def sql(sqlText: String): DataFrame = SparkTestQueryExecutor.cc.sql(sqlText)
 
   override def sqlContext: SQLContext = SparkTestQueryExecutor.cc
+
+  override def stop(): Unit = SparkTestQueryExecutor.cc.sparkContext.stop()
 }
 
 object SparkTestQueryExecutor {
