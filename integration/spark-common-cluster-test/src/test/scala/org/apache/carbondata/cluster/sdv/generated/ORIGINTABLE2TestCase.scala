@@ -84,7 +84,8 @@ test("Sort_Column_43", Include) {
 
 //Sort_Column_52
 test("Sort_Column_52", Include) {
-  sql(s"""select empno from origintable2 order by empno""").collect
+  checkAnswer(s"""select empno from origintable2 order by empno limit 10""",
+    s"""select empno from origintable2_hive order by empno limit 10""")
 }
        
 override def afterAll {

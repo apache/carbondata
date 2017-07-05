@@ -129,7 +129,7 @@ test("comp_TC10", Include) {
 
 //comp_TC24
 test("comp_TC24", Include) {
-  sql(s"""select * from Comp_TABLE_ONE_JOIN""").collect
+  sql(s"""select * from Comp_TABLE_ONE_JOIN order by customer_uid limit 10""").collect
 }
        
 
@@ -243,7 +243,7 @@ test("comp_TC22", Include) {
 
 //comp_TC25
 test("comp_TC25", Include) {
-  sql(s"""select * from Comp_TABLE_TWO_JOIN""").collect
+  sql(s"""select * from Comp_TABLE_TWO_JOIN order by customer_payment_id limit 10""").collect
 }
        
 

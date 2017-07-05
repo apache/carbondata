@@ -613,13 +613,13 @@ test("Comp_VMALL_DICTIONARY_INCLUDE_058", Include) {
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_059
-test("Comp_VMALL_DICTIONARY_INCLUDE_059", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_059", Include) {
   sql(s"""select last(contractNumber) a from Comp_VMALL_DICTIONARY_INCLUDE  order by a""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_060
-test("Comp_VMALL_DICTIONARY_INCLUDE_060", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_060", Include) {
   sql(s"""select FIRST(contractNumber) a from Comp_VMALL_DICTIONARY_INCLUDE order by a""").collect
 }
        
@@ -800,31 +800,31 @@ test("Comp_VMALL_DICTIONARY_INCLUDE_085", Include) {
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_086
-test("Comp_VMALL_DICTIONARY_INCLUDE_086", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_086", Include) {
   sql(s"""select variance(Latest_DAY) as a   from (select Latest_DAY from Comp_VMALL_DICTIONARY_INCLUDE order by Latest_DAY) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_087
-test("Comp_VMALL_DICTIONARY_INCLUDE_087", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_087", Include) {
   sql(s"""select var_pop(Latest_DAY)  as a from (select Latest_DAY from Comp_VMALL_DICTIONARY_INCLUDE order by Latest_DAY) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_088
-test("Comp_VMALL_DICTIONARY_INCLUDE_088", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_088", Include) {
   sql(s"""select var_samp(Latest_DAY) as a  from (select Latest_DAY from Comp_VMALL_DICTIONARY_INCLUDE order by Latest_DAY) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_089
-test("Comp_VMALL_DICTIONARY_INCLUDE_089", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_089", Include) {
   sql(s"""select stddev_pop(Latest_DAY) as a  from (select Latest_DAY from Comp_VMALL_DICTIONARY_INCLUDE order by Latest_DAY) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_090
-test("Comp_VMALL_DICTIONARY_INCLUDE_090", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_090", Include) {
   sql(s"""select stddev_samp(Latest_DAY)  as a from (select Latest_DAY from Comp_VMALL_DICTIONARY_INCLUDE order by Latest_DAY) t""").collect
 }
        
@@ -849,31 +849,31 @@ test("Comp_VMALL_DICTIONARY_INCLUDE_093", Include) {
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_094
-test("Comp_VMALL_DICTIONARY_INCLUDE_094", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_094", Include) {
   sql(s"""select percentile_approx(Latest_DAY,0.2) as a  from (select Latest_DAY from Comp_VMALL_DICTIONARY_INCLUDE order by Latest_DAY) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_095
-test("Comp_VMALL_DICTIONARY_INCLUDE_095", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_095", Include) {
   sql(s"""select percentile_approx(Latest_DAY,0.2,5) as a  from (select Latest_DAY from Comp_VMALL_DICTIONARY_INCLUDE order by Latest_DAY) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_096
-test("Comp_VMALL_DICTIONARY_INCLUDE_096", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_096", Include) {
   sql(s"""select percentile_approx(Latest_DAY,array(0.2,0.3,0.99))  as a from (select Latest_DAY from Comp_VMALL_DICTIONARY_INCLUDE order by Latest_DAY) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_097
-test("Comp_VMALL_DICTIONARY_INCLUDE_097", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_097", Include) {
   sql(s"""select percentile_approx(Latest_DAY,array(0.2,0.3,0.99),5) as a from (select Latest_DAY from Comp_VMALL_DICTIONARY_INCLUDE order by Latest_DAY) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_098
-test("Comp_VMALL_DICTIONARY_INCLUDE_098", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_098", Include) {
   sql(s"""select histogram_numeric(Latest_DAY,2)  as a from (select Latest_DAY from Comp_VMALL_DICTIONARY_INCLUDE order by Latest_DAY) t""").collect
 }
        
@@ -893,13 +893,13 @@ test("Comp_VMALL_DICTIONARY_INCLUDE_100", Include) {
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_101
-test("Comp_VMALL_DICTIONARY_INCLUDE_101", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_101", Include) {
   sql(s"""select last(Latest_DAY) a from Comp_VMALL_DICTIONARY_INCLUDE order by a""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_102
-test("Comp_VMALL_DICTIONARY_INCLUDE_102", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_102", Include) {
   sql(s"""select FIRST(Latest_DAY) a from (select Latest_DAY from Comp_VMALL_DICTIONARY_INCLUDE order by Latest_DAY) t""").collect
 }
        
@@ -1077,43 +1077,43 @@ test("Comp_VMALL_DICTIONARY_INCLUDE_127", Include) {
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_128
-test("Comp_VMALL_DICTIONARY_INCLUDE_128", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_128", Include) {
   sql(s"""select variance(gamePointId) as a   from (select gamePointId from Comp_VMALL_DICTIONARY_INCLUDE order by gamePointId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_129
-test("Comp_VMALL_DICTIONARY_INCLUDE_129", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_129", Include) {
   sql(s"""select var_pop(gamePointId)  as a from (select gamePointId from Comp_VMALL_DICTIONARY_INCLUDE order by gamePointId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_130
-test("Comp_VMALL_DICTIONARY_INCLUDE_130", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_130", Include) {
   sql(s"""select var_samp(gamePointId) as a  from (select gamePointId from Comp_VMALL_DICTIONARY_INCLUDE order by gamePointId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_131
-test("Comp_VMALL_DICTIONARY_INCLUDE_131", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_131", Include) {
   sql(s"""select stddev_pop(gamePointId) as a  from (select gamePointId from Comp_VMALL_DICTIONARY_INCLUDE order by gamePointId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_132
-test("Comp_VMALL_DICTIONARY_INCLUDE_132", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_132", Include) {
   sql(s"""select stddev_samp(gamePointId)  as a from (select gamePointId from Comp_VMALL_DICTIONARY_INCLUDE order by gamePointId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_133
-test("Comp_VMALL_DICTIONARY_INCLUDE_133", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_133", Include) {
   sql(s"""select covar_pop(gamePointId,gamePointId) as a  from (select gamePointId from Comp_VMALL_DICTIONARY_INCLUDE order by gamePointId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_134
-test("Comp_VMALL_DICTIONARY_INCLUDE_134", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_134", Include) {
   sql(s"""select covar_samp(gamePointId,gamePointId) as a  from (select gamePointId from Comp_VMALL_DICTIONARY_INCLUDE order by gamePointId) t""").collect
 }
        
@@ -1126,31 +1126,31 @@ test("Comp_VMALL_DICTIONARY_INCLUDE_135", Include) {
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_136
-test("Comp_VMALL_DICTIONARY_INCLUDE_136", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_136", Include) {
   sql(s"""select percentile_approx(gamePointId,0.2) as a  from (select gamePointId from Comp_VMALL_DICTIONARY_INCLUDE order by gamePointId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_137
-test("Comp_VMALL_DICTIONARY_INCLUDE_137", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_137", Include) {
   sql(s"""select percentile_approx(gamePointId,0.2,5) as a  from (select gamePointId from Comp_VMALL_DICTIONARY_INCLUDE order by gamePointId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_138
-test("Comp_VMALL_DICTIONARY_INCLUDE_138", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_138", Include) {
   sql(s"""select percentile_approx(gamePointId,array(0.2,0.3,0.99))  as a from (select gamePointId from Comp_VMALL_DICTIONARY_INCLUDE order by gamePointId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_139
-test("Comp_VMALL_DICTIONARY_INCLUDE_139", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_139", Include) {
   sql(s"""select percentile_approx(gamePointId,array(0.2,0.3,0.99),5) as a from (select gamePointId from Comp_VMALL_DICTIONARY_INCLUDE order by gamePointId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_140
-test("Comp_VMALL_DICTIONARY_INCLUDE_140", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_140", Include) {
   sql(s"""select histogram_numeric(gamePointId,2)  as a from (select gamePointId from Comp_VMALL_DICTIONARY_INCLUDE order by gamePointId) t""").collect
 }
        
@@ -1170,13 +1170,13 @@ test("Comp_VMALL_DICTIONARY_INCLUDE_142", Include) {
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_143
-test("Comp_VMALL_DICTIONARY_INCLUDE_143", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_143", Include) {
   sql(s"""select last(gamePointId) a from (select gamePointId from Comp_VMALL_DICTIONARY_INCLUDE order by gamePointId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_144
-test("Comp_VMALL_DICTIONARY_INCLUDE_144", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_144", Include) {
   sql(s"""select FIRST(gamePointId) a from Comp_VMALL_DICTIONARY_INCLUDE order by a""").collect
 }
        
@@ -1370,7 +1370,7 @@ test("Comp_VMALL_DICTIONARY_INCLUDE_183", Include) {
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_184
-test("Comp_VMALL_DICTIONARY_INCLUDE_184", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_184", Include) {
   sql(s"""select FIRST(productionDate) a from Comp_VMALL_DICTIONARY_INCLUDE  order by a""").collect
 }
        
@@ -1474,7 +1474,7 @@ test("Comp_VMALL_DICTIONARY_INCLUDE_198", Include) {
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_199
-test("Comp_VMALL_DICTIONARY_INCLUDE_199", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_199", Include) {
   sql(s"""select productionDate from Comp_VMALL_DICTIONARY_INCLUDE where productionDate <'2015-07-01 12:07:28.0' order by productionDate""").collect
 }
        
@@ -1543,43 +1543,43 @@ test("Comp_VMALL_DICTIONARY_INCLUDE_208", Include) {
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_209
-test("Comp_VMALL_DICTIONARY_INCLUDE_209", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_209", Include) {
   sql(s"""select variance(deviceInformationId) as a   from (select deviceInformationId from Comp_VMALL_DICTIONARY_INCLUDE order by deviceInformationId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_210
-test("Comp_VMALL_DICTIONARY_INCLUDE_210", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_210", Include) {
   sql(s"""select var_pop(deviceInformationId)  as a from Comp_VMALL_DICTIONARY_INCLUDE""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_211
-test("Comp_VMALL_DICTIONARY_INCLUDE_211", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_211", Include) {
   sql(s"""select var_samp(deviceInformationId) as a  from Comp_VMALL_DICTIONARY_INCLUDE""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_212
-test("Comp_VMALL_DICTIONARY_INCLUDE_212", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_212", Include) {
   sql(s"""select stddev_pop(deviceInformationId) as a  from (select deviceInformationId from Comp_VMALL_DICTIONARY_INCLUDE order by deviceInformationId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_213
-test("Comp_VMALL_DICTIONARY_INCLUDE_213", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_213", Include) {
   sql(s"""select stddev_samp(deviceInformationId)  as a from (select deviceInformationId from Comp_VMALL_DICTIONARY_INCLUDE order by deviceInformationId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_214
-test("Comp_VMALL_DICTIONARY_INCLUDE_214", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_214", Include) {
   sql(s"""select covar_pop(deviceInformationId,deviceInformationId) as a  from (select deviceInformationId from Comp_VMALL_DICTIONARY_INCLUDE order by deviceInformationId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_215
-test("Comp_VMALL_DICTIONARY_INCLUDE_215", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_215", Include) {
   sql(s"""select covar_samp(deviceInformationId,deviceInformationId) as a  from (select deviceInformationId from Comp_VMALL_DICTIONARY_INCLUDE order by deviceInformationId) t""").collect
 }
        
@@ -1592,31 +1592,31 @@ test("Comp_VMALL_DICTIONARY_INCLUDE_216", Include) {
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_217
-test("Comp_VMALL_DICTIONARY_INCLUDE_217", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_217", Include) {
   sql(s"""select percentile_approx(deviceInformationId,0.2) as a  from (select deviceInformationId from Comp_VMALL_DICTIONARY_INCLUDE order by deviceInformationId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_218
-test("Comp_VMALL_DICTIONARY_INCLUDE_218", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_218", Include) {
   sql(s"""select percentile_approx(deviceInformationId,0.2,5) as a  from (select deviceInformationId from Comp_VMALL_DICTIONARY_INCLUDE order by deviceInformationId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_219
-test("Comp_VMALL_DICTIONARY_INCLUDE_219", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_219", Include) {
   sql(s"""select percentile_approx(deviceInformationId,array(0.2,0.3,0.99))  as a from (select deviceInformationId from Comp_VMALL_DICTIONARY_INCLUDE order by deviceInformationId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_220
-test("Comp_VMALL_DICTIONARY_INCLUDE_220", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_220", Include) {
   sql(s"""select percentile_approx(deviceInformationId,array(0.2,0.3,0.99),5) as a from (select deviceInformationId from Comp_VMALL_DICTIONARY_INCLUDE order by deviceInformationId) t""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_221
-test("Comp_VMALL_DICTIONARY_INCLUDE_221", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_221", Include) {
   sql(s"""select histogram_numeric(deviceInformationId,2)  as a from (select deviceInformationId from Comp_VMALL_DICTIONARY_INCLUDE order by deviceInformationId) t""").collect
 }
        
@@ -1636,13 +1636,13 @@ test("Comp_VMALL_DICTIONARY_INCLUDE_223", Include) {
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_224
-test("Comp_VMALL_DICTIONARY_INCLUDE_224", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_224", Include) {
   sql(s"""select last(deviceInformationId) a from Comp_VMALL_DICTIONARY_INCLUDE order by a""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_225
-test("Comp_VMALL_DICTIONARY_INCLUDE_225", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_225", Include) {
   sql(s"""select FIRST(deviceInformationId) a from Comp_VMALL_DICTIONARY_INCLUDE order by a""").collect
 }
        
@@ -1857,13 +1857,13 @@ test("Comp_VMALL_DICTIONARY_INCLUDE_255", Include) {
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_256
-test("Comp_VMALL_DICTIONARY_INCLUDE_256", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_256", Include) {
   sql(s"""select sum(gamePointId)+10 as a   from Comp_VMALL_DICTIONARY_INCLUDE""").collect
 }
        
 
 //Comp_VMALL_DICTIONARY_INCLUDE_257
-test("Comp_VMALL_DICTIONARY_INCLUDE_257", Include) {
+  ignore("Comp_VMALL_DICTIONARY_INCLUDE_257", Include) {
   sql(s"""select sum(gamePointId)*10 as a   from Comp_VMALL_DICTIONARY_INCLUDE""").collect
 }
        

@@ -112,19 +112,19 @@ test("CMBC_Query_9", Include) {
        
 
 //CMBC_Query_10
-test("CMBC_Query_10", Include) {
+  ignore("CMBC_Query_10", Include) {
   sql(s"""SELECT SubsidaryBank, SUM(incomeOneyear) AS Sum_incomeOneyear, SUM(numberoftransactions) AS Sum_numberoftransactions FROM (select * from cmb) SUB_QRY WHERE SubsidaryBank IN ("Bank Bumiputera Indonesia","Daegu Bank","Real-Estate Bank") GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""").collect
 }
        
 
 //CMBC_Query_11
-test("CMBC_Query_11", Include) {
+  ignore("CMBC_Query_11", Include) {
   sql(s"""SELECT `year`, `month`, SUM(DemandDeposits) AS Sum_DemandDeposits, SUM(numberoftransactions) AS Sum_numberoftransactions, SUM(yenDeposits) AS Sum_yenDeposits FROM (select * from cmb) SUB_QRY WHERE ( SubsidaryBank = "CMB Financial Leasing Ltd") AND ( Cust_UID = "CMB0000000000000000000000") GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""").collect
 }
        
 
 //CMBC_Query_12
-test("CMBC_Query_12", Include) {
+  ignore("CMBC_Query_12", Include) {
   sql(s"""SELECT `year`, `month`, SUM(yenDeposits) AS Sum_yenDeposits, SUM(HongKongDeposits) AS Sum_HongKongDeposits, SUM(dollarDeposits) AS Sum_dollarDeposits, SUM(euroDeposits) AS Sum_euroDeposits FROM (select * from cmb) SUB_QRY WHERE ( SubsidaryBank = "Credit Suisse") AND ( `month` IN ("1","2","3")) GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""").collect
 }
        

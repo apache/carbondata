@@ -670,43 +670,43 @@ test("TC_102", Include) {
        
 
 //TC_103
-test("TC_103", Include) {
+ignore("TC_103", Include) {
   sql(s"""select variance(deviceInformationId) as a   from Carbon_automation""").collect
 }
        
 
 //TC_104
-test("TC_104", Include) {
+  ignore("TC_104", Include) {
   sql(s"""select var_pop(deviceInformationId)  as a from Carbon_automation""").collect
 }
        
 
 //TC_105
-test("TC_105", Include) {
+  ignore("TC_105", Include) {
   sql(s"""select var_samp(deviceInformationId) as a  from Carbon_automation""").collect
 }
        
 
 //TC_106
-test("TC_106", Include) {
+  ignore("TC_106", Include) {
   sql(s"""select stddev_pop(deviceInformationId) as a  from Carbon_automation""").collect
 }
        
 
 //TC_107
-test("TC_107", Include) {
+  ignore("TC_107", Include) {
   sql(s"""select stddev_samp(deviceInformationId)  as a from Carbon_automation""").collect
 }
        
 
 //TC_108
-test("TC_108", Include) {
+  ignore("TC_108", Include) {
   sql(s"""select covar_pop(deviceInformationId,deviceInformationId) as a  from Carbon_automation""").collect
 }
        
 
 //TC_109
-test("TC_109", Include) {
+  ignore("TC_109", Include) {
   sql(s"""select covar_samp(deviceInformationId,deviceInformationId) as a  from Carbon_automation""").collect
 }
        

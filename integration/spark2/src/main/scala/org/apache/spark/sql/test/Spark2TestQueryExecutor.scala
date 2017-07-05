@@ -52,27 +52,16 @@ object Spark2TestQueryExecutor {
 
 
   import org.apache.spark.sql.CarbonSession._
-  val modules = Seq(TestQueryExecutor.projectPath+"/common/target",
-    TestQueryExecutor.projectPath+"/core/target",
-    TestQueryExecutor.projectPath+"/hadoop/target",
-    TestQueryExecutor.projectPath+"/processing/target",
-    TestQueryExecutor.projectPath+"/integration/spark-common/target",
-    TestQueryExecutor.projectPath+"/integration/spark2/target",
-    TestQueryExecutor.projectPath+"/integration/spark-common/target/jars")
-  val jars = new ArrayBuffer[String]()
-  modules.foreach { path =>
-    val files = new File(path).listFiles(new FilenameFilter {
-      override def accept(dir: File, name: String) = {
-        name.endsWith(".jar")
-      }
-    })
-    files.foreach(jars += _.getAbsolutePath)
-  }
 
-  val conf = new SparkConf().setJars(jars).
-    set("spark.driver.memory", "4g").
-    set("spark.executor.memory","8g").
-    set("spark.executor.cores", "4")
+  val conf = new SparkConf()
+  if (!TestQueryExecutor.masterUrl.startsWith("local")) {
+    conf.setJars(TestQueryExecutor.jars).
+      set("spark.driver.memory", "4g").
+      set("spark.executor.memory", "8g").
+      set("spark.executor.cores", "4")
+    FileFactory.getConfiguration.
+      set("dfs.client.block.write.replace-datanode-on-failure.policy","NEVER")
+  }
 
   val spark = SparkSession
     .builder().config(conf)
@@ -84,5 +73,4 @@ object Spark2TestQueryExecutor {
     .getOrCreateCarbonSession(null, TestQueryExecutor.metastoredb)
   FileFactory.getConfiguration.set("dfs.client.block.write.replace-datanode-on-failure.policy","NEVER")
   spark.sparkContext.setLogLevel("ERROR")
-
 }

@@ -17,8 +17,10 @@
 
 package org.apache.spark.sql.test
 
-import java.io.File
+import java.io.{File, FilenameFilter}
 import java.util.ServiceLoader
+
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.util.Utils
@@ -99,6 +101,26 @@ object TestQueryExecutor {
   println(s"""Store path taken $storeLocation""")
   println(s"""Warehouse path taken $warehouse""")
   println(s"""Resource path taken $resourcesPath""")
+
+  lazy val modules = Seq(TestQueryExecutor.projectPath+"/common/target",
+    TestQueryExecutor.projectPath+"/core/target",
+    TestQueryExecutor.projectPath+"/hadoop/target",
+    TestQueryExecutor.projectPath+"/processing/target",
+    TestQueryExecutor.projectPath+"/integration/spark-common/target",
+    TestQueryExecutor.projectPath+"/integration/spark2/target",
+    TestQueryExecutor.projectPath+"/integration/spark-common/target/jars")
+  lazy val jars = {
+    val jarsLocal = new ArrayBuffer[String]()
+    modules.foreach { path =>
+      val files = new File(path).listFiles(new FilenameFilter {
+        override def accept(dir: File, name: String) = {
+          name.endsWith(".jar")
+        }
+      })
+      files.foreach(jarsLocal += _.getAbsolutePath)
+    }
+    jarsLocal
+  }
 
   val INSTANCE = lookupQueryExecutor.newInstance().asInstanceOf[TestQueryExecutorRegister]
   CarbonProperties.getInstance()

@@ -56,56 +56,59 @@ test("Sort_Column_02", Include) {
        
 
 //Sort_Column_14
-test("Sort_Column_14", Include) {
+ignore("Sort_Column_14", Include) {
   sql(s"""select empname from origintable1""").collect
 }
        
 
 //Sort_Column_18
-test("Sort_Column_18", Include) {
+ignore("Sort_Column_18", Include) {
   sql(s"""select workgroupcategory, empname from origintable1 order by workgroupcategory""").collect
 }
        
 
 //Sort_Column_22
-test("Sort_Column_22", Include) {
+ignore("Sort_Column_22", Include) {
   sql(s"""select workgroupcategory, empname from origintable1 order by workgroupcategory""").collect
 }
        
 
 //Sort_Column_26
-test("Sort_Column_26", Include) {
+ignore("Sort_Column_26", Include) {
   sql(s"""select workgroupcategory, empname from origintable1 order by workgroupcategory""").collect
 }
        
 
 //Sort_Column_30
-test("Sort_Column_30", Include) {
+ignore("Sort_Column_30", Include) {
   sql(s"""select workgroupcategory, empname from origintable1 order by workgroupcategory""").collect
 }
        
 
 //Sort_Column_34
-test("Sort_Column_34", Include) {
+ignore("Sort_Column_34", Include) {
   sql(s"""select workgroupcategory, empname from origintable1 order by workgroupcategory""").collect
 }
        
 
 //Sort_Column_38
 test("Sort_Column_38", Include) {
-  sql(s"""select workgroupcategory, empname from origintable1 order by workgroupcategory""").collect
+  checkAnswer(s"""select workgroupcategory, empname from origintable1 order by workgroupcategory, empname limit 10""",
+    s"""select workgroupcategory, empname from origintable1_hive order by workgroupcategory, empname limit 10""")
 }
        
 
 //Sort_Column_57
 test("Sort_Column_57", Include) {
-  sql(s"""select * from origintable1 where doj = '1994-07-08 18:50:35.0'""").collect
+  checkAnswer(s"""select doj from origintable1 where doj = '1994-07-08 18:50:35.0' order by doj""",
+    s"""select doj from origintable1_hive where doj = '1994-07-08 18:50:35.0' order by doj""")
 }
        
 
 //Sort_Column_59
 test("Sort_Column_59", Include) {
-  sql(s"""select * from origintable1 where empname = 'Yolanda'""").collect
+  checkAnswer(s"""select empno from origintable1 where empname = 'Yolanda' order by empno""",
+    s"""select empno from origintable1_hive where empname = 'Yolanda' order by empno""")
 }
        
 override def afterAll {
