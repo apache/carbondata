@@ -27,9 +27,9 @@ You can find the latest CarbonData document and learn more at:
 [CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA/)
 
 ## Status
-Spark2.1:
+* Spark2.1:
 [![Build Status](https://builds.apache.org/buildStatus/icon?job=carbondata-master-spark-2.1)](https://builds.apache.org/view/CarbonData/job/carbondata-master-spark-2.1/)
-Spark1.6:
+* Spark1.6:
 [![Build Status](https://builds.apache.org/buildStatus/icon?job=carbondata-master-spark-1.6)](https://builds.apache.org/view/CarbonData/job/carbondata-master-spark-1.6/)
 
 ## Features

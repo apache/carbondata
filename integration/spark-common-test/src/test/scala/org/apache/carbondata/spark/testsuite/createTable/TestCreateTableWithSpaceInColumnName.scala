@@ -29,7 +29,7 @@ class TestCreateTableWithSpaceInColumnName extends QueryTest with BeforeAndAfter
 
   override def beforeAll {
     sql("use default")
-    sql("drop database if exists dbColumnSpace cascade")
+    sql("drop database if exists dbColumnSpace")
   }
 
   test("test create table space in column names") {
@@ -55,7 +55,7 @@ class TestCreateTableWithSpaceInColumnName extends QueryTest with BeforeAndAfter
 
   override def afterAll {
     sql("use default")
-    sql("drop database if exists dbColumnSpace cascade")
+    sql("drop database if exists dbColumnSpace")
   }
 
 }
