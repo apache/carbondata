@@ -380,7 +380,7 @@ object CompareTest {
         .getOrCreateCarbonSession(storeLocation)
     spark.sparkContext.setLogLevel("warn")
 
-    val table1 = orcTableName
+    val table1 = parquetTableName
     val table2 = carbonTableName("3")
     prepareTable(spark, table1, table2)
     runTest(spark, table1, table2)
