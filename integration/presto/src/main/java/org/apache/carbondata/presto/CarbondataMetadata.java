@@ -115,9 +115,6 @@ public class CarbondataMetadata implements ConnectorMetadata {
     }
 
     CarbonTable carbonTable = carbonTableReader.getTable(schemaTableName);
-    if (carbonTable == null) {
-      return null;
-    }
 
     List<ColumnMetadata> columnsMetaList = new LinkedList<>();
     List<CarbonColumn> carbonColumns = carbonTable.getCreateOrderColumn(schemaTableName.getTableName());
@@ -148,9 +145,6 @@ public class CarbondataMetadata implements ConnectorMetadata {
 
     //CarbonTable(official struct) is stored in CarbonMetadata(official struct)
     CarbonTable cb = carbonTableReader.getTable(handle.getSchemaTableName());
-    if (cb == null) {
-      throw new TableNotFoundException(handle.getSchemaTableName());
-    }
 
     ImmutableMap.Builder<String, ColumnHandle> columnHandles = ImmutableMap.builder();
     String tableName = handle.getSchemaTableName().getTableName();
