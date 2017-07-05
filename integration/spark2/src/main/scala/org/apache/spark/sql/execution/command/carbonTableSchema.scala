@@ -426,8 +426,14 @@ case class LoadTable(
           false
         }
       case illegal =>
-        LOGGER.error(s"Can't use single_pass, because illegal syntax found: [" + illegal + "] " +
-                     "Please set it as 'true' or 'false'")
+        if (StringUtils.isNotEmpty(optionsFinal.get("all_dictionary_path").get) ||
+            StringUtils.isNotEmpty(optionsFinal.get("columndict").get)) {
+          throw new MalformedCarbonCommandException(
+            "Can not use all_dictionary_path or columndict with Illegal Value:[" + illegal + "] " +
+            "of single_pass. Please set it to True")
+        }
+        LOGGER.info("Can't use single_pass, because illegal syntax found: [" + illegal + "] " +
+                     ",continuing with default value 'false'")
         false
     }
     optionsFinal.put("single_pass", useOnePass.toString)
