@@ -30,11 +30,11 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
-  * A query test case
-  * @param sqlText SQL statement
-  * @param queryType type of query: scan, filter, aggregate, topN
-  * @param desc description of the goal of this test case
-  */
+ * A query test case
+ * @param sqlText SQL statement
+ * @param queryType type of query: scan, filter, aggregate, topN
+ * @param desc description of the goal of this test case
+ */
 case class Query(sqlText: String, queryType: String, desc: String)
 
 // scalastyle:off println
@@ -172,17 +172,20 @@ object CompareTest {
     // ==                  FILTER SCAN GROUP BY AGGREGATION                     ==
     // ===========================================================================
     Query(
-      "select country, sum(m1) as metric from $table where city='city8' group by country order by metric",
+      "select country, sum(m1) as metric from $table where city='city8' group by country " +
+          "order by metric",
       "filter scan and aggregate",
       "group by on large data, small result set"
     ),
     Query(
-      "select id, sum(m1) as metric from $table where planet='planet10' group by id order by metric",
+      "select id, sum(m1) as metric from $table where planet='planet10' group by id " +
+          "order by metric",
       "filter scan and aggregate",
       "group by on medium data, large result set"
     ),
     Query(
-      "select city, sum(m1) as metric from $table where country='country12' group by city order by metric",
+      "select city, sum(m1) as metric from $table where country='country12' group by city " +
+          "order by metric",
       "filter scan and aggregate",
       "group by on medium data, small result set"
     ),
@@ -246,7 +249,8 @@ object CompareTest {
     )
   )
 
-  private def loadParquetTable(spark: SparkSession, input: DataFrame, table: String): Double = time {
+  private def loadParquetTable(spark: SparkSession, input: DataFrame, table: String)
+  : Double = time {
     // partitioned by last 1 digit of id column
     val dfWithPartition = input.withColumn("partitionCol", input.col("id").%(10))
     dfWithPartition.write
