@@ -22,6 +22,7 @@ import java.io.{File, FilenameFilter}
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.SparkConf
+import org.apache.spark.sql.test.TestQueryExecutor.integrationPath
 import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -58,13 +59,13 @@ object Spark2TestQueryExecutor {
   val conf = new SparkConf()
   if (!TestQueryExecutor.masterUrl.startsWith("local")) {
     conf.setJars(TestQueryExecutor.jars).
-      set("spark.driver.memory", "4g").
+      set("spark.driver.memory", "8g").
       set("spark.executor.memory", "8g").
       set("spark.executor.cores", "4")
     FileFactory.getConfiguration.
       set("dfs.client.block.write.replace-datanode-on-failure.policy","NEVER")
   }
-
+  val metastoredb = s"$integrationPath/spark-common-cluster-test/target"
   val spark = SparkSession
     .builder().config(conf)
     .master(TestQueryExecutor.masterUrl)

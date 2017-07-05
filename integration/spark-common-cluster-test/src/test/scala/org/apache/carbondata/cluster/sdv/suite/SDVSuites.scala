@@ -37,52 +37,52 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
                new COMPVMALLDICTIONARYEXCLUDETestCase ::
                new COMPVMALLDICTIONARYINCLUDETestCase ::
                new COMPVMALLDICTIONARYSHARECOMPTestCase ::
-//               new MYVMALLTestCase ::
-//               new ORIGINTABLE1TestCase ::
-//               new ORIGINTABLE2TestCase ::
-//               new OSCONCARBONVIPTestCase ::
-//               new SEQUENTIALTestCase ::
-//               new SMART500DETestCase ::
-//               new SMART500DINCTestCase ::
-//               new SORTTABLE1TestCase ::
-//               new SORTTABLE2TestCase ::
-//               new SORTTABLE3TestCase ::
-//               new SORTTABLE4HEAPINMEMORYTestCase ::
-//               new SORTTABLE4HEAPSAFETestCase ::
-//               new SORTTABLE4HEAPUNSAFETestCase ::
-//               new SORTTABLE4OFFHEAPINMEMORYTestCase ::
-//               new SORTTABLE4OFFHEAPSAFETestCase ::
-//               new SORTTABLE4OFFHEAPUNSAFETestCase ::
-//               new SORTTABLE5TestCase ::
-//               new SORTTABLE6TestCase ::
-//               new SOURCEUNIQDATATestCase ::
-//               new STRUCTCOMTestCase ::
-//               new STRUCTOFARRAYCOMTestCase ::
-//               new STUDENT1INTestCase ::
-//               new TARGETUNIQDATATestCase ::
-//               new TESTBOUNDARY1TestCase ::
-//               new TRAFFIC2G3G4GVMALLTestCase ::
-//               new UNIQDATA1MBTestCase ::
-//               new UNIQDATAASPTestCase ::
-//               new UNIQDATACHAR1TestCase ::
-//               new UNIQDATACHARTestCase ::
-//               new UNIQDATADATEDICTIONARYTestCase ::
-//               new UNIQDATADATETestCase ::
-//               new UNIQDATAEXCLUDEDICTIONARYTestCase ::
-//               new UNIQDATAINCLUDEDICTIONARY1SPTestCase ::
-//               new UNIQDATAINCLUDEDICTIONARY2SPTestCase ::
-//               new UNIQDATAINCLUDEDICTIONARYSPTestCase ::
-//               new UNIQDATAINCLUDEDICTIONARYTestCase ::
-//               new UNIQDATATestCase ::
-//               new UNIQEXCLUDE1SPTestCase ::
-//               new UNIQEXCLUDESPTestCase ::
-//               new UNIQINCLUDEDICTIONARYCOMPMAJORSPTestCase ::
-//               new UNIQINCLUDEDICTIONARYCOMPMINORSPTestCase ::
-//               new UNIQINCLUDEDICTIONARYSPTestCase ::
-//               new UNIQSHAREDDICTIONARYSPTestCase ::
-//               new VMALLDICTIONARYCOLUMNGRPTestCase ::
-//               new VMALLDICTIONARYEXCLUDETestCase ::
-//               new VMALLDICTIONARYINCLUDETestCase ::
+               new MYVMALLTestCase ::
+               new ORIGINTABLE1TestCase ::
+               new ORIGINTABLE2TestCase ::
+               new OSCONCARBONVIPTestCase ::
+               new SEQUENTIALTestCase ::
+               new SMART500DETestCase ::
+               new SMART500DINCTestCase ::
+               new SORTTABLE1TestCase ::
+               new SORTTABLE2TestCase ::
+               new SORTTABLE3TestCase ::
+               new SORTTABLE4HEAPINMEMORYTestCase ::
+               new SORTTABLE4HEAPSAFETestCase ::
+               new SORTTABLE4HEAPUNSAFETestCase ::
+               new SORTTABLE4OFFHEAPINMEMORYTestCase ::
+               new SORTTABLE4OFFHEAPSAFETestCase ::
+               new SORTTABLE4OFFHEAPUNSAFETestCase ::
+               new SORTTABLE5TestCase ::
+               new SORTTABLE6TestCase ::
+               new SOURCEUNIQDATATestCase ::
+               new STRUCTCOMTestCase ::
+               new STRUCTOFARRAYCOMTestCase ::
+               new STUDENT1INTestCase ::
+               new TARGETUNIQDATATestCase ::
+               new TESTBOUNDARY1TestCase ::
+               new TRAFFIC2G3G4GVMALLTestCase ::
+               new UNIQDATA1MBTestCase ::
+               new UNIQDATAASPTestCase ::
+               new UNIQDATACHAR1TestCase ::
+               new UNIQDATACHARTestCase ::
+               new UNIQDATADATEDICTIONARYTestCase ::
+               new UNIQDATADATETestCase ::
+               new UNIQDATAEXCLUDEDICTIONARYTestCase ::
+               new UNIQDATAINCLUDEDICTIONARY1SPTestCase ::
+               new UNIQDATAINCLUDEDICTIONARY2SPTestCase ::
+               new UNIQDATAINCLUDEDICTIONARYSPTestCase ::
+               new UNIQDATAINCLUDEDICTIONARYTestCase ::
+               new UNIQDATATestCase ::
+               new UNIQEXCLUDE1SPTestCase ::
+               new UNIQEXCLUDESPTestCase ::
+               new UNIQINCLUDEDICTIONARYCOMPMAJORSPTestCase ::
+               new UNIQINCLUDEDICTIONARYCOMPMINORSPTestCase ::
+               new UNIQINCLUDEDICTIONARYSPTestCase ::
+               new UNIQSHAREDDICTIONARYSPTestCase ::
+               new VMALLDICTIONARYCOLUMNGRPTestCase ::
+               new VMALLDICTIONARYEXCLUDETestCase ::
+               new VMALLDICTIONARYINCLUDETestCase ::
                Nil
 
   override val nestedSuites = suites.toIndexedSeq
@@ -91,6 +91,5 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
     println("---------------- Stopping spark -----------------")
     TestQueryExecutor.INSTANCE.stop()
     println("---------------- Stopped spark -----------------")
-    System.exit(0)
   }
 }

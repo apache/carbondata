@@ -86,6 +86,7 @@ object ResourceRegisterAndCopier {
                   "Data/FACT_UNITED_DATA_INFO_sample_cube.csv"::
                   "Data/newdata.csv"::
                   "Data/payment_C1.csv"::
+                  "Data/HiveData/100_hive_test.csv" ::
                   "Data/Test_Data1.csv"::Nil
   val link = "https://raw.githubusercontent.com/ravipesala/incubator-carbondata/sdv-test_data/integration/spark-common-test/src/test/resources"
 
