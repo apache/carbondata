@@ -78,6 +78,23 @@ class DataCompactionBoundaryConditionsTest extends QueryTest with BeforeAndAfter
 
   }
 
+  test("check if compaction is completed correctly for multiple load.") {
+
+    var csvFilePath1 = s"$resourcesPath/compaction/compaction1.csv"
+
+
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE boundarytest " +
+        "OPTIONS" +
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+    )
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE boundarytest " +
+        "OPTIONS" +
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+    )
+    val df = sql("select * from boundarytest")
+    sql("alter table boundarytest compact 'major'")
+    checkAnswer(df, sql("select * from boundarytest"))
+  }
 
   override def afterAll {
     sql("drop table if exists  boundarytest")

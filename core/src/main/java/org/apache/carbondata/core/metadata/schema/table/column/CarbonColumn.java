@@ -134,8 +134,15 @@ public class CarbonColumn implements Serializable {
   /**
    * @return if column is dimension return true, else false.
    */
-  public Boolean isDimesion() {
+  public Boolean isDimension() {
     return columnSchema.isDimensionColumn();
+  }
+
+  /**
+   * @return true if column is measure, otherwise false
+   */
+  public Boolean isMeasure() {
+    return !isDimension();
   }
 
   /**

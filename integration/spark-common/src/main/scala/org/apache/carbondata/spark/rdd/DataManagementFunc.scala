@@ -29,7 +29,7 @@ import org.apache.spark.sql.execution.command.{CompactionCallableModel, Compacti
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
-import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
@@ -59,7 +59,7 @@ object DataManagementFunc {
 
     val sc = sqlContext
     // Delete the records based on data
-    val table = CarbonMetadata.getInstance.getCarbonTable(databaseName + "_" + tableName)
+    val table = schema.getCarbonTable
     val loadMetadataDetailsArray =
       SegmentStatusManager.readLoadMetadata(table.getMetaDataFilepath).toList
     val resultMap = new CarbonDeleteLoadByDateRDD(
@@ -361,6 +361,7 @@ object DataManagementFunc {
         LOGGER.info("Clean files lock has been successfully acquired.")
         deleteLoadsAndUpdateMetadata(dbName, tableName, storePath,
           isForceDeletion = true, carbonTable)
+        CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
       } else {
         val errorMsg = "Clean files request is failed for " +
             s"$dbName.$tableName" +

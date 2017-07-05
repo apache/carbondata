@@ -20,13 +20,13 @@ package org.apache.carbondata.core.datastore.columnar;
 public interface IndexStorage<T> {
   boolean isAlreadySorted();
 
-  T getDataAfterComp();
+  T getRowIdPage();
 
-  T getIndexMap();
+  T getRowIdRlePage();
 
-  byte[][] getKeyBlock();
+  byte[][] getDataPage();
 
-  T getDataIndexMap();
+  T getDataRlePage();
 
   int getTotalSize();
 

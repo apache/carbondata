@@ -61,22 +61,31 @@ import org.apache.spark.sql.CarbonSession._
 * Create a CarbonSession :
 
 ```
-val carbon = SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<hdfs store path>")
+val carbon = SparkSession.builder().config(sc.getConf)
+             .getOrCreateCarbonSession("<hdfs store path>")
 ```
-**NOTE**: By default metastore location is pointed to `../carbon.metastore`, user can provide own metastore location to CarbonSession like `SparkSession.builder().config(sc.getConf).getOrCreateCarbonSession("<hdfs store path>", "<local metastore path>")`
+**NOTE**: By default metastore location is pointed to `../carbon.metastore`, user can provide own metastore location to CarbonSession like `SparkSession.builder().config(sc.getConf)
+.getOrCreateCarbonSession("<hdfs store path>", "<local metastore path>")`
 
 #### Executing Queries
 
 ###### Creating a Table
 
 ```
-scala>carbon.sql("CREATE TABLE IF NOT EXISTS test_table(id string, name string, city string, age Int) STORED BY 'carbondata'")
+scala>carbon.sql("CREATE TABLE
+                        IF NOT EXISTS test_table(
+                                  id string,
+                                  name string,
+                                  city string,
+                                  age Int)
+                       STORED BY 'carbondata'")
 ```
 
 ###### Loading Data to a Table
 
 ```
-scala>carbon.sql("LOAD DATA INPATH 'sample.csv file path' INTO TABLE test_table")
+scala>carbon.sql("LOAD DATA INPATH 'sample.csv file path'
+                  INTO TABLE test_table")
 ```
 **NOTE**: Please provide the real file path of `sample.csv` for the above script.
 
@@ -85,7 +94,9 @@ scala>carbon.sql("LOAD DATA INPATH 'sample.csv file path' INTO TABLE test_table"
 ```
 scala>carbon.sql("SELECT * FROM test_table").show()
 
-scala>carbon.sql("SELECT city, avg(age), sum(age) FROM test_table GROUP BY city").show()
+scala>carbon.sql("SELECT city, avg(age), sum(age)
+                  FROM test_table
+                  GROUP BY city").show()
 ```
 
 ## Interactive Analysis with Spark Shell Version 1.6
@@ -97,7 +108,8 @@ Start Spark shell by running the following command in the Spark directory:
 ```
 ./bin/spark-shell --jars <carbondata assembly jar path>
 ```
-**NOTE**: Assembly jar will be available after [building CarbonData](https://github.com/apache/carbondata/blob/master/build/README.md) and can be copied from `./assembly/target/scala-2.1x/carbondata_xxx.jar`
+**NOTE**: Assembly jar will be available after [building CarbonData](https://github.com/apache/carbondata/
+blob/master/build/README.md) and can be copied from `./assembly/target/scala-2.1x/carbondata_xxx.jar`
 
 **NOTE**: In this shell, SparkContext is readily available as `sc`.
 
@@ -119,7 +131,13 @@ val cc = new CarbonContext(sc, "<hdfs store path>")
 ###### Creating a Table
 
 ```
-scala>cc.sql("CREATE TABLE IF NOT EXISTS test_table (id string, name string, city string, age Int) STORED BY 'carbondata'")
+scala>cc.sql("CREATE TABLE
+              IF NOT EXISTS test_table (
+                         id string,
+                         name string,
+                         city string,
+                         age Int)
+              STORED BY 'carbondata'")
 ```
 To see the table created :
 
@@ -130,7 +148,8 @@ scala>cc.sql("SHOW TABLES").show()
 ###### Loading Data to a Table
 
 ```
-scala>cc.sql("LOAD DATA INPATH 'sample.csv file path' INTO TABLE test_table")
+scala>cc.sql("LOAD DATA INPATH 'sample.csv file path'
+              INTO TABLE test_table")
 ```
 **NOTE**: Please provide the real file path of `sample.csv` for the above script.
 
@@ -138,5 +157,7 @@ scala>cc.sql("LOAD DATA INPATH 'sample.csv file path' INTO TABLE test_table")
 
 ```
 scala>cc.sql("SELECT * FROM test_table").show()
-scala>cc.sql("SELECT city, avg(age), sum(age) FROM test_table GROUP BY city").show()
+scala>cc.sql("SELECT city, avg(age), sum(age)
+              FROM test_table
+              GROUP BY city").show()
 ```

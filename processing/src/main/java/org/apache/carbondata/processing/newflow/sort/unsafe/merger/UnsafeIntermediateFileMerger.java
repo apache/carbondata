@@ -312,7 +312,13 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
       if (null != value) {
         switch (type[mesCount]) {
           case SHORT:
+            rowData.putShort(size, (Short) value);
+            size += 2;
+            break;
           case INT:
+            rowData.putInt(size, (Integer) value);
+            size += 4;
+            break;
           case LONG:
             rowData.putLong(size, (Long) value);
             size += 8;

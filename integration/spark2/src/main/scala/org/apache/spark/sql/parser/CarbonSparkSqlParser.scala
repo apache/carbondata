@@ -18,30 +18,33 @@ package org.apache.spark.sql.parser
 
 import scala.collection.mutable
 
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, ParseException, SqlBaseParser}
 import org.apache.spark.sql.catalyst.parser.ParserUtils._
-import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{CreateTableContext,
-TablePropertyListContext}
+import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{CreateTableContext, TablePropertyListContext}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
-import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field,
-PartitionerField, TableModel}
+import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field, PartitionerField, TableModel}
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
 
+import org.apache.carbondata.core.util.{CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
 /**
- * Concrete parser for Spark SQL statements and carbon specific statements
+ * Concrete parser for Spark SQL stateENABLE_INMEMORY_MERGE_SORT_DEFAULTments and carbon specific
+ * statements
  */
-class CarbonSparkSqlParser(conf: SQLConf) extends AbstractSqlParser {
+class CarbonSparkSqlParser(conf: SQLConf, sparkSession: SparkSession) extends AbstractSqlParser {
 
   val astBuilder = new CarbonSqlAstBuilder(conf)
 
   private val substitutor = new VariableSubstitution(conf)
 
   override def parsePlan(sqlText: String): LogicalPlan = {
+    val carbonSessionInfo: CarbonSessionInfo = CarbonEnv.getInstance(sparkSession).carbonSessionInfo
+    ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
     try {
       super.parsePlan(sqlText)
     } catch {
@@ -115,7 +118,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       }
 
       val tableProperties = mutable.Map[String, String]()
-      properties.foreach{property => tableProperties.put(property._1, property._2.toLowerCase)}
+      properties.foreach{property => tableProperties.put(property._1, property._2)}
 
       // validate partition clause
       if (partitionerFields.nonEmpty) {
@@ -170,11 +173,20 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
     val badKeys = props.filter { case (_, v) => v == null }.keys
     if (badKeys.nonEmpty) {
       operationNotAllowed(
-        s"Values must be specified for key(s): ${ badKeys.mkString("[", ",", "]") }", ctx)
+        s"Values must be specified for key(s): ${badKeys.mkString("[", ",", "]")}", ctx)
     }
     props.map { case (key, value) =>
-      (key.toLowerCase, value.toLowerCase)
+      if (needToConvertToLowerCase(key)) {
+        (key.toLowerCase, value.toLowerCase)
+      } else {
+        (key.toLowerCase, value)
+      }
     }
+  }
+
+  private def needToConvertToLowerCase(key: String): Boolean = {
+    val noConvertList = Array("LIST_INFO", "RANGE_INFO")
+    !noConvertList.exists(x => x.equalsIgnoreCase(key));
   }
 
 

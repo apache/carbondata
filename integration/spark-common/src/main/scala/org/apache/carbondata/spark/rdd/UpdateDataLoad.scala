@@ -28,7 +28,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.DataLoadExecutor
-import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException
 
 /**
  * Data load in case of update command .
@@ -61,10 +60,6 @@ object UpdateDataLoad {
         recordReaders.toArray)
 
     } catch {
-      case e: BadRecordFoundException =>
-        loadMetadataDetails.setLoadStatus(
-          CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
-        LOGGER.info("Bad Record Found")
       case e: Exception =>
         LOGGER.error(e)
         throw e

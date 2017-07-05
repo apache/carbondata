@@ -49,6 +49,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -502,7 +503,9 @@ public final class FilterUtil {
             }
           }
         } catch (FilterIllegalMemberException e) {
-          LOGGER.debug(e.getMessage());
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(e.getMessage());
+          }
         }
       }
       return getFilterValues(columnExpression, evaluateResultListFinal, forwardDictionary,
@@ -1482,4 +1485,21 @@ public final class FilterUtil {
     return bitSetGroup;
   }
 
+  /**
+   * This method will compare the selected data against null values and
+   * flip the bitSet if any null value is found
+   *
+   * @param dimensionColumnDataChunk
+   * @param bitSet
+   */
+  public static void removeNullValues(DimensionColumnDataChunk dimensionColumnDataChunk,
+      BitSet bitSet, byte[] defaultValue) {
+    if (!bitSet.isEmpty()) {
+      for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
+        if (dimensionColumnDataChunk.compareTo(i, defaultValue) == 0) {
+          bitSet.flip(i);
+        }
+      }
+    }
+  }
 }

@@ -123,7 +123,7 @@ public class LocalCarbonFile implements CarbonFile {
   @Override public CarbonFile[] listFiles() {
 
     if (!file.isDirectory()) {
-      return null;
+      return new CarbonFile[0];
     }
     File[] files = file.listFiles();
     if (files == null) {

@@ -63,9 +63,6 @@ class TestNotEqualToFilter extends QueryTest with BeforeAndAfterAll {
   }
 
   test("select Id from test_not_equal_to_carbon where id != '7'") {
-   // sql("select id from test_not_equal_to_carbon").show(200,false)
-   // sql("select id from test_not_equal_to_hive").show(200,false)
-    sql("select Id from test_not_equal_to_carbon where id > '1.5rre'").show(200, false)
     checkAnswer(
       sql("select Id from test_not_equal_to_carbon where id != '7'"),
       sql("select Id from test_not_equal_to_hive where id != '7'")

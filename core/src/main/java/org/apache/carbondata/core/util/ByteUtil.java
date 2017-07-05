@@ -18,8 +18,6 @@
 package org.apache.carbondata.core.util;
 
 import java.io.UnsupportedEncodingException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
@@ -38,8 +36,6 @@ public final class ByteUtil {
   public static final int SIZEOF_SHORT = 2;
 
   public static final String UTF8_CSN = StandardCharsets.UTF_8.name();
-
-  public static final byte[] ZERO_IN_BYTES = toBytes(0);
 
   private ByteUtil() {
 
@@ -465,6 +461,31 @@ public final class ByteUtil {
   }
 
   /**
+   * int => byte[3]
+   * supported range is [-8388608, 8388607], note that Math.pow(2, 24) == 8388608
+   */
+  public static byte[] to3Bytes(int val) {
+    assert val <= (Math.pow(2, 23) - 1) && val >= (-Math.pow(2, 23));
+    return new byte[]{ (byte)(val >> 16), (byte)(val >> 8), (byte)val };
+  }
+
+  /**
+   * convert 3 bytes to int
+   */
+  public static int valueOf3Bytes(byte[] val, int offset) {
+    assert val.length >= offset + 3;
+    if (val[offset] < 0) {
+      return (((val[offset] & 0xFFFF) << 16) |
+          ((val[offset + 1] & 0xFF) << 8) |
+          ((val[offset + 2] & 0xFF)));
+    } else {
+      return (((val[offset] & 0xFF) << 16) |
+          ((val[offset + 1] & 0xFF) << 8) |
+          ((val[offset + 2] & 0xFF)));
+    }
+  }
+
+  /**
    * byte[] => int
    *
    * @param bytes
@@ -493,26 +514,16 @@ public final class ByteUtil {
     return n ^ Integer.MIN_VALUE;
   }
 
-  /**
-   * float => byte[]
-   *
-   * @param f
-   * @return
-   */
-  public static byte[] toBytes(final float f) {
-    // Encode it as int
-    return toBytes(Float.floatToRawIntBits(f));
+  public static int toInt(byte[] bytes, int offset) {
+    return (((int)bytes[offset]) << 24) + (((int)bytes[offset + 1]) << 16) +
+        (((int)bytes[offset + 2]) << 8) + bytes[offset + 3];
   }
 
-  /**
-   * byte[] => float
-   *
-   * @param bytes
-   * @param offset
-   * @return
-   */
-  public static float toFloat(byte[] bytes, int offset) {
-    return Float.intBitsToFloat(toInt(bytes, offset, SIZEOF_INT));
+  public static void setInt(byte[] data, int offset, int value) {
+    data[offset] = (byte) (value >> 24);
+    data[offset + 1] = (byte) (value >> 16);
+    data[offset + 2] = (byte) (value >> 8);
+    data[offset + 3] = (byte) value;
   }
 
   /**
@@ -554,61 +565,6 @@ public final class ByteUtil {
       }
     }
     return l ^ Long.MIN_VALUE;
-  }
-
-  /**
-   * doube => byte[]
-   *
-   * @param d
-   * @return
-   */
-  public static byte[] toBytes(final double d) {
-    // Encode it as a long
-    return toBytes(Double.doubleToRawLongBits(d));
-  }
-
-  /**
-   * byte[] => double
-   *
-   * @param bytes
-   * @param offset
-   * @return
-   */
-  public static double toDouble(final byte[] bytes, final int offset) {
-    return Double.longBitsToDouble(toLong(bytes, offset, SIZEOF_LONG));
-  }
-
-  /**
-   * BigDecimal => byte[]
-   *
-   * @param val
-   * @return
-   */
-  public static byte[] toBytes(BigDecimal val) {
-    byte[] valueBytes = val.unscaledValue().toByteArray();
-    byte[] result = new byte[valueBytes.length + SIZEOF_INT];
-    int offset = putInt(result, 0, val.scale());
-    putBytes(result, offset, valueBytes, 0, valueBytes.length);
-    return result;
-  }
-
-  /**
-   * byte[] => BigDecimal
-   *
-   * @param bytes
-   * @param offset
-   * @param length
-   * @return
-   */
-  public static BigDecimal toBigDecimal(byte[] bytes, int offset, final int length) {
-    if (bytes == null || length < SIZEOF_INT + 1 || (offset + length > bytes.length)) {
-      return null;
-    }
-
-    int scale = toInt(bytes, offset, bytes.length);
-    byte[] tcBytes = new byte[length - SIZEOF_INT];
-    System.arraycopy(bytes, offset + SIZEOF_INT, tcBytes, 0, length - SIZEOF_INT);
-    return new BigDecimal(new BigInteger(tcBytes), scale);
   }
 
   private static IllegalArgumentException explainWrongLengthOrOffset(final byte[] bytes,
@@ -670,4 +626,22 @@ public final class ByteUtil {
     System.arraycopy(srcBytes, srcOffset, tgtBytes, tgtOffset, srcLength);
     return tgtOffset + srcLength;
   }
+
+  /**
+   * flatten input byte[][] to byte[] and return
+   */
+  public static byte[] flatten(byte[][] input) {
+    int totalSize = 0;
+    for (int i = 0; i < input.length; i++) {
+      totalSize += input[i].length;
+    }
+    byte[] flattenedData = new byte[totalSize];
+    int pos = 0;
+    for (int i = 0; i < input.length; i++) {
+      System.arraycopy(input[i], 0, flattenedData, pos, input[i].length);
+      pos += input[i].length;
+    }
+    return flattenedData;
+  }
+
 }

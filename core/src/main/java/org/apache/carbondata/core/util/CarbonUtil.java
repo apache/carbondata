@@ -40,6 +40,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -48,10 +49,9 @@ import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
-import org.apache.carbondata.core.datastore.compression.MeasureMetaDataModel;
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
@@ -327,10 +327,13 @@ public final class CarbonUtil {
   }
 
   public static String getBadLogPath(String storeLocation) {
-    String badLogStoreLocation =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
+    String badLogStoreLocation = CarbonProperties.getInstance()
+        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH);
+    if (null == badLogStoreLocation) {
+      badLogStoreLocation =
+          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
+    }
     badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
-
     return badLogStoreLocation;
   }
 
@@ -694,27 +697,32 @@ public final class CarbonUtil {
    */
   public static String checkAndAppendHDFSUrl(String filePath) {
     String currentPath = filePath;
-    if (null != filePath && filePath.length() != 0
-        && FileFactory.getFileType(filePath) != FileFactory.FileType.HDFS
-        && FileFactory.getFileType(filePath) != FileFactory.FileType.VIEWFS) {
-      String baseDFSUrl = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL);
-      if (null != baseDFSUrl) {
-        String dfsUrl = conf.get(FS_DEFAULT_FS);
-        if (null != dfsUrl && (dfsUrl.startsWith(HDFS_PREFIX) || dfsUrl
-            .startsWith(VIEWFS_PREFIX))) {
-          baseDFSUrl = dfsUrl + baseDFSUrl;
-        }
-        if (baseDFSUrl.endsWith("/")) {
-          baseDFSUrl = baseDFSUrl.substring(0, baseDFSUrl.length() - 1);
-        }
-        if (!filePath.startsWith("/")) {
-          filePath = "/" + filePath;
-        }
-        currentPath = baseDFSUrl + filePath;
-      }
+    String defaultFsUrl = conf.get(FS_DEFAULT_FS);
+    String baseDFSUrl = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL, "");
+    if (checkIfPrefixExists(filePath)) {
+      return currentPath;
     }
-    return currentPath;
+    if (baseDFSUrl.endsWith("/")) {
+      baseDFSUrl = baseDFSUrl.substring(0, baseDFSUrl.length() - 1);
+    }
+    if (!filePath.startsWith("/")) {
+      filePath = "/" + filePath;
+    }
+    currentPath = baseDFSUrl + filePath;
+    if (checkIfPrefixExists(currentPath)) {
+      return currentPath;
+    }
+    if (defaultFsUrl == null) {
+      return currentPath;
+    }
+    return defaultFsUrl + currentPath;
+  }
+
+  private static boolean checkIfPrefixExists(String path) {
+    final String lowerPath = path.toLowerCase();
+    return lowerPath.startsWith(HDFS_PREFIX) || lowerPath.startsWith(VIEWFS_PREFIX) || lowerPath
+        .startsWith("file://") || lowerPath.startsWith(ALLUXIO_PREFIX);
   }
 
   public static String getCarbonStorePath() {
@@ -822,36 +830,12 @@ public final class CarbonUtil {
   }
 
   /**
-   * Below method will be used to get the value compression model of the
-   * measure data chunk
-   *
-   * @return value compression model
+   * Below method will be used to get the stats of the measure data page
    */
-  public static WriterCompressModel getValueCompressionModel(
+  public static MeasurePageStatsVO getMeasurePageStats(
       List<ValueEncoderMeta> encodeMetaList) {
-    Object[] maxValue = new Object[encodeMetaList.size()];
-    Object[] minValue = new Object[encodeMetaList.size()];
-    Object[] uniqueValue = new Object[encodeMetaList.size()];
-    int[] decimal = new int[encodeMetaList.size()];
-    DataType[] type = new DataType[encodeMetaList.size()];
-    byte[] dataTypeSelected = new byte[encodeMetaList.size()];
-
-    /*
-     * to fill the meta data required for value compression model
-     */
-    for (int i = 0; i < dataTypeSelected.length; i++) {  // always 1
-      ValueEncoderMeta valueEncoderMeta = encodeMetaList.get(i);
-      maxValue[i] = valueEncoderMeta.getMaxValue();
-      minValue[i] = valueEncoderMeta.getMinValue();
-      uniqueValue[i] = valueEncoderMeta.getUniqueValue();
-      decimal[i] = valueEncoderMeta.getDecimal();
-      type[i] = valueEncoderMeta.getType();
-      dataTypeSelected[i] = valueEncoderMeta.getDataTypeSelected();
-    }
-    MeasureMetaDataModel measureMetadataModel =
-        new MeasureMetaDataModel(minValue, maxValue, decimal, dataTypeSelected.length, uniqueValue,
-            type, dataTypeSelected);
-    return ValueCompressionUtil.getWriterCompressModel(measureMetadataModel);
+    return MeasurePageStatsVO.build(
+        encodeMetaList.toArray(new ValueEncoderMeta[encodeMetaList.size()]));
   }
 
   /**
@@ -977,8 +961,8 @@ public final class CarbonUtil {
    * @return surrogate key
    */
   public static int getSurrogateKey(byte[] data, ByteBuffer buffer) {
-    int lenght = 4 - data.length;
-    for (int i = 0; i < lenght; i++) {
+    int length = 4 - data.length;
+    for (int i = 0; i < length; i++) {
       buffer.put((byte) 0);
     }
     buffer.put(data);
@@ -1045,8 +1029,8 @@ public final class CarbonUtil {
       if (null != childs && childs.size() > 0) {
         break;
       }
-      if (carbonDimension.isColumnar() && hasEncoding(carbonDimension.getEncoder(),
-          Encoding.DICTIONARY)) {
+      if (carbonDimension.isColumnar() &&
+          hasEncoding(carbonDimension.getEncoder(), Encoding.DICTIONARY)) {
         isDictionaryDimensions.add(true);
       } else if (!carbonDimension.isColumnar()) {
         if (processedColumnGroup.add(carbonDimension.columnGroupId())) {
@@ -1414,13 +1398,13 @@ public final class CarbonUtil {
   }
 
   /**
-   * Below method will be used to convert the encode metadata to
+   * Below method will be used to convert the apply metadata to
    * ValueEncoderMeta object
    *
    * @param encoderMeta
    * @return ValueEncoderMeta object
    */
-  public static ValueEncoderMeta deserializeEncoderMeta(byte[] encoderMeta) {
+  public static ValueEncoderMeta deserializeEncoderMetaV2(byte[] encoderMeta) {
     // TODO : should remove the unnecessary fields.
     ByteArrayInputStream aos = null;
     ObjectInputStream objStream = null;
@@ -1437,7 +1421,7 @@ public final class CarbonUtil {
     return meta;
   }
 
-  public static ValueEncoderMeta deserializeEncoderMetaNew(byte[] encodeMeta) {
+  public static ValueEncoderMeta deserializeEncoderMetaV3(byte[] encodeMeta) {
     ByteBuffer buffer = ByteBuffer.wrap(encodeMeta);
     char measureType = buffer.getChar();
     ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
@@ -1671,6 +1655,70 @@ public final class CarbonUtil {
       default:
         throw new IllegalArgumentException("Int cannot me more than 4 bytes");
     }
+  }
+  /**
+   * Validate boolean value configuration
+   *
+   * @param value
+   * @return
+   */
+  public static boolean validateBoolean(String value) {
+    if (null == value) {
+      return false;
+    } else if (!("false".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value))) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * validate the sort scope
+   * @param sortScope
+   * @return
+   */
+  public static boolean isValidSortOption(String sortScope) {
+    if (sortScope == null) {
+      return false;
+    }
+    switch (sortScope.toUpperCase()) {
+      case "BATCH_SORT":
+        return true;
+      case "LOCAL_SORT":
+        return true;
+      case "NO_SORT":
+        return true;
+      case "GLOBAL_SORT":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * validate teh batch size
+   *
+   * @param value
+   * @return
+   */
+  public static boolean validateValidIntType(String value) {
+    if (null == value) {
+      return false;
+    }
+    try {
+      Integer.parseInt(value);
+    } catch (NumberFormatException nfe) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * is valid store path
+   * @param badRecordsLocation
+   * @return
+   */
+  public static boolean isValidBadStorePath(String badRecordsLocation) {
+    return !(null == badRecordsLocation || badRecordsLocation.length() == 0);
   }
 }
 

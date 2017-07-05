@@ -253,6 +253,9 @@ class AlterTableColumnSchemaGenerator(
             }
           }
         }
+        else if (elem._1.equalsIgnoreCase("no_inverted_index")) {
+          col.getEncodingList.remove(Encoding.INVERTED_INDEX)
+        }
       }
     }
     tableSchema.setListOfColumns(allColumns.asJava)
@@ -447,6 +450,7 @@ class TableNewProcessor(cm: TableModel) {
 
     // Setting the boolean value of useInvertedIndex in column schema
     val noInvertedIndexCols = cm.noInvertedIdxCols.getOrElse(Seq())
+    LOGGER.info("NoINVERTEDINDEX columns are : " + noInvertedIndexCols.mkString(","))
     for (column <- allColumns) {
       // When the column is measure or the specified no inverted index column in DDL,
       // set useInvertedIndex to false, otherwise true.

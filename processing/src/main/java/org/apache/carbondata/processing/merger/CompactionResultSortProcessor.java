@@ -24,6 +24,8 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -32,7 +34,6 @@ import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortIntermediateFileMerger;
@@ -41,7 +42,6 @@ import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
 import org.apache.carbondata.processing.store.SingleThreadFinalSortFilesMerger;
-import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.apache.spark.sql.types.Decimal;
@@ -92,7 +92,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   /**
    * agg type defined for measures
    */
-  private DataType[] aggType;
+  private DataType[] dataTypes;
   /**
    * segment id
    */
@@ -241,7 +241,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     int measureIndexInRow = 1;
     for (int i = 0; i < measureCount; i++) {
       preparedRow[dimensionColumnCount + i] =
-          getConvertedMeasureValue(row[measureIndexInRow++], aggType[i]);
+          getConvertedMeasureValue(row[measureIndexInRow++], dataTypes[i]);
     }
     return preparedRow;
   }
@@ -273,13 +273,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       intermediateFileMerger.finish();
       finalMerger.startFinalMerge();
       while (finalMerger.hasNext()) {
-        Object[] rowRead = finalMerger.next();
-        CarbonRow row = new CarbonRow(rowRead);
-        // convert the row from surrogate key to MDKey
-        Object[] outputRow = CarbonDataProcessorUtil
-            .convertToMDKeyAndFillRow(row, segmentProperties, measureCount, noDictionaryCount,
-                segmentProperties.getComplexDimensions().size());
-        dataHandler.addDataToStore(outputRow);
+        Object[] row = finalMerger.next();
+        dataHandler.addDataToStore(new CarbonRow(row));
       }
       dataHandler.finish();
     } catch (CarbonDataWriterException e) {
@@ -307,7 +302,6 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void addRowForSorting(Object[] row) throws Exception {
     try {
-      // prepare row array using RemoveDictionaryUtil class
       sortDataRows.addRow(row);
     } catch (CarbonSortKeyAndGroupByException e) {
       LOGGER.error(e);
@@ -377,7 +371,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     finalMerger =
         new SingleThreadFinalSortFilesMerger(sortTempFileLocation, tableName, dimensionColumnCount,
             segmentProperties.getComplexDimensions().size(), measureCount, noDictionaryCount,
-            aggType, noDictionaryColMapping, noDictionarySortColumnMapping);
+            dataTypes, noDictionaryColMapping, noDictionarySortColumnMapping);
   }
 
   /**
@@ -412,6 +406,6 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * initialise aggregation type for measures for their storage format
    */
   private void initAggType() {
-    aggType = CarbonDataProcessorUtil.initDataType(carbonTable, tableName, measureCount);
+    dataTypes = CarbonDataProcessorUtil.initDataType(carbonTable, tableName, measureCount);
   }
 }

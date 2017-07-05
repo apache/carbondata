@@ -31,6 +31,7 @@ import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 public class NotInExpression extends BinaryConditionalExpression {
   private static final long serialVersionUID = -6835841923752118034L;
   protected transient Set<ExpressionResult> setOfExprResult;
+  protected transient ExpressionResult nullValuePresent = null;
 
   public NotInExpression(Expression left, Expression right) {
     super(left, right);
@@ -38,23 +39,34 @@ public class NotInExpression extends BinaryConditionalExpression {
 
   @Override public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
+
+    // Both left and right result need to be checked for null because NotInExpression is basically
+    // an And Operation on the list of predicates that are provided.
+    // Example: x in (1,2,null) would be converted to x=1 AND x=2 AND x=null.
+    // If any of the predicates is null then the result is unknown for all the predicates thus
+    // we will return false for each of them.
+    if (nullValuePresent != null) {
+      return nullValuePresent;
+    }
+
     ExpressionResult leftRsult = left.evaluate(value);
+    if (leftRsult.isNull()) {
+      leftRsult.set(DataType.BOOLEAN, false);
+      return leftRsult;
+    }
+
     if (setOfExprResult == null) {
       ExpressionResult val = null;
       ExpressionResult rightRsult = right.evaluate(value);
-      // Both left and right result need to be checked for null because NotInExpression is basically
-      // an And Operation on the list of predicates that are provided.
-      // Example: x in (1,2,null) would be converted to x=1 AND x=2 AND x=null.
-      // If any of the predicates is null then the result is unknown for all the predicates thus
-      // we will return false for each of them.
-      for (ExpressionResult expressionResult: rightRsult.getList()) {
-        if (expressionResult.isNull() || leftRsult.isNull()) {
+      setOfExprResult = new HashSet<ExpressionResult>(10);
+      for (ExpressionResult exprResVal : rightRsult.getList()) {
+
+        if (exprResVal.isNull()) {
+          nullValuePresent = new ExpressionResult(DataType.BOOLEAN, false);
           leftRsult.set(DataType.BOOLEAN, false);
           return leftRsult;
         }
-      }
-      setOfExprResult = new HashSet<ExpressionResult>(10);
-      for (ExpressionResult exprResVal : rightRsult.getList()) {
+
         if (exprResVal.getDataType().getPrecedenceOrder() < leftRsult.getDataType()
             .getPrecedenceOrder()) {
           val = leftRsult;
@@ -88,9 +100,11 @@ public class NotInExpression extends BinaryConditionalExpression {
             throw new FilterUnsupportedException(
                 "DataType: " + val.getDataType() + " not supported for the filter expression");
         }
+
         setOfExprResult.add(val);
       }
     }
+
     leftRsult.set(DataType.BOOLEAN, !setOfExprResult.contains(leftRsult));
     return leftRsult;
   }

@@ -32,15 +32,11 @@ public class CarbonDataWriterVo {
 
   private int measureCount;
 
-  private int mdKeyLength;
-
   private String tableName;
 
   private IFileManagerComposite fileManager;
 
-  private int[] keyBlockSize;
-
-  private boolean[] aggBlocks;
+  private boolean[] rleEncodingForDictDim;
 
   private boolean[] isComplexType;
 
@@ -51,8 +47,6 @@ public class CarbonDataWriterVo {
   private String databaseName;
 
   private List<ColumnSchema> wrapperColumnSchemaList;
-
-  private int numberOfNoDictionaryColumn;
 
   private boolean[] isDictionaryColumn;
 
@@ -99,13 +93,6 @@ public class CarbonDataWriterVo {
   }
 
   /**
-   * @param mdKeyLength the mdKeyLength to set
-   */
-  public void setMdKeyLength(int mdKeyLength) {
-    this.mdKeyLength = mdKeyLength;
-  }
-
-  /**
    * @return the tableName
    */
   public String getTableName() {
@@ -134,31 +121,17 @@ public class CarbonDataWriterVo {
   }
 
   /**
-   * @return the keyBlockSize
+   * @return the rleEncodingForDictDim
    */
-  public int[] getKeyBlockSize() {
-    return keyBlockSize;
+  public boolean[] getRleEncodingForDictDim() {
+    return rleEncodingForDictDim;
   }
 
   /**
-   * @param keyBlockSize the keyBlockSize to set
+   * @param rleEncodingForDictDim the rleEncodingForDictDim to set
    */
-  public void setKeyBlockSize(int[] keyBlockSize) {
-    this.keyBlockSize = keyBlockSize;
-  }
-
-  /**
-   * @return the aggBlocks
-   */
-  public boolean[] getAggBlocks() {
-    return aggBlocks;
-  }
-
-  /**
-   * @param aggBlocks the aggBlocks to set
-   */
-  public void setAggBlocks(boolean[] aggBlocks) {
-    this.aggBlocks = aggBlocks;
+  public void setRleEncodingForDictDim(boolean[] rleEncodingForDictDim) {
+    this.rleEncodingForDictDim = rleEncodingForDictDim;
   }
 
   /**

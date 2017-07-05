@@ -40,7 +40,6 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
 import org.apache.carbondata.core.fileoperations.FileWriteOperation
-import org.apache.carbondata.core.locks.ZookeeperInit
 import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL
@@ -529,7 +528,6 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
         case Some(tableMeta) =>
           metadata.tablesMeta -= tableMeta
           CarbonMetadata.getInstance.removeTable(dbName + "_" + tableName)
-          CarbonMetadata.getInstance.removeTable(dbName + "_" + tableName)
           updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
         case None =>
           LOGGER.info(s"Metadata does not contain entry for table $tableName in database $dbName")
@@ -882,7 +880,7 @@ case class CarbonRelation(
       .asScala
     // convert each column to Attribute
     columns.filter(!_.isInvisible).map { column =>
-      if (column.isDimesion()) {
+      if (column.isDimension()) {
         val output: DataType = column.getDataType.toString.toLowerCase match {
           case "array" =>
             CarbonMetastoreTypes.toDataType(s"array<${getArrayChildren(column.getColName)}>")

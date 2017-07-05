@@ -22,14 +22,11 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 
 public class CarbonLoadModel implements Serializable {
-  /**
-   *
-   */
+
   private static final long serialVersionUID = 6580168429197697465L;
 
   private String databaseName;
@@ -37,8 +34,6 @@ public class CarbonLoadModel implements Serializable {
   private String tableName;
 
   private String factFilePath;
-
-  private String dimFolderPath;
 
   private String colDictFilePath;
 
@@ -56,7 +51,6 @@ public class CarbonLoadModel implements Serializable {
 
   private boolean isRetentionRequest;
 
-  private List<String> factFilesToProcess;
   private String csvHeader;
   private String[] csvHeaderColumns;
   private String csvDelimiter;
@@ -65,7 +59,6 @@ public class CarbonLoadModel implements Serializable {
 
   private boolean isDirectLoad;
   private List<LoadMetadataDetails> loadMetadataDetails;
-  private transient List<SegmentUpdateDetails> segmentUpdateDetails;
   private transient SegmentUpdateStatusManager segmentUpdateStatusManager;
 
   private String blocksID;
@@ -132,24 +125,9 @@ public class CarbonLoadModel implements Serializable {
   private String maxColumns;
 
   /**
-   * the key of RDD Iterator in RDD iterator Map
-   */
-  private String rddIteratorKey;
-
-  private String carbondataFileName = "";
-
-  /**
    * defines the string to specify whether empty data is good or bad
    */
   private String isEmptyDataBadRecord;
-
-  public String getCarbondataFileName() {
-    return carbondataFileName;
-  }
-
-  public void setCarbondataFileName(String carbondataFileName) {
-    this.carbondataFileName = carbondataFileName;
-  }
 
   /**
    * Use one pass to generate dictionary
@@ -171,7 +149,25 @@ public class CarbonLoadModel implements Serializable {
    */
   private boolean preFetch;
 
-  private String numberOfcolumns;
+  /**
+   * Batch sort should be enabled or not
+   */
+  private String sortScope;
+
+  /**
+   * Batch sort size in mb.
+   */
+  private String batchSortSizeInMb;
+  /**
+   * bad record location
+   */
+  private String badRecordsLocation;
+
+  /**
+   * Number of partitions in global sort.
+   */
+  private String globalSortPartitions;
+
   /**
    * get escape char
    *
@@ -188,24 +184,6 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setEscapeChar(String escapeChar) {
     this.escapeChar = escapeChar;
-  }
-
-  /**
-   * get blocck id
-   *
-   * @return
-   */
-  public String getBlocksID() {
-    return blocksID;
-  }
-
-  /**
-   * set block id for carbon load model
-   *
-   * @param blocksID
-   */
-  public void setBlocksID(String blocksID) {
-    this.blocksID = blocksID;
   }
 
   public String getCsvDelimiter() {
@@ -246,10 +224,6 @@ public class CarbonLoadModel implements Serializable {
 
   public void setAllDictPath(String allDictPath) {
     this.allDictPath = allDictPath;
-  }
-
-  public List<String> getFactFilesToProcess() {
-    return factFilesToProcess;
   }
 
   public String getCsvHeader() {
@@ -391,6 +365,58 @@ public class CarbonLoadModel implements Serializable {
     copy.dictionaryServerPort = dictionaryServerPort;
     copy.preFetch = preFetch;
     copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
+    copy.sortScope = sortScope;
+    copy.batchSortSizeInMb = batchSortSizeInMb;
+    copy.badRecordsLocation = badRecordsLocation;
+    return copy;
+  }
+
+  /**
+   * Get copy with taskNo.
+   * Broadcast value is shared in process, so we need to copy it to make sure the value in each
+   * task independently.
+   *
+   * @return
+   */
+  public CarbonLoadModel getCopyWithTaskNo(String taskNo) {
+    CarbonLoadModel copy = new CarbonLoadModel();
+    copy.tableName = tableName;
+    copy.factFilePath = factFilePath;
+    copy.databaseName = databaseName;
+    copy.partitionId = partitionId;
+    copy.aggTables = aggTables;
+    copy.aggTableName = aggTableName;
+    copy.aggLoadRequest = aggLoadRequest;
+    copy.loadMetadataDetails = loadMetadataDetails;
+    copy.isRetentionRequest = isRetentionRequest;
+    copy.csvHeader = csvHeader;
+    copy.csvHeaderColumns = csvHeaderColumns;
+    copy.isDirectLoad = isDirectLoad;
+    copy.csvDelimiter = csvDelimiter;
+    copy.complexDelimiterLevel1 = complexDelimiterLevel1;
+    copy.complexDelimiterLevel2 = complexDelimiterLevel2;
+    copy.carbonDataLoadSchema = carbonDataLoadSchema;
+    copy.blocksID = blocksID;
+    copy.taskNo = taskNo;
+    copy.factTimeStamp = factTimeStamp;
+    copy.segmentId = segmentId;
+    copy.serializationNullFormat = serializationNullFormat;
+    copy.badRecordsLoggerEnable = badRecordsLoggerEnable;
+    copy.badRecordsAction = badRecordsAction;
+    copy.escapeChar = escapeChar;
+    copy.quoteChar = quoteChar;
+    copy.commentChar = commentChar;
+    copy.dateFormat = dateFormat;
+    copy.defaultTimestampFormat = defaultTimestampFormat;
+    copy.maxColumns = maxColumns;
+    copy.storePath = storePath;
+    copy.useOnePass = useOnePass;
+    copy.dictionaryServerHost = dictionaryServerHost;
+    copy.dictionaryServerPort = dictionaryServerPort;
+    copy.preFetch = preFetch;
+    copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
+    copy.sortScope = sortScope;
+    copy.batchSortSizeInMb = batchSortSizeInMb;
     return copy;
   }
 
@@ -418,7 +444,6 @@ public class CarbonLoadModel implements Serializable {
     copyObj.carbonDataLoadSchema = carbonDataLoadSchema;
     copyObj.csvHeader = header;
     copyObj.csvHeaderColumns = csvHeaderColumns;
-    copyObj.factFilesToProcess = filesForPartition;
     copyObj.isDirectLoad = true;
     copyObj.csvDelimiter = delimiter;
     copyObj.complexDelimiterLevel1 = complexDelimiterLevel1;
@@ -442,6 +467,9 @@ public class CarbonLoadModel implements Serializable {
     copyObj.dictionaryServerPort = dictionaryServerPort;
     copyObj.preFetch = preFetch;
     copyObj.isEmptyDataBadRecord = isEmptyDataBadRecord;
+    copyObj.sortScope = sortScope;
+    copyObj.batchSortSizeInMb = batchSortSizeInMb;
+    copyObj.badRecordsLocation = badRecordsLocation;
     return copyObj;
   }
 
@@ -467,20 +495,6 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * @return the aggLoadRequest
-   */
-  public boolean isAggLoadRequest() {
-    return aggLoadRequest;
-  }
-
-  /**
-   * @param aggLoadRequest the aggLoadRequest to set
-   */
-  public void setAggLoadRequest(boolean aggLoadRequest) {
-    this.aggLoadRequest = aggLoadRequest;
-  }
-
-  /**
    * @param storePath The storePath to set.
    */
   public void setStorePath(String storePath) {
@@ -488,24 +502,10 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * @return Returns the aggTableName.
-   */
-  public String getAggTableName() {
-    return aggTableName;
-  }
-
-  /**
    * @return Returns the factStoreLocation.
    */
   public String getStorePath() {
     return storePath;
-  }
-
-  /**
-   * @param aggTableName The aggTableName to set.
-   */
-  public void setAggTableName(String aggTableName) {
-    this.aggTableName = aggTableName;
   }
 
   /**
@@ -533,24 +533,6 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setLoadMetadataDetails(List<LoadMetadataDetails> loadMetadataDetails) {
     this.loadMetadataDetails = loadMetadataDetails;
-  }
-
-  /**
-   * getSegmentUpdateDetails
-   *
-   * @return
-   */
-  public List<SegmentUpdateDetails> getSegmentUpdateDetails() {
-    return segmentUpdateDetails;
-  }
-
-  /**
-   * setSegmentUpdateDetails
-   *
-   * @param segmentUpdateDetails
-   */
-  public void setSegmentUpdateDetails(List<SegmentUpdateDetails> segmentUpdateDetails) {
-    this.segmentUpdateDetails = segmentUpdateDetails;
   }
 
   /**
@@ -717,15 +699,6 @@ public class CarbonLoadModel implements Serializable {
     this.badRecordsAction = badRecordsAction;
   }
 
-  public String getRddIteratorKey() {
-    return rddIteratorKey;
-  }
-
-  public void setRddIteratorKey(String rddIteratorKey) {
-    this.rddIteratorKey = rddIteratorKey;
-
-  }
-
   public boolean getUseOnePass() {
     return useOnePass;
   }
@@ -772,5 +745,37 @@ public class CarbonLoadModel implements Serializable {
 
   public void setIsEmptyDataBadRecord(String isEmptyDataBadRecord) {
     this.isEmptyDataBadRecord = isEmptyDataBadRecord;
+  }
+
+  public String getSortScope() {
+    return sortScope;
+  }
+
+  public void setSortScope(String sortScope) {
+    this.sortScope = sortScope;
+  }
+
+  public String getBatchSortSizeInMb() {
+    return batchSortSizeInMb;
+  }
+
+  public void setBatchSortSizeInMb(String batchSortSizeInMb) {
+    this.batchSortSizeInMb = batchSortSizeInMb;
+  }
+
+  public String getGlobalSortPartitions() {
+    return globalSortPartitions;
+  }
+
+  public void setGlobalSortPartitions(String globalSortPartitions) {
+    this.globalSortPartitions = globalSortPartitions;
+  }
+
+  public String getBadRecordsLocation() {
+    return badRecordsLocation;
+  }
+
+  public void setBadRecordsLocation(String badRecordsLocation) {
+    this.badRecordsLocation = badRecordsLocation;
   }
 }

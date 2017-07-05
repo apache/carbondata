@@ -206,7 +206,7 @@ public class ReverseDictionaryCacheTest extends AbstractDictionaryCacheTest {
     // available size limit
     new MockUp<CarbonDictionaryColumnMetaChunk>() {
       @Mock public long getEnd_offset() {
-        return 10485755L;
+        return 10445000L;
       }
     };
     columnIdentifier = columnIdentifiers[1];

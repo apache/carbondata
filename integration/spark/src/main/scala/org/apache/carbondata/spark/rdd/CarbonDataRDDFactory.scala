@@ -39,6 +39,7 @@ import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel,
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.util.SparkUtil
 
+import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo}
@@ -57,9 +58,13 @@ import org.apache.carbondata.processing.csvload.{BlockDetails, CSVInputFormat, S
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.processing.model.CarbonLoadModel
+import org.apache.carbondata.processing.newflow.exception.{BadRecordFoundException, CarbonDataLoadingException}
+import org.apache.carbondata.processing.newflow.DataLoadProcessBuilder
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
+import org.apache.carbondata.processing.newflow.sort.SortScopeOptions
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark._
-import org.apache.carbondata.spark.load._
+import org.apache.carbondata.spark.load.{FailureCauses, _}
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil, CommonUtil}
 
@@ -87,9 +92,6 @@ object CarbonDataRDDFactory {
       if (alterTableModel.segmentUpdateStatusManager.get != None) {
         carbonLoadModel
           .setSegmentUpdateStatusManager((alterTableModel.segmentUpdateStatusManager.get))
-        carbonLoadModel
-          .setSegmentUpdateDetails(alterTableModel.segmentUpdateStatusManager.get
-            .getUpdateStatusDetails.toList.asJava)
         carbonLoadModel
           .setLoadMetadataDetails(alterTableModel.segmentUpdateStatusManager.get
             .getLoadMetadataDetails.toList.asJava)
@@ -442,10 +444,6 @@ object CarbonDataRDDFactory {
       // Check if any load need to be deleted before loading new data
       DataManagementFunc.deleteLoadsAndUpdateMetadata(carbonLoadModel.getDatabaseName,
         carbonLoadModel.getTableName, storePath, false, carbonTable)
-      if (null == carbonLoadModel.getLoadMetadataDetails) {
-        CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
-      }
-
       var currentLoadCount = -1
       val convLoadDetails = carbonLoadModel.getLoadMetadataDetails.asScala
       // taking the latest segment ID present.
@@ -492,7 +490,7 @@ object CarbonDataRDDFactory {
       // CarbonCommonConstants.TABLE_SPLIT_PARTITION_DEFAULT_VALUE).toBoolean
       val isTableSplitPartition = false
       var blocksGroupBy: Array[(String, Array[BlockDetails])] = null
-      var status: Array[(String, LoadMetadataDetails)] = null
+      var status: Array[(String, (LoadMetadataDetails, ExecutionErrors))] = null
       var res: Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = null
 
       def loadDataFile(): Unit = {
@@ -567,7 +565,7 @@ object CarbonDataRDDFactory {
             val fileSplit = inputSplit.asInstanceOf[FileSplit]
             new TableBlockInfo(fileSplit.getPath.toString,
               fileSplit.getStart, "1",
-              fileSplit.getLocations, fileSplit.getLength, ColumnarFormatVersion.V1
+              fileSplit.getLocations, fileSplit.getLength, ColumnarFormatVersion.V1, null
             ).asInstanceOf[Distributable]
           }
           // group blocks to nodes, tasks
@@ -693,6 +691,12 @@ object CarbonDataRDDFactory {
                 carbonLoadModel,
                 loadMetadataDetails)
             } catch {
+              case e: BadRecordFoundException =>
+                loadMetadataDetails
+                  .setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+                executionErrors.failureCauses = FailureCauses.BAD_RECORDS
+                executionErrors.errorMsg = e.getMessage
+                LOGGER.info("Bad Record Found")
               case e: Exception =>
                 LOGGER.info("DataLoad failure")
                 LOGGER.error(e)
@@ -756,16 +760,23 @@ object CarbonDataRDDFactory {
 
       if (!updateModel.isDefined) {
       CarbonLoaderUtil.checkAndCreateCarbonDataLocation(storePath,
-        carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName, currentLoadCount.toString)
+        currentLoadCount.toString, carbonTable)
       }
       var loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
       var errorMessage: String = "DataLoad failure"
       var executorMessage: String = ""
+      val configuration = DataLoadProcessBuilder.createConfiguration(carbonLoadModel)
+      val sortScope = CarbonDataProcessorUtil.getSortScope(configuration)
       try {
         if (updateModel.isDefined) {
           loadDataFrameForUpdate()
         } else if (carbonTable.getPartitionInfo(carbonTable.getFactTableName) != null) {
           loadDataForPartitionTable()
+        } else if (configuration.isSortTable &&
+            sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
+          LOGGER.audit("Using global sort for loading.")
+          status = DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkContext,
+            dataFrame, carbonLoadModel, currentLoadCount)
         } else if (dataFrame.isDefined) {
           loadDataFrame()
         } else {
@@ -785,25 +796,30 @@ object CarbonDataRDDFactory {
                 else {
                   updateModel.get.executorErrors = resultOfBlock._2._2
                 }
+              } else if (resultOfBlock._2._1.getLoadStatus
+                .equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)) {
+                loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+                updateModel.get.executorErrors.failureCauses = resultOfBlock._2._2.failureCauses
+                updateModel.get.executorErrors.errorMsg = resultOfBlock._2._2.errorMsg
               }
             }
           ))
 
         }
         else {
-        val newStatusMap = scala.collection.mutable.Map.empty[String, String]
+          val newStatusMap = scala.collection.mutable.Map.empty[String, String]
         if (status.nonEmpty) {
           status.foreach { eachLoadStatus =>
             val state = newStatusMap.get(eachLoadStatus._1)
             state match {
               case Some(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) =>
-                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
+                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getLoadStatus)
               case Some(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
-                if eachLoadStatus._2.getLoadStatus ==
+                if eachLoadStatus._2._1.getLoadStatus ==
                     CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS =>
-                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
+                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getLoadStatus)
               case _ =>
-                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
+                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getLoadStatus)
             }
           }
 
@@ -856,8 +872,11 @@ object CarbonDataRDDFactory {
             }
           }
           return
-        }
-        else {
+        } else if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS &&
+                   updateModel.get.executorErrors.failureCauses == FailureCauses.BAD_RECORDS &&
+                   carbonLoadModel.getBadRecordsAction.split(",")(1) == LoggerAction.FAIL.name) {
+          return
+        } else {
           // in success case handle updation of the table status file.
           // success case.
           val segmentDetails = new util.HashSet[String]()
@@ -906,7 +925,7 @@ object CarbonDataRDDFactory {
 
         return
       }
-        LOGGER.info("********starting clean up**********")
+      LOGGER.info("********starting clean up**********")
       if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
         CarbonLoaderUtil.deleteSegment(carbonLoadModel, currentLoadCount)
         LOGGER.info("********clean up done**********")
@@ -915,7 +934,18 @@ object CarbonDataRDDFactory {
         LOGGER.warn("Cannot write load metadata file as data load failed")
         throw new Exception(errorMessage)
       } else {
-        val metadataDetails = status(0)._2
+        // check if data load fails due to bad record and throw data load failure due to
+        // bad record exception
+        if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS &&
+            status(0)._2._2.failureCauses == FailureCauses.BAD_RECORDS &&
+            carbonLoadModel.getBadRecordsAction.split(",")(1) == LoggerAction.FAIL.name) {
+          CarbonLoaderUtil.deleteSegment(carbonLoadModel, currentLoadCount)
+          LOGGER.info("********clean up done**********")
+          LOGGER.audit(s"Data load is failed for " +
+                       s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+          throw new Exception(status(0)._2._2.errorMsg)
+        }
+        val metadataDetails = status(0)._2._1
         if (!isAgg) {
             writeDictionary(carbonLoadModel, result, false)
             val status = CarbonLoaderUtil.recordLoadMetadata(currentLoadCount, metadataDetails,
@@ -971,30 +1001,51 @@ object CarbonDataRDDFactory {
     val partitionColumnDataType = partitionInfo.getColumnSchemaList.get(0).getDataType
     val columns = carbonLoadModel.getCsvHeaderColumns
     var partitionColumnIndex = -1
-    for (i <- 0 until columns.length) {
-      if (partitionColumn.equals(columns(i))) {
-        partitionColumnIndex = i
+    breakable {
+      for (i <- 0 until columns.length) {
+        if (partitionColumn.equalsIgnoreCase(columns(i))) {
+          partitionColumnIndex = i
+          break
+        }
       }
     }
     if (partitionColumnIndex == -1) {
       throw new DataLoadingException("Partition column not found.")
     }
+
+    val dateFormatMap = CarbonDataProcessorUtil.getDateFormatMap(carbonLoadModel.getDateFormat())
+    val specificFormat = Option(dateFormatMap.get(partitionColumn.toLowerCase))
+    val timeStampFormat = if (specificFormat.isDefined) {
+      new SimpleDateFormat(specificFormat.get)
+    } else {
+      val timestampFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+        .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      new SimpleDateFormat(timestampFormatString)
+    }
+
+    val dateFormat = if (specificFormat.isDefined) {
+      new SimpleDateFormat(specificFormat.get)
+    } else {
+      val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+        .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      new SimpleDateFormat(dateFormatString)
+    }
+
     // generate RDD[(K, V)] to use the partitionBy method of PairRDDFunctions
     val inputRDD: RDD[(String, Row)] = if (dataFrame.isDefined) {
       // input data from DataFrame
-      val timestampFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-        .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-      val timeStampFormat = new SimpleDateFormat(timestampFormatString)
-      val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-        .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
-      val dateFormat = new SimpleDateFormat(dateFormatString)
       val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
       val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
       val serializationNullFormat =
         carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
       dataFrame.get.rdd.map { row =>
-        (CarbonScalaUtil.getString(row.get(partitionColumnIndex), serializationNullFormat,
-          delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat), row)
+        if (null != row && row.length > partitionColumnIndex &&
+          null != row.get(partitionColumnIndex)) {
+          (CarbonScalaUtil.getString(row.get(partitionColumnIndex), serializationNullFormat,
+            delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat), row)
+        } else {
+          (null, row)
+        }
       }
     } else {
       // input data from csv files
@@ -1009,8 +1060,18 @@ object CarbonDataRDDFactory {
         classOf[StringArrayWritable],
         hadoopConfiguration
       ).map { currentRow =>
-        val row = new StringArrayRow(new Array[String](columnCount))
-        (currentRow._2.get()(partitionColumnIndex), row.setValues(currentRow._2.get()))
+        if (null == currentRow || null == currentRow._2) {
+          val row = new StringArrayRow(new Array[String](columnCount))
+          (null, row)
+        } else {
+          val row = new StringArrayRow(new Array[String](columnCount))
+          val values = currentRow._2.get()
+          if (values != null && values.length > partitionColumnIndex) {
+            (currentRow._2.get()(partitionColumnIndex), row.setValues(currentRow._2.get()))
+          } else {
+            (null, row.setValues(currentRow._2.get()))
+          }
+        }
       }
     }
 
@@ -1026,7 +1087,8 @@ object CarbonDataRDDFactory {
       }
     } else {
       inputRDD.map { row =>
-        (PartitionUtil.getDataBasedOnDataType(row._1, partitionColumnDataType), row._2)
+        (PartitionUtil.getDataBasedOnDataType(row._1, partitionColumnDataType, timeStampFormat,
+          dateFormat), row._2)
       }
         .partitionBy(partitioner)
         .map(_._2)

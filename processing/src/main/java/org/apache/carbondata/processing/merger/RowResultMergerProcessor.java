@@ -26,6 +26,9 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -37,7 +40,6 @@ import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
-import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
 /**
  * This is the Merger class responsible for the merging of the segments.
@@ -50,8 +52,6 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
    * record holder heap
    */
   private AbstractQueue<RawResultIterator> recordHolderHeap;
-
-  private TupleConversionAdapter tupleConvertor;
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(RowResultMergerProcessor.class.getName());
@@ -72,7 +72,6 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         carbonFactDataHandlerModel);
     carbonFactDataHandlerModel.setCompactionFlow(true);
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
-    tupleConvertor = new TupleConversionAdapter(segProp);
   }
 
   private void initRecordHolderHeap(List<RawResultIterator> rawResultIteratorList) {
@@ -169,11 +168,9 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
    * @throws SliceMergerException
    */
   private void addRow(Object[] carbonTuple) throws SliceMergerException {
-    Object[] rowInWritableFormat;
-
-    rowInWritableFormat = tupleConvertor.getObjectArray(carbonTuple);
+    CarbonRow row = WriteStepRowUtil.fromMergerRow(carbonTuple, segprop);
     try {
-      this.dataHandler.addDataToStore(rowInWritableFormat);
+      this.dataHandler.addDataToStore(row);
     } catch (CarbonDataWriterException e) {
       throw new SliceMergerException("Problem in merging the slice", e);
     }

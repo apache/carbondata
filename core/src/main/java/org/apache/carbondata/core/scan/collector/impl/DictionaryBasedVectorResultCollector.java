@@ -49,6 +49,8 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
 
   protected ColumnVectorInfo[] allColumnInfo;
 
+  protected ColumnVectorInfo[] implictColumnInfo;
+
   public DictionaryBasedVectorResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
     // initialize only if the current block is not a restructured block else the initialization
@@ -66,8 +68,15 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     List<ColumnVectorInfo> dictInfoList = new ArrayList<>();
     List<ColumnVectorInfo> noDictInfoList = new ArrayList<>();
     List<ColumnVectorInfo> complexList = new ArrayList<>();
+    List<ColumnVectorInfo> implictColumnList = new ArrayList<>();
     for (int i = 0; i < queryDimensions.length; i++) {
-      if (!queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)) {
+      if (queryDimensions[i].getDimension().hasEncoding(Encoding.IMPLICIT)) {
+        ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
+        implictColumnList.add(columnVectorInfo);
+        columnVectorInfo.dimension = queryDimensions[i];
+        columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
+        allColumnInfo[queryDimensions[i].getQueryOrder()] = columnVectorInfo;
+      } else if (!queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)) {
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
         noDictInfoList.add(columnVectorInfo);
         columnVectorInfo.dimension = queryDimensions[i];
@@ -109,6 +118,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     dictionaryInfo = dictInfoList.toArray(new ColumnVectorInfo[dictInfoList.size()]);
     noDictionaryInfo = noDictInfoList.toArray(new ColumnVectorInfo[noDictInfoList.size()]);
     complexInfo = complexList.toArray(new ColumnVectorInfo[complexList.size()]);
+    implictColumnInfo = implictColumnList.toArray(new ColumnVectorInfo[implictColumnList.size()]);
     Arrays.sort(dictionaryInfo);
     Arrays.sort(complexInfo);
   }
@@ -120,6 +130,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
   @Override public void collectVectorBatch(AbstractScannedResult scannedResult,
       CarbonColumnarBatch columnarBatch) {
     int numberOfPages = scannedResult.numberOfpages();
+    int filteredRows = 0;
     while (scannedResult.getCurrentPageCounter() < numberOfPages) {
       int currentPageRowCount = scannedResult.getCurrentPageRowCount();
       if (currentPageRowCount == 0) {
@@ -128,13 +139,18 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
       }
       int rowCounter = scannedResult.getRowCounter();
       int availableRows = currentPageRowCount - rowCounter;
-      int requiredRows = columnarBatch.getBatchSize() - columnarBatch.getActualSize();
+      // getRowCounter holds total number or rows being placed in Vector. Calculate the
+      // Left over space through getRowCounter only.
+      int requiredRows = columnarBatch.getBatchSize() - columnarBatch.getRowCounter();
       requiredRows = Math.min(requiredRows, availableRows);
       if (requiredRows < 1) {
         return;
       }
       fillColumnVectorDetails(columnarBatch, rowCounter, requiredRows);
+      filteredRows = scannedResult
+          .markFilteredRows(columnarBatch, rowCounter, requiredRows, columnarBatch.getRowCounter());
       scanAndFillResult(scannedResult, columnarBatch, rowCounter, availableRows, requiredRows);
+      columnarBatch.setActualSize(columnarBatch.getActualSize() + requiredRows - filteredRows);
     }
   }
 
@@ -144,6 +160,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     scannedResult.fillColumnarNoDictionaryBatch(noDictionaryInfo);
     scannedResult.fillColumnarMeasureBatch(measureColumnInfo, measureInfo.getMeasureOrdinals());
     scannedResult.fillColumnarComplexBatch(complexInfo);
+    scannedResult.fillColumnarImplicitBatch(implictColumnInfo);
     // it means fetched all data out of page so increment the page counter
     if (availableRows == requiredRows) {
       scannedResult.incrementPageCounter();
@@ -151,7 +168,6 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
       // Or set the row counter.
       scannedResult.setRowCounter(rowCounter + requiredRows);
     }
-    columnarBatch.setActualSize(columnarBatch.getActualSize() + requiredRows);
     columnarBatch.setRowCounter(columnarBatch.getRowCounter() + requiredRows);
   }
 

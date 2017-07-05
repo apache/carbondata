@@ -28,7 +28,7 @@ import org.scalatest.BeforeAndAfterAll
 class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("CREATE TABLE alldatatypestableJoin (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE alldatatypestableJoin (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='empno','TABLE_BLOCKSIZE'='4')")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE alldatatypestableJoin OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""");
 
     sql("CREATE TABLE alldatatypestableJoin_hive (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)row format delimited fields terminated by ','")
@@ -88,6 +88,13 @@ class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
     // Drop table
     sql("DROP TABLE IF EXISTS carbon_table1")
     sql("DROP TABLE IF EXISTS carbon_table2")
+  }
+
+  test("join with aggregate plan") {
+    checkAnswer(sql("SELECT c1.empno,c1.empname, c2.empno FROM (SELECT empno,empname FROM alldatatypestableJoin GROUP BY empno,empname) c1 FULL JOIN " +
+                    "(SELECT empno FROM alldatatypestableJoin GROUP BY empno) c2 ON c1.empno = c2.empno"),
+      sql("SELECT c1.empno,c1.empname, c2.empno FROM (SELECT empno,empname FROM alldatatypestableJoin_hive GROUP BY empno,empname) c1 FULL JOIN " +
+          "(SELECT empno FROM alldatatypestableJoin_hive GROUP BY empno) c2 ON c1.empno = c2.empno"))
   }
 
   override def afterAll {

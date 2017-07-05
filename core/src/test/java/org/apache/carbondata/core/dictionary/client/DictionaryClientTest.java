@@ -19,6 +19,8 @@ package org.apache.carbondata.core.dictionary.client;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
@@ -33,6 +35,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import mockit.Mock;
+import mockit.MockUp;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -158,6 +162,22 @@ public class DictionaryClientTest {
     client.shutDown();
 
     // Shutdown the server
+  }
+
+  @Test public void testToCheckIfCorrectTimeOutExceptionMessageIsThrown() {
+    new MockUp<LinkedBlockingQueue<DictionaryMessage>>() {
+      @SuppressWarnings("unused")
+      @Mock
+      DictionaryMessage poll(long timeout, TimeUnit unit) throws InterruptedException {
+        return null;
+      }
+    };
+    try {
+      testClient();
+      Assert.fail();
+    } catch (Exception e) {
+      Assert.assertFalse(e.getMessage().contains("data"));
+    }
   }
 
   @After public void tearDown() {

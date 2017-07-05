@@ -169,13 +169,21 @@ public class CarbonTable implements Serializable {
     for (TableSchema aggTable : aggregateTableList) {
       this.aggregateTablesName.add(aggTable.getTableName());
       fillDimensionsAndMeasuresForTables(aggTable);
-      tableBucketMap.put(aggTable.getTableName(), aggTable.getBucketingInfo());
-      tablePartitionMap.put(aggTable.getTableName(), aggTable.getPartitionInfo());
+      if (aggTable.getBucketingInfo() != null) {
+        tableBucketMap.put(aggTable.getTableName(), aggTable.getBucketingInfo());
+      }
+      if (aggTable.getPartitionInfo() != null) {
+        tablePartitionMap.put(aggTable.getTableName(), aggTable.getPartitionInfo());
+      }
     }
-    tableBucketMap.put(tableInfo.getFactTable().getTableName(),
-        tableInfo.getFactTable().getBucketingInfo());
-    tablePartitionMap.put(tableInfo.getFactTable().getTableName(),
-        tableInfo.getFactTable().getPartitionInfo());
+    if (tableInfo.getFactTable().getBucketingInfo() != null) {
+      tableBucketMap.put(tableInfo.getFactTable().getTableName(),
+          tableInfo.getFactTable().getBucketingInfo());
+    }
+    if (tableInfo.getFactTable().getPartitionInfo() != null) {
+      tablePartitionMap.put(tableInfo.getFactTable().getTableName(),
+          tableInfo.getFactTable().getPartitionInfo());
+    }
   }
 
   /**
@@ -585,6 +593,10 @@ public class CarbonTable implements Serializable {
     return tablePartitionMap.get(tableName);
   }
 
+  public boolean isPartitionTable() {
+    return null != tablePartitionMap.get(getFactTableName());
+  }
+
   public PartitionStatistic getPartitionStatistic() {
     return partitionStatistic;
   }
@@ -678,6 +690,25 @@ public class CarbonTable implements Serializable {
     }
     tableMeasuresMap.put(tableName, visibleMeasures);
   }
+
+  /**
+   * Method to get the list of sort columns
+   *
+   * @param tableName
+   * @return List of Sort column
+   */
+  public List<String> getSortColumns(String tableName) {
+    List<String> sort_columsList = new ArrayList<String>(allDimensions.size());
+    List<CarbonDimension> carbonDimensions = tableDimensionsMap.get(tableName);
+    for (CarbonDimension dim : carbonDimensions) {
+      if (dim.isSortColumn()) {
+        sort_columsList.add(dim.getColName());
+      }
+    }
+    return sort_columsList;
+  }
+
+
 
   public int getNumberOfSortColumns() {
     return numberOfSortColumns;

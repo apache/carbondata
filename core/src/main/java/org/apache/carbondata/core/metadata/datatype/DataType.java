@@ -19,31 +19,37 @@ package org.apache.carbondata.core.metadata.datatype;
 
 public enum DataType {
 
-  STRING(0, "STRING"),
-  DATE(1, "DATE"),
-  TIMESTAMP(2, "TIMESTAMP"),
-  BOOLEAN(1, "BOOLEAN"),
-  SHORT(2, "SMALLINT"),
-  INT(3, "INT"),
-  FLOAT(4, "FLOAT"),
-  LONG(5, "BIGINT"),
-  DOUBLE(6, "DOUBLE"),
-  NULL(7, "NULL"),
-  DECIMAL(8, "DECIMAL"),
-  ARRAY(9, "ARRAY"),
-  STRUCT(10, "STRUCT"),
-  MAP(11, "MAP"),
-  BYTE(12, "BYTE"),
+  STRING(0, "STRING", -1),
+  DATE(1, "DATE", -1),
+  TIMESTAMP(2, "TIMESTAMP", -1),
+  BOOLEAN(1, "BOOLEAN", 1),
+  SHORT(2, "SMALLINT", 2),
+  INT(3, "INT", 4),
+  FLOAT(4, "FLOAT", 4),
+  LONG(5, "BIGINT", 8),
+  DOUBLE(6, "DOUBLE", 8),
+  NULL(7, "NULL", 1),
+  DECIMAL(8, "DECIMAL", -1),
+  ARRAY(9, "ARRAY", -1),
+  STRUCT(10, "STRUCT", -1),
+  MAP(11, "MAP", -1),
+  BYTE(12, "BYTE", 1),
 
-  // internal use only
-  BYTE_ARRAY(13, "BYTE ARRAY");
+  // internal use only, for variable length data type
+  BYTE_ARRAY(13, "BYTE_ARRAY", -1),
+  // internal use only, for value compression from integer/long to 3 bytes value
+  SHORT_INT(14, "SHORT_INT", 3);
 
   private int precedenceOrder;
-  private String name ;
+  private String name;
 
-  DataType(int value ,String  name) {
+  // size of the value of this data type, negative value means variable length
+  private int sizeInBytes;
+
+  DataType(int value ,String name, int sizeInBytes) {
     this.precedenceOrder = value;
     this.name = name;
+    this.sizeInBytes = sizeInBytes;
   }
 
   public int getPrecedenceOrder() {
@@ -56,5 +62,13 @@ public enum DataType {
 
   public boolean isComplexType() {
     return precedenceOrder >= 9 && precedenceOrder <= 11;
+  }
+
+  public int getSizeInBytes() {
+    return sizeInBytes;
+  }
+
+  public int getSizeBits() {
+    return (int) (Math.log(getSizeInBytes()) / Math.log(2));
   }
 }

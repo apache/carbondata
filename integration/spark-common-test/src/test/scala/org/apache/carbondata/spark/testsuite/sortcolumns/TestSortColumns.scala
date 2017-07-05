@@ -21,6 +21,7 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class TestSortColumns extends QueryTest with BeforeAndAfterAll {
 
@@ -35,6 +36,39 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     sql("CREATE TABLE sorttable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='empno')")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
     checkAnswer(sql("select empno from sorttable1"), sql("select empno from sorttable1 order by empno"))
+  }
+
+  test("create table with no dictionary sort_columns with dictionary exclude") {
+    sql(
+      "CREATE TABLE sorttable1a (empno String, empname String, designation String, doj Timestamp," +
+      " workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
+      "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
+      "utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties" +
+      "('dictionary_exclude'='empno','sort_columns'='empno')")
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable1a OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '\"','SORT_SCOPE'='BATCH_SORT',
+         |'batch_sort_size_inmb'='64')""".stripMargin)
+    checkAnswer(sql("select empname from sorttable1a"),
+      sql("select empname from origintable1 order by empname"))
+  }
+
+  test(
+    "create table with no dictionary sort_columns where NumberOfNoDictSortColumns < " +
+    "NoDictionaryCount")
+  {
+    sql(
+      "CREATE TABLE sorttable1b (empno String, empname String, designation String, doj Timestamp," +
+      " workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
+      "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
+      "utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties" +
+      "('dictionary_exclude'='empno,empname,workgroupcategoryname','sort_columns'='empno,empname')")
+    sql(
+      s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable1b OPTIONS
+          |('DELIMITER'= ',', 'QUOTECHAR'= '\"','SORT_SCOPE'='BATCH_SORT',
+          |'batch_sort_size_inmb'='64')""".stripMargin)
+    checkAnswer(sql("select empname from sorttable1b"),
+      sql("select empname from origintable1 order by empname"))
   }
 
   test("create table with dictionary sort_columns") {
@@ -244,7 +278,20 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     // compare hive and carbon data
     checkAnswer(sql("select * from test_sort_col_hive"), sql("select * from test_sort_col"))
   }
+
+  test("describe formatted for sort_columns") {
+    sql("CREATE TABLE sorttableDesc (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='empno,empname')")
+    checkExistence(sql("describe formatted sorttableDesc"),true,"SORT_COLUMNS")
+    checkExistence(sql("describe formatted sorttableDesc"),true,"empno,empname")
+  }
   
+  test("duplicate columns in sort_columns") {
+    val exceptionCaught = intercept[MalformedCarbonCommandException]{
+      sql("CREATE TABLE sorttable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='empno,empname,empno')")
+    }
+  assert(exceptionCaught.getMessage.equals("SORT_COLUMNS Either having duplicate columns : empno or it contains illegal argumnet."))
+  }
+
   override def afterAll = {
     dropTable
   }
@@ -253,6 +300,8 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists origintable1")
     sql("drop table if exists origintable2")
     sql("drop table if exists sorttable1")
+    sql("drop table if exists sorttableDesc")
+    sql("drop table if exists sorttable1a")
     sql("drop table if exists sorttable2")
     sql("drop table if exists sorttable3")
     sql("drop table if exists sorttable4_offheap_safe")
@@ -275,13 +324,15 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
 
   def setLoadingProperties(offheap: String, unsafe: String, useBatch: String): Unit = {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, offheap)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, unsafe)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT, useBatch)
+    if (useBatch.equalsIgnoreCase("true")) {
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "BATCH_SORT")
+    }
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, useBatch)
   }
 
   def defaultLoadingProperties = {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT, CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_USE_BATCH_SORT, CarbonCommonConstants.LOAD_USE_BATCH_SORT_DEFAULT)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
   }
 }

@@ -58,7 +58,6 @@ import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -743,13 +742,19 @@ public final class CarbonLoaderUtil {
       if (null == nodeAndBlockMapping.get(node)) {
         list = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         list.add(nbr.getBlock());
-        Collections.sort(list);
         nodeAndBlockMapping.put(node, list);
       } else {
         list = nodeAndBlockMapping.get(node);
         list.add(nbr.getBlock());
-        Collections.sort(list);
       }
+    }
+    /*for resolving performance issue, removed values() with entrySet () iterating the values and
+    sorting it.entrySet will give the logical view for hashMap and we dont query the map twice for
+    each key whereas values () iterate twice*/
+    Iterator<Map.Entry<String, List<Distributable>>> iterator =
+        nodeAndBlockMapping.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Collections.sort(iterator.next().getValue());
     }
   }
 
@@ -783,14 +788,10 @@ public final class CarbonLoaderUtil {
    * This method will get the store location for the given path, segment id and partition id
    *
    * @param carbonStorePath
-   * @param dbName
-   * @param tableName
    * @param segmentId
    */
-  public static void checkAndCreateCarbonDataLocation(String carbonStorePath, String dbName,
-      String tableName, String segmentId) {
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(dbName + CarbonCommonConstants.UNDERSCORE + tableName);
+  public static void checkAndCreateCarbonDataLocation(String carbonStorePath,
+      String segmentId, CarbonTable carbonTable) {
     CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);

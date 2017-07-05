@@ -269,6 +269,11 @@ public final class DataTypeUtil {
             return null;
           }
           return Short.parseShort(data);
+        case FLOAT:
+          if (data.isEmpty()) {
+            return null;
+          }
+          return Float.parseFloat(data);
         case DOUBLE:
           if (data.isEmpty()) {
             return null;
@@ -287,7 +292,7 @@ public final class DataTypeUtil {
             Date dateToStr = dateformatter.get().parse(data);
             return dateToStr.getTime() * 1000;
           } catch (ParseException e) {
-            LOGGER.error("Cannot convert" + data + " to Time/Long type value" + e.getMessage());
+            LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
             return null;
           }
 
@@ -299,7 +304,7 @@ public final class DataTypeUtil {
             Date dateToStr = timeStampformatter.get().parse(data);
             return dateToStr.getTime() * 1000;
           } catch (ParseException e) {
-            LOGGER.error("Cannot convert" + data + " to Time/Long type value" + e.getMessage());
+            LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
             return null;
           }
         case DECIMAL:
@@ -329,14 +334,8 @@ public final class DataTypeUtil {
         return ByteUtil.toBytes(Short.parseShort(dimensionValue));
       case INT:
         return ByteUtil.toBytes(Integer.parseInt(dimensionValue));
-      case FLOAT:
-        return ByteUtil.toBytes(Float.parseFloat(dimensionValue));
       case LONG:
         return ByteUtil.toBytes(Long.parseLong(dimensionValue));
-      case DOUBLE:
-        return ByteUtil.toBytes(Double.parseDouble(dimensionValue));
-      case DECIMAL:
-        return ByteUtil.toBytes(new BigDecimal(dimensionValue));
       default:
         return ByteUtil.toBytes(dimensionValue);
     }
@@ -367,14 +366,8 @@ public final class DataTypeUtil {
           return ByteUtil.toShort(dataInBytes, 0, dataInBytes.length);
         case INT:
           return ByteUtil.toInt(dataInBytes, 0, dataInBytes.length);
-        case FLOAT:
-          return ByteUtil.toFloat(dataInBytes, 0);
         case LONG:
           return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length);
-        case DOUBLE:
-          return ByteUtil.toDouble(dataInBytes, 0);
-        case DECIMAL:
-          return ByteUtil.toBigDecimal(dataInBytes, 0, dataInBytes.length);
         default:
           return ByteUtil.toString(dataInBytes, 0, dataInBytes.length);
       }
@@ -436,7 +429,7 @@ public final class DataTypeUtil {
             Date dateToStr = dateformatter.get().parse(data5);
             return dateToStr.getTime() * 1000;
           } catch (ParseException e) {
-            LOGGER.error("Cannot convert" + data5 + " to Time/Long type value" + e.getMessage());
+            LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
             return null;
           }
 
@@ -449,7 +442,7 @@ public final class DataTypeUtil {
             Date dateToStr = timeStampformatter.get().parse(data6);
             return dateToStr.getTime() * 1000;
           } catch (ParseException e) {
-            LOGGER.error("Cannot convert" + data6 + " to Time/Long type value" + e.getMessage());
+            LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
             return null;
           }
         case DECIMAL:

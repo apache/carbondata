@@ -46,7 +46,7 @@ public class MeasureDataVectorProcessor {
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           vector.putInt(vectorOffset,
-              (int)dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(i));
+              (int)dataChunk.getColumnPage().getLong(i));
           vectorOffset++;
         }
       } else {
@@ -55,7 +55,7 @@ public class MeasureDataVectorProcessor {
             vector.putNull(vectorOffset);
           } else {
             vector.putInt(vectorOffset,
-                (int)dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(i));
+                (int)dataChunk.getColumnPage().getLong(i));
           }
           vectorOffset++;
         }
@@ -74,7 +74,7 @@ public class MeasureDataVectorProcessor {
         for (int i = offset; i < len; i++) {
           int currentRow = rowMapping[i];
           vector.putInt(vectorOffset,
-              (int)dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(currentRow));
+              (int)dataChunk.getColumnPage().getLong(currentRow));
           vectorOffset++;
         }
       } else {
@@ -84,7 +84,7 @@ public class MeasureDataVectorProcessor {
             vector.putNull(vectorOffset);
           } else {
             vector.putInt(vectorOffset,
-                (int)dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(currentRow));
+                (int)dataChunk.getColumnPage().getLong(currentRow));
           }
           vectorOffset++;
         }
@@ -104,7 +104,7 @@ public class MeasureDataVectorProcessor {
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           vector.putShort(vectorOffset,
-              (short) dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(i));
+              (short) dataChunk.getColumnPage().getLong(i));
           vectorOffset++;
         }
       } else {
@@ -113,7 +113,7 @@ public class MeasureDataVectorProcessor {
             vector.putNull(vectorOffset);
           } else {
             vector.putShort(vectorOffset,
-                (short) dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(i));
+                (short) dataChunk.getColumnPage().getLong(i));
           }
           vectorOffset++;
         }
@@ -132,7 +132,7 @@ public class MeasureDataVectorProcessor {
         for (int i = offset; i < len; i++) {
           int currentRow = rowMapping[i];
           vector.putShort(vectorOffset,
-              (short) dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(currentRow));
+              (short) dataChunk.getColumnPage().getLong(currentRow));
           vectorOffset++;
         }
       } else {
@@ -142,7 +142,7 @@ public class MeasureDataVectorProcessor {
             vector.putNull(vectorOffset);
           } else {
             vector.putShort(vectorOffset,
-                (short) dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(currentRow));
+                (short) dataChunk.getColumnPage().getLong(currentRow));
           }
           vectorOffset++;
         }
@@ -162,7 +162,7 @@ public class MeasureDataVectorProcessor {
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           vector.putLong(vectorOffset,
-              dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(i));
+              dataChunk.getColumnPage().getLong(i));
           vectorOffset++;
         }
       } else {
@@ -171,7 +171,7 @@ public class MeasureDataVectorProcessor {
             vector.putNull(vectorOffset);
           } else {
             vector.putLong(vectorOffset,
-                dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(i));
+                dataChunk.getColumnPage().getLong(i));
           }
           vectorOffset++;
         }
@@ -190,7 +190,7 @@ public class MeasureDataVectorProcessor {
         for (int i = offset; i < len; i++) {
           int currentRow = rowMapping[i];
           vector.putLong(vectorOffset,
-              dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(currentRow));
+              dataChunk.getColumnPage().getLong(currentRow));
           vectorOffset++;
         }
       } else {
@@ -200,7 +200,7 @@ public class MeasureDataVectorProcessor {
             vector.putNull(vectorOffset);
           } else {
             vector.putLong(vectorOffset,
-                dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(currentRow));
+                dataChunk.getColumnPage().getLong(currentRow));
           }
           vectorOffset++;
         }
@@ -224,7 +224,7 @@ public class MeasureDataVectorProcessor {
           vector.putNull(vectorOffset);
         } else {
           BigDecimal decimal =
-              dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(i);
+              dataChunk.getColumnPage().getDecimal(i);
           if (decimal.scale() < newMeasureScale) {
             decimal = decimal.setScale(newMeasureScale);
           }
@@ -250,7 +250,7 @@ public class MeasureDataVectorProcessor {
           vector.putNull(vectorOffset);
         } else {
           BigDecimal decimal =
-              dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(currentRow);
+              dataChunk.getColumnPage().getDecimal(currentRow);
           if (info.measure.getMeasure().getScale() > decimal.scale()) {
             decimal = decimal.setScale(info.measure.getMeasure().getScale());
           }
@@ -274,7 +274,7 @@ public class MeasureDataVectorProcessor {
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           vector.putDouble(vectorOffset,
-              dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(i));
+              dataChunk.getColumnPage().getDouble(i));
           vectorOffset++;
         }
       } else {
@@ -283,7 +283,7 @@ public class MeasureDataVectorProcessor {
             vector.putNull(vectorOffset);
           } else {
             vector.putDouble(vectorOffset,
-                dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(i));
+                dataChunk.getColumnPage().getDouble(i));
           }
           vectorOffset++;
         }
@@ -302,7 +302,7 @@ public class MeasureDataVectorProcessor {
         for (int i = offset; i < len; i++) {
           int currentRow = rowMapping[i];
           vector.putDouble(vectorOffset,
-              dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(currentRow));
+              dataChunk.getColumnPage().getDouble(currentRow));
           vectorOffset++;
         }
       } else {
@@ -312,7 +312,7 @@ public class MeasureDataVectorProcessor {
             vector.putNull(vectorOffset);
           } else {
             vector.putDouble(vectorOffset,
-                dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(currentRow));
+                dataChunk.getColumnPage().getDouble(currentRow));
           }
           vectorOffset++;
         }

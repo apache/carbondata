@@ -22,19 +22,19 @@ import java.util.Iterator;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
-import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
@@ -46,19 +46,15 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataWriterProcessorStepImpl.class.getName());
 
-  private SegmentProperties segmentProperties;
-
-  private int noDictionaryCount;
-
-  private int complexDimensionCount;
-
-  private int measureCount;
-
   private long readCounter;
 
   public DataWriterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     super(configuration, child);
+  }
+
+  public DataWriterProcessorStepImpl(CarbonDataLoadConfiguration configuration) {
+    super(configuration, null);
   }
 
   @Override public DataField[] getOutput() {
@@ -78,19 +74,21 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return storeLocation;
   }
 
+  public CarbonFactDataHandlerModel getDataHandlerModel(int partitionId) {
+    CarbonTableIdentifier tableIdentifier =
+        configuration.getTableIdentifier().getCarbonTableIdentifier();
+    String storeLocation = getStoreLocation(tableIdentifier, String.valueOf(partitionId));
+    CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
+        .createCarbonFactDataHandlerModel(configuration, storeLocation, partitionId, 0);
+    return model;
+  }
+
   @Override public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
     Iterator<CarbonRowBatch>[] iterators = child.execute();
     CarbonTableIdentifier tableIdentifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
     String tableName = tableIdentifier.getTableName();
     try {
-      CarbonFactDataHandlerModel dataHandlerModel = CarbonFactDataHandlerModel
-          .createCarbonFactDataHandlerModel(configuration,
-              getStoreLocation(tableIdentifier, String.valueOf(0)), 0, 0);
-      noDictionaryCount = dataHandlerModel.getNoDictionaryCount();
-      complexDimensionCount = configuration.getComplexDimensionCount();
-      measureCount = dataHandlerModel.getMeasureCount();
-      segmentProperties = dataHandlerModel.getSegmentProperties();
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
           .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
               System.currentTimeMillis());
@@ -111,7 +109,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
           processBatch(iterator.next(), dataHandler);
         }
         if (!rowsNotExist) {
-          finish(tableName, dataHandler);
+          finish(dataHandler);
         }
         i++;
       }
@@ -131,7 +129,11 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return "Data Writer";
   }
 
-  private void finish(String tableName, CarbonFactHandler dataHandler) {
+  public void finish(CarbonFactHandler dataHandler) {
+    CarbonTableIdentifier tableIdentifier =
+        configuration.getTableIdentifier().getCarbonTableIdentifier();
+    String tableName = tableIdentifier.getTableName();
+
     try {
       dataHandler.finish();
     } catch (Exception e) {
@@ -170,17 +172,23 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     try {
       while (batch.hasNext()) {
         CarbonRow row = batch.next();
+        dataHandler.addDataToStore(row);
         readCounter++;
-        // convert the row from surrogate key to MDKey
-        Object[] outputRow = CarbonDataProcessorUtil
-            .convertToMDKeyAndFillRow(row, segmentProperties, measureCount, noDictionaryCount,
-                complexDimensionCount);
-        dataHandler.addDataToStore(outputRow);
       }
     } catch (Exception e) {
       throw new CarbonDataLoadingException("unable to generate the mdkey", e);
     }
     rowCounter.getAndAdd(batch.getSize());
+  }
+
+  public void processRow(CarbonRow row, CarbonFactHandler dataHandler) throws KeyGenException {
+    try {
+      readCounter++;
+      dataHandler.addDataToStore(row);
+    } catch (Exception e) {
+      throw new CarbonDataLoadingException("unable to generate the mdkey", e);
+    }
+    rowCounter.getAndAdd(1);
   }
 
   @Override protected CarbonRow processRow(CarbonRow row) {

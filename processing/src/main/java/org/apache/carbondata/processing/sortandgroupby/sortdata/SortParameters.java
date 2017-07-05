@@ -17,6 +17,7 @@
 package org.apache.carbondata.processing.sortandgroupby.sortdata;
 
 import java.io.File;
+import java.io.Serializable;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -29,7 +30,7 @@ import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.schema.metadata.SortObserver;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
-public class SortParameters {
+public class SortParameters implements Serializable {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(SortParameters.class.getName());
@@ -122,6 +123,8 @@ public class SortParameters {
 
   private int numberOfCores;
 
+  private int batchSortSizeinMb;
+
   public SortParameters getCopy() {
     SortParameters parameters = new SortParameters();
     parameters.tempFileLocation = tempFileLocation;
@@ -149,6 +152,7 @@ public class SortParameters {
     parameters.numberOfSortColumns = numberOfSortColumns;
     parameters.numberOfNoDictSortColumns = numberOfNoDictSortColumns;
     parameters.numberOfCores = numberOfCores;
+    parameters.batchSortSizeinMb = batchSortSizeinMb;
     return parameters;
   }
 
@@ -352,6 +356,14 @@ public class SortParameters {
     this.numberOfNoDictSortColumns = Math.min(numberOfNoDictSortColumns, noDictionaryCount);
   }
 
+  public int getBatchSortSizeinMb() {
+    return batchSortSizeinMb;
+  }
+
+  public void setBatchSortSizeinMb(int batchSortSizeinMb) {
+    this.batchSortSizeinMb = batchSortSizeinMb;
+  }
+
   public static SortParameters createSortParameters(CarbonDataLoadConfiguration configuration) {
     SortParameters parameters = new SortParameters();
     CarbonTableIdentifier tableIdentifier =
@@ -364,11 +376,13 @@ public class SortParameters {
     parameters.setTaskNo(configuration.getTaskNo());
     parameters.setMeasureColCount(configuration.getMeasureCount());
     parameters.setDimColCount(
-        configuration.getDimensionCount() - configuration.getComplexDimensionCount());
+        configuration.getDimensionCount() - configuration.getComplexColumnCount());
     parameters.setNoDictionaryCount(configuration.getNoDictionaryCount());
-    parameters.setComplexDimColCount(configuration.getComplexDimensionCount());
+    parameters.setComplexDimColCount(configuration.getComplexColumnCount());
     parameters.setNoDictionaryDimnesionColumn(
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields()));
+    parameters.setBatchSortSizeinMb(CarbonDataProcessorUtil.getBatchSortSizeinMb(configuration));
+
     parameters.setNumberOfSortColumns(configuration.getNumberOfSortColumns());
     parameters.setNumberOfNoDictSortColumns(configuration.getNumberOfNoDictSortColumns());
     setNoDictionarySortColumnMapping(parameters);
@@ -453,8 +467,7 @@ public class SortParameters {
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
         CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
 
-    DataType[] measureDataType = CarbonDataProcessorUtil
-        .getMeasureDataType(configuration.getMeasureCount(), configuration.getMeasureFields());
+    DataType[] measureDataType = configuration.getMeasureDataType();
     parameters.setMeasureDataType(measureDataType);
     return parameters;
   }

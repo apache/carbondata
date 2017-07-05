@@ -67,9 +67,12 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
 
   private int currentDictionarySize;
 
+  private int maxValue;
+
   private CarbonDimension dimension;
 
   public IncrementalColumnDictionaryGenerator(CarbonDimension dimension, int maxValue) {
+    this.maxValue = maxValue;
     this.currentDictionarySize = maxValue;
     this.dimension = dimension;
   }
@@ -169,14 +172,20 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
       }
       // write value to dictionary file
       if (reverseIncrementalCache.size() > 0) {
-        for (int index = 2; index < reverseIncrementalCache.size() + 2; index++) {
-          String value = reverseIncrementalCache.get(index);
-          String parsedValue = DataTypeUtil
-                  .normalizeColumnValueForItsDataType(value, dimension);
-          if (null != parsedValue) {
-            dictionaryWriter.write(parsedValue);
-            distinctValues.add(parsedValue);
+        synchronized (lock) {
+          // collect incremental dictionary
+          for (int index = maxValue + 1; index <= currentDictionarySize; index++) {
+            String value = reverseIncrementalCache.get(index);
+            String parsedValue = DataTypeUtil.normalizeColumnValueForItsDataType(value, dimension);
+            if (null != parsedValue) {
+              dictionaryWriter.write(parsedValue);
+              distinctValues.add(parsedValue);
+            }
           }
+          // clear incremental dictionary to avoid write to file again
+          reverseIncrementalCache.clear();
+          incrementalCache.clear();
+          currentDictionarySize = maxValue;
         }
       }
     } finally {

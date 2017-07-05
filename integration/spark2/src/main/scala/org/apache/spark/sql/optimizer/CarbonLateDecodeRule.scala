@@ -27,7 +27,7 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.RunnableCommand
+import org.apache.spark.sql.execution.command.{ProjectForUpdateCommand, RunnableCommand}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{IntegerType, StringType}
 
@@ -69,7 +69,8 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         return plan
       }
       LOGGER.info("Starting to optimize plan")
-      val udfTransformedPlan = pushDownUDFToJoinLeftRelation(plan)
+      val iudPlan = processPlan(plan)
+      val udfTransformedPlan = pushDownUDFToJoinLeftRelation(iudPlan)
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("")
       val queryStatistic = new QueryStatistic()
       val result = transformCarbonPlan(udfTransformedPlan, relations)
@@ -85,33 +86,62 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
   }
 
   private def pushDownUDFToJoinLeftRelation(plan: LogicalPlan): LogicalPlan = {
-    val output = plan match {
+    val output = plan.transform {
       case proj@Project(cols, Join(
       left, right, jointype: org.apache.spark.sql.catalyst.plans.JoinType, condition)) =>
         var projectionToBeAdded: Seq[org.apache.spark.sql.catalyst.expressions.Alias] = Seq.empty
-        val newCols = cols.map { col =>
-          col match {
-            case a@Alias(s: ScalaUDF, name)
-              if (name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
-                  name.equalsIgnoreCase(
-                    CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)) =>
-              projectionToBeAdded :+= a
-              AttributeReference(name, StringType, true)().withExprId(a.exprId)
-            case other => other
-          }
-        }
-        val newLeft = left match {
-          case Project(columns, logicalPlan) =>
-            Project(columns ++ projectionToBeAdded, logicalPlan)
-          case filter: Filter =>
-            Project(filter.output ++ projectionToBeAdded, filter)
+        var udfExists = false
+        val newCols = cols.map {
+          case a@Alias(s: ScalaUDF, name)
+            if name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
+                name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
+            udfExists = true
+            projectionToBeAdded :+= a
+            AttributeReference(name, StringType, nullable = true)().withExprId(a.exprId)
           case other => other
         }
-        Project(newCols, Join(newLeft, right, jointype, condition))
+        if (udfExists) {
+          val newLeft = left match {
+            case Project(columns, logicalPlan) =>
+              Project(columns ++ projectionToBeAdded, logicalPlan)
+            case filter: Filter =>
+              Project(filter.output ++ projectionToBeAdded, filter)
+            case relation: LogicalRelation =>
+              Project(relation.output ++ projectionToBeAdded, relation)
+            case other => other
+          }
+          Project(newCols, Join(newLeft, right, jointype, condition))
+        } else {
+          proj
+        }
       case other => other
     }
     output
   }
+
+  private def processPlan(plan: LogicalPlan): LogicalPlan = {
+    plan transform {
+      case ProjectForUpdate(table, cols, Seq(updatePlan)) =>
+        var isTransformed = false
+        val newPlan = updatePlan transform {
+          case Project(pList, child) if (!isTransformed) =>
+            val (dest: Seq[NamedExpression], source: Seq[NamedExpression]) = pList
+              .splitAt(pList.size - cols.size)
+            val diff = cols.diff(dest.map(_.name.toLowerCase))
+            if (diff.size > 0) {
+              sys.error(s"Unknown column(s) ${diff.mkString(",")} in table ${table.tableName}")
+            }
+            isTransformed = true
+            Project(dest.filter(a => !cols.contains(a.name.toLowerCase)) ++ source, child)
+        }
+        val identifier = table.tableIdentifier.database match {
+          case Some(db) => Seq(db, table.tableIdentifier.table)
+          case _ => Seq(table.tableIdentifier.table)
+        }
+        ProjectForUpdateCommand(newPlan, identifier)
+    }
+  }
+
 
   def isOptimized(plan: LogicalPlan): Boolean = {
     plan find {
@@ -149,7 +179,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
    * Steps for changing the plan.
    * 1. It finds out the join condition columns and dimension aggregate columns which are need to
    * be decoded just before that plan executes.
-   * 2. Plan starts transform by adding the decoder to the plan where it needs the decoded data
+   * 2. Plan starts encode by adding the decoder to the plan where it needs the decoded data
    * like dimension aggregate columns decoder under aggregator and join condition decoder under
    * join children.
    */
@@ -178,6 +208,46 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     relations.foreach(_.fillAttributeMap(attrMap))
 
     def addTempDecoder(currentPlan: LogicalPlan): LogicalPlan = {
+
+      def transformAggregateExpression(agg: Aggregate,
+          attrsOnGroup: util.HashSet[AttributeReferenceWrapper] = null): LogicalPlan = {
+        val attrsOndimAggs = new util.HashSet[AttributeReferenceWrapper]
+        if (attrsOnGroup != null) {
+          attrsOndimAggs.addAll(attrsOnGroup)
+        }
+        agg.aggregateExpressions.map {
+          case attr: AttributeReference =>
+          case a@Alias(attr: AttributeReference, name) =>
+          case aggExp: AggregateExpression =>
+            aggExp.transform {
+              case aggExp: AggregateExpression =>
+                collectDimensionAggregates(aggExp, attrsOndimAggs, aliasMap, attrMap)
+                aggExp
+            }
+          case others =>
+            others.collect {
+              case attr: AttributeReference
+                if isDictionaryEncoded(attr, attrMap, aliasMap) =>
+                attrsOndimAggs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
+            }
+        }
+        var child = agg.child
+        // Incase if the child also aggregate then push down decoder to child
+        if (attrsOndimAggs.size() > 0 && !child.equals(agg)) {
+          child = CarbonDictionaryTempDecoder(attrsOndimAggs,
+            new util.HashSet[AttributeReferenceWrapper](),
+            agg.child)
+        }
+        if (!decoder && attrsOnGroup == null) {
+          decoder = true
+          CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
+            new util.HashSet[AttributeReferenceWrapper](),
+            Aggregate(agg.groupingExpressions, agg.aggregateExpressions, child),
+            isOuter = true)
+        } else {
+          Aggregate(agg.groupingExpressions, agg.aggregateExpressions, child)
+        }
+      }
       currentPlan match {
         case limit@GlobalLimit(_, LocalLimit(_, child: Sort)) =>
           if (!decoder) {
@@ -259,39 +329,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
             Union(children)
           }
         case agg: Aggregate if !agg.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
-          val attrsOndimAggs = new util.HashSet[AttributeReferenceWrapper]
-          agg.aggregateExpressions.map {
-            case attr: AttributeReference =>
-            case a@Alias(attr: AttributeReference, name) =>
-            case aggExp: AggregateExpression =>
-              aggExp.transform {
-                case aggExp: AggregateExpression =>
-                  collectDimensionAggregates(aggExp, attrsOndimAggs, aliasMap, attrMap)
-                  aggExp
-              }
-            case others =>
-              others.collect {
-                case attr: AttributeReference
-                  if isDictionaryEncoded(attr, attrMap, aliasMap) =>
-                  attrsOndimAggs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
-              }
-          }
-          var child = agg.child
-          // Incase if the child also aggregate then push down decoder to child
-          if (attrsOndimAggs.size() > 0 && !child.equals(agg)) {
-            child = CarbonDictionaryTempDecoder(attrsOndimAggs,
-              new util.HashSet[AttributeReferenceWrapper](),
-              agg.child)
-          }
-          if (!decoder) {
-            decoder = true
-            CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
-              new util.HashSet[AttributeReferenceWrapper](),
-              Aggregate(agg.groupingExpressions, agg.aggregateExpressions, child),
-              isOuter = true)
-          } else {
-            Aggregate(agg.groupingExpressions, agg.aggregateExpressions, child)
-          }
+          transformAggregateExpression(agg)
         case expand: Expand if !expand.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
           val attrsOnExpand = new util.HashSet[AttributeReferenceWrapper]
           expand.projections.map {s =>
@@ -381,15 +419,29 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
             var rightPlan = j.right
             if (leftCondAttrs.size() > 0 &&
                 !leftPlan.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
-              leftPlan = CarbonDictionaryTempDecoder(leftCondAttrs,
-                new util.HashSet[AttributeReferenceWrapper](),
-                j.left)
+              leftPlan = leftPlan match {
+                case agg: Aggregate =>
+                  CarbonDictionaryTempDecoder(leftCondAttrs,
+                    new util.HashSet[AttributeReferenceWrapper](),
+                    transformAggregateExpression(agg, leftCondAttrs))
+                case _ =>
+                  CarbonDictionaryTempDecoder(leftCondAttrs,
+                    new util.HashSet[AttributeReferenceWrapper](),
+                    j.left)
+              }
             }
             if (rightCondAttrs.size() > 0 &&
                 !rightPlan.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
-              rightPlan = CarbonDictionaryTempDecoder(rightCondAttrs,
-                new util.HashSet[AttributeReferenceWrapper](),
-                j.right)
+              rightPlan = rightPlan match {
+                case agg: Aggregate =>
+                  CarbonDictionaryTempDecoder(rightCondAttrs,
+                    new util.HashSet[AttributeReferenceWrapper](),
+                    transformAggregateExpression(agg, rightCondAttrs))
+                case _ =>
+                  CarbonDictionaryTempDecoder(rightCondAttrs,
+                    new util.HashSet[AttributeReferenceWrapper](),
+                    j.right)
+              }
             }
             Join(leftPlan, rightPlan, j.joinType, j.condition)
           } else {
@@ -503,7 +555,6 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
 
         case others => others
       }
-
     }
 
     val transFormedPlan =

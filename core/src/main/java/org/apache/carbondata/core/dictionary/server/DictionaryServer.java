@@ -135,11 +135,9 @@ public class DictionaryServer {
    * @throws Exception
    */
   public void shutdown() throws Exception {
+    LOGGER.info("Shutting down dictionary server");
     worker.shutdownGracefully();
     boss.shutdownGracefully();
-    // Wait until all threads are terminated.
-    boss.terminationFuture().sync();
-    worker.terminationFuture().sync();
   }
 
 

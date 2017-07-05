@@ -51,6 +51,30 @@ class TestCreateTableWithDatabaseNameCaseChange extends QueryTest with BeforeAnd
     }
   }
 
+  test("test drop database cascade with case sensitive") {
+    // this test case will test the creation of table for different case for database name.
+    // In hive dbName folder is always created with small case in HDFS. Carbon should behave
+    // the same way. If table creation fails during second time creation it means in HDFS
+    // separate folders are created for the matching case in commands executed.
+    sql("drop database if exists AbCdEf cascade")
+    sql("create database AbCdEf")
+    sql("use AbCdEf")
+    sql("create table carbonTable(a int, b string)stored by 'carbondata'")
+    sql("use default")
+    sql("drop database if exists AbCdEf cascade")
+    sql("create database AbCdEf")
+    sql("use AbCdEf")
+    try {
+      sql("create table carbonTable(a int, b string)stored by 'carbondata'")
+      assert(true)
+    } catch {
+      case ex: Exception =>
+        assert(false)
+    }
+    sql("use default")
+    sql("drop database if exists AbCdEf cascade")
+  }
+
   override def afterAll {
     sql("use default")
     sql("drop database if exists dbCaseChange cascade")

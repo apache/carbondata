@@ -22,7 +22,7 @@ import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.hive.{CarbonRelation, HiveExternalCatalog}
+import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionState}
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -100,7 +100,7 @@ private[sql] case class AlterTableAddColumns(
         .updateSchemaInfo(carbonTable,
           schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
           thriftTable)(sparkSession,
-          sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog])
+          sparkSession.sessionState.asInstanceOf[CarbonSessionState])
       LOGGER.info(s"Alter table for add columns is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for add columns is successful for table $dbName.$tableName")
     } catch {
@@ -202,10 +202,10 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
           carbonTable.getStorePath)(sparkSession)
       CarbonEnv.getInstance(sparkSession).carbonMetastore
         .removeTableFromMetadata(oldDatabaseName, oldTableName)
-      sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client
+      sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
         .runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$oldTableName RENAME TO $oldDatabaseName.$newTableName")
-      sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog].client
+      sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
         .runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$newTableName SET SERDEPROPERTIES" +
           s"('tableName'='$newTableName', " +
@@ -282,7 +282,19 @@ private[sql] case class AlterTableDropColumns(
       carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
         .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
         .tableMeta.carbonTable
-      // check each column existence in the table
+      val partitionInfo = carbonTable.getPartitionInfo(tableName)
+      if (partitionInfo != null) {
+        val partitionColumnSchemaList = partitionInfo.getColumnSchemaList.asScala
+          .map(_.getColumnName)
+        // check each column existence in the table
+        val partitionColumns = alterTableDropColumnModel.columns.filter {
+          tableColumn => partitionColumnSchemaList.contains(tableColumn)
+        }
+        if (partitionColumns.nonEmpty) {
+          throw new UnsupportedOperationException("Partition columns cannot be dropped: " +
+                                                  s"$partitionColumns")
+        }
+      }
       val tableColumns = carbonTable.getCreateOrderColumn(tableName).asScala
       var dictionaryColumns = Seq[org.apache.carbondata.core.metadata.schema.table.column
       .ColumnSchema]()
@@ -293,7 +305,7 @@ private[sql] case class AlterTableDropColumns(
         tableColumns.foreach { tableColumn =>
           // column should not be already deleted and should exist in the table
           if (!tableColumn.isInvisible && column.equalsIgnoreCase(tableColumn.getColName)) {
-            if (tableColumn.isDimesion) {
+            if (tableColumn.isDimension) {
               keyColumnCountToBeDeleted += 1
               if (tableColumn.hasEncoding(Encoding.DICTIONARY)) {
                 dictionaryColumns ++= Seq(tableColumn.getColumnSchema)
@@ -309,7 +321,7 @@ private[sql] case class AlterTableDropColumns(
       // take the total key column count. key column to be deleted should not
       // be >= key columns in schema
       val totalKeyColumnInSchema = tableColumns.count {
-        tableColumn => !tableColumn.isInvisible && tableColumn.isDimesion
+        tableColumn => !tableColumn.isInvisible && tableColumn.isDimension
       }
       if (keyColumnCountToBeDeleted >= totalKeyColumnInSchema) {
         sys.error(s"Alter drop operation failed. AtLeast one key column should exist after drop.")
@@ -339,7 +351,7 @@ private[sql] case class AlterTableDropColumns(
         .updateSchemaInfo(carbonTable,
           schemaEvolutionEntry,
           tableInfo)(sparkSession,
-          sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog])
+          sparkSession.sessionState.asInstanceOf[CarbonSessionState])
       // TODO: 1. add check for deletion of index tables
       // delete dictionary files for dictionary column and clear dictionary cache from memory
       new AlterTableDropColumnRDD(sparkSession.sparkContext,
@@ -430,7 +442,7 @@ private[sql] case class AlterTableDataTypeChange(
         .updateSchemaInfo(carbonTable,
           schemaEvolutionEntry,
           tableInfo)(sparkSession,
-          sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog])
+          sparkSession.sessionState.asInstanceOf[CarbonSessionState])
       LOGGER.info(s"Alter table for data type change is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for data type change is successful for table $dbName.$tableName")
     } catch {

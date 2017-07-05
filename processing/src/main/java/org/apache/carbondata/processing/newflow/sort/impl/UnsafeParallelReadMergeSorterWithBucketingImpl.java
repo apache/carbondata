@@ -29,19 +29,19 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.newflow.sort.Sorter;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeSortDataRows;
 import org.apache.carbondata.processing.newflow.sort.unsafe.merger.UnsafeIntermediateMerger;
 import org.apache.carbondata.processing.newflow.sort.unsafe.merger.UnsafeSingleThreadFinalSortFilesMerger;
-import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
@@ -55,26 +55,20 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 public class UnsafeParallelReadMergeSorterWithBucketingImpl implements Sorter {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(ParallelReadMergeSorterImpl.class.getName());
+      LogServiceFactory.getLogService(
+                UnsafeParallelReadMergeSorterWithBucketingImpl.class.getName());
 
   private SortParameters sortParameters;
 
-  private ExecutorService executorService;
-
   private BucketingInfo bucketingInfo;
-
-  private DataField[] inputDataFields;
 
   public UnsafeParallelReadMergeSorterWithBucketingImpl(DataField[] inputDataFields,
       BucketingInfo bucketingInfo) {
-    this.inputDataFields = inputDataFields;
     this.bucketingInfo = bucketingInfo;
   }
 
   @Override public void initialize(SortParameters sortParameters) {
     this.sortParameters = sortParameters;
-    int buffer = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.SORT_SIZE, CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
   }
 
   @Override public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
@@ -97,10 +91,10 @@ public class UnsafeParallelReadMergeSorterWithBucketingImpl implements Sorter {
             new UnsafeSortDataRows(parameters, intermediateFileMergers[i], inMemoryChunkSizeInMB);
         sortDataRows[i].initialize();
       }
-    } catch (CarbonSortKeyAndGroupByException e) {
+    } catch (MemoryException e) {
       throw new CarbonDataLoadingException(e);
     }
-    this.executorService = Executors.newFixedThreadPool(iterators.length);
+    ExecutorService executorService = Executors.newFixedThreadPool(iterators.length);
     final int batchSize = CarbonProperties.getInstance().getBatchSize();
     try {
       for (int i = 0; i < iterators.length; i++) {

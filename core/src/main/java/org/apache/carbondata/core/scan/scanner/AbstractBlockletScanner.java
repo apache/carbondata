@@ -19,12 +19,11 @@ package org.apache.carbondata.core.scan.scanner;
 import java.io.IOException;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
-import org.apache.carbondata.core.mutate.data.BlockletDeleteDeltaCacheLoader;
-import org.apache.carbondata.core.mutate.data.DeleteDeltaCacheLoaderIntf;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -33,11 +32,16 @@ import org.apache.carbondata.core.scan.result.impl.NonFilterQueryScannedResult;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * Blocklet scanner class to process the block
  */
 public abstract class AbstractBlockletScanner implements BlockletScanner {
+
+  private static final int NUMBER_OF_ROWS_PER_PAGE = Integer.parseInt(CarbonProperties.getInstance()
+      .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
+          CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT));
 
   /**
    * block execution info
@@ -97,7 +101,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
       }
     }
     scannedResult.setMeasureChunks(measureColumnDataChunks);
-    int[] numberOfRows = new int[] { blocksChunkHolder.getDataBlock().nodeSize() };
+    int[] numberOfRows = null;
     if (blockExecutionInfo.getAllSelectedDimensionBlocksIndexes().length > 0) {
       for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
         if (dimensionRawColumnChunks[i] != null) {
@@ -113,14 +117,18 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
         }
       }
     }
+    // count(*)  case there would not be any dimensions are measures selected.
+    if (numberOfRows == null) {
+      numberOfRows = new int[blocksChunkHolder.getDataBlock().numberOfPages()];
+      for (int i = 0; i < numberOfRows.length; i++) {
+        numberOfRows[i] = NUMBER_OF_ROWS_PER_PAGE;
+      }
+      int lastPageSize = blocksChunkHolder.getDataBlock().nodeSize() % NUMBER_OF_ROWS_PER_PAGE;
+      if (lastPageSize > 0) {
+        numberOfRows[numberOfRows.length - 1] = lastPageSize;
+      }
+    }
     scannedResult.setNumberOfRows(numberOfRows);
-    // loading delete data cache in blockexecutioninfo instance
-    DeleteDeltaCacheLoaderIntf deleteCacheLoader =
-        new BlockletDeleteDeltaCacheLoader(scannedResult.getBlockletId(),
-            blocksChunkHolder.getDataBlock(), blockExecutionInfo.getAbsoluteTableIdentifier());
-    deleteCacheLoader.loadDeleteDeltaFileDataToCache();
-    scannedResult
-        .setBlockletDeleteDeltaCache(blocksChunkHolder.getDataBlock().getDeleteDeltaDataCache());
     scannedResult.setRawColumnChunks(dimensionRawColumnChunks);
     // adding statistics for carbon scan time
     QueryStatistic scanTime = queryStatisticsModel.getStatisticsTypeAndObjMap()

@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.commons.lang3.StringUtils
+import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
@@ -35,6 +36,7 @@ import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
 
 import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -52,6 +54,7 @@ import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.load.ValidateUtil
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DataManagementFunc, DictionaryLoadModel}
 import org.apache.carbondata.spark.util.{CommonUtil, GlobalDictionaryUtil}
 
@@ -66,6 +69,34 @@ object Checker {
       LogServiceFactory.getLogService(this.getClass.getName).error(err)
       throw new IllegalArgumentException(err)
     }
+  }
+}
+
+/**
+ * Command for show table partitions Command
+ *
+ * @param tableIdentifier
+ */
+private[sql] case class ShowCarbonPartitionsCommand(
+    tableIdentifier: TableIdentifier) extends RunnableCommand {
+  val LOGGER = LogServiceFactory.getLogService(ShowCarbonPartitionsCommand.getClass.getName)
+  override val output = CommonUtil.partitionInfoOutput
+  override def run(sqlContext: SQLContext): Seq[Row] = {
+    val relation = CarbonEnv.get.carbonMetastore
+      .lookupRelation1(tableIdentifier)(sqlContext).
+      asInstanceOf[CarbonRelation]
+    val carbonTable = relation.tableMeta.carbonTable
+    var tableName = carbonTable.getFactTableName
+    var partitionInfo = carbonTable.getPartitionInfo(
+      carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
+    if (partitionInfo == null) {
+      throw new AnalysisException(
+        s"SHOW PARTITIONS is not allowed on a table that is not partitioned: $tableName")
+    }
+    var partitionType = partitionInfo.getPartitionType
+    var columnName = partitionInfo.getColumnSchemaList.get(0).getColumnName
+    LOGGER.info("partition column name:" + columnName)
+    CommonUtil.getPartitionInfo(columnName, partitionType, partitionInfo)
   }
 }
 
@@ -403,9 +434,23 @@ case class LoadTable(
       val complex_delimiter_level_1 = options.getOrElse("complex_delimiter_level_1", "\\$")
       val complex_delimiter_level_2 = options.getOrElse("complex_delimiter_level_2", "\\:")
       val dateFormat = options.getOrElse("dateformat", null)
-      validateDateFormat(dateFormat, table)
+      ValidateUtil.validateDateFormat(dateFormat, table, tableName)
       val maxColumns = options.getOrElse("maxcolumns", null)
-
+      val sortScope = options.getOrElse("sort_scope", null)
+      ValidateUtil.validateSortScope(table, sortScope)
+      val batchSortSizeInMB = options.getOrElse("batch_sort_size_inmb", null)
+      val globalSortPartitions = options.getOrElse("global_sort_partitions", null)
+      ValidateUtil.validateGlobalSortPartitions(globalSortPartitions)
+      val bad_record_path = options.getOrElse("bad_record_path",
+          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+            CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))
+      if (badRecordsLoggerEnable.toBoolean ||
+          LoggerAction.REDIRECT.name().equalsIgnoreCase(badRecordsAction)) {
+        if (!CarbonUtil.isValidBadStorePath(bad_record_path)) {
+          sys.error("Invalid bad records location.")
+        }
+      }
+      carbonLoadModel.setBadRecordsLocation(bad_record_path)
       carbonLoadModel.setEscapeChar(checkDefaultValue(escapeChar, "\\"))
       carbonLoadModel.setQuoteChar(checkDefaultValue(quoteChar, "\""))
       carbonLoadModel.setCommentChar(checkDefaultValue(commentchar, "#"))
@@ -428,13 +473,19 @@ case class LoadTable(
       carbonLoadModel
         .setIsEmptyDataBadRecord(
           DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + "," + isEmptyDataBadRecord)
+      carbonLoadModel.setSortScope(sortScope)
+      carbonLoadModel.setBatchSortSizeInMb(batchSortSizeInMB)
+      carbonLoadModel.setGlobalSortPartitions(globalSortPartitions)
       // when single_pass=true, and not use all dict
       val useOnePass = options.getOrElse("single_pass", "false").trim.toLowerCase match {
         case "true" =>
           true
         case "false" =>
-          if (!StringUtils.isEmpty(allDictionaryPath)) {
-            true
+          // when single_pass = false  and if either alldictionary
+          // or columnDict is configured the do not allow load
+          if (StringUtils.isNotEmpty(allDictionaryPath) || StringUtils.isNotEmpty(columnDict)) {
+            throw new MalformedCarbonCommandException(
+              "Can not use all_dictionary_path or columndict without single_pass.")
           } else {
             false
           }
@@ -483,6 +534,15 @@ case class LoadTable(
         val dictFolderPath = carbonTablePath.getMetadataDirectoryPath
         val dimensions = carbonTable.getDimensionByTableName(
           carbonTable.getFactTableName).asScala.toArray
+        if (null == carbonLoadModel.getLoadMetadataDetails) {
+          CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
+        }
+        if (carbonLoadModel.getLoadMetadataDetails.isEmpty && carbonLoadModel.getUseOnePass &&
+            StringUtils.isEmpty(columnDict) && StringUtils.isEmpty(allDictionaryPath)) {
+          LOGGER.info(s"Cannot use single_pass=true for $dbName.$tableName during the first load")
+          LOGGER.audit(s"Cannot use single_pass=true for $dbName.$tableName during the first load")
+          carbonLoadModel.setUseOnePass(false)
+        }
         if (carbonLoadModel.getUseOnePass) {
           val colDictFilePath = carbonLoadModel.getColDictFilePath
           if (!StringUtils.isEmpty(colDictFilePath)) {
@@ -521,6 +581,11 @@ case class LoadTable(
             val dictionaryServer = DictionaryServer
               .getInstance(dictionaryServerPort.toInt)
             carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
+            sqlContext.sparkContext.addSparkListener(new SparkListener() {
+              override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
+                dictionaryServer.shutdown()
+              }
+            })
             Some(dictionaryServer)
           } else {
             None
@@ -662,31 +727,6 @@ case class LoadTable(
     carbonLoadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(carbonTable))
   }
 
-  private def validateDateFormat(dateFormat: String, table: CarbonTable): Unit = {
-    val dimensions = table.getDimensionByTableName(tableName).asScala
-    if (dateFormat != null) {
-      if (dateFormat.trim == "") {
-        throw new MalformedCarbonCommandException("Error: Option DateFormat is set an empty " +
-                                                  "string.")
-      } else {
-        val dateFormats: Array[String] = dateFormat.split(CarbonCommonConstants.COMMA)
-        for (singleDateFormat <- dateFormats) {
-          val dateFormatSplits: Array[String] = singleDateFormat.split(":", 2)
-          val columnName = dateFormatSplits(0).trim.toLowerCase
-          if (!dimensions.exists(_.getColName.equals(columnName))) {
-            throw new MalformedCarbonCommandException("Error: Wrong Column Name " +
-                                                      dateFormatSplits(0) +
-                                                      " is provided in Option DateFormat.")
-          }
-          if (dateFormatSplits.length < 2 || dateFormatSplits(1).trim.isEmpty) {
-            throw new MalformedCarbonCommandException("Error: Option DateFormat is not provided " +
-                                                      "for " + "Column " + dateFormatSplits(0) +
-                                                      ".")
-          }
-        }
-      }
-    }
-  }
 }
 
 private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: Option[String],
@@ -727,13 +767,6 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
             val file = FileFactory.getCarbonFile(metadataFilePath, fileType)
             CarbonUtil.deleteFoldersAndFiles(file.getParentFile)
           }
-        }
-        // delete bad record log after drop table
-        val badLogPath = CarbonUtil.getBadLogPath(dbName + File.separator + tableName)
-        val badLogFileType = FileFactory.getFileType(badLogPath)
-        if (FileFactory.isFileExist(badLogPath, badLogFileType)) {
-          val file = FileFactory.getCarbonFile(badLogPath, badLogFileType)
-          CarbonUtil.deleteFoldersAndFiles(file)
         }
       }
     }
@@ -783,9 +816,15 @@ private[sql] case class DescribeCommandFormatted(
         }
         if (dimension.hasEncoding(Encoding.DICTIONARY) &&
             !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-          "DICTIONARY, KEY COLUMN"
+          "DICTIONARY, KEY COLUMN" + (dimension.hasEncoding(Encoding.INVERTED_INDEX) match {
+                      case false => ",NOINVERTEDINDEX"
+                      case _ => ""
+                    })
         } else {
-          "KEY COLUMN"
+          "KEY COLUMN" + (dimension.hasEncoding(Encoding.INVERTED_INDEX) match {
+            case false => ",NOINVERTEDINDEX"
+            case _ => ""
+          })
         }
       } else {
         "MEASURE"
@@ -812,9 +851,17 @@ private[sql] case class DescribeCommandFormatted(
     } else {
       results ++= Seq(("ADAPTIVE", "", ""))
     }
+    results ++= Seq(("SORT_COLUMNS", relation.metaData.carbonTable.getSortColumns(
+      relation.tableMeta.carbonTableIdentifier.getTableName).asScala
+      .map(column => column).mkString(","), ""))
     val dimension = carbonTable
       .getDimensionByTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
     results ++= getColumnGroups(dimension.asScala.toList)
+    if (carbonTable.getPartitionInfo(carbonTable.getFactTableName) != null) {
+      results ++=
+      Seq(("Partition Columns: ", carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+        .getColumnSchemaList.asScala.map(_.getColumnName).mkString(","), ""))
+    }
     results.map { case (name, dataType, comment) =>
       Row(f"$name%-36s $dataType%-80s $comment%-72s")
     }

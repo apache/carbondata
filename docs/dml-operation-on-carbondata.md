@@ -107,7 +107,7 @@ You can use the following options to load data:
 - **COMPLEX_DELIMITER_LEVEL_2:** Split the complex type nested data column in a row. Applies level_1 delimiter & applies level_2 based on complex data type (eg., a:b$c:d --> Array> = {{a,b},{c,d}}).
 
     ```
-    OPTIONS('COMPLEX_DELIMITER_LEVEL_2'=':') 
+    OPTIONS('COMPLEX_DELIMITER_LEVEL_2'=':')
     ```
 
 - **ALL_DICTIONARY_PATH:** All dictionary files path.
@@ -146,6 +146,9 @@ You can use the following options to load data:
    * If this option is set to TRUE then data loading will take less time.
 
    * If this option is set to some invalid value other than TRUE or FALSE then it uses the default value.
+   
+   * If this option is set to TRUE, then high.cardinality.identify.enable property will be disabled during data load.
+   
 ### Example:
 
 ```
@@ -340,6 +343,8 @@ SET (column_name1, column_name2,) =
 | sourceColumn | The source table column values to be updated in destination table. |
 | sourceTable | The table from which the records are updated into destination Carbon table. |
 
+NOTE: This functionality is currently not supported in Spark 2.x and will support soon.  
+
 ### Usage Guidelines
 The following conditions must be met for successful updation :
 
@@ -413,6 +418,7 @@ DELETE FROM table_name [WHERE expression];
 |--------------|-----------------------------------------------------------------------|
 | table_name | The name of the Carbon table in which you want to perform the delete. |
 
+NOTE: This functionality is currently not supported in Spark 2.x and will support soon.  
 
 ### Examples
 

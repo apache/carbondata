@@ -31,7 +31,6 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
@@ -343,7 +342,7 @@ public class CarbonUtilTest {
       }
     };
     String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("../core/src/test/resources/testDatabase");
-    assertEquals(hdfsURL, "BASE_URL/../core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "file:///BASE_URL/../core/src/test/resources/testDatabase");
   }
 
   @Test public void testToCheckAndAppendHDFSUrlWithBlackSlash() {
@@ -358,7 +357,7 @@ public class CarbonUtilTest {
       }
     };
     String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("../core/src/test/resources/testDatabase");
-    assertEquals(hdfsURL, "BASE_URL/../core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "file:///BASE_URL/../core/src/test/resources/testDatabase");
   }
 
   @Test public void testToCheckAndAppendHDFSUrlWithNull() {
@@ -373,7 +372,92 @@ public class CarbonUtilTest {
       }
     };
     String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("../core/src/test/resources/testDatabase");
-    assertEquals(hdfsURL, "../core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "file:////../core/src/test/resources/testDatabase");
+  }
+
+  @Test public void testToCheckAndAppendHDFSUrlWithHdfs() {
+    new MockUp<FileFactory>() {
+      @SuppressWarnings("unused") @Mock public FileFactory.FileType getFileType(String path) {
+        return FileFactory.FileType.HDFS;
+      }
+    };
+    new MockUp<org.apache.hadoop.conf.Configuration>() {
+      @SuppressWarnings("unused") @Mock public String get(String name) {
+        return "hdfs://";
+      }
+    };
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("hdfs://ha/core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "hdfs://ha/core/src/test/resources/testDatabase");
+  }
+
+  @Test public void testToCheckAndAppendHDFSUrlWithDoubleSlashLocal() {
+    new MockUp<FileFactory>() {
+      @SuppressWarnings("unused") @Mock public FileFactory.FileType getFileType(String path) {
+        return FileFactory.FileType.LOCAL;
+      }
+    };
+    new MockUp<CarbonProperties>() {
+      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
+        return "/opt/";
+      }
+    };
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("/core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "file:////opt/core/src/test/resources/testDatabase");
+  }
+
+  @Test public void testToCheckAndAppendHDFSUrlWithDoubleSlashHDFS() {
+    new MockUp<FileFactory>() {
+      @SuppressWarnings("unused") @Mock public FileFactory.FileType getFileType(String path) {
+        return FileFactory.FileType.HDFS;
+      }
+    };
+    new MockUp<org.apache.hadoop.conf.Configuration>() {
+      @SuppressWarnings("unused") @Mock public String get(String name) {
+        return "hdfs://";
+      }
+    };
+    new MockUp<CarbonProperties>() {
+      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
+        return "/opt/";
+      }
+    };
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("/core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "hdfs:///opt/core/src/test/resources/testDatabase");
+  }
+
+  @Test public void testToCheckAndAppendHDFSUrlWithBaseURLPrefix() {
+    new MockUp<FileFactory>() {
+      @SuppressWarnings("unused") @Mock public FileFactory.FileType getFileType(String path) {
+        return FileFactory.FileType.HDFS;
+      }
+    };
+    new MockUp<CarbonProperties>() {
+      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
+        return "hdfs://ha/opt/";
+      }
+    };
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("/core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "hdfs://ha/opt/core/src/test/resources/testDatabase");
+  }
+
+  @Test public void testToCheckAndAppendHDFSUrlWithBaseURLFile() {
+    new MockUp<FileFactory>() {
+      @SuppressWarnings("unused") @Mock public FileFactory.FileType getFileType(String path) {
+        return FileFactory.FileType.HDFS;
+      }
+    };
+    new MockUp<CarbonProperties>() {
+      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
+        return "file:///";
+      }
+    };
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("/core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "file:///core/src/test/resources/testDatabase");
+  }
+
+  @Test public void testToCheckAndAppendHDFSUrlWithFilepathPrefix() {
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("file:///core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "file:///core/src/test/resources/testDatabase");
   }
 
   @Test public void testForisFileExists() {
@@ -516,7 +600,7 @@ public class CarbonUtilTest {
       }
     };
     TableBlockInfo info =
-        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1);
+        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
 
     assertEquals(CarbonUtil.readMetadatFile(info).getVersionId().number(), 1);
   }
@@ -525,7 +609,7 @@ public class CarbonUtilTest {
   public void testToReadMetadatFileWithException()
       throws Exception {
     TableBlockInfo info =
-        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1);
+        new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
     CarbonUtil.readMetadatFile(info);
   }
 
@@ -661,9 +745,7 @@ public class CarbonUtilTest {
     valueEncoderMetas.add(valueEncoderMeta);
     dataChunk.setValueEncoderMeta(valueEncoderMetas);
     dataChunkList.add(dataChunk);
-    WriterCompressModel writerCompressModel =
-        CarbonUtil.getValueCompressionModel(dataChunkList.get(0).getValueEncoderMeta());
-    assertEquals(1, writerCompressModel.getMaxValue().length);
+    assertEquals(1, dataChunkList.get(0).getValueEncoderMeta().size());
   }
 
   @Test public void testToGetDictionaryChunkSize() {

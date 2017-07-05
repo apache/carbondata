@@ -61,7 +61,8 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     createDatabase | dropDatabase | loadManagement | describeTable |
-    showLoads | alterTable | updateTable | deleteRecords | useDatabase | createTable
+      showPartitions | showLoads | alterTable | updateTable | deleteRecords | useDatabase |
+      createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -294,7 +295,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
 
           if (partitionCols.nonEmpty) {
             if (!CommonUtil.validatePartitionColumns(tableProperties, partitionCols)) {
-              throw new MalformedCarbonCommandException("Invalid table properties")
+              throw new MalformedCarbonCommandException("Invalid partition definition")
             }
             // partition columns should not be part of the schema
             val colNames = fields.map(_.column)
@@ -486,6 +487,13 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             (sel, updateRelation(tab, tab.tableIdentifier, tab.alias))
           }
         UpdateTable(relation, columns, selectStmt, where)
+    }
+  protected lazy val showPartitions: Parser[LogicalPlan] =
+    (SHOW ~> PARTITIONS ~> table) <~ opt(";") ^^ {
+      case table =>
+        val tableName = getTableName(table.tableIdentifier)
+        val alias = table.alias.getOrElse("")
+        ShowPartitions(table.tableIdentifier)
     }
 
   private def splitQuery(query: String): (String, String) = {

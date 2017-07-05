@@ -26,9 +26,10 @@ import java.util.concurrent.Future;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
+import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
@@ -36,13 +37,12 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
+import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
-import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
@@ -53,10 +53,6 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonRowDataWriterProcessorStepImpl.class.getName());
-
-  private SegmentProperties segmentProperties;
-
-  private KeyGenerator keyGenerator;
 
   private int dimensionWithComplexCount;
 
@@ -111,21 +107,16 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       writeCounter = new long[iterators.length];
       dimensionWithComplexCount = configuration.getDimensionCount();
       noDictWithComplextCount =
-          configuration.getNoDictionaryCount() + configuration.getComplexDimensionCount();
+          configuration.getNoDictionaryCount() + configuration.getComplexColumnCount();
       dimensionCount = configuration.getDimensionCount() - noDictWithComplextCount;
       isNoDictionaryDimensionColumn =
           CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
-      measureDataType = CarbonDataProcessorUtil
-          .getMeasureDataType(configuration.getMeasureCount(), configuration.getMeasureFields());
-
+      measureDataType = configuration.getMeasureDataType();
       CarbonFactDataHandlerModel dataHandlerModel = CarbonFactDataHandlerModel
           .createCarbonFactDataHandlerModel(configuration,
               getStoreLocation(tableIdentifier, String.valueOf(0)), 0, 0);
       measureCount = dataHandlerModel.getMeasureCount();
       outputLength = measureCount + (this.noDictWithComplextCount > 0 ? 1 : 0) + 1;
-      segmentProperties = dataHandlerModel.getSegmentProperties();
-      keyGenerator = segmentProperties.getDimensionKeyGenerator();
-
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
           .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
               System.currentTimeMillis());
@@ -148,6 +139,9 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
           "Error while initializing data handler : " + e.getMessage());
     } catch (Exception e) {
       LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterProcessorStepImpl");
+      if (e instanceof BadRecordFoundException) {
+        throw new BadRecordFoundException(e.getMessage(), e);
+      }
       throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage(), e);
     }
     return null;
@@ -232,17 +226,17 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
    * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    * | Part                     | Object item                    | describe                 |
    * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-   * | Object[0 ~ d-1]          | int, byte[], ...               | measures                 |
+   * | Object[d+1]              | byte[]                         | mdkey                    |
    * ----------------------------------------------------------------------------------------
    * | Object[d]                | byte[b+c][]                    | no dict + complex dim    |
    * ----------------------------------------------------------------------------------------
-   * | Object[d+1]              | byte[]                         | mdkey                    |
+   * | Object[0 ~ d-1]          | int, byte[], ...               | measures                 |
    * ----------------------------------------------------------------------------------------
    *
    * @param row
    * @return
    */
-  private Object[] convertRow(CarbonRow row) throws KeyGenException {
+  private CarbonRow convertRow(CarbonRow row) throws KeyGenException {
     int dictIndex = 0;
     int nonDicIndex = 0;
     int[] dim = new int[this.dimensionCount];
@@ -261,34 +255,31 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       nonDicArray[nonDicIndex++] = (byte[]) row.getObject(dimCount);
     }
 
-    int l = 0;
-    Object[] outputRow = new Object[outputLength];
-    for (; l < this.measureCount; l++) {
-      Object value = row.getObject(l + this.dimensionWithComplexCount);
+    Object[] measures = new Object[outputLength];
+    for (int i = 0; i < this.measureCount; i++) {
+      Object value = row.getObject(i + this.dimensionWithComplexCount);
       if (null != value) {
-        if (measureDataType[l] == DataType.DECIMAL) {
+        if (measureDataType[i] == DataType.DECIMAL) {
           BigDecimal val = (BigDecimal) value;
-          outputRow[l] = DataTypeUtil.bigDecimalToByte(val);
+          measures[i] = DataTypeUtil.bigDecimalToByte(val);
         } else {
-          outputRow[l] = value;
+          measures[i] = value;
         }
       } else {
-        outputRow[l] = null;
+        measures[i] = null;
       }
     }
 
-    if (this.noDictWithComplextCount > 0) {
-      outputRow[l++] = nonDicArray;
-    }
-    outputRow[l] = keyGenerator.generateKey(dim);
-    return outputRow;
+    return WriteStepRowUtil.fromColumnCategory(dim, nonDicArray, measures);
   }
 
   private void processBatch(CarbonRowBatch batch, CarbonFactHandler dataHandler, int iteratorIndex)
       throws CarbonDataLoadingException {
     try {
       while (batch.hasNext()) {
-        dataHandler.addDataToStore(convertRow(batch.next()));
+        CarbonRow row = batch.next();
+        CarbonRow converted = convertRow(row);
+        dataHandler.addDataToStore(converted);
         readCounter[iteratorIndex]++;
       }
       writeCounter[iteratorIndex] += batch.getSize();

@@ -20,9 +20,10 @@ package org.apache.carbondata.core.util;
 import mockit.Mock;
 import mockit.MockUp;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.format.*;
@@ -53,6 +54,7 @@ public class CarbonMetadataUtilTest {
   static List<ColumnSchema> columnSchemaList;
   static Long[] objMaxArr;
   static Long[] objMinArr;
+  static int[] objDecimal;
 
   @BeforeClass public static void setUp() {
     Long lngObj = new Long("11221");
@@ -72,6 +74,8 @@ public class CarbonMetadataUtilTest {
     objMinArr[3] = new Long("141");
     objMinArr[4] = new Long("151");
     objMinArr[5] = new Long("161");
+
+    objDecimal = new int[] { 0, 0, 0, 0, 0, 0 };
 
     columnSchemaList = new ArrayList<>();
     List<Encoding> encodingList = new ArrayList<>();
@@ -193,13 +197,18 @@ public class CarbonMetadataUtilTest {
     integerList.add(new Integer("1"));
     integerList.add(new Integer("2"));
 
-    WriterCompressModel writerCompressModel = new WriterCompressModel();
-    writerCompressModel.setMaxValue(objMaxArr);
-    writerCompressModel.setMinValue(objMinArr);
-    writerCompressModel.setDataTypeSelected(byteArr);
-    writerCompressModel.setMantissa(intArr);
-    writerCompressModel.setType(dataType);
-    writerCompressModel.setUniqueValue(objMinArr);
+    ValueEncoderMeta[] metas = new ValueEncoderMeta[6];
+    for (int i = 0; i < metas.length; i++) {
+      metas[i] = new ValueEncoderMeta();
+      metas[i].setMinValue(objMinArr[i]);
+      metas[i].setMaxValue(objMaxArr[i]);
+      metas[i].setUniqueValue(objMinArr[i]);
+      metas[i].setDecimal(objDecimal[i]);
+      metas[i].setType(CarbonCommonConstants.BIG_INT_MEASURE);
+      metas[i].setDataTypeSelected(byteArr[i]);
+    }
+
+    MeasurePageStatsVO stats = MeasurePageStatsVO.build(metas);
 
     BlockletInfoColumnar blockletInfoColumnar = new BlockletInfoColumnar();
 
@@ -223,7 +232,7 @@ public class CarbonMetadataUtilTest {
     blockletInfoColumnar.setMeasureLength(intArr);
     blockletInfoColumnar.setMeasureOffset(longArr);
     blockletInfoColumnar.setMeasureNullValueIndex(bitSetArr);
-    blockletInfoColumnar.setCompressionModel(writerCompressModel);
+    blockletInfoColumnar.setStats(stats);
 
     BlockletInfoColumnar blockletInfoColumnar1 = new BlockletInfoColumnar();
     blockletInfoColumnar1.setColumnMaxData(maxByteArr);
@@ -239,7 +248,7 @@ public class CarbonMetadataUtilTest {
     blockletInfoColumnar1.setMeasureLength(intArr);
     blockletInfoColumnar1.setMeasureOffset(longArr);
     blockletInfoColumnar1.setMeasureNullValueIndex(bitSetArr);
-    blockletInfoColumnar1.setCompressionModel(writerCompressModel);
+    blockletInfoColumnar1.setStats(stats);
     blockletInfoColumnar1.setColGrpBlocks(boolArr);
 
     List<BlockletInfoColumnar> blockletInfoColumnarList = new ArrayList<>();

@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.util
 
+import java.text.SimpleDateFormat
 import java.util
 
 import scala.collection.JavaConverters._
@@ -26,14 +27,22 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
+import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
-import org.apache.spark.sql.types.StructField
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.RowFactory
+import org.apache.spark.sql.types.MetadataBuilder
+import org.apache.spark.sql.types.StringType
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.csvload.CSVInputFormat
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
@@ -42,6 +51,9 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object CommonUtil {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  val FIXED_DECIMAL = """decimal\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
+  val FIXED_DECIMALTYPE = """decimaltype\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
 
   def validateColumnGroup(colGroup: String, noDictionaryDims: Seq[String],
       msrs: Seq[Field], retrievedColGrps: Seq[String], dims: Seq[Field]) {
@@ -167,9 +179,23 @@ object CommonUtil {
       isValid = false
     } else {
       partitionType.get.toUpperCase() match {
-        case "HASH" => if (!numPartitions.isDefined) isValid = false
-        case "LIST" => if (!listInfo.isDefined) isValid = false
-        case "RANGE" => if (!rangeInfo.isDefined) isValid = false
+        case "HASH" => if (!numPartitions.isDefined
+        || scala.util.Try(numPartitions.get.toInt).isFailure
+        || numPartitions.get.toInt <= 0) {
+          isValid = false
+        }
+        case "LIST" => if (!listInfo.isDefined) {
+          isValid = false
+        } else {
+          listInfo.get.replace("(", "").replace(")", "").split(",").map(_.trim).foreach(
+            isValid &= validateTypeConvert(partitionerFields(0), _))
+        }
+        case "RANGE" => if (!rangeInfo.isDefined) {
+          isValid = false
+        } else {
+          rangeInfo.get.split(",").map(_.trim).foreach(
+            isValid &= validateTypeConvert(partitionerFields(0), _))
+        }
         case "RANGE_INTERVAL" => isValid = false
         case _ => isValid = false
       }
@@ -177,6 +203,97 @@ object CommonUtil {
       if (partitionerFields.length > 1) isValid = false
     }
     isValid
+  }
+
+  def validateTypeConvertForSpark2(partitionerField: PartitionerField, value: String): Boolean = {
+    val result = partitionerField.dataType.get.toLowerCase match {
+      case "integertype" =>
+        scala.util.Try(value.toInt).isSuccess
+      case "stringtype" =>
+        scala.util.Try(value.toString).isSuccess
+      case "longtype" =>
+        scala.util.Try(value.toLong).isSuccess
+      case "floattype" =>
+        scala.util.Try(value.toFloat).isSuccess
+      case "doubletype" =>
+        scala.util.Try(value.toDouble).isSuccess
+      case "numerictype" =>
+        scala.util.Try(value.toDouble).isSuccess
+      case "smallinttype" =>
+        scala.util.Try(value.toShort).isSuccess
+      case "tinyinttype" =>
+        scala.util.Try(value.toShort).isSuccess
+      case "shorttype" =>
+        scala.util.Try(value.toShort).isSuccess
+      case FIXED_DECIMALTYPE(_, _) =>
+        val parField = partitionerField.dataType.get.split(",")
+        val precision = parField(0).substring(12).toInt
+        val scale = parField(1).substring(0, parField(1).length - 1).toInt
+        val pattern = "^([-]?[0-9]{0," + (precision - scale) +
+                      "})([.][0-9]{1," + scale + "})?$"
+        value.matches(pattern)
+      case "timestamptype" =>
+        val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
+        scala.util.Try(timeStampFormat.parse(value)).isSuccess
+      case "datetype" =>
+        val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT))
+        scala.util.Try(dateFormat.parse(value)).isSuccess
+      case others =>
+       if (others != null && others.startsWith("char")) {
+         scala.util.Try(value.toString).isSuccess
+        } else if (others != null && others.startsWith("varchar")) {
+         scala.util.Try(value.toString).isSuccess
+        } else {
+          throw new MalformedCarbonCommandException(
+            "UnSupported partition type: " + partitionerField.dataType)
+        }
+    }
+    result
+  }
+
+  def validateTypeConvert(partitionerField: PartitionerField, value: String): Boolean = {
+    val result = partitionerField.dataType.get.toLowerCase() match {
+      case "int" =>
+        scala.util.Try(value.toInt).isSuccess
+      case "string" =>
+        scala.util.Try(value.toString).isSuccess
+      case "bigint" =>
+        scala.util.Try(value.toLong).isSuccess
+      case "long" =>
+        scala.util.Try(value.toLong).isSuccess
+      case "float" =>
+        scala.util.Try(value.toFloat).isSuccess
+      case "double" =>
+        scala.util.Try(value.toDouble).isSuccess
+      case "numeric" =>
+        scala.util.Try(value.toDouble).isSuccess
+      case "smallint" =>
+        scala.util.Try(value.toShort).isSuccess
+      case "tinyint" =>
+        scala.util.Try(value.toShort).isSuccess
+      case "boolean" =>
+        scala.util.Try(value.toBoolean).isSuccess
+      case FIXED_DECIMAL(_, _) =>
+        val parField = partitionerField.dataType.get.split(",")
+        val precision = parField(0).substring(8).toInt
+        val scale = parField(1).substring(0, parField(1).length - 1).toInt
+        val pattern = "^([-]?[0-9]{0," + (precision - scale) +
+                      "})([.][0-9]{1," + scale + "})?$"
+        value.matches(pattern)
+      case "timestamp" =>
+        val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
+        scala.util.Try(timeStampFormat.parse(value)).isSuccess
+      case "date" =>
+        val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT))
+        scala.util.Try(dateFormat.parse(value)).isSuccess
+      case _ =>
+        validateTypeConvertForSpark2(partitionerField, value)
+    }
+    result
   }
 
   def validateFields(key: String, fields: Seq[Field]): Boolean = {
@@ -435,4 +552,43 @@ object CommonUtil {
     }
   }
 
+  def getPartitionInfo(columnName: String, partitionType: PartitionType,
+      partitionInfo: PartitionInfo): Seq[Row] = {
+    var result = Seq.newBuilder[Row]
+    partitionType match {
+      case PartitionType.RANGE =>
+        result.+=(RowFactory.create(columnName + "=default"))
+        var rangeInfo = partitionInfo.getRangeInfo
+        var size = rangeInfo.size() - 1
+        for (index <- 0 to size) {
+          if (index == 0) {
+            result.+=(RowFactory.create(columnName + "<" + rangeInfo.get(index)))
+          } else {
+            result.+=(RowFactory.create(rangeInfo.get(index - 1) + "<=" +
+              columnName + "<" + rangeInfo.get(index)))
+          }
+        }
+      case PartitionType.RANGE_INTERVAL =>
+        result.+=(RowFactory.create(columnName + "="))
+      case PartitionType.LIST =>
+        result.+=(RowFactory.create(columnName + "=default"))
+        var listInfo = partitionInfo.getListInfo
+        listInfo.asScala.foreach {
+          f =>
+            result.+=(RowFactory.create(columnName + "=" +
+              f.toArray().mkString(", ")))
+        }
+      case PartitionType.HASH =>
+        var hashNumber = partitionInfo.getNumPartitions
+        result.+=(RowFactory.create(columnName + "=HASH_NUMBER(" + hashNumber.toString() + ")"))
+      case others =>
+        result.+=(RowFactory.create(columnName + "="))
+    }
+    result.result()
+  }
+
+  def partitionInfoOutput: Seq[Attribute] = Seq(
+    AttributeReference("partition", StringType, nullable = false,
+      new MetadataBuilder().putString("comment", "partitions info").build())()
+  )
 }

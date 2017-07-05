@@ -24,6 +24,13 @@ import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.util.ByteUtil;
 
+import org.apache.spark.sql.types.BooleanType;
+import org.apache.spark.sql.types.DataType;
+import org.apache.spark.sql.types.IntegerType;
+import org.apache.spark.sql.types.LongType;
+import org.apache.spark.sql.types.ShortType;
+import org.apache.spark.sql.types.StringType;
+
 /**
  * Below class is responsible to store variable length dimension data chunk in
  * memory Memory occupied can be on heap or offheap using unsafe interface
@@ -164,7 +171,18 @@ public class UnsafeVariableLengthDimesionDataChunkStore
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, value)) {
       vector.putNull(vectorRow);
     } else {
-      vector.putBytes(vectorRow, value);
+      DataType dt = vector.getType();
+      if (dt instanceof StringType) {
+        vector.putBytes(vectorRow, 0, value.length, value);
+      } else if (dt instanceof BooleanType) {
+        vector.putBoolean(vectorRow, ByteUtil.toBoolean(value[0]));
+      } else if (dt instanceof ShortType) {
+        vector.putShort(vectorRow, ByteUtil.toShort(value, 0, value.length));
+      } else if (dt instanceof IntegerType) {
+        vector.putInt(vectorRow, ByteUtil.toInt(value, 0, value.length));
+      } else if (dt instanceof LongType) {
+        vector.putLong(vectorRow, ByteUtil.toLong(value, 0, value.length));
+      }
     }
   }
 

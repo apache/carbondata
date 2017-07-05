@@ -39,8 +39,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.columnar.IndexStorage;
-import org.apache.carbondata.core.datastore.compression.CompressorFactory;
+import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
@@ -67,14 +66,11 @@ import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.processing.store.file.FileData;
-import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.hadoop.io.IOUtils;
 
-public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<T>
-
-{
+public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<T> {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(AbstractFactDataWriter.class.getName());
@@ -141,10 +137,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * file size at any given point
    */
   private long currentFileSize;
-  /**
-   * size reserved in one file for writing block meta data. It will be in percentage
-   */
-  private int spaceReservedForBlockMetaSize;
 
   protected FileOutputStream fileOutputStream;
 
@@ -171,7 +163,10 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     this.fileSizeInBytes =
         (long) dataWriterVo.getTableBlocksize() * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
             * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
-    this.spaceReservedForBlockMetaSize = Integer.parseInt(propInstance
+    /*
+    size reserved in one file for writing block meta data. It will be in percentage
+   */
+    int spaceReservedForBlockMetaSize = Integer.parseInt(propInstance
         .getProperty(CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE,
             CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT));
     this.dataBlockSize = fileSizeInBytes - (fileSizeInBytes * spaceReservedForBlockMetaSize) / 100;
@@ -520,7 +515,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
           getMaxOfBlockAndFileSize(fileSizeInBytes, localCarbonFile.getSize()));
     } catch (IOException e) {
       throw new CarbonDataWriterException(
-          "Problem while copying file from local store to carbon store");
+          "Problem while copying file from local store to carbon store", e);
     }
     LOGGER.info(
         "Total copy time (ms) to copy file " + localFileName + " is " + (System.currentTimeMillis()
@@ -541,8 +536,10 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     DataOutputStream dataOutputStream = null;
     DataInputStream dataInputStream = null;
     try {
-      LOGGER.debug(
-          "HDFS file block size for file: " + carbonStoreFilePath + " is " + blockSize + " (bytes");
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("HDFS file block size for file: " + carbonStoreFilePath + " is " + blockSize
+            + " (bytes");
+      }
       dataOutputStream = FileFactory
           .getDataOutputStream(carbonStoreFilePath, FileFactory.getFileType(carbonStoreFilePath),
               bufferSize, blockSize);
@@ -576,59 +573,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   public abstract void writeBlockletData(NodeHolder nodeHolder) throws CarbonDataWriterException;
 
-  protected byte[][] fillAndCompressedKeyBlockData(IndexStorage[] keyStorageArray,
-      int entryCount) {
-    byte[][] keyBlockData = new byte[keyStorageArray.length][];
-    int destPos = 0;
-    int keyBlockSizePosition = -1;
-    for (int i = 0; i < keyStorageArray.length; i++) {
-      destPos = 0;
-      //handling for high card dims
-      if (!dataWriterVo.getIsComplexType()[i] && !dataWriterVo.getIsDictionaryColumn()[i]) {
-        int totalLength = 0;
-        // calc size of the total bytes in all the colmns.
-        for (int k = 0; k < keyStorageArray[i].getKeyBlock().length; k++) {
-          byte[] colValue = keyStorageArray[i].getKeyBlock()[k];
-          totalLength += colValue.length;
-        }
-        keyBlockData[i] = new byte[totalLength];
-
-        for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
-          int length = keyStorageArray[i].getKeyBlock()[j].length;
-          System
-              .arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos, length);
-          destPos += length;
-        }
-      } else {
-        keyBlockSizePosition++;
-        if (dataWriterVo.getAggBlocks()[i]) {
-          keyBlockData[i] = new byte[keyStorageArray[i].getTotalSize()];
-          for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
-            System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos,
-                keyStorageArray[i].getKeyBlock()[j].length);
-            destPos += keyStorageArray[i].getKeyBlock()[j].length;
-          }
-        } else {
-          if (dataWriterVo.getIsComplexType()[i]) {
-            keyBlockData[i] = new byte[keyStorageArray[i].getKeyBlock().length * dataWriterVo
-                .getKeyBlockSize()[keyBlockSizePosition]];
-          } else {
-            keyBlockData[i] =
-                new byte[entryCount * dataWriterVo.getKeyBlockSize()[keyBlockSizePosition]];
-          }
-          for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
-            System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos,
-                dataWriterVo.getKeyBlockSize()[keyBlockSizePosition]);
-            destPos += dataWriterVo.getKeyBlockSize()[keyBlockSizePosition];
-          }
-        }
-      }
-      keyBlockData[i] = CompressorFactory.getInstance().getCompressor()
-          .compressByte(keyBlockData[i]);
-    }
-    return keyBlockData;
-  }
-
   /**
    * Below method will be used to update the min or max value
    * by removing the length from it
@@ -659,7 +603,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     short numberOfByteToStorLength = 2;
     // as length part is removed, so each no dictionary value index
     // needs to be reshuffled by 2 bytes
-    for (int i = 0; i < dataWriterVo.getNoDictionaryCount(); i++) {
+    int NumberOfNoDictSortColumns =
+        dataWriterVo.getSegmentProperties().getNumberOfNoDictSortColumns();
+    for (int i = 0; i < NumberOfNoDictSortColumns; i++) {
       output.putShort((short) (buffer.getShort() - numberOfByteToStorLength));
     }
     // copy the data part

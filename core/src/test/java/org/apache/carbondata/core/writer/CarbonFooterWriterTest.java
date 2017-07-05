@@ -25,10 +25,11 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
+import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
@@ -180,14 +181,25 @@ public class CarbonFooterWriterTest extends TestCase{
     infoColumnar.setAggKeyBlock(new boolean[] { true, true, true, true });
     infoColumnar.setColGrpBlocks(new boolean[] { false, false, false, false });
     infoColumnar.setMeasureNullValueIndex(new BitSet[] {new BitSet(),new BitSet()});
-    WriterCompressModel compressionModel = new WriterCompressModel();
-    compressionModel.setMaxValue(new Object[] { 44d, 55d });
-    compressionModel.setMinValue(new Object[] { 0d, 0d });
-    compressionModel.setMantissa(new int[] { 0, 0 });
-    compressionModel.setType(new DataType[] { DataType.DOUBLE, DataType.DOUBLE });
-    compressionModel.setUniqueValue(new Object[] { 0d, 0d });
-    compressionModel.setDataTypeSelected(new byte[2]);
-    infoColumnar.setCompressionModel(compressionModel);
+
+    ValueEncoderMeta[] metas = new ValueEncoderMeta[2];
+    metas[0] = new ValueEncoderMeta();
+    metas[0].setMinValue(0);
+    metas[0].setMaxValue(44d);
+    metas[0].setUniqueValue(0d);
+    metas[0].setDecimal(0);
+    metas[0].setType(CarbonCommonConstants.DOUBLE_MEASURE);
+    metas[0].setDataTypeSelected((byte)0);
+    metas[1] = new ValueEncoderMeta();
+    metas[1].setMinValue(0);
+    metas[1].setMaxValue(55d);
+    metas[1].setUniqueValue(0d);
+    metas[1].setDecimal(0);
+    metas[1].setType(CarbonCommonConstants.DOUBLE_MEASURE);
+    metas[1].setDataTypeSelected((byte)0);
+
+    MeasurePageStatsVO stats = MeasurePageStatsVO.build(metas);
+    infoColumnar.setStats(stats);
     List<BlockletInfoColumnar> infoColumnars = new ArrayList<BlockletInfoColumnar>();
     infoColumnars.add(infoColumnar);
     return infoColumnars;

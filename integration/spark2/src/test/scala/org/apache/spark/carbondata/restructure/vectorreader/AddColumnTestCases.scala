@@ -24,6 +24,8 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+
 class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
@@ -70,7 +72,7 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
 
   test("test add msr column and check aggregate") {
     sql(
-      "alter table addcolumntest add columns(msrField decimal(5,2))TBLPROPERTIES ('DEFAULT.VALUE" +
+      "alter table addcolumntest add columns(msrField DECIMAL(5,2))TBLPROPERTIES ('DEFAULT.VALUE" +
       ".msrfield'= '123.45')")
     checkAnswer(sql("select sum(msrField) from addcolumntest"),
       Row(new BigDecimal("246.90").setScale(2, RoundingMode.HALF_UP)))
@@ -218,6 +220,7 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
       s" OPTIONS" +
       s"('BAD_RECORDS_LOGGER_ENABLE'='TRUE', " +
       s"'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,a6')")
+    sql("select a6 from carbon_measure_is_null where a6 is null").show
     checkAnswer(sql("select * from carbon_measure_is_null"),
       sql("select * from carbon_measure_is_null where a6 is null"))
     checkAnswer(sql("select count(*) from carbon_measure_is_null where a6 is not null"), Row(0))
@@ -344,6 +347,18 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_dict")
   }
 
+  test("test sort_columns for add columns") {
+    sql("DROP TABLE IF EXISTS alter_sort_columns")
+    sql(
+      "CREATE TABLE alter_sort_columns(stringField string,charField string) STORED BY 'carbondata'")
+    val caught = intercept[MalformedCarbonCommandException] {
+      sql(
+        "Alter table alter_sort_columns add columns(newField Int) tblproperties" +
+        "('sort_columns'='newField')")
+    }
+    assert(caught.getMessage.equals("Unsupported Table property in add column: sort_columns"))
+  }
+
   test("test compaction with all no dictionary columns") {
     sql("DROP TABLE IF EXISTS alter_no_dict")
     sql("CREATE TABLE alter_no_dict(stringField string,charField string) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_EXCLUDE'='stringField,charField')")
@@ -357,9 +372,45 @@ class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_no_dict")
   }
 
+  test("no inverted index load and alter table") {
+
+    sql("drop table if exists indexAlter")
+    sql(
+      """
+        CREATE TABLE IF NOT EXISTS indexAlter
+        (ID Int, date Timestamp, country String,
+        name String, phonetype String, serialname String)
+        STORED BY 'org.apache.carbondata.format'
+        TBLPROPERTIES('NO_INVERTED_INDEX'='country,name,phonetype')
+      """)
+
+    val testData2 = s"$resourcesPath/source.csv"
+
+    sql(s"""
+           LOAD DATA LOCAL INPATH '$testData2' into table indexAlter
+           """)
+
+    sql("alter table indexAlter add columns(salary String) tblproperties('no_inverted_index'='salary')")
+    sql(s"""
+           LOAD DATA LOCAL INPATH '$testData2' into table indexAlter
+           """)
+    checkAnswer(
+      sql("""
+           SELECT country, count(salary) AS amount
+           FROM indexAlter
+           WHERE country IN ('china','france')
+           GROUP BY country
+          """),
+      Seq(Row("china", 96), Row("france", 1))
+    )
+
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS addcolumntest")
     sql("drop table if exists hivetable")
+    sql("drop table if exists alter_sort_columns")
+    sql("drop table if exists indexAlter")
     sqlContext.setConf("carbon.enable.vector.reader", "false")
   }
 }

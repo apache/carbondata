@@ -46,7 +46,7 @@ import org.apache.commons.lang3.ArrayUtils;
 public class CarbonCompactionUtil {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(CarbonCompactionExecutor.class.getName());
+      LogServiceFactory.getLogService(CarbonCompactionUtil.class.getName());
 
   /**
    * To create a mapping of Segment Id and TableBlockInfo.

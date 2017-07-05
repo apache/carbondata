@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -46,7 +47,7 @@ import static org.junit.Assert.assertTrue;
 public class HDFSCarbonFileTest {
 
     private static final LogService LOGGER =
-            LogServiceFactory.getLogService(HDFSCarbonFile.class.getName());
+            LogServiceFactory.getLogService(HDFSCarbonFileTest.class.getName());
     private static HDFSCarbonFile hdfsCarbonFile;
     private static FileStatus fileStatus = null;
     private static FileStatus fileStatusWithOutDirectoryPermission;
@@ -132,7 +133,7 @@ public class HDFSCarbonFileTest {
             }
 
         };
-        assertEquals(hdfsCarbonFile.listFiles(), null);
+        assertArrayEquals(hdfsCarbonFile.listFiles(), new CarbonFile[0]);
     }
 
     @Test

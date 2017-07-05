@@ -19,6 +19,8 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
+import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -50,7 +52,6 @@ object CarbonPartitionExample {
 
     // none partition table
     spark.sql("DROP TABLE IF EXISTS t0")
-
     spark.sql("""
                 | CREATE TABLE IF NOT EXISTS t0
                 | (
@@ -65,12 +66,10 @@ object CarbonPartitionExample {
 
     // range partition
     spark.sql("DROP TABLE IF EXISTS t1")
-
     spark.sql("""
                 | CREATE TABLE IF NOT EXISTS t1
                 | (
                 | vin String,
-                | logdate Timestamp,
                 | phonenumber Long,
                 | country String,
                 | area String
@@ -78,16 +77,14 @@ object CarbonPartitionExample {
                 | PARTITIONED BY (logdate Timestamp)
                 | STORED BY 'carbondata'
                 | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-                | 'RANGE_INFO'='20140101, 2015/01/01 ,2016-01-01, ')
+                | 'RANGE_INFO'='2014/01/01, 2015/01/01, 2016/01/01')
               """.stripMargin)
 
     // hash partition
     spark.sql("DROP TABLE IF EXISTS t3")
-
     spark.sql("""
                 | CREATE TABLE IF NOT EXISTS t3
                 | (
-                | vin String,
                 | logdate Timestamp,
                 | phonenumber Long,
                 | country String,
@@ -100,32 +97,74 @@ object CarbonPartitionExample {
 
     // list partition
     spark.sql("DROP TABLE IF EXISTS t5")
-
     spark.sql("""
        | CREATE TABLE IF NOT EXISTS t5
        | (
        | vin String,
        | logdate Timestamp,
        | phonenumber Long,
-       | country String,
        | area String
        |)
-       | PARTITIONED BY (country string)
+       | PARTITIONED BY (country String)
        | STORED BY 'carbondata'
        | TBLPROPERTIES('PARTITION_TYPE'='LIST',
        | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea ')
        """.stripMargin)
 
-    // spark.sql(s"""
-    //   LOAD DATA LOCAL INPATH '$testData' into table t3
-    // options('BAD_RECORDS_ACTION'='FORCE')
-    //   """)
+    // hive partition table
+    spark.sql("DROP TABLE IF EXISTS t7")
+    spark.sql("""
+       | create table t7(id int, name string) partitioned by (city string)
+       | row format delimited fields terminated by ','
+       """.stripMargin)
+    spark.sql("alter table t7 add partition (city = 'Hangzhou')")
 
-    // spark.sql("select vin, count(*) from t3 group by vin
-    // order by count(*) desc").show(50)
+    // not default db partition table
+    try {
+      spark.sql(s"DROP TABLE IF EXISTS partitionDB.t9")
+    } catch {
+      case ex: NoSuchDatabaseException => print(ex.getMessage())
+    }
+    spark.sql(s"DROP DATABASE IF EXISTS partitionDB")
+    spark.sql(s"CREATE DATABASE partitionDB")
+    spark.sql(s"""
+                | CREATE TABLE IF NOT EXISTS partitionDB.t9(
+                | logdate Timestamp,
+                | phonenumber Int,
+                | country String,
+                | area String
+                | )
+                | PARTITIONED BY (vin String)
+                | STORED BY 'carbondata'
+                | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='5')
+                """.stripMargin)
 
-    // Drop table
-    // spark.sql("DROP TABLE IF EXISTS t3")
+    // show tables
+    spark.sql("SHOW TABLES").show()
+
+    // show partitions
+    try {
+      spark.sql("""SHOW PARTITIONS t0""").show()
+    } catch {
+      case ex: AnalysisException => print(ex.getMessage())
+    }
+    spark.sql("""SHOW PARTITIONS t1""").show()
+    spark.sql("""SHOW PARTITIONS t3""").show()
+    spark.sql("""SHOW PARTITIONS t5""").show()
+    spark.sql("""SHOW PARTITIONS t7""").show()
+    spark.sql("""SHOW PARTITIONS partitionDB.t9""").show()
+
+    // drop table
+    spark.sql("DROP TABLE IF EXISTS t0")
+    spark.sql("DROP TABLE IF EXISTS t1")
+    spark.sql("DROP TABLE IF EXISTS t3")
+    spark.sql("DROP TABLE IF EXISTS t5")
+    spark.sql("DROP TABLE IF EXISTS t7")
+    spark.sql("DROP TABLE IF EXISTS partitionDB.t9")
+    spark.sql(s"DROP DATABASE IF EXISTS partitionDB")
+
+    spark.close()
+
   }
 
 }
