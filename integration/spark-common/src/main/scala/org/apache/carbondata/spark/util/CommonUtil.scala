@@ -557,7 +557,7 @@ object CommonUtil {
     var result = Seq.newBuilder[Row]
     partitionType match {
       case PartitionType.RANGE =>
-        result.+=(RowFactory.create(columnName + "=default"))
+        result.+=(RowFactory.create("Default"))
         var rangeInfo = partitionInfo.getRangeInfo
         var size = rangeInfo.size() - 1
         for (index <- 0 to size) {
@@ -571,7 +571,7 @@ object CommonUtil {
       case PartitionType.RANGE_INTERVAL =>
         result.+=(RowFactory.create(columnName + "="))
       case PartitionType.LIST =>
-        result.+=(RowFactory.create(columnName + "=default"))
+        result.+=(RowFactory.create("Default"))
         var listInfo = partitionInfo.getListInfo
         listInfo.asScala.foreach {
           f =>
