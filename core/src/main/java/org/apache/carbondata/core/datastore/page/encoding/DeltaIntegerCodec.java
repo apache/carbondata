@@ -120,6 +120,9 @@ public class DeltaIntegerCodec extends AdaptiveCompressionCodec {
         case SHORT:
           encodedPage.putShort(rowId, (short)(max - value));
           break;
+        case SHORT_INT:
+          encodedPage.putShortInt(rowId, (int)(max - value));
+          break;
         case INT:
           encodedPage.putInt(rowId, (int)(max - value));
           break;
@@ -136,6 +139,9 @@ public class DeltaIntegerCodec extends AdaptiveCompressionCodec {
           break;
         case SHORT:
           encodedPage.putShort(rowId, (short)(max - value));
+          break;
+        case SHORT_INT:
+          encodedPage.putShortInt(rowId, (int)(max - value));
           break;
         case INT:
           encodedPage.putInt(rowId, (int)(max - value));
@@ -157,6 +163,9 @@ public class DeltaIntegerCodec extends AdaptiveCompressionCodec {
         case SHORT:
           encodedPage.putShort(rowId, (short)(max - value));
           break;
+        case SHORT_INT:
+          encodedPage.putShortInt(rowId, (int)(max - value));
+          break;
         case INT:
           encodedPage.putInt(rowId, (int)(max - value));
           break;
@@ -176,6 +185,9 @@ public class DeltaIntegerCodec extends AdaptiveCompressionCodec {
           break;
         case SHORT:
           encodedPage.putShort(rowId, (short)(max - value));
+          break;
+        case SHORT_INT:
+          encodedPage.putShortInt(rowId, (int)(max - value));
           break;
         case INT:
           encodedPage.putInt(rowId, (int)(max - value));
