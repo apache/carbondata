@@ -16,12 +16,9 @@
  */
 package org.apache.spark.sql.test
 
-import java.io.{DataInputStream, DataOutputStream}
+import java.io.File
 import java.net.URL
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.io.IOUtils
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -33,7 +30,6 @@ import org.apache.carbondata.core.util.CarbonUtil
 object ResourceRegisterAndCopier {
 
   val resources = "Data/cmb/data.csv"::
-                  "Data/complex/All_ComplexType.csv"::
                   "Data/complex/Array.csv"::
                   "Data/complex/ArrayofArray.csv"::
                   "Data/complex/arrayofstruct.csv"::
@@ -90,6 +86,7 @@ object ResourceRegisterAndCopier {
                   "Data/newdata.csv"::
                   "Data/payment_C1.csv"::
                   "Data/Test_Data1.csv"::Nil
+  val link = "https://raw.githubusercontent.com/ravipesala/incubator-carbondata/sdv-test_data/integration/spark-common-test/src/test/resources"
 
   def copyResourcesifNotExists(hdfsPath: String, resourcePath: String): Unit = {
     val fileType = FileFactory.getFileType(hdfsPath)
@@ -101,10 +98,12 @@ object ResourceRegisterAndCopier {
       val hdfsDataPath = hdfsPath + "/" + file
       val rsFile = FileFactory.getCarbonFile(hdfsDataPath, fileType)
       if (!rsFile.exists()) {
-        val mkdir = hdfsPath + "/" + file.substring(0, file.lastIndexOf("/"))
-
+        val target = resourcePath + "/" + file
+        new File(resourcePath + "/" + file.substring(0, file.lastIndexOf("/"))).mkdirs()
+        downloadFile(link, file, target)
         // copy it
-        copyLocalFile(hdfsDataPath, resourcePath + "/" + file)
+        copyLocalFile(hdfsDataPath, target)
+        new File(target).delete()
       }
     }
   }
@@ -119,6 +118,29 @@ object ResourceRegisterAndCopier {
     IOUtils.copyBytes(dataInputStream, dataOutputStream, 8*1024)
     CarbonUtil.closeStream(dataInputStream)
     CarbonUtil.closeStream(dataOutputStream)
+  }
+
+  def downloadFile(relativeLink: String, fileToDownLoad: String, targetFile: String): Unit = {
+    import java.io.FileOutputStream
+    val link = relativeLink + "/" + fileToDownLoad
+    println(s"Downloading file $link")
+    val url = new URL(link)
+    val c = url.openConnection
+    c.setRequestProperty("User-Agent",
+        "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705; .NET CLR 1.1.4322;" +
+        " .NET CLR 1.2.30703)")
+
+    var input = c.getInputStream
+    val buffer = new Array[Byte](4096)
+    var n = input.read(buffer)
+
+    val output = new FileOutputStream(new File(targetFile))
+    while ( n != -1)  {
+      output.write(buffer, 0, n)
+      n = input.read(buffer)
+    }
+    output.close()
+    input.close()
   }
 
 }
