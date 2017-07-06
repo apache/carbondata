@@ -218,6 +218,9 @@ public final class DataLoadProcessBuilder {
     configuration.setUseOnePass(loadModel.getUseOnePass());
     configuration.setDictionaryServerHost(loadModel.getDictionaryServerHost());
     configuration.setDictionaryServerPort(loadModel.getDictionaryServerPort());
+    configuration.setDictionaryServerSecretKey(loadModel.getDictionaryServerSecretKey());
+    configuration.setDictionaryEncryptServerSecure(loadModel.getDictionaryEncryptServerSecure());
+    configuration.setDictionaryServiceProvider(loadModel.getDictionaryServiceProvider());
     configuration.setPreFetch(loadModel.isPreFetch());
     configuration.setNumberOfSortColumns(carbonTable.getNumberOfSortColumns());
     configuration.setNumberOfNoDictSortColumns(carbonTable.getNumberOfNoDictSortColumns());

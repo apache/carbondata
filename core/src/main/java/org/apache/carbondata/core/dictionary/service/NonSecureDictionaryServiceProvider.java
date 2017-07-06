@@ -15,15 +15,28 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.dictionary.client;
+package org.apache.carbondata.core.dictionary.service;
 
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
+import org.apache.carbondata.core.dictionary.client.DictionaryClient;
+import org.apache.carbondata.core.dictionary.client.NonSecureDictionaryClient;
 
-public interface DictionaryClient {
+public class NonSecureDictionaryServiceProvider implements DictionaryServiceProvider {
+  private int port = 0;
 
-  public void startClient(String secretKey, String address, int port, boolean encryptSecureServer);
+  /**
+   * default serial version ID.
+   */
+  private static final long serialVersionUID = 1L;
 
-  public void shutDown();
+  public NonSecureDictionaryServiceProvider(int port) {
+    this.port = port;
+  }
 
-  public DictionaryMessage getDictionary(DictionaryMessage key);
+  //  @Override public DictionaryServer getDictionaryServer() {
+  //    return NonSecureDictionaryServer.getInstance(port);
+  //  }
+
+  @Override public DictionaryClient getDictionaryClient() {
+    return new NonSecureDictionaryClient();
+  }
 }

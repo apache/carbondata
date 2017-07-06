@@ -32,7 +32,8 @@ import org.apache.spark.util.{CausedBy, FileUtils}
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.dictionary.server.DictionaryServer
+import org.apache.carbondata.core.dictionary.server.{DictionaryServer, NonSecureDictionaryServer}
+import org.apache.carbondata.core.dictionary.service.NonSecureDictionaryServiceProvider
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
@@ -47,6 +48,8 @@ import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
+import org.apache.carbondata.spark.dictionary.provider.SecureDictionaryServiceProvider
+import org.apache.carbondata.spark.dictionary.server.SecureDictionaryServer
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, DataLoadingUtil, GlobalDictionaryUtil}
@@ -161,6 +164,18 @@ case class CarbonLoadDataCommand(
         }
         // if table is an aggregate table then disable single pass.
         if (carbonLoadModel.isAggLoadRequest) {
+          carbonLoadModel.setUseOnePass(false)
+        }
+
+        // start dictionary server when use one pass load and dimension with DICTIONARY
+        // encoding is present.
+        val allDimensions =
+        carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getAllDimensions.asScala.toList
+        val createDictionary = allDimensions.exists {
+          carbonDimension => carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
+                             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
+        }
+        if (!createDictionary) {
           carbonLoadModel.setUseOnePass(false)
         }
         // Create table and metadata folders if not exist
@@ -283,18 +298,25 @@ case class CarbonLoadDataCommand(
     val sparkDriverHost = sparkSession.sqlContext.sparkContext.
       getConf.get("spark.driver.host")
     carbonLoadModel.setDictionaryServerHost(sparkDriverHost)
-    // start dictionary server when use one pass load and dimension with DICTIONARY
-    // encoding is present.
-    val allDimensions =
-      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getAllDimensions.asScala.toList
-    val createDictionary = allDimensions.exists {
-      carbonDimension => carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
-                         !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
-    }
-    val server: Option[DictionaryServer] = if (createDictionary) {
-      val dictionaryServer = DictionaryServer
-        .getInstance(dictionaryServerPort.toInt, carbonTable)
+
+    val carbonSecureModeDictServer = CarbonProperties.getInstance.
+      getProperty(CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER,
+      CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER_DEFAULT)
+
+    val sparkConf = sparkSession.sqlContext.sparkContext.getConf
+    // For testing.
+    // sparkConf.set("spark.authenticate", "true")
+    // sparkConf.set("spark.authenticate.secret", "secret")
+
+    val server: Option[DictionaryServer] = if (sparkConf.get("spark.authenticate", "false").
+      equalsIgnoreCase("true") && carbonSecureModeDictServer.toBoolean) {
+      val dictionaryServer = SecureDictionaryServer.getInstance(sparkConf,
+        sparkDriverHost.toString, dictionaryServerPort.toInt, carbonTable)
       carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
+      carbonLoadModel.setDictionaryServerHost(dictionaryServer.getHost)
+      carbonLoadModel.setDictionaryServerSecretKey(dictionaryServer.getSecretKey)
+      carbonLoadModel.setDictionaryEncryptServerSecure(dictionaryServer.isEncryptSecureServer)
+      carbonLoadModel.setDictionaryServiceProvider(new SecureDictionaryServiceProvider())
       sparkSession.sparkContext.addSparkListener(new SparkListener() {
         override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
           dictionaryServer.shutdown()
@@ -302,7 +324,20 @@ case class CarbonLoadDataCommand(
       })
       Some(dictionaryServer)
     } else {
-      None
+      val dictionaryServer = NonSecureDictionaryServer
+        .getInstance(dictionaryServerPort.toInt, carbonTable)
+      carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
+      carbonLoadModel.setDictionaryServerHost(dictionaryServer.getHost)
+      carbonLoadModel.setDictionaryEncryptServerSecure(false)
+      carbonLoadModel
+        .setDictionaryServiceProvider(new NonSecureDictionaryServiceProvider(dictionaryServer
+          .getPort))
+      sparkSession.sparkContext.addSparkListener(new SparkListener() {
+        override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
+          dictionaryServer.shutdown()
+        }
+      })
+      Some(dictionaryServer)
     }
     val loadDataFrame = if (updateModel.isDefined) {
        Some(getDataFrameWithTupleID())

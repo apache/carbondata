@@ -15,15 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.dictionary.client;
+package org.apache.carbondata.spark.dictionary.provider;
 
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
+import org.apache.carbondata.core.dictionary.client.DictionaryClient;
+import org.apache.carbondata.core.dictionary.service.DictionaryServiceProvider;
+import org.apache.carbondata.spark.dictionary.client.SecureDictionaryClient;
 
-public interface DictionaryClient {
+public class SecureDictionaryServiceProvider implements DictionaryServiceProvider {
 
-  public void startClient(String secretKey, String address, int port, boolean encryptSecureServer);
+  /**
+   * default serial version ID.
+   */
+  private static final long serialVersionUID = 1L;
 
-  public void shutDown();
-
-  public DictionaryMessage getDictionary(DictionaryMessage key);
+  @Override public DictionaryClient getDictionaryClient() {
+    return new SecureDictionaryClient();
+  }
 }

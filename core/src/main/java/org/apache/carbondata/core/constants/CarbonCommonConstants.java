@@ -1313,6 +1313,12 @@ public final class CarbonCommonConstants {
   public static final String CARBON_LEASE_RECOVERY_RETRY_INTERVAL =
       "carbon.lease.recovery.retry.interval";
 
+  @CarbonProperty
+  public static final String CARBON_SECURE_DICTIONARY_SERVER =
+      "carbon.secure.dictionary.server";
+
+  public static final String CARBON_SECURE_DICTIONARY_SERVER_DEFAULT = "true";
+
   /**
    * whether to use multi directories when loading data,
    * the main purpose is to avoid single-disk-hot-spot
