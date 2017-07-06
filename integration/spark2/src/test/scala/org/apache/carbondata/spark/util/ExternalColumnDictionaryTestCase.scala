@@ -78,7 +78,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
      proddate struct<productionDate:string,activeDeactivedate:array<string>>,
      gamePointId double,contractNumber double)
      STORED BY 'org.apache.carbondata.format'
-     TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
+     TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId, channelsId')
         """)
     } catch {
       case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
@@ -89,7 +89,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
         """CREATE TABLE verticalDelimitedTable (deviceInformationId int,
      channelsId string,contractNumber double)
      STORED BY 'org.apache.carbondata.format'
-     TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
+     TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId, channelsId')
         """)
     } catch {
       case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)

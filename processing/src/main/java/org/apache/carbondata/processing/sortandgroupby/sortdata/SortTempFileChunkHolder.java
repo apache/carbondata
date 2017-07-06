@@ -313,7 +313,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     Object[] holder = new Object[3];
     int index = 0;
     int nonDicIndex = 0;
-    int[] dim = new int[this.dimensionCount];
+    int[] dim = new int[this.dimensionCount - this.noDictionaryCount];
     byte[][] nonDicArray = new byte[this.noDictionaryCount + this.complexDimensionCount][];
     Object[] measures = new Object[this.measureCount];
     try {
