@@ -262,14 +262,13 @@ Using this segment ID, you can remove the segment.
 The following command will get the segmentID.
 
 ```
-SHOW SEGMENTS FOR Table dbname.tablename LIMIT number_of_segments
+SHOW SEGMENTS FOR Table [db_name.]table_name LIMIT number_of_segments
 ```
 
 After you retrieve the segment ID of the segment that you want to delete, execute the following command to delete the selected segment.
 
 ```
-DELETE SEGMENT segment_sequence_id1, segments_sequence_id2, .... 
-FROM TABLE tableName
+DELETE FROM TABLE [db_name.]table_name WERE SEGMENT.ID IN (segment_id1, segments_id2, ....)
 ```
 
 ### Parameter Description
@@ -282,8 +281,8 @@ FROM TABLE tableName
 ### Example:
 
 ```
-DELETE SEGMENT 0 FROM TABLE CarbonDatabase.CarbonTable;
-DELETE SEGMENT 0.1,5,8 FROM TABLE CarbonDatabase.CarbonTable;
+DELETE FROM TABLE CarbonDatabase.CarbonTable WHERE SEGMENT.ID IN (0);
+DELETE FROM TABLE CarbonDatabase.CarbonTable WHERE SEGMENT.ID IN (0,5,8);
 ```
   NOTE: Here 0.1 is compacted segment sequence id. 
 
@@ -293,8 +292,8 @@ This command will allow to delete the CarbonData segment(s) from the store based
 The segment created before the particular date will be removed from the specific stores.
 
 ```
-DELETE SEGMENTS FROM TABLE [db_name.]table_name 
-WHERE STARTTIME BEFORE DATE_VALUE
+DELETE FROM TABLE [db_name.]table_name 
+WHERE SEGMENT.STARTTIME BEFORE DATE_VALUE
 ```
 
 ### Parameter Description
@@ -308,8 +307,8 @@ WHERE STARTTIME BEFORE DATE_VALUE
 ### Example:
 
 ```
- DELETE SEGMENTS FROM TABLE CarbonDatabase.CarbonTable 
- WHERE STARTTIME BEFORE '2017-06-01 12:05:06';  
+ DELETE FROM TABLE CarbonDatabase.CarbonTable 
+ WHERE SEGMENT.STARTTIME BEFORE '2017-06-01 12:05:06';  
 ```
 
 ## Update CarbonData Table
