@@ -26,13 +26,16 @@ import org.apache.spark.sql.execution.streaming.{CarbonAppendableStreamSink, Sin
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.dictionary.server.DictionaryServer
+import org.apache.carbondata.core.dictionary.server.{DictionaryServer, NonSecureDictionaryServer}
+import org.apache.carbondata.core.dictionary.service.NonSecureDictionaryServiceProvider
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+import org.apache.carbondata.spark.dictionary.provider.SecureDictionaryServiceProvider
+import org.apache.carbondata.spark.dictionary.server.SecureDictionaryServer
 import org.apache.carbondata.spark.util.DataLoadingUtil
 import org.apache.carbondata.streaming.segment.StreamSegment
 
@@ -61,10 +64,9 @@ object StreamSinkFactory {
     val server = startDictionaryServer(
       sparkSession,
       carbonTable,
-      carbonLoadModel.getDictionaryServerPort)
+      carbonLoadModel)
     if (server.isDefined) {
       carbonLoadModel.setUseOnePass(true)
-      carbonLoadModel.setDictionaryServerPort(server.get.getPort)
     } else {
       carbonLoadModel.setUseOnePass(false)
     }
@@ -118,7 +120,7 @@ object StreamSinkFactory {
   def startDictionaryServer(
       sparkSession: SparkSession,
       carbonTable: CarbonTable,
-      port: Int): Option[DictionaryServer] = {
+      carbonLoadModel: CarbonLoadModel): Option[DictionaryServer] = {
     // start dictionary server when use one pass load and dimension with DICTIONARY
     // encoding is present.
     val allDimensions = carbonTable.getAllDimensions.asScala.toList
@@ -126,14 +128,46 @@ object StreamSinkFactory {
       carbonDimension => carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
                          !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
     }
+    val carbonSecureModeDictServer = CarbonProperties.getInstance.
+      getProperty(CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER,
+        CarbonCommonConstants.CARBON_SECURE_DICTIONARY_SERVER_DEFAULT)
+
+    val sparkConf = sparkSession.sqlContext.sparkContext.getConf
+    val sparkDriverHost = sparkSession.sqlContext.sparkContext.
+      getConf.get("spark.driver.host")
+
     val server: Option[DictionaryServer] = if (createDictionary) {
-      val dictionaryServer = DictionaryServer.getInstance(port, carbonTable)
-      sparkSession.sparkContext.addSparkListener(new SparkListener() {
-        override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
-          dictionaryServer.shutdown()
-        }
-      })
-      Some(dictionaryServer)
+      if (sparkConf.get("spark.authenticate", "false").equalsIgnoreCase("true") &&
+          carbonSecureModeDictServer.toBoolean) {
+        val dictionaryServer = SecureDictionaryServer.getInstance(sparkConf,
+          sparkDriverHost.toString, carbonLoadModel.getDictionaryServerPort, carbonTable)
+        carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
+        carbonLoadModel.setDictionaryServerHost(dictionaryServer.getHost)
+        carbonLoadModel.setDictionaryServerSecretKey(dictionaryServer.getSecretKey)
+        carbonLoadModel.setDictionaryEncryptServerSecure(dictionaryServer.isEncryptSecureServer)
+        carbonLoadModel.setDictionaryServiceProvider(new SecureDictionaryServiceProvider())
+        sparkSession.sparkContext.addSparkListener(new SparkListener() {
+          override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
+            dictionaryServer.shutdown()
+          }
+        })
+        Some(dictionaryServer)
+      } else {
+        val dictionaryServer = NonSecureDictionaryServer
+          .getInstance(carbonLoadModel.getDictionaryServerPort, carbonTable)
+        carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
+        carbonLoadModel.setDictionaryServerHost(dictionaryServer.getHost)
+        carbonLoadModel.setDictionaryEncryptServerSecure(false)
+        carbonLoadModel
+          .setDictionaryServiceProvider(new NonSecureDictionaryServiceProvider(dictionaryServer
+            .getPort))
+        sparkSession.sparkContext.addSparkListener(new SparkListener() {
+          override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
+            dictionaryServer.shutdown()
+          }
+        })
+        Some(dictionaryServer)
+      }
     } else {
       None
     }

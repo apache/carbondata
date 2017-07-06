@@ -62,9 +62,9 @@ object CarbonSessionExample {
 
     spark.sql(
       s"""
-        | SELECT *
-        | FROM carbon_table
-        | WHERE stringfield = 'spark' AND decimalField > 40
+         | SELECT *
+         | FROM carbon_table
+         | WHERE stringfield = 'spark' AND decimalField > 40
       """.stripMargin).show()
 
     spark.sql(
@@ -90,21 +90,21 @@ object CarbonSessionExample {
 
     spark.sql(
       s"""
-        | SELECT t1.*, t2.*
-        | FROM carbon_table t1, carbon_table t2
-        | WHERE t1.stringField = t2.stringField
+         | SELECT t1.*, t2.*
+         | FROM carbon_table t1, carbon_table t2
+         | WHERE t1.stringField = t2.stringField
       """.stripMargin).show()
 
     spark.sql(
       s"""
-        | WITH t1 AS (
-        | SELECT * FROM carbon_table
-        | UNION ALL
-        | SELECT * FROM carbon_table
-        | )
-        | SELECT t1.*, t2.*
-        | FROM t1, carbon_table t2
-        | WHERE t1.stringField = t2.stringField
+         | WITH t1 AS (
+         | SELECT * FROM carbon_table
+         | UNION ALL
+         | SELECT * FROM carbon_table
+         | )
+         | SELECT t1.*, t2.*
+         | FROM t1, carbon_table t2
+         | WHERE t1.stringField = t2.stringField
       """.stripMargin).show()
 
     spark.sql(

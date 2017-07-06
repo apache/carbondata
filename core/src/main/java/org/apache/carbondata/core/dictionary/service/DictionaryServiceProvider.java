@@ -15,15 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.dictionary.client;
+package org.apache.carbondata.core.dictionary.service;
 
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
+import java.io.Serializable;
 
-public interface DictionaryClient {
+import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 
-  public void startClient(String secretKey, String address, int port, boolean encryptSecureServer);
+public interface DictionaryServiceProvider extends Serializable {
 
-  public void shutDown();
-
-  public DictionaryMessage getDictionary(DictionaryMessage key);
+  public DictionaryClient getDictionaryClient();
 }
