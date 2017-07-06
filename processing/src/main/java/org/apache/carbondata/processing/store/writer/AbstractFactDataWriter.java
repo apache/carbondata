@@ -603,9 +603,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     short numberOfByteToStorLength = 2;
     // as length part is removed, so each no dictionary value index
     // needs to be reshuffled by 2 bytes
-    int NumberOfNoDictSortColumns =
+    int numberOfNoDictSortColumns =
         dataWriterVo.getSegmentProperties().getNumberOfNoDictSortColumns();
-    for (int i = 0; i < NumberOfNoDictSortColumns; i++) {
+    for (int i = 0; i < numberOfNoDictSortColumns; i++) {
       output.putShort((short) (buffer.getShort() - numberOfByteToStorLength));
     }
     // copy the data part

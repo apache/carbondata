@@ -29,6 +29,7 @@ class TestLoadDataUseAllDictionary extends QueryTest with BeforeAndAfterAll{
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'carbondata'
+           TBLPROPERTIES('dictionary_include'='country,name,phonetype,serialname')
            """)
   }
 
