@@ -111,7 +111,7 @@ public class CarbondataMetadata implements ConnectorMetadata {
 
   private ConnectorTableMetadata getTableMetadata(SchemaTableName schemaTableName) {
     if (!listSchemaNamesInternal().contains(schemaTableName.getSchemaName())) {
-      return null;
+      throw new SchemaNotFoundException(schemaTableName.getSchemaName());
     }
 
     CarbonTable carbonTable = carbonTableReader.getTable(schemaTableName);
