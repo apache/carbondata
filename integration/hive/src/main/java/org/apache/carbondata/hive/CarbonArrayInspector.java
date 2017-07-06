@@ -18,7 +18,6 @@ package org.apache.carbondata.hive;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
@@ -122,9 +121,6 @@ class CarbonArrayInspector implements SettableListObjectInspector {
 
       final Writable[] array = ((ArrayWritable) subObj).get();
       final List<Writable> list = Arrays.asList(array);
-
-      Collections.addAll(list, array);
-
       return list;
     }
 
