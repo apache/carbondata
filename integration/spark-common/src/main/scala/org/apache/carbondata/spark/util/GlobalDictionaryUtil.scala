@@ -278,11 +278,6 @@ object GlobalDictionaryUtil {
     }
   }
 
-  def isHighCardinalityColumn(columnCardinality: Int,
-      model: DictionaryLoadModel): Boolean = {
-    columnCardinality > model.highCardThreshold
-  }
-
   /**
    * create a instance of DictionaryLoadModel
    *
@@ -319,14 +314,6 @@ object GlobalDictionaryUtil {
     val lockType = CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
     val zookeeperUrl = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.ZOOKEEPER_URL)
-    // load high cardinality identify configure
-    val highCardIdentifyEnable = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE,
-      CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE_DEFAULT).toBoolean
-    val highCardThreshold = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD,
-      CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT).toInt
-
     val serializationNullFormat =
       carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
     // get load count
@@ -342,8 +329,6 @@ object GlobalDictionaryUtil {
       isComplexes.toArray,
       primDimensions,
       carbonLoadModel.getDelimiters,
-      highCardIdentifyEnable,
-      highCardThreshold,
       columnIdentifier,
       carbonLoadModel.getLoadMetadataDetails.size() == 0,
       hdfsTempLocation,
@@ -394,9 +379,8 @@ object GlobalDictionaryUtil {
   private def checkStatus(carbonLoadModel: CarbonLoadModel,
       sqlContext: SQLContext,
       model: DictionaryLoadModel,
-      status: Array[(Int, String, Boolean)]) = {
+      status: Array[(Int, String)]) = {
     var result = false
-    val noDictionaryColumns = new ArrayBuffer[CarbonDimension]
     val tableName = model.table.getTableName
     status.foreach { x =>
       val columnName = model.primDimensions(x._1).getColName
@@ -404,12 +388,6 @@ object GlobalDictionaryUtil {
         result = true
         LOGGER.error(s"table:$tableName column:$columnName generate global dictionary file failed")
       }
-      if (x._3) {
-        noDictionaryColumns += model.primDimensions(x._1)
-      }
-    }
-    if (noDictionaryColumns.nonEmpty) {
-      updateTableMetadataFunc(carbonLoadModel, sqlContext, model, noDictionaryColumns.toArray)
     }
     if (result) {
       LOGGER.error("generate global dictionary files failed")

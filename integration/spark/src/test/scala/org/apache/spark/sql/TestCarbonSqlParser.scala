@@ -28,16 +28,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
   */
 private class TestCarbonSqlParserStub extends CarbonSqlParser {
 
-  //val parser:CarbonSqlDDLParser = new CarbonSqlDDLParser()
-
-  def updateColumnGroupsInFieldTest(fields: Seq[Field], tableProperties: Map[String, String]): Seq[String] = {
-
-     var (dims, msrs, noDictionaryDims, sortkey) = extractDimAndMsrFields(fields, tableProperties)
-
-    updateColumnGroupsInField(tableProperties,
-        noDictionaryDims, msrs, dims)
-  }
-
   def extractDimAndMsrFieldsTest(fields: Seq[Field],
       tableProperties: Map[String, String]): (Seq[Field], Seq[Field], Seq[String], Seq[String]) = {
     extractDimAndMsrFields(fields, tableProperties)
@@ -78,113 +68,6 @@ class TestCarbonSqlParser extends QueryTest {
     fields
   }
 
-  // Testing the column group Splitting method.
-  test("Test-updateColumnGroupsInField") {
-    val colGroupStr = "(col2,col3),(col5,col6),(col7,col8)"
-    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr)
-    val fields: Seq[Field] = loadAllFields
-    val stub = new TestCarbonSqlParserStub()
-    val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
-    assert(colgrps.lift(0).get.equalsIgnoreCase("col2,col3"))
-    assert(colgrps.lift(1).get.equalsIgnoreCase("col5,col6"))
-    assert(colgrps.lift(2).get.equalsIgnoreCase("col7,col8"))
-
-  }
-  test("Test-updateColumnGroupsInField_disordered") {
-    val colGroupStr = "(col5,col6),(col2,col3),(col7,col8)"
-    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr)
-    var fields: Seq[Field] = loadAllFields
-    val stub = new TestCarbonSqlParserStub()
-    val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
-    assert(colgrps.lift(0).get.equalsIgnoreCase("col2,col3"))
-    assert(colgrps.lift(1).get.equalsIgnoreCase("col5,col6"))
-    assert(colgrps.lift(2).get.equalsIgnoreCase("col7,col8"))
-
-  }
-  test("Test-ColumnGroupsInvalidField_Shouldnotallow") {
-    val colGroupStr = "(col1,col2),(col10,col6),(col7,col8)"
-    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr)
-    val fields: Seq[Field] = loadAllFields
-    val stub = new TestCarbonSqlParserStub()
-    try {
-      val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
-      assert(false)
-    } catch {
-      case e: Exception => assert(true)
-    }
-  }
-  test("Test-MeasureInColumnGroup_ShouldNotAllow") {
-    //col1 is measure
-    val colGroupStr = "(col1,col2),(col5,col6),(col7,col8)"
-    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr)
-    val fields: Seq[Field] = loadAllFields
-    val stub = new TestCarbonSqlParserStub()
-    try {
-      val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
-      assert(false)
-    } catch {
-      case e: Exception => assert(true)
-    }
-  }
-  test("Test-NoDictionaryInColumnGroup_ShouldNotAllow") {
-    //col5 is no dictionary
-    val colGroupStr = "(col2,col3),(col5,col6),(col7,col8)"
-    val noDictStr = "col5"
-    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr, CarbonCommonConstants.DICTIONARY_EXCLUDE -> noDictStr)
-    val fields: Seq[Field] = loadAllFields
-    val stub = new TestCarbonSqlParserStub()
-    try {
-      val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
-      assert(false)
-    } catch {
-      case e: Exception => assert(true)
-    }
-  }
-  test("Test-SameColumnInDifferentGroup_ShouldNotAllow") {
-    val colGroupStr = "(col2,col3),(col5,col6),(col6,col7,col8)"
-    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr)
-    val fields: Seq[Field] = loadAllFields
-    val stub = new TestCarbonSqlParserStub()
-    try {
-      val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
-      assert(false)
-    } catch {
-      case e: Exception => assert(true)
-    }
-  }
-  
-   test("Test-ColumnAreNotTogetherAsInSchema_ShouldNotAllow") {
-    val colGroupStr = "(col2,col3),(col5,col8)"
-    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr)
-    val fields: Seq[Field] = loadAllFields
-    val stub = new TestCarbonSqlParserStub()
-    try {
-      val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
-      assert(false)
-    } catch {
-      case e: Exception => assert(true)
-    }
-  }
-  test("Test-ColumnInColumnGroupAreShuffledButInSequence") {
-    val colGroupStr = "(col2,col3),(col7,col8,col6)"
-    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr)
-    val fields: Seq[Field] = loadAllFields
-    val stub = new TestCarbonSqlParserStub()
-    
-    val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
-    assert(colgrps.lift(0).get.equalsIgnoreCase("col2,col3"))
-    assert(colgrps.lift(1).get.equalsIgnoreCase("col6,col7,col8"))
-  }
-  // Testing the column group Splitting method with empty table properties so null will be returned.
-  test("Test-Empty-updateColumnGroupsInField") {
-    val tableProperties = Map("" -> "")
-    val fields: Seq[Field] = loadAllFields
-    val stub = new TestCarbonSqlParserStub()
-    val colgrps = stub.updateColumnGroupsInFieldTest(fields, Map())
-    //assert( rtn === 1)
-    assert(null == colgrps)
-  }
-
   // Testing the extracting of Dims and no Dictionary
   test("Test-extractDimColsAndNoDictionaryFields") {
     val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col2", CarbonCommonConstants.DICTIONARY_INCLUDE -> "col4")
@@ -203,8 +86,15 @@ class TestCarbonSqlParser extends QueryTest {
     assert(dimCols.lift(3).get.column.equalsIgnoreCase("col4"))
 
     //No dictionary column names will be available in noDictionary list
-    assert(noDictionary.size == 1)
-    assert(noDictionary.lift(0).get.equalsIgnoreCase("col2"))
+    assert(noDictionary.size == 7)
+    assert(noDictionary.lift(0).get.equalsIgnoreCase("col1"))
+    assert(noDictionary.lift(1).get.equalsIgnoreCase("col2"))
+    assert(noDictionary.lift(2).get.equalsIgnoreCase("col3"))
+    assert(noDictionary.lift(3).get.equalsIgnoreCase("col5"))
+    assert(noDictionary.lift(4).get.equalsIgnoreCase("col6"))
+    assert(noDictionary.lift(5).get.equalsIgnoreCase("col7"))
+    assert(noDictionary.lift(6).get.equalsIgnoreCase("col8"))
+
   }
 
   test("Test-DimAndMsrColsWithNoDictionaryFields1") {
@@ -220,8 +110,14 @@ class TestCarbonSqlParser extends QueryTest {
     assert(dimCols.lift(2).get.column.equalsIgnoreCase("col3"))
 
     //below column names will be available in noDictionary list
-    assert(noDictionary.size == 1)
+    assert(noDictionary.size == 7)
     assert(noDictionary.lift(0).get.equalsIgnoreCase("col1"))
+    assert(noDictionary.lift(1).get.equalsIgnoreCase("col2"))
+    assert(noDictionary.lift(2).get.equalsIgnoreCase("col3"))
+    assert(noDictionary.lift(3).get.equalsIgnoreCase("col5"))
+    assert(noDictionary.lift(4).get.equalsIgnoreCase("col6"))
+    assert(noDictionary.lift(5).get.equalsIgnoreCase("col7"))
+    assert(noDictionary.lift(6).get.equalsIgnoreCase("col8"))
 
     //check msr
     assert(msrCols.size == 1)
@@ -241,7 +137,13 @@ class TestCarbonSqlParser extends QueryTest {
     assert(dimCols.lift(2).get.column.equalsIgnoreCase("col3"))
 
     //below column names will be available in noDictionary list
-    assert(noDictionary.size == 0)
+    assert(noDictionary.size == 6)
+    assert(noDictionary.lift(0).get.equalsIgnoreCase("col2"))
+    assert(noDictionary.lift(1).get.equalsIgnoreCase("col3"))
+    assert(noDictionary.lift(2).get.equalsIgnoreCase("col5"))
+    assert(noDictionary.lift(3).get.equalsIgnoreCase("col6"))
+    assert(noDictionary.lift(4).get.equalsIgnoreCase("col7"))
+    assert(noDictionary.lift(5).get.equalsIgnoreCase("col8"))
 
     //check msr
     assert(msrCols.size == 1)
@@ -263,8 +165,14 @@ class TestCarbonSqlParser extends QueryTest {
     assert(dimCols.lift(3).get.column.equalsIgnoreCase("col4"))
 
     //below column names will be available in noDictionary list
-    assert(noDictionary.size == 1)
+    assert(noDictionary.size == 7)
     assert(noDictionary.lift(0).get.equalsIgnoreCase("col1"))
+    assert(noDictionary.lift(1).get.equalsIgnoreCase("col2"))
+    assert(noDictionary.lift(2).get.equalsIgnoreCase("col3"))
+    assert(noDictionary.lift(3).get.equalsIgnoreCase("col5"))
+    assert(noDictionary.lift(4).get.equalsIgnoreCase("col6"))
+    assert(noDictionary.lift(5).get.equalsIgnoreCase("col7"))
+    assert(noDictionary.lift(6).get.equalsIgnoreCase("col8"))
 
     //check msr
     assert(msrCols.size == 0)
@@ -283,8 +191,13 @@ class TestCarbonSqlParser extends QueryTest {
     assert(dimCols.lift(2).get.column.equalsIgnoreCase("col3"))
 
     //below column names will be available in noDictionary list
-    assert(noDictionary.size == 1)
-    assert(noDictionary.lift(0).get.equalsIgnoreCase("col3"))
+    assert(noDictionary.size == 6)
+    assert(noDictionary.lift(0).get.equalsIgnoreCase("col1"))
+    assert(noDictionary.lift(1).get.equalsIgnoreCase("col3"))
+    assert(noDictionary.lift(2).get.equalsIgnoreCase("col5"))
+    assert(noDictionary.lift(3).get.equalsIgnoreCase("col6"))
+    assert(noDictionary.lift(4).get.equalsIgnoreCase("col7"))
+    assert(noDictionary.lift(5).get.equalsIgnoreCase("col8"))
 
     //check msr
     assert(msrCols.size == 1)
@@ -304,8 +217,13 @@ class TestCarbonSqlParser extends QueryTest {
     assert(dimCols.lift(2).get.column.equalsIgnoreCase("col3"))
 
     //below column names will be available in noDictionary list
-    assert(noDictionary.size == 1)
+    assert(noDictionary.size == 6)
     assert(noDictionary.lift(0).get.equalsIgnoreCase("col1"))
+    assert(noDictionary.lift(1).get.equalsIgnoreCase("col3"))
+    assert(noDictionary.lift(2).get.equalsIgnoreCase("col5"))
+    assert(noDictionary.lift(3).get.equalsIgnoreCase("col6"))
+    assert(noDictionary.lift(4).get.equalsIgnoreCase("col7"))
+    assert(noDictionary.lift(5).get.equalsIgnoreCase("col8"))
 
     //check msr
     assert(msrCols.size == 1)
@@ -325,8 +243,13 @@ class TestCarbonSqlParser extends QueryTest {
     assert(dimCols.lift(2).get.column.equalsIgnoreCase("col3"))
 
     //below column names will be available in noDictionary list
-    assert(noDictionary.size == 1)
+    assert(noDictionary.size == 6)
     assert(noDictionary.lift(0).get.equalsIgnoreCase("col2"))
+    assert(noDictionary.lift(1).get.equalsIgnoreCase("col3"))
+    assert(noDictionary.lift(2).get.equalsIgnoreCase("col5"))
+    assert(noDictionary.lift(3).get.equalsIgnoreCase("col6"))
+    assert(noDictionary.lift(4).get.equalsIgnoreCase("col7"))
+    assert(noDictionary.lift(5).get.equalsIgnoreCase("col8"))
 
     //check msr
     assert(msrCols.size == 1)
@@ -349,9 +272,13 @@ class TestCarbonSqlParser extends QueryTest {
     assert(dimCols.lift(3).get.column.equalsIgnoreCase("col4"))
 
     //below column names will be available in noDictionary list
-    assert(noDictionary.size == 2)
+    assert(noDictionary.size == 6)
     assert(noDictionary.lift(0).get.equalsIgnoreCase("col1"))
     assert(noDictionary.lift(1).get.equalsIgnoreCase("col2"))
+    assert(noDictionary.lift(2).get.equalsIgnoreCase("col5"))
+    assert(noDictionary.lift(3).get.equalsIgnoreCase("col6"))
+    assert(noDictionary.lift(4).get.equalsIgnoreCase("col7"))
+    assert(noDictionary.lift(5).get.equalsIgnoreCase("col8"))
 
     //check msr
     assert(msrCols.size == 0)
@@ -369,8 +296,13 @@ class TestCarbonSqlParser extends QueryTest {
     assert(dimCols.lift(1).get.column.equalsIgnoreCase("col2"))
 
     //below column names will be available in noDictionary list
-    assert(noDictionary.size == 1)
-    assert(noDictionary.lift(0).get.equalsIgnoreCase("col2"))
+    assert(noDictionary.size == 6)
+    assert(noDictionary.lift(0).get.equalsIgnoreCase("col1"))
+    assert(noDictionary.lift(1).get.equalsIgnoreCase("col2"))
+    assert(noDictionary.lift(2).get.equalsIgnoreCase("col5"))
+    assert(noDictionary.lift(3).get.equalsIgnoreCase("col6"))
+    assert(noDictionary.lift(4).get.equalsIgnoreCase("col7"))
+    assert(noDictionary.lift(5).get.equalsIgnoreCase("col8"))
 
     //check msr
     assert(msrCols.size == 1)
@@ -389,7 +321,6 @@ class TestCarbonSqlParser extends QueryTest {
     assert(msrCols.lift(0).get.column.equalsIgnoreCase("col4"))
 
   }
-
 
 }
 

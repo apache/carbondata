@@ -29,7 +29,6 @@ import org.apache.carbondata.core.util.CarbonProperties
 class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
   var filePath: String = _
 
-
   def buildTestData() = {
     filePath = s"${integrationPath}/spark-common-test/target/big.csv"
     val file = new File(filePath)
@@ -79,6 +78,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
         | CREATE TABLE carbon_load1(c1 string, c2 string, c3 string, c4 string, c5 string,
         | c6 string, c7 int, c8 int, c9 int, c10 int)
         | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('dictionary_include'='c1,c2,c3,c4,c5,c6')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load1 " +
@@ -160,6 +160,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
         | CREATE TABLE carbon_load3(c1 string, c2 string, c3 string, c4 string, c5 string,
         | c6 string, c7 int, c8 int, c9 int, c10 int)
         | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('dictionary_include'='c1,c2,c3,c4,c5,c6')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load3 " +
@@ -182,6 +183,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
         | CREATE TABLE carbon_load4(c1 string, c2 string, c3 string, c4 string, c5 string,
         | c6 string, c7 int, c8 int, c9 int, c10 int)
         | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('dictionary_include'='c1,c2,c3,c4,c5,c6')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load4 " )
@@ -202,6 +204,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
         | CREATE TABLE carbon_load6(c1 string, c2 string, c3 string, c4 string, c5 string,
         | c6 string, c7 int, c8 int, c9 int, c10 int)
         | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('dictionary_include'='c1,c2,c3,c4,c5,c6')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load6 " )
