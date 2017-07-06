@@ -33,10 +33,10 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 /**
  * Client handler to get data.
  */
-public class DictionaryClientHandler extends ChannelInboundHandlerAdapter {
+public class NonSecureDictionaryClientHandler extends ChannelInboundHandlerAdapter {
 
   private static final LogService LOGGER =
-          LogServiceFactory.getLogService(DictionaryClientHandler.class.getName());
+          LogServiceFactory.getLogService(NonSecureDictionaryClientHandler.class.getName());
 
   private final BlockingQueue<DictionaryMessage> responseMsgQueue = new LinkedBlockingQueue<>();
 
@@ -57,7 +57,7 @@ public class DictionaryClientHandler extends ChannelInboundHandlerAdapter {
     try {
       ByteBuf data = (ByteBuf) msg;
       DictionaryMessage key = new DictionaryMessage();
-      key.readData(data);
+      key.readSkipLength(data);
       data.release();
       responseMsgQueue.offer(key);
     } catch (Exception e) {

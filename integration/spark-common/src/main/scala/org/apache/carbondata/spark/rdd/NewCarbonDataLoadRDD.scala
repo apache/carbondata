@@ -41,11 +41,11 @@ import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.dictionary.service.DictionaryOnePassService
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
-import org.apache.carbondata.processing.csvload.BlockDetails
-import org.apache.carbondata.processing.csvload.CSVInputFormat
-import org.apache.carbondata.processing.csvload.CSVRecordReaderIterator
+import org.apache.carbondata.processing.csvload.{BlockDetails, CSVInputFormat,
+CSVRecordReaderIterator}
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.DataLoadExecutor
 import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException
@@ -59,7 +59,7 @@ class SerializableConfiguration(@transient var value: Configuration) extends Ser
   @transient
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  private def writeObject(out: ObjectOutputStream): Unit =
+  private def writeObject(out: ObjectOutputStream): Unit = {
     try {
       out.defaultWriteObject()
       value.write(out)
@@ -71,9 +71,10 @@ class SerializableConfiguration(@transient var value: Configuration) extends Ser
         LOGGER.error(e, "Exception encountered")
         throw new IOException(e)
     }
+  }
 
 
-  private def readObject(in: ObjectInputStream): Unit =
+  private def readObject(in: ObjectInputStream): Unit = {
     try {
       value = new Configuration(false)
       value.readFields(in)
@@ -85,6 +86,7 @@ class SerializableConfiguration(@transient var value: Configuration) extends Ser
         LOGGER.error(e, "Exception encountered")
         throw new IOException(e)
     }
+  }
 }
 
 /**
@@ -216,6 +218,7 @@ class NewCarbonDataLoadRDD[K, V](
   }
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
+
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       var partitionID = "0"
@@ -282,12 +285,12 @@ class NewCarbonDataLoadRDD[K, V](
           carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
           if (carbonLoadModel.isDirectLoad) {
             model = carbonLoadModel.getCopyWithPartition(
-                split.serializableHadoopSplit.value.getPartition.getUniqueID,
-                split.serializableHadoopSplit.value.getPartition.getFilesPath,
-                carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
+               split.serializableHadoopSplit.value.getPartition.getUniqueID,
+               split.serializableHadoopSplit.value.getPartition.getFilesPath,
+               carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
           } else {
             model = carbonLoadModel.getCopyWithPartition(
-                split.serializableHadoopSplit.value.getPartition.getUniqueID)
+               split.serializableHadoopSplit.value.getPartition.getUniqueID)
           }
           partitionID = split.serializableHadoopSplit.value.getPartition.getUniqueID
 
@@ -380,8 +383,9 @@ class NewCarbonDataLoadRDD[K, V](
 }
 
 /**
- *  It loads the data to carbon from spark DataFrame using
- *  @see org.apache.carbondata.processing.newflow.DataLoadExecutor
+ * It loads the data to carbon from spark DataFrame using
+ *
+ * @see org.apache.carbondata.processing.newflow.DataLoadExecutor
  */
 class NewDataFrameLoaderRDD[K, V](
     sc: SparkContext,
@@ -465,6 +469,7 @@ class NewDataFrameLoaderRDD[K, V](
     }
     iter
   }
+
   override protected def getPartitions: Array[Partition] = firstParent[Row].partitions
 }
 
@@ -491,6 +496,7 @@ class NewRddIterator(rddIter: Iterator[Row],
   private val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
   private val serializationNullFormat =
     carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
+
   def hasNext: Boolean = rddIter.hasNext
 
   def next: Array[AnyRef] = {
@@ -511,6 +517,7 @@ class NewRddIterator(rddIter: Iterator[Row],
 
 /**
  * LazyRddIterator invoke rdd.iterator method when invoking hasNext method.
+ *
  * @param serializer
  * @param serializeBytes
  * @param partition

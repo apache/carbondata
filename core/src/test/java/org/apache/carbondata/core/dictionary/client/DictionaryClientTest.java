@@ -26,6 +26,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType;
 import org.apache.carbondata.core.dictionary.server.DictionaryServer;
+import org.apache.carbondata.core.dictionary.server.NonSecureDictionaryServer;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -55,6 +56,7 @@ public class DictionaryClientTest {
   private TableInfo tableInfo;
   private String storePath;
   private DictionaryServer server;
+  private String host;
 
   @Before public void setUp() throws Exception {
     // enable lru cache by setting cache size
@@ -95,12 +97,13 @@ public class DictionaryClientTest {
     metadata.addCarbonTable(carbonTable);
 
     // Start the server for testing the client
-    server = DictionaryServer.getInstance(5678);
+    server = NonSecureDictionaryServer.getInstance(5678);
+    host = server.getHost();
   }
 
   @Test public void testClient() throws Exception {
-    DictionaryClient client = new DictionaryClient();
-    client.startClient("localhost", 5678);
+    NonSecureDictionaryClient client = new NonSecureDictionaryClient();
+    client.startClient(null, host, 5678);
 
     Thread.sleep(1000);
     // Create a dictionary key
