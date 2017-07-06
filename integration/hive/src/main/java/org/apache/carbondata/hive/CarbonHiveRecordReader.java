@@ -62,6 +62,8 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
 
   private ArrayWritable valueObj = null;
   private CarbonObjectInspector objInspector;
+  private long recordReaderCounter = 0;
+  private int[] columnIds;
 
   public CarbonHiveRecordReader(QueryModel queryModel, CarbonReadSupport<ArrayWritable> readSupport,
       InputSplit inputSplit, JobConf jobConf) throws IOException {
@@ -88,17 +90,12 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     } catch (QueryExecutionException e) {
       throw new IOException(e.getMessage(), e.getCause());
     }
-    if (valueObj == null) {
-      valueObj =
-          new ArrayWritable(Writable.class, new Writable[queryModel.getProjectionColumns().length]);
-    }
-
     final TypeInfo rowTypeInfo;
     final List<String> columnNames;
     List<TypeInfo> columnTypes;
     // Get column names and sort order
     final String colIds = conf.get("hive.io.file.readcolumn.ids");
-    final String columnNameProperty = conf.get("hive.io.file.readcolumn.names");
+    final String columnNameProperty = conf.get(serdeConstants.LIST_COLUMNS);
     final String columnTypeProperty = conf.get(serdeConstants.LIST_COLUMN_TYPES);
 
     if (columnNameProperty.length() == 0) {
@@ -111,56 +108,44 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     } else {
       columnTypes = TypeInfoUtils.getTypeInfosFromTypeString(columnTypeProperty);
     }
+
+    if (valueObj == null) {
+      valueObj = new ArrayWritable(Writable.class, new Writable[columnTypes.size()]);
+    }
+
     if (!colIds.equals("")) {
       String[] arraySelectedColId = colIds.split(",");
       List<TypeInfo> reqColTypes = new ArrayList<TypeInfo>();
-
-      for (String anArrayColId : arraySelectedColId) {
-        reqColTypes.add(columnTypes.get(Integer.parseInt(anArrayColId)));
+      columnIds = new int[arraySelectedColId.length];
+      int columnId = 0;
+      for (int j = 0; j < arraySelectedColId.length; j++) {
+        columnId = Integer.parseInt(arraySelectedColId[j]);
+        columnIds[j] = columnId;
       }
-      // Create row related objects
-      rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, reqColTypes);
-      this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
-    } else {
-      rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
-      this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
     }
+
+    rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
+    this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
   }
 
   @Override public boolean next(Void aVoid, ArrayWritable value) throws IOException {
     if (carbonIterator.hasNext()) {
       Object obj = readSupport.readRow(carbonIterator.next());
-      ArrayWritable tmpValue;
-      try {
-        tmpValue = createArrayWritable(obj);
-      } catch (SerDeException se) {
-        throw new IOException(se.getMessage(), se.getCause());
-      }
-
-      if (value != tmpValue) {
-        final Writable[] arrValue = value.get();
-        final Writable[] arrCurrent = tmpValue.get();
-        if (valueObj != null && arrValue.length == arrCurrent.length) {
-          System.arraycopy(arrCurrent, 0, arrValue, 0, arrCurrent.length);
-        } else {
-          if (arrValue.length != arrCurrent.length) {
-            throw new IOException(
-                "CarbonHiveInput : size of object differs. Value" + " size :  " + arrValue.length
-                    + ", Current Object size : " + arrCurrent.length);
-          } else {
-            throw new IOException("CarbonHiveInput can not support RecordReaders that"
-                + " don't return same key & value & value is null");
-          }
+      recordReaderCounter++;
+      Writable[] objArray = (Writable[]) obj;
+      Writable[] sysArray = new Writable[value.get().length];
+      if (columnIds != null && columnIds.length > 0 && objArray.length == columnIds.length) {
+        for (int i = 0; i < columnIds.length; i++) {
+          sysArray[columnIds[i]] = objArray[i];
         }
+        value.set(sysArray);
+      } else {
+        value.set(objArray);
       }
       return true;
     } else {
       return false;
     }
-  }
-
-  private ArrayWritable createArrayWritable(Object obj) throws SerDeException {
-    return createStruct(obj, objInspector);
   }
 
   @Override public Void createKey() {
@@ -172,7 +157,7 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
   }
 
   @Override public long getPos() throws IOException {
-    return 0;
+    return recordReaderCounter;
   }
 
   @Override public float getProgress() throws IOException {

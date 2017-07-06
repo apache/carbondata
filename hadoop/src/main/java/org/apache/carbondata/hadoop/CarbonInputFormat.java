@@ -444,9 +444,14 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
           }
         }
       }
+
+      // For Hive integration if we have to get the stats we have to fetch hive.query.id
+      String query_id = job.getConfiguration().get("query.id") != null ?
+          job.getConfiguration().get("query.id") :
+          job.getConfiguration().get("hive.query.id");
       statistic
           .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_DRIVER, System.currentTimeMillis());
-      recorder.recordStatisticsForDriver(statistic, job.getConfiguration().get("query.id"));
+      recorder.recordStatisticsForDriver(statistic, query_id);
       return resultFilterredBlocks;
     } finally {
       // clean up the access count for a segment as soon as its usage is complete so that in
