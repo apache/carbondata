@@ -33,6 +33,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
+
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 import org.apache.hadoop.hive.common.type.HiveDecimal;
@@ -155,7 +156,6 @@ public class DictionaryDecodeReadSupport<T> implements CarbonReadSupport<T> {
    */
   private ArrayWritable createArray(Object obj, CarbonColumn carbonColumn) throws IOException {
     if (obj instanceof GenericArrayData) {
-
       Object[] objArray = ((GenericArrayData) obj).array();
       List<CarbonDimension> childCarbonDimensions = null;
       CarbonDimension arrayDimension = null;
@@ -238,7 +238,7 @@ public class DictionaryDecodeReadSupport<T> implements CarbonReadSupport<T> {
         return new Text(obj.toString());
       case DECIMAL:
         return new HiveDecimalWritable(
-            HiveDecimal.create(((org.apache.spark.sql.types.Decimal) obj).toJavaBigDecimal()));
+            HiveDecimal.create(new java.math.BigDecimal(obj.toString())));
     }
     throw new IOException("Unknown primitive : " + dataType.getName());
   }
@@ -281,7 +281,7 @@ public class DictionaryDecodeReadSupport<T> implements CarbonReadSupport<T> {
         break;
       case DECIMAL:
         ((HiveDecimalWritable) writable)
-            .set(HiveDecimal.create(((org.apache.spark.sql.types.Decimal) obj).toJavaBigDecimal()));
+            .set(HiveDecimal.create(new java.math.BigDecimal(obj.toString())));
     }
   }
 
