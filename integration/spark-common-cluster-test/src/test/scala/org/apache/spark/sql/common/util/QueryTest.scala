@@ -85,7 +85,7 @@ class QueryTest extends PlanTest with Suite {
     checkAnswer(df, expectedAnswer.collect())
   }
 
-  protected def checkAnswer(carbon: String, hive: String): Unit = {
+  protected def checkAnswer(carbon: String, hive: String, uniqueIdentifier:String): Unit = {
     checkAnswer(sql(carbon), sql(hive))
   }
 
