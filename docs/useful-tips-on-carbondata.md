@@ -63,6 +63,15 @@ The create table command can be modified as suggested below :
   )STORED BY 'org.apache.carbondata.format'
   TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,..',
   'DICTIONARY_INCLUDE'='...');
+
+  Example:
+  create table carbondata_table(
+    msisdn String,
+    BEGIN_TIME bigint
+    )STORED BY 'org.apache.carbondata.format'
+    TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN',
+    'DICTIONARY_INCLUDE'='BEGIN_TIME');
+
 ```
 
   Now the query with MSISDN in the filter will be more efficient.
@@ -87,6 +96,17 @@ The create table command can be modified as suggested below :
   )STORED BY 'org.apache.carbondata.format'
   TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST..',
   'DICTIONARY_INCLUDE'='Dime_1..');
+
+  Example:
+  create table carbondata_table(
+    Dime_1 String,
+    HOST String,
+    MSISDN String
+    )STORED BY 'org.apache.carbondata.format'
+    TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST',
+    'DICTIONARY_INCLUDE'='Dime_1');
+
+
 ```
 
 
@@ -97,14 +117,15 @@ The create table command can be modified as below :
 
 ```
   create table carbondata_table(
-  Dime_1 String,
-  BEGIN_TIME bigint,
-  HOST String,
-  MSISDN String,
-  ...
-  )STORED BY 'org.apache.carbondata.format'
-  TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST,IMSI..',
-  'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME..');
+    Dime_1 String,
+    BEGIN_TIME bigint,
+    END_TIME bigint,
+    HOST String,
+    MSISDN String
+    ...
+    )STORED BY 'org.apache.carbondata.format'
+    TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST...',
+    'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME...');
 ```
 
 
@@ -115,17 +136,18 @@ query performance. The create table command can be modified as below :
 
 ```
   create table carbondata_table(
-  Dime_1 String,
-  BEGIN_TIME bigint,
-  HOST String,
-  MSISDN String,
-  counter_1 double,
-  counter_2 double,
-  ...
-  counter_100 double
-  )STORED BY 'org.apache.carbondata.format'
-  TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST,IMSI',
-  'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME');
+    Dime_1 String,
+    BEGIN_TIME bigint,
+    END_TIME bigint,
+    HOST String,
+    MSISDN String,
+    counter_1 double,
+    counter_2 double,
+    ...
+    counter_100 double
+    )STORED BY 'org.apache.carbondata.format'
+    TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST...',
+    'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME...');
 ```
   The result of performance analysis of test-case shows reduction in query execution time from 15 to 3 seconds, thereby improving performance by nearly 5 times.
 
@@ -139,17 +161,18 @@ suggested to put begin_time at the end of dimensions.
 
 ```
   create table carbondata_table(
-  Dime_1 String,
-  HOST String,
-  MSISDN String,
-  counter_1 double,
-  counter_2 double,
-  BEGIN_TIME bigint,
-  ...
-  counter_100 double
-  )STORED BY 'org.apache.carbondata.format'
-  TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST,IMSI',
-  'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME');
+    Dime_1 String,
+    HOST String,
+    MSISDN String,
+    counter_1 double,
+    counter_2 double,
+    BEGIN_TIME bigint,
+    END_TIME bigint,
+    ...
+    counter_100 double
+    )STORED BY 'org.apache.carbondata.format'
+    TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST...',
+    'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME....');
 ```
 
 
