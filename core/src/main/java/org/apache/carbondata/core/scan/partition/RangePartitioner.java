@@ -78,7 +78,7 @@ public class RangePartitioner implements Partitioner {
       return 0;
     } else {
       for (int i = 0; i < numPartitions; i++) {
-        if (comparator.compareTo(key, bounds[i])) {
+        if (comparator.compare(key, bounds[i]) < 0) {
           return i + 1;
         }
       }

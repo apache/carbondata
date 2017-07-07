@@ -20,5 +20,5 @@ package org.apache.carbondata.core.util.comparator;
 import java.io.Serializable;
 
 public interface SerializableComparator extends Serializable {
-  boolean compareTo(Object key1, Object key2);
+  int compare(Object key1, Object key2);
 }

@@ -273,15 +273,15 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       }
 
       CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
-      Partitioner partitioner = PartitionUtil.getPartitioner(partitionInfo);
-      // prune partitions for filter query on partition table
-      BitSet matchedPartitions = setMatchedPartitions(null, carbonTable, filter, partitioner);
+      BitSet matchedPartitions = null;
       if (partitionInfo != null) {
+        // prune partitions for filter query on partition table
+        matchedPartitions = setMatchedPartitions(null, carbonTable, filter, partitionInfo);
         if (matchedPartitions != null) {
           if (matchedPartitions.cardinality() == 0) {
             // no partition is required
             return new ArrayList<InputSplit>();
-          } else if (matchedPartitions.cardinality() == partitioner.numPartitions()) {
+          } else if (matchedPartitions.cardinality() == partitionInfo.getNumberOfPartitions()) {
             // all partitions are required, no need to prune partitions
             matchedPartitions = null;
           }
@@ -325,7 +325,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   private BitSet setMatchedPartitions(String partitionIds, CarbonTable carbonTable,
-      Expression filter, Partitioner partitioner) {
+      Expression filter, PartitionInfo partitionInfo) {
     BitSet matchedPartitions = null;
     if (null != partitionIds) {
       String[] partList = partitionIds.replace("[","").replace("]","").split(",");
@@ -335,12 +335,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       }
     } else {
       if (null != filter) {
-        PartitionInfo partitionInfo =
-            carbonTable.getPartitionInfo(carbonTable.getFactTableName());
-        if (null != partitionInfo) {
           matchedPartitions = new FilterExpressionProcessor()
-              .getFilteredPartitions(filter, partitionInfo, partitioner);
-        }
+              .getFilteredPartitions(filter, partitionInfo);
       }
     }
     return matchedPartitions;

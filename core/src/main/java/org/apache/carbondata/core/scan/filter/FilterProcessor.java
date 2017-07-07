@@ -59,6 +59,5 @@ public interface FilterProcessor {
    * This API will get the map of required partitions.
    * @return BitSet the value "1" represent the required partition.
    */
-  BitSet getFilteredPartitions(Expression expressionTree, PartitionInfo partitionInfo,
-      Partitioner partitioner);
+  BitSet getFilteredPartitions(Expression expressionTree, PartitionInfo partitionInfo);
 }

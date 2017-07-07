@@ -63,6 +63,7 @@ import org.apache.carbondata.core.scan.filter.resolver.LogicalFilterResolverImpl
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelFilterResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelRangeFilterResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.TrueConditionalResolverImpl;
+import org.apache.carbondata.core.scan.partition.PartitionUtil;
 import org.apache.carbondata.core.scan.partition.Partitioner;
 
 public class FilterExpressionProcessor implements FilterProcessor {
@@ -163,11 +164,11 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * The value of "1" in BitSet represent the required partition
    * @param expressionTree
    * @param partitionInfo
-   * @param partitioner
    * @return
    */
   @Override public BitSet getFilteredPartitions(Expression expressionTree,
-      PartitionInfo partitionInfo, Partitioner partitioner) {
+      PartitionInfo partitionInfo) {
+    Partitioner partitioner = PartitionUtil.getPartitioner(partitionInfo);
     return createPartitionFilterTree(expressionTree, partitionInfo).applyFilter(partitioner);
   }
 

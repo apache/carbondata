@@ -24,66 +24,72 @@ import org.apache.carbondata.core.util.ByteUtil;
 
 public final class Comparator {
 
-  private static SerializableComparator comparator;
-
   public static SerializableComparator getComparator(DataType dataType) {
     switch (dataType) {
       case INT:
-        comparator = new IntSerializableComparator();
-        break;
+        return new IntSerializableComparator();
       case SHORT:
-        comparator = new ShortSerializableComparator();
-        break;
+        return new ShortSerializableComparator();
       case DOUBLE:
-        comparator = new DoubleSerializableComparator();
-        break;
+        return new DoubleSerializableComparator();
       case LONG:
       case DATE:
       case TIMESTAMP:
-        comparator = new LongSerializableComparator();
-        break;
+        return new LongSerializableComparator();
       case DECIMAL:
-        comparator = new BigDecimalSerializableComparator();
-        break;
+        return new BigDecimalSerializableComparator();
       default:
-        comparator = new ByteArraySerializableComparator();
+        return new ByteArraySerializableComparator();
     }
-    return comparator;
   }
 }
 
 class ByteArraySerializableComparator implements SerializableComparator {
-  @Override public boolean compareTo(Object key1, Object key2) {
-    return ByteUtil.compare((byte[]) key1, (byte[]) key2) < 0;
+  @Override public int compare(Object key1, Object key2) {
+    return ByteUtil.compare((byte[]) key1, (byte[]) key2);
   }
 }
 
 class IntSerializableComparator implements SerializableComparator {
-  @Override public boolean compareTo(Object key1, Object key2) {
-    return (int) key1 - (int) key2 < 0;
+  @Override public int compare(Object key1, Object key2) {
+    return (int) key1 - (int) key2;
   }
 }
 
 class ShortSerializableComparator implements SerializableComparator {
-  @Override public boolean compareTo(Object key1, Object key2) {
-    return (short) key1 - (short) key2 < 0;
+  @Override public int compare(Object key1, Object key2) {
+    return (short) key1 - (short) key2;
   }
 }
 
 class DoubleSerializableComparator implements SerializableComparator {
-  @Override public boolean compareTo(Object key1, Object key2) {
-    return (double) key1 - (double) key2 < 0;
+  @Override public int compare(Object key1, Object key2) {
+    double result =  (double) key1 - (double) key2;
+    if (result < 0) {
+      return -1;
+    } else if (result > 0) {
+      return 1;
+    } else {
+      return 0;
+    }
   }
 }
 
 class LongSerializableComparator implements SerializableComparator {
-  @Override public boolean compareTo(Object key1, Object key2) {
-    return (long) key1 - (long) key2 < 0;
+  @Override public int compare(Object key1, Object key2) {
+    long result = (long) key1 - (long) key2;
+    if (result < 0) {
+      return -1;
+    } else if (result > 0) {
+      return 1;
+    } else {
+      return 0;
+    }
   }
 }
 
 class BigDecimalSerializableComparator implements SerializableComparator {
-  @Override public boolean compareTo(Object key1, Object key2) {
-    return ((BigDecimal) key1).compareTo((BigDecimal) key2) < 0;
+  @Override public int compare(Object key1, Object key2) {
+    return ((BigDecimal) key1).compareTo((BigDecimal) key2);
   }
 }

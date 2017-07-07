@@ -319,7 +319,7 @@ object CommonUtil {
         case _ => PartitionUtil.getDataBasedOnDataType(iterator.next(), columnDataType,
           timestampFormatter, dateFormatter)
       }
-      if (comparator.compareTo(head, next)) {
+      if (comparator.compare(head, next) < 0) {
         head = next
       } else {
         sys.error("Range info must be in ascending order, please check again!")
