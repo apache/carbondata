@@ -18,6 +18,7 @@ package org.apache.carbondata.core.indexstore;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -25,13 +26,16 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 
 /**
- * It maintains all the index tables in it.
+ * It maintains all the DataMaps in it.
  */
 public class DataMapStoreManager {
 
   private static DataMapStoreManager instance = new DataMapStoreManager();
 
-  private Map<DataMapType, Map<String, AbstractTableDataMap>> dataMapMappping = new HashMap<>();
+  /**
+   * Contains the list of datamaps for each table.
+   */
+  private Map<AbsoluteTableIdentifier, List<TableDataMap>> dataMapMappping = new HashMap<>();
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataMapStoreManager.class.getName());
@@ -47,20 +51,18 @@ public class DataMapStoreManager {
    * @param mapType
    * @return
    */
-  public AbstractTableDataMap getDataMap(AbsoluteTableIdentifier identifier, String dataMapName,
+  public TableDataMap getDataMap(AbsoluteTableIdentifier identifier, String dataMapName,
       DataMapType mapType) {
-    Map<String, AbstractTableDataMap> map = dataMapMappping.get(mapType);
-    AbstractTableDataMap dataMap = null;
-    if (map == null) {
+    List<TableDataMap> tableDataMaps = dataMapMappping.get(identifier);
+    TableDataMap dataMap = null;
+    if (tableDataMaps == null) {
       createTableDataMap(identifier, mapType, dataMapName);
-      map = dataMapMappping.get(mapType);
+      tableDataMaps = dataMapMappping.get(identifier);
     }
-    dataMap = map.get(dataMapName);
+    dataMap = getAbstractTableDataMap(dataMapName, tableDataMaps);
     if (dataMap == null) {
       throw new RuntimeException("Datamap does not exist");
     }
-    // Initialize datamap
-    dataMap.init(identifier, dataMapName);
     return dataMap;
   }
 
@@ -70,32 +72,54 @@ public class DataMapStoreManager {
    * @param mapType
    * @return
    */
-  public AbstractTableDataMap createTableDataMap(AbsoluteTableIdentifier identifier,
+  public TableDataMap createTableDataMap(AbsoluteTableIdentifier identifier,
       DataMapType mapType, String dataMapName) {
-    Map<String, AbstractTableDataMap> map = dataMapMappping.get(mapType);
-    if (map == null) {
-      map = new HashMap<>();
-      dataMapMappping.put(mapType, map);
+    List<TableDataMap> tableDataMaps = dataMapMappping.get(identifier);
+    if (tableDataMaps == null) {
+      tableDataMaps = new ArrayList<>();
+      dataMapMappping.put(identifier, tableDataMaps);
     }
-    AbstractTableDataMap dataMap = map.get(dataMapName);
+    TableDataMap dataMap = getAbstractTableDataMap(dataMapName, tableDataMaps);
     if (dataMap != null) {
       throw new RuntimeException("Already datamap exists in that path with type " + mapType);
     }
 
     try {
-      dataMap = (AbstractTableDataMap) (Class.forName(mapType.getClassName()).newInstance());
+      DataMapFactory dataMapFactory = mapType.getClassObject().newInstance();
+      dataMapFactory.init(identifier, dataMapName);
+      dataMap = new TableDataMap(identifier, dataMapName, dataMapFactory);
     } catch (Exception e) {
       LOGGER.error(e);
+      throw new RuntimeException(e);
     }
-    dataMap.init(identifier, dataMapName);
-    map.put(dataMapName, dataMap);
+    tableDataMaps.add(dataMap);
     return dataMap;
   }
 
-  public void clearDataMap(String dataMapName, DataMapType mapType) {
-    Map<String, AbstractTableDataMap> map = dataMapMappping.get(mapType);
-    if (map != null && map.get(dataMapName) != null) {
-      map.remove(dataMapName).clear(new ArrayList<String>());
+  private TableDataMap getAbstractTableDataMap(String dataMapName,
+      List<TableDataMap> tableDataMaps) {
+    TableDataMap dataMap = null;
+    for (TableDataMap tableDataMap: tableDataMaps) {
+      if (tableDataMap.getDataMapName().equals(dataMapName)) {
+        dataMap = tableDataMap;
+        break;
+      }
+    }
+    return dataMap;
+  }
+
+  public void clearDataMap(AbsoluteTableIdentifier identifier, String dataMapName) {
+    List<TableDataMap> tableDataMaps = dataMapMappping.get(identifier);
+    if (tableDataMaps != null) {
+      int i = 0;
+      for (TableDataMap tableDataMap: tableDataMaps) {
+        if (tableDataMap != null && dataMapName.equals(tableDataMap.getDataMapName())) {
+          tableDataMap.clear(new ArrayList<String>());
+          tableDataMaps.remove(i);
+          break;
+        }
+        i++;
+      }
     }
   }
 

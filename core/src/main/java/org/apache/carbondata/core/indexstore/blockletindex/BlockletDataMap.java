@@ -36,7 +36,8 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
-import org.apache.carbondata.core.indexstore.DataMap;
+import org.apache.carbondata.core.indexstore.DataMapDistributable;
+import org.apache.carbondata.core.indexstore.DataMapFactory;
 import org.apache.carbondata.core.indexstore.DataMapWriter;
 import org.apache.carbondata.core.indexstore.UnsafeMemoryDMStore;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
@@ -57,7 +58,7 @@ import org.apache.carbondata.core.util.DataFileFooterConverter;
 /**
  * Datamap implementation for blocklet.
  */
-public class BlockletDataMap implements DataMap, Cacheable {
+public class BlockletDataMap implements DataMapFactory.DataMap, Cacheable {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(BlockletDataMap.class.getName());
@@ -435,5 +436,10 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   @Override public long getMemorySize() {
     return unsafeMemoryDMStore.getMemoryUsed();
+  }
+
+  @Override public DataMapDistributable toDistributable() {
+    // TODO
+    return null;
   }
 }

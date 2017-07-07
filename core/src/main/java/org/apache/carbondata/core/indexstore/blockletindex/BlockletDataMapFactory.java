@@ -29,20 +29,17 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.events.ChangeEvent;
-import org.apache.carbondata.core.indexstore.AbstractTableDataMap;
-import org.apache.carbondata.core.indexstore.DataMap;
 import org.apache.carbondata.core.indexstore.DataMapDistributable;
+import org.apache.carbondata.core.indexstore.DataMapFactory;
 import org.apache.carbondata.core.indexstore.DataMapWriter;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
+import org.apache.carbondata.core.indexstore.schema.FilterType;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
  * Table map for blocklet
  */
-public class BlockletTableMap extends AbstractTableDataMap {
-
-  private String dataMapName;
+public class BlockletDataMapFactory implements DataMapFactory {
 
   private AbsoluteTableIdentifier identifier;
 
@@ -50,23 +47,17 @@ public class BlockletTableMap extends AbstractTableDataMap {
 
   private Cache<TableBlockIndexUniqueIdentifier, DataMap> cache;
 
-  @Override public void init(AbsoluteTableIdentifier identifier, String dataMapName) {
+  public void init(AbsoluteTableIdentifier identifier, String dataMapName) {
     this.identifier = identifier;
-    this.dataMapName = dataMapName;
     cache = CacheProvider.getInstance()
         .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP, identifier.getStorePath());
   }
 
-  @Override public DataMapWriter getMetaDataWriter() {
-    return null;
-  }
-
-  @Override
   public DataMapWriter getDataMapWriter(AbsoluteTableIdentifier identifier, String segmentId) {
     return null;
   }
 
-  @Override protected List<DataMap> getDataMaps(String segmentId) {
+  public List<DataMap> getDataMaps(String segmentId) {
     List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
         segmentMap.get(segmentId);
     if (tableBlockIndexUniqueIdentifiers == null) {
@@ -92,29 +83,29 @@ public class BlockletTableMap extends AbstractTableDataMap {
     }
   }
 
-  @Override public List<DataMapDistributable> toDistributable(List<String> segmentIds) {
-    return null;
-  }
-
-  @Override protected DataMap getDataMap(DataMapDistributable distributable) {
-    return null;
-  }
-
-  @Override public boolean isFiltersSupported(FilterResolverIntf filterExp) {
+  @Override public boolean isFiltersSupported(FilterType filterType) {
     return true;
   }
 
-  @Override public void clear(List<String> segmentIds) {
-    for (String segmentId : segmentIds) {
-      List<TableBlockIndexUniqueIdentifier> blockIndexes = segmentMap.remove(segmentId);
-      if (blockIndexes != null) {
-        for (TableBlockIndexUniqueIdentifier blockIndex : blockIndexes) {
-          DataMap dataMap = cache.getIfPresent(blockIndex);
-          dataMap.clear();
-          cache.invalidate(blockIndex);
-        }
+  public void clear(String segmentId) {
+    List<TableBlockIndexUniqueIdentifier> blockIndexes = segmentMap.remove(segmentId);
+    if (blockIndexes != null) {
+      for (TableBlockIndexUniqueIdentifier blockIndex : blockIndexes) {
+        DataMap dataMap = cache.getIfPresent(blockIndex);
+        dataMap.clear();
+        cache.invalidate(blockIndex);
       }
     }
+  }
+
+  @Override public void clear() {
+    for (String segmentId: segmentMap.keySet()) {
+      clear(segmentId);
+    }
+  }
+
+  @Override public DataMap getDataMap(DataMapDistributable distributable) {
+    return null;
   }
 
   @Override public void fireEvent(ChangeEvent event) {

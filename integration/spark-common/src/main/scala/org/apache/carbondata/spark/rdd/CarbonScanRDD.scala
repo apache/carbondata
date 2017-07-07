@@ -40,6 +40,7 @@ import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
 import org.apache.carbondata.hadoop._
+import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
 
@@ -245,22 +246,22 @@ class CarbonScanRDD(
     iterator.asInstanceOf[Iterator[InternalRow]]
   }
 
-  private def prepareInputFormatForDriver(conf: Configuration): CarbonInputFormatNew[Object] = {
-    CarbonInputFormatNew.setCarbonTable(conf, carbonTable)
+  private def prepareInputFormatForDriver(conf: Configuration): CarbonTableInputFormat[Object] = {
+    CarbonTableInputFormat.setCarbonTable(conf, carbonTable)
     createInputFormat(conf)
   }
 
-  private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormatNew[Object] = {
-    CarbonInputFormatNew.setCarbonReadSupport(conf, readSupport)
+  private def prepareInputFormatForExecutor(conf: Configuration): CarbonTableInputFormat[Object] = {
+    CarbonTableInputFormat.setCarbonReadSupport(conf, readSupport)
     createInputFormat(conf)
   }
 
-  private def createInputFormat(conf: Configuration): CarbonInputFormatNew[Object] = {
-    val format = new CarbonInputFormatNew[Object]
-    CarbonInputFormatNew.setTablePath(conf,
+  private def createInputFormat(conf: Configuration): CarbonTableInputFormat[Object] = {
+    val format = new CarbonTableInputFormat[Object]
+    CarbonTableInputFormat.setTablePath(conf,
       identifier.appendWithLocalPrefix(identifier.getTablePath))
-    CarbonInputFormatNew.setFilterPredicates(conf, filterExpression)
-    CarbonInputFormatNew.setColumnProjection(conf, columnProjection)
+    CarbonTableInputFormat.setFilterPredicates(conf, filterExpression)
+    CarbonTableInputFormat.setColumnProjection(conf, columnProjection)
     format
   }
 

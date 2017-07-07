@@ -19,37 +19,32 @@ package org.apache.carbondata.core.indexstore;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.events.ChangeEvent;
 import org.apache.carbondata.core.events.EventListener;
+import org.apache.carbondata.core.indexstore.DataMapFactory.DataMap;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-
 /**
  * DataMap at the table level, user can add any number of datamaps for one table. Depends
  * on the filter condition it can prune the blocklets.
  */
-public abstract class AbstractTableDataMap implements EventListener {
+public final class TableDataMap implements EventListener {
+
+  private AbsoluteTableIdentifier identifier;
+
+  private String dataMapName;
+
+  private DataMapFactory dataMapFactory;
 
   /**
    * It is called to initialize and load the required table datamap metadata.
    */
-  public abstract void init(AbsoluteTableIdentifier identifier, String dataMapName);
-
-  /**
-   * Gives the writer to write the metadata information of this datamap at table level.
-   *
-   * @return
-   */
-  public abstract DataMapWriter getMetaDataWriter();
-
-  /**
-   * Get the datamap writer for each segmentid.
-   *
-   * @param identifier
-   * @param segmentId
-   * @return
-   */
-  public abstract DataMapWriter getDataMapWriter(AbsoluteTableIdentifier identifier,
-      String segmentId);
+  public TableDataMap(AbsoluteTableIdentifier identifier, String dataMapName,
+      DataMapFactory dataMapFactory) {
+    this.identifier = identifier;
+    this.dataMapName = dataMapName;
+    this.dataMapFactory = dataMapFactory;
+  }
 
   /**
    * Pass the valid segments and prune the datamap using filter expression
@@ -61,7 +56,7 @@ public abstract class AbstractTableDataMap implements EventListener {
   public List<Blocklet> prune(List<String> segmentIds, FilterResolverIntf filterExp) {
     List<Blocklet> blocklets = new ArrayList<>();
     for (String segmentId : segmentIds) {
-      List<DataMap> dataMaps = getDataMaps(segmentId);
+      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentId);
       for (DataMap dataMap : dataMaps) {
         List<Blocklet> pruneBlocklets = dataMap.prune(filterExp);
         blocklets.addAll(addSegmentId(pruneBlocklets, segmentId));
@@ -78,21 +73,22 @@ public abstract class AbstractTableDataMap implements EventListener {
   }
 
   /**
-   * Get the datamap for segmentid
-   *
-   * @param segmentId
-   * @return
-   */
-  protected abstract List<DataMap> getDataMaps(String segmentId);
-
-  /**
    * This is used for making the datamap distributable.
    * It takes the valid segments and returns all the datamaps as distributable objects so that
    * it can be distributed across machines.
    *
    * @return
    */
-  public abstract List<DataMapDistributable> toDistributable(List<String> segmentIds);
+  public List<DataMapDistributable> toDistributable(List<String> segmentIds) {
+    List<DataMapDistributable> distributables = new ArrayList<>();
+    for (String segmentsId : segmentIds) {
+      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentsId);
+      for (DataMap dataMap : dataMaps) {
+        distributables.add(dataMap.toDistributable());
+      }
+    }
+    return distributables;
+  }
 
   /**
    * This method is used from any machine after it is distributed. It takes the distributable object
@@ -103,29 +99,36 @@ public abstract class AbstractTableDataMap implements EventListener {
    * @return
    */
   public List<Blocklet> prune(DataMapDistributable distributable, FilterResolverIntf filterExp) {
-    return getDataMap(distributable).prune(filterExp);
+    return dataMapFactory.getDataMap(distributable).prune(filterExp);
+  }
+
+  @Override public void fireEvent(ChangeEvent event) {
+    dataMapFactory.fireEvent(event);
   }
 
   /**
-   * Get datamap for distributable object.
-   *
-   * @param distributable
-   * @return
+   * Clear only the datamaps of the segments
+   * @param segmentIds
    */
-  protected abstract DataMap getDataMap(DataMapDistributable distributable);
+  public void clear(List<String> segmentIds) {
+    for (String segmentId: segmentIds) {
+      dataMapFactory.clear(segmentId);
+    }
+  }
 
   /**
-   * This method checks whether the columns and the type of filters supported
-   * for this datamap or not
+   * Clears all datamap
+   */
+  public void clear() {
+    dataMapFactory.clear();
+  }
+  /**
+   * Get the unique name of datamap
    *
-   * @param filterExp
    * @return
    */
-  public abstract boolean isFiltersSupported(FilterResolverIntf filterExp);
-
-  /**
-   * Clears table level datamap
-   */
-  public abstract void clear(List<String> segmentIds);
+  public String getDataMapName() {
+    return dataMapName;
+  }
 
 }

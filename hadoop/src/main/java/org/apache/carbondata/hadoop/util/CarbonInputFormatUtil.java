@@ -34,7 +34,7 @@ import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.hadoop.CarbonInputFormatNew;
+import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
@@ -77,10 +77,10 @@ public class CarbonInputFormatUtil {
     return plan;
   }
 
-  public static <V> CarbonInputFormatNew<V> createCarbonInputFormat(
+  public static <V> CarbonTableInputFormat<V> createCarbonInputFormat(
       AbsoluteTableIdentifier identifier,
       Job job) throws IOException {
-    CarbonInputFormatNew<V> carbonInputFormat = new CarbonInputFormatNew<>();
+    CarbonTableInputFormat<V> carbonInputFormat = new CarbonTableInputFormat<>();
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
     return carbonInputFormat;
   }

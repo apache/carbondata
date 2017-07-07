@@ -14,41 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.indexstore;
-
-import java.util.List;
-
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+package org.apache.carbondata.core.indexstore.schema;
 
 /**
- * Interface for adding and retrieving index data.
+ * Types of filters of select query
  */
-public interface DataMap {
-
-  /**
-   * Give the writer to write the data.
-   *
-   * @return
-   */
-  DataMapWriter getWriter();
-
-  /**
-   * It is called to load the data map to memory or to initialize it.
-   */
-  void init(String path);
-
-  /**
-   * Prune the datamap with filter expression. It returns the list of
-   * blocklets where these filters can exist.
-   *
-   * @param filterExp
-   * @return
-   */
-  List<Blocklet> prune(FilterResolverIntf filterExp);
-
-  /**
-   * Clear complete index table and release memory.
-   */
-  void clear();
-
+public enum FilterType {
+  EQUALTO, GREATER_THAN, LESS_THAN, GREATER_THAN_EQUAL, LESS_THAN_EQUAL, LIKE
 }
