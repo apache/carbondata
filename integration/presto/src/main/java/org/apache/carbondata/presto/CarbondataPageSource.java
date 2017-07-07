@@ -109,8 +109,7 @@ public class CarbondataPageSource implements ConnectorPageSource {
             switch(base) {
               case "varchar":
               case "decimal": Slice slice = cursor.getSlice(column);
-                if(type instanceof  DecimalType)
-                {
+                if(type instanceof  DecimalType) {
                   if (isShortDecimal(type)) {
                     type.writeLong(output, parseLong((DecimalType) type, slice, 0, slice.length()));
                   } else {
