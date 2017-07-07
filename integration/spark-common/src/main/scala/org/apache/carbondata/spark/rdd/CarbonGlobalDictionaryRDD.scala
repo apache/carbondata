@@ -381,16 +381,14 @@ class CarbonGlobalDictionaryGenerateRDD(
             model.primDimensions(split.index).getColName
           }")
         } else {
-          sys
-            .error(s"Dictionary file ${
+          sys.error(s"Dictionary file ${
               model.primDimensions(split.index).getColName
-            } is locked for updation. Please try after some time")
+          } is locked for updation. Please try after some time")
         }
         val t2 = System.currentTimeMillis
         val fileType = FileFactory.getFileType(model.dictFilePaths(split.index))
-        model.dictFileExists(split.index) = FileFactory
-          .isFileExist(model.dictFilePaths(split.index), fileType)
-        dictionaryForDistinctValueLookUp = if (model.dictFileExists(split.index)) {
+        val isDictFileExists = FileFactory.isFileExist(model.dictFilePaths(split.index), fileType)
+        dictionaryForDistinctValueLookUp = if (isDictFileExists) {
           CarbonLoaderUtil.getDictionary(model.table,
             model.columnIdentifier(split.index),
             model.hdfsLocation,
@@ -407,7 +405,7 @@ class CarbonGlobalDictionaryGenerateRDD(
           model.columnIdentifier(split.index),
           model.hdfsLocation,
           model.primDimensions(split.index).getColumnSchema,
-          model.dictFileExists(split.index)
+          isDictFileExists
         )
         // execute dictionary writer task to get distinct values
         val distinctValues = dictWriteTask.execute()

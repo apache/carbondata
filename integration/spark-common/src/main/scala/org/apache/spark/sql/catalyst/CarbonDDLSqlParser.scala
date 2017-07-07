@@ -572,7 +572,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     // All excluded cols should be there in create table cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
-      LOGGER.warn("dictionary_exclude option was deprecated")
+      LOGGER.warn("dictionary_exclude option was deprecated, " +
+                  "by default string column does not use global dictionary.")
       dictExcludeCols =
         tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
       dictExcludeCols
