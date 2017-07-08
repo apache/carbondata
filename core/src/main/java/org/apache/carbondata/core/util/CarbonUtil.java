@@ -128,7 +128,7 @@ public final class CarbonUtil {
         try {
           closeStream(stream);
         } catch (IOException e) {
-          LOGGER.error("Error while closing stream:" + e);
+          LOGGER.error(e, "Error while closing stream:" + e);
         }
       }
     }

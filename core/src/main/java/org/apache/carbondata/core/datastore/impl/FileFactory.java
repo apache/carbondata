@@ -518,4 +518,25 @@ public final class FileFactory {
     }
   }
 
+  /**
+   * This method will create the path object for a given file
+   *
+   * @param filePath
+   * @return
+   */
+  public static Path getPath(String filePath) {
+    return new Path(filePath);
+  }
+
+  /**
+   * This method will return the filesystem instance
+   *
+   * @param path
+   * @return
+   * @throws IOException
+   */
+  public static FileSystem getFileSystem(Path path) throws IOException {
+    return path.getFileSystem(configuration);
+  }
+
 }
