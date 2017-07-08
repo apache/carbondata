@@ -488,13 +488,6 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * @param aggTables the aggTables to set
-   */
-  public void setAggTables(String[] aggTables) {
-    this.aggTables = aggTables;
-  }
-
-  /**
    * @param storePath The storePath to set.
    */
   public void setStorePath(String storePath) {

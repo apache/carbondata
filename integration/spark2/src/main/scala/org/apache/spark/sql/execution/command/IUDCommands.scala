@@ -795,8 +795,8 @@ object UpdateExecution {
 
     def isDestinationRelation(relation: CarbonDatasourceHadoopRelation): Boolean = {
 
-      val tableName = relation.absIdentifier.getCarbonTableIdentifier.getTableName
-      val dbName = relation.absIdentifier.getCarbonTableIdentifier.getDatabaseName
+      val tableName = relation.identifier.getCarbonTableIdentifier.getTableName
+      val dbName = relation.identifier.getCarbonTableIdentifier.getDatabaseName
       (tableIdentifier.size > 1 &&
         tableIdentifier(0) == dbName &&
         tableIdentifier(1) == tableName) ||
@@ -841,8 +841,8 @@ object UpdateExecution {
     val header = getHeader(carbonRelation, plan)
 
     LoadTable(
-      Some(carbonRelation.absIdentifier.getCarbonTableIdentifier.getDatabaseName),
-      carbonRelation.absIdentifier.getCarbonTableIdentifier.getTableName,
+      Some(carbonRelation.identifier.getCarbonTableIdentifier.getDatabaseName),
+      carbonRelation.identifier.getCarbonTableIdentifier.getTableName,
       null,
       Seq(),
       Map(("fileheader" -> header)),

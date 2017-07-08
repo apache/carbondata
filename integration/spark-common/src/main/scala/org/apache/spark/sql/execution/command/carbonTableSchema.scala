@@ -526,7 +526,6 @@ class TableNewProcessor(cm: TableModel) {
     tableInfo.setTableUniqueName(cm.databaseName + "_" + cm.tableName)
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
-    tableInfo.setAggregateTableList(new util.ArrayList[TableSchema]())
     tableInfo
   }
 
