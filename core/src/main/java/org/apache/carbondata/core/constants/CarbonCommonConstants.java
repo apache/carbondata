@@ -1287,6 +1287,13 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_BAD_RECORDS_ACTION_DEFAULT = "FORCE";
 
+  @CarbonProperty
+  public static final String CARBON_LEASE_RECOVERY_RETRY_COUNT =
+      "carbon.lease.recovery.retry.count";
+  @CarbonProperty
+  public static final String CARBON_LEASE_RECOVERY_RETRY_INTERVAL =
+      "carbon.lease.recovery.retry.interval";
+
   private CarbonCommonConstants() {
   }
 }

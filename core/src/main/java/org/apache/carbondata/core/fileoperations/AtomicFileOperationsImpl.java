@@ -25,6 +25,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 public class AtomicFileOperationsImpl implements AtomicFileOperations {
 
@@ -67,10 +68,8 @@ public class AtomicFileOperationsImpl implements AtomicFileOperations {
   @Override public void close() throws IOException {
 
     if (null != dataOutStream) {
-      dataOutStream.close();
-
+      CarbonUtil.closeStream(dataOutStream);
       CarbonFile tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
-
       if (!tempFile.renameForce(filePath)) {
         throw new IOException("temporary file renaming failed, src="
             + tempFile.getPath() + ", dest=" + filePath);
