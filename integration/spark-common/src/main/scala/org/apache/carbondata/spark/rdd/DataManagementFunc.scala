@@ -250,7 +250,6 @@ object DataManagementFunc {
       carbonLoadModel,
       storeLocation,
       compactionModel.carbonTable,
-      compactionModel.tableCreationTime,
       loadsToMerge,
       sqlContext,
       compactionModel.compactionType

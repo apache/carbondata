@@ -256,19 +256,18 @@ public class CarbonCompactionUtil {
   /**
    * This will check if any compaction request has been received for any table.
    *
-   * @param tableMetas
+   * @param carbonTables
    * @return
    */
-  public static TableMeta getNextTableToCompact(TableMeta[] tableMetas,
+  public static CarbonTable getNextTableToCompact(CarbonTable[] carbonTables,
       List<CarbonTableIdentifier> skipList) {
-    for (TableMeta table : tableMetas) {
-      CarbonTable ctable = table.carbonTable;
+    for (CarbonTable ctable : carbonTables) {
       String metadataPath = ctable.getMetaDataFilepath();
       // check for the compaction required file and at the same time exclude the tables which are
       // present in the skip list.
       if (CarbonCompactionUtil.isCompactionRequiredForTable(metadataPath) && !skipList
-          .contains(table.carbonTableIdentifier)) {
-        return table;
+          .contains(ctable.getCarbonTableIdentifier())) {
+        return ctable;
       }
     }
     return null;

@@ -391,8 +391,6 @@ class NewDataFrameLoaderRDD[K, V](
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     loadCount: Integer,
-    tableCreationTime: Long,
-    schemaLastUpdatedTime: Long,
     prev: DataLoadCoalescedRDD[Row]) extends CarbonRDD[(K, V)](prev) {
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
@@ -589,8 +587,6 @@ class PartitionTableDataLoaderRDD[K, V](
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     loadCount: Integer,
-    tableCreationTime: Long,
-    schemaLastUpdatedTime: Long,
     prev: RDD[Row]) extends CarbonRDD[(K, V)](prev) {
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {

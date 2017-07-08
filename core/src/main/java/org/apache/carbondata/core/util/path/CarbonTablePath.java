@@ -432,6 +432,10 @@ public class CarbonTablePath extends Path {
     return tablePath + File.separator + FACT_DIR;
   }
 
+  public CarbonTableIdentifier getCarbonTableIdentifier() {
+    return carbonTableIdentifier;
+  }
+
   @Override public boolean equals(Object o) {
     if (!(o instanceof CarbonTablePath)) {
       return false;

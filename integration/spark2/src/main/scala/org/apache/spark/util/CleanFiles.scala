@@ -18,6 +18,7 @@
 package org.apache.spark.util
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.api.CarbonStore
 
@@ -30,8 +31,9 @@ object CleanFiles {
   def cleanFiles(spark: SparkSession, dbName: String, tableName: String,
       storePath: String): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
-    val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore
-      .getTableFromMetadata(dbName, tableName).map(_.carbonTable).getOrElse(null)
+    val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.
+      lookupRelation(Some(dbName), tableName)(spark).asInstanceOf[CarbonRelation].
+      tableMeta.carbonTable
     CarbonStore.cleanFiles(dbName, tableName, storePath, carbonTable)
   }
 
