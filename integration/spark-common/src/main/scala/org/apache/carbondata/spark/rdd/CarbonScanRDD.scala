@@ -26,7 +26,6 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark._
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.hive.DistributionUtil
 
@@ -34,7 +33,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
@@ -53,8 +52,9 @@ class CarbonScanRDD(
     columnProjection: CarbonProjection,
     filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
-    @transient carbonTable: CarbonTable)
-  extends CarbonRDD[InternalRow](sc, Nil) {
+    serializedTableInfo: Array[Byte],
+    @transient tableInfo: TableInfo)
+  extends CarbonRDDWithTableInfo[InternalRow](sc, Nil, serializedTableInfo) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
   private val jobTrackerId: String = {
@@ -65,7 +65,7 @@ class CarbonScanRDD(
 
   private val readSupport = SparkReadSupport.readSupportClass
 
-  private val bucketedTable = carbonTable.getBucketingInfo(carbonTable.getFactTableName)
+  private val bucketedTable = tableInfo.getFactTable.getBucketingInfo
 
   @transient private val jobId = new JobID(jobTrackerId, id)
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -174,6 +174,7 @@ class CarbonScanRDD(
   }
 
   override def internalCompute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
+
     val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
     if (null == carbonPropertiesFilePath) {
       System.setProperty("carbon.properties.filepath",
@@ -246,12 +247,13 @@ class CarbonScanRDD(
   }
 
   private def prepareInputFormatForDriver(conf: Configuration): CarbonInputFormat[Object] = {
-    CarbonInputFormat.setCarbonTable(conf, carbonTable)
+    CarbonInputFormat.setTableInfo(conf, tableInfo)
     createInputFormat(conf)
   }
 
   private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormat[Object] = {
     CarbonInputFormat.setCarbonReadSupport(conf, readSupport)
+    CarbonInputFormat.setTableInfo(conf, getTableInfo)
     createInputFormat(conf)
   }
 

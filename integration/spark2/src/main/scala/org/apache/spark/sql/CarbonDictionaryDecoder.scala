@@ -40,7 +40,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
-import org.apache.carbondata.spark.rdd.CarbonRDD
+import org.apache.carbondata.spark.rdd.{CarbonRDD, CarbonRDDWithTableInfo}
 
 /**
  * It decodes the data.
@@ -444,10 +444,9 @@ class CarbonDecoderRDD(
     aliasMap: CarbonAliasDecoderRelation,
     prev: RDD[InternalRow],
     output: Seq[Attribute],
-    sparkSession: SparkSession)
-  extends CarbonRDD[InternalRow](prev) {
-
-  private val storepath = CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath
+    storePath: String,
+    serializedTableInfo: Array[Byte])
+  extends CarbonRDDWithTableInfo[InternalRow](prev, serializedTableInfo) {
 
   def canBeDecoded(attr: Attribute): Boolean = {
     profile match {
@@ -516,13 +515,13 @@ class CarbonDecoderRDD(
 
   override def internalCompute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
     val absoluteTableIdentifiers = relations.map { relation =>
-      val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
-      (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
+      val tableInfo = getTableInfo
+      (tableInfo.getFactTable.getTableName, tableInfo.getOrCreateAbsoluteTableIdentifier)
     }.toMap
 
     val cacheProvider: CacheProvider = CacheProvider.getInstance
     val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storepath)
+      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
     val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
       forwardDictionaryCache)
     val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)

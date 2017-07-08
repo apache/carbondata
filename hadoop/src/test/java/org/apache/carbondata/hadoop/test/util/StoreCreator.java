@@ -270,7 +270,6 @@ public class StoreCreator {
             + absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
     tableInfo.setLastUpdatedTime(System.currentTimeMillis());
     tableInfo.setFactTable(tableSchema);
-    tableInfo.setAggregateTableList(new ArrayList<TableSchema>());
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());

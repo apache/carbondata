@@ -27,4 +27,24 @@ public enum Encoding {
   BIT_PACKED,
   DIRECT_DICTIONARY,
   IMPLICIT;
+
+  public static Encoding valueOf(int ordinal) {
+    if (ordinal == DICTIONARY.ordinal()) {
+      return DICTIONARY;
+    } else if (ordinal == DELTA.ordinal()) {
+      return DELTA;
+    } else if (ordinal == RLE.ordinal()) {
+      return RLE;
+    } else if (ordinal == INVERTED_INDEX.ordinal()) {
+      return INVERTED_INDEX;
+    } else if (ordinal == BIT_PACKED.ordinal()) {
+      return BIT_PACKED;
+    } else if (ordinal == DIRECT_DICTIONARY.ordinal()) {
+      return DIRECT_DICTIONARY;
+    } else if (ordinal == IMPLICIT.ordinal()) {
+      return IMPLICIT;
+    } else {
+      throw new RuntimeException("create Encoding with invalid ordinal: " + ordinal);
+    }
+  }
 }

@@ -39,6 +39,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.mutate.data.BlockMappingVO;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -101,51 +102,50 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String FILTER_PREDICATE =
       "mapreduce.input.carboninputformat.filter.predicate";
   private static final String COLUMN_PROJECTION = "mapreduce.input.carboninputformat.projection";
-  private static final String CARBON_TABLE = "mapreduce.input.carboninputformat.table";
+  private static final String TABLE_INFO = "mapreduce.input.carboninputformat.tableinfo";
   private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
 
+  // a cache for carbon table, it will be used in task side
+  private CarbonTable carbonTable;
+
   /**
-   * It is optional, if user does not set then it reads from store
-   *
-   * @param configuration
-   * @param carbonTable
-   * @throws IOException
+   * Set the `tableInfo` in `configuration`
    */
-  public static void setCarbonTable(Configuration configuration, CarbonTable carbonTable)
+  public static void setTableInfo(Configuration configuration, TableInfo tableInfo)
       throws IOException {
-    if (null != carbonTable) {
-      configuration.set(CARBON_TABLE, ObjectSerializationUtil.convertObjectToString(carbonTable));
+    if (null != tableInfo) {
+      configuration.set(TABLE_INFO, ObjectSerializationUtil.convertObjectToString(tableInfo));
     }
-  }
-
-  public static CarbonTable getCarbonTable(Configuration configuration) throws IOException {
-    String carbonTableStr = configuration.get(CARBON_TABLE);
-    if (carbonTableStr == null) {
-      populateCarbonTable(configuration);
-      // read it from schema file in the store
-      carbonTableStr = configuration.get(CARBON_TABLE);
-      return (CarbonTable) ObjectSerializationUtil.convertStringToObject(carbonTableStr);
-    }
-    return (CarbonTable) ObjectSerializationUtil.convertStringToObject(carbonTableStr);
   }
 
   /**
-   * this method will read the schema from the physical file and populate into CARBON_TABLE
-   * @param configuration
-   * @throws IOException
+   * Get TableInfo object from `configuration`
    */
-  private static void populateCarbonTable(Configuration configuration) throws IOException {
-    String dirs = configuration.get(INPUT_DIR, "");
-    String[] inputPaths = StringUtils.split(dirs);
-    if (inputPaths.length == 0) {
-      throw new InvalidPathException("No input paths specified in job");
+  private TableInfo getTableInfo(Configuration configuration) throws IOException {
+    String tableInfoStr = configuration.get(TABLE_INFO);
+    return (TableInfo) ObjectSerializationUtil.convertStringToObject(tableInfoStr);
+  }
+
+  /**
+   * Get the cached CarbonTable or create it by TableInfo in `configuration`
+   */
+  private CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
+    if (carbonTable == null) {
+      // carbon table should be created either from deserialized table info (schema saved in
+      // hive metastore) or by reading schema in HDFS (schema saved in HDFS)
+      TableInfo tableInfo = getTableInfo(configuration);
+      CarbonTable carbonTable;
+      if (tableInfo != null) {
+        carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
+      } else {
+        carbonTable = SchemaReader.readCarbonTableFromStore(
+            getAbsoluteTableIdentifier(configuration));
+      }
+      this.carbonTable = carbonTable;
+      return carbonTable;
+    } else {
+      return this.carbonTable;
     }
-    AbsoluteTableIdentifier absoluteTableIdentifier =
-        AbsoluteTableIdentifier.fromTablePath(inputPaths[0]);
-    // read the schema file to get the absoluteTableIdentifier having the correct table id
-    // persisted in the schema
-    CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
-    setCarbonTable(configuration, carbonTable);
   }
 
   public static void setTablePath(Configuration configuration, String tablePath)
@@ -212,13 +212,17 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * Set list of files to access
    */
   public static void setFilesToAccess(Configuration configuration, List<String> validFiles) {
-    configuration
-        .set(CarbonInputFormat.INPUT_FILES, CarbonUtil.getSegmentString(validFiles));
+    configuration.set(CarbonInputFormat.INPUT_FILES, CarbonUtil.getSegmentString(validFiles));
   }
 
-  private static AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
+  private AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
       throws IOException {
-    return getCarbonTable(configuration).getAbsoluteTableIdentifier();
+    String dirs = configuration.get(INPUT_DIR, "");
+    String[] inputPaths = StringUtils.split(dirs);
+    if (inputPaths.length == 0) {
+      throw new InvalidPathException("No input paths specified in job");
+    }
+    return AbsoluteTableIdentifier.fromTablePath(inputPaths[0]);
   }
 
   /**
@@ -265,12 +269,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
       // process and resolve the expression
       Expression filter = getFilterPredicates(job.getConfiguration());
-      CarbonTable carbonTable = getCarbonTable(job.getConfiguration());
-      // this will be null in case of corrupt schema file.
-      if (null == carbonTable) {
-        throw new IOException("Missing/Corrupt schema file for table.");
-      }
-
+      CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
       CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
 
       // prune partitions for filter query on partition table
@@ -343,17 +342,15 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     UpdateVO invalidBlockVOForSegmentId = null;
     Boolean  isIUDTable = false;
 
-    AbsoluteTableIdentifier absoluteTableIdentifier =
-            getCarbonTable(job.getConfiguration()).getAbsoluteTableIdentifier();
-    SegmentUpdateStatusManager updateStatusManager =
-            new SegmentUpdateStatusManager(absoluteTableIdentifier);
+    AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
+    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
 
     isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
 
     //for each segment fetch blocks matching filter in Driver BTree
     for (String segmentNo : getSegmentsToAccess(job)) {
       List<DataRefNode> dataRefNodes =
-          getDataBlocksOfSegment(job, filterExpressionProcessor, absoluteTableIdentifier,
+          getDataBlocksOfSegment(job, filterExpressionProcessor, identifier,
               filterResolver, matchedPartitions, segmentNo, cacheClient, updateStatusManager);
 
       // Get the UpdateVO for those tables on which IUD operations being performed.
@@ -699,7 +696,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   public QueryModel getQueryModel(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
       throws IOException {
     Configuration configuration = taskAttemptContext.getConfiguration();
-    CarbonTable carbonTable = getCarbonTable(configuration);
+    CarbonTable carbonTable = getOrCreateCarbonTable(configuration);
     // getting the table absoluteTableIdentifier from the carbonTable
     // to avoid unnecessary deserialization
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();

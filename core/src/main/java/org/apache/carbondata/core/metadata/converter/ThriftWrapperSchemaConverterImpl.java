@@ -269,12 +269,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
 
     org.apache.carbondata.format.TableSchema thriftFactTable =
         fromWrapperToExternalTableSchema(wrapperTableInfo.getFactTable());
-    List<org.apache.carbondata.format.TableSchema> thriftAggTables =
-        new ArrayList<org.apache.carbondata.format.TableSchema>();
-    for (TableSchema wrapperAggTableSchema : wrapperTableInfo.getAggregateTableList()) {
-      thriftAggTables.add(fromWrapperToExternalTableSchema(wrapperAggTableSchema));
-    }
-    return new org.apache.carbondata.format.TableInfo(thriftFactTable, thriftAggTables);
+    return new org.apache.carbondata.format.TableInfo(thriftFactTable, new ArrayList<org.apache
+        .carbondata.format.TableSchema>());
   }
 
   /* (non-Javadoc)

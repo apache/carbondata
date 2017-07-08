@@ -1500,10 +1500,6 @@ public class ThriftWrapperSchemaConverterImplTest {
       @Mock public TableSchema getFactTable() {
         return wrapperTableSchema;
       }
-
-      @Mock public List<TableSchema> getAggregateTableList() {
-        return tableSchemas;
-      }
     };
 
     new MockUp<TableSchema>() {
@@ -1529,12 +1525,11 @@ public class ThriftWrapperSchemaConverterImplTest {
     };
     org.apache.carbondata.format.TableSchema thriftFactTable =
         new org.apache.carbondata.format.TableSchema("tableId", thriftColumnSchemas, schemaEvol);
-    List<org.apache.carbondata.format.TableSchema> thriftAggTables = new ArrayList<>();
-    thriftAggTables.add(thriftFactTable);
     org.apache.carbondata.format.TableInfo actualResult = thriftWrapperSchemaConverter
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName);
     org.apache.carbondata.format.TableInfo expectedResult =
-        new org.apache.carbondata.format.TableInfo(thriftFactTable, thriftAggTables);
+        new org.apache.carbondata.format.TableInfo(thriftFactTable, new ArrayList<org.apache
+            .carbondata.format.TableSchema>());
     assertEquals(expectedResult, actualResult);
   }
 
