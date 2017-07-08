@@ -16,13 +16,14 @@
  */
 package org.apache.spark.sql.execution.command
 
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, InsertIntoCarbonTable, ShowLoadsCommand, SparkSession}
+import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
 
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 /**
@@ -61,7 +62,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       _, child: LogicalPlan, _, _) =>
         ExecutedCommandExec(LoadTableByInsert(relation, child)) :: Nil
       case createDb@CreateDatabaseCommand(dbName, ifNotExists, _, _, _) =>
-        CarbonEnv.getInstance(sparkSession).carbonMetastore.createDatabaseDirectory(dbName)
+        CarbonUtil.createDatabaseDirectory(dbName, CarbonEnv.getInstance(sparkSession).
+          carbonMetastore.storePath)
         ExecutedCommandExec(createDb) :: Nil
       case drop@DropDatabaseCommand(dbName, ifExists, isCascade) =>
         ExecutedCommandExec(CarbonDropDatabaseCommand(drop)) :: Nil
@@ -127,6 +129,14 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         ExecutedCommandExec(CarbonSetCommand(set)) :: Nil
       case reset@ResetCommand =>
         ExecutedCommandExec(CarbonResetCommand()) :: Nil
+      case org.apache.spark.sql.execution.datasources.CreateTable(tableDesc, mode, None)
+        if tableDesc.provider.get != DDLUtils.HIVE_PROVIDER
+           && tableDesc.provider.get.equals("org.apache.spark.sql.CarbonSource") =>
+        val updatedCatalog =
+          CarbonSource.updateCatalogTableWithCarbonSchema(tableDesc, sparkSession)
+        val cmd =
+          CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists = mode == SaveMode.Ignore)
+        ExecutedCommandExec(cmd) :: Nil
       case _ => Nil
     }
   }

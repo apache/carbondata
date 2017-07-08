@@ -195,6 +195,7 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test create table with complex datatype") {
+    sql("drop table if exists create_source")
     sql("create table create_source(intField int, stringField string, complexField array<string>) USING org.apache.spark.sql.CarbonSource OPTIONS('tableName'='create_source')")
     sql("drop table create_source")
   }

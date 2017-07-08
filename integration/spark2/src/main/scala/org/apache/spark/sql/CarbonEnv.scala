@@ -20,7 +20,7 @@ package org.apache.spark.sql
 import java.util.Map
 import java.util.concurrent.ConcurrentHashMap
 
-import org.apache.spark.sql.hive.{CarbonMetastore, CarbonSessionCatalog}
+import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonMetaStoreFactory, CarbonSessionCatalog}
 import org.apache.spark.sql.internal.CarbonSQLConf
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -34,7 +34,7 @@ import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
  */
 class CarbonEnv {
 
-  var carbonMetastore: CarbonMetastore = _
+  var carbonMetastore: CarbonMetaStore = _
 
   var sessionParams: SessionParams = _
 
@@ -64,7 +64,7 @@ class CarbonEnv {
         val storePath =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
         LOGGER.info(s"carbon env initial: $storePath")
-        new CarbonMetastore(sparkSession.conf, storePath)
+        CarbonMetaStoreFactory.createCarbonMetaStore(sparkSession.conf, storePath)
       }
       CarbonProperties.getInstance.addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
       initialized = true
