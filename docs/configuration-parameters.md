@@ -144,6 +144,5 @@ This section provides the details of all the configurations required for CarbonD
 |----------------------------------------|--------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | spark.driver.memory | 1g | Amount of memory to be used by the driver process. |
 | spark.executor.memory | 1g | Amount of memory to be used per executor process. |
-| spark.sql.bigdata.register.analyseRule | org.apache.spark.sql.hive.acl.CarbonAccessControlRules | CarbonAccessControlRules need to be set for enabling Access Control. |
    
  
