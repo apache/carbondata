@@ -36,7 +36,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
 
   @BeforeClass public void setUp() {
     carbonTable = new CarbonTable();
-    carbonTable.loadCarbonTable(getTableInfo(1000L));
+    carbonTable.buildFromTableInfo(getTableInfo(1000L));
   }
 
   @AfterClass public void tearDown() {

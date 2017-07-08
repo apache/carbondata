@@ -25,7 +25,7 @@ import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.hadoop.CarbonInputFormat
 
 /**
@@ -45,7 +45,7 @@ class TestTableIdTest extends QueryTest with BeforeAndAfterAll {
     job.getConfiguration
       .set("mapreduce.input.fileinputformat.inputdir",
         storePath + "/default/carbontable")
-    val carbonTable: CarbonTable = CarbonInputFormat.getCarbonTable(job.getConfiguration)
+    val tableInfo: TableInfo = CarbonInputFormat.getTableInfo(job.getConfiguration)
     val getAbsoluteTableIdentifier = classOf[CarbonInputFormat[Array[Object]]]
       .getDeclaredMethod("getAbsoluteTableIdentifier", classOf[Configuration])
     getAbsoluteTableIdentifier.setAccessible(true)
@@ -53,7 +53,7 @@ class TestTableIdTest extends QueryTest with BeforeAndAfterAll {
       .invoke(carbonInputFormat, job.getConfiguration).asInstanceOf[AbsoluteTableIdentifier]
 
     Assert
-      .assertEquals(carbonTable.getCarbonTableIdentifier.getTableId,
+      .assertEquals(tableInfo.getOrCreateAbsoluteTableIdentifier().getCarbonTableIdentifier.getTableId,
         absoluteTableIdentifier.getCarbonTableIdentifier.getTableId)
   }
 

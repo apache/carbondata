@@ -16,17 +16,30 @@
  */
 package org.apache.carbondata.core.metadata.schema.table;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 
 /**
  * Store the information about the table.
  * it stores the fact table as well as aggregate table present in the schema
  */
-public class TableInfo implements Serializable {
+public class TableInfo implements Serializable, Writable {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(TableInfo.class.getName());
 
   /**
    * serialization version
@@ -49,11 +62,6 @@ public class TableInfo implements Serializable {
   private TableSchema factTable;
 
   /**
-   * list of aggregate table
-   */
-  private List<TableSchema> aggregateTableList;
-
-  /**
    * last updated time to update the table if any changes
    */
   private long lastUpdatedTime;
@@ -68,8 +76,10 @@ public class TableInfo implements Serializable {
    */
   private String storePath;
 
+  // this idenifier is a lazy field which will be created when it is used first time
+  private AbsoluteTableIdentifier identifier;
+
   public TableInfo() {
-    aggregateTableList = new ArrayList<TableSchema>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   }
 
   /**
@@ -84,20 +94,6 @@ public class TableInfo implements Serializable {
    */
   public void setFactTable(TableSchema factTable) {
     this.factTable = factTable;
-  }
-
-  /**
-   * @return the aggregateTableList
-   */
-  public List<TableSchema> getAggregateTableList() {
-    return aggregateTableList;
-  }
-
-  /**
-   * @param aggregateTableList the aggregateTableList to set
-   */
-  public void setAggregateTableList(List<TableSchema> aggregateTableList) {
-    this.aggregateTableList = aggregateTableList;
   }
 
   /**
@@ -205,5 +201,69 @@ public class TableInfo implements Serializable {
       return false;
     }
     return true;
+  }
+
+  /**
+   * This method will return the table size. Default table block size will be considered
+   * in case not specified by the user
+   */
+  int getTableBlockSizeInMB() {
+    String tableBlockSize = null;
+    // In case of old store there will not be any map for table properties so table properties
+    // will be null
+    Map<String, String> tableProperties = getFactTable().getTableProperties();
+    if (null != tableProperties) {
+      tableBlockSize = tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE);
+    }
+    if (null == tableBlockSize) {
+      tableBlockSize = CarbonCommonConstants.BLOCK_SIZE_DEFAULT_VAL;
+      LOGGER.info("Table block size not specified for " + getTableUniqueName()
+          + ". Therefore considering the default value "
+          + CarbonCommonConstants.BLOCK_SIZE_DEFAULT_VAL + " MB");
+    }
+    return Integer.parseInt(tableBlockSize);
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    WritableUtil.writeString(out, databaseName);
+    WritableUtil.writeString(out, tableUniqueName);
+    factTable.write(out);
+    out.writeLong(lastUpdatedTime);
+    WritableUtil.writeString(out, metaDataFilepath);
+    WritableUtil.writeString(out, storePath);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    this.databaseName = WritableUtil.readString(in);
+    this.tableUniqueName = WritableUtil.readString(in);
+    this.factTable = new TableSchema();
+    this.factTable.readFields(in);
+    this.lastUpdatedTime = in.readLong();
+    this.metaDataFilepath = WritableUtil.readString(in);
+    this.storePath = WritableUtil.readString(in);
+  }
+
+  public AbsoluteTableIdentifier getOrCreateAbsoluteTableIdentifier() {
+    if (identifier == null) {
+      CarbonTableIdentifier carbontableIdentifier =
+          new CarbonTableIdentifier(databaseName, factTable.getTableName(), factTable.getTableId());
+      identifier = new AbsoluteTableIdentifier(storePath, carbontableIdentifier);
+    }
+    return identifier;
+  }
+
+  public byte[] serielize() throws IOException {
+    ByteArrayOutputStream bao = new ByteArrayOutputStream();
+    this.write(new DataOutputStream(bao));
+    return bao.toByteArray();
+  }
+
+  public static TableInfo deserielize(byte[] bytes) throws IOException {
+    TableInfo tableInfo = new TableInfo();
+    DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes));
+    tableInfo.readFields(in);
+    return tableInfo;
   }
 }

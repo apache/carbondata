@@ -89,7 +89,7 @@ public class DictionaryClientTest {
     storePath = System.getProperty("java.io.tmpdir") + "/tmp";
     tableInfo.setStorePath(storePath);
     CarbonTable carbonTable = new CarbonTable();
-    carbonTable.loadCarbonTable(tableInfo);
+    carbonTable.buildFromTableInfo(tableInfo);
 
     // Add the created table to metadata
     metadata.addCarbonTable(carbonTable);

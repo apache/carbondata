@@ -17,11 +17,14 @@
 
 package org.apache.carbondata.spark.rdd
 
+import java.io.{ByteArrayInputStream, DataInputStream}
+
 import scala.reflect.ClassTag
 
 import org.apache.spark.{Dependency, OneToOneDependency, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 
+import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.util.{CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
 
 /**
@@ -43,4 +46,18 @@ abstract class CarbonRDD[T: ClassTag](@transient sc: SparkContext,
     ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
     internalCompute(split, context)
   }
+}
+
+/**
+ * This RDD contains TableInfo object which is serialized and deserialized in driver and executor
+ */
+abstract class CarbonRDDWithTableInfo[T: ClassTag](
+    @transient sc: SparkContext,
+    @transient private var deps: Seq[Dependency[_]],
+    serializedTableInfo: Array[Byte]) extends CarbonRDD[T](sc, deps) {
+
+  def this(@transient oneParent: RDD[_], serializedTableInfo: Array[Byte]) =
+    this (oneParent.context, List(new OneToOneDependency(oneParent)), serializedTableInfo)
+
+  def getTableInfo: TableInfo = TableInfo.deserielize(serializedTableInfo)
 }

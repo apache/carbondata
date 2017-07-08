@@ -128,7 +128,6 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
 
 
     val table = relation.tableMeta.carbonTable
-    carbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.toArray)
     carbonLoadModel.setTableName(table.getFactTableName)
     val dataLoadSchema = new CarbonDataLoadSchema(table)
     // Need to fill dimension relation
@@ -404,7 +403,6 @@ case class LoadTable(
       carbonLoadModel.setStorePath(relation.tableMeta.storePath)
 
       val table = relation.tableMeta.carbonTable
-      carbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.toArray)
       carbonLoadModel.setTableName(table.getFactTableName)
       val dataLoadSchema = new CarbonDataLoadSchema(table)
       // Need to fill dimension relation

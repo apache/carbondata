@@ -167,7 +167,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
 
     tableInfo.setStorePath(storePath);
     CarbonTable carbonTable = new CarbonTable();
-    carbonTable.loadCarbonTable(tableInfo);
+    carbonTable.buildFromTableInfo(tableInfo);
 
     // Add the table to metadata
     metadata.addCarbonTable(carbonTable);

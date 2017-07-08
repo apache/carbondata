@@ -31,8 +31,10 @@ import org.apache.carbondata.hadoop.CarbonInputFormat;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
+import org.apache.carbondata.hadoop.util.SchemaReader;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.InvalidPathException;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;
 import org.apache.hadoop.io.ArrayWritable;
@@ -42,6 +44,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.util.StringUtils;
 
 public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     implements InputFormat<Void, ArrayWritable>, CombineHiveInputFormat.AvoidSplitCombination {
@@ -66,6 +69,19 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     QueryModel queryModel = getQueryModel(jobConf);
     CarbonReadSupport<ArrayWritable> readSupport = getReadSupportClass(jobConf);
     return new CarbonHiveRecordReader(queryModel, readSupport, inputSplit, jobConf);
+  }
+
+  private CarbonTable getCarbonTable(Configuration configuration) throws IOException {
+    String dirs = configuration.get(INPUT_DIR, "");
+    String[] inputPaths = StringUtils.split(dirs);
+    if (inputPaths.length == 0) {
+      throw new InvalidPathException("No input paths specified in job");
+    }
+    AbsoluteTableIdentifier absoluteTableIdentifier =
+        AbsoluteTableIdentifier.fromTablePath(inputPaths[0]);
+    // read the schema file to get the absoluteTableIdentifier having the correct table id
+    // persisted in the schema
+    return SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
   }
 
   private QueryModel getQueryModel(Configuration configuration) throws IOException {

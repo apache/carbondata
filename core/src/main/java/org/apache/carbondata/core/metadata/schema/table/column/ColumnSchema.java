@@ -16,17 +16,24 @@
  */
 package org.apache.carbondata.core.metadata.schema.table.column;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.Writable;
+import org.apache.carbondata.core.metadata.schema.table.WritableUtil;
 
 /**
  * Store the information about the column meta data present the table
  */
-public class ColumnSchema implements Serializable {
+public class ColumnSchema implements Serializable, Writable {
 
   /**
    * serialization version
@@ -37,6 +44,7 @@ public class ColumnSchema implements Serializable {
    * dataType
    */
   private DataType dataType;
+
   /**
    * Name of the column. If it is a complex data type, we follow a naming rule
    * grand_parent_column.parent_column.child_column
@@ -360,17 +368,6 @@ public class ColumnSchema implements Serializable {
   }
 
   /**
-   * @param property
-   * @return
-   */
-  public String getColumnProperty(String property) {
-    if (null != columnProperties) {
-      return columnProperties.get(property);
-    }
-    return null;
-  }
-
-  /**
    * return columnproperties
    */
   public Map<String, String> getColumnProperties() {
@@ -420,5 +417,68 @@ public class ColumnSchema implements Serializable {
 
   public void setSortColumn(boolean sortColumn) {
     isSortColumn = sortColumn;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeInt(dataType.ordinal());
+    WritableUtil.writeString(out, columnName);
+    WritableUtil.writeString(out, columnUniqueId);
+    WritableUtil.writeString(out, columnReferenceId);
+    if (encodingList == null) {
+      out.writeInt(0);
+    } else {
+      out.writeInt(encodingList.size());
+      for (Encoding encoding : encodingList) {
+        out.writeInt(encoding.ordinal());
+      }
+    }
+    out.writeBoolean(isDimensionColumn);
+    out.writeInt(scale);
+    out.writeInt(precision);
+    out.writeInt(schemaOrdinal);
+    out.writeInt(numberOfChild);
+    WritableUtil.writeByteArray(out, defaultValue);
+    if (columnProperties == null) {
+      out.writeInt(0);
+    } else {
+      out.writeInt(columnProperties.size());
+      for (Map.Entry<String, String> entry : columnProperties.entrySet()) {
+        WritableUtil.writeString(out, entry.getKey());
+        WritableUtil.writeString(out, entry.getValue());
+      }
+    }
+    out.writeBoolean(invisible);
+    out.writeBoolean(isSortColumn);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    int ordinal = in.readInt();
+    this.dataType = DataType.valueOf(ordinal);
+    this.columnName = WritableUtil.readString(in);
+    this.columnUniqueId = WritableUtil.readString(in);
+    this.columnReferenceId = WritableUtil.readString(in);
+    int encodingListSize = in.readInt();
+    this.encodingList = new ArrayList<>(encodingListSize);
+    for (int i = 0; i < encodingListSize; i++) {
+      ordinal = in.readInt();
+      encodingList.add(Encoding.valueOf(ordinal));
+    }
+    this.isDimensionColumn = in.readBoolean();
+    this.scale = in.readInt();
+    this.precision = in.readInt();
+    this.schemaOrdinal = in.readInt();
+    this.numberOfChild = in.readInt();
+    this.defaultValue = WritableUtil.readByteArray(in);
+    int mapSize = in.readInt();
+    this.columnProperties = new HashMap<>(mapSize);
+    for (int i = 0; i < mapSize; i++) {
+      String key = WritableUtil.readString(in);
+      String value = WritableUtil.readString(in);
+      this.columnProperties.put(key, value);
+    }
+    this.invisible = in.readBoolean();
+    this.isSortColumn = in.readBoolean();
   }
 }

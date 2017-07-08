@@ -266,7 +266,6 @@ object DataManagementFunc {
   def prepareCarbonLoadModel(storePath: String,
       table: CarbonTable,
       newCarbonLoadModel: CarbonLoadModel): Unit = {
-    newCarbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.toArray)
     newCarbonLoadModel.setTableName(table.getFactTableName)
     val dataLoadSchema = new CarbonDataLoadSchema(table)
     // Need to fill dimension relation
