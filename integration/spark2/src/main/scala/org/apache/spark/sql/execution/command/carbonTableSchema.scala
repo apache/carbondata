@@ -733,9 +733,10 @@ case class LoadTable(
           // Create table and metadata folders if not exist
           val carbonTablePath = CarbonStorePath
             .getCarbonTablePath(storePath, table.getCarbonTableIdentifier)
-          val fileType = FileFactory.getFileType(carbonTablePath.getSchemaFilePath)
-          if (!FileFactory.isFileExist(carbonTablePath.getSchemaFilePath, fileType)) {
-            FileFactory.mkdirs(carbonTablePath.getSchemaFilePath, fileType)
+          val metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath
+          val fileType = FileFactory.getFileType(metadataDirectoryPath)
+          if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
+            FileFactory.mkdirs(metadataDirectoryPath, fileType)
           }
           GlobalDictionaryUtil
             .generateGlobalDictionary(

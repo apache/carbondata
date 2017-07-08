@@ -142,10 +142,10 @@ class CarbonFileMetastore(conf: RuntimeConfig, val storePath: String) extends Ca
 
   def lookupRelation(tableIdentifier: TableIdentifier, readFromStore: Boolean = false)
     (sparkSession: SparkSession): LogicalPlan = {
+    checkSchemasModifiedTimeAndReloadTables()
     val database = tableIdentifier.database.getOrElse(
       sparkSession.catalog.currentDatabase
     )
-    checkSchemasModifiedTimeAndReloadTables()
     val tables = getTableFromMetadata(database, tableIdentifier.table, true)
     tables match {
       case Some(t) =>
@@ -266,6 +266,7 @@ class CarbonFileMetastore(conf: RuntimeConfig, val storePath: String) extends Ca
       }
     } catch {
       case s: java.io.FileNotFoundException =>
+        s.printStackTrace()
         // Create folders and files.
         FileFactory.mkdirs(databasePath, fileType)
     }
@@ -469,16 +470,16 @@ class CarbonFileMetastore(conf: RuntimeConfig, val storePath: String) extends Ca
       checkSchemasModifiedTimeAndReloadTables
       val file = FileFactory.getCarbonFile(metadataFilePath, fileType)
       CarbonUtil.deleteFoldersAndFilesSilent(file.getParentFile)
-        val metadataToBeRemoved: Option[TableMeta] = getTableFromMetadata(dbName,
-          tableIdentifier.table)
-        metadataToBeRemoved match {
-          case Some(tableMeta) =>
-            metadata.tablesMeta -= tableMeta
-            CarbonMetadata.getInstance.removeTable(dbName + "_" + tableName)
-            updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
-          case None =>
-            LOGGER.info(s"Metadata does not contain entry for table $tableName in database $dbName")
-        }
+      val metadataToBeRemoved: Option[TableMeta] = getTableFromMetadata(dbName,
+        tableIdentifier.table)
+      metadataToBeRemoved match {
+        case Some(tableMeta) =>
+          metadata.tablesMeta -= tableMeta
+          CarbonMetadata.getInstance.removeTable(dbName + "_" + tableName)
+          updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
+        case None =>
+          LOGGER.info(s"Metadata does not contain entry for table $tableName in database $dbName")
+      }
       CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
       // discard cached table info in cachedDataSourceTables
       sparkSession.sessionState.catalog.refreshTable(tableIdentifier)

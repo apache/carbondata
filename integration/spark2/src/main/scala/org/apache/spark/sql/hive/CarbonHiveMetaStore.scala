@@ -139,6 +139,8 @@ class CarbonHiveMetaStore(conf: RuntimeConfig, storePath: String)
       CarbonTablePath.getFolderContainingFile(carbonTablePath.getSchemaFilePath)
     tableInfo.setMetaDataFilepath(schemaMetadataPath)
     tableInfo.setStorePath(storePath)
+    removeTableFromMetadata(dbName, tableName)
+    CarbonMetadata.getInstance().loadTableMetadata(tableInfo)
     carbonTablePath.getPath
   }
 

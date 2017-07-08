@@ -148,10 +148,16 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     val dbName: String = parameters.getOrElse("dbName",
       CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
     val tableName: String = parameters.getOrElse("tableName", "").toLowerCase
+    val carbonSchemaPartsNo = parameters.get("carbonSchemaPartsNo")
     try {
-      CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .lookupRelation(Option(dbName), tableName)(sparkSession)
-      CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath + s"/$dbName/$tableName"
+      carbonSchemaPartsNo match {
+        case Some(schema) =>
+          getPathForTable(sparkSession, dbName, tableName, parameters)
+        case _ =>
+          CarbonEnv.getInstance(sparkSession).carbonMetastore
+            .lookupRelation(Option(dbName), tableName)(sparkSession)
+          CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath + s"/$dbName/$tableName"
+      }
     } catch {
       case ex: NoSuchTableException =>
         val sqlParser = new CarbonSpark2SqlParser
