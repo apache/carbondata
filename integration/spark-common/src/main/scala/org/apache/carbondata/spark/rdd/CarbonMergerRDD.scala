@@ -265,6 +265,8 @@ class CarbonMergerRDD[K, V](
     val jobConf: JobConf = new JobConf(new Configuration)
     val job: Job = new Job(jobConf)
     val format = CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)
+    CarbonInputFormat.setCarbonTable(job.getConfiguration,
+      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable)
     var updateDetails: UpdateVO = null
     // initialise query_id for job
     job.getConfiguration.set("query.id", queryId)

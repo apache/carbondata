@@ -71,8 +71,7 @@ private[sql] case class AlterTableAddColumns(
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
         carbonTable.getCarbonTableIdentifier)
       val tableMetadataFile = carbonTablePath.getSchemaFilePath
-      val thriftTableInfo: TableInfo = CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .readSchemaFile(tableMetadataFile)
+      val thriftTableInfo: TableInfo = CarbonUtil.readSchemaFile(tableMetadataFile)
       val schemaConverter = new ThriftWrapperSchemaConverterImpl()
       val wrapperTableInfo = schemaConverter
         .fromExternalToWrapperTableInfo(thriftTableInfo,
@@ -175,8 +174,8 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
         carbonTable.getCarbonTableIdentifier)
       val tableMetadataFile = carbonTablePath.getSchemaFilePath
-      val tableInfo: org.apache.carbondata.format.TableInfo = CarbonEnv.getInstance(sparkSession)
-        .carbonMetastore.readSchemaFile(tableMetadataFile)
+      val tableInfo: org.apache.carbondata.format.TableInfo =
+        CarbonUtil.readSchemaFile(tableMetadataFile)
       val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
       schemaEvolutionEntry.setTableName(newTableName)
       timeStamp = System.currentTimeMillis()
@@ -330,8 +329,8 @@ private[sql] case class AlterTableDropColumns(
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
         carbonTable.getCarbonTableIdentifier)
       val tableMetadataFile = carbonTablePath.getSchemaFilePath
-      val tableInfo: org.apache.carbondata.format.TableInfo = CarbonEnv.getInstance(sparkSession)
-        .carbonMetastore.readSchemaFile(tableMetadataFile)
+      val tableInfo: org.apache.carbondata.format.TableInfo =
+        CarbonUtil.readSchemaFile(tableMetadataFile)
       // maintain the deleted columns for schema evolution history
       var deletedColumnSchema = ListBuffer[org.apache.carbondata.format.ColumnSchema]()
       val columnSchemaList = tableInfo.fact_table.table_columns.asScala
@@ -416,8 +415,7 @@ private[sql] case class AlterTableDataTypeChange(
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
         carbonTable.getCarbonTableIdentifier)
       val tableMetadataFile = carbonTablePath.getSchemaFilePath
-      val tableInfo: TableInfo = CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .readSchemaFile(tableMetadataFile)
+      val tableInfo: TableInfo = CarbonUtil.readSchemaFile(tableMetadataFile)
       // maintain the added column for schema evolution history
       var addColumnSchema: ColumnSchema = null
       var deletedColumnSchema: ColumnSchema = null

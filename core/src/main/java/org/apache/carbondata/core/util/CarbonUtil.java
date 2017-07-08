@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -58,6 +59,7 @@ import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -73,6 +75,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 
+import com.google.gson.Gson;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -1720,5 +1723,93 @@ public final class CarbonUtil {
   public static boolean isValidBadStorePath(String badRecordsLocation) {
     return !(null == badRecordsLocation || badRecordsLocation.length() == 0);
   }
+
+  public static String convertToMultiGsonStrings(TableInfo tableInfo, String seperator,
+      String quote) {
+    Gson gson = new Gson();
+    String schemaString = gson.toJson(tableInfo);
+    int schemaLen = schemaString.length();
+    int splitLen = 4000;
+    int parts = schemaLen / splitLen;
+    if (schemaLen % splitLen > 0) {
+      parts++;
+    }
+    StringBuilder builder =
+        new StringBuilder(",").append(quote).append("carbonSchemaPartsNo").append(quote)
+            .append(seperator).append("'").append(parts).append("',");
+    int runningLen = 0;
+    int endLen = splitLen;
+    for (int i = 0; i < parts; i++) {
+      if (i == parts - 1) {
+        endLen = schemaLen % splitLen;
+      }
+      builder.append(quote).append("carbonSchema").append(i).append(quote).append(seperator);
+      builder.append("'").append(schemaString.substring(runningLen, runningLen + endLen))
+          .append("'");
+      if (i < parts - 1) {
+        builder.append(",");
+      }
+      runningLen += splitLen;
+    }
+    return builder.toString();
+  }
+
+  public static TableInfo convertGsonToTableInfo(Map<String, String> properties) {
+    Gson gson = new Gson();
+    String partsNo = properties.get("carbonSchemaPartsNo");
+    if (partsNo == null) {
+      return null;
+    }
+    int no = Integer.parseInt(partsNo);
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < no; i++) {
+      String part = properties.get("carbonSchema" + i);
+      if (part == null) {
+        throw new RuntimeException("Some thing wrong in getting schema from hive metastore");
+      }
+      builder.append(part);
+    }
+    TableInfo tableInfo = gson.fromJson(builder.toString(), TableInfo.class);
+    return tableInfo;
+  }
+
+  /**
+   * This method will read the schema file from a given path
+   *
+   * @param schemaFilePath
+   * @return
+   */
+  public static org.apache.carbondata.format.TableInfo readSchemaFile(String schemaFilePath)
+      throws IOException {
+    TBaseCreator createTBase = new ThriftReader.TBaseCreator() {
+      public org.apache.thrift.TBase<org.apache.carbondata.format.TableInfo,
+          org.apache.carbondata.format.TableInfo._Fields> create() {
+        return new org.apache.carbondata.format.TableInfo();
+      }
+    };
+    ThriftReader thriftReader = new ThriftReader(schemaFilePath, createTBase);
+    thriftReader.open();
+    org.apache.carbondata.format.TableInfo tableInfo =
+        (org.apache.carbondata.format.TableInfo) thriftReader.read();
+    thriftReader.close();
+    return tableInfo;
+  }
+
+  public static void createDatabaseDirectory(String dbName, String storePath) throws IOException {
+    String databasePath = storePath + File.separator + dbName.toLowerCase();
+    FileFactory.FileType fileType = FileFactory.getFileType(databasePath);
+    FileFactory.mkdirs(databasePath, fileType);
+  }
+
+  public static void dropDatabaseDirectory(String dbName, String storePath)
+      throws IOException, InterruptedException {
+    String databasePath = storePath + File.separator + dbName;
+    FileFactory.FileType fileType = FileFactory.getFileType(databasePath);
+    if (FileFactory.isFileExist(databasePath, fileType)) {
+      CarbonFile dbPath = FileFactory.getCarbonFile(databasePath, fileType);
+      CarbonUtil.deleteFoldersAndFiles(dbPath);
+    }
+  }
+
 }
 

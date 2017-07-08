@@ -105,8 +105,6 @@ object CarbonDataRDDFactory {
     LOGGER.audit(s"Compaction request received for table " +
         s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    val tableCreationTime = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
-        .getTableCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
 
     if (null == carbonLoadModel.getLoadMetadataDetails) {
       CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
@@ -124,7 +122,6 @@ object CarbonDataRDDFactory {
     val compactionModel = CompactionModel(compactionSize,
       compactionType,
       carbonTable,
-      tableCreationTime,
       isCompactionTriggerByDDl
     )
 
@@ -285,22 +282,18 @@ object CarbonDataRDDFactory {
             val skipCompactionTables = ListBuffer[CarbonTableIdentifier]()
             var tableForCompaction = CarbonCompactionUtil
               .getNextTableToCompact(CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
-                .metadata.tablesMeta.toArray,
+                .listAllTables(sqlContext.sparkSession).toArray,
                 skipCompactionTables.toList.asJava)
             while (null != tableForCompaction) {
               LOGGER.info("Compaction request has been identified for table " +
-                  s"${ tableForCompaction.carbonTable.getDatabaseName }." +
-                  s"${ tableForCompaction.carbonTableIdentifier.getTableName }")
-              val table: CarbonTable = tableForCompaction.carbonTable
+                  s"${ tableForCompaction.getDatabaseName }." +
+                  s"${ tableForCompaction.getFactTableName}")
+              val table: CarbonTable = tableForCompaction
               val metadataPath = table.getMetaDataFilepath
               val compactionType = CarbonCompactionUtil.determineCompactionType(metadataPath)
 
               val newCarbonLoadModel = new CarbonLoadModel()
               DataManagementFunc.prepareCarbonLoadModel(storePath, table, newCarbonLoadModel)
-              val tableCreationTime = CarbonEnv.getInstance(sqlContext.sparkSession)
-                .carbonMetastore.getTableCreationTime(newCarbonLoadModel.getDatabaseName,
-                newCarbonLoadModel.getTableName
-              )
 
               val compactionSize = CarbonDataMergerUtil
                   .getCompactionSize(CompactionType.MAJOR_COMPACTION)
@@ -308,7 +301,6 @@ object CarbonDataRDDFactory {
               val newcompactionModel = CompactionModel(compactionSize,
                 compactionType,
                 table,
-                tableCreationTime,
                 compactionModel.isDDLTrigger
               )
               // proceed for compaction
@@ -321,8 +313,8 @@ object CarbonDataRDDFactory {
               } catch {
                 case e: Exception =>
                   LOGGER.error("Exception in compaction thread for table " +
-                      s"${ tableForCompaction.carbonTable.getDatabaseName }." +
-                      s"${ tableForCompaction.carbonTableIdentifier.getTableName }")
+                      s"${ tableForCompaction.getDatabaseName }." +
+                      s"${ tableForCompaction.getFactTableName }")
                 // not handling the exception. only logging as this is not the table triggered
                 // by user.
               } finally {
@@ -331,17 +323,17 @@ object CarbonDataRDDFactory {
                     .deleteCompactionRequiredFile(metadataPath, compactionType)) {
                   // if the compaction request file is not been able to delete then
                   // add those tables details to the skip list so that it wont be considered next.
-                  skipCompactionTables.+=:(tableForCompaction.carbonTableIdentifier)
+                  skipCompactionTables.+=:(tableForCompaction.getCarbonTableIdentifier)
                   LOGGER.error("Compaction request file can not be deleted for table " +
-                      s"${ tableForCompaction.carbonTable.getDatabaseName }." +
-                      s"${ tableForCompaction.carbonTableIdentifier.getTableName }")
+                      s"${ tableForCompaction.getDatabaseName }." +
+                      s"${ tableForCompaction.getFactTableName }")
                 }
               }
               // ********* check again for all the tables.
               tableForCompaction = CarbonCompactionUtil
                 .getNextTableToCompact(CarbonEnv.getInstance(sqlContext.sparkSession)
-                  .carbonMetastore.metadata
-                  .tablesMeta.toArray, skipCompactionTables.asJava
+                  .carbonMetastore.listAllTables(sqlContext.sparkSession).toArray,
+                  skipCompactionTables.asJava
                 )
             }
           }
@@ -373,7 +365,7 @@ object CarbonDataRDDFactory {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val isAgg = false
     // for handling of the segment Merging.
-    def handleSegmentMerging(tableCreationTime: Long): Unit = {
+    def handleSegmentMerging(): Unit = {
       LOGGER.info(s"compaction need status is" +
           s" ${ CarbonDataMergerUtil.checkIfAutoLoadMergingRequired() }")
       if (CarbonDataMergerUtil.checkIfAutoLoadMergingRequired()) {
@@ -384,7 +376,6 @@ object CarbonDataRDDFactory {
         val compactionModel = CompactionModel(compactionSize,
           CompactionType.MINOR_COMPACTION,
           carbonTable,
-          tableCreationTime,
           isCompactionTriggerByDDl
         )
         var storeLocation = ""
@@ -492,11 +483,6 @@ object CarbonDataRDDFactory {
       // reading the start time of data load.
       val loadStartTime = CarbonUpdateUtil.readCurrentTime();
       carbonLoadModel.setFactTimeStamp(loadStartTime)
-      val tableCreationTime = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
-          .getTableCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
-      val schemaLastUpdatedTime = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
-          .getSchemaLastUpdatedTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
-
       // get partition way from configuration
       // val isTableSplitPartition = CarbonProperties.getInstance().getProperty(
       // CarbonCommonConstants.TABLE_SPLIT_PARTITION,
@@ -645,8 +631,6 @@ object CarbonDataRDDFactory {
             new DataLoadResultImpl(),
             carbonLoadModel,
             currentLoadCount,
-            tableCreationTime,
-            schemaLastUpdatedTime,
             newRdd).collect()
 
         } catch {
@@ -760,8 +744,6 @@ object CarbonDataRDDFactory {
             new DataLoadResultImpl(),
             carbonLoadModel,
             currentLoadCount,
-            tableCreationTime,
-            schemaLastUpdatedTime,
             rdd).collect()
         } catch {
           case ex: Exception =>
@@ -998,7 +980,7 @@ object CarbonDataRDDFactory {
         }
         try {
           // compaction handling
-          handleSegmentMerging(tableCreationTime)
+          handleSegmentMerging()
         } catch {
           case e: Exception =>
             throw new Exception(

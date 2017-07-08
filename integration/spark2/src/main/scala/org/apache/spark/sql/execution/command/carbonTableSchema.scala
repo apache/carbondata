@@ -186,23 +186,27 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
     } else {
       // Add Database to catalog and persist
       val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      // Need to fill partitioner class when we support partition
+      var carbonSchemaString: String = ""
       val tablePath = catalog.createTableFromThrift(tableInfo, dbName, tbName)(sparkSession)
+      if (createDSTable && catalog.isReadFromHiveMetaStore) {
+        carbonSchemaString = CarbonUtil.convertToMultiGsonStrings(tableInfo, " ", "")
+      }
       if (createDSTable) {
         try {
           val fields = new Array[Field](cm.dimCols.size + cm.msrCols.size)
           cm.dimCols.foreach(f => fields(f.schemaOrdinal) = f)
           cm.msrCols.foreach(f => fields(f.schemaOrdinal) = f)
+
           sparkSession.sql(
             s"""CREATE TABLE $dbName.$tbName
                 |(${ fields.map(f => f.rawSchema).mkString(",") })
                 |USING org.apache.spark.sql.CarbonSource""".stripMargin +
-            s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath "$tablePath") """)
+            s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath """.stripMargin +
+            s""""$tablePath" $carbonSchemaString) """)
         } catch {
           case e: Exception =>
             val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
             // call the drop table to delete the created table.
-
             CarbonEnv.getInstance(sparkSession).carbonMetastore
               .dropTable(catalog.storePath, identifier)(sparkSession)
 
@@ -234,9 +238,9 @@ case class DeleteLoadsById(
   def run(sparkSession: SparkSession): Seq[Row] = {
 
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .getTableFromMetadata(getDB.getDatabaseName(databaseNameOp, sparkSession), tableName)
-      .map(_.carbonTable).getOrElse(null)
+    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
+      lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
+      tableMeta.carbonTable
     CarbonStore.deleteLoadById(
       loadids,
       getDB.getDatabaseName(databaseNameOp, sparkSession),
@@ -259,9 +263,9 @@ case class DeleteLoadsByLoadDate(
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .getTableFromMetadata(getDB.getDatabaseName(databaseNameOp, sparkSession), tableName)
-      .map(_.carbonTable).getOrElse(null)
+    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
+      lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
+      tableMeta.carbonTable
     CarbonStore.deleteLoadByDate(
       loadDate,
       getDB.getDatabaseName(databaseNameOp, sparkSession),
@@ -301,9 +305,9 @@ object LoadTable {
     val catalog = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
 
     // update the schema modified time
-    catalog.updateSchemasUpdatedTime(catalog.touchSchemaFileSystemTime(
+    catalog.updateAndTouchSchemasUpdatedTime(
       carbonLoadModel.getDatabaseName,
-      carbonLoadModel.getTableName))
+      carbonLoadModel.getTableName)
 
     // update Metadata
     catalog.updateMetadataByThriftTable(schemaFilePath, tableInfo,
@@ -726,6 +730,13 @@ case class LoadTable(
           } else {
             (dataFrame, dataFrame)
           }
+          // Create table and metadata folders if not exist
+          val carbonTablePath = CarbonStorePath
+            .getCarbonTablePath(storePath, table.getCarbonTableIdentifier)
+          val fileType = FileFactory.getFileType(carbonTablePath.getSchemaFilePath)
+          if (!FileFactory.isFileExist(carbonTablePath.getSchemaFilePath, fileType)) {
+            FileFactory.mkdirs(carbonTablePath.getSchemaFilePath, fileType)
+          }
           GlobalDictionaryUtil
             .generateGlobalDictionary(
               sparkSession.sqlContext,
@@ -794,9 +805,9 @@ private[sql] case class DeleteLoadByDate(
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .getTableFromMetadata(getDB.getDatabaseName(databaseNameOp, sparkSession), tableName)
-      .map(_.carbonTable).getOrElse(null)
+    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
+      lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
+      tableMeta.carbonTable
     CarbonStore.deleteLoadByDate(
       loadDate,
       getDB.getDatabaseName(databaseNameOp, sparkSession),
@@ -818,9 +829,7 @@ case class CleanFiles(
     val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val relation = catalog
       .lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation]
-    val carbonTable = catalog
-      .getTableFromMetadata(getDB.getDatabaseName(databaseNameOp, sparkSession), tableName)
-      .map(_.carbonTable).getOrElse(null)
+    val carbonTable = relation.tableMeta.carbonTable
     CarbonStore.cleanFiles(
       getDB.getDatabaseName(databaseNameOp, sparkSession),
       tableName,
@@ -839,9 +848,9 @@ case class ShowLoads(
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .getTableFromMetadata(getDB.getDatabaseName(databaseNameOp, sparkSession), tableName)
-      .map(_.carbonTable).getOrElse(null)
+    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
+      lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
+      tableMeta.carbonTable
     CarbonStore.showSegments(
       getDB.getDatabaseName(databaseNameOp, sparkSession),
       tableName,
@@ -868,14 +877,19 @@ case class CarbonDropTableCommand(ifExistsSet: Boolean,
     val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
     try {
       val carbonTable = catalog.getTableFromMetadata(dbName, tableName).map(_.carbonTable).orNull
-       locksToBeAcquired foreach {
+      locksToBeAcquired foreach {
         lock => carbonLocks += CarbonLockUtil.getLockObject(carbonTable, lock)
       }
-      LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
-      if (null != carbonTable) {
-        // clear driver B-tree and dictionary cache
-        ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
+      isLocked = carbonLock.lockWithRetries()
+      if (isLocked) {
+        logInfo("Successfully able to get the lock for drop.")
       }
+      else {
+        LOGGER.audit(s"Dropping table $dbName.$tableName failed as the Table is locked")
+        sys.error("Table is locked for deletion. Please try after some time")
+      }
+      LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
+
       CarbonEnv.getInstance(sparkSession).carbonMetastore
         .dropTable(storePath, identifier)(sparkSession)
       LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")

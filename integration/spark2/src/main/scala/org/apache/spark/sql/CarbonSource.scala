@@ -125,7 +125,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
     val path = if (sqlContext.sparkSession.sessionState.catalog.listTables(dbName)
       .exists(_.table.equalsIgnoreCase(tableName))) {
-        getPathForTable(sqlContext.sparkSession, dbName, tableName)
+        getPathForTable(sqlContext.sparkSession, dbName, tableName, parameters)
     } else {
         createTableIfNotExists(sqlContext.sparkSession, parameters, dataSchema)
     }
@@ -177,7 +177,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
    * @return
    */
   private def getPathForTable(sparkSession: SparkSession, dbName: String,
-      tableName : String): String = {
+      tableName : String, parameters: Map[String, String]): String = {
 
     if (StringUtils.isBlank(tableName)) {
       throw new MalformedCarbonCommandException("The Specified Table Name is Blank")
@@ -186,9 +186,14 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       throw new MalformedCarbonCommandException("Table Name Should not have spaces ")
     }
     try {
-      CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .lookupRelation(Option(dbName), tableName)(sparkSession)
-      CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath + s"/$dbName/$tableName"
+      if (CarbonEnv.getInstance(sparkSession).carbonMetastore.isReadFromHiveMetaStore
+          && parameters.contains("tablePath")) {
+        parameters.get("tablePath").get
+      } else {
+        CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .lookupRelation(Option(dbName), tableName)(sparkSession)
+        CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath + s"/$dbName/$tableName"
+      }
     } catch {
       case ex: Exception =>
         throw new Exception(s"Do not have $dbName and $tableName", ex)

@@ -17,8 +17,7 @@
 
 package org.apache.spark.sql.hive
 
-import java.io._
-import java.util.{GregorianCalendar, LinkedHashSet, UUID}
+import java.util.{LinkedHashSet, UUID}
 import java.util.concurrent.atomic.AtomicLong
 
 import scala.Array.canBuildFrom
@@ -31,16 +30,15 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{MultiInstanceRelation, NoSuchTableException}
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Statistics}
-import org.apache.spark.sql.execution.command.Partitioner
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
 import org.apache.carbondata.core.fileoperations.FileWriteOperation
-import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -104,7 +102,7 @@ case class DictionaryMap(dictionaryMap: Map[String, Boolean]) {
   }
 }
 
-class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
+class CarbonFileMetastore(conf: RuntimeConfig, val storePath: String) extends CarbonMetaStore {
 
   @transient
   val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.CarbonMetastoreCatalog")
@@ -119,24 +117,22 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
     System.nanoTime() + ""
   }
 
-  val metadata = loadMetadata(storePath, nextQueryId)
+  lazy val metadata = loadMetadata(storePath, nextQueryId)
 
-  def getTableCreationTime(databaseName: String, tableName: String): Long = {
-    val tableMeta = metadata.tablesMeta.filter(
-      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(databaseName) &&
-           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))
-    val tableCreationTime = tableMeta.head.carbonTable.getTableLastUpdatedTime
-    tableCreationTime
-  }
 
-  def cleanStore(): Unit = {
-    try {
-      val fileType = FileFactory.getFileType(storePath)
-      FileFactory.deleteFile(storePath, fileType)
-      metadata.clear()
-    } catch {
-      case e: Throwable => LOGGER.error(e, "clean store failed")
-    }
+  /**
+   * Create spark session from paramters.
+   *
+   * @param parameters
+   * @param absIdentifier
+   * @param sparkSession
+   */
+  override def createCarbonRelation(parameters: Map[String, String],
+      absIdentifier: AbsoluteTableIdentifier,
+      sparkSession: SparkSession): CarbonRelation = {
+    lookupRelation(TableIdentifier(absIdentifier.getCarbonTableIdentifier.getTableName,
+      Some(absIdentifier.getCarbonTableIdentifier.getDatabaseName)), true)(sparkSession)
+      .asInstanceOf[CarbonRelation]
   }
 
   def lookupRelation(dbName: Option[String], tableName: String)
@@ -144,17 +140,17 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
     lookupRelation(TableIdentifier(tableName, dbName))(sparkSession)
   }
 
-  def lookupRelation(tableIdentifier: TableIdentifier, alias: Option[String] = None)
+  def lookupRelation(tableIdentifier: TableIdentifier, readFromStore: Boolean = false)
     (sparkSession: SparkSession): LogicalPlan = {
-    checkSchemasModifiedTimeAndReloadTables()
     val database = tableIdentifier.database.getOrElse(
       sparkSession.catalog.currentDatabase
     )
-    val tables = getTableFromMetadata(database, tableIdentifier.table)
+    checkSchemasModifiedTimeAndReloadTables()
+    val tables = getTableFromMetadata(database, tableIdentifier.table, true)
     tables match {
       case Some(t) =>
         CarbonRelation(database, tableIdentifier.table,
-          CarbonSparkUtil.createSparkMeta(tables.head.carbonTable), tables.head, alias)
+          CarbonSparkUtil.createSparkMeta(tables.head.carbonTable), tables.head)
       case None =>
         throw new NoSuchTableException(database, tableIdentifier.table)
     }
@@ -168,7 +164,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
    * @return
    */
   def getTableFromMetadata(database: String,
-      tableName: String): Option[TableMeta] = {
+      tableName: String, readStore: Boolean = false): Option[TableMeta] = {
     metadata.tablesMeta
       .find(c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
                  c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))
@@ -177,12 +173,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
   def tableExists(
       table: String,
       databaseOp: Option[String] = None)(sparkSession: SparkSession): Boolean = {
-    checkSchemasModifiedTimeAndReloadTables()
-    val database = databaseOp.getOrElse(sparkSession.catalog.currentDatabase)
-    val tables = metadata.tablesMeta.filter(
-      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
-           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(table))
-    tables.nonEmpty
+   tableExists(TableIdentifier(table, databaseOp))(sparkSession)
   }
 
   def tableExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
@@ -251,7 +242,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
                 if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
                   val tableName = tableFolder.getName
                   val tableUniqueName = databaseFolder.getName + "_" + tableFolder.getName
-                  val tableInfo: TableInfo = readSchemaFile(tableMetadataFile)
+                  val tableInfo: TableInfo = CarbonUtil.readSchemaFile(tableMetadataFile)
                   val schemaConverter = new ThriftWrapperSchemaConverterImpl
                   val wrapperTableInfo = schemaConverter
                     .fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, basePath)
@@ -278,25 +269,6 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
         // Create folders and files.
         FileFactory.mkdirs(databasePath, fileType)
     }
-  }
-
-  /**
-   * This method will read the schema file from a given path
-   *
-   * @param schemaFilePath
-   * @return
-   */
-  def readSchemaFile(schemaFilePath: String): TableInfo = {
-    val createTBase = new ThriftReader.TBaseCreator() {
-      override def create(): org.apache.thrift.TBase[TableInfo, TableInfo._Fields] = {
-        new TableInfo()
-      }
-    }
-    val thriftReader = new ThriftReader(schemaFilePath, createTBase)
-    thriftReader.open()
-    val tableInfo: TableInfo = thriftReader.read().asInstanceOf[TableInfo]
-    thriftReader.close()
-    tableInfo
   }
 
   /**
@@ -465,35 +437,6 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
     updateMetadataByWrapperTable(wrapperTableInfo)
   }
 
-  /**
-   * Shows all schemas which has Database name like
-   */
-  def showDatabases(schemaLike: Option[String]): Seq[String] = {
-    checkSchemasModifiedTimeAndReloadTables()
-    metadata.tablesMeta.map { c =>
-      schemaLike match {
-        case Some(name) =>
-          if (c.carbonTableIdentifier.getDatabaseName.contains(name)) {
-            c.carbonTableIdentifier
-              .getDatabaseName
-          } else {
-            null
-          }
-        case _ => c.carbonTableIdentifier.getDatabaseName
-      }
-    }.filter(f => f != null)
-  }
-
-  /**
-   * Shows all tables in all schemas.
-   */
-  def getAllTables(): Seq[TableIdentifier] = {
-    checkSchemasModifiedTimeAndReloadTables()
-    metadata.tablesMeta.map { c =>
-      TableIdentifier(c.carbonTableIdentifier.getTableName,
-        Some(c.carbonTableIdentifier.getDatabaseName))
-    }
-  }
 
   def isTablePathExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
     val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
@@ -513,7 +456,11 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
 
     val metadataFilePath = CarbonStorePath.getCarbonTablePath(tableStorePath,
       new CarbonTableIdentifier(dbName, tableName, "")).getMetadataDirectoryPath
-
+    val carbonTable = CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)
+    if (null != carbonTable) {
+      // clear driver B-tree and dictionary cache
+      ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
+    }
     val fileType = FileFactory.getFileType(metadataFilePath)
 
     if (FileFactory.isFileExist(metadataFilePath, fileType)) {
@@ -522,16 +469,16 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
       checkSchemasModifiedTimeAndReloadTables
       val file = FileFactory.getCarbonFile(metadataFilePath, fileType)
       CarbonUtil.deleteFoldersAndFilesSilent(file.getParentFile)
-      val metadataToBeRemoved: Option[TableMeta] = getTableFromMetadata(dbName,
-        tableIdentifier.table)
-      metadataToBeRemoved match {
-        case Some(tableMeta) =>
-          metadata.tablesMeta -= tableMeta
-          CarbonMetadata.getInstance.removeTable(dbName + "_" + tableName)
-          updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
-        case None =>
-          LOGGER.info(s"Metadata does not contain entry for table $tableName in database $dbName")
-      }
+        val metadataToBeRemoved: Option[TableMeta] = getTableFromMetadata(dbName,
+          tableIdentifier.table)
+        metadataToBeRemoved match {
+          case Some(tableMeta) =>
+            metadata.tablesMeta -= tableMeta
+            CarbonMetadata.getInstance.removeTable(dbName + "_" + tableName)
+            updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
+          case None =>
+            LOGGER.info(s"Metadata does not contain entry for table $tableName in database $dbName")
+        }
       CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
       // discard cached table info in cachedDataSourceTables
       sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
@@ -549,8 +496,12 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
    *
    * @param timeStamp
    */
-  def updateSchemasUpdatedTime(timeStamp: Long) {
+  private def updateSchemasUpdatedTime(timeStamp: Long) {
     tableModifiedTimeStore.put("default", timeStamp)
+  }
+
+  def updateAndTouchSchemasUpdatedTime(databaseName: String, tableName: String) {
+    updateSchemasUpdatedTime(touchSchemaFileSystemTime(databaseName, tableName))
   }
 
   /**
@@ -560,7 +511,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
    * @param tableName
    * @return
    */
-  def readSchemaFileSystemTime(databaseName: String, tableName: String): Long = {
+  private def readSchemaFileSystemTime(databaseName: String, tableName: String): Long = {
     val (timestampFile, timestampFileType) = getTimestampFileAndType(databaseName, tableName)
     if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
       FileFactory.getCarbonFile(timestampFile, timestampFileType).getLastModifiedTime
@@ -576,7 +527,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
    * @param tableName
    * @return
    */
-  def touchSchemaFileSystemTime(databaseName: String, tableName: String): Long = {
+  private def touchSchemaFileSystemTime(databaseName: String, tableName: String): Long = {
     val (timestampFile, timestampFileType) = getTimestampFileAndType(databaseName, tableName)
     if (!FileFactory.isFileExist(timestampFile, timestampFileType)) {
       LOGGER.audit(s"Creating timestamp file for $databaseName.$tableName")
@@ -599,104 +550,14 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
     }
   }
 
-  def refreshCache() {
+  private def refreshCache() {
     metadata.tablesMeta = loadMetadata(storePath, nextQueryId).tablesMeta
   }
 
-  def getSchemaLastUpdatedTime(databaseName: String, tableName: String): Long = {
-    var schemaLastUpdatedTime = System.currentTimeMillis
-    val (timestampFile, timestampFileType) = getTimestampFileAndType(databaseName, tableName)
-    if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
-      schemaLastUpdatedTime = FileFactory.getCarbonFile(timestampFile, timestampFileType)
-        .getLastModifiedTime
-    }
-    schemaLastUpdatedTime
-  }
+  override def isReadFromHiveMetaStore: Boolean = false
 
-  def readTableMetaDataFile(tableFolder: CarbonFile,
-      fileType: FileFactory.FileType):
-  (String, String, String, String, Partitioner, Long) = {
-    val tableMetadataFile = tableFolder.getAbsolutePath + "/metadata"
-
-    var schema: String = ""
-    var databaseName: String = ""
-    var tableName: String = ""
-    var dataPath: String = ""
-    var partitioner: Partitioner = null
-    val cal = new GregorianCalendar(2011, 1, 1)
-    var tableCreationTime = cal.getTime.getTime
-
-    if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
-      // load metadata
-      val in = FileFactory.getDataInputStream(tableMetadataFile, fileType)
-      var len = 0
-      try {
-        len = in.readInt()
-      } catch {
-        case others: EOFException => len = 0
-      }
-
-      while (len > 0) {
-        val databaseNameBytes = new Array[Byte](len)
-        in.readFully(databaseNameBytes)
-
-        databaseName = new String(databaseNameBytes, "UTF8")
-        val tableNameLen = in.readInt()
-        val tableNameBytes = new Array[Byte](tableNameLen)
-        in.readFully(tableNameBytes)
-        tableName = new String(tableNameBytes, "UTF8")
-
-        val dataPathLen = in.readInt()
-        val dataPathBytes = new Array[Byte](dataPathLen)
-        in.readFully(dataPathBytes)
-        dataPath = new String(dataPathBytes, "UTF8")
-
-        val versionLength = in.readInt()
-        val versionBytes = new Array[Byte](versionLength)
-        in.readFully(versionBytes)
-
-        val schemaLen = in.readInt()
-        val schemaBytes = new Array[Byte](schemaLen)
-        in.readFully(schemaBytes)
-        schema = new String(schemaBytes, "UTF8")
-
-        val partitionLength = in.readInt()
-        val partitionBytes = new Array[Byte](partitionLength)
-        in.readFully(partitionBytes)
-        val inStream = new ByteArrayInputStream(partitionBytes)
-        val objStream = new ObjectInputStream(inStream)
-        partitioner = objStream.readObject().asInstanceOf[Partitioner]
-        objStream.close()
-
-        try {
-          tableCreationTime = in.readLong()
-          len = in.readInt()
-        } catch {
-          case others: EOFException => len = 0
-        }
-
-      }
-      in.close()
-    }
-
-    (databaseName, tableName, dataPath, schema, partitioner, tableCreationTime)
-  }
-
-  def createDatabaseDirectory(dbName: String) {
-    val databasePath = storePath + File.separator + dbName.toLowerCase
-    val fileType = FileFactory.getFileType(databasePath)
-    FileFactory.mkdirs(databasePath, fileType)
-  }
-
-  def dropDatabaseDirectory(dbName: String) {
-    val databasePath = storePath + File.separator + dbName
-    val fileType = FileFactory.getFileType(databasePath)
-    if (FileFactory.isFileExist(databasePath, fileType)) {
-      val dbPath = FileFactory.getCarbonFile(databasePath, fileType)
-      CarbonUtil.deleteFoldersAndFiles(dbPath)
-    }
-  }
-
+  override def listAllTables(sparkSession: SparkSession): Seq[CarbonTable] =
+    metadata.tablesMeta.map(_.carbonTable)
 }
 
 
@@ -787,8 +648,7 @@ case class CarbonRelation(
     databaseName: String,
     tableName: String,
     var metaData: CarbonMetaData,
-    tableMeta: TableMeta,
-    alias: Option[String])
+    tableMeta: TableMeta)
   extends LeafNode with MultiInstanceRelation {
 
   def recursiveMethod(dimName: String, childDim: CarbonDimension): String = {
@@ -831,7 +691,7 @@ case class CarbonRelation(
   }
 
   override def newInstance(): LogicalPlan = {
-    CarbonRelation(databaseName, tableName, metaData, tableMeta, alias)
+    CarbonRelation(databaseName, tableName, metaData, tableMeta)
       .asInstanceOf[this.type]
   }
 
