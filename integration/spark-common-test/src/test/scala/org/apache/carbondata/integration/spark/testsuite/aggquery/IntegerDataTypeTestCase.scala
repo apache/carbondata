@@ -122,7 +122,7 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       """
         | CREATE TABLE short_int_target_table
-        | (begin_time long, name string)
+        | (begin_time bigint, name string)
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
 
