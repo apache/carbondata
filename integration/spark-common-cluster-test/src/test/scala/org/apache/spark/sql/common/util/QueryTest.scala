@@ -89,6 +89,10 @@ class QueryTest extends PlanTest with Suite {
     checkAnswer(sql(carbon), sql(hive))
   }
 
+  protected def checkAnswer(carbon: String, expectedAnswer: Seq[Row], uniqueIdentifier:String): Unit = {
+    checkAnswer(sql(carbon), expectedAnswer)
+  }
+
   def sql(sqlText: String): DataFrame = {
     val frame = TestQueryExecutor.INSTANCE.sql(sqlText)
     val plan = frame.queryExecution.logical

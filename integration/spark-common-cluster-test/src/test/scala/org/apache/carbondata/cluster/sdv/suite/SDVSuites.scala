@@ -19,12 +19,42 @@ package org.apache.carbondata.cluster.sdv.suite
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.{BeforeAndAfterAll, Suites}
 
+import org.apache.carbondata.cluster.sdv.generated._
+
 /**
  * Suite class for all tests.
  */
 class SDVSuites extends Suites with BeforeAndAfterAll {
 
-  val suites =                Nil
+  val suites =                new AlterTableTestCase ::
+                              new BadRecordTestCase ::
+                              new BatchSortLoad1TestCase ::
+                              new BatchSortLoad2TestCase ::
+                              new BatchSortQueryTestCase ::
+                              new ColumndictTestCase ::
+                              new DataLoadingTestCase ::
+                              new DataLoadingV3TestCase ::
+                              new InvertedindexTestCase ::
+                              new OffheapQuery1TestCase ::
+                              new OffheapQuery2TestCase ::
+                              new OffheapSort1TestCase ::
+                              new OffheapSort2TestCase ::
+                              new PartitionTestCase ::
+                              new QueriesBasicTestCase ::
+                              new QueriesBVATestCase ::
+                              new QueriesCompactionTestCase ::
+                              new QueriesExcludeDictionaryTestCase ::
+                              new QueriesIncludeDictionaryTestCase ::
+                              new QueriesNormalTestCase ::
+                              new QueriesRangeFilterTestCase ::
+                              new QueriesSparkBlockDistTestCase ::
+                              new ShowLoadsTestCase ::
+                              new SinglepassTestCase ::
+                              new SortColumnTestCase ::
+                              new TimestamptypesTestCase ::
+                              new V3offheapvectorTestCase ::
+                              new Vector1TestCase ::
+                              new Vector2TestCase ::Nil
 
   override val nestedSuites = suites.toIndexedSeq
 

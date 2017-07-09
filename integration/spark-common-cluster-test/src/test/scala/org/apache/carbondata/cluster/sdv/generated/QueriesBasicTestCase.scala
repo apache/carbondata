@@ -14098,8 +14098,6 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists myvmall_hive")
     sql("drop table if exists Carbon_automation")
     sql("drop table if exists Carbon_automation_hive")
-    sql("drop table if exists babudb.bandwidth_1")
-    sql("drop table if exists babudb.bandwidth_1_hive")
     sql("drop table if exists uniqdata_1000mb")
     sql("drop table if exists uniqdata_1000mb_hive")
     sql("drop table if exists uniqdata_50mb")
