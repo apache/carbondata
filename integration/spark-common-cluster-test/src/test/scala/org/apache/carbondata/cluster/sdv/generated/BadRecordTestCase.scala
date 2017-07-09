@@ -90,7 +90,7 @@ class BadRecordTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/test6.csv' into table abadrecordtest1 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'="'",'is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE','BAD_RECORDS_LOGGER_ENABLE'='TRUE')""").collect
     checkAnswer(s"""select count(*) from abadrecordtest1""",
       Seq(Row(3)), "BadRecordTestCase_AR-Develop-Feature-BadRecords-001_PTS006_TC001")
-     sql(s"""drop table if exists abadrecordtest1""").collect
+     sql(s"""drop table if exist  s abadrecordtest1""").collect
   }
 
 
