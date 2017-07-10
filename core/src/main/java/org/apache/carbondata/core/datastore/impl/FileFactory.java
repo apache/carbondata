@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.filesystem.*;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -74,13 +75,13 @@ public final class FileFactory {
   }
 
   public static FileType getFileType(String path) {
-    if (path.startsWith(CarbonUtil.HDFS_PREFIX)) {
+    if (path.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
       return FileType.HDFS;
     }
-    else if (path.startsWith(CarbonUtil.ALLUXIO_PREFIX)) {
+    else if (path.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
       return FileType.ALLUXIO;
     }
-    else if (path.startsWith(CarbonUtil.VIEWFS_PREFIX)) {
+    else if (path.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
       return FileType.VIEWFS;
     }
     return FileType.LOCAL;
