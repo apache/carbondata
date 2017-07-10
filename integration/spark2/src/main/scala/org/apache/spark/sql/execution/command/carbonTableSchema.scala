@@ -29,21 +29,20 @@ import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.hive.{CarbonMetastore, CarbonRelation}
+import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.table.TableInfo
+import org.apache.carbondata.core.metadata.schema.table. TableInfo
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -186,11 +185,8 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
     } else {
       // Add Database to catalog and persist
       val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      var carbonSchemaString: String = ""
-      val tablePath = catalog.createTableFromThrift(tableInfo, dbName, tbName)(sparkSession)
-      if (createDSTable && catalog.isReadFromHiveMetaStore) {
-        carbonSchemaString = CarbonUtil.convertToMultiGsonStrings(tableInfo, " ", "")
-      }
+      val (tablePath, carbonSchemaString) =
+        catalog.createTableFromThrift(tableInfo, dbName, tbName)(sparkSession)
       if (createDSTable) {
         try {
           val fields = new Array[Field](cm.dimCols.size + cm.msrCols.size)
@@ -289,7 +285,7 @@ object LoadTable {
     val schemaFilePath = carbonTablePath.getSchemaFilePath
 
     // read TableInfo
-    val tableInfo = CarbonMetastore.readSchemaFileToThriftTable(schemaFilePath)
+    val tableInfo = CarbonUtil.readSchemaFile(schemaFilePath)
 
     // modify TableInfo
     val columns = tableInfo.getFact_table.getTable_columns
@@ -300,7 +296,7 @@ object LoadTable {
     }
 
     // write TableInfo
-    CarbonMetastore.writeThriftTableToSchemaFile(schemaFilePath, tableInfo)
+    CarbonUtil.writeThriftTableToSchemaFile(schemaFilePath, tableInfo)
 
     val catalog = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
 
@@ -880,14 +876,6 @@ case class CarbonDropTableCommand(ifExistsSet: Boolean,
       val carbonTable = catalog.getTableFromMetadata(dbName, tableName).map(_.carbonTable).orNull
       locksToBeAcquired foreach {
         lock => carbonLocks += CarbonLockUtil.getLockObject(carbonTable, lock)
-      }
-      isLocked = carbonLock.lockWithRetries()
-      if (isLocked) {
-        logInfo("Successfully able to get the lock for drop.")
-      }
-      else {
-        LOGGER.audit(s"Dropping table $dbName.$tableName failed as the Table is locked")
-        sys.error("Table is locked for deletion. Please try after some time")
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
 

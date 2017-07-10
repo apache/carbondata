@@ -22,6 +22,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.schema.table
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
@@ -102,10 +103,9 @@ trait CarbonMetaStore {
    * Load CarbonTable from wrapper tableInfo
    *
    */
-  def createTableFromThrift(
-      tableInfo: org.apache.carbondata.core.metadata.schema.table.TableInfo,
-      dbName: String, tableName: String)
-    (sparkSession: SparkSession): String
+  def createTableFromThrift(tableInfo: table.TableInfo,
+      dbName: String,
+      tableName: String)(sparkSession: SparkSession): (String, String)
 
   /**
    * This method will remove the table meta from catalog metadata array

@@ -72,6 +72,7 @@ import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.core.writer.ThriftWriter;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 
@@ -1795,6 +1796,17 @@ public final class CarbonUtil {
     return tableInfo;
   }
 
+  public static void writeThriftTableToSchemaFile(String schemaFilePath,
+      org.apache.carbondata.format.TableInfo tableInfo) throws IOException {
+    ThriftWriter thriftWriter = new ThriftWriter(schemaFilePath, false);
+    try {
+      thriftWriter.open();
+      thriftWriter.write(tableInfo);
+    } finally {
+      thriftWriter.close();
+    }
+  }
+
   public static void createDatabaseDirectory(String dbName, String storePath) throws IOException {
     String databasePath = storePath + File.separator + dbName.toLowerCase();
     FileFactory.FileType fileType = FileFactory.getFileType(databasePath);
@@ -1810,6 +1822,5 @@ public final class CarbonUtil {
       CarbonUtil.deleteFoldersAndFiles(dbPath);
     }
   }
-
 }
 

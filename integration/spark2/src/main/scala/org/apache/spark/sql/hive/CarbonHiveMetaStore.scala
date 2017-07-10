@@ -128,10 +128,8 @@ class CarbonHiveMetaStore(conf: RuntimeConfig, storePath: String)
    * Load CarbonTable from wrapper tableInfo
    *
    */
-  override def createTableFromThrift(tableInfo: TableInfo,
-      dbName: String,
-      tableName: String)
-    (sparkSession: SparkSession): String = {
+  override def createTableFromThrift(tableInfo: TableInfo, dbName: String,
+      tableName: String)(sparkSession: SparkSession): (String, String) = {
     val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName,
       tableInfo.getFactTable.getTableId)
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier)
@@ -141,7 +139,7 @@ class CarbonHiveMetaStore(conf: RuntimeConfig, storePath: String)
     tableInfo.setStorePath(storePath)
     removeTableFromMetadata(dbName, tableName)
     CarbonMetadata.getInstance().loadTableMetadata(tableInfo)
-    carbonTablePath.getPath
+    (carbonTablePath.getPath, CarbonUtil.convertToMultiGsonStrings(tableInfo, " ", ""))
   }
 
   /**
