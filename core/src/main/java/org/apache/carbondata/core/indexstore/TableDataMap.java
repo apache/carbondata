@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.apache.carbondata.core.events.ChangeEvent;
 import org.apache.carbondata.core.events.EventListener;
-import org.apache.carbondata.core.indexstore.DataMapFactory.DataMap;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 /**

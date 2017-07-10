@@ -28,7 +28,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 /**
  * It maintains all the DataMaps in it.
  */
-public class DataMapStoreManager {
+public final class DataMapStoreManager {
 
   private static DataMapStoreManager instance = new DataMapStoreManager();
 
@@ -54,7 +54,7 @@ public class DataMapStoreManager {
   public TableDataMap getDataMap(AbsoluteTableIdentifier identifier, String dataMapName,
       DataMapType mapType) {
     List<TableDataMap> tableDataMaps = dataMapMappping.get(identifier);
-    TableDataMap dataMap = null;
+    TableDataMap dataMap;
     if (tableDataMaps == null) {
       createTableDataMap(identifier, mapType, dataMapName);
       tableDataMaps = dataMapMappping.get(identifier);
@@ -67,12 +67,12 @@ public class DataMapStoreManager {
   }
 
   /**
-   * Create new datamap instance using datamap type and path
+   * Create new datamap instance using datamap name, datamap type and table identifier
    *
    * @param mapType
    * @return
    */
-  public TableDataMap createTableDataMap(AbsoluteTableIdentifier identifier,
+  private TableDataMap createTableDataMap(AbsoluteTableIdentifier identifier,
       DataMapType mapType, String dataMapName) {
     List<TableDataMap> tableDataMaps = dataMapMappping.get(identifier);
     if (tableDataMaps == null) {
@@ -108,6 +108,11 @@ public class DataMapStoreManager {
     return dataMap;
   }
 
+  /**
+   * Clear the datamap/datamaps of a mentioned datamap name and table from memory
+   * @param identifier
+   * @param dataMapName
+   */
   public void clearDataMap(AbsoluteTableIdentifier identifier, String dataMapName) {
     List<TableDataMap> tableDataMaps = dataMapMappping.get(identifier);
     if (tableDataMaps != null) {
@@ -123,6 +128,10 @@ public class DataMapStoreManager {
     }
   }
 
+  /**
+   * Returns the singleton instance
+   * @return
+   */
   public static DataMapStoreManager getInstance() {
     return instance;
   }

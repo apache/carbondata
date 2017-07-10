@@ -21,7 +21,6 @@ import java.util.List;
 import org.apache.carbondata.core.events.ChangeEvent;
 import org.apache.carbondata.core.indexstore.schema.FilterType;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
  * Interface for datamap factory, it is responsible for creating the datamap.
@@ -84,44 +83,5 @@ public interface DataMapFactory {
    * Clear all datamaps from memory
    */
   void clear();
-
-  /**
-   * Manages the the data of one datamap
-   */
-  interface DataMap {
-
-    /**
-     * Give the writer to write the data.
-     *
-     * @return
-     */
-    DataMapWriter getWriter();
-
-    /**
-     * It is called to load the data map to memory or to initialize it.
-     */
-    void init(String path);
-
-    /**
-     * Prune the datamap with filter expression. It returns the list of
-     * blocklets where these filters can exist.
-     *
-     * @param filterExp
-     * @return
-     */
-    List<Blocklet> prune(FilterResolverIntf filterExp);
-
-    /**
-     * Convert datamap to distributable object
-     * @return
-     */
-    DataMapDistributable toDistributable();
-
-    /**
-     * Clear complete index table and release memory.
-     */
-    void clear();
-
-  }
 
 }

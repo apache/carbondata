@@ -29,6 +29,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.events.ChangeEvent;
+import org.apache.carbondata.core.indexstore.DataMap;
 import org.apache.carbondata.core.indexstore.DataMapDistributable;
 import org.apache.carbondata.core.indexstore.DataMapFactory;
 import org.apache.carbondata.core.indexstore.DataMapWriter;

@@ -133,13 +133,6 @@ private[sql] case class ProjectForUpdateCommand(
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
 
-
-   //  sqlContext.sparkContext.setLocalProperty(org.apache.spark.sql.execution.SQLExecution
-    //  .EXECUTION_ID_KEY, null)
-    // DataFrame(sqlContext, plan).show(truncate = false)
-    // return Seq.empty
-
-
     val res = plan find {
       case relation: LogicalRelation if (relation.relation
         .isInstanceOf[CarbonDatasourceRelation]) =>
