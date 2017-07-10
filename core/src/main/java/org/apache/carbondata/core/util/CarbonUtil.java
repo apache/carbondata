@@ -84,11 +84,6 @@ import org.apache.thrift.transport.TIOStreamTransport;
 
 public final class CarbonUtil {
 
-  public static final String HDFS_PREFIX = "hdfs://";
-  public static final String VIEWFS_PREFIX = "viewfs://";
-  public static final String ALLUXIO_PREFIX = "alluxio://";
-  private static final String FS_DEFAULT_FS = "fs.defaultFS";
-
   /**
    * Attribute for Carbon LOGGER
    */
@@ -697,7 +692,7 @@ public final class CarbonUtil {
    */
   public static String checkAndAppendHDFSUrl(String filePath) {
     String currentPath = filePath;
-    String defaultFsUrl = conf.get(FS_DEFAULT_FS);
+    String defaultFsUrl = conf.get(CarbonCommonConstants.FS_DEFAULT_FS);
     String baseDFSUrl = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL, "");
     if (checkIfPrefixExists(filePath)) {
@@ -721,8 +716,10 @@ public final class CarbonUtil {
 
   private static boolean checkIfPrefixExists(String path) {
     final String lowerPath = path.toLowerCase();
-    return lowerPath.startsWith(HDFS_PREFIX) || lowerPath.startsWith(VIEWFS_PREFIX) || lowerPath
-        .startsWith("file://") || lowerPath.startsWith(ALLUXIO_PREFIX);
+    return lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) || lowerPath
+        .startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) || lowerPath
+        .startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX) || lowerPath
+        .startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX);
   }
 
   public static String getCarbonStorePath() {

@@ -54,8 +54,9 @@ public class HdfsFileLock extends AbstractCarbonLock {
     // If can not get the STORE_LOCATION, then use hadoop.tmp.dir .
     tmpPath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION,
                System.getProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION));
-    if (!tmpPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)
-          && !tmpPath.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
+    if (!tmpPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) && !tmpPath
+        .startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) && !tmpPath
+        .startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
       tmpPath = hdfsPath + tmpPath;
     }
   }

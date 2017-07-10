@@ -143,6 +143,11 @@ public final class CarbonCommonConstants {
    * VIEWFSURL_PREFIX
    */
   public static final String VIEWFSURL_PREFIX = "viewfs://";
+
+  /**
+   * ALLUXIO_PREFIX
+   */
+  public static final String ALLUXIOURL_PREFIX = "alluxio://";
   /**
    * FS_DEFAULT_FS
    */
@@ -328,6 +333,15 @@ public final class CarbonCommonConstants {
    * CSV_READ_BUFFER_SIZE
    */
   public static final String CSV_READ_BUFFER_SIZE_DEFAULT = "50000";
+  /**
+   * min value for csv read buffer size
+   */
+  public static final int CSV_READ_BUFFER_SIZE_MIN = 10240; //10 kb
+  /**
+   * max value for csv read buffer size
+   */
+  public static final int CSV_READ_BUFFER_SIZE_MAX = 10485760; // 10 mb
+
   /**
    * CSV_READ_COPIES
    */
