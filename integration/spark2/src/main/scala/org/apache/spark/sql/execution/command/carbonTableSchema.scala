@@ -17,9 +17,8 @@
 
 package org.apache.spark.sql.execution.command
 
-import java.io.File
-
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.commons.lang3.StringUtils
@@ -30,7 +29,7 @@ import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.hive.{CarbonMetastore, CarbonRelation, HiveExternalCatalog}
+import org.apache.spark.sql.hive.{CarbonMetastore, CarbonRelation}
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
 
@@ -41,10 +40,10 @@ import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
-import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
+import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -834,24 +833,17 @@ case class CarbonDropTableCommand(ifExistsSet: Boolean,
     val dbName = getDB.getDatabaseName(databaseNameOp, sparkSession)
     val identifier = TableIdentifier(tableName, Option(dbName))
     val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")
-    val carbonLock = CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier.getDatabaseName,
-        carbonTableIdentifier.getTableName + CarbonCommonConstants.UNDERSCORE +
-        LockUsage.DROP_TABLE_LOCK)
+    val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.DROP_TABLE_LOCK)
     val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val storePath = catalog.storePath
-    var isLocked = false
     catalog.checkSchemasModifiedTimeAndReloadTables()
+    val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
     try {
-      isLocked = carbonLock.lockWithRetries()
-      if (isLocked) {
-        logInfo("Successfully able to get the lock for drop.")
-      }
-      else {
-        LOGGER.audit(s"Dropping table $dbName.$tableName failed as the Table is locked")
-        sys.error("Table is locked for deletion. Please try after some time")
+      val carbonTable = catalog.getTableFromMetadata(dbName, tableName).map(_.carbonTable).orNull
+       locksToBeAcquired foreach {
+        lock => carbonLocks += CarbonLockUtil.getLockObject(carbonTable, lock)
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
-      val carbonTable = catalog.getTableFromMetadata(dbName, tableName).map(_.carbonTable).orNull
       if (null != carbonTable) {
         // clear driver B-tree and dictionary cache
         ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
@@ -859,18 +851,22 @@ case class CarbonDropTableCommand(ifExistsSet: Boolean,
       CarbonEnv.getInstance(sparkSession).carbonMetastore
         .dropTable(storePath, identifier)(sparkSession)
       LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")
+    } catch {
+      case ex: Exception =>
+        LOGGER.error(ex, s"Dropping table $dbName.$tableName failed")
     } finally {
-      if (carbonLock != null && isLocked) {
-        if (carbonLock.unlock()) {
-          logInfo("Table MetaData Unlocked Successfully after dropping the table")
-          // deleting any remaining files.
-          val metadataFilePath = CarbonStorePath
-            .getCarbonTablePath(storePath, carbonTableIdentifier).getMetadataDirectoryPath
-          val fileType = FileFactory.getFileType(metadataFilePath)
-          if (FileFactory.isFileExist(metadataFilePath, fileType)) {
-            val file = FileFactory.getCarbonFile(metadataFilePath, fileType)
-            CarbonUtil.deleteFoldersAndFiles(file.getParentFile)
-          }
+      if (carbonLocks.nonEmpty) {
+        val unlocked = carbonLocks.forall(_.unlock())
+        if (unlocked) {
+          logInfo("Table MetaData Unlocked Successfully")
+        }
+        // deleting any remaining files.
+        val metadataFilePath = CarbonStorePath
+          .getCarbonTablePath(storePath, carbonTableIdentifier).getMetadataDirectoryPath
+        val fileType = FileFactory.getFileType(metadataFilePath)
+        if (FileFactory.isFileExist(metadataFilePath, fileType)) {
+          val file = FileFactory.getCarbonFile(metadataFilePath, fileType)
+          CarbonUtil.deleteFoldersAndFiles(file.getParentFile)
         }
       }
     }

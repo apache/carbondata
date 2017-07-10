@@ -29,7 +29,7 @@ import org.apache.spark.sql.hive.HiveExternalCatalog._
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock}
+import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock}
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonStorePath
@@ -65,7 +65,7 @@ object AlterTableUtil {
     val acquiredLocks = ListBuffer[ICarbonLock]()
     try {
       locksToBeAcquired.foreach { lock =>
-        acquiredLocks += getLockObject(table, lock)
+        acquiredLocks += CarbonLockUtil.getLockObject(table, lock)
       }
       acquiredLocks.toList
     } catch {
@@ -73,27 +73,6 @@ object AlterTableUtil {
         releaseLocks(acquiredLocks.toList)
         throw e
     }
-  }
-
-  /**
-   * Given a lock type this method will return a new lock object if not acquired by any other
-   * operation
-   *
-   * @param carbonTable
-   * @param lockType
-   * @return
-   */
-  private def getLockObject(carbonTable: CarbonTable,
-      lockType: String): ICarbonLock = {
-    val carbonLock = CarbonLockFactory
-      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
-        lockType)
-    if (carbonLock.lockWithRetries()) {
-      LOGGER.info(s"Successfully acquired the lock $lockType")
-    } else {
-      sys.error("Table is locked for updation. Please try after some time")
-    }
-    carbonLock
   }
 
   /**
