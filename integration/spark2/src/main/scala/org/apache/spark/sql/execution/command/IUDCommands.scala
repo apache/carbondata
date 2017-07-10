@@ -42,6 +42,7 @@ import org.apache.carbondata.core.statusmanager.{SegmentStatusManager, SegmentUp
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl
+import org.apache.carbondata.hadoop.CarbonInputFormat
 import org.apache.carbondata.processing.exception.MultipleMatchingException
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CarbonDataMergerUtilResult, CompactionType}
 import org.apache.carbondata.spark.DeleteDelataResultImpl
@@ -107,7 +108,7 @@ private[sql] case class ProjectForDeleteCommand(
           CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString)
 
       case e: Exception =>
-        LOG.error("Exception in Delete data operation " + e.getMessage)
+        LOG.error(e, "Exception in Delete data operation " + e.getMessage)
         // ****** start clean up.
         // In case of failure , clean all related delete delta files
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
@@ -548,7 +549,7 @@ object deleteExecution {
 
     val (carbonInputFormat, job) =
       QueryPlanUtil.createCarbonInputFormat(absoluteTableIdentifier)
-
+    CarbonInputFormat.setCarbonTable(job.getConfiguration, carbonTable)
     val keyRdd = deleteRdd.map({ row =>
       val tupleId: String = row
         .getString(row.fieldIndex(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))

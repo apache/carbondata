@@ -70,26 +70,21 @@ class CarbonHiveMetaStore(conf: RuntimeConfig, storePath: String)
     }
   }
 
-  override def lookupRelation(tableIdentifier: TableIdentifier,
-      readFromStore: Boolean)
+  override def lookupRelation(tableIdentifier: TableIdentifier)
     (sparkSession: SparkSession): LogicalPlan = {
     val database = tableIdentifier.database.getOrElse(
       sparkSession.catalog.currentDatabase)
-    if (!readFromStore) {
-      val relation = sparkSession.sessionState.catalog.lookupRelation(tableIdentifier) match {
-        case SubqueryAlias(_,
-        LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _),
-        _) =>
-          carbonDatasourceHadoopRelation.carbonRelation
-        case LogicalRelation(
-        carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
-          carbonDatasourceHadoopRelation.carbonRelation
-        case _ => throw new NoSuchTableException(database, tableIdentifier.table)
-      }
-      relation
-    } else {
-      super.lookupRelation(tableIdentifier)(sparkSession)
+    val relation = sparkSession.sessionState.catalog.lookupRelation(tableIdentifier) match {
+      case SubqueryAlias(_,
+      LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _),
+      _) =>
+        carbonDatasourceHadoopRelation.carbonRelation
+      case LogicalRelation(
+      carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
+        carbonDatasourceHadoopRelation.carbonRelation
+      case _ => throw new NoSuchTableException(database, tableIdentifier.table)
     }
+    relation
   }
 
   /**
@@ -227,7 +222,9 @@ class CarbonHiveMetaStore(conf: RuntimeConfig, storePath: String)
       carbonStorePath: String)
     (sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
-    thriftTableInfo.fact_table.schema_evolution.schema_evolution_history.add(schemaEvolutionEntry)
+    if (schemaEvolutionEntry != null) {
+      thriftTableInfo.fact_table.schema_evolution.schema_evolution_history.add(schemaEvolutionEntry)
+    }
     updateHiveMetaStore(newTableIdentifier,
       oldTableIdentifier,
       thriftTableInfo,

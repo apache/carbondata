@@ -42,11 +42,12 @@ import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.table. TableInfo
+import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.format
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
@@ -279,13 +280,13 @@ object LoadTable {
       sqlContext: SQLContext,
       model: DictionaryLoadModel,
       noDictDimension: Array[CarbonDimension]): Unit = {
-
+    val sparkSession = sqlContext.sparkSession
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(model.hdfsLocation,
       model.table)
-    val schemaFilePath = carbonTablePath.getSchemaFilePath
 
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     // read TableInfo
-    val tableInfo = CarbonUtil.readSchemaFile(schemaFilePath)
+    val tableInfo: format.TableInfo = metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
 
     // modify TableInfo
     val columns = tableInfo.getFact_table.getTable_columns
@@ -294,23 +295,21 @@ object LoadTable {
         columns.get(i).encoders.remove(org.apache.carbondata.format.Encoding.DICTIONARY)
       }
     }
+    val entry = tableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
+    entry.setTime_stamp(System.currentTimeMillis())
 
     // write TableInfo
-    CarbonUtil.writeThriftTableToSchemaFile(schemaFilePath, tableInfo)
-
-    val catalog = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
+    metastore.updateTableSchema(carbonTablePath.getCarbonTableIdentifier,
+      carbonTablePath.getCarbonTableIdentifier,
+      tableInfo, entry, carbonTablePath.getPath)(sparkSession)
 
     // update the schema modified time
-    catalog.updateAndTouchSchemasUpdatedTime(
+    metastore.updateAndTouchSchemasUpdatedTime(
       carbonLoadModel.getDatabaseName,
       carbonLoadModel.getTableName)
 
-    // update Metadata
-    catalog.updateMetadataByThriftTable(schemaFilePath, tableInfo,
-      model.table.getDatabaseName, model.table.getTableName, carbonLoadModel.getStorePath)
-
     // update CarbonDataLoadSchema
-    val carbonTable = catalog.lookupRelation(Option(model.table.getDatabaseName),
+    val carbonTable = metastore.lookupRelation(Option(model.table.getDatabaseName),
       model.table.getTableName)(sqlContext.sparkSession).asInstanceOf[CarbonRelation].tableMeta
       .carbonTable
     carbonLoadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(carbonTable))
@@ -628,6 +627,14 @@ case class LoadTable(
           LOGGER.audit(s"Cannot use single_pass=true for $dbName.$tableName during the first load")
           carbonLoadModel.setUseOnePass(false)
         }
+        // Create table and metadata folders if not exist
+        val carbonTablePath = CarbonStorePath
+          .getCarbonTablePath(storePath, table.getCarbonTableIdentifier)
+        val metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath
+        val fileType = FileFactory.getFileType(metadataDirectoryPath)
+        if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
+          FileFactory.mkdirs(metadataDirectoryPath, fileType)
+        }
         if (carbonLoadModel.getUseOnePass) {
           val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
           val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
@@ -691,8 +698,7 @@ case class LoadTable(
             server,
             dataFrame,
             updateModel)
-        }
-        else {
+        } else {
           val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
             val fields = dataFrame.get.schema.fields
             import org.apache.spark.sql.functions.udf
@@ -726,14 +732,7 @@ case class LoadTable(
           } else {
             (dataFrame, dataFrame)
           }
-          // Create table and metadata folders if not exist
-          val carbonTablePath = CarbonStorePath
-            .getCarbonTablePath(storePath, table.getCarbonTableIdentifier)
-          val metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath
-          val fileType = FileFactory.getFileType(metadataDirectoryPath)
-          if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
-            FileFactory.mkdirs(metadataDirectoryPath, fileType)
-          }
+
           GlobalDictionaryUtil
             .generateGlobalDictionary(
               sparkSession.sqlContext,

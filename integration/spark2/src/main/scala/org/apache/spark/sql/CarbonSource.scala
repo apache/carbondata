@@ -17,20 +17,23 @@
 
 package org.apache.spark.sql
 
+import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
-import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field}
+import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field, TableModel, TableNewProcessor}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{DecimalType, StructType}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.metadata.schema.table.TableInfo
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
@@ -148,26 +151,22 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     val dbName: String = parameters.getOrElse("dbName",
       CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
     val tableName: String = parameters.getOrElse("tableName", "").toLowerCase
-    val carbonSchemaPartsNo = parameters.get("carbonSchemaPartsNo")
+
     try {
-      carbonSchemaPartsNo match {
-        case Some(schema) =>
-          getPathForTable(sparkSession, dbName, tableName, parameters)
-        case _ =>
-          CarbonEnv.getInstance(sparkSession).carbonMetastore
-            .lookupRelation(Option(dbName), tableName)(sparkSession)
-          CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath + s"/$dbName/$tableName"
+      if (parameters.contains("carbonSchemaPartsNo")) {
+        getPathForTable(sparkSession, dbName, tableName, parameters)
+      } else {
+        CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .lookupRelation(Option(dbName), tableName)(sparkSession)
+        CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath + s"/$dbName/$tableName"
       }
     } catch {
       case ex: NoSuchTableException =>
-        val sqlParser = new CarbonSpark2SqlParser
-        val fields = sqlParser.getFields(dataSchema)
-        val map = scala.collection.mutable.Map[String, String]()
-        parameters.foreach { case (key, value) => map.put(key, value.toLowerCase()) }
-        val options = new CarbonOption(parameters)
-        val bucketFields = sqlParser.getBucketFields(map, fields, options)
-        val cm = sqlParser.prepareTableModel(ifNotExistPresent = false, Option(dbName),
-          tableName, fields, Nil, map, bucketFields)
+        val cm: TableModel = CarbonSource.createTableInfoFromParams(
+          parameters,
+          dataSchema,
+          dbName,
+          tableName)
         CreateTable(cm, false).run(sparkSession)
         CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath + s"/$dbName/$tableName"
       case ex: Exception =>
@@ -177,6 +176,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
   /**
    * Returns the path of the table
+   *
    * @param sparkSession
    * @param dbName
    * @param tableName
@@ -192,8 +192,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       throw new MalformedCarbonCommandException("Table Name Should not have spaces ")
     }
     try {
-      if (CarbonEnv.getInstance(sparkSession).carbonMetastore.isReadFromHiveMetaStore
-          && parameters.contains("tablePath")) {
+      if (parameters.contains("tablePath")) {
         parameters.get("tablePath").get
       } else {
         CarbonEnv.getInstance(sparkSession).carbonMetastore
@@ -206,4 +205,51 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
   }
 
+}
+
+object CarbonSource {
+
+  def createTableInfoFromParams(parameters: Map[String, String],
+      dataSchema: StructType,
+      dbName: String,
+      tableName: String): TableModel = {
+    val sqlParser = new CarbonSpark2SqlParser
+    val fields = sqlParser.getFields(dataSchema)
+    val map = scala.collection.mutable.Map[String, String]()
+    parameters.foreach { case (key, value) => map.put(key, value.toLowerCase()) }
+    val options = new CarbonOption(parameters)
+    val bucketFields = sqlParser.getBucketFields(map, fields, options)
+    sqlParser.prepareTableModel(ifNotExistPresent = false, Option(dbName),
+      tableName, fields, Nil, map, bucketFields)
+  }
+
+  /**
+   * Update spark catalog table with schema information in case of schema storage is hive metastore
+   * @param tableDesc
+   * @param sparkSession
+   * @return
+   */
+  def updateCatalogTableWithCarbonSchema(tableDesc: CatalogTable,
+      sparkSession: SparkSession): CatalogTable = {
+    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val storageFormat = tableDesc.storage
+    val properties = storageFormat.properties
+    if (metaStore.isReadFromHiveMetaStore && !properties.contains("carbonSchemaPartsNo")) {
+      val dbName: String = properties.getOrElse("dbName",
+        CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
+      val tableName: String = properties.getOrElse("tableName", "").toLowerCase
+      val model = createTableInfoFromParams(properties, tableDesc.schema, dbName, tableName)
+      val tableInfo: TableInfo = TableNewProcessor(model)
+      val (tablePath, carbonSchemaString) =
+      metaStore.createTableFromThrift(tableInfo, dbName, tableName)(sparkSession)
+      val map = CarbonUtil.convertToMultiStringMap(tableInfo)
+      properties.foreach(e => map.put(e._1, e._2))
+      map.put("tablePath", tablePath)
+      // updating params
+      val updatedFormat = storageFormat.copy(properties = map.asScala.toMap)
+      tableDesc.copy(storage = updatedFormat)
+    } else {
+      tableDesc
+    }
+  }
 }

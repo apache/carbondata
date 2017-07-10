@@ -91,7 +91,7 @@ class CarbonFileMetastore(conf: RuntimeConfig, val storePath: String) extends Ca
       absIdentifier: AbsoluteTableIdentifier,
       sparkSession: SparkSession): CarbonRelation = {
     lookupRelation(TableIdentifier(absIdentifier.getCarbonTableIdentifier.getTableName,
-      Some(absIdentifier.getCarbonTableIdentifier.getDatabaseName)), true)(sparkSession)
+      Some(absIdentifier.getCarbonTableIdentifier.getDatabaseName)))(sparkSession)
       .asInstanceOf[CarbonRelation]
   }
 
@@ -100,7 +100,7 @@ class CarbonFileMetastore(conf: RuntimeConfig, val storePath: String) extends Ca
     lookupRelation(TableIdentifier(tableName, dbName))(sparkSession)
   }
 
-  def lookupRelation(tableIdentifier: TableIdentifier, readFromStore: Boolean = false)
+  def lookupRelation(tableIdentifier: TableIdentifier)
     (sparkSession: SparkSession): LogicalPlan = {
     checkSchemasModifiedTimeAndReloadTables()
     val database = tableIdentifier.database.getOrElse(
@@ -248,7 +248,9 @@ class CarbonFileMetastore(conf: RuntimeConfig, val storePath: String) extends Ca
       carbonStorePath: String)
     (sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
-    thriftTableInfo.fact_table.schema_evolution.schema_evolution_history.add(schemaEvolutionEntry)
+    if (schemaEvolutionEntry != null) {
+      thriftTableInfo.fact_table.schema_evolution.schema_evolution_history.add(schemaEvolutionEntry)
+    }
     val wrapperTableInfo = schemaConverter
       .fromExternalToWrapperTableInfo(thriftTableInfo,
           newTableIdentifier.getDatabaseName,

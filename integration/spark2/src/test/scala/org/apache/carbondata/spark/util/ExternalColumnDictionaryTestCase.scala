@@ -25,7 +25,9 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
@@ -175,6 +177,14 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
     carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
     carbonLoadModel.setMaxColumns("100")
+    // Create table and metadata folders if not exist
+    val carbonTablePath = CarbonStorePath
+      .getCarbonTablePath(table.getStorePath, table.getCarbonTableIdentifier)
+    val metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath
+    val fileType = FileFactory.getFileType(metadataDirectoryPath)
+    if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
+      FileFactory.mkdirs(metadataDirectoryPath, fileType)
+    }
     carbonLoadModel
   }
 

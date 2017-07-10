@@ -36,15 +36,17 @@ class DictionaryDetailHelper extends DictionaryDetailService {
     // Metadata folder
     val metadataDirectory = FileFactory.getCarbonFile(dictfolderPath, fileType)
     // need list all dictionary file paths with exists flag
-    val carbonFiles = metadataDirectory.listFiles(new CarbonFileFilter {
-      @Override def accept(pathname: CarbonFile): Boolean = {
-        CarbonTablePath.isDictionaryFile(pathname)
-      }
-    })
-    // 2 put dictionary file names to fileNamesMap
     val fileNamesMap = new HashMap[String, Int]
-    for (i <- 0 until carbonFiles.length) {
-      fileNamesMap.put(carbonFiles(i).getName, i)
+    if (metadataDirectory.exists()) {
+      val carbonFiles = metadataDirectory.listFiles(new CarbonFileFilter {
+        @Override def accept(pathname: CarbonFile): Boolean = {
+          CarbonTablePath.isDictionaryFile(pathname)
+        }
+      })
+      // 2 put dictionary file names to fileNamesMap
+      for (i <- 0 until carbonFiles.length) {
+        fileNamesMap.put(carbonFiles(i).getName, i)
+      }
     }
     // 3 lookup fileNamesMap, if file name is in fileNamesMap, file is exists, or not.
     primDimensions.zipWithIndex.foreach { f =>

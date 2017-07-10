@@ -37,7 +37,7 @@ trait CarbonMetaStore {
   def lookupRelation(dbName: Option[String], tableName: String)
     (sparkSession: SparkSession): LogicalPlan
 
-  def lookupRelation(tableIdentifier: TableIdentifier, readFromStore: Boolean = false)
+  def lookupRelation(tableIdentifier: TableIdentifier)
     (sparkSession: SparkSession): LogicalPlan
 
   /**

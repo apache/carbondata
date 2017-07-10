@@ -31,6 +31,7 @@ import java.nio.charset.Charset;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -1754,6 +1755,30 @@ public final class CarbonUtil {
     }
     return builder.toString();
   }
+
+  public static Map<String, String> convertToMultiStringMap(TableInfo tableInfo) {
+    Map<String, String> map = new HashMap<>();
+    Gson gson = new Gson();
+    String schemaString = gson.toJson(tableInfo);
+    int schemaLen = schemaString.length();
+    int splitLen = 4000;
+    int parts = schemaLen / splitLen;
+    if (schemaLen % splitLen > 0) {
+      parts++;
+    }
+    map.put("carbonSchemaPartsNo", parts + "");
+    int runningLen = 0;
+    int endLen = splitLen;
+    for (int i = 0; i < parts; i++) {
+      if (i == parts - 1) {
+        endLen = schemaLen % splitLen;
+      }
+      map.put("carbonSchema" + i, schemaString.substring(runningLen, runningLen + endLen));
+      runningLen += splitLen;
+    }
+    return map;
+  }
+
 
   public static TableInfo convertGsonToTableInfo(Map<String, String> properties) {
     Gson gson = new Gson();
