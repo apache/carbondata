@@ -25,7 +25,7 @@ public class WritableUtil {
 
   public static void writeString(DataOutput out, String string) throws IOException {
     if (string == null) {
-      out.writeInt(0);
+      out.writeInt(-1);
     } else {
       out.writeInt(string.length());
       out.writeBytes(string);
@@ -34,14 +34,18 @@ public class WritableUtil {
 
   public static String readString(DataInput in) throws IOException {
     int length = in.readInt();
-    byte[] b = new byte[length];
-    in.readFully(b);
-    return new String(b);
+    if (length == -1) {
+      return null;
+    } else {
+      byte[] b = new byte[length];
+      in.readFully(b);
+      return new String(b);
+    }
   }
 
   public static void writeByteArray(DataOutput out, byte[] bytes) throws IOException {
     if (bytes == null) {
-      out.writeInt(0);
+      out.writeInt(-1);
     } else {
       out.writeInt(bytes.length);
       out.write(bytes);
@@ -50,8 +54,12 @@ public class WritableUtil {
 
   public static byte[] readByteArray(DataInput in) throws IOException {
     int length = in.readInt();
-    byte[] b = new byte[length];
-    in.readFully(b);
-    return b;
+    if (length == -1) {
+      return null;
+    } else {
+      byte[] b = new byte[length];
+      in.readFully(b);
+      return b;
+    }
   }
 }

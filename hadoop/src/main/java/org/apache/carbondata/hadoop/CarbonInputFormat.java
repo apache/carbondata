@@ -19,7 +19,14 @@ package org.apache.carbondata.hadoop;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.DataRefNode;
@@ -36,7 +43,6 @@ import org.apache.carbondata.core.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.apache.carbondata.core.datastore.impl.btree.BlockBTreeLeafNode;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -65,12 +71,14 @@ import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport
 import org.apache.carbondata.hadoop.util.BlockLevelTraverser;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
+import org.apache.carbondata.hadoop.util.SchemaReader;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.InvalidPathException;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
@@ -84,6 +92,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.security.TokenCache;
 import org.apache.hadoop.mapreduce.task.JobContextImpl;
+import org.apache.hadoop.util.StringUtils;
 
 /**
  * Carbon Input format class representing one carbon table
@@ -119,7 +128,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * Get TableInfo object from `configuration`
    */
-  public static TableInfo getTableInfo(Configuration configuration) throws IOException {
+  private TableInfo getTableInfo(Configuration configuration) throws IOException {
     String tableInfoStr = configuration.get(TABLE_INFO);
     return (TableInfo) ObjectSerializationUtil.convertStringToObject(tableInfoStr);
   }
@@ -129,8 +138,16 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    */
   private CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
     if (carbonTable == null) {
+      // carbon table should be created either from deserialized table info (schema saved in
+      // hive metastore) or by reading schema in HDFS (schema saved in HDFS)
       TableInfo tableInfo = getTableInfo(configuration);
-      CarbonTable carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
+      CarbonTable carbonTable;
+      if (tableInfo != null) {
+        carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
+      } else {
+        carbonTable = SchemaReader.readCarbonTableFromStore(
+            getAbsoluteTableIdentifier(configuration));
+      }
       this.carbonTable = carbonTable;
       return carbonTable;
     } else {
@@ -198,13 +215,14 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         .set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, CarbonUtil.getSegmentString(validSegments));
   }
 
-  private static AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
+  private AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
       throws IOException {
-    TableInfo tableInfo = getTableInfo(configuration);
-    CarbonTableIdentifier carbontableIdentifier =
-        new CarbonTableIdentifier(tableInfo.getDatabaseName(),
-            tableInfo.getFactTable().getTableName(), tableInfo.getFactTable().getTableId());
-    return new AbsoluteTableIdentifier(tableInfo.getStorePath(), carbontableIdentifier);
+    String dirs = configuration.get(INPUT_DIR, "");
+    String[] inputPaths = StringUtils.split(dirs);
+    if (inputPaths.length == 0) {
+      throw new InvalidPathException("No input paths specified in job");
+    }
+    return AbsoluteTableIdentifier.fromTablePath(inputPaths[0]);
   }
 
   /**

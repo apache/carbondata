@@ -130,7 +130,7 @@ public class CarbonTable implements Serializable {
    */
   private int numberOfNoDictSortColumns;
 
-  public CarbonTable() {
+  private CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableImplicitDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableMeasuresMap = new HashMap<String, List<CarbonMeasure>>();

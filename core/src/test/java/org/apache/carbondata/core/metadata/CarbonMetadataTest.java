@@ -160,7 +160,7 @@ public class CarbonMetadataTest {
   }
 
   @Test public void testGetCarbonDimensionBasedOnColIdentifier() {
-    CarbonTable carbonTable = new CarbonTable();
+    CarbonTable carbonTable = CarbonTable.buildFromTableInfo(getTableInfo(1000L));
     String columnIdentifier = "1";
     final List<CarbonDimension> carbonDimensions = new ArrayList();
     ColumnSchema colSchema1 = new ColumnSchema();
@@ -186,7 +186,7 @@ public class CarbonMetadataTest {
 
   @Test
   public void testGetCarbonDimensionBasedOnColIdentifierWhenChildDimensionColumnEqualsColumnIdentifier() {
-    CarbonTable carbonTable = new CarbonTable();
+    CarbonTable carbonTable = CarbonTable.buildFromTableInfo(getTableInfo(1000L));
     String columnIdentifier = "9";
     final List<CarbonDimension> carbonDimensions = new ArrayList();
     ColumnSchema colSchema1 = new ColumnSchema();
@@ -226,7 +226,7 @@ public class CarbonMetadataTest {
   }
 
   @Test public void testGetCarbonDimensionBasedOnColIdentifierNullCase() {
-    CarbonTable carbonTable = new CarbonTable();
+    CarbonTable carbonTable = CarbonTable.buildFromTableInfo(getTableInfo(1000L));
     String columnIdentifier = "3";
     final List<CarbonDimension> carbonDimensions = new ArrayList();
     ColumnSchema colSchema1 = new ColumnSchema();
