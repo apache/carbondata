@@ -1726,7 +1726,7 @@ public final class CarbonUtil {
   }
 
   public static String convertToMultiGsonStrings(TableInfo tableInfo, String seperator,
-      String quote) {
+      String quote, String prefix) {
     Gson gson = new Gson();
     String schemaString = gson.toJson(tableInfo);
     int schemaLen = schemaString.length();
@@ -1736,7 +1736,7 @@ public final class CarbonUtil {
       parts++;
     }
     StringBuilder builder =
-        new StringBuilder(",").append(quote).append("carbonSchemaPartsNo").append(quote)
+        new StringBuilder(prefix).append(quote).append("carbonSchemaPartsNo").append(quote)
             .append(seperator).append("'").append(parts).append("',");
     int runningLen = 0;
     int endLen = splitLen;

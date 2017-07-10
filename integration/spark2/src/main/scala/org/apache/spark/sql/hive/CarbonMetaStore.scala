@@ -25,6 +25,7 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTable
 import org.apache.carbondata.core.metadata.schema.table
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.processing.merger.TableMeta
 
@@ -72,17 +73,17 @@ trait CarbonMetaStore {
   /**
    * This method will overwrite the existing schema and update it with the given details
    *
-   * @param carbonTableIdentifier
+   * @param newTableIdentifier
    * @param thriftTableInfo
    * @param schemaEvolutionEntry
    * @param carbonStorePath
    * @param sparkSession
    */
-  def updateTableSchema(carbonTableIdentifier: CarbonTableIdentifier,
+  def updateTableSchema(newTableIdentifier: CarbonTableIdentifier,
+      oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       schemaEvolutionEntry: SchemaEvolutionEntry,
-      carbonStorePath: String)
-    (sparkSession: SparkSession): String
+      carbonStorePath: String)(sparkSession: SparkSession): String
 
   /**
    * This method will is used to remove the evolution entry in case of failure.
@@ -132,6 +133,8 @@ trait CarbonMetaStore {
   def listAllTables(sparkSession: SparkSession): Seq[CarbonTable]
 
   def storePath: String
+
+  def getThriftTableInfo(tablePath: CarbonTablePath)(sparkSession: SparkSession): TableInfo
 
 }
 

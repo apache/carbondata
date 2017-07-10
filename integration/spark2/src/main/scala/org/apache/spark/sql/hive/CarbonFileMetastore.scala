@@ -235,13 +235,14 @@ class CarbonFileMetastore(conf: RuntimeConfig, val storePath: String) extends Ca
   /**
    * This method will overwrite the existing schema and update it with the given details
    *
-   * @param carbonTableIdentifier
+   * @param newTableIdentifier
    * @param thriftTableInfo
    * @param schemaEvolutionEntry
    * @param carbonStorePath
    * @param sparkSession
    */
-  def updateTableSchema(carbonTableIdentifier: CarbonTableIdentifier,
+  def updateTableSchema(newTableIdentifier: CarbonTableIdentifier,
+      oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       schemaEvolutionEntry: SchemaEvolutionEntry,
       carbonStorePath: String)
@@ -250,13 +251,13 @@ class CarbonFileMetastore(conf: RuntimeConfig, val storePath: String) extends Ca
     thriftTableInfo.fact_table.schema_evolution.schema_evolution_history.add(schemaEvolutionEntry)
     val wrapperTableInfo = schemaConverter
       .fromExternalToWrapperTableInfo(thriftTableInfo,
-          carbonTableIdentifier.getDatabaseName,
-          carbonTableIdentifier.getTableName,
+          newTableIdentifier.getDatabaseName,
+          newTableIdentifier.getTableName,
           carbonStorePath)
     createSchemaThriftFile(wrapperTableInfo,
       thriftTableInfo,
-      carbonTableIdentifier.getDatabaseName,
-      carbonTableIdentifier.getTableName)(sparkSession)
+      newTableIdentifier.getDatabaseName,
+      newTableIdentifier.getTableName)(sparkSession)
   }
 
   /**
@@ -518,5 +519,11 @@ class CarbonFileMetastore(conf: RuntimeConfig, val storePath: String) extends Ca
 
   override def listAllTables(sparkSession: SparkSession): Seq[CarbonTable] =
     metadata.tablesMeta.map(_.carbonTable)
+
+  override def getThriftTableInfo(tablePath: CarbonTablePath)
+    (sparkSession: SparkSession): TableInfo = {
+    val tableMetadataFile = tablePath.getSchemaFilePath
+    CarbonUtil.readSchemaFile(tableMetadataFile)
+  }
 }
 

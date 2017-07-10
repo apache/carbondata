@@ -63,15 +63,15 @@ private[sql] case class AlterTableAddColumns(
       // completion of 1st operation but as look up relation is called before it will have the
       // older carbon table and this can lead to inconsistent state in the system. Therefor look
       // up relation should be called after acquiring the lock
-      carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      carbonTable = metastore
         .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
         .tableMeta.carbonTable
       // get the latest carbon table and check for column existence
       // read the latest schema file
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
         carbonTable.getCarbonTableIdentifier)
-      val tableMetadataFile = carbonTablePath.getSchemaFilePath
-      val thriftTableInfo: TableInfo = CarbonUtil.readSchemaFile(tableMetadataFile)
+      val thriftTableInfo: TableInfo = metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
       val schemaConverter = new ThriftWrapperSchemaConverterImpl()
       val wrapperTableInfo = schemaConverter
         .fromExternalToWrapperTableInfo(thriftTableInfo,
@@ -103,8 +103,8 @@ private[sql] case class AlterTableAddColumns(
       LOGGER.info(s"Alter table for add columns is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for add columns is successful for table $dbName.$tableName")
     } catch {
-      case e: Exception => LOGGER
-        .error("Alter table add columns failed :" + e.getMessage)
+      case e: Exception =>
+        LOGGER.error(e, "Alter table add columns failed")
         if (newCols.nonEmpty) {
           LOGGER.info("Cleaning up the dictionary files as alter table add operation failed")
           new AlterTableDropColumnRDD(sparkSession.sparkContext,
@@ -146,9 +146,9 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
     val newTableName = newTableIdentifier.table.toLowerCase
     LOGGER.audit(s"Rename table request has been received for $oldDatabaseName.$oldTableName")
     LOGGER.info(s"Rename table request has been received for $oldDatabaseName.$oldTableName")
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val relation: CarbonRelation =
-      CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .lookupRelation(oldTableIdentifier.database, oldTableName)(sparkSession)
+      metastore.lookupRelation(oldTableIdentifier.database, oldTableName)(sparkSession)
         .asInstanceOf[CarbonRelation]
     if (relation == null) {
       LOGGER.audit(s"Rename table request has failed. " +
@@ -167,15 +167,14 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
       locks = AlterTableUtil
         .validateTableAndAcquireLock(oldDatabaseName, oldTableName, locksToBeAcquired)(
             sparkSession)
-      carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .lookupRelation(Some(oldDatabaseName), oldTableName)(sparkSession)
+      carbonTable = metastore.lookupRelation(Some(oldDatabaseName), oldTableName)(sparkSession)
         .asInstanceOf[CarbonRelation].tableMeta.carbonTable
       // get the latest carbon table and check for column existence
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
         carbonTable.getCarbonTableIdentifier)
-      val tableMetadataFile = carbonTablePath.getSchemaFilePath
+      val tableMetadataFile = carbonTablePath.getPath
       val tableInfo: org.apache.carbondata.format.TableInfo =
-        CarbonUtil.readSchemaFile(tableMetadataFile)
+        metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
       val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
       schemaEvolutionEntry.setTableName(newTableName)
       timeStamp = System.currentTimeMillis()
@@ -192,15 +191,13 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
         }
       }
       val newTableIdentifier = new CarbonTableIdentifier(oldDatabaseName,
-        newTableName,
-        carbonTable.getCarbonTableIdentifier.getTableId)
-      val newTablePath = CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .updateTableSchema(newTableIdentifier,
+        newTableName, carbonTable.getCarbonTableIdentifier.getTableId)
+      val newTablePath = metastore.updateTableSchema(newTableIdentifier,
+          carbonTable.getCarbonTableIdentifier,
           tableInfo,
           schemaEvolutionEntry,
           carbonTable.getStorePath)(sparkSession)
-      CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .removeTableFromMetadata(oldDatabaseName, oldTableName)
+      metastore.removeTableFromMetadata(oldDatabaseName, oldTableName)
       sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
         .runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$oldTableName RENAME TO $oldDatabaseName.$newTableName")
@@ -212,8 +209,8 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
       LOGGER.audit(s"Table $oldTableName has been successfully renamed to $newTableName")
       LOGGER.info(s"Table $oldTableName has been successfully renamed to $newTableName")
     } catch {
-      case e: Exception => LOGGER
-        .error("Rename table failed: " + e.getMessage)
+      case e: Exception =>
+        LOGGER.error(e, "Rename table failed: " + e.getMessage)
         if (carbonTable != null) {
           AlterTableUtil
             .revertRenameTableChanges(oldTableIdentifier,
@@ -278,7 +275,8 @@ private[sql] case class AlterTableDropColumns(
     try {
       locks = AlterTableUtil
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
-      carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      carbonTable = metastore
         .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
         .tableMeta.carbonTable
       val partitionInfo = carbonTable.getPartitionInfo(tableName)
@@ -328,9 +326,8 @@ private[sql] case class AlterTableDropColumns(
       // read the latest schema file
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
         carbonTable.getCarbonTableIdentifier)
-      val tableMetadataFile = carbonTablePath.getSchemaFilePath
       val tableInfo: org.apache.carbondata.format.TableInfo =
-        CarbonUtil.readSchemaFile(tableMetadataFile)
+        metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
       // maintain the deleted columns for schema evolution history
       var deletedColumnSchema = ListBuffer[org.apache.carbondata.format.ColumnSchema]()
       val columnSchemaList = tableInfo.fact_table.table_columns.asScala
@@ -392,7 +389,8 @@ private[sql] case class AlterTableDataTypeChange(
     try {
       locks = AlterTableUtil
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
-      carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      carbonTable = metastore
         .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
         .tableMeta.carbonTable
       val columnName = alterTableDataTypeChangeModel.columnName
@@ -414,8 +412,7 @@ private[sql] case class AlterTableDataTypeChange(
       // read the latest schema file
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
         carbonTable.getCarbonTableIdentifier)
-      val tableMetadataFile = carbonTablePath.getSchemaFilePath
-      val tableInfo: TableInfo = CarbonUtil.readSchemaFile(tableMetadataFile)
+      val tableInfo: TableInfo = metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
       // maintain the added column for schema evolution history
       var addColumnSchema: ColumnSchema = null
       var deletedColumnSchema: ColumnSchema = null

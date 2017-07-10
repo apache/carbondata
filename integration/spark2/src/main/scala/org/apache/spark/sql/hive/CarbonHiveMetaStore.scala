@@ -28,9 +28,13 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
+import org.apache.carbondata.core.metadata.schema
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.format
+import org.apache.carbondata.format.SchemaEvolutionEntry
 import org.apache.carbondata.processing.merger.TableMeta
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
@@ -57,8 +61,8 @@ class CarbonHiveMetaStore(conf: RuntimeConfig, storePath: String)
     if (info != null) {
       val table = new CarbonTable
       table.loadCarbonTable(info)
-      val meta = new TableMeta(absIdentifier.getCarbonTableIdentifier,
-        absIdentifier.getStorePath, table)
+      val meta = new TableMeta(table.getCarbonTableIdentifier,
+        table.getStorePath, table)
       CarbonRelation(info.getDatabaseName, info.getFactTable.getTableName,
         CarbonSparkUtil.createSparkMeta(table), meta)
     } else {
@@ -137,9 +141,12 @@ class CarbonHiveMetaStore(conf: RuntimeConfig, storePath: String)
       CarbonTablePath.getFolderContainingFile(carbonTablePath.getSchemaFilePath)
     tableInfo.setMetaDataFilepath(schemaMetadataPath)
     tableInfo.setStorePath(storePath)
+    val schemaEvolutionEntry = new schema.SchemaEvolutionEntry
+    schemaEvolutionEntry.setTimeStamp(tableInfo.getLastUpdatedTime)
+    tableInfo.getFactTable.getSchemaEvalution.getSchemaEvolutionEntryList.add(schemaEvolutionEntry)
     removeTableFromMetadata(dbName, tableName)
     CarbonMetadata.getInstance().loadTableMetadata(tableInfo)
-    (carbonTablePath.getPath, CarbonUtil.convertToMultiGsonStrings(tableInfo, " ", ""))
+    (carbonTablePath.getPath, CarbonUtil.convertToMultiGsonStrings(tableInfo, " ", "", ","))
   }
 
   /**
@@ -190,5 +197,95 @@ class CarbonHiveMetaStore(conf: RuntimeConfig, storePath: String)
   override def listAllTables(sparkSession: SparkSession): Seq[CarbonTable] = {
     // Todo
     Seq()
+  }
+
+  override def getThriftTableInfo(tablePath: CarbonTablePath)
+    (sparkSession: SparkSession): format.TableInfo = {
+    val identifier = tablePath.getCarbonTableIdentifier
+    val relation = lookupRelation(TableIdentifier(identifier.getTableName,
+      Some(identifier.getDatabaseName)))(sparkSession).asInstanceOf[CarbonRelation]
+    val carbonTable = relation.metaData.carbonTable
+    val schemaConverter = new ThriftWrapperSchemaConverterImpl
+    schemaConverter.fromWrapperToExternalTableInfo(carbonTable.getTableInfo,
+      carbonTable.getDatabaseName,
+      carbonTable.getFactTableName)
+  }
+
+  /**
+   * This method will overwrite the existing schema and update it with the given details
+   *
+   * @param newTableIdentifier
+   * @param thriftTableInfo
+   * @param schemaEvolutionEntry
+   * @param carbonStorePath
+   * @param sparkSession
+   */
+  override def updateTableSchema(newTableIdentifier: CarbonTableIdentifier,
+      oldTableIdentifier: CarbonTableIdentifier,
+      thriftTableInfo: format.TableInfo,
+      schemaEvolutionEntry: SchemaEvolutionEntry,
+      carbonStorePath: String)
+    (sparkSession: SparkSession): String = {
+    val schemaConverter = new ThriftWrapperSchemaConverterImpl
+    thriftTableInfo.fact_table.schema_evolution.schema_evolution_history.add(schemaEvolutionEntry)
+    updateHiveMetaStore(newTableIdentifier,
+      oldTableIdentifier,
+      thriftTableInfo,
+      carbonStorePath,
+      sparkSession,
+      schemaConverter)
+  }
+
+  private def updateHiveMetaStore(newTableIdentifier: CarbonTableIdentifier,
+      oldTableIdentifier: CarbonTableIdentifier,
+      thriftTableInfo: format.TableInfo,
+      carbonStorePath: String,
+      sparkSession: SparkSession,
+      schemaConverter: ThriftWrapperSchemaConverterImpl) = {
+    val wrapperTableInfo = schemaConverter
+      .fromExternalToWrapperTableInfo(thriftTableInfo,
+        newTableIdentifier.getDatabaseName,
+        newTableIdentifier.getTableName,
+        carbonStorePath)
+    wrapperTableInfo.setStorePath(storePath)
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, newTableIdentifier)
+    val schemaMetadataPath =
+      CarbonTablePath.getFolderContainingFile(carbonTablePath.getSchemaFilePath)
+    wrapperTableInfo.setMetaDataFilepath(schemaMetadataPath)
+    val dbName = oldTableIdentifier.getDatabaseName
+    val tableName = oldTableIdentifier.getTableName
+    val carbonUpdatedIdentifier = new CarbonTableIdentifier(dbName, tableName,
+      wrapperTableInfo.getFactTable.getTableId)
+    val schemaParts = CarbonUtil.convertToMultiGsonStrings(wrapperTableInfo, "=", "'", "")
+    sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive.runSqlHive(
+      s"ALTER TABLE $dbName.$tableName SET SERDEPROPERTIES($schemaParts)")
+    sparkSession.catalog.refreshTable(TableIdentifier(tableName, Some(dbName)).quotedString)
+    removeTableFromMetadata(wrapperTableInfo.getDatabaseName,
+      wrapperTableInfo.getFactTable.getTableName)
+    CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
+    CarbonStorePath.getCarbonTablePath(storePath, carbonUpdatedIdentifier).getPath
+  }
+
+  /**
+   * This method will is used to remove the evolution entry in case of failure.
+   *
+   * @param carbonTableIdentifier
+   * @param thriftTableInfo
+   * @param carbonStorePath
+   * @param sparkSession
+   */
+  override def revertTableSchema(carbonTableIdentifier: CarbonTableIdentifier,
+      thriftTableInfo: format.TableInfo,
+      carbonStorePath: String)
+    (sparkSession: SparkSession): String = {
+    val schemaConverter = new ThriftWrapperSchemaConverterImpl
+    val evolutionEntries = thriftTableInfo.fact_table.schema_evolution.schema_evolution_history
+    evolutionEntries.remove(evolutionEntries.size() - 1)
+    updateHiveMetaStore(carbonTableIdentifier,
+      carbonTableIdentifier,
+      thriftTableInfo,
+      carbonStorePath,
+      sparkSession,
+      schemaConverter)
   }
 }

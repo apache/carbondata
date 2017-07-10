@@ -67,25 +67,28 @@ public class ManageDictionaryAndBTree {
     String metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath();
     CarbonFile metadataDir = FileFactory
         .getCarbonFile(metadataDirectoryPath, FileFactory.getFileType(metadataDirectoryPath));
-    // sort index file is created with dictionary size appended to it. So all the files
-    // with a given column ID need to be listed
-    CarbonFile[] listFiles = metadataDir.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile path) {
-        if (path.getName().startsWith(columnSchema.getColumnUniqueId())) {
-          return true;
+    if (metadataDir.exists()) {
+      // sort index file is created with dictionary size appended to it. So all the files
+      // with a given column ID need to be listed
+      CarbonFile[] listFiles = metadataDir.listFiles(new CarbonFileFilter() {
+        @Override public boolean accept(CarbonFile path) {
+          if (path.getName().startsWith(columnSchema.getColumnUniqueId())) {
+            return true;
+          }
+          return false;
         }
-        return false;
-      }
-    });
-    for (CarbonFile file : listFiles) {
-      // try catch is inside for loop because even if one deletion fails, other files
-      // still need to be deleted
-      try {
-        FileFactory
-            .deleteFile(file.getCanonicalPath(), FileFactory.getFileType(file.getCanonicalPath()));
-      } catch (IOException e) {
-        LOGGER.error("Failed to delete dictionary or sortIndex file for column " + columnSchema
-            .getColumnName() + "with column ID " + columnSchema.getColumnUniqueId());
+      });
+      for (CarbonFile file : listFiles) {
+        // try catch is inside for loop because even if one deletion fails, other files
+        // still need to be deleted
+        try {
+          FileFactory.deleteFile(file.getCanonicalPath(),
+              FileFactory.getFileType(file.getCanonicalPath()));
+        } catch (IOException e) {
+          LOGGER.error("Failed to delete dictionary or sortIndex file for column "
+              + columnSchema.getColumnName() + "with column ID "
+              + columnSchema.getColumnUniqueId());
+        }
       }
     }
     // remove dictionary cache
