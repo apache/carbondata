@@ -31,7 +31,7 @@ public class PartitionUtil {
   public static Partitioner getPartitioner(PartitionInfo partitionInfo) {
     switch (partitionInfo.getPartitionType()) {
       case HASH:
-        return new HashPartitioner(partitionInfo.getHashNumber());
+        return new HashPartitioner(partitionInfo.getNumPartitions());
       case LIST:
         return new ListPartitioner(partitionInfo);
       case RANGE:

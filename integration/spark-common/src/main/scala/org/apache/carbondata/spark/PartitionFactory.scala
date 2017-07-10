@@ -28,7 +28,7 @@ object PartitionFactory {
 
   def getPartitioner(partitionInfo: PartitionInfo): Partitioner = {
     partitionInfo.getPartitionType match {
-      case PartitionType.HASH => new HashPartitioner(partitionInfo.getHashNumber)
+      case PartitionType.HASH => new HashPartitioner(partitionInfo.getNumPartitions)
       case PartitionType.LIST => new ListPartitioner(partitionInfo)
       case PartitionType.RANGE => new RangePartitioner(partitionInfo)
       case partitionType =>

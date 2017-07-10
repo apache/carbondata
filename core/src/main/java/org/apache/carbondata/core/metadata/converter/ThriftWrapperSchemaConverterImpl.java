@@ -218,11 +218,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
             fromWrapperToExternalPartitionType(wrapperPartitionInfo.getPartitionType()));
     externalPartitionInfo.setList_info(wrapperPartitionInfo.getListInfo());
     externalPartitionInfo.setRange_info(wrapperPartitionInfo.getRangeInfo());
-    externalPartitionInfo.setHash_number(wrapperPartitionInfo.getHashNumber());
-    externalPartitionInfo.setNumOfPartitions(wrapperPartitionInfo.getNumberOfPartitions());
+    externalPartitionInfo.setNum_partitions(wrapperPartitionInfo.getNumPartitions());
     externalPartitionInfo.setMax_partition(wrapperPartitionInfo.getMAX_PARTITION());
-    externalPartitionInfo.setPartitionIdList(wrapperPartitionInfo
-        .getPartitionIdList());
+    externalPartitionInfo.setPartition_ids(wrapperPartitionInfo
+        .getPartitionIds());
     return externalPartitionInfo;
   }
 
@@ -456,10 +455,9 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         fromExternalToWrapperPartitionType(externalPartitionInfo.getPartition_type()));
     wrapperPartitionInfo.setListInfo(externalPartitionInfo.getList_info());
     wrapperPartitionInfo.setRangeInfo(externalPartitionInfo.getRange_info());
-    wrapperPartitionInfo.setHashNumber(externalPartitionInfo.getHash_number());
-    wrapperPartitionInfo.setNumberOfPartitions(externalPartitionInfo.getNumOfPartitions());
-    wrapperPartitionInfo.setPartitionIdList(externalPartitionInfo
-        .getPartitionIdList());
+    wrapperPartitionInfo.setNumPartitions(externalPartitionInfo.getNum_partitions());
+    wrapperPartitionInfo.setPartitionIds(externalPartitionInfo
+        .getPartition_ids());
     wrapperPartitionInfo.setMAX_PARTITION(externalPartitionInfo.getMax_partition());
     return wrapperPartitionInfo;
   }

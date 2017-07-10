@@ -47,8 +47,6 @@ import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.scan.partition.PartitionUtil;
-import org.apache.carbondata.core.scan.partition.Partitioner;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
@@ -266,7 +264,6 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       // process and resolve the expression
       Expression filter = getFilterPredicates(job.getConfiguration());
       CarbonTable carbonTable = getCarbonTable(job.getConfiguration());
-      PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName());
       // this will be null in case of corrupt schema file.
       if (null == carbonTable) {
         throw new IOException("Missing/Corrupt schema file for table.");
@@ -274,6 +271,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
       CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
       BitSet matchedPartitions = null;
+      PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName());
       if (partitionInfo != null) {
         // prune partitions for filter query on partition table
         matchedPartitions = setMatchedPartitions(null, carbonTable, filter, partitionInfo);
@@ -281,7 +279,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
           if (matchedPartitions.cardinality() == 0) {
             // no partition is required
             return new ArrayList<InputSplit>();
-          } else if (matchedPartitions.cardinality() == partitionInfo.getNumberOfPartitions()) {
+          } else if (matchedPartitions.cardinality() == partitionInfo.getNumPartitions()) {
             // all partitions are required, no need to prune partitions
             matchedPartitions = null;
           }
@@ -335,8 +333,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       }
     } else {
       if (null != filter) {
-          matchedPartitions = new FilterExpressionProcessor()
-              .getFilteredPartitions(filter, partitionInfo);
+        matchedPartitions = new FilterExpressionProcessor()
+            .getFilteredPartitions(filter, partitionInfo);
       }
     }
     return matchedPartitions;
@@ -436,7 +434,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       int partitionIndex = -1;
       List<Integer> partitionIdList = new ArrayList<>();
       if (partitionInfo != null) {
-        partitionIdList = partitionInfo.getPartitionIdList();
+        partitionIdList = partitionInfo.getPartitionIds();
       }
       if (null != segmentIndexMap) {
         for (Map.Entry<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> entry :

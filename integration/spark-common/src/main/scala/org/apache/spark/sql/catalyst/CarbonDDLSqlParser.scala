@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.catalyst
 
+import java.text.SimpleDateFormat
 import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
@@ -38,7 +39,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.processing.newflow.sort.SortScopeOptions
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.{CommonUtil, DataTypeConverterUtil}
@@ -369,6 +370,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    */
   protected def getPartitionInfo(partitionCols: Seq[PartitionerField],
       tableProperties: Map[String, String]): Option[PartitionInfo] = {
+    val timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+    val dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
     if (partitionCols.isEmpty) {
       None
     } else {
@@ -389,7 +396,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       if (tableProperties.get(CarbonCommonConstants.RANGE_INFO).isDefined) {
         rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO).get.split(",")
           .map(_.trim()).toList
-        CommonUtil.validateRangeInfo(rangeInfo, columnDataType)
+        CommonUtil.validateRangeInfo(rangeInfo, columnDataType, timestampFormatter, dateFormatter)
       }
       if (tableProperties.get(CarbonCommonConstants.LIST_INFO).isDefined) {
         val originListInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO).get
@@ -407,7 +414,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       var partitionInfo : PartitionInfo = null
       partitionType.toUpperCase() match {
         case "HASH" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.HASH)
-          partitionInfo.setHashNumber(numPartitions)
           partitionInfo.initialize(numPartitions)
         case "RANGE" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.RANGE)
           partitionInfo.setRangeInfo(rangeInfo.asJava)

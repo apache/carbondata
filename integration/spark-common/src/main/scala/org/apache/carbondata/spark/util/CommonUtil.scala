@@ -53,12 +53,6 @@ object CommonUtil {
 
   val FIXED_DECIMAL = """decimal\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
   val FIXED_DECIMALTYPE = """decimaltype\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
-  val timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance
-    .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
-  val dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance
-    .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
 
   def validateColumnGroup(colGroup: String, noDictionaryDims: Seq[String],
       msrs: Seq[Field], retrievedColGrps: Seq[String], dims: Seq[Field]) {
@@ -304,8 +298,11 @@ object CommonUtil {
    * To verify the range info is in correct order
    * @param rangeInfo
    * @param columnDataType
+   * @param timestampFormatter
+   * @param dateFormatter
    */
-  def validateRangeInfo(rangeInfo: List[String], columnDataType: DataType): Unit = {
+  def validateRangeInfo(rangeInfo: List[String], columnDataType: DataType,
+      timestampFormatter: SimpleDateFormat, dateFormatter: SimpleDateFormat): Unit = {
     val comparator = Comparator.getComparator(columnDataType)
     var head = columnDataType match {
       case DataType.STRING => ByteUtil.toBytes(rangeInfo.head)
@@ -610,7 +607,7 @@ object CommonUtil {
               f.toArray().mkString(", ")))
         }
       case PartitionType.HASH =>
-        var hashNumber = partitionInfo.getHashNumber
+        var hashNumber = partitionInfo.getNumPartitions
         result.+=(RowFactory.create(columnName + "=HASH_NUMBER(" + hashNumber.toString() + ")"))
       case others =>
         result.+=(RowFactory.create(columnName + "="))

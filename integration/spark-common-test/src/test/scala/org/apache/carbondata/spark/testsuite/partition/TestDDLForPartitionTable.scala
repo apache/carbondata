@@ -58,7 +58,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataType.INT)
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 0)
     assert(partitionInfo.getPartitionType ==  PartitionType.HASH)
-    assert(partitionInfo.getHashNumber == 3)
+    assert(partitionInfo.getNumPartitions == 3)
   }
 
   test("create partition table: range partition") {

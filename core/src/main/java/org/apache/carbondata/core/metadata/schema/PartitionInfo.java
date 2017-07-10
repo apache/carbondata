@@ -44,14 +44,9 @@ public class PartitionInfo implements Serializable {
   private List<List<String>> listInfo;
 
   /**
-   * number of hash partitions
-   */
-  private int hashNumber;
-
-  /**
    * total count of partitions
    */
-  private int numberOfPartitions;
+  private int numPartitions;
 
   /**
    * current max partition id, increase only, will be used in alter table partition operation
@@ -62,12 +57,12 @@ public class PartitionInfo implements Serializable {
    * record the partitionId in the logical ascending order
    * initiate when table created and changed when alter table
    */
-  private List<Integer> partitionIdList;
+  private List<Integer> partitionIds;
 
   public PartitionInfo(List<ColumnSchema> columnSchemaList, PartitionType partitionType) {
     this.columnSchemaList = columnSchemaList;
     this.partitionType = partitionType;
-    this.partitionIdList = new ArrayList<>();
+    this.partitionIds = new ArrayList<>();
   }
 
   public List<ColumnSchema> getColumnSchemaList() {
@@ -80,14 +75,6 @@ public class PartitionInfo implements Serializable {
 
   public PartitionType getPartitionType() {
     return partitionType;
-  }
-
-  public void setHashNumber(int numPartitions) {
-    this.hashNumber = numPartitions;
-  }
-
-  public int getHashNumber() {
-    return hashNumber;
   }
 
   public void setRangeInfo(List<String> rangeInfo) {
@@ -108,14 +95,18 @@ public class PartitionInfo implements Serializable {
 
   public void initialize(int partitionNum) {
     for (int i = 0; i < partitionNum; i++) {
-      partitionIdList.add(i);
+      partitionIds.add(i);
     }
     MAX_PARTITION = partitionNum - 1;
-    numberOfPartitions = partitionNum;
+    numPartitions = partitionNum;
   }
 
-  public int getNumberOfPartitions() {
-    return numberOfPartitions;
+  public void setNumPartitions(int numPartitions) {
+    this.numPartitions = numPartitions;
+  }
+
+  public int getNumPartitions() {
+    return numPartitions;
   }
 
   public int getMAX_PARTITION() {
@@ -126,20 +117,16 @@ public class PartitionInfo implements Serializable {
     this.MAX_PARTITION = max_partition;
   }
 
-  public List<Integer> getPartitionIdList() {
-    return partitionIdList;
+  public List<Integer> getPartitionIds() {
+    return partitionIds;
   }
 
-  public void setPartitionIdList(List<Integer> partitionIdList) {
-    this.partitionIdList = partitionIdList;
-  }
-
-  public void setNumberOfPartitions(int numberOfPartitions) {
-    this.numberOfPartitions = numberOfPartitions;
+  public void setPartitionIds(List<Integer> partitionIdList) {
+    this.partitionIds = partitionIdList;
   }
 
   public int getPartitionId(int index) {
-    return partitionIdList.get(index);
+    return partitionIds.get(index);
   }
 
 }

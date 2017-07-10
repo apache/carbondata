@@ -52,22 +52,33 @@ class ByteArraySerializableComparator implements SerializableComparator {
 
 class IntSerializableComparator implements SerializableComparator {
   @Override public int compare(Object key1, Object key2) {
-    return (int) key1 - (int) key2;
+    if ((int) key1 < (int) key2) {
+      return -1;
+    } else if ((int) key1 > (int) key2) {
+      return 1;
+    } else {
+      return 0;
+    }
   }
 }
 
 class ShortSerializableComparator implements SerializableComparator {
   @Override public int compare(Object key1, Object key2) {
-    return (short) key1 - (short) key2;
+    if ((short) key1 < (short) key2) {
+      return -1;
+    } else if ((short) key1 > (short) key2) {
+      return 1;
+    } else {
+      return 0;
+    }
   }
 }
 
 class DoubleSerializableComparator implements SerializableComparator {
   @Override public int compare(Object key1, Object key2) {
-    double result =  (double) key1 - (double) key2;
-    if (result < 0) {
+    if ((double) key1 < (double) key2) {
       return -1;
-    } else if (result > 0) {
+    } else if ((double) key1 > (double) key2) {
       return 1;
     } else {
       return 0;
@@ -77,10 +88,9 @@ class DoubleSerializableComparator implements SerializableComparator {
 
 class LongSerializableComparator implements SerializableComparator {
   @Override public int compare(Object key1, Object key2) {
-    long result = (long) key1 - (long) key2;
-    if (result < 0) {
+    if ((long) key1 < (long) key2) {
       return -1;
-    } else if (result > 0) {
+    } else if ((long) key1 > (long) key2) {
       return 1;
     } else {
       return 0;
