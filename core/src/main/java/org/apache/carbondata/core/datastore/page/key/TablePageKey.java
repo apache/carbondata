@@ -63,16 +63,15 @@ public class TablePageKey {
   }
 
   /** update all keys based on the input row */
-  public void update(int rowId, CarbonRow row) throws KeyGenException {
-    byte[] currentMDKey = WriteStepRowUtil.getMdk(row, mdkGenerator);
+  public void update(int rowId, CarbonRow row, byte[] mdk) throws KeyGenException {
     if (hasNoDictionary) {
       currentNoDictionaryKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
     }
     if (rowId == 0) {
-      startKey = currentMDKey;
+      startKey = mdk;
       noDictStartKey = currentNoDictionaryKey;
     }
-    endKey = currentMDKey;
+    endKey = mdk;
     noDictEndKey = currentNoDictionaryKey;
     if (rowId == pageSize - 1) {
       finalizeKeys();

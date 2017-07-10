@@ -153,12 +153,12 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     try {
       for (int i = 0; i < numDimensions; i++) {
         dataChunkBytes[i] = CarbonUtil.getByteArray(
-            EncodedDimensionPage.getDataChunk3(encodedTablePageList, i));
+            CarbonMetadataUtil.getDimensionDataChunk3(encodedTablePageList, i));
         blockletDataSize += dataChunkBytes[i].length;
       }
       for (int i = 0; i < numMeasures; i++) {
         dataChunkBytes[measureStartIndex] = CarbonUtil.getByteArray(
-            EncodedMeasurePage.getDataChunk3(encodedTablePageList, i));
+            CarbonMetadataUtil.getMeasureDataChunk3(encodedTablePageList, i));
         blockletDataSize += dataChunkBytes[measureStartIndex].length;
         measureStartIndex++;
       }

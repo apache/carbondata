@@ -23,17 +23,13 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 
 public interface SimpleStatsResult {
 
-  byte[] getMinAsBytes();
-
-  byte[] getMaxAsBytes();
-
   Object getMin();
 
   Object getMax();
 
   BitSet getNullBits();
 
-  int getDecimal();
+  int getDecimalPoint();
 
   DataType getDataType();
 }

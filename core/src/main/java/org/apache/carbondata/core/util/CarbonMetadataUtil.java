@@ -604,6 +604,9 @@ public class CarbonMetadataUtil {
     return colDataChunks;
   }
 
+  /**
+   * return DataChunk3 that contains the input DataChunk2 list
+   */
   public static DataChunk3 getDataChunk3(List<DataChunk2> dataChunksList) {
     int offset = 0;
     DataChunk3 dataChunk = new DataChunk3();
@@ -621,6 +624,32 @@ public class CarbonMetadataUtil {
     dataChunk.setPage_length(pageLengths);
     dataChunk.setPage_offset(pageOffsets);
     return dataChunk;
+  }
+
+  /**
+   * return DataChunk3 for the dimension column (specifed by `columnIndex`)
+   * in `encodedTablePageList`
+   */
+  public static DataChunk3 getDimensionDataChunk3(List<EncodedTablePage> encodedTablePageList,
+      int columnIndex) throws IOException {
+    List<DataChunk2> dataChunksList = new ArrayList<>(encodedTablePageList.size());
+    for (EncodedTablePage encodedTablePage : encodedTablePageList) {
+      dataChunksList.add(encodedTablePage.getDimension(columnIndex).getDataChunk2());
+    }
+    return CarbonMetadataUtil.getDataChunk3(dataChunksList);
+  }
+
+  /**
+   * return DataChunk3 for the measure column (specifed by `columnIndex`)
+   * in `encodedTablePageList`
+   */
+  public static DataChunk3 getMeasureDataChunk3(List<EncodedTablePage> encodedTablePageList,
+      int columnIndex) throws IOException {
+    List<DataChunk2> dataChunksList = new ArrayList<>(encodedTablePageList.size());
+    for (EncodedTablePage encodedTablePage : encodedTablePageList) {
+      dataChunksList.add(encodedTablePage.getMeasure(columnIndex).getDataChunk2());
+    }
+    return CarbonMetadataUtil.getDataChunk3(dataChunksList);
   }
 
   public static int compareMeasureData(byte[] first, byte[] second, DataType dataType) {

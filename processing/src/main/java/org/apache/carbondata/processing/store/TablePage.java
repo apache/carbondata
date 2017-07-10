@@ -129,13 +129,15 @@ public class TablePage {
    */
   public void addRow(int rowId, CarbonRow row) throws KeyGenException {
     // convert each column category, update key and stats
-    convertToColumnar(rowId, row);
-    key.update(rowId, row);
+    byte[] mdk = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
+    convertToColumnarAndAddToPages(rowId, row, mdk);
+    key.update(rowId, row, mdk);
   }
 
-  private void convertToColumnar(int rowId, CarbonRow row) throws KeyGenException {
+  // convert the input row object to columnar data and add to column pages
+  private void convertToColumnarAndAddToPages(int rowId, CarbonRow row, byte[] mdk)
+      throws KeyGenException {
     // 1. convert dictionary columns
-    byte[] mdk = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
     byte[][] keys = model.getSegmentProperties().getFixedLengthKeySplitter().splitKey(mdk);
     for (int i = 0; i < dictDimensionPage.length; i++) {
       dictDimensionPage[i].putData(rowId, keys[i]);

@@ -67,7 +67,7 @@ public class ValueEncoderMeta implements Serializable {
     encoderMeta.targetDataType = targetDataType;
     encoderMeta.maxValue = stats.getMax();
     encoderMeta.minValue = stats.getMin();
-    encoderMeta.decimal = stats.getDecimal();
+    encoderMeta.decimal = stats.getDecimalPoint();
     encoderMeta.nullBitSet = stats.getNullBits();
     return encoderMeta;
   }

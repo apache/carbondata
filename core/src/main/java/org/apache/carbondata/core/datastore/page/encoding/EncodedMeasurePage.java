@@ -73,15 +73,6 @@ public class EncodedMeasurePage extends EncodedColumnPage {
     return dataChunk;
   }
 
-  public static DataChunk3 getDataChunk3(List<EncodedTablePage> encodedTablePageList,
-      int columnIndex) throws IOException {
-    List<DataChunk2> dataChunksList = new ArrayList<>(encodedTablePageList.size());
-    for (EncodedTablePage encodedTablePage : encodedTablePageList) {
-      dataChunksList.add(encodedTablePage.getMeasure(columnIndex).getDataChunk2());
-    }
-    return CarbonMetadataUtil.getDataChunk3(dataChunksList);
-  }
-
   public ValueEncoderMeta getMetaData() {
     return metaData;
   }

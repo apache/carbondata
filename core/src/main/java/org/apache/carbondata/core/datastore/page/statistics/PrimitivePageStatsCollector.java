@@ -213,22 +213,6 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   }
 
   /**
-   * return min value as byte array
-   */
-  @Override
-  public byte[] getMinAsBytes() {
-    return getValueAsBytes(getMin());
-  }
-
-  /**
-   * return max value as byte array
-   */
-  @Override
-  public byte[] getMaxAsBytes() {
-    return getValueAsBytes(getMax());
-  }
-
-  /**
    * convert value to byte array
    */
   private byte[] getValueAsBytes(Object value) {
@@ -307,7 +291,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   }
 
   @Override
-  public int getDecimal() {
+  public int getDecimalPoint() {
     return decimal;
   }
 

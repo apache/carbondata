@@ -83,14 +83,6 @@ public class VarLengthPageStatsCollector implements ColumnPageStatsCollector {
     // for binary type, we do not collect its stats
     return new SimpleStatsResult() {
 
-      @Override public byte[] getMinAsBytes() {
-        return min;
-      }
-
-      @Override public byte[] getMaxAsBytes() {
-        return max;
-      }
-
       @Override public Object getMin() {
         return min;
       }
@@ -103,7 +95,7 @@ public class VarLengthPageStatsCollector implements ColumnPageStatsCollector {
         return null;
       }
 
-      @Override public int getDecimal() {
+      @Override public int getDecimalPoint() {
         return 0;
       }
 
