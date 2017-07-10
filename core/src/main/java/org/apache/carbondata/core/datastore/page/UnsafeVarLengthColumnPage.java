@@ -66,8 +66,9 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
    * @param pageSize number of row
    * @param capacity initial capacity of the page, in bytes
    */
-  UnsafeVarLengthColumnPage(DataType dataType, int pageSize, int capacity) throws MemoryException {
-    super(dataType, pageSize);
+  UnsafeVarLengthColumnPage(DataType dataType, int pageSize, int capacity,
+      int scale, int precision) throws MemoryException {
+    super(dataType, pageSize, scale, precision);
     this.capacity = capacity;
     memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry((long)(capacity));
     baseAddress = memoryBlock.getBaseObject();

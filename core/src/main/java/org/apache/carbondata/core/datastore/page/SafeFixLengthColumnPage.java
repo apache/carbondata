@@ -99,11 +99,13 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
-  @Override public void putDecimal(int rowId, BigDecimal decimal) {
+  @Override
+  public void putDecimal(int rowId, BigDecimal decimal) {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
-  @Override public byte[] getDecimalPage() {
+  @Override
+  public byte[] getDecimalPage() {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 

@@ -116,7 +116,11 @@ public abstract class ColumnPage {
     }
   }
 
-  public static ColumnPage newVarLengthPath(DataType dataType, int pageSize, int scale,
+  public static ColumnPage newVarLengthPage(DataType dataType, int pageSize) {
+    return newVarLengthPage(dataType, pageSize, -1, -1);
+  }
+
+  private static ColumnPage newVarLengthPage(DataType dataType, int pageSize, int scale,
       int precision) {
     if (unsafe) {
       try {

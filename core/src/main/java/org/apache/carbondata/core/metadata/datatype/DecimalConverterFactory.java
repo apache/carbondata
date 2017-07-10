@@ -201,9 +201,9 @@ public final class DecimalConverterFactory {
     }
   }
 
-  public static class LegacyDecimalConverter implements DecimalConverter {
+  public static class LVBytesDecimalConverter implements DecimalConverter {
 
-    public static LegacyDecimalConverter INSTANCE = new LegacyDecimalConverter();
+    public static LVBytesDecimalConverter INSTANCE = new LVBytesDecimalConverter();
 
     @Override public byte[] convert(BigDecimal decimal) {
       return DataTypeUtil.bigDecimalToByte(decimal);
@@ -224,7 +224,7 @@ public final class DecimalConverterFactory {
 
   public DecimalConverter getDecimalConverter(int precision, int scale) {
     if (precision < 0) {
-      return new LegacyDecimalConverter();
+      return new LVBytesDecimalConverter();
     } else if (precision <= 9) {
       return new DecimalIntConverter(precision, scale);
     } else if (precision <= 18) {

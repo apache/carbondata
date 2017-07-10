@@ -68,11 +68,11 @@ public class TablePage {
     int numDictDimension = model.getMDKeyGenerator().getDimCount();
     dictDimensionPage = new ColumnPage[numDictDimension];
     for (int i = 0; i < dictDimensionPage.length; i++) {
-      dictDimensionPage[i] = ColumnPage.newVarLengthPath(DataType.BYTE_ARRAY, pageSize, -1, -1);
+      dictDimensionPage[i] = ColumnPage.newVarLengthPage(DataType.BYTE_ARRAY, pageSize);
     }
     noDictDimensionPage = new ColumnPage[model.getNoDictionaryCount()];
     for (int i = 0; i < noDictDimensionPage.length; i++) {
-      noDictDimensionPage[i] = ColumnPage.newVarLengthPath(DataType.BYTE_ARRAY, pageSize, -1, -1);
+      noDictDimensionPage[i] = ColumnPage.newVarLengthPage(DataType.BYTE_ARRAY, pageSize);
     }
     complexDimensionPage = new ComplexColumnPage[model.getComplexColumnCount()];
     for (int i = 0; i < complexDimensionPage.length; i++) {

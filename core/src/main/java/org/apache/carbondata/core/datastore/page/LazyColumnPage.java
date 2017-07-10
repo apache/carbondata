@@ -138,6 +138,16 @@ public class LazyColumnPage extends ColumnPage {
   }
 
   @Override
+  public void putDecimal(int rowId, BigDecimal decimal) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public byte[] getDecimalPage() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
   public byte[] getFlattenedBytePage() {
     throw new UnsupportedOperationException("internal error");
   }
