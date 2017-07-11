@@ -37,6 +37,7 @@ import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.core.util.path.HDFSLeaseUtils;
 import org.apache.carbondata.format.ColumnDictionaryChunk;
 import org.apache.carbondata.format.ColumnDictionaryChunkMeta;
 
@@ -359,7 +360,24 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     // create thrift writer instance
     dictionaryThriftWriter = new ThriftWriter(dictionaryFile, true);
     // open the file stream
-    dictionaryThriftWriter.open();
+    try {
+      dictionaryThriftWriter.open();
+    } catch (IOException e) {
+      // Cases to handle
+      // 1. Handle File lease recovery
+      if (HDFSLeaseUtils.checkExceptionMessageForLeaseRecovery(e.getMessage())) {
+        LOGGER.error(e, "Lease recovery exception encountered for file: " + dictionaryFile);
+        boolean leaseRecovered = HDFSLeaseUtils.recoverFileLease(dictionaryFile);
+        if (leaseRecovered) {
+          // try to open output stream again after recovering the lease on file
+          dictionaryThriftWriter.open();
+        } else {
+          throw e;
+        }
+      } else {
+        throw e;
+      }
+    }
   }
 
   /**

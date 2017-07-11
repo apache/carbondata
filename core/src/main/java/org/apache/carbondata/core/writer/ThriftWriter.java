@@ -136,7 +136,7 @@ public class ThriftWriter {
    */
   public void close() throws IOException {
     closeAtomicFileWriter();
-    CarbonUtil.closeStreams(dataOutputStream);
+    CarbonUtil.closeStream(dataOutputStream);
   }
 
   /**
