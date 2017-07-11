@@ -59,12 +59,6 @@ class QueryTest extends PlanTest with Suite {
     }
   }
 
-  def sqlTest(sqlString: String, expectedAnswer: Seq[Row])(implicit sqlContext: SQLContext) {
-    test(sqlString) {
-      checkAnswer(sqlContext.sql(sqlString), expectedAnswer)
-    }
-  }
-
   /**
    * Runs the plan and makes sure the answer matches the expected result.
    * @param df the [[DataFrame]] to be executed
