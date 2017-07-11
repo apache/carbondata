@@ -204,8 +204,8 @@ public class TableSchema implements Serializable, Writable {
 
   @Override
   public void write(DataOutput out) throws IOException {
-    WritableUtil.writeString(out, tableId);
-    WritableUtil.writeString(out, tableName);
+    out.writeUTF(tableId);
+    out.writeUTF(tableName);
     out.writeInt(listOfColumns.size());
     for (ColumnSchema column : listOfColumns) {
       column.write(out);
@@ -214,8 +214,8 @@ public class TableSchema implements Serializable, Writable {
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    this.tableId = WritableUtil.readString(in);
-    this.tableName = WritableUtil.readString(in);
+    this.tableId = in.readUTF();
+    this.tableName = in.readUTF();
     int listSize = in.readInt();
     this.listOfColumns = new ArrayList<>(listSize);
     for (int i = 0; i < listSize; i++) {

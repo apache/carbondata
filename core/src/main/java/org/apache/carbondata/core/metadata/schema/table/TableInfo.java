@@ -226,23 +226,23 @@ public class TableInfo implements Serializable, Writable {
 
   @Override
   public void write(DataOutput out) throws IOException {
-    WritableUtil.writeString(out, databaseName);
-    WritableUtil.writeString(out, tableUniqueName);
+    out.writeUTF(databaseName);
+    out.writeUTF(tableUniqueName);
     factTable.write(out);
     out.writeLong(lastUpdatedTime);
-    WritableUtil.writeString(out, metaDataFilepath);
-    WritableUtil.writeString(out, storePath);
+    out.writeUTF(metaDataFilepath);
+    out.writeUTF(storePath);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    this.databaseName = WritableUtil.readString(in);
-    this.tableUniqueName = WritableUtil.readString(in);
+    this.databaseName = in.readUTF();
+    this.tableUniqueName = in.readUTF();
     this.factTable = new TableSchema();
     this.factTable.readFields(in);
     this.lastUpdatedTime = in.readLong();
-    this.metaDataFilepath = WritableUtil.readString(in);
-    this.storePath = WritableUtil.readString(in);
+    this.metaDataFilepath = in.readUTF();
+    this.storePath = in.readUTF();
   }
 
   public AbsoluteTableIdentifier getOrCreateAbsoluteTableIdentifier() {
@@ -254,13 +254,13 @@ public class TableInfo implements Serializable, Writable {
     return identifier;
   }
 
-  public byte[] serielize() throws IOException {
+  public byte[] serialize() throws IOException {
     ByteArrayOutputStream bao = new ByteArrayOutputStream();
     this.write(new DataOutputStream(bao));
     return bao.toByteArray();
   }
 
-  public static TableInfo deserielize(byte[] bytes) throws IOException {
+  public static TableInfo deserialize(byte[] bytes) throws IOException {
     TableInfo tableInfo = new TableInfo();
     DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes));
     tableInfo.readFields(in);

@@ -19,14 +19,7 @@ package org.apache.carbondata.hadoop;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.DataRefNode;
@@ -213,6 +206,13 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   public static void setSegmentsToAccess(Configuration configuration, List<String> validSegments) {
     configuration
         .set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, CarbonUtil.getSegmentString(validSegments));
+  }
+
+  /**
+   * Set list of files to access
+   */
+  public static void setFilesToAccess(Configuration configuration, List<String> validFiles) {
+    configuration.set(CarbonInputFormat.INPUT_FILES, CarbonUtil.getSegmentString(validFiles));
   }
 
   private AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)

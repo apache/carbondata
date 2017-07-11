@@ -79,7 +79,7 @@ case class CarbonDatasourceHadoopRelation(
       projection,
       filterExpression.orNull,
       identifier,
-      carbonTable.getTableInfo.serielize(),
+      carbonTable.getTableInfo.serialize(),
       carbonTable.getTableInfo)
   }
 

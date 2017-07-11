@@ -103,7 +103,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       rdd,
       output,
       CarbonEnv.getInstance(SparkSession.getActiveSession.get).carbonMetastore.storePath,
-      table.carbonTable.getTableInfo.serielize())
+      table.carbonTable.getTableInfo.serialize())
   }
 
   private[this] def toCatalystRDD(

@@ -421,16 +421,16 @@ public class ColumnSchema implements Serializable, Writable {
 
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeInt(dataType.ordinal());
-    WritableUtil.writeString(out, columnName);
-    WritableUtil.writeString(out, columnUniqueId);
-    WritableUtil.writeString(out, columnReferenceId);
+    out.writeShort(dataType.ordinal());
+    out.writeUTF(columnName);
+    out.writeUTF(columnUniqueId);
+    out.writeUTF(columnReferenceId);
     if (encodingList == null) {
-      out.writeInt(0);
+      out.writeShort(0);
     } else {
-      out.writeInt(encodingList.size());
+      out.writeShort(encodingList.size());
       for (Encoding encoding : encodingList) {
-        out.writeInt(encoding.ordinal());
+        out.writeShort(encoding.ordinal());
       }
     }
     out.writeBoolean(isDimensionColumn);
@@ -440,12 +440,12 @@ public class ColumnSchema implements Serializable, Writable {
     out.writeInt(numberOfChild);
     WritableUtil.writeByteArray(out, defaultValue);
     if (columnProperties == null) {
-      out.writeInt(0);
+      out.writeShort(0);
     } else {
-      out.writeInt(columnProperties.size());
+      out.writeShort(columnProperties.size());
       for (Map.Entry<String, String> entry : columnProperties.entrySet()) {
-        WritableUtil.writeString(out, entry.getKey());
-        WritableUtil.writeString(out, entry.getValue());
+        out.writeUTF(entry.getKey());
+        out.writeUTF(entry.getValue());
       }
     }
     out.writeBoolean(invisible);
@@ -454,15 +454,15 @@ public class ColumnSchema implements Serializable, Writable {
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    int ordinal = in.readInt();
+    int ordinal = in.readShort();
     this.dataType = DataType.valueOf(ordinal);
-    this.columnName = WritableUtil.readString(in);
-    this.columnUniqueId = WritableUtil.readString(in);
-    this.columnReferenceId = WritableUtil.readString(in);
-    int encodingListSize = in.readInt();
+    this.columnName = in.readUTF();
+    this.columnUniqueId = in.readUTF();
+    this.columnReferenceId = in.readUTF();
+    int encodingListSize = in.readShort();
     this.encodingList = new ArrayList<>(encodingListSize);
     for (int i = 0; i < encodingListSize; i++) {
-      ordinal = in.readInt();
+      ordinal = in.readShort();
       encodingList.add(Encoding.valueOf(ordinal));
     }
     this.isDimensionColumn = in.readBoolean();
@@ -471,11 +471,11 @@ public class ColumnSchema implements Serializable, Writable {
     this.schemaOrdinal = in.readInt();
     this.numberOfChild = in.readInt();
     this.defaultValue = WritableUtil.readByteArray(in);
-    int mapSize = in.readInt();
+    int mapSize = in.readShort();
     this.columnProperties = new HashMap<>(mapSize);
     for (int i = 0; i < mapSize; i++) {
-      String key = WritableUtil.readString(in);
-      String value = WritableUtil.readString(in);
+      String key = in.readUTF();
+      String value = in.readUTF();
       this.columnProperties.put(key, value);
     }
     this.invisible = in.readBoolean();

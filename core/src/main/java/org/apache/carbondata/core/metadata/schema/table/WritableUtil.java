@@ -23,26 +23,6 @@ import java.io.IOException;
 
 public class WritableUtil {
 
-  public static void writeString(DataOutput out, String string) throws IOException {
-    if (string == null) {
-      out.writeInt(-1);
-    } else {
-      out.writeInt(string.length());
-      out.writeBytes(string);
-    }
-  }
-
-  public static String readString(DataInput in) throws IOException {
-    int length = in.readInt();
-    if (length == -1) {
-      return null;
-    } else {
-      byte[] b = new byte[length];
-      in.readFully(b);
-      return new String(b);
-    }
-  }
-
   public static void writeByteArray(DataOutput out, byte[] bytes) throws IOException {
     if (bytes == null) {
       out.writeInt(-1);

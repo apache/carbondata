@@ -59,5 +59,5 @@ abstract class CarbonRDDWithTableInfo[T: ClassTag](
   def this(@transient oneParent: RDD[_], serializedTableInfo: Array[Byte]) =
     this (oneParent.context, List(new OneToOneDependency(oneParent)), serializedTableInfo)
 
-  def getTableInfo: TableInfo = TableInfo.deserielize(serializedTableInfo)
+  def getTableInfo: TableInfo = TableInfo.deserialize(serializedTableInfo)
 }
