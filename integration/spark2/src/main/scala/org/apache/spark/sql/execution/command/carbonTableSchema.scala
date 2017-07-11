@@ -233,10 +233,10 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
 
           sparkSession.sql(
             s"""CREATE TABLE $dbName.$tbName
-                |(${ fields.map(f => f.rawSchema).mkString(",") })
-                |USING org.apache.spark.sql.CarbonSource""".stripMargin +
-            s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath """.stripMargin +
-            s""""$tablePath"$carbonSchemaString) """)
+               |(${ fields.map(f => f.rawSchema).mkString(",") })
+               |USING org.apache.spark.sql.CarbonSource""".stripMargin +
+                s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath """.stripMargin +
+                s""""$tablePath"$carbonSchemaString) """)
         } catch {
           case e: Exception =>
             val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
@@ -268,8 +268,8 @@ case class DeleteLoadsById(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
-      lookupRelation(databaseNameOp,  tableName)(sparkSession).asInstanceOf[CarbonRelation].
-      tableMeta.carbonTable
+        lookupRelation(databaseNameOp,  tableName)(sparkSession).asInstanceOf[CarbonRelation].
+        tableMeta.carbonTable
     CarbonStore.deleteLoadById(
       loadids,
       getDB.getDatabaseName(databaseNameOp, sparkSession),
@@ -293,8 +293,8 @@ case class DeleteLoadsByLoadDate(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
-      lookupRelation(databaseNameOp,  tableName)(sparkSession).asInstanceOf[CarbonRelation].
-      tableMeta.carbonTable
+        lookupRelation(databaseNameOp,  tableName)(sparkSession).asInstanceOf[CarbonRelation].
+        tableMeta.carbonTable
     CarbonStore.deleteLoadByDate(
       loadDate,
       getDB.getDatabaseName(databaseNameOp, sparkSession),
@@ -751,10 +751,10 @@ case class LoadTable(
           }
 
             GlobalDictionaryUtil.generateGlobalDictionary(
-              sparkSession.sqlContext,
-              carbonLoadModel,
-              relation.tableMeta.storePath,
-              dictionaryDataFrame)
+                sparkSession.sqlContext,
+                carbonLoadModel,
+                relation.tableMeta.storePath,
+                dictionaryDataFrame)
           CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
             carbonLoadModel,
             relation.tableMeta.storePath,
@@ -847,8 +847,8 @@ case class ShowLoads(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
-      lookupRelation(databaseNameOp,  tableName)(sparkSession).asInstanceOf[CarbonRelation].
-      tableMeta.carbonTable
+        lookupRelation(databaseNameOp,  tableName)(sparkSession).asInstanceOf[CarbonRelation].
+        tableMeta.carbonTable
     CarbonStore.showSegments(
       getDB.getDatabaseName(databaseNameOp, sparkSession),
       tableName,
