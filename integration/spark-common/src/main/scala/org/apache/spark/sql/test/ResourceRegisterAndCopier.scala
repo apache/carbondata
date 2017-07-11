@@ -80,6 +80,15 @@ object ResourceRegisterAndCopier {
                   "Data/uniqdata/7000_UniqData.csv"::
                   "Data/VmaLL100/100_olap.csv"::
                   "Data/VmaLL100/100olap.csv"::
+                  "Data/RangeFilter/complexdata.csv" ::
+                  "Data/RangeFilter/data.csv" ::
+                  "Data/RangeFilter/data2.csv" ::
+                  "Data/RangeFilter/datasample.csv" ::
+                  "Data/RangeFilter/datawithoutheader.csv" ::
+                  "Data/RangeFilter/rangedata.csv" ::
+                  "Data/RangeFilter/rangedatasample.csv" ::
+                  "Data/RangeFilter/rangefilterdata.csv" ::
+                  "Data/partition/2000_UniqData_partition.csv" ::
                   "Data/100_olap_C20.csv"::
                   "Data/100_VMALL_1_Day_DATA_2015-09-15.csv"::
                   "Data/customer_C1.csv"::
