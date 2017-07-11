@@ -18,7 +18,8 @@ package org.apache.carbondata.spark.testsuite.iud
 
 import org.apache.spark.sql.{Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
@@ -526,6 +527,46 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     }.getMessage.contains("Update operation is not supported for pre-aggregate table")
     sql("drop table if exists preaggMain")
     sql("drop table if exists preaggMain_preagg1")
+  }
+
+  test("Update operation on carbon table with singlepass") {
+    sql(s"""set ${ CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS }=true""")
+    sql("drop database if exists carbon cascade")
+    sql(s"create database carbon location '$dblocation'")
+    sql("use carbon")
+    sql("""CREATE TABLE carbontable(id int, name string, city string, age int)
+         STORED BY 'org.apache.carbondata.format'""")
+    val testData = s"$resourcesPath/sample.csv"
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table carbontable")
+    // update operation
+    sql("""update carbon.carbontable d  set (d.id) = (d.id + 1) where d.id > 2""").show()
+    checkAnswer(
+      sql("select count(*) from carbontable"),
+      Seq(Row(6))
+    )
+    sql(s"""set ${ CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS }=false""")
+    sql("drop table carbontable")
+  }
+  test("Update operation on carbon table with persist false") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.isPersistEnabled, "false")
+    sql("drop database if exists carbon cascade")
+    sql(s"create database carbon location '$dblocation'")
+    sql("use carbon")
+    sql("""CREATE TABLE carbontable(id int, name string, city string, age int)
+         STORED BY 'org.apache.carbondata.format'""")
+    val testData = s"$resourcesPath/sample.csv"
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table carbontable")
+    // update operation
+    sql("""update carbon.carbontable d  set (d.id) = (d.id + 1) where d.id > 2""").show()
+    checkAnswer(
+      sql("select count(*) from carbontable"),
+      Seq(Row(6))
+    )
+    sql("drop table carbontable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.isPersistEnabled,
+        CarbonCommonConstants.defaultValueIsPersistEnabled)
   }
 
   override def afterAll {
