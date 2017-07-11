@@ -59,8 +59,7 @@ class CarbonHiveMetaStore(conf: RuntimeConfig, storePath: String)
       sparkSession: SparkSession): CarbonRelation = {
     val info = CarbonUtil.convertGsonToTableInfo(parameters.asJava)
     if (info != null) {
-      val table = new CarbonTable
-      table.loadCarbonTable(info)
+      val table = CarbonTable.buildFromTableInfo(info)
       val meta = new TableMeta(table.getCarbonTableIdentifier,
         table.getStorePath, table)
       CarbonRelation(info.getDatabaseName, info.getFactTable.getTableName,

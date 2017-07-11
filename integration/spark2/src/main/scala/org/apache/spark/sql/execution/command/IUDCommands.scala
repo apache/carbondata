@@ -549,7 +549,7 @@ object deleteExecution {
 
     val (carbonInputFormat, job) =
       QueryPlanUtil.createCarbonInputFormat(absoluteTableIdentifier)
-    CarbonInputFormat.setCarbonTable(job.getConfiguration, carbonTable)
+    CarbonInputFormat.setTableInfo(job.getConfiguration, carbonTable.getTableInfo)
     val keyRdd = deleteRdd.map({ row =>
       val tupleId: String = row
         .getString(row.fieldIndex(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))

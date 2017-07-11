@@ -54,11 +54,9 @@ case class CarbonDatasourceHadoopRelation(
   ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
 
   @transient lazy val carbonRelation: CarbonRelation =
-    CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .lookupRelation(
-          Some(identifier.getCarbonTableIdentifier.getDatabaseName),
-          identifier.getCarbonTableIdentifier.getTableName)(sparkSession)
-    .asInstanceOf[CarbonRelation]
+    CarbonEnv.getInstance(sparkSession).carbonMetastore.
+    createCarbonRelation(parameters, identifier, sparkSession)
+
 
   @transient lazy val carbonTable: CarbonTable = carbonRelation.tableMeta.carbonTable
 

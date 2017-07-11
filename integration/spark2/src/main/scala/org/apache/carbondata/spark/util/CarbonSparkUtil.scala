@@ -46,9 +46,8 @@ object CarbonSparkUtil {
   }
 
   def createCarbonRelation(tableInfo: TableInfo, tablePath: String): CarbonRelation = {
-    val identifier = AbsoluteTableIdentifier fromTablePath(tablePath)
-    val table = new CarbonTable
-    table.loadCarbonTable(tableInfo)
+    val identifier = AbsoluteTableIdentifier.fromTablePath(tablePath)
+    val table = CarbonTable.buildFromTableInfo(tableInfo)
     val meta = new TableMeta(identifier.getCarbonTableIdentifier, identifier.getStorePath, table)
     CarbonRelation(tableInfo.getDatabaseName, tableInfo.getFactTable.getTableName,
       CarbonSparkUtil.createSparkMeta(table), meta)

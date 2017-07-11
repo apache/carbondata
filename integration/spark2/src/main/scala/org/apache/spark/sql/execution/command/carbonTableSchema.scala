@@ -872,9 +872,8 @@ case class CarbonDropTableCommand(ifExistsSet: Boolean,
     catalog.checkSchemasModifiedTimeAndReloadTables()
     val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
     try {
-      val carbonTable = catalog.getTableFromMetadata(dbName, tableName).map(_.carbonTable).orNull
       locksToBeAcquired foreach {
-        lock => carbonLocks += CarbonLockUtil.getLockObject(carbonTable, lock)
+        lock => carbonLocks += CarbonLockUtil.getLockObject(carbonTableIdentifier, lock)
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
 
