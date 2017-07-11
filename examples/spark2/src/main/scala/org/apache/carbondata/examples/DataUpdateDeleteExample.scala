@@ -19,9 +19,8 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.{CarbonContext, DataFrame, Row, SaveMode, SQLContext}
-import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
+import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
@@ -29,73 +28,62 @@ import org.apache.carbondata.core.util.CarbonProperties
 object DataUpdateDeleteExample {
 
   def main(args: Array[String]) {
+
+    val rootPath = new File(this.getClass.getResource("/").getPath
+      + "../../../..").getCanonicalPath
+
     var hdfsStoreFlg = false;
     if (args != null && args.size > 0) {
       if ("true".equalsIgnoreCase(args(0))) {
         hdfsStoreFlg = true
       }
     }
-    def currentPath: String = new File(this.getClass.getResource("/").getPath + "../../")
-    .getCanonicalPath
-    var storeLocation = currentPath + "/target/store"
-    var metastoredb = currentPath + "/target/carbonmetastore"
-    var testData = currentPath + "/src/main/resources/data.csv"
+    var storeLocation = s"$rootPath/examples/spark2/target/store"
+    var warehouse = s"$rootPath/examples/spark2/target/warehouse"
+    var metastoredb = s"$rootPath/examples/spark2/target"
+    var testData = s"$rootPath/examples/spark2/src/main/resources/data_update.csv"
     if (hdfsStoreFlg) {
-      storeLocation = "hdfs://nameservice1/carbon/store/"
-      metastoredb = "hdfs://nameservice1/carbon2/carbonmetastore/"
-      testData = "hdfs://nameservice1/carbon/data_update.csv"
+      storeLocation = "hdfs://nameservice1/carbon2/data/"
+      warehouse = "hdfs://nameservice1/carbon2/warehouse/"
+      metastoredb = "hdfs://nameservice1/carbon2/carbonstore/"
+      testData = "hdfs://nameservice1/carbon2/data_update.csv"
     }
 
-    val sc = new SparkContext(new SparkConf()
-      .setAppName("DataUpdateDeleteExample")
-      .setMaster("local[2]"))
-    sc.setLogLevel("ERROR")
-    // scalastyle:off println
-    println(s"Starting DataUpdateDeleteExample using spark version ${sc.version}")
-    // scalastyle:on println
-
-    val cc = new CarbonContext(sc, storeLocation, metastoredb)
-    // Specify date format based on raw data
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
+    import org.apache.spark.sql.CarbonSession._
+    val spark = SparkSession
+      .builder()
+      .master("local")
+      .appName("CarbonSessionExample")
+      .config("spark.sql.warehouse.dir", warehouse)
+      .config("spark.driver.host", "localhost")
+      .config("spark.sql.crossJoin.enabled", "true")
+      .getOrCreateCarbonSession(storeLocation, metastoredb)
+    spark.sparkContext.setLogLevel("WARN")
 
     // Specify date format based on raw data
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
 
+    import spark.implicits._
     // Drop table
-    cc.sql("DROP TABLE IF EXISTS update_table")
-    cc.sql("DROP TABLE IF EXISTS big_table")
+    spark.sql("DROP TABLE IF EXISTS update_table")
+    spark.sql("DROP TABLE IF EXISTS big_table")
 
-    cc.sql(s"""
+    spark.sql(s"""
            CREATE TABLE IF NOT EXISTS update_table
            (ID Int, country String,
            name String, phonetype String, serialname char(10), salary Int)
            STORED BY 'carbondata'
            """)
 
-    cc.sql(s"""
+    spark.sql(s"""
            LOAD DATA LOCAL INPATH '$testData' INTO TABLE update_table
            """)
-    var fields = Seq[StructField]()
-    fields = fields :+ DataTypes.createStructField("id", DataTypes.IntegerType, false)
-    fields = fields :+ DataTypes.createStructField("name", DataTypes.StringType, false)
-    fields = fields :+ DataTypes.createStructField("date", DataTypes.StringType, false)
-    fields = fields :+ DataTypes.createStructField("country", DataTypes.StringType, false)
-    fields = fields :+ DataTypes.createStructField("salary", DataTypes.IntegerType, false)
-    val schema = StructType(fields)
-    val data = cc.sparkContext.parallelize(1 to 2000000).map { x =>
-      var row = Seq[Any]()
-      row = row :+ x
-      row = row :+ "name" + (1000000 + x)
-      row = row :+ "2017/07/" + (x % 20 + 1)
-      row = row :+ "china"
-      row = row :+ 2 * x
-      Row.fromSeq(row)
-    }
 
-    val df = cc.createDataFrame(data, schema)
-    df.write.mode(SaveMode.Overwrite).parquet(PerfTest.savePath("temp"))
+    val df = spark.sparkContext.parallelize(1 to 2000000)
+      .map(x => (x, "name" + (1000000 + x), "2017/07/" + (x % 20 + 1),
+        "china", 2 * x))
+      .toDF("id", "name", "date", "country", "salary")
     df.write
       .format("carbondata")
       .option("tableName", "big_table")
@@ -109,43 +97,43 @@ object DataUpdateDeleteExample {
     for (index <- 1 to loopCnt) {
       // Update country with simple SET
       var name = "name" + (1200000 + index)
-      cc.sql(s"""
+      spark.sql(s"""
            UPDATE big_table SET (country) = ('india') WHERE name = '$name'
            """).show()
       // Query data after the above update
-      cc.sql(s"""
+      spark.sql(s"""
            SELECT * FROM big_table WHERE name = '$name'
            """).show()
 
       // Update date with simple SET
       name = "name" + (1200000 + loopCnt + index)
-      cc.sql(s"""
+      spark.sql(s"""
            UPDATE big_table SET (date) = ('2018/08/08') WHERE name = '$name'
            """).show()
       // Query data after the above update
-      cc.sql(s"""
+      spark.sql(s"""
            SELECT * FROM big_table WHERE name = '$name'
            """).show()
 
       // Update salary with simple SET
       name = "name" + (1200000 + loopCnt * 2 + index)
-      cc.sql(s"""
+      spark.sql(s"""
            UPDATE big_table SET (salary) = (9999999) WHERE name = '$name'
            """).show()
       // Query data after the above update
-      cc.sql(s"""
+      spark.sql(s"""
            SELECT * FROM big_table WHERE name = '$name'
            """).show()
 
       // Update data with subquery result SET
       var id = loopCnt + index
-      cc.sql(s"""
+      spark.sql(s"""
          UPDATE big_table
          SET (big_table.country, big_table.name) = (SELECT u.country,
           u.name FROM update_table u WHERE u.id = $index)
          WHERE big_table.id < $id""").show()
       // Query data after the above update
-      cc.sql(s"""
+      spark.sql(s"""
            SELECT * FROM big_table where big_table.id < $id
            """).show()
 
@@ -153,42 +141,43 @@ object DataUpdateDeleteExample {
       id = 2000000 - index * 10
       val id1 = loopCnt * 3 + index
       val id2 = loopCnt * 4 + index
-      cc.sql(s"""
+      spark.sql(s"""
          UPDATE big_table
          SET (big_table.country, big_table.salary) =
          (SELECT u.country, f.salary FROM update_table u FULL JOIN update_table f
          WHERE u.id = $id1  and f.id=$id2) WHERE big_table.id > $id""").show()
       // Query data after the above update
-      cc.sql(s"""
+      spark.sql(s"""
            SELECT * FROM big_table where big_table.id < $id
            """).show()
 
       // delete by name
       name = "name" + (1200000 + loopCnt * 3 + index)
-      cc.sql(s"""
+      spark.sql(s"""
            DELETE FROM big_table WHERE name = '$name'
            """).show()
       // Query data after the above delete
-      cc.sql(s"""
+      spark.sql(s"""
            SELECT * FROM big_table WHERE name = '$name'
            """).show()
 
       // delete by salary
       var salary = 2000000*2 - index * 4
-      cc.sql(s"""
+      spark.sql(s"""
            DELETE FROM big_table WHERE salary > $salary and salary < 9999999
            """).show()
-      cc.sql(s"""
+      spark.sql(s"""
            SELECT * FROM big_table WHERE salary > $salary and salary < 9999999
            """).show()
     }
 
-    cc.sql(s"""
+    spark.sql(s"""
            SELECT count(*) FROM big_table
            """).show()
 
     // Drop table
-    cc.sql("DROP TABLE IF EXISTS update_table")
-    cc.sql("DROP TABLE IF EXISTS big_table")
+    spark.sql("DROP TABLE IF EXISTS update_table")
+    spark.sql("DROP TABLE IF EXISTS big_table")
   }
+
 }
