@@ -108,6 +108,10 @@ class QueryTest extends PlanTest with Suite {
     frame
   }
 
+  protected def dropTable(tableName: String): Unit ={
+    sql(s"DROP TABLE IF EXISTS $tableName")
+  }
+
   val sqlContext: SQLContext = TestQueryExecutor.INSTANCE.sqlContext
 
   val storeLocation = TestQueryExecutor.storeLocation
