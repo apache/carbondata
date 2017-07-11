@@ -54,7 +54,6 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
   test("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC003", Include) {
      sql(s"""drop table if exists uniqdata""").collect
     sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='List','NUM_PARTITIONS'='3')""").collect
-    sql(s"""CREATE TABLE uniqdata_hive (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
      sql(s"""drop table if exists uniqdata""").collect
   }
 
@@ -123,7 +122,6 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
   test("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC009", Include) {
      sql(s"""drop table if exists uniqdata""").collect
     sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double) PARTITIONED BY (DOJ int)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='1,2')""").collect
-    sql(s"""CREATE TABLE uniqdata_hive (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double) PARTITIONED BY (DOJ int) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
      sql(s"""drop table if exists uniqdata""").collect
   }
 

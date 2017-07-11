@@ -16,8 +16,10 @@
  */
 package org.apache.spark.sql.test
 
-import java.io.File
+import java.io.{BufferedReader, File, FileReader}
 import java.net.URL
+
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.io.IOUtils
 
@@ -29,82 +31,15 @@ import org.apache.carbondata.core.util.CarbonUtil
  */
 object ResourceRegisterAndCopier {
 
-  val resources = "Data/cmb/data.csv"::
-                  "Data/complex/Array.csv"::
-                  "Data/complex/ArrayofArray.csv"::
-                  "Data/complex/arrayofstruct.csv"::
-                  "Data/complex/Struct.csv"::
-                  "Data/complex/structofarray.csv"::"Data/oscon/oscon.csv"::
-                  "Data/pushdownJoin/30thousand_unidata.csv"::
-                  "Data/pushdownJoin/city_id.csv"::
-                  "Data/pushdownJoin/join1.csv"::
-                  "Data/pushdownJoin/join2.csv"::
-                  "Data/pushdownJoin/Population.csv"::
-                  "Data/pushdownJoin/Test1.csv"::
-                  "Data/pushdownJoin/test2.csv"::
-                  "Data/pushdownJoin/test3.csv"::
-                  "Data/pushdownJoin/Test4.csv"::
-                  "Data/pushdownJoin/Test5.csv"::
-                  "Data/pushdownJoin/Test6.csv"::
-                  "Data/pushdownJoin/Test12.csv"::
-                  "Data/pushdownJoin/Test12.csv"::
-                  "Data/pushdownJoin/vardhandaterestruct.csv"::
-                  "Data/pushdownJoin/vardhandaterestruct2.csv"::
-                  "Data/pushdownJoin/vardhandaterestruct3.csv"::
-//                  "Data/HiveData/100_hive_test (1).csv" ::
-                  "Data/SEQ500/seq_500Records.csv"::
-                  "Data/sequencedata/100.csv"::
-                  "Data/sequencedata/dict.csv"::
-                  "Data/sequencedata/file.csv"::
-                  "Data/sequencedata/improper.csv"::
-                  "Data/sequencedata/improper1.csv"::
-                  "Data/sequencedata/nulltable.csv"::
-                  "Data/sequencedata/records.csv"::
-                  "Data/sequencedata/vardhandaterestruct.csv"::
-                  "Data/uniqdata/2000_UniqData.csv"::
-                  "Data/uniqdata/2000_UniqData_CommentChar.csv"::
-                  "Data/uniqdata/2000_UniqData_Date.csv"::
-                  "Data/uniqdata/2000_UniqData_EscapeChar.csv"::
-                  "Data/uniqdata/2000_UniqData_insert.csv"::
-                  "Data/uniqdata/2000_UniqData_tabdelm.csv"::
-                  "Data/uniqdata/3000_1_UniqData.csv"::
-                  "Data/uniqdata/3000_UniqData.csv"::
-                  "Data/uniqdata/3000_UniqData1.csv"::
-                  "Data/uniqdata/3000_UniqDatatdelm.csv"::
-                  "Data/uniqdata/4000_UniqData.csv"::
-                  "Data/uniqdata/4000_UniqDataquotedelm.csv"::
-                  "Data/uniqdata/5000_UniqData!delm.csv"::
-                  "Data/uniqdata/5000_UniqData.csv"::
-                  "Data/uniqdata/6000_UniqData.csv"::
-                  "Data/uniqdata/7000_UniqData"::
-                  "Data/uniqdata/7000_UniqData.csv"::
-                  "Data/VmaLL100/100_olap.csv"::
-                  "Data/VmaLL100/100olap.csv"::
-                  "Data/RangeFilter/complexdata.csv" ::
-                  "Data/RangeFilter/data.csv" ::
-                  "Data/RangeFilter/data2.csv" ::
-                  "Data/RangeFilter/datasample.csv" ::
-                  "Data/RangeFilter/datawithoutheader.csv" ::
-                  "Data/RangeFilter/rangedata.csv" ::
-                  "Data/RangeFilter/rangedatasample.csv" ::
-                  "Data/RangeFilter/rangefilterdata.csv" ::
-                  "Data/partition/2000_UniqData_partition.csv" ::
-                  "Data/100_olap_C20.csv"::
-                  "Data/100_VMALL_1_Day_DATA_2015-09-15.csv"::
-                  "Data/customer_C1.csv"::
-                  "Data/FACT_UNITED_DATA_INFO_sample_cube.csv"::
-                  "Data/newdata.csv"::
-                  "Data/payment_C1.csv"::
-                  "Data/HiveData/100_hive_test.csv" ::
-                  "Data/Test_Data1.csv"::Nil
   val link = "https://raw.githubusercontent.com/ravipesala/incubator-carbondata/sdv-test_data/integration/spark-common-test/src/test/resources"
 
-  def copyResourcesifNotExists(hdfsPath: String, resourcePath: String): Unit = {
+  def copyResourcesifNotExists(hdfsPath: String, resourcePath: String, dataFilesPath: String): Unit = {
     val fileType = FileFactory.getFileType(hdfsPath)
     val file = FileFactory.getCarbonFile(hdfsPath, fileType)
     if (!file.exists()) {
       sys.error(s"""Provided path $hdfsPath does not exist""")
     }
+    val resources = readDataFiles(dataFilesPath)
     resources.foreach {file =>
       val hdfsDataPath = hdfsPath + "/" + file
       val rsFile = FileFactory.getCarbonFile(hdfsDataPath, fileType)
@@ -117,6 +52,18 @@ object ResourceRegisterAndCopier {
         new File(target).delete()
       }
     }
+  }
+
+  def readDataFiles(dataFilesPath: String): Seq[String] = {
+    val buffer = new ArrayBuffer[String]()
+    val reader = new BufferedReader(new FileReader(dataFilesPath))
+    var line = reader.readLine()
+    while (line != null) {
+      buffer += line
+      line = reader.readLine()
+    }
+    reader.close()
+    buffer
   }
 
   def copyLocalFile(dst: String,

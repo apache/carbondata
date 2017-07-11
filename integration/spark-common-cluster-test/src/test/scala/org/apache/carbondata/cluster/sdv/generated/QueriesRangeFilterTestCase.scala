@@ -45,41 +45,41 @@ test("Range_Filter_01_1", Include) {
 
   sql(s"""CREATE TABLE NO_DICTIONARY_CARBON(empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno, empname,designation')""").collect
 
-  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_hive(empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
+  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_hive(empno string, empname String, designation String,doj Timestamp, workgroupcategory Int,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp,attendance Int,utilization Int,salary Int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
 
-  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata.csv' INTO TABLE NO_DICTIONARY_CARBON OPTIONS('DELIMITER'= ',', 'QUOTECHAR'='"')""").collect
+  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata.csv' INTO TABLE NO_DICTIONARY_CARBON OPTIONS('DELIMITER'= ',', 'QUOTECHAR'='"', 'FILEHEADER'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary')""").collect
 
   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata.csv' INTO TABLE NO_DICTIONARY_CARBON_hive """).collect
 
   sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_6 (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno, empname,designation')""").collect
 
-  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_6_hive (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
+  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_6_hive (empno string, empname String, designation String,doj Timestamp, workgroupcategory Int,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp,attendance Int,utilization Int,salary Int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
 
-  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata.csv' INTO TABLE NO_DICTIONARY_CARBON_6 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'='"')""").collect
+  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata.csv' INTO TABLE NO_DICTIONARY_CARBON_6 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'='"', 'FILEHEADER'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary')""").collect
 
   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata.csv' INTO TABLE NO_DICTIONARY_CARBON_6_hive """).collect
 
   sql(s"""CREATE TABLE DICTIONARY_CARBON_6 (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate timestamp,projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='empname,designation')""").collect
 
-  sql(s"""CREATE TABLE DICTIONARY_CARBON_6_hive (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate timestamp,projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
+  sql(s"""CREATE TABLE DICTIONARY_CARBON_6_hive (empno string, empname String, designation String,doj Timestamp, workgroupcategory Int,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp,attendance Int,utilization Int,salary Int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
 
-  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata.csv' INTO TABLE DICTIONARY_CARBON_6 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'='"')""").collect
+  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata.csv' INTO TABLE DICTIONARY_CARBON_6 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'='"', 'FILEHEADER'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary')""").collect
 
   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata.csv' INTO TABLE DICTIONARY_CARBON_6_hive """).collect
 
   sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_7 (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno,empname,designation')""").collect
 
-  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_7_hive (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
+  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_7_hive (empno string, empname String, designation String,doj Timestamp, workgroupcategory Int,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp,attendance Int,utilization Int,salary Int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
 
-  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata.csv' INTO TABLE NO_DICTIONARY_CARBON_7  OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""").collect
+  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata.csv' INTO TABLE NO_DICTIONARY_CARBON_7  OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"' , 'FILEHEADER'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary')""").collect
 
   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata.csv' INTO TABLE NO_DICTIONARY_CARBON_7_hive  """).collect
 
   sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_8 (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno,empname,designation')""").collect
 
-  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_8_hive (empno string, doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp, designation String,attendance Int,utilization Int,salary Int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
+  sql(s"""CREATE TABLE NO_DICTIONARY_CARBON_8_hive (empno string, empname String, designation String,doj Timestamp, workgroupcategory Int,workgroupcategoryname String, deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, projectenddate Timestamp,attendance Int,utilization Int,salary Int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
 
-  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata.csv' INTO TABLE NO_DICTIONARY_CARBON_8  OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""").collect
+  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata.csv' INTO TABLE NO_DICTIONARY_CARBON_8  OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"' , 'FILEHEADER'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary')""").collect
 
   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangefilterdata.csv' INTO TABLE NO_DICTIONARY_CARBON_8_hive  """).collect
 
@@ -87,7 +87,7 @@ test("Range_Filter_01_1", Include) {
 
   sql(s"""CREATE TABLE if not exists directDictionaryTable_hive (empno int,doj Timestamp, salary int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
 
-  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangedatasample.csv' INTO TABLE directDictionaryTable OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '"')""").collect
+  sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangedatasample.csv' INTO TABLE directDictionaryTable OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '"','FILEHEADER'='empno,doj,salary')""").collect
 
   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/RangeFilter/rangedatasample.csv' INTO TABLE directDictionaryTable_hive """).collect
 
@@ -404,7 +404,7 @@ test("Range_Filter_34", Include) {
 test("Range_Filter_35", Include) {
   
   checkAnswer(s"""select s.empno, s.empname, t.empno, t.empname from DICTIONARY_CARBON_6 s, NO_DICTIONARY_CARBON_6 t where s.empno > '11' and t.empno < '16' and s.empname = t.empname""",
-    s"""select s.empno, s.empname, t.empno, t.empname from DICTIONARY_CARBON_6_hive s, NO_DICTIONARY_CARBON_6_hive_hive t where s.empno > '11' and t.empno < '16' and s.empname = t.empname""", "QueriesRangeFilterTestCase_Range_Filter_35")
+    s"""select s.empno, s.empname, t.empno, t.empname from DICTIONARY_CARBON_6_hive s, NO_DICTIONARY_CARBON_6_hive t where s.empno > '11' and t.empno < '16' and s.empname = t.empname""", "QueriesRangeFilterTestCase_Range_Filter_35")
   
 }
        
@@ -413,7 +413,7 @@ test("Range_Filter_35", Include) {
 test("Range_Filter_36", Include) {
   
   checkAnswer(s"""select s.empno, s.empname, t.empno, t.empname from DICTIONARY_CARBON_6 s, NO_DICTIONARY_CARBON_6 t where s.empno > '09' and t.empno < '30' and s.empname = t.empname""",
-    s"""select s.empno, s.empname, t.empno, t.empname from DICTIONARY_CARBON_6_hive s, NO_DICTIONARY_CARBON_6_hive_hive t where s.empno > '09' and t.empno < '30' and s.empname = t.empname""", "QueriesRangeFilterTestCase_Range_Filter_36")
+    s"""select s.empno, s.empname, t.empno, t.empname from DICTIONARY_CARBON_6_hive s, NO_DICTIONARY_CARBON_6_hive t where s.empno > '09' and t.empno < '30' and s.empname = t.empname""", "QueriesRangeFilterTestCase_Range_Filter_36")
   
 }
        
@@ -672,16 +672,6 @@ test("Range_Filter_65", Include) {
   
   checkAnswer(s"""select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_8 where empno > '13' and empno < '17' and workgroupcategory < 1 and deptno > 14""",
     s"""select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_8_hive where empno > '13' and empno < '17' and workgroupcategory < 1 and deptno > 14""", "QueriesRangeFilterTestCase_Range_Filter_65")
-  sql(s"""drop table if exists complexcarbontable
-drop table if exists directDictionaryTable
-drop table if exists NO_DICTIONARY_CARBON
-drop table if exists NO_DICTIONARY_CARBON_1
-drop table if exists NO_DICTIONARY_CARBON_2
-drop table if exists NO_DICTIONARY_CARBON_6
-drop table if exists DICTIONARY_CARBON_6
-drop table if exists NO_DICTIONARY_CARBON_7
-drop table if exists NO_DICTIONARY_CARBON_8""").collect
-
 }
        
   override def afterAll {

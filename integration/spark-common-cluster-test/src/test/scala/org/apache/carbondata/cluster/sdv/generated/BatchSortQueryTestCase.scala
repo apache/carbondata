@@ -917,7 +917,7 @@ class BatchSortQueryTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Left join with where clause
-  test("PTS-AR-Batch_sort_Querying_001-01-01-01_001-TC_085", Include) {
+  ignore("PTS-AR-Batch_sort_Querying_001-01-01-01_001-TC_085", Include) {
 
     sql(s"""select uniqdataquery1.CUST_ID from uniqdataquery1 LEFT join uniqdataquery11 where uniqdataquery1.CUST_ID > 10000""").collect
 
@@ -940,7 +940,7 @@ class BatchSortQueryTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Broadcast join
-  test("PTS-AR-Batch_sort_Querying_001-01-01-01_001-TC_087", Include) {
+  ignore("PTS-AR-Batch_sort_Querying_001-01-01-01_001-TC_087", Include) {
 
     sql(s"""select broadcast.cust_id from uniqdataquery1 broadcast join uniqdataquery11 where broadcast.cust_id > 10900""").collect
 

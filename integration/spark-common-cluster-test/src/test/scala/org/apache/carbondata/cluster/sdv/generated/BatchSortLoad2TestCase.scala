@@ -48,7 +48,7 @@ class BatchSortLoad2TestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists uniqdata12""").collect
      sql(s"""CREATE TABLE uniqdata12 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
 
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/batchsort/1lac_UniqData.csv' into table uniqdata12 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/1lac_UniqData.csv' into table uniqdata12 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     sql(s"""select * from uniqdata12""").collect
 
      sql(s"""drop table uniqdata12""").collect
@@ -84,7 +84,7 @@ class BatchSortLoad2TestCase extends QueryTest with BeforeAndAfterAll {
   test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_031", Include) {
     try {
      sql(s"""CREATE TABLE uniqdata14 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
-      sql(s"""LOAD DATA  INPATH '$resourcesPath/Data/batchsort/2000_UniqData.csv' into table OPTIONS('DELIMITER'=',' , 'FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
+      sql(s"""LOAD DATA  INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table OPTIONS('DELIMITER'=',' , 'FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
       assert(false)
     } catch {
       case _ => assert(true)
@@ -225,8 +225,7 @@ class BatchSortLoad2TestCase extends QueryTest with BeforeAndAfterAll {
   test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_044", Include) {
      sql(s"""drop table if exists t3""").collect
    sql(s"""CREATE TABLE t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
-    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/batchsort/data.csv' into table t3 options('COLUMNDICT'=
-  'country:resourcesPath/Data/batchsort/country.csv')""").collect
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/batchsort/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect
      sql(s"""drop table t3""").collect
   }
 
@@ -235,7 +234,7 @@ class BatchSortLoad2TestCase extends QueryTest with BeforeAndAfterAll {
   test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_045", Include) {
     sql(s"""drop table if exists t3""").collect
      sql(s"""CREATE TABLE t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
-    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/batchsort/data.csv' into table t3 options('ALL_DICTIONARY_PATH'='resourcesPath/Data/batchsort/data.dictionary')""").collect
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/batchsort/data.csv' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/data.dictionary', 'SINGLE_PASS'='true')""").collect
      sql(s"""drop table t3""").collect
   }
 

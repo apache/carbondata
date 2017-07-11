@@ -57,7 +57,7 @@ class Vector1TestCase extends QueryTest with BeforeAndAfterAll {
   //To check select random columns  and order with vectorized carbon reader enabled
   test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-007-01-01-01_001-TC_003", Include) {
      sql(s"""create table double(id double, name string) STORED BY 'org.apache.carbondata.format' """).collect
-   sql(s"""load data  inpath '$resourcesPath/Data/HeapVector/maxrange_double.csv' into table double""").collect
+   sql(s"""load data  inpath '$resourcesPath/Data/InsertData/maxrange_double.csv' into table double""").collect
 
     sql(s"""select id from double order by id""").collect
 

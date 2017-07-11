@@ -49,7 +49,6 @@ class InvertedindexTestCase extends QueryTest with BeforeAndAfterAll {
   test("AR-Develop-Feature-NoInvertedindex-001_PTS001_TC003", Include) {
      sql(s"""drop table if exists uniqdata""").collect
     sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='CUST_ID','NO_INVERTED_INDEX'='CUST_ID')""").collect
-    sql(s"""CREATE TABLE uniqdata_hive (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
      sql(s"""drop table if exists uniqdata""").collect
   }
 
@@ -58,7 +57,6 @@ class InvertedindexTestCase extends QueryTest with BeforeAndAfterAll {
   test("AR-Develop-Feature-NoInvertedindex-001_PTS001_TC004", Include) {
      sql(s"""drop table if exists uniqdata""").collect
     sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='ACTIVE_EMUI_VERSION','NO_INVERTED_INDEX'='CUST_NAME')""").collect
-    sql(s"""CREATE TABLE uniqdata_hive (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
      sql(s"""drop table if exists uniqdata""").collect
   }
 
@@ -67,7 +65,6 @@ class InvertedindexTestCase extends QueryTest with BeforeAndAfterAll {
   test("AR-Develop-Feature-NoInvertedindex-001_PTS001_TC005", Include) {
      sql(s"""drop table if exists uniqdata""").collect
     sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='CUST_ID','DICTIONARY_EXCLUDE'='ACTIVE_EMUI_VERSION','NO_INVERTED_INDEX'='CUST_NAME')""").collect
-    sql(s"""CREATE TABLE uniqdata_hive (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
      sql(s"""drop table if exists uniqdata""").collect
   }
 
@@ -76,7 +73,6 @@ class InvertedindexTestCase extends QueryTest with BeforeAndAfterAll {
   test("AR-Develop-Feature-NoInvertedindex-001_PTS001_TC007", Include) {
      sql(s"""drop table if exists uniqdata""").collect
     sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='CUST_ID','DICTIONARY_EXCLUDE'='ACTIVE_EMUI_VERSION','NO_INVERTED_INDEX'='DOB')""").collect
-    sql(s"""CREATE TABLE uniqdata_hive (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
      sql(s"""drop table if exists uniqdata""").collect
   }
 
@@ -85,7 +81,6 @@ class InvertedindexTestCase extends QueryTest with BeforeAndAfterAll {
   test("AR-Develop-Feature-NoInvertedindex-001_PTS001_TC008", Include) {
      sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('NO_INVERTED_INDEX'='CUST_NAME')""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/noinverted.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/noinverted.csv' into table uniqdata_hive """).collect
      sql(s"""drop table if exists uniqdata""").collect
   }
 
@@ -94,7 +89,6 @@ class InvertedindexTestCase extends QueryTest with BeforeAndAfterAll {
   test("AR-Develop-Feature-NoInvertedindex-001_PTS001_TC009", Include) {
      sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='CUST_ID','NO_INVERTED_INDEX'='CUST_NAME')""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/noinverted.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/noinverted.csv' into table uniqdata_hive """).collect
      sql(s"""drop table if exists uniqdata""").collect
   }
 
@@ -103,7 +97,6 @@ class InvertedindexTestCase extends QueryTest with BeforeAndAfterAll {
   test("AR-Develop-Feature-NoInvertedindex-001_PTS001_TC010", Include) {
      sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='ACTIVE_EMUI_VERSION','NO_INVERTED_INDEX'='CUST_NAME')""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/noinverted.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/noinverted.csv' into table uniqdata_hive """).collect
      sql(s"""drop table if exists uniqdata""").collect
   }
 
@@ -112,7 +105,6 @@ class InvertedindexTestCase extends QueryTest with BeforeAndAfterAll {
   test("AR-Develop-Feature-NoInvertedindex-001_PTS001_TC011", Include) {
      sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='CUST_ID','DICTIONARY_EXCLUDE'='ACTIVE_EMUI_VERSION','NO_INVERTED_INDEX'='CUST_NAME')""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/noinverted.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/noinverted.csv' into table uniqdata_hive """).collect
      sql(s"""drop table if exists uniqdata""").collect
   }
 
@@ -121,7 +113,6 @@ class InvertedindexTestCase extends QueryTest with BeforeAndAfterAll {
   test("AR-Develop-Feature-NoInvertedindex-001_PTS001_TC013", Include) {
      sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='CUST_ID','DICTIONARY_EXCLUDE'='ACTIVE_EMUI_VERSION','NO_INVERTED_INDEX'='DOB')""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/noinverted.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/noinverted.csv' into table uniqdata_hive """).collect
      sql(s"""drop table if exists uniqdata""").collect
   }
 
@@ -130,7 +121,6 @@ class InvertedindexTestCase extends QueryTest with BeforeAndAfterAll {
   test("AR-Develop-Feature-NoInvertedindex-001_PTS001_TC014", Include) {
      sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='CUST_ID','NO_INVERTED_INDEX'='CUST_ID')""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/noinverted.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/noinverted.csv' into table uniqdata_hive """).collect
      sql(s"""drop table if exists uniqdata""").collect
   }
 
@@ -816,25 +806,6 @@ class InvertedindexTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //To check show tables for no_inverted_index
-  test("AR-Develop-Feature-NoInvertedindex-001_PTS001_TC093", Include) {
-     sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('COLUMN_GROUPS'='(CUST_NAME,ACTIVE_EMUI_VERSION)','DICTIONARY_INCLUDE'='CUST_ID','NO_INVERTED_INDEX'='CUST_NAME')""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/noinverted.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-    sql(s"""show tables""").collect
-     sql(s"""drop table if exists uniqdata""").collect
-  }
-
-
-  //to check alter rename table for no_inverted
-  test("AR-Develop-Feature-NoInvertedindex-001_PTS001_TC096", Include) {
-     sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('COLUMN_GROUPS'='(CUST_NAME,ACTIVE_EMUI_VERSION)','DICTIONARY_INCLUDE'='CUST_ID','NO_INVERTED_INDEX'='CUST_NAME')""").collect
-   sql(s"""ALTER TABLE uniqdata RENAME TO renameduniqdata""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/noinverted.csv' into table renameduniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-    sql(s"""show tables""").collect
-     sql(s"""drop table if exists uniqdata""").collect
-  }
-
-
   //to check alter drop column for no_inverted
   test("AR-Develop-Feature-NoInvertedindex-001_PTS001_TC097", Include) {
     try {
@@ -847,17 +818,6 @@ class InvertedindexTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case _ => assert(true)
     }
-     sql(s"""drop table if exists uniqdata""").collect
-  }
-
-
-  //to check alter add column for no_inverted
-  test("AR-Develop-Feature-NoInvertedindex-001_PTS001_TC098", Include) {
-     sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('COLUMN_GROUPS'='(CUST_NAME,ACTIVE_EMUI_VERSION)','DICTIONARY_INCLUDE'='CUST_ID','NO_INVERTED_INDEX'='CUST_NAME')""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/noinverted.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-   sql(s"""Alter table uniqdata add columns(newField string) TBLPROPERTIES('DEFAULT.VALUE.newField'='def')""").collect
-    sql(s"""select * from uniqdata""").collect
-
      sql(s"""drop table if exists uniqdata""").collect
   }
 

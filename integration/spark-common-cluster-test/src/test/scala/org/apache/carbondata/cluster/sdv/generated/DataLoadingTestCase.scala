@@ -20,7 +20,11 @@ package org.apache.carbondata.cluster.sdv.generated
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util._
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Test Class for DataLoadingTestCase to verify all scenerios
@@ -34,7 +38,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   test("DataSight_Carbon_BadRecord_Dataload_001", Include) {
     sql(s"""drop table if exists uniqdata""").collect
      sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
       Seq(Row(2013)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_001")
      sql(s"""drop table uniqdata""").collect
@@ -57,23 +61,25 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='IGNORE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
-      Seq(Row(2013)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_003")
+      Seq(Row(2007)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_003")
      sql(s"""drop table uniqdata""").collect
   }
 
 
   //Data load--->Action--->Ignore--->Logger-->False
   test("DataSight_Carbon_BadRecord_Dataload_004", Include) {
+    sql(s"""drop table if exists uniqdata""").collect
      sql(s""" CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='IGNORE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
-      Seq(Row(2013)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_004")
-     sql(s"""drop table uniqdata""").collect
+      Seq(Row(2007)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_004")
+     sql(s"""drop table if exists uniqdata""").collect
   }
 
 
   //Data load--->Action--->FORCE--->Logger-->False
   test("DataSight_Carbon_BadRecord_Dataload_005", Include) {
+    sql(s"""drop table if exists uniqdata""").collect
      sql(s""" CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
@@ -84,10 +90,11 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Data load--->Action--->Redirect--->Logger-->False
   test("DataSight_Carbon_BadRecord_Dataload_006", Include) {
+    sql(s"""drop table if exists uniqdata""").collect
      sql(s""" CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
-      Seq(Row(2013)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_006")
+      Seq(Row(2007)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_006")
      sql(s"""drop table uniqdata""").collect
   }
 
@@ -97,7 +104,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""CREATE TABLE uniq_exclude (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='CUST_NAME,ACTIVE_EMUI_VERSION')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table uniq_exclude OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select count(*) from uniq_exclude""",
-      Seq(Row(2013)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_007")
+      Seq(Row(2007)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_007")
      sql(s"""drop table uniq_exclude""").collect
   }
 
@@ -105,7 +112,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   //Data load-->Extra_Column_in table
   test("DataSight_Carbon_BadRecord_Dataload_010", Include) {
      sql(s"""CREATE TABLE exceed_column_in_table (cust_id int ,CUST_NAME String,date timestamp,date2 timestamp) STORED BY 'org.apache.carbondata.format'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/extra_column.csv' into table exceed_column_in_table OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='cust_id,CUST_NAME,date,date2')""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/extra_column.csv' into table exceed_column_in_table OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='cust_id,CUST_NAME,date,date2')""").collect
     checkAnswer(s"""select count(*) from exceed_column_in_table""",
       Seq(Row(0)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_010")
      sql(s"""drop table exceed_column_in_table""").collect
@@ -114,10 +121,19 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Data load-->Empty BadRecords Parameters
   test("DataSight_Carbon_BadRecord_Dataload_011", Include) {
-     sql(s"""CREATE TABLE badrecords_test1 (ID int,CUST_ID int,sal int,cust_name string) STORED BY 'org.apache.carbondata.format'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/bad_records1.csv' into table badrecords_test1 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='', 'BAD_RECORDS_ACTION'='','FILEHEADER'='ID,CUST_ID,sal,cust_name')""").collect
-    checkAnswer(s"""select count(*) from badrecords_test1""",
-      Seq(Row(0)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_011")
+    try {
+      sql(s"""CREATE TABLE badrecords_test1 (ID int,CUST_ID int,sal int,cust_name string) STORED BY 'org.apache.carbondata.format'""")
+
+        .collect
+      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/bad_records1.csv' into table badrecords_test1 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='', 'BAD_RECORDS_ACTION'='','FILEHEADER'='ID,CUST_ID,sal,cust_name')""")
+        .collect
+      checkAnswer(
+        s"""select count(*) from badrecords_test1""",
+        Seq(Row(0)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_011")
+      assert(false)
+    } catch {
+      case _ => assert(true)
+    }
      sql(s"""drop table badrecords_test1""").collect
   }
 
@@ -125,7 +141,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   //Data load-->Range Exceed
   test("DataSight_Carbon_BadRecord_Dataload_012", Include) {
      sql(s"""CREATE TABLE all_data_types_range (integer_column int,string_column string,double_Column double,decimal_column decimal,bigint_Column bigint) STORED BY 'org.apache.carbondata.format'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/all_data_types_range.csv' into table all_data_types_range OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='integer_column,string_column,double_Column,decimal_column,bigint_Column')""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/all_data_types_range.csv' into table all_data_types_range OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='integer_column,string_column,double_Column,decimal_column,bigint_Column')""").collect
     checkAnswer(s"""select count(*) from all_data_types_range""",
       Seq(Row(0)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_012")
      sql(s"""drop table all_data_types_range""").collect
@@ -136,7 +152,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   test("DataSight_Carbon_BadRecord_Dataload_013", Include) {
      sql(s"""CREATE TABLE Escape_test(integer_col int,String_col String,Integer_column2 int) STORED BY 'org.apache.carbondata.format'""").collect
 
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/EScape_Test.csv' into table Escape_test OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='integer_col,String_col,Integer_column2')""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/EScape_Test.csv' into table Escape_test OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='integer_col,String_col,Integer_column2')""").collect
     checkAnswer(s"""select count(*) from Escape_test""",
       Seq(Row(0)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_013")
      sql(s"""drop table Escape_test""").collect
@@ -148,7 +164,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""CREATE TABLE test25(integer_col int,integer_col2 int,String_col String,decimal_col decimal,double_col double,date timestamp) STORED BY 'org.apache.carbondata.format'""").collect
 
 
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/badrecords_test6.csv' into table test25 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='\','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='integer_col,integer_col2,String_col,decimal_col,double_col,date')""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/badrecords_test6.csv' into table test25 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='\','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='integer_col,integer_col2,String_col,decimal_col,double_col,date')""").collect
     checkAnswer(s"""select count(*) from test25""",
       Seq(Row(0)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_014")
      sql(s"""drop table test25""").collect
@@ -163,7 +179,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/test3.csv' into table test3 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','FILEHEADER'='ID,CUST_ID,Cust_name')""").collect
     checkAnswer(s"""select count(*) from test3""",
-      Seq(Row(0)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_015")
+      Seq(Row(4)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_015")
      sql(s"""drop table test3""").collect
   }
 
@@ -184,7 +200,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   test("DataSight_Carbon_BadRecord_Dataload_017", Include) {
      sql(s"""CREATE TABLE emptycsv_check(integer_col int,integer_col2 int,String_col String,decimal_col decimal,double_col double,date timestamp) STORED BY 'org.apache.carbondata.format'""").collect
 
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/empty.csv' into table emptycsv_check OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='\','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='integer_col,integer_col2,String_col,decimal_col,double_col,date')""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/empty.csv' into table emptycsv_check OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='\','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='integer_col,integer_col2,String_col,decimal_col,double_col,date')""").collect
     checkAnswer(s"""select count(*) from  emptycsv_check """,
       Seq(Row(0)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_017")
      sql(s"""drop table  emptycsv_check """).collect
@@ -195,7 +211,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   test("DataSight_Carbon_BadRecord_Dataload_018", Include) {
      sql(s"""CREATE TABLE datatype_check(integer_col int,integer_col2 int,String_col String) STORED BY 'org.apache.carbondata.format'""").collect
 
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/datatype.csv' into table datatype_check OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='\','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='integer_col,integer_col2,String_col')""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/datatype.csv' into table datatype_check OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='\','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='integer_col,integer_col2,String_col')""").collect
     checkAnswer(s"""select count(*) from datatype_check""",
       Seq(Row(0)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_018")
      sql(s"""drop table datatype_check""").collect
@@ -265,7 +281,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""drop table IF EXISTS T_Carbn01""").collect
    sql(s"""create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""create table T_Hive1(Active_status BOOLEAN, Item_type_cd TINYINT, Qty_day_avg SMALLINT, Qty_total INT, Sell_price BIGINT, Sell_pricep FLOAT, Discount_price DOUBLE , Profit DECIMAL(3,2), Item_code STRING, Item_name VARCHAR(50), Outlet_name CHAR(100), Update_time TIMESTAMP, Create_date DATE)row format delimited fields terminated by ',' collection items terminated by '$DOLLAR'""").collect
-   sql(s"""load data LOCAL INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' overwrite into table T_Hive1""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' overwrite into table T_Hive1""").collect
    sql(s"""insert into T_Carbn01 select * from T_Hive1""").collect
     checkAnswer(s"""select active_status,item_type_cd,qty_day_avg,qty_total,sell_price,sell_pricep,discount_price, profit,item_code,item_name from T_Carbn01 order by update_time""",
       Seq(Row("true",1,450,304034400,200000343430000000L,121.5,4.99,2.44,"SE3423ee","asfdsffdfg"),Row("true",2,423,3046340,200000000003454300L,121.5,4.99,2.44,"SE3423ee","asfdsffdfg"),Row("true",3,453,3003445,200000000000003450L,121.5,4.99,2.44,"SE3423ee","asfdsffdfg"),Row("true",4,4350,3044364,200000000000000000L,121.5,4.99,2.44,"SE3423ee","asfdsffdfg"),Row("true",114,4520,30000430,200000000004300000L,121.5,4.99,2.44,"RE3423ee","asfdsffdfg"),Row("false",123,454,30000040,200000000000000000L,121.5,4.99,2.44,"RE3423ee","asfrewerfg"),Row("true",11,4530,3000040,200000000000000000L,121.5,4.99,2.44,"SE3423ee","asfdsffder"),Row("true",14,4590,3000400,200000000000000000L,121.5,4.99,2.44,"ASD423ee","asfertfdfg"),Row("false",41,4250,0,200000000000000000L,121.5,4.99,2.44,"SAD423ee","asrtsffdfg"),Row("true",13,4510,30400,200000000000000000L,121.5,4.99,2.44,"DE3423ee","asfrtffdfg")), "DataLoadingTestCase_DataSight_Carbon_Insert_Func_005")
@@ -317,7 +333,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   test("DataSight_Carbon_Insert_Func_008", Include) {
      sql(s"""drop table IF EXISTS t_hive2""").collect
    sql(s"""create table T_Hive2(Active_status BOOLEAN, Item_type_cd TINYINT, Qty_day_avg SMALLINT, Qty_total INT, Sell_price BIGINT, Sell_pricep FLOAT, Discount_price DOUBLE , Profit DECIMAL(3,2),  Item_code STRING, Item_name VARCHAR(50), Outlet_name CHAR(100), Update_time TIMESTAMP, Create_date DATE,Profit_perc DECIMAL(4,3),name string)row format delimited fields terminated by ',' collection items terminated by '$DOLLAR'""").collect
-   sql(s"""load data LOCAL INPATH '$resourcesPath/Data/InsertData/T_Hive2.csv' overwrite into table T_Hive2""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive2.csv' overwrite into table T_Hive2""").collect
    sql(s"""create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""insert into T_Carbn01 select * from T_Hive2""").collect
     checkAnswer(s"""select active_status,item_type_cd,qty_day_avg,qty_total,sell_price,sell_pricep,discount_price, profit,item_code,item_name from T_Carbn01 order by update_time""",
@@ -391,8 +407,8 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""drop table IF EXISTS T_Carbn01""").collect
    sql(s"""create table T_Hive4(Item_code STRING, Item_name VARCHAR(50))row format delimited fields terminated by ',' collection items terminated by '$DOLLAR'""").collect
    sql(s"""create table T_Hive5(Item_code STRING, Profit DECIMAL(3,2))row format delimited fields terminated by ',' collection items terminated by '$DOLLAR'""").collect
-   sql(s"""load data LOCAL INPATH '$resourcesPath/Data/InsertData/T_Hive4.csv' overwrite into table T_Hive4""").collect
-   sql(s"""load data LOCAL INPATH '$resourcesPath/Data/InsertData/T_Hive5.csv' overwrite into table T_Hive5""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive4.csv' overwrite into table T_Hive4""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive5.csv' overwrite into table T_Hive5""").collect
    sql(s"""create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""insert into T_carbn01 select x.Active_status,x.Item_type_cd,x.Qty_day_avg,x.Qty_total,x.Sell_price,x.Sell_pricep,x.Discount_price,z.Profit,x.Item_code,y.Item_name,x.Outlet_name,x.Update_time,x.Create_date from T_Hive1 x,T_Hive4 y, T_Hive5 z where x.Item_code = y.Item_code and x.Item_code = z.Item_code""").collect
     checkAnswer(s"""select active_status,item_type_cd,qty_day_avg,qty_total,sell_price,sell_pricep,discount_price, profit,item_code,item_name from T_Carbn01 order by update_time""",
@@ -405,8 +421,8 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   test("DataSight_Carbon_Insert_Func_020", Include) {
      sql(s"""drop table IF EXISTS t_hive7""").collect
    sql(s"""create table T_Hive7(Active_status1 BOOLEAN, Item_type_cd1 TINYINT, Qty_day_avg1 SMALLINT, Qty_total1 INT, Sell_price1 BIGINT, Sell_pricep1 FLOAT, Discount_price1 DOUBLE , Profit1 DECIMAL(3,2), Item_code1 STRING, Item_name1 VARCHAR(50), Outlet_name1 CHAR(100), Update_time TIMESTAMP, Create_date DATE)row format delimited fields terminated by ',' collection items terminated by '$DOLLAR'""").collect
-   sql(s"""load data LOCAL INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' overwrite into table T_Hive7""").collect
-   sql(s"""load data LOCAL INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv'  into table T_Hive7""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' overwrite into table T_Hive7""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv'  into table T_Hive7""").collect
    sql(s"""create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""insert into T_Carbn01 select * from T_Hive7""").collect
     checkAnswer(s"""select active_status,item_type_cd,qty_day_avg,qty_total,sell_price,sell_pricep,discount_price, profit,item_code,item_name from T_Carbn01 order by update_time""",
@@ -445,7 +461,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\','FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""create table T_Hive_1(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String) row format delimited fields terminated by ',' collection items terminated by '\n'""").collect
-   sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Hive_1""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Hive_1""").collect
    sql(s"""insert into T_Carbn01 select * from T_Hive_1""").collect
     checkAnswer(s"""select count(*) from T_Carbn01""",
       Seq(Row(20)), "DataLoadingTestCase_DataSight_Carbon_Insert_Func_027")
@@ -478,7 +494,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   test("DataSight_Carbon_Insert_Func_039", Include) {
      sql(s"""drop table IF EXISTS t_hive5""").collect
    sql(s"""create table T_Hive5(Item_code STRING, Profit DECIMAL(3,2))row format delimited fields terminated by ',' collection items terminated by '$DOLLAR'""").collect
-   sql(s"""load data LOCAL INPATH '$resourcesPath/Data/InsertData/T_Hive5.csv' overwrite into table T_Hive5""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive5.csv' overwrite into table T_Hive5""").collect
    sql(s"""create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""insert into T_Carbn01 select * from T_Hive1 x where exists (select * from T_Hive5 y where x.Item_code= y.Item_code) """).collect
     checkAnswer(s"""select active_status,item_type_cd,qty_day_avg,qty_total,sell_price,sell_pricep,discount_price, profit,item_code,item_name from T_Carbn01 order by update_time""",
@@ -491,7 +507,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   test("DataSight_Carbon_Insert_Func_044", Include) {
      sql(s"""drop table if exists t_hive4""").collect
    sql(s"""create table T_Hive4(Item_code STRING, Item_name VARCHAR(50))row format delimited fields terminated by ','""").collect
-   sql(s"""load data LOCAL INPATH '$resourcesPath/Data/InsertData/T_Hive4.csv' overwrite into table T_Hive4""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive4.csv' overwrite into table T_Hive4""").collect
    sql(s"""create table T_Carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""insert into T_Carbn01 select * from T_Hive1 a where a.Item_code in (select b.item_code from T_Hive4 b)""").collect
     checkAnswer(s"""select active_status,item_type_cd,qty_day_avg,qty_total,sell_price,sell_pricep,discount_price, profit,item_code,item_name from T_Carbn01 order by update_time""",
@@ -613,7 +629,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""drop table if exists T_Hive1""").collect
    sql(s"""create table T_Hive1(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String) row format delimited fields terminated by ',' collection items terminated by '\n'""").collect
-   sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Hive1""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table T_Hive1""").collect
    sql(s"""Insert into T_Carbn01 select * from T_Hive1""").collect
    sql(s"""delete from table T_Carbn01 where segment.id in (0)""").collect
    sql(s"""select count(*)  from T_Carbn01""").collect
@@ -653,7 +669,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""create table T_Hive14(Item_code STRING,  Profit DECIMAL(3,2)) partitioned by (Qty_total INT, Item_type_cd TINYINT) row format delimited fields terminated by ',' collection items terminated by '$DOLLAR'""").collect
    sql(s"""drop table IF EXISTS T_Carbn014""").collect
    sql(s"""create table T_Carbn014(Item_code STRING, Profit DECIMAL(3,2), Qty_total INT, Item_type_cd INT) STORED BY 'org.apache.carbondata.format'""").collect
-   sql(s"""load data LOCAL INPATH '$resourcesPath/Data/InsertData/T_Hive14.csv' overwrite into table T_Hive14 partition(Qty_total=100, Item_type_cd=2)""").collect
+   sql(s"""load data INPATH '$resourcesPath/Data/InsertData/T_Hive14.csv' overwrite into table T_Hive14 partition(Qty_total=100, Item_type_cd=2)""").collect
    sql(s"""insert into T_carbn014 select * from T_Hive14 where Qty_total =100""").collect
     checkAnswer(s"""select item_code, profit from T_Carbn014 order by item_code, profit""",
       Seq(Row("BE3423ee",4.99),Row("BE3423ee",4.99),Row("SE3423ee",4.99),Row("SE3423ee",4.99),Row("SE3423ee",4.99),Row("SE3423ee",4.99)), "DataLoadingTestCase_DataSight_Carbon_Insert_Func_109")
@@ -742,7 +758,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   //Check for insert into carbon table with select from Hive table where only Measures columns are present.
   test("DataSight_Carbon_Insert_Func_066", Include) {
      sql(s"""create table Measures_Dataload_H (Item_code STRING, Qty int)row format delimited fields terminated by ',' LINES TERMINATED BY '\n'""").collect
-   sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE Measures_Dataload_H""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE Measures_Dataload_H""").collect
    sql(s"""create table Measures_Dataload_C (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
    sql(s"""insert into Measures_Dataload_C select * from Measures_Dataload_H""").collect
     checkAnswer(s"""select count(*) from Measures_Dataload_C""",
@@ -771,8 +787,8 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   //Check for insert into carbon table with select statement having logical operators
   test("DataSight_Carbon_Insert_Func_043", Include) {
      sql(s"""create table Logical_Dataload_H (Item_code STRING, Qty int)row format delimited fields terminated by ',' LINES TERMINATED BY '\n'""").collect
-   sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Logical_Dataload_H""").collect
-   sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Logical_Dataload_H""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Logical_Dataload_H""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Logical_Dataload_H""").collect
    sql(s"""create table Logical_Dataload_C (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
    sql(s"""insert into Logical_Dataload_C select * from Logical_Dataload_H where Item_Code != 'D' and Qty < 40""").collect
     checkAnswer(s"""select count(*) from Logical_Dataload_C""",
@@ -785,7 +801,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   //Check that select query fetches the correct data after doing insert and load .
   test("DataSight_Carbon_Insert_Func_073", Include) {
      sql(s"""create table Dataload_H (Item_code STRING, Qty int)row format delimited fields terminated by ',' LINES TERMINATED BY '\n'""").collect
-   sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Dataload_H""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Dataload_H""").collect
    sql(s"""create table Dataload_C (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
 
 
@@ -801,7 +817,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   test("DataSight_Carbon_Insert_Func_111", Include) {
      sql(s"""create database insert1""").collect
    sql(s"""create table insert1.DiffDB_Dataload_H(Item_code STRING, Qty int)row format delimited fields terminated by ',' LINES TERMINATED BY '\n'""").collect
-   sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE insert1.DiffDB_Dataload_H""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE insert1.DiffDB_Dataload_H""").collect
    sql(s"""create database insert2""").collect
    sql(s"""create table insert2.DiffDB_Dataload_C(Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
    sql(s"""insert into insert2.DiffDB_Dataload_C select * from insert1.DiffDB_Dataload_H""").collect
@@ -815,7 +831,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   //Check for insert into carbon table with select from Hive table where only Dimension columns are present.
   test("DataSight_Carbon_Insert_Func_065", Include) {
      sql(s"""create table Dimension_Dataload_H (Item_code STRING)row format delimited fields terminated by ',' LINES TERMINATED BY '\n'""").collect
-   sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Dimension_Dataload_H""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Dimension_Dataload_H""").collect
    sql(s"""create table Dimension_Dataload_C (Item_code STRING)stored by 'org.apache.carbondata.format'""").collect
    sql(s"""insert into Dimension_Dataload_C select * from Dimension_Dataload_H""").collect
     checkAnswer(s"""select count(*) from Dimension_Dataload_C""",
@@ -1237,7 +1253,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   //Check whether the bad records are logging when user BAD_RECORDS_LOGGER_ACTION as FORCE and BAD_RECORDS_LOGGER_ENABLE as False and loading the data through csv
   test("PTS-AR-DataSight_Carbon-Bad_Records_Logger_Implementation-001-TC-012", Include) {
      sql(s"""create table BR_Logger_FORCE(val1 string,val2 string,val3 string,val4 string,val5 int,dt timestamp) stored by 'org.apache.carbondata.format'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecords_2.csv' INTO TABLE BR_Logger_FORCE OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\','FILEHEADER'='val1, val2, val3, val4, val5, dt','BAD_RECORDS_LOGGER_ENABLE'='FALSE','BAD_RECORDS_ACTION'='FORCE')""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/badrecords_2.csv' INTO TABLE BR_Logger_FORCE OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\','FILEHEADER'='val1, val2, val3, val4, val5, dt','BAD_RECORDS_LOGGER_ENABLE'='FALSE','BAD_RECORDS_ACTION'='FORCE')""").collect
     checkAnswer(s"""select count(*) from BR_Logger_FORCE""",
       Seq(Row(3)), "DataLoadingTestCase_PTS-AR-DataSight_Carbon-Bad_Records_Logger_Implementation-001-TC-012")
      sql(s"""drop table BR_Logger_FORCE""").collect
@@ -1267,7 +1283,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   //Check whether the bad records are logged when user load the data through carbon table having invalid data in different column/rows
   test("PTS-AR-DataSight_Carbon-Bad_Records_Logger_Implementation-001-TC-003", Include) {
      sql(s"""create table BR_Logger_Invalid_Data_2 (val1 string,val2 string,val3 string,val4 string,val5 int,dt timestamp) stored by 'org.apache.carbondata.format'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecords_3.csv' INTO TABLE BR_Logger_Invalid_Data_2 OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\','FILEHEADER'='val1, val2, val3, val4, val5, dt','BAD_RECORDS_LOGGER_ENABLE'='TRUE','BAD_RECORDS_ACTION'='FORCE')""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/badrecords_3.csv' INTO TABLE BR_Logger_Invalid_Data_2 OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\','FILEHEADER'='val1, val2, val3, val4, val5, dt','BAD_RECORDS_LOGGER_ENABLE'='TRUE','BAD_RECORDS_ACTION'='FORCE')""").collect
     checkAnswer(s"""select count(*) from BR_Logger_Invalid_Data_2""",
       Seq(Row(5)), "DataLoadingTestCase_PTS-AR-DataSight_Carbon-Bad_Records_Logger_Implementation-001-TC-003")
      sql(s"""drop table BR_Logger_Invalid_Data_2""").collect
@@ -1355,7 +1371,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""CREATE TABLE DL_without_QUOTECHAR (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table DL_without_QUOTECHAR OPTIONS('DELIMITER'=',' , 'BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select count(*) from DL_without_QUOTECHAR""",
-      Seq(Row(2013)), "DataLoadingTestCase_PTS-TOR_AR-DataSight_Carbon-Maintenance_Incremental_Data_Load_001_001-001-TC-11_840")
+      Seq(Row(2007)), "DataLoadingTestCase_PTS-TOR_AR-DataSight_Carbon-Maintenance_Incremental_Data_Load_001_001-001-TC-11_840")
      sql(s"""drop table DL_without_QUOTECHAR""").collect
   }
 
@@ -1363,8 +1379,8 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   //Check for insert into carbon table with select on all column from a Carbon table where table has no records due to segmnet deletion
   test("DataSight_Carbon_Insert_Func_023_01", Include) {
      sql(s"""create table Norecords_Dataload_H (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/Measures.csv' INTO TABLE Norecords_Dataload_H OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='Item_code, Qty')""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/Measures.csv' INTO TABLE Norecords_Dataload_H OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='Item_code, Qty')""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Norecords_Dataload_H OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='Item_code, Qty')""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Norecords_Dataload_H OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='Item_code, Qty')""").collect
    sql(s"""create table Norecords_Dataload_C (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
    sql(s"""DELETE FROM TABLE Norecords_Dataload_H WHERE SEGMENT.ID IN(0,1)""").collect
    sql(s"""insert into Norecords_Dataload_C select * from Norecords_Dataload_H""").collect
@@ -1391,7 +1407,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row(297)), "DataLoadingTestCase_DataSight_Carbon_Insert_Func_071")
      sql(s"""show segments for table Compact_1.Compaction_T_1""").collect
    sql(s"""show segments for table Compact_1.Compaction_T_2""").collect
-   sql(s"""drop database Compact_1 cascade""").collect
+   sql(s"""drop database if exists Compact_1 cascade""").collect
   }
 
 
@@ -1399,8 +1415,8 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   test("DataSight_Carbon_Insert_Func_080", Include) {
      sql(s"""drop database if exists insertInto CASCADE""").collect
    sql(s"""create database insertInto""").collect
-   sql(s"""create table insertInto.Norecords_Dataload_H (Item_code STRING, Qty int)row format delimited fields terminated by ',' LINES TERMINATED BY '\n'""").collect
-   sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE insertInto.Norecords_Dataload_H""").collect
+   sql(s"""create table insertInto.Norecords_Dataload_H (Item_code STRING, Qty int)row format delimited fields terminated by ',' LINES TERMINATED BY '\n'""").collect 
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/vardhandaterestruct.csv' INTO TABLE insertInto.Norecords_Dataload_H""").collect
    sql(s"""use insertInto""").collect
    sql(s"""drop table if exists Norecords_Dataload_Carbon""").collect
    sql(s"""create table Norecords_Dataload_Carbon (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
@@ -1412,6 +1428,8 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
     sql(s"""drop table if exists uniqdata""").collect
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+      TestQueryExecutor.storeLocation+"/baaaaaaadrecords")
   }
 
   override def afterAll: Unit = {

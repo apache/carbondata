@@ -6803,8 +6803,6 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
   sql("drop table if exists Comp_VMALL_DICTIONARY_INCLUDE")
   sql("drop table if exists Comp_VMALL_DICTIONARY_INCLUDE_hive")
-  sql("drop table if exists ")
-  sql("drop table if exists _hive")
   sql("drop table if exists Comp_VMALL_DICTIONARY_EXCLUDE")
   sql("drop table if exists Comp_VMALL_DICTIONARY_EXCLUDE_hive")
   }

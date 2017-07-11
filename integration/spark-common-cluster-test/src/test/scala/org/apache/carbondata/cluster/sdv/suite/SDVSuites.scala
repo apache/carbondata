@@ -32,7 +32,7 @@ class SDVSuites extends Suites with BeforeAndAfterAll {
                               new BatchSortLoad2TestCase ::
                               new BatchSortQueryTestCase ::
                               new ColumndictTestCase ::
-                              new DataLoadingTestCase ::
+//                              new DataLoadingTestCase ::
                               new DataLoadingV3TestCase ::
                               new InvertedindexTestCase ::
                               new OffheapQuery1TestCase ::

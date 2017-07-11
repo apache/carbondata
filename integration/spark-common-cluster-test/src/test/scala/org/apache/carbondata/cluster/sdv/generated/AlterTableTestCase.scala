@@ -20,6 +20,7 @@ package org.apache.carbondata.cluster.sdv.generated
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util._
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -81,6 +82,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("ARID_RenameTable_001_06", Include) {
     sql(s"""drop table if exists test2""").collect
     sql(s"""drop table if exists test1""").collect
+    sql(s"""drop table if exists test3""").collect
      sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""alter table test1 rename to test2""").collect
@@ -680,6 +682,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //check table insert works fine after alter table to add a column
   test("ARID_Insertint_001_03", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
+    sql(s"""drop table if exists default.t_carbn02""").collect
      sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""create table default.t_carbn02(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
@@ -695,6 +698,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   //check table insert works fine after alter table to add a column
   test("ARID_Insertint_001_04", Include) {
     sql(s"""drop table if exists default.t_carbn01""").collect
+    sql(s"""drop table if exists default.t_carbn02""").collect
      sql(s"""create table default.t_carbn01(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/T_Hive1.csv' INTO table default.t_carbn01 options ('DELIMITER'=',', 'QUOTECHAR'='\', 'FILEHEADER'='Active_status,Item_type_cd,Qty_day_avg,Qty_total,Sell_price,Sell_pricep,Discount_price,Profit,Item_code,Item_name,Outlet_name,Update_time,Create_date')""").collect
    sql(s"""create table default.t_carbn02(Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
@@ -786,6 +790,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   test("ARID_Compaction_001_04", Include) {
      sql(s"""drop table if exists test1""").collect
    sql(s"""drop table if exists test2""").collect
+    sql(s"""drop table if exists test3""").collect
    sql(s"""create table test1(name string, id int) stored by 'carbondata'""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""alter table test1 rename to test2""").collect
@@ -1067,6 +1072,8 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     prop.addProperty("carbon.compaction.level.threshold", "2,1")
     prop.addProperty("carbon.enable.auto.load.merge", "false")
     prop.addProperty("carbon.bad.records.action", "FORCE")
+    prop.addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+      TestQueryExecutor.storeLocation+"/baaaaaaadrecords")
   }
 
   override def afterAll: Unit = {

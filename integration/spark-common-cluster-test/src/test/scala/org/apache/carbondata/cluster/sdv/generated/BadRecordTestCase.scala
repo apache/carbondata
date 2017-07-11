@@ -86,11 +86,12 @@ class BadRecordTestCase extends QueryTest with BeforeAndAfterAll {
 
   //create table and Load history data with parameters BAD_RECORDS_ACTION=FAIL/FORCE/REDIRECT/IGNORE,BAD_RECORD_LOGGER_ENABLE=true/false and IS_EMPTY_DATA_BAD_RECORD=false/true  from CSV with' Delimiters , Quote characters '
   test("AR-Develop-Feature-BadRecords-001_PTS006_TC001", Include) {
+    sql(s"""drop table if exists abadrecordtest1""").collect
      sql(s"""CREATE TABLE abadrecordtest1 (ID int,CUST_ID int,cust_name string) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/test6.csv' into table abadrecordtest1 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'="'",'is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE','BAD_RECORDS_LOGGER_ENABLE'='TRUE')""").collect
     checkAnswer(s"""select count(*) from abadrecordtest1""",
       Seq(Row(3)), "BadRecordTestCase_AR-Develop-Feature-BadRecords-001_PTS006_TC001")
-     sql(s"""drop table if exist  s abadrecordtest1""").collect
+     sql(s"""drop table if exists abadrecordtest1""").collect
   }
 
 
@@ -108,27 +109,31 @@ class BadRecordTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Create the table and Load from Hive table
   test("AR-Develop-Feature-BadRecords-001_PTS008_TC001", Include) {
+    sql(s"""drop table if exists badrecordTest7""").collect
+    sql(s"""drop table if exists hivetable7""").collect
      sql(s"""CREATE TABLE badrecordtest7 (ID int,CUST_ID int,cust_name string) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""CREATE TABLE hivetable7 (ID int,CUST_ID int,cust_name string) row format delimited fields terminated by ','""").collect
-   sql(s"""LOAD DATA LOCAL INPATH '/opt/Carbon/Spark/RunAutomation/Installtion/Data/badrecord/test2.csv' into table hivetable7""").collect
+   sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/badrecord/test2.csv' into table hivetable7""").collect
    sql(s"""insert into table badrecordtest7 select * from hivetable7""").collect
     checkAnswer(s"""select count(*) from badrecordtest7""",
       Seq(Row(3)), "BadRecordTestCase_AR-Develop-Feature-BadRecords-001_PTS008_TC001")
      sql(s"""drop table if exists badrecordTest7""").collect
-   sql(s"""drop table if hivetable7""").collect
+   sql(s"""drop table if exists hivetable7""").collect
   }
 
 
   //Create table and Insert into Select for destination carbon table from source carbon/hive/parquet table
   test("AR-Develop-Feature-BadRecords-001_PTS015_TC001", Include) {
+    sql(s"""drop table if exists badrecordTest9""").collect
+    sql(s"""drop table if exists hivetable9""").collect
      sql(s"""CREATE TABLE badrecordTest9 (ID int,CUST_ID int,cust_name string) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""CREATE TABLE hivetable9 (ID int,CUST_ID int,cust_name string) row format delimited fields terminated by ','""").collect
-   sql(s"""LOAD DATA LOCAL INPATH '/opt/Carbon/Spark/RunAutomation/Installtion/Data/badrecord/test2.csv' into table hivetable9""").collect
+   sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/badrecord/test2.csv' into table hivetable9""").collect
    sql(s"""insert into table badrecordTest9 select * from hivetable9""").collect
     checkAnswer(s"""select count(*) from badrecordTest9""",
       Seq(Row(3)), "BadRecordTestCase_AR-Develop-Feature-BadRecords-001_PTS015_TC001")
      sql(s"""drop table if exists badrecordTest9""").collect
-   sql(s"""drop table if hivetable9""").collect
+   sql(s"""drop table if exists hivetable9""").collect
   }
 
 
@@ -163,6 +168,7 @@ class BadRecordTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check the data load with parameters BAD_RECORDS_ACTION=FAIL/FORCE/REDIRECT/IGNORE,BAD_RECORD_LOGGER_ENABLE=true/false and IS_EMPTY_DATA_BAD_RECORD=false/true, data having  a,  insufficient column
   test("AR-Develop-Feature-BadRecords-001_PTS022_TC001", Include) {
+    sql(s"""drop table if exists badrecordTest16""").collect
      sql(s"""CREATE TABLE badrecordtest16 (ID int,CUST_ID int,cust_name string) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/insuffcient.csv' into table badrecordtest16 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE')""").collect
     checkAnswer(s"""select count(*) from badrecordTest16""",

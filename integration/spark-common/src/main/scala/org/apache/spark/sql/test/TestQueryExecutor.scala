@@ -72,7 +72,8 @@ object TestQueryExecutor {
 
   val resourcesPath = if (hdfsUrl.startsWith("hdfs://")) {
     ResourceRegisterAndCopier.
-      copyResourcesifNotExists(hdfsUrl, s"$integrationPath/spark-common-test/src/test/resources")
+      copyResourcesifNotExists(hdfsUrl, s"$integrationPath/spark-common-test/src/test/resources",
+        s"$integrationPath//spark-common-cluster-test/src/test/resources/testdatafileslist.txt")
     hdfsUrl
   } else {
     s"$integrationPath/spark-common-test/src/test/resources"
