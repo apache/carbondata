@@ -430,8 +430,7 @@ class CarbonFileMetastore(conf: RuntimeConfig, val storePath: String) extends Ca
       // while drop we should refresh the schema modified time so that if any thing has changed
       // in the other beeline need to update.
       checkSchemasModifiedTimeAndReloadTables
-      val file = FileFactory.getCarbonFile(metadataFilePath, fileType)
-      CarbonUtil.deleteFoldersAndFilesSilent(file.getParentFile)
+
       val metadataToBeRemoved: Option[TableMeta] = getTableFromMetadata(dbName,
         tableIdentifier.table)
       metadataToBeRemoved match {
