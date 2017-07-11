@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.page.encoding;
 
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 
 import org.apache.carbondata.format.DataChunk2;
 
@@ -31,6 +32,8 @@ public abstract class EncodedColumnPage {
 
   // encoded and compressed column page data
   protected byte[] encodedData;
+
+  protected BitSet nullBitSet;
 
   // metadata of this page
   protected DataChunk2 dataChunk2;
@@ -64,4 +67,11 @@ public abstract class EncodedColumnPage {
     return dataChunk2;
   }
 
+  public void setNullBitSet(BitSet nullBitSet) {
+    this.nullBitSet = nullBitSet;
+  }
+
+  public BitSet getNullBitSet() {
+    return nullBitSet;
+  }
 }

@@ -25,7 +25,7 @@ import org.apache.carbondata.core.datastore.page.LazyColumnPage;
 import org.apache.carbondata.core.datastore.page.PrimitiveCodec;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.metadata.CodecMetaFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
@@ -58,7 +58,8 @@ class AdaptiveIntegralCodec extends AdaptiveCompressionCodec {
     byte[] result = encodedPage.compress(compressor);
     encodedPage.freeMemory();
     return new EncodedMeasurePage(input.getPageSize(), result,
-        ValueEncoderMeta.newInstance(stats, targetDataType));
+        CodecMetaFactory.createMeta(stats, targetDataType),
+        ((SimpleStatsResult)input.getStatistics()).getNullBits());
   }
 
   @Override

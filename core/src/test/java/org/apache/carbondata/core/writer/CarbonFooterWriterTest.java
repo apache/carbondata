@@ -24,24 +24,23 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
+import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
+import org.apache.carbondata.core.metadata.CodecMetaFactory;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.reader.CarbonFooterReader;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
-
-import junit.framework.TestCase;
-
-import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.format.ColumnSchema;
 
+import junit.framework.TestCase;
 import mockit.Mock;
 import mockit.MockUp;
 import org.junit.After;
@@ -151,8 +150,7 @@ public class CarbonFooterWriterTest extends TestCase{
     infoColumnar.setMeasureNullValueIndex(new BitSet[] {new BitSet(),new BitSet()});
     infoColumnar.setEncodedTablePage(EncodedTablePage.newEmptyInstance());
 
-    final ValueEncoderMeta meta = ValueEncoderMeta.newInstance();
-    meta.setNullBitSet(new BitSet(0));
+    final ValueEncoderMeta meta = CodecMetaFactory.createMeta();
 
     new MockUp<ValueEncoderMeta>() {
       @SuppressWarnings("unused") @Mock
@@ -176,7 +174,8 @@ public class CarbonFooterWriterTest extends TestCase{
       }
     };
 
-    final EncodedMeasurePage measure = new EncodedMeasurePage(2, new byte[]{0,1}, meta);
+    final EncodedMeasurePage measure = new EncodedMeasurePage(2, new byte[]{0,1}, meta,
+        new BitSet());
     new MockUp<EncodedTablePage>() {
       @SuppressWarnings("unused") @Mock
       public EncodedMeasurePage getMeasure(int measureIndex) {

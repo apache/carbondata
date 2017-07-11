@@ -17,23 +17,6 @@
 
 package org.apache.carbondata.core.util;
 
-import mockit.Mock;
-import mockit.MockUp;
-
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.page.EncodedTablePage;
-import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
-import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
-import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
-import org.apache.carbondata.core.metadata.ValueEncoderMeta;
-import org.apache.carbondata.format.*;
-import org.apache.carbondata.format.BlockletMinMaxIndex;
-import org.apache.carbondata.format.ColumnSchema;
-import org.apache.carbondata.format.DataType;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -41,10 +24,34 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static junit.framework.TestCase.*;
-import static org.apache.carbondata.core.util.CarbonMetadataUtil.getIndexHeader;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.page.EncodedTablePage;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
+import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
+import org.apache.carbondata.core.metadata.CodecMetaFactory;
+import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
+import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
+import org.apache.carbondata.format.BlockIndex;
+import org.apache.carbondata.format.BlockletInfo;
+import org.apache.carbondata.format.BlockletMinMaxIndex;
+import org.apache.carbondata.format.ColumnSchema;
+import org.apache.carbondata.format.DataChunk;
+import org.apache.carbondata.format.DataType;
+import org.apache.carbondata.format.Encoding;
+import org.apache.carbondata.format.FileFooter;
+import org.apache.carbondata.format.IndexHeader;
+import org.apache.carbondata.format.SegmentInfo;
+
+import mockit.Mock;
+import mockit.MockUp;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static junit.framework.TestCase.assertEquals;
 import static org.apache.carbondata.core.util.CarbonMetadataUtil.convertFileFooter;
 import static org.apache.carbondata.core.util.CarbonMetadataUtil.getBlockIndexInfo;
+import static org.apache.carbondata.core.util.CarbonMetadataUtil.getIndexHeader;
 
 public class CarbonMetadataUtilTest {
   static List<ByteBuffer> byteBufferList;
@@ -111,11 +118,11 @@ public class CarbonMetadataUtilTest {
     blockletInfoList.add(blockletInfo);
     blockletInfoList.add(blockletInfo);
 
-    ValueEncoderMeta valueEncoderMeta = ValueEncoderMeta.newInstance();
-    valueEncoderMeta.setDecimal(5);
-    valueEncoderMeta.setMinValue(objMinArr);
-    valueEncoderMeta.setMaxValue(objMaxArr);
-    valueEncoderMeta.setSrcDataType(ValueEncoderMeta.DOUBLE_MEASURE);
+    ValueEncoderMeta meta = CodecMetaFactory.createMeta();
+    meta.setDecimalPoint(5);
+    meta.setMinValue(objMinArr);
+    meta.setMaxValue(objMaxArr);
+    meta.setSrcDataType(ColumnPageCodecMeta.DOUBLE_MEASURE);
 
     List<Encoding> encoders = new ArrayList<>();
     encoders.add(Encoding.INVERTED_INDEX);
@@ -195,17 +202,16 @@ public class CarbonMetadataUtilTest {
 
     ValueEncoderMeta[] metas = new ValueEncoderMeta[6];
     for (int i = 0; i < metas.length; i++) {
-      metas[i] = ValueEncoderMeta.newInstance();
+      metas[i] = CodecMetaFactory.createMeta();
       metas[i].setMinValue(objMinArr[i]);
       metas[i].setMaxValue(objMaxArr[i]);
-      metas[i].setDecimal(objDecimal[i]);
-      metas[i].setSrcDataType(ValueEncoderMeta.BIG_INT_MEASURE);
+      metas[i].setDecimalPoint(objDecimal[i]);
+      metas[i].setSrcDataType(ColumnPageCodecMeta.BIG_INT_MEASURE);
     }
 
     BlockletInfoColumnar blockletInfoColumnar = new BlockletInfoColumnar();
 
-    final ValueEncoderMeta meta = ValueEncoderMeta.newInstance();
-    meta.setNullBitSet(new BitSet(0));
+    final ValueEncoderMeta meta = CodecMetaFactory.createMeta();
 
     new MockUp<ValueEncoderMeta>() {
       @SuppressWarnings("unused") @Mock
@@ -229,7 +235,8 @@ public class CarbonMetadataUtilTest {
       }
     };
 
-    final EncodedMeasurePage measure = new EncodedMeasurePage(6, new byte[]{0,1}, meta);
+    final EncodedMeasurePage measure = new EncodedMeasurePage(6, new byte[]{0,1}, meta,
+        new BitSet());
     new MockUp<EncodedTablePage>() {
       @SuppressWarnings("unused") @Mock
       public EncodedMeasurePage getMeasure(int measureIndex) {

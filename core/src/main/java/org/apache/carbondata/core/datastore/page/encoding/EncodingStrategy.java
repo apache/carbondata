@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page.encoding;
 
 import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
+import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 
 /**
@@ -53,23 +54,45 @@ public abstract class EncodingStrategy {
    * create codec based on the page data type and statistics contained by ValueEncoderMeta
    */
   public ColumnPageCodec createCodec(ValueEncoderMeta meta) {
-    SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(meta);
-    switch (meta.getSrcDataType()) {
-      case BYTE:
-      case SHORT:
-      case INT:
-      case LONG:
-        return newCodecForIntegralType(stats);
-      case FLOAT:
-      case DOUBLE:
-        return newCodecForFloatingType(stats);
-      case DECIMAL:
-        return newCodecForDecimalType(stats);
-      case BYTE_ARRAY:
-        // no dictionary dimension
-        return newCodecForByteArrayType(stats);
-      default:
-        throw new RuntimeException("unsupported data type: " + stats.getDataType());
+    if (meta instanceof ColumnPageCodecMeta) {
+      ColumnPageCodecMeta codecMeta = (ColumnPageCodecMeta) meta;
+      SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(codecMeta);
+      switch (codecMeta.getSrcDataType()) {
+        case BYTE:
+        case SHORT:
+        case INT:
+        case LONG:
+          return newCodecForIntegralType(stats);
+        case FLOAT:
+        case DOUBLE:
+          return newCodecForFloatingType(stats);
+        case DECIMAL:
+          return newCodecForDecimalType(stats);
+        case BYTE_ARRAY:
+          // no dictionary dimension
+          return newCodecForByteArrayType(stats);
+        default:
+          throw new RuntimeException("unsupported data type: " + stats.getDataType());
+      }
+    } else {
+      SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(meta);
+      switch (meta.getSrcDataType()) {
+        case BYTE:
+        case SHORT:
+        case INT:
+        case LONG:
+          return newCodecForIntegralType(stats);
+        case FLOAT:
+        case DOUBLE:
+          return newCodecForFloatingType(stats);
+        case DECIMAL:
+          return newCodecForDecimalType(stats);
+        case BYTE_ARRAY:
+          // no dictionary dimension
+          return newCodecForByteArrayType(stats);
+        default:
+          throw new RuntimeException("unsupported data type: " + stats.getDataType());
+      }
     }
   }
 

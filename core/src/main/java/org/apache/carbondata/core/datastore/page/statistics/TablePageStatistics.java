@@ -83,7 +83,7 @@ public class TablePageStatistics {
       ValueEncoderMeta meta = measures[i].getMetaData();
       measureMaxValue[i] = meta.getMaxAsBytes();
       measureMinValue[i] = meta.getMinAsBytes();
-      nullBitSet[i] = meta.getNullBitSet();
+      nullBitSet[i] = measures[i].getNullBitSet();
     }
   }
 

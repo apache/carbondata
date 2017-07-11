@@ -25,7 +25,7 @@ import org.apache.carbondata.core.datastore.page.LazyColumnPage;
 import org.apache.carbondata.core.datastore.page.PrimitiveCodec;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.metadata.CodecMetaFactory;
 
 /**
  * This codec directly apply compression on the input data
@@ -53,7 +53,8 @@ public class DirectCompressCodec implements ColumnPageCodec {
   public EncodedColumnPage encode(ColumnPage input) throws IOException, MemoryException {
     byte[] result = input.compress(compressor);
     return new EncodedMeasurePage(input.getPageSize(), result,
-        ValueEncoderMeta.newInstance(stats, stats.getDataType()));
+        CodecMetaFactory.createMeta(stats, stats.getDataType()),
+        ((SimpleStatsResult)input.getStatistics()).getNullBits());
   }
 
   @Override

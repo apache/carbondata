@@ -264,8 +264,8 @@ public class TablePage {
       throws MemoryException, IOException {
     EncodedMeasurePage[] encodedMeasures = new EncodedMeasurePage[measurePage.length];
     for (int i = 0; i < measurePage.length; i++) {
-      ColumnPageCodec encoder =
-          encodingStrategy.createCodec((SimpleStatsResult)(measurePage[i].getStatistics()));
+      SimpleStatsResult stats = (SimpleStatsResult)(measurePage[i].getStatistics());
+      ColumnPageCodec encoder = encodingStrategy.createCodec(stats);
       encodedMeasures[i] = (EncodedMeasurePage) encoder.encode(measurePage[i]);
     }
     return encodedMeasures;
@@ -385,6 +385,8 @@ public class TablePage {
       byte[] compressedData = compressor.compressByte(flattened);
       compressedColumns[indexStorageOffset] = new EncodedDimensionPage(
           pageSize, compressedData, indexStorages[indexStorageOffset], dimensionSpec.getType(i));
+      SimpleStatsResult stats = (SimpleStatsResult) page.getStatistics();
+      compressedColumns[indexStorageOffset].setNullBitSet(stats.getNullBits());
       indexStorageOffset++;
     }
 

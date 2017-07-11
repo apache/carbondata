@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.BitSet;
 
+import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
@@ -48,6 +49,36 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   }
 
   // this is for decode flow, we do not need to create nullBits, so passing 0 as pageSize
+  public static PrimitivePageStatsCollector newInstance(ColumnPageCodecMeta meta) {
+    PrimitivePageStatsCollector instance =
+        new PrimitivePageStatsCollector(meta.getSrcDataType(), 0);
+    // set min max from meta
+    switch (meta.getSrcDataType()) {
+      case BYTE:
+        instance.minByte = (byte) meta.getMinValue();
+        instance.maxByte = (byte) meta.getMaxValue();
+        break;
+      case SHORT:
+        instance.minShort = (short) meta.getMinValue();
+        instance.maxShort = (short) meta.getMaxValue();
+        break;
+      case INT:
+        instance.minInt = (int) meta.getMinValue();
+        instance.maxInt = (int) meta.getMaxValue();
+        break;
+      case LONG:
+        instance.minLong = (long) meta.getMinValue();
+        instance.maxLong = (long) meta.getMaxValue();
+        break;
+      case DOUBLE:
+        instance.minDouble = (double) meta.getMinValue();
+        instance.maxDouble = (double) meta.getMaxValue();
+        instance.decimal = meta.getDecimalPoint();
+        break;
+    }
+    return instance;
+  }
+
   public static PrimitivePageStatsCollector newInstance(ValueEncoderMeta meta) {
     PrimitivePageStatsCollector instance =
         new PrimitivePageStatsCollector(meta.getSrcDataType(), 0);
@@ -72,7 +103,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       case DOUBLE:
         instance.minDouble = (double) meta.getMinValue();
         instance.maxDouble = (double) meta.getMaxValue();
-        instance.decimal = meta.getDecimal();
+        instance.decimal = meta.getDecimalPoint();
         break;
     }
     return instance;

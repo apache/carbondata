@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page.encoding;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
@@ -37,9 +38,11 @@ public class EncodedMeasurePage extends EncodedColumnPage {
 
   private ValueEncoderMeta metaData;
 
-  public EncodedMeasurePage(int pageSize, byte[] encodedData, ValueEncoderMeta metaData) {
+  public EncodedMeasurePage(int pageSize, byte[] encodedData, ValueEncoderMeta metaData,
+      BitSet nullBitSet) {
     super(pageSize, encodedData);
     this.metaData = metaData;
+    this.nullBitSet = nullBitSet;
     this.dataChunk2 = buildDataChunk2();
   }
 
@@ -59,7 +62,7 @@ public class EncodedMeasurePage extends EncodedColumnPage {
     presenceMeta.setPresent_bit_streamIsSet(true);
     Compressor compressor = CompressorFactory.getInstance().getCompressor();
     presenceMeta.setPresent_bit_stream(
-        compressor.compressByte(metaData.getNullBitSet().toByteArray()));
+        compressor.compressByte(nullBitSet.toByteArray()));
     dataChunk.setPresence(presenceMeta);
     List<ByteBuffer> encoderMetaList = new ArrayList<ByteBuffer>();
     encoderMetaList.add(
