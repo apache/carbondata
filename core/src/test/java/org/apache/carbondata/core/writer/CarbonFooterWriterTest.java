@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.metadata.CodecMetaFactory;
+import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -152,7 +153,7 @@ public class CarbonFooterWriterTest extends TestCase{
 
     final ValueEncoderMeta meta = CodecMetaFactory.createMeta();
 
-    new MockUp<ValueEncoderMeta>() {
+    new MockUp<ColumnPageCodecMeta>() {
       @SuppressWarnings("unused") @Mock
       public byte[] serialize() {
         return new byte[]{1,2};
@@ -165,6 +166,11 @@ public class CarbonFooterWriterTest extends TestCase{
       public byte[] getMinAsBytes() {
         return new byte[]{1,2};
       }
+      @SuppressWarnings("unused") @Mock
+      public DataType getSrcDataType() {
+        return DataType.DOUBLE;
+      }
+
     };
 
     new MockUp<EncodedMeasurePage>() {

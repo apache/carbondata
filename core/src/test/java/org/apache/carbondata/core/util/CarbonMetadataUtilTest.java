@@ -213,7 +213,7 @@ public class CarbonMetadataUtilTest {
 
     final ValueEncoderMeta meta = CodecMetaFactory.createMeta();
 
-    new MockUp<ValueEncoderMeta>() {
+    new MockUp<ColumnPageCodecMeta>() {
       @SuppressWarnings("unused") @Mock
       public byte[] serialize() {
         return new byte[]{1,2};
@@ -225,6 +225,10 @@ public class CarbonMetadataUtilTest {
       @SuppressWarnings("unused") @Mock
       public byte[] getMinAsBytes() {
         return new byte[]{1,2};
+      }
+      @SuppressWarnings("unused") @Mock
+      public org.apache.carbondata.core.metadata.datatype.DataType getSrcDataType() {
+        return org.apache.carbondata.core.metadata.datatype.DataType.DOUBLE;
       }
     };
 
