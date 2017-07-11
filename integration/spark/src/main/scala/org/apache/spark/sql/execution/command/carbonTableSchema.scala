@@ -601,10 +601,6 @@ case class LoadTable(
         } else {
           val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
             val fields = dataFrame.get.schema.fields
-            import org.apache.spark.sql.functions.udf
-            // extracting only segment from tupleId
-            val getSegIdUDF = udf((tupleId: String) =>
-              CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID))
             // getting all fields except tupleId field as it is not required in the value
             var otherFields = fields.toSeq
               .filter(field => !field.name
@@ -621,8 +617,8 @@ case class LoadTable(
               })
 
             // extract tupleId field which will be used as a key
-            val segIdColumn = getSegIdUDF(new Column(UnresolvedAttribute
-              .quotedString(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))).as("segId")
+            val segIdColumn = new Column(UnresolvedAttribute
+              .quotedString(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)).as("tupleId")
             // use dataFrameWithoutTupleId as dictionaryDataFrame
             val dataFrameWithoutTupleId = dataFrame.get.select(otherFields: _*)
             otherFields = otherFields :+ segIdColumn

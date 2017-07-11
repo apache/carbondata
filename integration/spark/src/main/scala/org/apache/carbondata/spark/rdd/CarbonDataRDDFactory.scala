@@ -49,7 +49,7 @@ import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarForma
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
@@ -722,8 +722,8 @@ object CarbonDataRDDFactory {
 
         val keyRDD = updateRdd.map(row =>
           // splitting as (key, value) i.e., (segment, updatedRows)
-          (row.get(row.size - 1).toString, Row(row.toSeq.slice(0, row.size - 1): _*))
-        )
+          (CarbonUpdateUtil.getRequiredFieldFromTID(row.get(row.size - 1).toString,
+            TupleIdEnum.SEGMENT_ID), Row(row.toSeq.slice(0, row.size - 1): _*)))
         val groupBySegmentRdd = keyRDD.groupByKey()
 
         val nodeNumOfData = groupBySegmentRdd.partitions.flatMap[String, Array[String]] { p =>
