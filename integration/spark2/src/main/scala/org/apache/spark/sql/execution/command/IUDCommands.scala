@@ -58,31 +58,35 @@ import org.apache.carbondata.spark.util.QueryPlanUtil
 private[sql] case class ProjectForDeleteCommand(
      plan: LogicalPlan,
      identifier: Seq[String],
-     timestamp: String) extends RunnableCommand {
+     timestamp: String) extends RunnableCommand with DataProcessCommand {
 
-  val LOG = LogServiceFactory.getLogService(this.getClass.getName)
   var horizontalCompactionFailed = false
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
+    processData(sparkSession)
+  }
+
+  override def processData(sparkSession: SparkSession): Seq[Row] = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val dataFrame = Dataset.ofRows(sparkSession, plan)
-//    dataFrame.show(truncate = false)
-//    dataFrame.collect().foreach(println)
+    //    dataFrame.show(truncate = false)
+    //    dataFrame.collect().foreach(println)
     val dataRdd = dataFrame.rdd
 
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .lookupRelation(deleteExecution.getTableIdentifier(identifier))(sparkSession).
-      asInstanceOf[CarbonRelation]
+        .lookupRelation(deleteExecution.getTableIdentifier(identifier))(sparkSession).
+        asInstanceOf[CarbonRelation]
     val carbonTable = relation.tableMeta.carbonTable
     val metadataLock = CarbonLockFactory
-      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
-        LockUsage.METADATA_LOCK)
+        .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+          LockUsage.METADATA_LOCK)
     var lockStatus = false
     try {
       lockStatus = metadataLock.lockWithRetries()
-      LOG.audit(s" Delete data request has been received " +
-                s"for ${ relation.databaseName }.${ relation.tableName }.")
+      LOGGER.audit(s" Delete data request has been received " +
+          s"for ${ relation.databaseName }.${ relation.tableName }.")
       if (lockStatus) {
-        LOG.info("Successfully able to get the table metadata file lock")
+        LOGGER.info("Successfully able to get the table metadata file lock")
       }
       else {
         throw new Exception("Table is locked for deletion. Please try after some time")
@@ -92,23 +96,23 @@ private[sql] case class ProjectForDeleteCommand(
         carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier)
       var executorErrors = new ExecutionErrors(FailureCauses.NONE, "")
 
-        // handle the clean up of IUD.
-        CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
+      // handle the clean up of IUD.
+      CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
 
-          if (deleteExecution
-            .deleteDeltaExecution(identifier, sparkSession, dataRdd, timestamp, relation,
-              false, executorErrors)) {
-            // call IUD Compaction.
-            IUDCommon.tryHorizontalCompaction(sparkSession, relation, isUpdateOperation = false)
-          }
+      if (deleteExecution
+          .deleteDeltaExecution(identifier, sparkSession, dataRdd, timestamp, relation,
+            false, executorErrors)) {
+        // call IUD Compaction.
+        IUDCommon.tryHorizontalCompaction(sparkSession, relation, isUpdateOperation = false)
+      }
     } catch {
       case e: HorizontalCompactionException =>
-          LOG.error("Delete operation passed. Exception in Horizontal Compaction." +
-              " Please check logs. " + e.getMessage)
-          CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString)
+        LOGGER.error("Delete operation passed. Exception in Horizontal Compaction." +
+            " Please check logs. " + e.getMessage)
+        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString)
 
       case e: Exception =>
-        LOG.error(e, "Exception in Delete data operation " + e.getMessage)
+        LOGGER.error(e, "Exception in Delete data operation " + e.getMessage)
         // ****** start clean up.
         // In case of failure , clean all related delete delta files
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
@@ -130,47 +134,51 @@ private[sql] case class ProjectForDeleteCommand(
 }
 
 private[sql] case class ProjectForUpdateCommand(
-    plan: LogicalPlan, tableIdentifier: Seq[String]) extends RunnableCommand {
-  val LOGGER = LogServiceFactory.getLogService(ProjectForUpdateCommand.getClass.getName)
+    plan: LogicalPlan, tableIdentifier: Seq[String]) extends RunnableCommand
+    with DataProcessCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
+    processData(sparkSession)
+  }
 
+  override def processData(sparkSession: SparkSession): Seq[Row] = {
+    val LOGGER = LogServiceFactory.getLogService(ProjectForUpdateCommand.getClass.getName)
 
-   //  sqlContext.sparkContext.setLocalProperty(org.apache.spark.sql.execution.SQLExecution
+    //  sqlContext.sparkContext.setLocalProperty(org.apache.spark.sql.execution.SQLExecution
     //  .EXECUTION_ID_KEY, null)
     // DataFrame(sqlContext, plan).show(truncate = false)
     // return Seq.empty
 
 
     val res = plan find {
-      case relation: LogicalRelation if (relation.relation
-        .isInstanceOf[CarbonDatasourceHadoopRelation]) =>
+      case relation: LogicalRelation if relation.relation
+          .isInstanceOf[CarbonDatasourceHadoopRelation] =>
         true
       case _ => false
     }
 
-    if (!res.isDefined) {
+    if (res.isEmpty) {
       return Seq.empty
     }
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .lookupRelation(deleteExecution.getTableIdentifier(tableIdentifier))(sparkSession).
-      asInstanceOf[CarbonRelation]
-//    val relation = CarbonEnv.get.carbonMetastore
-//      .lookupRelation1(deleteExecution.getTableIdentifier(tableIdentifier))(sqlContext).
-//      asInstanceOf[CarbonRelation]
+        .lookupRelation(deleteExecution.getTableIdentifier(tableIdentifier))(sparkSession).
+        asInstanceOf[CarbonRelation]
+    //    val relation = CarbonEnv.get.carbonMetastore
+    //      .lookupRelation1(deleteExecution.getTableIdentifier(tableIdentifier))(sqlContext).
+    //      asInstanceOf[CarbonRelation]
     val carbonTable = relation.tableMeta.carbonTable
     val metadataLock = CarbonLockFactory
-      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
-        LockUsage.METADATA_LOCK)
+        .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+          LockUsage.METADATA_LOCK)
     var lockStatus = false
     // get the current time stamp which should be same for delete and update.
     val currentTime = CarbonUpdateUtil.readCurrentTime
-//    var dataFrame: DataFrame = null
+    //    var dataFrame: DataFrame = null
     var dataSet: DataFrame = null
     val isPersistEnabledUserValue = CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.isPersistEnabled,
-        CarbonCommonConstants.defaultValueIsPersistEnabled)
-   var isPersistEnabled = CarbonCommonConstants.defaultValueIsPersistEnabled.toBoolean
+        .getProperty(CarbonCommonConstants.isPersistEnabled,
+          CarbonCommonConstants.defaultValueIsPersistEnabled)
+    var isPersistEnabled = CarbonCommonConstants.defaultValueIsPersistEnabled.toBoolean
     if (isPersistEnabledUserValue.equalsIgnoreCase("false")) {
       isPersistEnabled = false
     }
@@ -188,48 +196,46 @@ private[sql] case class ProjectForUpdateCommand(
       val tablePath = CarbonStorePath.getCarbonTablePath(
         carbonTable.getStorePath,
         carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier)
-        // Get RDD.
+      // Get RDD.
 
       dataSet = if (isPersistEnabled) {
-          Dataset.ofRows(sparkSession, plan).persist(StorageLevel.MEMORY_AND_DISK)
-//          DataFrame(sqlContext, plan)
-//            .persist(StorageLevel.MEMORY_AND_DISK)
-        }
-        else {
-          Dataset.ofRows(sparkSession, plan)
-//          DataFrame(sqlContext, plan)
-        }
-        var executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
+        Dataset.ofRows(sparkSession, plan).persist(StorageLevel.MEMORY_AND_DISK)
+        //          DataFrame(sqlContext, plan)
+        //            .persist(StorageLevel.MEMORY_AND_DISK)
+      }
+      else {
+        Dataset.ofRows(sparkSession, plan)
+        //          DataFrame(sqlContext, plan)
+      }
+      var executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
 
 
-        // handle the clean up of IUD.
-        CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
+      // handle the clean up of IUD.
+      CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
 
-        // do delete operation.
-        deleteExecution.deleteDeltaExecution(tableIdentifier, sparkSession, dataSet.rdd,
-          currentTime + "",
+      // do delete operation.
+      deleteExecution.deleteDeltaExecution(tableIdentifier, sparkSession, dataSet.rdd,
+        currentTime + "",
         relation, isUpdateOperation = true, executionErrors)
 
-        if(executionErrors.failureCauses != FailureCauses.NONE) {
-          throw new Exception(executionErrors.errorMsg)
-        }
+      if(executionErrors.failureCauses != FailureCauses.NONE) {
+        throw new Exception(executionErrors.errorMsg)
+      }
 
-        // do update operation.
-        UpdateExecution.performUpdate(dataSet, tableIdentifier, plan,
-          sparkSession, currentTime, executionErrors)
+      // do update operation.
+      UpdateExecution.performUpdate(dataSet, tableIdentifier, plan,
+        sparkSession, currentTime, executionErrors)
 
-        if(executionErrors.failureCauses != FailureCauses.NONE) {
-          throw new Exception(executionErrors.errorMsg)
-        }
+      if(executionErrors.failureCauses != FailureCauses.NONE) {
+        throw new Exception(executionErrors.errorMsg)
+      }
 
-        // Do IUD Compaction.
-        IUDCommon.tryHorizontalCompaction(sparkSession, relation, isUpdateOperation = true)
-    }
-
-    catch {
+      // Do IUD Compaction.
+      IUDCommon.tryHorizontalCompaction(sparkSession, relation, isUpdateOperation = true)
+    } catch {
       case e: HorizontalCompactionException =>
         LOGGER.error(
-            "Update operation passed. Exception in Horizontal Compaction. Please check logs." + e)
+          "Update operation passed. Exception in Horizontal Compaction. Please check logs." + e)
         // In case of failure , clean all related delta files
         CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString)
 
