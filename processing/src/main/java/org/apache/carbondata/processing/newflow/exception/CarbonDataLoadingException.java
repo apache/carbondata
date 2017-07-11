@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.processing.newflow.exception;
 
-import java.util.Locale;
-
 public class CarbonDataLoadingException extends RuntimeException {
   /**
    * default serial version ID.
@@ -57,17 +55,6 @@ public class CarbonDataLoadingException extends RuntimeException {
    */
   public CarbonDataLoadingException(Throwable t) {
     super(t);
-  }
-
-  /**
-   * This method is used to get the localized message.
-   *
-   * @param locale - A Locale object represents a specific geographical,
-   *               political, or cultural region.
-   * @return - Localized error message.
-   */
-  public String getLocalizedMessage(Locale locale) {
-    return "";
   }
 
   /**
