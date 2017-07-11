@@ -128,7 +128,7 @@ case class CarbonScan(
       projection,
       buildCarbonPlan.getFilterExpression,
       carbonTable.getAbsoluteTableIdentifier,
-      carbonTable.getTableInfo.serielize(),
+      carbonTable.getTableInfo.serialize(),
       carbonTable.getTableInfo
     )
   }
