@@ -60,17 +60,6 @@ public class CarbonDataLoadingException extends RuntimeException {
   }
 
   /**
-   * This method is used to get the localized message.
-   *
-   * @param locale - A Locale object represents a specific geographical,
-   *               political, or cultural region.
-   * @return - Localized error message.
-   */
-  public String getLocalizedMessage(Locale locale) {
-    return "";
-  }
-
-  /**
    * getLocalizedMessage
    */
   @Override public String getLocalizedMessage() {
