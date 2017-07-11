@@ -20,12 +20,12 @@ package org.apache.carbondata.processing.store;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.GenericDataType;
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
@@ -35,7 +35,6 @@ import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.spark.sql.types.Decimal;
 
@@ -69,11 +68,11 @@ public class TablePage {
     int numDictDimension = model.getMDKeyGenerator().getDimCount();
     dictDimensionPage = new ColumnPage[numDictDimension];
     for (int i = 0; i < dictDimensionPage.length; i++) {
-      dictDimensionPage[i] = ColumnPage.newVarLengthPath(DataType.BYTE_ARRAY, pageSize);
+      dictDimensionPage[i] = ColumnPage.newVarLengthPage(DataType.BYTE_ARRAY, pageSize);
     }
     noDictDimensionPage = new ColumnPage[model.getNoDictionaryCount()];
     for (int i = 0; i < noDictDimensionPage.length; i++) {
-      noDictDimensionPage[i] = ColumnPage.newVarLengthPath(DataType.BYTE_ARRAY, pageSize);
+      noDictDimensionPage[i] = ColumnPage.newVarLengthPage(DataType.BYTE_ARRAY, pageSize);
     }
     complexDimensionPage = new ComplexColumnPage[model.getComplexColumnCount()];
     for (int i = 0; i < complexDimensionPage.length; i++) {
@@ -83,8 +82,10 @@ public class TablePage {
     }
     measurePage = new ColumnPage[model.getMeasureCount()];
     DataType[] dataTypes = model.getMeasureDataType();
+    TableSpec.MeasureSpec measureSpec = model.getTableSpec().getMeasureSpec();
     for (int i = 0; i < measurePage.length; i++) {
-      measurePage[i] = ColumnPage.newPage(dataTypes[i], pageSize);
+      measurePage[i] = ColumnPage
+          .newPage(dataTypes[i], pageSize, measureSpec.getScale(i), measureSpec.getPrecision(i));
     }
   }
 
@@ -132,8 +133,7 @@ public class TablePage {
       if (measurePage[i].getDataType() == DataType.DECIMAL &&
           model.isCompactionFlow() &&
           value != null) {
-        BigDecimal bigDecimal = ((Decimal) value).toJavaBigDecimal();
-        value = DataTypeUtil.bigDecimalToByte(bigDecimal);
+        value = ((Decimal) value).toJavaBigDecimal();
       }
       measurePage[i].putData(rowId, value);
     }

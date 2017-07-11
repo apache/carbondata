@@ -524,7 +524,9 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
       }
     }
-    sqlContext.conf.wholeStageEnabled && vectorizedReader.toBoolean &&
+    val supportCodegen =
+      sqlContext.conf.wholeStageEnabled && sqlContext.conf.wholeStageMaxNumFields >= cols.size
+    supportCodegen && vectorizedReader.toBoolean &&
       cols.forall(_.dataType.isInstanceOf[AtomicType])
   }
 }
