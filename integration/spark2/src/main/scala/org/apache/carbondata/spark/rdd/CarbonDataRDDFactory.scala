@@ -421,6 +421,8 @@ object CarbonDataRDDFactory {
       } else {
         // in success case handle updation of the table status file.
         // success case.
+        // write the dictionary file in case of single_pass true
+        writeDictionary(carbonLoadModel, result, false)
         val segmentDetails = new util.HashSet[String]()
         var resultSize = 0
         res.foreach { resultOfSeg =>
