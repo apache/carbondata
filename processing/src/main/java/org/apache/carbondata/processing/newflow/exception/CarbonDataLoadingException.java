@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.processing.newflow.exception;
 
-import java.util.Locale;
-
 public class CarbonDataLoadingException extends RuntimeException {
   /**
    * default serial version ID.
