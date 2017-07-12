@@ -215,3 +215,15 @@ Data/badrecord/test5.csv
 Data/badrecord/test6.csv
 Data/badrecord/test7.csv
 Data/badrecord/test8.csv
+Data/3Lakh.csv
+Data/Delimiter_BackrwardSlash.csv
+Data/DiffDilimiter.csv
+Data/OSCON.csv
+Data/bad_records1.csv
+Data/badrecords.csv
+Data/badrecords_2.csv
+Data/badrecords_3.csv
+Data/badrecords_4.csv
+Data/badrecords_5.csv
+Data/emptyLoad.csv
+Data/splchar.csv

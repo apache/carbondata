@@ -35,7 +35,9 @@ class DataLoadingV3TestCase extends QueryTest with BeforeAndAfterAll {
   //Check query reponse for select * query with no filters
   test("PTS_TOR-Productize-New-Features-V3_01_Query_01_001", Include) {
      sql(s"""CREATE TABLE 3lakh_uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128','include_dictionary'='BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,CUST_ID')""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/3Lakh.csv' into table 3lakh_uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
+   sql(
+     s"""LOAD DATA INPATH '
+        |/3Lakh.csv' into table 3lakh_uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""".stripMargin).collect
     checkAnswer(s"""select count(*) from 3lakh_uniqdata""",
       Seq(Row(300635)), "DataLoadingV3TestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_001")
 
@@ -341,10 +343,6 @@ class DataLoadingV3TestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/3Lakh.csv' into table 3lakh_uniqdata3 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select count(*) from (select CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1 from 3lakh_uniqdata)c""",
       Seq(Row(300635)), "DataLoadingV3TestCase_PTS_TOR-Productize-New-Features-V3_01_Compaction_01_003")
-     sql(s"""drop table 3lakh_uniqdata""").collect
-   sql(s"""drop table 3lakh_uniqdata2""").collect
-   sql(s"""drop table t_carbn1c""").collect
-   sql(s"""drop table 3lakh_uniqdata1""").collect
   }
 
   val prop = CarbonProperties.getInstance()
@@ -363,9 +361,17 @@ class DataLoadingV3TestCase extends QueryTest with BeforeAndAfterAll {
     prop.addProperty("carbon.data.file.version", "V3")
     prop.addProperty("carbon.enable.auto.load.merge", "false")
     prop.addProperty("carbon.compaction.level.threshold", "(2,2)")
+    sql(s"""drop table if exists 3lakh_uniqdata""").collect
+    sql(s"""drop table if exists 3lakh_uniqdata2""").collect
+    sql(s"""drop table if exists t_carbn1c""").collect
+    sql(s"""drop table if exists 3lakh_uniqdata1""").collect
   }
 
   override def afterAll: Unit = {
+    sql(s"""drop table if exists 3lakh_uniqdata""").collect
+    sql(s"""drop table if exists 3lakh_uniqdata2""").collect
+    sql(s"""drop table if exists t_carbn1c""").collect
+    sql(s"""drop table if exists 3lakh_uniqdata1""").collect
     //Reverting to old
     prop.addProperty("carbon.blockletgroup.size.in.mb", p1)
     prop.addProperty("enable.offheap.sort", p2)
