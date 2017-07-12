@@ -18,12 +18,11 @@
   */
 package org.apache.carbondata.spark.util
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.constants.TableOptionConstant
@@ -35,8 +34,7 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
  * test case for external column dictionary generation
  * also support complicated type
  */
-class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
-  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   var extComplexRelation: CarbonRelation = _
   var verticalDelimiteRelation: CarbonRelation = _
   var loadSqlRelation: CarbonRelation = _

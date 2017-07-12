@@ -20,10 +20,10 @@ import java.util.concurrent.{Callable, Executors}
 
 import scala.collection.mutable.ListBuffer
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.service.impl.PathFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory

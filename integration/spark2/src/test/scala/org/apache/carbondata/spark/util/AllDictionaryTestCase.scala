@@ -16,12 +16,11 @@
  */
 package org.apache.carbondata.spark.util
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.constants.TableOptionConstant
@@ -30,8 +29,7 @@ import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadM
 /**
   * Test Case for org.apache.carbondata.integration.spark.util.GlobalDictionaryUtil
   */
-class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
-  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   var pwd: String = _
   var sampleRelation: CarbonRelation = _
   var complexRelation: CarbonRelation = _

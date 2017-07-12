@@ -19,7 +19,7 @@ package org.apache.carbondata.spark.testsuite.dataload
 
 import java.math.BigDecimal
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.types.{DecimalType, DoubleType, StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll

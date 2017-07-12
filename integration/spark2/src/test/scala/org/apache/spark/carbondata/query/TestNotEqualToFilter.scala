@@ -17,7 +17,7 @@
 
 package org.apache.spark.carbondata.query
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -26,7 +26,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 /**
  * Test cases for testing columns having \N or \null values for non numeric columns
  */
-class TestNotEqualToFilter extends QueryTest with BeforeAndAfterAll {
+class TestNotEqualToFilter extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop table if exists test_not_equal_to_carbon")

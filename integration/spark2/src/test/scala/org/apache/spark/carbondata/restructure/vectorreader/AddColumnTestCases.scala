@@ -21,12 +21,12 @@ import java.math.{BigDecimal, RoundingMode}
 import java.sql.{Date, Timestamp}
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
-class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
+class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sqlContext.setConf("carbon.enable.vector.reader", "true")

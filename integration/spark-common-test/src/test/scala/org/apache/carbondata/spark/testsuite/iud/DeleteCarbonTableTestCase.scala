@@ -16,8 +16,8 @@
  */
 package org.apache.carbondata.spark.testsuite.iud
 
+import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{Row, SaveMode}
-import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 

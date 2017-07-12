@@ -17,10 +17,10 @@
 
 package org.apache.spark
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-class SparkCommandSuite extends QueryTest with BeforeAndAfterAll {
+class SparkCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     sql("DROP TABLE IF EXISTS src_pqt")
     sql("DROP TABLE IF EXISTS src_orc")
