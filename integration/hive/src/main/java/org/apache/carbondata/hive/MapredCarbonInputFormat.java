@@ -73,7 +73,7 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
       path = ((CarbonHiveInputSplit) inputSplit).getPath().toString();
     }
     QueryModel queryModel = getQueryModel(jobConf, path);
-    CarbonReadSupport<ArrayWritable> readSupport = new DictionaryDecodeReadSupport<>();
+    CarbonReadSupport<ArrayWritable> readSupport = new CarbonDictionaryDecodeReadSupport<>();
     return new CarbonHiveRecordReader(queryModel, readSupport, inputSplit, jobConf);
   }
 

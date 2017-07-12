@@ -55,7 +55,7 @@ import org.apache.spark.sql.catalyst.util.GenericArrayData;
 /**
  *  This is the class to decode dictionary encoded column data back to its original value.
  */
-public class DictionaryDecodeReadSupport<T> implements CarbonReadSupport<T> {
+public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T> {
 
   protected Dictionary[] dictionaries;
 
