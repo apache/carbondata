@@ -18,6 +18,7 @@
 package org.apache.carbondata.examples
 
 import java.io.File
+import java.text.SimpleDateFormat
 
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.SparkSession
@@ -29,25 +30,15 @@ object DataUpdateDeleteExample {
 
   def main(args: Array[String]) {
 
+    // for local files
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
+    // for hdfs files
+    // var rootPath = "hdfs://hdfs-host/carbon"
 
-    var hdfsStoreFlg = false;
-    if (args != null && args.size > 0) {
-      if ("true".equalsIgnoreCase(args(0))) {
-        hdfsStoreFlg = true
-      }
-    }
     var storeLocation = s"$rootPath/examples/spark2/target/store"
     var warehouse = s"$rootPath/examples/spark2/target/warehouse"
     var metastoredb = s"$rootPath/examples/spark2/target"
-    var testData = s"$rootPath/examples/spark2/src/main/resources/data_update.csv"
-    if (hdfsStoreFlg) {
-      storeLocation = "hdfs://nameservice1/carbon2/data/"
-      warehouse = "hdfs://nameservice1/carbon2/warehouse/"
-      metastoredb = "hdfs://nameservice1/carbon2/carbonstore/"
-      testData = "hdfs://nameservice1/carbon2/data_update.csv"
-    }
 
     import org.apache.spark.sql.CarbonSession._
     val spark = SparkSession
@@ -62,122 +53,121 @@ object DataUpdateDeleteExample {
 
     // Specify date format based on raw data
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
 
     import spark.implicits._
     // Drop table
-    spark.sql("DROP TABLE IF EXISTS update_table")
-    spark.sql("DROP TABLE IF EXISTS big_table")
+    spark.sql("DROP TABLE IF EXISTS t3")
+    spark.sql("DROP TABLE IF EXISTS t5")
 
-    spark.sql(s"""
-           CREATE TABLE IF NOT EXISTS update_table
-           (ID Int, country String,
-           name String, phonetype String, serialname char(10), salary Int)
-           STORED BY 'carbondata'
-           """)
-
-    spark.sql(s"""
-           LOAD DATA LOCAL INPATH '$testData' INTO TABLE update_table
-           """)
-
-    val df = spark.sparkContext.parallelize(1 to 2000000)
-      .map(x => (x, "name" + (1000000 + x), "2017/07/" + (x % 20 + 1),
-        "china", 2 * x))
-      .toDF("id", "name", "date", "country", "salary")
+    // use code to create table t5 and insert data
+    var sdf = new SimpleDateFormat("yyyy-MM-dd")
+    var df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => (x, new java.sql.Date(sdf.parse("2015-07-" + (x % 10 + 10)).getTime),
+        "china", "aaa" + x, "phone" + 555 * x, "ASD" + (60000 + x), 14999 + x))
+      .toDF("ID", "date", "country", "name", "phonetype", "serialname", "salary")
     df.write
       .format("carbondata")
-      .option("tableName", "big_table")
+      .option("tableName", "t3")
       .option("tempCSV", "true")
       .option("compress", "true")
       .mode(SaveMode.Overwrite)
       .save()
 
-    // loop update and delete in big_table
-    var loopCnt = 5
-    for (index <- 1 to loopCnt) {
-      // Update country with simple SET
-      var name = "name" + (1200000 + index)
-      spark.sql(s"""
-           UPDATE big_table SET (country) = ('india') WHERE name = '$name'
-           """).show()
-      // Query data after the above update
-      spark.sql(s"""
-           SELECT * FROM big_table WHERE name = '$name'
+    sdf = new SimpleDateFormat("yyyy-MM-dd")
+    df = spark.sparkContext.parallelize(1 to 10)
+      .map(x => (x, new java.sql.Date(sdf.parse("2017-07-" + (x % 20 + 1)).getTime),
+        "usa", "bbb" + x, "phone" + 100 * x, "ASD" + (1000 * x - x), 25000 + x))
+      .toDF("ID", "date", "country", "name", "phonetype", "serialname", "salary")
+    df.write
+      .format("carbondata")
+      .option("tableName", "t5")
+      .option("tempCSV", "true")
+      .option("compress", "true")
+      .mode(SaveMode.Overwrite)
+      .save()
+
+    // Query data again after the above data insert
+    spark.sql("""
+           SELECT * FROM t5 ORDER BY ID
            """).show()
 
-      // Update date with simple SET
-      name = "name" + (1200000 + loopCnt + index)
-      spark.sql(s"""
-           UPDATE big_table SET (date) = ('2018/08/08') WHERE name = '$name'
-           """).show()
-      // Query data after the above update
-      spark.sql(s"""
-           SELECT * FROM big_table WHERE name = '$name'
+    // 1.Update data with simple SET
+    spark.sql("""
+           SELECT * FROM t3 ORDER BY ID
            """).show()
 
-      // Update salary with simple SET
-      name = "name" + (1200000 + loopCnt * 2 + index)
-      spark.sql(s"""
-           UPDATE big_table SET (salary) = (9999999) WHERE name = '$name'
-           """).show()
-      // Query data after the above update
-      spark.sql(s"""
-           SELECT * FROM big_table WHERE name = '$name'
-           """).show()
-
-      // Update data with subquery result SET
-      var id = loopCnt + index
-      spark.sql(s"""
-         UPDATE big_table
-         SET (big_table.country, big_table.name) = (SELECT u.country,
-          u.name FROM update_table u WHERE u.id = $index)
-         WHERE big_table.id < $id""").show()
-      // Query data after the above update
-      spark.sql(s"""
-           SELECT * FROM big_table where big_table.id < $id
-           """).show()
-
-      // Update data with join query result SET
-      id = 2000000 - index * 10
-      val id1 = loopCnt * 3 + index
-      val id2 = loopCnt * 4 + index
-      spark.sql(s"""
-         UPDATE big_table
-         SET (big_table.country, big_table.salary) =
-         (SELECT u.country, f.salary FROM update_table u FULL JOIN update_table f
-         WHERE u.id = $id1  and f.id=$id2) WHERE big_table.id > $id""").show()
-      // Query data after the above update
-      spark.sql(s"""
-           SELECT * FROM big_table where big_table.id < $id
-           """).show()
-
-      // delete by name
-      name = "name" + (1200000 + loopCnt * 3 + index)
-      spark.sql(s"""
-           DELETE FROM big_table WHERE name = '$name'
-           """).show()
-      // Query data after the above delete
-      spark.sql(s"""
-           SELECT * FROM big_table WHERE name = '$name'
-           """).show()
-
-      // delete by salary
-      var salary = 2000000*2 - index * 4
-      spark.sql(s"""
-           DELETE FROM big_table WHERE salary > $salary and salary < 9999999
-           """).show()
-      spark.sql(s"""
-           SELECT * FROM big_table WHERE salary > $salary and salary < 9999999
-           """).show()
-    }
-
+    // Update data where salary < 15003
+    val dateStr = "2018-08-08"
     spark.sql(s"""
-           SELECT count(*) FROM big_table
+           UPDATE t3 SET (date) = ($dateStr) WHERE t3.salary < 15003
+           """).show()
+    spark.sql("""
+           UPDATE t3 SET (t3.country) = ('india') WHERE t3.salary < 15003
+           """).show()
+    spark.sql("""
+           UPDATE t3 SET (t3.salary) = (t3.salary + 9) WHERE t3.name = 'aaa1'
+           """).show()
+
+    // Query data again after the above update
+    spark.sql("""
+           SELECT * FROM t3 ORDER BY ID
+           """).show()
+
+    // 2.Update data with subquery result SET
+    spark.sql("""
+         UPDATE t3
+         SET (t3.country, t3.name) = (SELECT u.country, u.name FROM t5 u WHERE u.id = 5)
+         WHERE t3.id < 5""").show()
+    spark.sql("""
+         UPDATE t3
+         SET (t3.date, t3.serialname, t3.salary) =
+         (SELECT '2099-09-09', u.serialname, '9999' FROM t5 u WHERE u.id = 5)
+         WHERE t3.id < 5""").show()
+
+    // Query data again after the above update
+    spark.sql("""
+           SELECT * FROM t3 ORDER BY ID
+           """).show()
+
+    // 3.Update data with join query result SET
+    spark.sql("""
+         UPDATE t3
+         SET (t3.country, t3.salary) =
+         (SELECT u.country, f.salary FROM t5 u FULL JOIN t5 f
+         WHERE u.id = 8 and f.id=6) WHERE t3.id >6""").show()
+
+    // Query data again after the above update
+    spark.sql("""
+           SELECT * FROM t3 ORDER BY ID
+           """).show()
+
+    // 4.Delete data where salary > 15005
+    spark.sql("""
+           DELETE FROM t3 WHERE salary > 15005
+           """).show()
+
+    // Query data again after delete data
+    spark.sql("""
+           SELECT * FROM t3 ORDER BY ID
+           """).show()
+
+    // 5.Delete data WHERE id in (1, 2, $key)
+    var key = 3
+    spark.sql(s"""
+           DELETE FROM t3 WHERE id in (1, 2, $key)
+           """).show()
+
+    // Query data again after delete data
+    spark.sql("""
+           SELECT * FROM t3 ORDER BY ID
            """).show()
 
     // Drop table
-    spark.sql("DROP TABLE IF EXISTS update_table")
-    spark.sql("DROP TABLE IF EXISTS big_table")
+    spark.sql("DROP TABLE IF EXISTS t3")
+    spark.sql("DROP TABLE IF EXISTS t5")
+
+    spark.stop()
   }
 
 }

@@ -18,6 +18,7 @@
 package org.apache.carbondata.examples
 
 import java.io.File
+import java.text.SimpleDateFormat
 
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.{CarbonContext, DataFrame, Row, SaveMode, SQLContext}
@@ -25,170 +26,159 @@ import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.examples.util.ExampleUtils
 
 object DataUpdateDeleteExample {
 
   def main(args: Array[String]) {
-    var hdfsStoreFlg = false;
-    if (args != null && args.size > 0) {
-      if ("true".equalsIgnoreCase(args(0))) {
-        hdfsStoreFlg = true
-      }
-    }
-    def currentPath: String = new File(this.getClass.getResource("/").getPath + "../../")
-    .getCanonicalPath
-    var storeLocation = currentPath + "/target/store"
-    var metastoredb = currentPath + "/target/carbonmetastore"
-    var testData = currentPath + "/src/main/resources/data.csv"
-    if (hdfsStoreFlg) {
-      storeLocation = "hdfs://nameservice1/carbon/store/"
-      metastoredb = "hdfs://nameservice1/carbon2/carbonmetastore/"
-      testData = "hdfs://nameservice1/carbon/data_update.csv"
-    }
+    val cc = ExampleUtils.createCarbonContext("DataUpdateDeleteExample")
 
-    val sc = new SparkContext(new SparkConf()
-      .setAppName("DataUpdateDeleteExample")
-      .setMaster("local[2]"))
-    sc.setLogLevel("ERROR")
-    // scalastyle:off println
-    println(s"Starting DataUpdateDeleteExample using spark version ${sc.version}")
-    // scalastyle:on println
+    // for local files
+    var rootPath = ExampleUtils.currentPath
+    // for hdfs files
+    // var rootPath = "hdfs://hdfs-host/carbon"
 
-    val cc = new CarbonContext(sc, storeLocation, metastoredb)
-    // Specify date format based on raw data
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
+    val testData = rootPath + "/src/main/resources/data.csv"
 
     // Specify date format based on raw data
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
 
-    // Drop table
-    cc.sql("DROP TABLE IF EXISTS update_table")
-    cc.sql("DROP TABLE IF EXISTS big_table")
+    cc.sql("DROP TABLE IF EXISTS t3")
+    cc.sql("DROP TABLE IF EXISTS t5")
 
-    cc.sql(s"""
-           CREATE TABLE IF NOT EXISTS update_table
-           (ID Int, country String,
+    // Create table, 6 dimensions, 1 measure
+    cc.sql("""
+           CREATE TABLE IF NOT EXISTS t3
+           (ID Int, date Date, country String,
            name String, phonetype String, serialname char(10), salary Int)
            STORED BY 'carbondata'
            """)
 
     cc.sql(s"""
-           LOAD DATA LOCAL INPATH '$testData' INTO TABLE update_table
+           LOAD DATA LOCAL INPATH '$testData' INTO TABLE t3
            """)
+
+    // use code to create table t5 and insert data
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
     var fields = Seq[StructField]()
-    fields = fields :+ DataTypes.createStructField("id", DataTypes.IntegerType, false)
-    fields = fields :+ DataTypes.createStructField("name", DataTypes.StringType, false)
-    fields = fields :+ DataTypes.createStructField("date", DataTypes.StringType, false)
+    fields = fields :+ DataTypes.createStructField("ID", DataTypes.IntegerType, false)
+    fields = fields :+ DataTypes.createStructField("date", DataTypes.DateType, false)
     fields = fields :+ DataTypes.createStructField("country", DataTypes.StringType, false)
+    fields = fields :+ DataTypes.createStructField("name", DataTypes.StringType, false)
+    fields = fields :+ DataTypes.createStructField("phonetype", DataTypes.StringType, false)
+    fields = fields :+ DataTypes.createStructField("serialname", DataTypes.StringType, false)
     fields = fields :+ DataTypes.createStructField("salary", DataTypes.IntegerType, false)
-    val schema = StructType(fields)
-    val data = cc.sparkContext.parallelize(1 to 2000000).map { x =>
+    var schema = StructType(fields)
+    var sdf = new SimpleDateFormat("yyyy-MM-dd")
+    // create table data
+    var data = cc.sparkContext.parallelize(1 to 10).map { x =>
+      val day = x % 20 + 1
+      var dateStr = ""
+      if (day >= 10) {
+        dateStr = "2017-07-" + day
+      } else {
+        dateStr = "2017-07-0" + day
+      }
+      val dt = new java.sql.Date(sdf.parse(dateStr).getTime);
       var row = Seq[Any]()
       row = row :+ x
-      row = row :+ "name" + (1000000 + x)
-      row = row :+ "2017/07/" + (x % 20 + 1)
+      row = row :+ dt
       row = row :+ "china"
-      row = row :+ 2 * x
+      row = row :+ "bbb" + x
+      row = row :+ "phone" + 100 * x
+      row = row :+ "ASD" + (1000 * x - x)
+      row = row :+ (25000 + x)
       Row.fromSeq(row)
     }
-
-    val df = cc.createDataFrame(data, schema)
-    df.write.mode(SaveMode.Overwrite).parquet(PerfTest.savePath("temp"))
+    var df = cc.createDataFrame(data, schema)
     df.write
       .format("carbondata")
-      .option("tableName", "big_table")
+      .option("tableName", "t5")
       .option("tempCSV", "true")
       .option("compress", "true")
       .mode(SaveMode.Overwrite)
       .save()
-
-    // loop update and delete in big_table
-    var loopCnt = 5
-    for (index <- 1 to loopCnt) {
-      // Update country with simple SET
-      var name = "name" + (1200000 + index)
-      cc.sql(s"""
-           UPDATE big_table SET (country) = ('india') WHERE name = '$name'
-           """).show()
-      // Query data after the above update
-      cc.sql(s"""
-           SELECT * FROM big_table WHERE name = '$name'
+    // Query data again after the above data insert
+    cc.sql("""
+           SELECT * FROM t5 ORDER BY ID
            """).show()
 
-      // Update date with simple SET
-      name = "name" + (1200000 + loopCnt + index)
-      cc.sql(s"""
-           UPDATE big_table SET (date) = ('2018/08/08') WHERE name = '$name'
-           """).show()
-      // Query data after the above update
-      cc.sql(s"""
-           SELECT * FROM big_table WHERE name = '$name'
+    // 1.Update data with simple SET
+    cc.sql("""
+           SELECT * FROM t3 ORDER BY ID
            """).show()
 
-      // Update salary with simple SET
-      name = "name" + (1200000 + loopCnt * 2 + index)
-      cc.sql(s"""
-           UPDATE big_table SET (salary) = (9999999) WHERE name = '$name'
-           """).show()
-      // Query data after the above update
-      cc.sql(s"""
-           SELECT * FROM big_table WHERE name = '$name'
-           """).show()
-
-      // Update data with subquery result SET
-      var id = loopCnt + index
-      cc.sql(s"""
-         UPDATE big_table
-         SET (big_table.country, big_table.name) = (SELECT u.country,
-          u.name FROM update_table u WHERE u.id = $index)
-         WHERE big_table.id < $id""").show()
-      // Query data after the above update
-      cc.sql(s"""
-           SELECT * FROM big_table where big_table.id < $id
-           """).show()
-
-      // Update data with join query result SET
-      id = 2000000 - index * 10
-      val id1 = loopCnt * 3 + index
-      val id2 = loopCnt * 4 + index
-      cc.sql(s"""
-         UPDATE big_table
-         SET (big_table.country, big_table.salary) =
-         (SELECT u.country, f.salary FROM update_table u FULL JOIN update_table f
-         WHERE u.id = $id1  and f.id=$id2) WHERE big_table.id > $id""").show()
-      // Query data after the above update
-      cc.sql(s"""
-           SELECT * FROM big_table where big_table.id < $id
-           """).show()
-
-      // delete by name
-      name = "name" + (1200000 + loopCnt * 3 + index)
-      cc.sql(s"""
-           DELETE FROM big_table WHERE name = '$name'
-           """).show()
-      // Query data after the above delete
-      cc.sql(s"""
-           SELECT * FROM big_table WHERE name = '$name'
-           """).show()
-
-      // delete by salary
-      var salary = 2000000*2 - index * 4
-      cc.sql(s"""
-           DELETE FROM big_table WHERE salary > $salary and salary < 9999999
-           """).show()
-      cc.sql(s"""
-           SELECT * FROM big_table WHERE salary > $salary and salary < 9999999
-           """).show()
-    }
-
+    // Update data where salary < 15003
+    val dateStr = "2018-08-08"
     cc.sql(s"""
-           SELECT count(*) FROM big_table
+           UPDATE t3 SET (date) = ($dateStr) WHERE t3.salary < 15003
+           """).show()
+    cc.sql("""
+           UPDATE t3 SET (t3.country) = ('india') WHERE t3.salary < 15003
+           """).show()
+    cc.sql("""
+           UPDATE t3 SET (t3.salary) = (t3.salary + 9) WHERE t3.name = 'aaa1'
+           """).show()
+
+    // Query data again after the above update
+    cc.sql("""
+           SELECT * FROM t3 ORDER BY ID
+           """).show()
+
+    // 2.Update data with subquery result SET
+    cc.sql("""
+         UPDATE t3
+         SET (t3.country, t3.name) = (SELECT u.country, u.name FROM t5 u WHERE u.id = 5)
+         WHERE t3.id < 5""").show()
+    cc.sql("""
+         UPDATE t3
+         SET (t3.date, t3.serialname, t3.salary) =
+         (SELECT '2099-09-09', u.serialname, '9999' FROM t5 u WHERE u.id = 5)
+         WHERE t3.id < 5""").show()
+
+    // Query data again after the above update
+    cc.sql("""
+           SELECT * FROM t3 ORDER BY ID
+           """).show()
+
+    // 3.Update data with join query result SET
+    cc.sql("""
+         UPDATE t3
+         SET (t3.country, t3.salary) =
+         (SELECT u.country, f.salary FROM t5 u FULL JOIN t5 f
+         WHERE u.id = 8 and f.id=6) WHERE t3.id >6""").show()
+
+    // Query data again after the above update
+    cc.sql("""
+           SELECT * FROM t3 ORDER BY ID
+           """).show()
+
+    // 4.Delete data where salary > 15005
+    cc.sql("""
+           DELETE FROM t3 WHERE salary > 15005
+           """).show()
+
+    // Query data again after delete data
+    cc.sql("""
+           SELECT * FROM t3 ORDER BY ID
+           """).show()
+
+    // 5.Delete data WHERE id in (1, 2, $key)
+    var key = 3
+    cc.sql(s"""
+           DELETE FROM t3 WHERE id in (1, 2, $key)
+           """).show()
+
+    // Query data again after delete data
+    cc.sql("""
+           SELECT * FROM t3 ORDER BY ID
            """).show()
 
     // Drop table
-    cc.sql("DROP TABLE IF EXISTS update_table")
-    cc.sql("DROP TABLE IF EXISTS big_table")
+    cc.sql("DROP TABLE IF EXISTS t3")
+    cc.sql("DROP TABLE IF EXISTS t5")
   }
+
 }
