@@ -35,6 +35,7 @@
   * String Types
     * STRING
     * CHAR
+    * VARCHAR
 
   * Complex Types
     * arrays: ARRAY``<data_type>``
