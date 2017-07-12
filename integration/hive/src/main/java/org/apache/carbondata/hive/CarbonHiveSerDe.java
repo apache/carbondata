@@ -79,11 +79,9 @@ class CarbonHiveSerDe extends AbstractSerDe {
 
     final TypeInfo rowTypeInfo;
     final List<String> columnNames;
-    final List<String> reqColNames;
     final List<TypeInfo> columnTypes;
     // Get column names and sort order
     assert configuration != null;
-    final String colIds = configuration.get("hive.io.file.readcolumn.ids");
 
     final String columnNameProperty = tbl.getProperty(serdeConstants.LIST_COLUMNS);
     final String columnTypeProperty = tbl.getProperty(serdeConstants.LIST_COLUMN_TYPES);
@@ -98,29 +96,17 @@ class CarbonHiveSerDe extends AbstractSerDe {
     } else {
       columnTypes = TypeInfoUtils.getTypeInfosFromTypeString(columnTypeProperty);
     }
-    if (colIds != null && !colIds.equals("")) {
-      reqColNames = new ArrayList<String>();
 
-      String[] arraySelectedColId = colIds.split(",");
-      List<TypeInfo> reqColTypes = new ArrayList<TypeInfo>();
-      for (String anArrayColId : arraySelectedColId) {
-        reqColNames.add(columnNames.get(Integer.parseInt(anArrayColId)));
-        reqColTypes.add(columnTypes.get(Integer.parseInt(anArrayColId)));
-      }
-      // Create row related objects
-      rowTypeInfo = TypeInfoFactory.getStructTypeInfo(reqColNames, reqColTypes);
-      this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
-    }
-    else {
-      // Create row related objects
-      rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
-      this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
 
-      // Stats part
-      serializedSize = 0;
-      deserializedSize = 0;
-      status = LAST_OPERATION.UNKNOWN;
-    }
+
+    // Create row related objects
+    rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
+    this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
+
+    // Stats part
+    serializedSize = 0;
+    deserializedSize = 0;
+    status = LAST_OPERATION.UNKNOWN;
   }
 
   @Override public Class<? extends Writable> getSerializedClass() {

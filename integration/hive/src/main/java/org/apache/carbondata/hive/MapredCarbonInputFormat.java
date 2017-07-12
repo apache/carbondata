@@ -17,12 +17,12 @@
 package org.apache.carbondata.hive;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
@@ -31,8 +31,11 @@ import org.apache.carbondata.hadoop.CarbonInputFormat;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
+import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
+import org.apache.carbondata.hadoop.util.SchemaReader;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.InvalidPathException;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;
 import org.apache.hadoop.io.ArrayWritable;
@@ -42,9 +45,11 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.util.StringUtils;
 
 public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     implements InputFormat<Void, ArrayWritable>, CombineHiveInputFormat.AvoidSplitCombination {
+  private static final String CARBON_TABLE = "mapreduce.input.carboninputformat.table";
 
   @Override public InputSplit[] getSplits(JobConf jobConf, int numSplits) throws IOException {
     org.apache.hadoop.mapreduce.JobContext jobContext = Job.getInstance(jobConf);
@@ -63,47 +68,64 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
   @Override
   public RecordReader<Void, ArrayWritable> getRecordReader(InputSplit inputSplit, JobConf jobConf,
       Reporter reporter) throws IOException {
-    QueryModel queryModel = getQueryModel(jobConf);
-    CarbonReadSupport<ArrayWritable> readSupport = getReadSupportClass(jobConf);
+    String path = null;
+    if (inputSplit instanceof CarbonHiveInputSplit) {
+      path = ((CarbonHiveInputSplit) inputSplit).getPath().toString();
+    }
+    QueryModel queryModel = getQueryModel(jobConf, path);
+    CarbonReadSupport<ArrayWritable> readSupport = new CarbonDictionaryDecodeReadSupport<>();
     return new CarbonHiveRecordReader(queryModel, readSupport, inputSplit, jobConf);
   }
 
-  private QueryModel getQueryModel(Configuration configuration) throws IOException {
-    CarbonTable carbonTable = getCarbonTable(configuration);
+  /**
+   * this method will read the schema from the physical file and populate into CARBON_TABLE
+   *
+   * @param configuration
+   * @throws IOException
+   */
+  private static void populateCarbonTable(Configuration configuration, String paths)
+      throws IOException {
+    String dirs = configuration.get(INPUT_DIR, "");
+    String[] inputPaths = StringUtils.split(dirs);
+    String validInputPath = null;
+    if (inputPaths.length == 0) {
+      throw new InvalidPathException("No input paths specified in job");
+    } else {
+      if (paths != null) {
+        for (String inputPath : inputPaths) {
+          if (paths.startsWith(inputPath)) {
+            validInputPath = inputPath;
+            break;
+          }
+        }
+      }
+    }
+    AbsoluteTableIdentifier absoluteTableIdentifier =
+        AbsoluteTableIdentifier.fromTablePath(validInputPath);
+    // read the schema file to get the absoluteTableIdentifier having the correct table id
+    // persisted in the schema
+    CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
+    setCarbonTable(configuration, carbonTable);
+  }
+
+  private static CarbonTable getCarbonTable(Configuration configuration, String path)
+      throws IOException {
+    populateCarbonTable(configuration, path);
+    // read it from schema file in the store
+    String carbonTableStr = configuration.get(CARBON_TABLE);
+    return (CarbonTable) ObjectSerializationUtil.convertStringToObject(carbonTableStr);
+  }
+
+  private QueryModel getQueryModel(Configuration configuration, String path) throws IOException {
+    CarbonTable carbonTable = getCarbonTable(configuration, path);
     // getting the table absoluteTableIdentifier from the carbonTable
     // to avoid unnecessary deserialization
 
     StringBuilder colNames = new StringBuilder();
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
 
-    // query plan includes projection column
-    String projection = getColumnProjection(configuration);
-    if (projection == null) {
-      projection = configuration.get("hive.io.file.readcolumn.names");
-    }
-    if (projection.equals("")) {
-      List<CarbonDimension> carbonDimensionList = carbonTable.getAllDimensions();
-      List<CarbonMeasure> carbonMeasureList = carbonTable.getAllMeasures();
-
-      for (CarbonDimension aCarbonDimensionList : carbonDimensionList) {
-        colNames = new StringBuilder((colNames + (aCarbonDimensionList.getColName())) + ",");
-      }
-      if (carbonMeasureList.size() < 1) {
-        colNames = new StringBuilder(colNames.substring(0, colNames.lastIndexOf(",")));
-      }
-      for (int index = 0; index < carbonMeasureList.size(); index++) {
-        if (!carbonMeasureList.get(index).getColName().equals("default_dummy_measure")) {
-          if (index == carbonMeasureList.size() - 1) {
-            colNames.append(carbonMeasureList.get(index).getColName());
-          } else {
-            colNames =
-                new StringBuilder((colNames + (carbonMeasureList.get(index).getColName())) + ",");
-          }
-        }
-      }
-      projection = colNames.toString().trim();
-      configuration.set("hive.io.file.readcolumn.names", colNames.toString());
-    }
+    String projection = getProjection(configuration, carbonTable,
+        identifier.getCarbonTableIdentifier().getTableName());
     CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(carbonTable, projection);
     QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable);
     // set the filter to the query model in order to filter blocklet before scan
@@ -113,6 +135,45 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     queryModel.setFilterExpressionResolverTree(filterIntf);
 
     return queryModel;
+  }
+
+  /**
+   * Return the Projection for the CarbonQuery.
+   *
+   * @param configuration
+   * @param carbonTable
+   * @param tableName
+   * @return
+   */
+  private String getProjection(Configuration configuration, CarbonTable carbonTable,
+      String tableName) {
+    // query plan includes projection column
+    String projection = getColumnProjection(configuration);
+    if (projection == null) {
+      projection = configuration.get("hive.io.file.readcolumn.names");
+    }
+    List<CarbonColumn> carbonColumns = carbonTable.getCreateOrderColumn(tableName);
+    List<String> carbonColumnNames = new ArrayList<>();
+    StringBuilder allColumns = new StringBuilder();
+    StringBuilder projectionColumns = new StringBuilder();
+    for (CarbonColumn column : carbonColumns) {
+      carbonColumnNames.add(column.getColName());
+      allColumns.append(column.getColName() + ",");
+    }
+
+    if (!projection.equals("")) {
+      String[] columnNames = projection.split(",");
+      //verify that the columns parsed by Hive exist in the table
+      for (String col : columnNames) {
+        //show columns command will return these data
+        if (carbonColumnNames.contains(col)) {
+          projectionColumns.append(col + ",");
+        }
+      }
+      return projectionColumns.substring(0, projectionColumns.lastIndexOf(","));
+    } else {
+      return allColumns.substring(0, allColumns.lastIndexOf(","));
+    }
   }
 
   @Override public boolean shouldSkipCombine(Path path, Configuration conf) throws IOException {

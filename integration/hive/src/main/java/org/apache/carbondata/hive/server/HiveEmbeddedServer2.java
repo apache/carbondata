@@ -130,6 +130,7 @@ public class HiveEmbeddedServer2 {
     conf.set("hive.added.files.path", "");
     conf.set("hive.added.archives.path", "");
     conf.set("fs.default.name", "file:///");
+    conf.set(HiveConf.ConfVars.SUBMITLOCALTASKVIACHILD.varname, "false");
 
     // clear mapred.job.tracker - Hadoop defaults to 'local' if not defined. Hive however expects
     // this to be set to 'local' - if it's not, it does a remote execution (i.e. no child JVM)
