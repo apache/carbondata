@@ -27,6 +27,7 @@ import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
+import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
@@ -97,6 +98,9 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
       }
     } catch (Exception e) {
       LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterBatchProcessorStepImpl");
+      if (e.getCause() instanceof BadRecordFoundException) {
+        throw new BadRecordFoundException(e.getCause().getMessage());
+      }
       throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage());
     }
     return null;

@@ -57,9 +57,8 @@ import org.apache.carbondata.processing.csvload.{BlockDetails, CSVInputFormat, S
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException
+import org.apache.carbondata.processing.newflow.exception.{BadRecordFoundException, CarbonDataLoadingException, NoRetryException}
 import org.apache.carbondata.processing.newflow.DataLoadProcessBuilder
-import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.newflow.sort.SortScopeOptions
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark._
@@ -624,7 +623,7 @@ object CarbonDataRDDFactory {
                 carbonLoadModel,
                 loadMetadataDetails)
             } catch {
-              case e: BadRecordFoundException =>
+              case e: NoRetryException =>
                 loadMetadataDetails
                   .setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
                 executionErrors.failureCauses = FailureCauses.BAD_RECORDS
