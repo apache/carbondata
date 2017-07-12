@@ -100,7 +100,7 @@ object DataUpdateDeleteExample {
     // Update data where salary < 15003
     val dateStr = "2018-08-08"
     spark.sql(s"""
-           UPDATE t3 SET (date) = ($dateStr) WHERE t3.salary < 15003
+           UPDATE t3 SET (date) = ('$dateStr') WHERE t3.salary < 15003
            """).show()
     spark.sql("""
            UPDATE t3 SET (t3.country) = ('india') WHERE t3.salary < 15003
