@@ -75,7 +75,7 @@ object Checker {
  * Interface for command that modifies schema
  */
 trait SchemaProcessCommand {
-  def processSchema(sparkSession: SparkSession): Unit
+  def processSchema(sparkSession: SparkSession): Seq[Row]
 }
 
 /**
@@ -96,10 +96,9 @@ private[sql] case class ShowCarbonPartitionsCommand(
   override val output = CommonUtil.partitionInfoOutput
   override def run(sparkSession: SparkSession): Seq[Row] = {
     processSchema(sparkSession)
-    Seq.empty
   }
 
-  override def processSchema(sparkSession: SparkSession): Unit = {
+  override def processSchema(sparkSession: SparkSession): Seq[Row] = {
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
         .lookupRelation(tableIdentifier)(sparkSession).
         asInstanceOf[CarbonRelation]
@@ -189,7 +188,6 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     processSchema(sparkSession)
-    Seq.empty
   }
 
   def setV(ref: Any, name: String, value: Any): Unit = {
@@ -197,7 +195,7 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
       .set(ref, value.asInstanceOf[AnyRef])
   }
 
-  override def processSchema(sparkSession: SparkSession): Unit = {
+  override def processSchema(sparkSession: SparkSession): Seq[Row] = {
     CarbonEnv.getInstance(sparkSession).carbonMetastore.checkSchemasModifiedTimeAndReloadTables()
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     cm.databaseName = getDB.getDatabaseName(cm.databaseNameOp, sparkSession)
@@ -251,6 +249,7 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
 
       LOGGER.audit(s"Table created with Database name [$dbName] and Table name [$tbName]")
     }
+    Seq.empty
   }
 }
 
@@ -876,7 +875,7 @@ case class CarbonDropTableCommand(ifExistsSet: Boolean,
     processData(sparkSession)
   }
 
-  override def processSchema(sparkSession: SparkSession): Unit = {
+  override def processSchema(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = getDB.getDatabaseName(databaseNameOp, sparkSession)
     val identifier = TableIdentifier(tableName, Option(dbName))
@@ -905,6 +904,7 @@ case class CarbonDropTableCommand(ifExistsSet: Boolean,
         }
       }
     }
+    Seq.empty
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
@@ -931,7 +931,6 @@ private[sql] case class DescribeCommandFormatted(
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     processSchema(sparkSession)
-    Seq.empty
   }
 
   private def getColumnGroups(dimensions: List[CarbonDimension]): Seq[(String, String, String)] = {
@@ -951,7 +950,7 @@ private[sql] case class DescribeCommandFormatted(
     results
   }
 
-  override def processSchema(sparkSession: SparkSession): Unit = {
+  override def processSchema(sparkSession: SparkSession): Seq[Row] = {
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
         .lookupRelation(tblIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
     val mapper = new ObjectMapper()
