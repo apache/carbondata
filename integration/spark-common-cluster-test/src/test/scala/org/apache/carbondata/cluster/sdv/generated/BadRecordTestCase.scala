@@ -113,7 +113,7 @@ class BadRecordTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists hivetable7""").collect
      sql(s"""CREATE TABLE badrecordtest7 (ID int,CUST_ID int,cust_name string) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""CREATE TABLE hivetable7 (ID int,CUST_ID int,cust_name string) row format delimited fields terminated by ','""").collect
-   sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/badrecord/test2.csv' into table hivetable7""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/test2.csv' into table hivetable7""").collect
    sql(s"""insert into table badrecordtest7 select * from hivetable7""").collect
     checkAnswer(s"""select count(*) from badrecordtest7""",
       Seq(Row(3)), "BadRecordTestCase_AR-Develop-Feature-BadRecords-001_PTS008_TC001")
@@ -128,7 +128,7 @@ class BadRecordTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists hivetable9""").collect
      sql(s"""CREATE TABLE badrecordTest9 (ID int,CUST_ID int,cust_name string) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""CREATE TABLE hivetable9 (ID int,CUST_ID int,cust_name string) row format delimited fields terminated by ','""").collect
-   sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/badrecord/test2.csv' into table hivetable9""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/test2.csv' into table hivetable9""").collect
    sql(s"""insert into table badrecordTest9 select * from hivetable9""").collect
     checkAnswer(s"""select count(*) from badrecordTest9""",
       Seq(Row(3)), "BadRecordTestCase_AR-Develop-Feature-BadRecords-001_PTS015_TC001")

@@ -143,9 +143,9 @@ object QueryTest {
         Row.fromSeq(s.toSeq.map {
           case d: java.math.BigDecimal => BigDecimal(d)
           case b: Array[Byte] => b.toSeq
-          case d:Double =>
-            val bd = new java.math.BigDecimal(d).setScale(8, RoundingMode.HALF_EVEN)
-            bd.doubleValue()
+//          case d:Double =>
+//            val bd = new java.math.BigDecimal(d).setScale(8, RoundingMode.HALF_EVEN)
+//            bd.doubleValue()
           case o => o
         })
       }

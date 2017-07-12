@@ -69,13 +69,15 @@ object ResourceRegisterAndCopier {
   def copyLocalFile(dst: String,
       src: String): Unit = {
     println(s"Copying file : $src to  $dst")
-    val dataOutputStream = FileFactory.getDataOutputStream(dst,
+    if (FileFactory.isFileExist(src, FileFactory.getFileType(src))) {
+      val dataOutputStream = FileFactory.getDataOutputStream(dst,
         FileFactory.getFileType(dst))
-    val dataInputStream = FileFactory.getDataInputStream(src,
-      FileFactory.getFileType(src))
-    IOUtils.copyBytes(dataInputStream, dataOutputStream, 8*1024)
-    CarbonUtil.closeStream(dataInputStream)
-    CarbonUtil.closeStream(dataOutputStream)
+      val dataInputStream = FileFactory.getDataInputStream(src,
+        FileFactory.getFileType(src))
+      IOUtils.copyBytes(dataInputStream, dataOutputStream, 8 * 1024)
+      CarbonUtil.closeStream(dataInputStream)
+      CarbonUtil.closeStream(dataOutputStream)
+    }
   }
 
   def downloadFile(relativeLink: String, fileToDownLoad: String, targetFile: String): Unit = {

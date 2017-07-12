@@ -64,7 +64,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='IGNORE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
-      Seq(Row(2007)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_003")
+      Seq(Row(2013)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_003")
      sql(s"""drop table uniqdata""").collect
   }
 
@@ -75,7 +75,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s""" CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='IGNORE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
-      Seq(Row(2007)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_004")
+      Seq(Row(2013)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_004")
      sql(s"""drop table if exists uniqdata""").collect
   }
 
@@ -97,7 +97,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s""" CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
-      Seq(Row(2007)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_006")
+      Seq(Row(2013)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_006")
      sql(s"""drop table uniqdata""").collect
   }
 
@@ -107,7 +107,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""CREATE TABLE uniq_exclude (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='CUST_NAME,ACTIVE_EMUI_VERSION')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table uniq_exclude OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select count(*) from uniq_exclude""",
-      Seq(Row(2007)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_007")
+      Seq(Row(2013)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_007")
      sql(s"""drop table uniq_exclude""").collect
   }
 
@@ -716,6 +716,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Show loads--->Action=Fail--->Logger=True
   test("DataSight_Carbon_BadRecord_Dataload_024", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
     intercept[Exception] {
       sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FAIL','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -730,9 +731,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   test("DataSight_Carbon_BadRecord_Dataload_025", Include) {
     dropTable("uniqdata")
      sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
-    intercept[Exception] {
-      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FAIL','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-    }
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FAIL','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
       Seq(Row(0)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_025")
      sql(s"""drop table uniqdata""").collect
@@ -1133,7 +1132,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   //Test Double data type max value support by Carbon
   test("FN_Carbon_DecimalDataType_TC_01_126", Include) {
      sql(s"""CREATE TABLE DL_MaxDoubleValue (val double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='val')""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/DoubleVal.csv' INTO TABLE DL_MaxDoubleValue OPTIONS('DELIMITER'=',','QUOTECHAR'='"','FILEHEADER'='val')""").collect
+   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/DoubleVal.csv' INTO TABLE DL_MaxDoubleValue OPTIONS('DELIMITER'=',','QUOTECHAR'='"','FILEHEADER'='val')""").collect
     checkAnswer(s"""select count(*) from DL_MaxDoubleValue""",
       Seq(Row(4)), "DataLoadingTestCase_FN_Carbon_DecimalDataType_TC_01_126")
      sql(s"""drop table DL_MaxDoubleValue""").collect
@@ -1406,7 +1405,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""CREATE TABLE DL_without_QUOTECHAR (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/2000_UniqData.csv' into table DL_without_QUOTECHAR OPTIONS('DELIMITER'=',' , 'BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select count(*) from DL_without_QUOTECHAR""",
-      Seq(Row(2007)), "DataLoadingTestCase_PTS-TOR_AR-DataSight_Carbon-Maintenance_Incremental_Data_Load_001_001-001-TC-11_840")
+      Seq(Row(2013)), "DataLoadingTestCase_PTS-TOR_AR-DataSight_Carbon-Maintenance_Incremental_Data_Load_001_001-001-TC-11_840")
      sql(s"""drop table DL_without_QUOTECHAR""").collect
   }
 
@@ -1415,14 +1414,16 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
   test("DataSight_Carbon_Insert_Func_023_01", Include) {
     dropTable("Norecords_Dataload_C")
     dropTable("Norecords_Dataload_H")
-     sql(s"""create table Norecords_Dataload_H (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Norecords_Dataload_H OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='Item_code, Qty')""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Norecords_Dataload_H OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='Item_code, Qty')""").collect
-   sql(s"""create table Norecords_Dataload_C (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
-   sql(s"""DELETE SEGMENT 0,1 FROM TABLE Norecords_Dataload_H""").collect
-   sql(s"""insert into Norecords_Dataload_C select * from Norecords_Dataload_H""").collect
-    checkAnswer(s"""select count(*) from Norecords_Dataload_C""",
-      Seq(Row(0)), "DataLoadingTestCase_DataSight_Carbon_Insert_Func_023_01")
+    intercept[Exception] {
+      sql(s"""create table Norecords_Dataload_H (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
+      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Norecords_Dataload_H OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='Item_code,Qty')""").collect
+      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Norecords_Dataload_H OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='Item_code,Qty')""").collect
+      sql(s"""create table Norecords_Dataload_C (Item_code STRING, Qty int)stored by 'org.apache.carbondata.format'""").collect
+      sql(s"""DELETE SEGMENT 0,1 FROM TABLE Norecords_Dataload_H""").collect
+      sql(s"""insert into Norecords_Dataload_C select * from Norecords_Dataload_H""").collect
+      checkAnswer(s"""select count(*) from Norecords_Dataload_C""",
+        Seq(Row(0)), "DataLoadingTestCase_DataSight_Carbon_Insert_Func_023_01")
+    }
      dropTable("Norecords_Dataload_C")
      dropTable("Norecords_Dataload_H")
   }
@@ -1449,7 +1450,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Check insert into Carbon table with select from Hive where one of the column is having Null values
-  test("DataSight_Carbon_Insert_Func_080", Include) {
+  ignore("DataSight_Carbon_Insert_Func_080", Include) {
      sql(s"""drop database if exists insertInto CASCADE""").collect
    sql(s"""create database insertInto""").collect
    sql(s"""create table insertInto.Norecords_Dataload_H (Item_code STRING, Qty int)row format delimited fields terminated by ',' LINES TERMINATED BY '\n'""").collect 
