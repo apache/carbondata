@@ -44,7 +44,7 @@ object DataUpdateDeleteExample {
     val spark = SparkSession
       .builder()
       .master("local")
-      .appName("CarbonSessionExample")
+      .appName("DataUpdateDeleteExample")
       .config("spark.sql.warehouse.dir", warehouse)
       .config("spark.driver.host", "localhost")
       .config("spark.sql.crossJoin.enabled", "true")
