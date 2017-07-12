@@ -100,6 +100,16 @@ object TestQueryExecutor {
     s"$integrationPath/spark-common/target/warehouse"
   }
 
+  val hiveresultpath = if (hdfsUrl.startsWith("hdfs://")) {
+    val p = s"$hdfsUrl/hiveresultpath"
+    FileFactory.mkdirs(p, FileFactory.getFileType(p))
+    p
+  } else {
+    val p =s"$integrationPath/spark-common/target/hiveresultpath"
+    new File(p).mkdirs()
+    p
+  }
+
   println(s"""Store path taken $storeLocation""")
   println(s"""Warehouse path taken $warehouse""")
   println(s"""Resource path taken $resourcesPath""")

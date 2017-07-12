@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.common.util
 
+import java.io.{FileInputStream, ObjectInputStream, ObjectOutputStream}
 import java.math.RoundingMode
 import java.util.{Locale, TimeZone}
 
@@ -29,6 +30,8 @@ import org.apache.spark.sql.execution.command.LoadDataCommand
 import org.apache.spark.sql.test.{ResourceRegisterAndCopier, TestQueryExecutor}
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 import org.scalatest.Suite
+
+import org.apache.carbondata.core.datastore.impl.FileFactory
 
 class QueryTest extends PlanTest with Suite {
 
@@ -81,7 +84,19 @@ class QueryTest extends PlanTest with Suite {
   }
 
   protected def checkAnswer(carbon: String, hive: String, uniqueIdentifier:String): Unit = {
-    checkAnswer(sql(carbon), sql(hive))
+    val path = TestQueryExecutor.hiveresultpath + "/"+uniqueIdentifier
+    if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
+      val objinp = new ObjectInputStream(FileFactory.getDataInputStream(path, FileFactory.getFileType(path)))
+      val rows = objinp.readObject().asInstanceOf[Array[Row]]
+      objinp.close()
+      checkAnswer(sql(carbon), rows)
+    } else {
+      val rows = sql(hive).collect()
+      val obj = new ObjectOutputStream(FileFactory.getDataOutputStream(path, FileFactory.getFileType(path)))
+      obj.writeObject(rows)
+      obj.close()
+      checkAnswer(sql(carbon), rows)
+    }
   }
 
   protected def checkAnswer(carbon: String, expectedAnswer: Seq[Row], uniqueIdentifier:String): Unit = {
