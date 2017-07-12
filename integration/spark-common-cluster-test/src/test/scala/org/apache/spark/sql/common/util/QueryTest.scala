@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.common.util
 
+import java.math.RoundingMode
 import java.util.{Locale, TimeZone}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -142,6 +143,9 @@ object QueryTest {
         Row.fromSeq(s.toSeq.map {
           case d: java.math.BigDecimal => BigDecimal(d)
           case b: Array[Byte] => b.toSeq
+          case d:Double =>
+            val bd = new java.math.BigDecimal(d).setScale(8, RoundingMode.HALF_EVEN)
+            bd.doubleValue()
           case o => o
         })
       }
