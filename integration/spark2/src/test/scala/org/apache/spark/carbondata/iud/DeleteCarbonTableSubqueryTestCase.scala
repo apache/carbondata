@@ -17,13 +17,13 @@
 package org.apache.spark.carbondata.iud
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class DeleteCarbonTableSubqueryTestCase extends QueryTest with BeforeAndAfterAll {
+class DeleteCarbonTableSubqueryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("use default")
     sql("drop database  if exists iud_db_sub cascade")

@@ -19,12 +19,11 @@ package org.apache.carbondata.spark.testsuite.dataload
 
 import java.io.{BufferedWriter, File, FileWriter, FilenameFilter}
 
-import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.test.util.QueryTest
 
 class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
   var filePath: String = _

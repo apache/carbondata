@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.common.util
+package org.apache.spark.sql.test.util
 
-import org.apache.carbondata.common.logging.LogServiceFactory
 import org.scalatest.{FunSuite, Outcome}
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 
 private[spark] abstract class CarbonFunSuite extends FunSuite {
 
@@ -29,7 +29,7 @@ private[spark] abstract class CarbonFunSuite extends FunSuite {
    * Log the suite name and the test name before and after each test.
    *
    * Subclasses should never override this method. If they wish to run
-   * custom code before and after each test, they should should mix in
+   * custom code before and after each test, they should mix in
    * the {{org.scalatest.BeforeAndAfter}} trait instead.
    */
   final protected override def withFixture(test: NoArgTest): Outcome = {

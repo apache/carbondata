@@ -18,12 +18,11 @@
 package org.apache.carbondata.spark.testsuite.dataload
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.spark.sql.test.util.QueryTest
 
 /**
   * Test Class for table block size

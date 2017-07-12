@@ -16,9 +16,8 @@
  */
 package org.apache.carbondata.spark.testsuite.datetype
 
-import org.apache.spark.sql.common.util.QueryTest
-
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.spark.sql.test.util.QueryTest
 
 
 class DateTypeTest extends QueryTest {

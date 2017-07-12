@@ -18,7 +18,7 @@
 package org.apache.spark.carbondata.vectorreader
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.execution.{BatchedDataSourceScanExec, RowDataSourceScanExec}
 import org.scalatest.BeforeAndAfterAll
@@ -26,7 +26,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
+class VectorReaderTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
 

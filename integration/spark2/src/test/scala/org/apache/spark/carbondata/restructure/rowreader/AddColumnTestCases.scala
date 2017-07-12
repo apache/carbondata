@@ -21,11 +21,11 @@ import java.io.{File, FileOutputStream, FileWriter}
 import java.math.{BigDecimal, RoundingMode}
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
-class AddColumnTestCases extends QueryTest with BeforeAndAfterAll {
+class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sqlContext.setConf("carbon.enable.vector.reader", "false")

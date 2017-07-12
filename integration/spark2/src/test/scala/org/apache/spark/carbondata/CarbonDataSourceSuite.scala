@@ -19,14 +19,14 @@ package org.apache.spark.carbondata
 
 import scala.collection.mutable
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.util.CarbonProperties
 
-class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
+class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     // Drop table
     sql("DROP TABLE IF EXISTS carbon_testtable")

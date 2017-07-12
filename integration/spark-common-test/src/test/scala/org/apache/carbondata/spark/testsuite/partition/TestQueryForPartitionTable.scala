@@ -17,12 +17,11 @@
 
 package org.apache.carbondata.spark.testsuite.partition
 
-import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.test.util.QueryTest
 
 class TestQueryForPartitionTable  extends QueryTest with BeforeAndAfterAll {
   override def beforeAll = {

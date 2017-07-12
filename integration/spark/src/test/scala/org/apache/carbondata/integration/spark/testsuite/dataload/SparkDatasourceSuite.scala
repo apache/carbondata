@@ -18,7 +18,7 @@
 package org.apache.carbondata.integration.spark.testsuite.dataload
 
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{DataFrame, Row, SQLContext, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 

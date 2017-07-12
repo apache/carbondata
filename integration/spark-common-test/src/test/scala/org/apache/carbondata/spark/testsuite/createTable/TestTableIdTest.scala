@@ -20,13 +20,12 @@ package org.apache.carbondata.spark.testsuite.createTable
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.sql.common.util.QueryTest
 import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.hadoop.CarbonInputFormat
+import org.apache.spark.sql.test.util.QueryTest
 
 /**
  * test functionality related the case change for database name

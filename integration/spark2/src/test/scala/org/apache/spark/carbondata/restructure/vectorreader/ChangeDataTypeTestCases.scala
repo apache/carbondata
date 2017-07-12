@@ -20,10 +20,10 @@ package org.apache.spark.carbondata.restructure.vectorreader
 import java.math.BigDecimal
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-class ChangeDataTypeTestCases extends QueryTest with BeforeAndAfterAll {
+class ChangeDataTypeTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sqlContext.setConf("carbon.enable.vector.reader", "true")

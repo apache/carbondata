@@ -21,14 +21,14 @@ import java.io.File
 import java.sql.Timestamp
 import java.util.Date
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.core.util.CarbonUtil
 
-class CarbonCommandSuite extends QueryTest with BeforeAndAfterAll {
+class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
     dropTable("csv_table")

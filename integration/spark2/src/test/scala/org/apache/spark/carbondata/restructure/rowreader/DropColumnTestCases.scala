@@ -20,12 +20,12 @@ package org.apache.spark.carbondata.restructure.rowreader
 import java.math.{BigDecimal, RoundingMode}
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.util.CarbonProperties
 
-class DropColumnTestCases extends QueryTest with BeforeAndAfterAll {
+class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sqlContext.setConf("carbon.enable.vector.reader", "false")

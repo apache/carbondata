@@ -19,8 +19,8 @@ package org.apache.carbondata.spark.testsuite.partition
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 class TestCompactionForPartitionTable extends QueryTest with BeforeAndAfterAll {

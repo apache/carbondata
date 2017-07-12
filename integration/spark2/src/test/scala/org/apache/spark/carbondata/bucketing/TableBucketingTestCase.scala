@@ -17,7 +17,7 @@
 
 package org.apache.spark.carbondata.bucketing
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.execution.exchange.ShuffleExchange
 import org.scalatest.BeforeAndAfterAll
@@ -28,7 +28,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
-class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
+class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   var threshold: Int = _
 

@@ -15,17 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.common.util
+package org.apache.spark.sql.test.util
 
 import java.util.{Locale, TimeZone}
 
-import org.apache.carbondata.common.logging.LogServiceFactory
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
+import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.test.TestQueryExecutor
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+
+import org.apache.carbondata.common.logging.LogServiceFactory
 
 class QueryTest extends PlanTest {
 
@@ -93,7 +94,7 @@ class QueryTest extends PlanTest {
 object QueryTest {
 
   def checkAnswer(df: DataFrame, expectedAnswer: java.util.List[Row]): String = {
-    checkAnswer(df, expectedAnswer.toSeq) match {
+    checkAnswer(df, expectedAnswer.asScala) match {
       case Some(errorMessage) => errorMessage
       case None => null
     }

@@ -20,11 +20,10 @@ package org.apache.carbondata.spark.testsuite.dataretention
 import java.util
 import java.util.concurrent.{Callable, Executors}
 
-import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.test.util.QueryTest
 
 /**
  * This class contains DataRetention concurrency test cases
