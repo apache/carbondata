@@ -74,8 +74,8 @@ object Checker {
 /**
  * Interface for command that modifies schema
  */
-trait SchemaUpdatableCommand {
-  def updateSchema(sparkSession: SparkSession): Unit
+trait SchemaProcessCommand {
+  def processSchema(sparkSession: SparkSession): Unit
 }
 
 /**
@@ -91,13 +91,18 @@ trait DataProcessCommand {
  * @param tableIdentifier
  */
 private[sql] case class ShowCarbonPartitionsCommand(
-    tableIdentifier: TableIdentifier) extends RunnableCommand {
-  val LOGGER = LogServiceFactory.getLogService(ShowCarbonPartitionsCommand.getClass.getName)
+    tableIdentifier: TableIdentifier) extends RunnableCommand with SchemaProcessCommand {
+
   override val output = CommonUtil.partitionInfoOutput
   override def run(sparkSession: SparkSession): Seq[Row] = {
+    processSchema(sparkSession)
+    Seq.empty
+  }
+
+  override def processSchema(sparkSession: SparkSession): Unit = {
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .lookupRelation(tableIdentifier)(sparkSession).
-      asInstanceOf[CarbonRelation]
+        .lookupRelation(tableIdentifier)(sparkSession).
+        asInstanceOf[CarbonRelation]
     val carbonTable = relation.tableMeta.carbonTable
     var tableName = carbonTable.getFactTableName
     var partitionInfo = carbonTable.getPartitionInfo(
@@ -108,6 +113,7 @@ private[sql] case class ShowCarbonPartitionsCommand(
     }
     var partitionType = partitionInfo.getPartitionType
     var columnName = partitionInfo.getColumnSchemaList.get(0).getColumnName
+    val LOGGER = LogServiceFactory.getLogService(ShowCarbonPartitionsCommand.getClass.getName)
     LOGGER.info("partition column name:" + columnName)
     CommonUtil.getPartitionInfo(columnName, partitionType, partitionInfo)
   }
@@ -118,17 +124,22 @@ private[sql] case class ShowCarbonPartitionsCommand(
  *
  * @param alterTableModel
  */
-case class AlterTableCompaction(alterTableModel: AlterTableModel) extends RunnableCommand {
+case class AlterTableCompaction(alterTableModel: AlterTableModel) extends RunnableCommand
+    with DataProcessCommand {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   def run(sparkSession: SparkSession): Seq[Row] = {
+    processData(sparkSession)
+  }
+
+  override def processData(sparkSession: SparkSession): Seq[Row] = {
     val tableName = alterTableModel.tableName.toLowerCase
     val databaseName = alterTableModel.dbName.getOrElse(sparkSession.catalog.currentDatabase)
     val relation =
       CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .lookupRelation(Option(databaseName), tableName)(sparkSession)
-        .asInstanceOf[CarbonRelation]
+          .lookupRelation(Option(databaseName), tableName)(sparkSession)
+          .asInstanceOf[CarbonRelation]
     if (relation == null) {
       sys.error(s"Table $databaseName.$tableName does not exist")
     }
@@ -149,18 +160,18 @@ case class AlterTableCompaction(alterTableModel: AlterTableModel) extends Runnab
     carbonLoadModel.setStorePath(relation.tableMeta.storePath)
 
     var storeLocation = CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
-        System.getProperty("java.io.tmpdir")
-      )
+        .getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
+          System.getProperty("java.io.tmpdir")
+        )
     storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
     try {
       CarbonDataRDDFactory
-        .alterTableForCompaction(sparkSession.sqlContext,
-          alterTableModel,
-          carbonLoadModel,
-          relation.tableMeta.storePath,
-          storeLocation
-        )
+          .alterTableForCompaction(sparkSession.sqlContext,
+            alterTableModel,
+            carbonLoadModel,
+            relation.tableMeta.storePath,
+            storeLocation
+          )
     } catch {
       case e: Exception =>
         if (null != e.getMessage) {
@@ -174,10 +185,10 @@ case class AlterTableCompaction(alterTableModel: AlterTableModel) extends Runnab
 }
 
 case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends RunnableCommand
-    with SchemaUpdatableCommand {
+    with SchemaProcessCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
-    updateSchema(sparkSession)
+    processSchema(sparkSession)
     Seq.empty
   }
 
@@ -186,7 +197,7 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
       .set(ref, value.asInstanceOf[AnyRef])
   }
 
-  override def updateSchema(sparkSession: SparkSession): Unit = {
+  override def processSchema(sparkSession: SparkSession): Unit = {
     CarbonEnv.getInstance(sparkSession).carbonMetastore.checkSchemasModifiedTimeAndReloadTables()
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     cm.databaseName = getDB.getDatabaseName(cm.databaseNameOp, sparkSession)
@@ -246,14 +257,17 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
 case class DeleteLoadsById(
     loadids: Seq[String],
     databaseNameOp: Option[String],
-    tableName: String) extends RunnableCommand {
+    tableName: String) extends RunnableCommand with DataProcessCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
+    processData(sparkSession)
+  }
 
+  override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
-      lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
-      tableMeta.carbonTable
+        lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
+        tableMeta.carbonTable
     CarbonStore.deleteLoadById(
       loadids,
       getDB.getDatabaseName(databaseNameOp, sparkSession),
@@ -261,22 +275,24 @@ case class DeleteLoadsById(
       carbonTable
     )
     Seq.empty
-
   }
-
 }
 
 case class DeleteLoadsByLoadDate(
     databaseNameOp: Option[String],
     tableName: String,
     dateField: String,
-    loadDate: String) extends RunnableCommand {
+    loadDate: String) extends RunnableCommand with DataProcessCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
+    processData(sparkSession)
+  }
+
+  override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
-      lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
-      tableMeta.carbonTable
+        lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
+        tableMeta.carbonTable
     CarbonStore.deleteLoadByDate(
       loadDate,
       getDB.getDatabaseName(databaseNameOp, sparkSession),
@@ -285,7 +301,6 @@ case class DeleteLoadsByLoadDate(
     )
     Seq.empty
   }
-
 }
 
 object LoadTable {
@@ -474,7 +489,6 @@ case class LoadTable(
       sys.error(s"Overwrite is not supported for carbon table with $dbName.$tableName")
     }
 
-    // TODO???
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
         .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
     if (relation == null) {
@@ -804,36 +818,19 @@ case class LoadTable(
   }
 }
 
-private[sql] case class DeleteLoadByDate(
-    databaseNameOp: Option[String],
-    tableName: String,
-    dateField: String,
-    loadDate: String) {
-
-  def run(sparkSession: SparkSession): Seq[Row] = {
-    Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
-      lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
-      tableMeta.carbonTable
-    CarbonStore.deleteLoadByDate(
-      loadDate,
-      getDB.getDatabaseName(databaseNameOp, sparkSession),
-      tableName,
-      carbonTable
-    )
-    Seq.empty
-  }
-}
-
 case class CleanFiles(
     databaseNameOp: Option[String],
-    tableName: String) extends RunnableCommand {
+    tableName: String) extends RunnableCommand with DataProcessCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
+    processData(sparkSession)
+  }
+
+  override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val relation = catalog
-      .lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation]
+        .lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation]
     val carbonTable = relation.tableMeta.carbonTable
     CarbonStore.cleanFiles(
       getDB.getDatabaseName(databaseNameOp, sparkSession),
@@ -849,13 +846,17 @@ case class ShowLoads(
     databaseNameOp: Option[String],
     tableName: String,
     limit: Option[String],
-    override val output: Seq[Attribute]) extends RunnableCommand {
+    override val output: Seq[Attribute]) extends RunnableCommand with DataProcessCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
+    processData(sparkSession)
+  }
+
+  override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
-      lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
-      tableMeta.carbonTable
+        lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
+        tableMeta.carbonTable
     CarbonStore.showSegments(
       getDB.getDatabaseName(databaseNameOp, sparkSession),
       tableName,
@@ -868,14 +869,14 @@ case class ShowLoads(
 case class CarbonDropTableCommand(ifExistsSet: Boolean,
     databaseNameOp: Option[String],
     tableName: String)
-  extends RunnableCommand with SchemaUpdatableCommand with DataProcessCommand {
+  extends RunnableCommand with SchemaProcessCommand with DataProcessCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
-    updateSchema(sparkSession)
+    processSchema(sparkSession)
     processData(sparkSession)
   }
 
-  override def updateSchema(sparkSession: SparkSession): Unit = {
+  override def processSchema(sparkSession: SparkSession): Unit = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = getDB.getDatabaseName(databaseNameOp, sparkSession)
     val identifier = TableIdentifier(tableName, Option(dbName))
@@ -926,11 +927,33 @@ private[sql] case class DescribeCommandFormatted(
     child: SparkPlan,
     override val output: Seq[Attribute],
     tblIdentifier: TableIdentifier)
-  extends RunnableCommand {
+  extends RunnableCommand with SchemaProcessCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
+    processSchema(sparkSession)
+    Seq.empty
+  }
+
+  private def getColumnGroups(dimensions: List[CarbonDimension]): Seq[(String, String, String)] = {
+    var results: Seq[(String, String, String)] =
+      Seq(("", "", ""), ("##Column Group Information", "", ""))
+    val groupedDimensions = dimensions.groupBy(x => x.columnGroupId()).filter {
+      case (groupId, _) => groupId != -1
+    }.toSeq.sortBy(_._1)
+    val groups = groupedDimensions.map(colGroups => {
+      colGroups._2.map(dim => dim.getColName).mkString(", ")
+    })
+    var index = 1
+    groups.foreach { x =>
+      results = results :+ (s"Column Group $index", x, "")
+      index = index + 1
+    }
+    results
+  }
+
+  override def processSchema(sparkSession: SparkSession): Unit = {
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .lookupRelation(tblIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
+        .lookupRelation(tblIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
     val mapper = new ObjectMapper()
     val colProps = StringBuilder.newBuilder
     val dims = relation.metaData.dims.map(x => x.toLowerCase)
@@ -941,8 +964,8 @@ private[sql] case class DescribeCommandFormatted(
           relation.tableMeta.carbonTableIdentifier.getTableName, fieldName)
         if (null != dimension.getColumnProperties && !dimension.getColumnProperties.isEmpty) {
           colProps.append(fieldName).append(".")
-            .append(mapper.writeValueAsString(dimension.getColumnProperties))
-            .append(",")
+              .append(mapper.writeValueAsString(dimension.getColumnProperties))
+              .append(",")
         }
         if (dimension.hasEncoding(Encoding.DICTIONARY) &&
             !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
@@ -969,7 +992,7 @@ private[sql] case class DescribeCommandFormatted(
     }
     results ++= Seq(("", "", ""), ("##Detailed Table Information", "", ""))
     results ++= Seq(("Database Name: ", relation.tableMeta.carbonTableIdentifier
-      .getDatabaseName, "")
+        .getDatabaseName, "")
     )
     results ++= Seq(("Table Name: ", relation.tableMeta.carbonTableIdentifier.getTableName, ""))
     results ++= Seq(("CARBON Store Path: ", relation.tableMeta.storePath, ""))
@@ -983,34 +1006,17 @@ private[sql] case class DescribeCommandFormatted(
     }
     results ++= Seq(("SORT_COLUMNS", relation.metaData.carbonTable.getSortColumns(
       relation.tableMeta.carbonTableIdentifier.getTableName).asScala
-      .map(column => column).mkString(","), ""))
+        .map(column => column).mkString(","), ""))
     val dimension = carbonTable
-      .getDimensionByTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
+        .getDimensionByTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
     results ++= getColumnGroups(dimension.asScala.toList)
     if (carbonTable.getPartitionInfo(carbonTable.getFactTableName) != null) {
       results ++=
-      Seq(("Partition Columns: ", carbonTable.getPartitionInfo(carbonTable.getFactTableName)
-        .getColumnSchemaList.asScala.map(_.getColumnName).mkString(","), ""))
+          Seq(("Partition Columns: ", carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+              .getColumnSchemaList.asScala.map(_.getColumnName).mkString(","), ""))
     }
     results.map { case (name, dataType, comment) =>
       Row(f"$name%-36s", f"$dataType%-80s", f"$comment%-72s")
     }
-  }
-
-  private def getColumnGroups(dimensions: List[CarbonDimension]): Seq[(String, String, String)] = {
-    var results: Seq[(String, String, String)] =
-      Seq(("", "", ""), ("##Column Group Information", "", ""))
-    val groupedDimensions = dimensions.groupBy(x => x.columnGroupId()).filter {
-      case (groupId, _) => groupId != -1
-    }.toSeq.sortBy(_._1)
-    val groups = groupedDimensions.map(colGroups => {
-      colGroups._2.map(dim => dim.getColName).mkString(", ")
-    })
-    var index = 1
-    groups.foreach { x =>
-      results = results :+ (s"Column Group $index", x, "")
-      index = index + 1
-    }
-    results
   }
 }
