@@ -18,12 +18,11 @@
 package org.apache.carbondata.integration.spark.testsuite.complexType
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.spark.sql.test.util.QueryTest
 
 /**
  * Test class of creating and loading for carbon table with double

@@ -17,11 +17,10 @@
 package org.apache.carbondata.spark.testsuite.measurenullvalue
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.test.util.QueryTest
 
 class NullMeasureValueTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
 

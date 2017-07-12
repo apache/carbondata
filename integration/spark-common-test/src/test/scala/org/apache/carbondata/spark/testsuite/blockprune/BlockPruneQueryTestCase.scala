@@ -19,10 +19,9 @@ package org.apache.carbondata.spark.testsuite.blockprune
 import java.io.DataOutputStream
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.spark.sql.test.util.QueryTest
 
 /**
   * This class contains test cases for block prune query

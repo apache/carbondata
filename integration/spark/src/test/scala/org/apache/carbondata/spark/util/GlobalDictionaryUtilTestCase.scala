@@ -18,7 +18,7 @@ package org.apache.carbondata.spark.util
 
 import java.io.File
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.scalatest.BeforeAndAfterAll
 

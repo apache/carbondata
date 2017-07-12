@@ -16,13 +16,13 @@
  */
 package org.apache.spark.carbondata.commands
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants
 import org.apache.carbondata.core.exception.InvalidConfigurationException
 
-class SetCommandTestCase extends QueryTest with BeforeAndAfterAll{
+class SetCommandTestCase extends Spark2QueryTest with BeforeAndAfterAll{
   override def beforeAll: Unit = {
     sql("set carbon=true")
   }

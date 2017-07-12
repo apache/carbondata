@@ -20,7 +20,7 @@ package org.apache.carbondata.spark.testsuite.badrecordloger
 import java.io.File
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.hive.HiveContext
 import org.scalatest.BeforeAndAfterAll
 
@@ -32,7 +32,7 @@ import org.apache.carbondata.core.util.CarbonProperties
  *
  *
  */
-class NumericDimensionBadRecordTest extends QueryTest with BeforeAndAfterAll {
+class NumericDimensionBadRecordTest extends Spark2QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
 
   override def beforeAll {

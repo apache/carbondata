@@ -18,8 +18,8 @@ package org.apache.carbondata.integration.spark.testsuite.primitiveTypes
 
 import java.util.Random
 
+import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{DataFrame, Row, SaveMode}
-import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.types._
 import org.scalatest.BeforeAndAfterAll
 

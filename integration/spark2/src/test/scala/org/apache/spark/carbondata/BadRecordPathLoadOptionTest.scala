@@ -19,7 +19,7 @@ package org.apache.spark.carbondata
 
 import java.io.File
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.hive.HiveContext
 import org.scalatest.BeforeAndAfterAll
 
@@ -33,7 +33,7 @@ import org.apache.carbondata.core.util.CarbonProperties
  *
  *
  */
-class BadRecordPathLoadOptionTest extends QueryTest with BeforeAndAfterAll {
+class BadRecordPathLoadOptionTest extends Spark2QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
   var badRecordPath: String = null
   override def beforeAll {

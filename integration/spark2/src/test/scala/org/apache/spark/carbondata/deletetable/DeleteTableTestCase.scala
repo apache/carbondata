@@ -17,13 +17,13 @@
 
 package org.apache.spark.carbondata.deletetable
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test cases for drop table
  */
-class DeleteTableTestCase extends QueryTest with BeforeAndAfterAll {
+class DeleteTableTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop table if exists IS")

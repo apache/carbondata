@@ -15,37 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.testsuite.allqueries
+package org.apache.spark.sql.common.util
 
+import org.apache.spark.sql.hive.CarbonSessionState
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
 
-/*
- * Test Class for query when part of tableName has dbName
- *
- */
-class TestTableNameHasDbName extends QueryTest with BeforeAndAfterAll {
 
-  override def beforeAll {
-    sql("DROP TABLE IF EXISTS tabledefault")
-    sql("CREATE TABLE tabledefault (empno int, workgroupcategory string, " +
-      "deptno int, projectcode int,attendance int)" +
-      " STORED BY 'org.apache.carbondata.format'")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE tabledefault")
-  }
+class Spark2QueryTest extends QueryTest {
 
-  test("test query when part of tableName has dbName") {
-    try {
-      sql("SELECT * FROM tabledefault").collect()
-    } catch {
-      case ex: Exception =>
-        assert(false)
-    }
-  }
-
-  override def afterAll {
-    sql("DROP TABLE tabledefault")
-  }
+  val hiveClient = sqlContext.sparkSession.sessionState.asInstanceOf[CarbonSessionState]
+    .metadataHive
 
 }
-
