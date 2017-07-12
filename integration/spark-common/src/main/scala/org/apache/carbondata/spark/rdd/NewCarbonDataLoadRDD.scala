@@ -48,7 +48,7 @@ import org.apache.carbondata.processing.csvload.CSVInputFormat
 import org.apache.carbondata.processing.csvload.CSVRecordReaderIterator
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.DataLoadExecutor
-import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException
+import org.apache.carbondata.processing.newflow.exception.NoRetryException
 import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.load.{CarbonLoaderUtil, FailureCauses}
 import org.apache.carbondata.spark.splits.TableSplit
@@ -255,7 +255,7 @@ class NewCarbonDataLoadRDD[K, V](
           loader.storeLocation,
           recordReaders)
       } catch {
-        case e: BadRecordFoundException =>
+        case e: NoRetryException =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
           executionErrors.failureCauses = FailureCauses.BAD_RECORDS
           executionErrors.errorMsg = e.getMessage
@@ -441,7 +441,7 @@ class NewDataFrameLoaderRDD[K, V](
           CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
         executor.execute(model, loader.storeLocation, recordReaders.toArray)
       } catch {
-        case e: BadRecordFoundException =>
+        case e: NoRetryException =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
           executionErrors.failureCauses = FailureCauses.BAD_RECORDS
           executionErrors.errorMsg = e.getMessage
@@ -626,7 +626,7 @@ class PartitionTableDataLoaderRDD[K, V](
           CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
         executor.execute(model, loader.storeLocation, recordReaders)
       } catch {
-        case e: BadRecordFoundException =>
+        case e: NoRetryException =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
           executionErrors.failureCauses = FailureCauses.BAD_RECORDS
           executionErrors.errorMsg = e.getMessage

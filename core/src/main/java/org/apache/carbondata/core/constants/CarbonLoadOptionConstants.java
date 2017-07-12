@@ -85,4 +85,9 @@ public final class CarbonLoadOptionConstants {
   public static final String CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS =
       "carbon.options.global.sort.partitions";
 
+  /**
+   *  Max number of dictionary values that can be given with external dictionary
+   */
+  public static final int MAX_EXTERNAL_DICTIONARY_SIZE = 10000000;
+
 }

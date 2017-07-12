@@ -46,7 +46,6 @@ import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarFormatVersion}
 import org.apache.carbondata.core.metadata.datatype.DataType
-import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
@@ -58,8 +57,7 @@ import org.apache.carbondata.processing.csvload.{BlockDetails, CSVInputFormat, S
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException
-import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
+import org.apache.carbondata.processing.newflow.exception.{CarbonDataLoadingException, NoRetryException}
 import org.apache.carbondata.processing.newflow.sort.SortScopeOptions
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark.{DataLoadResultImpl, PartitionFactory, _}
@@ -723,7 +721,7 @@ object CarbonDataRDDFactory {
                 carbonLoadModel,
                 loadMetadataDetails)
             } catch {
-              case e: BadRecordFoundException =>
+              case e: NoRetryException =>
                 loadMetadataDetails
                   .setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
                 executionErrors.failureCauses = FailureCauses.BAD_RECORDS

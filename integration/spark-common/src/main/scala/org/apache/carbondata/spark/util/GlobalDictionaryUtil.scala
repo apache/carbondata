@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.spark.util
 
-import java.io.{FileNotFoundException, IOException}
 import java.nio.charset.Charset
 import java.util.regex.Pattern
 
@@ -57,6 +56,7 @@ import org.apache.carbondata.processing.csvload.CSVInputFormat
 import org.apache.carbondata.processing.csvload.StringArrayWritable
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.CarbonLoadModel
+import org.apache.carbondata.processing.newflow.exception.NoRetryException
 import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.rdd._
@@ -745,6 +745,11 @@ object GlobalDictionaryUtil {
       }
     } catch {
       case ex: Exception =>
+        if (ex.getCause != null && ex.getCause.isInstanceOf[NoRetryException]) {
+          LOGGER.error(ex.getCause, "generate global dictionary failed")
+          throw new Exception("generate global dictionary failed, " +
+                              ex.getCause.getMessage)
+        }
         ex match {
           case spx: SparkException =>
             LOGGER.error(spx, "generate global dictionary failed")

@@ -24,7 +24,7 @@ import java.util.regex.Pattern
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.util.control.Breaks.{break, breakable}
+import scala.util.control.Breaks.breakable
 
 import au.com.bytecode.opencsv.CSVReader
 import com.univocity.parsers.common.TextParsingException
@@ -34,8 +34,9 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.cache.dictionary.Dictionary
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
@@ -44,6 +45,7 @@ import org.apache.carbondata.core.service.{CarbonCommonFactory, PathService}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.processing.model.CarbonLoadModel
+import org.apache.carbondata.processing.newflow.exception.NoRetryException
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.tasks.{DictionaryWriterTask, SortIndexWriterTask}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
@@ -83,7 +85,12 @@ case class PrimitiveParser(dimension: CarbonDimension,
 
   def parseString(input: String): Unit = {
     if (hasDictEncoding && input != null) {
-      set.add(input)
+      if (set.size < CarbonLoadOptionConstants.MAX_EXTERNAL_DICTIONARY_SIZE) {
+        set.add(input)
+      } else {
+        throw new NoRetryException(s"Cannot provide more than ${
+          CarbonLoadOptionConstants.MAX_EXTERNAL_DICTIONARY_SIZE } dictionary values")
+      }
     }
   }
 }
@@ -336,7 +343,7 @@ class CarbonGlobalDictionaryGenerateRDD(
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION,
       model.hdfsLocation)
-    val status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
+    var status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
     val iter = new Iterator[(Int, String)] {
       var dictionaryForDistinctValueLookUp: Dictionary = _
       var dictionaryForSortIndexWriting: Dictionary = _
@@ -444,6 +451,9 @@ class CarbonGlobalDictionaryGenerateRDD(
                     s"\n sort list, distinct and write: $dictWriteTime" +
                     s"\n write sort info: $sortIndexWriteTime")
       } catch {
+        case dictionaryException: NoRetryException =>
+          LOGGER.error(dictionaryException)
+          status = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
         case ex: Exception =>
           LOGGER.error(ex)
           throw ex
