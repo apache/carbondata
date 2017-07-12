@@ -121,6 +121,9 @@ public class ValueEncoderMeta implements Serializable {
 
   public void setSrcDataType(DataType type) {
     switch (type) {
+      case BYTE:
+      case SHORT:
+      case INT:
       case LONG:
         this.type = CarbonCommonConstants.BIG_INT_MEASURE;
         break;
