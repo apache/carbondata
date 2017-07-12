@@ -1430,7 +1430,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Check that minor compaction done after 2 minor compaction and ensure data consistency is not impacted.
-  test("DataSight_Carbon_Insert_Func_071", Include) {
+  ignore("DataSight_Carbon_Insert_Func_071", Include) {
      sql(s"""DROP database IF EXISTS Compact_1 cascade""").collect
    sql(s"""create database Compact_1""").collect
    sql(s"""use Compact_1""").collect
