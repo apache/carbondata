@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -39,7 +40,7 @@ public class EncodedMeasurePage extends EncodedColumnPage {
   private ValueEncoderMeta metaData;
 
   public EncodedMeasurePage(int pageSize, byte[] encodedData, ValueEncoderMeta metaData,
-      BitSet nullBitSet) {
+      BitSet nullBitSet) throws IOException {
     super(pageSize, encodedData);
     this.metaData = metaData;
     this.nullBitSet = nullBitSet;
@@ -47,7 +48,7 @@ public class EncodedMeasurePage extends EncodedColumnPage {
   }
 
   @Override
-  public DataChunk2 buildDataChunk2() {
+  public DataChunk2 buildDataChunk2() throws IOException {
     DataChunk2 dataChunk = new DataChunk2();
     dataChunk.min_max = new BlockletMinMaxIndex();
     dataChunk.setChunk_meta(CarbonMetadataUtil.getSnappyChunkCompressionMeta());
@@ -61,12 +62,10 @@ public class EncodedMeasurePage extends EncodedColumnPage {
     PresenceMeta presenceMeta = new PresenceMeta();
     presenceMeta.setPresent_bit_streamIsSet(true);
     Compressor compressor = CompressorFactory.getInstance().getCompressor();
-    presenceMeta.setPresent_bit_stream(
-        compressor.compressByte(nullBitSet.toByteArray()));
+    presenceMeta.setPresent_bit_stream(compressor.compressByte(nullBitSet.toByteArray()));
     dataChunk.setPresence(presenceMeta);
     List<ByteBuffer> encoderMetaList = new ArrayList<ByteBuffer>();
-    encoderMetaList.add(
-        ByteBuffer.wrap(metaData.serialize()));
+    encoderMetaList.add(ByteBuffer.wrap(metaData.serialize()));
     dataChunk.setEncoder_meta(encoderMetaList);
     dataChunk.min_max.addToMax_values(ByteBuffer.wrap(metaData.getMaxAsBytes()));
     dataChunk.min_max.addToMin_values(ByteBuffer.wrap(metaData.getMinAsBytes()));

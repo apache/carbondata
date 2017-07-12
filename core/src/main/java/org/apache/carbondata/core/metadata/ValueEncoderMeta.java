@@ -17,6 +17,11 @@
 
 package org.apache.carbondata.core.metadata;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
@@ -59,9 +64,9 @@ public class ValueEncoderMeta implements Serializable {
       SimpleStatsResult stats, DataType targetDataType) {
     ValueEncoderMeta meta = new ValueEncoderMeta();
     meta.setSrcDataType(stats.getDataType());
-    meta.maxValue = stats.getMax();
-    meta.minValue = stats.getMin();
-    meta.decimal = stats.getDecimalPoint();
+    meta.setMaxValue(stats.getMax());
+    meta.setMinValue(stats.getMin());
+    meta.setDecimalPoint(stats.getDecimalPoint());
     return meta;
   }
 
@@ -160,24 +165,9 @@ public class ValueEncoderMeta implements Serializable {
   private byte[] getValueAsBytes(Object value) {
     ByteBuffer b;
     switch (getSrcDataType()) {
-      case BYTE:
-        b = ByteBuffer.allocate(8);
-        b.putLong((byte) value);
-        b.flip();
-        return b.array();
-      case SHORT:
-        b = ByteBuffer.allocate(8);
-        b.putLong((short) value);
-        b.flip();
-        return b.array();
-      case INT:
-        b = ByteBuffer.allocate(8);
-        b.putLong((int) value);
-        b.flip();
-        return b.array();
       case LONG:
         b = ByteBuffer.allocate(8);
-        b.putLong((long) value);
+        b.putLong(Long.valueOf(value.toString()));
         b.flip();
         return b.array();
       case DOUBLE:
@@ -193,11 +183,25 @@ public class ValueEncoderMeta implements Serializable {
     }
   }
 
-  public byte[] serialize() {
-    return null;
+  public byte[] serialize() throws IOException {
+    ByteArrayOutputStream aos = new ByteArrayOutputStream();
+    ObjectOutputStream objStream = new ObjectOutputStream(aos);
+    objStream.writeObject(this);
+    objStream.close();
+    return aos.toByteArray();
   }
 
-  public void deserialize(byte[] encodeMeta) {
-
+  public void deserialize(byte[] encodeMeta) throws IOException {
+    try {
+      ByteArrayInputStream ais = new ByteArrayInputStream(encodeMeta);
+      ObjectInputStream objStream = new ObjectInputStream(ais);
+      ValueEncoderMeta meta = (ValueEncoderMeta) objStream.readObject();
+      this.setSrcDataType(meta.getSrcDataType());
+      this.setMaxValue(meta.getMaxValue());
+      this.setMinValue(meta.getMinValue());
+      this.setDecimalPoint(meta.getDecimalPoint());
+    } catch (ClassNotFoundException e) {
+      throw new IOException("class not found", e);
+    }
   }
 }

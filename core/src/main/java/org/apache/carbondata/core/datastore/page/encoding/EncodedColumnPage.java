@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.BitSet;
 
@@ -43,7 +44,7 @@ public abstract class EncodedColumnPage {
     this.encodedData = encodedData;
   }
 
-  public abstract DataChunk2 buildDataChunk2();
+  public abstract DataChunk2 buildDataChunk2() throws IOException;
 
   /**
    * return the encoded and compressed data page

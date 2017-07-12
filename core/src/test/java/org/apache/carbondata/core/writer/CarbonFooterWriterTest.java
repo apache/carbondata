@@ -128,7 +128,7 @@ public class CarbonFooterWriterTest extends TestCase{
     return dimColumn;
  }
 
-  private List<BlockletInfoColumnar> getBlockletInfoColumnars() {
+  private List<BlockletInfoColumnar> getBlockletInfoColumnars() throws IOException {
     BlockletInfoColumnar infoColumnar = new BlockletInfoColumnar();
     infoColumnar.setStartKey(new byte[] { 1, 2, 3 });
     infoColumnar.setEndKey(new byte[] { 8, 9, 10 });
