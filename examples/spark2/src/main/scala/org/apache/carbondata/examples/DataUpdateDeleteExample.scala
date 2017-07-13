@@ -65,7 +65,8 @@ object DataUpdateDeleteExample {
     var df = spark.sparkContext.parallelize(1 to 10)
       .map(x => (x, new java.sql.Date(sdf.parse("2015-07-" + (x % 10 + 10)).getTime),
         "china", "aaa" + x, "phone" + 555 * x, "ASD" + (60000 + x), 14999 + x))
-      .toDF("t3_id", "t3_date", "t3_country", "t3_name", "t3_phonetype", "t3_serialname", "t3_salary")
+      .toDF("t3_id", "t3_date", "t3_country", "t3_name",
+          "t3_phonetype", "t3_serialname", "t3_salary")
     df.write
       .format("carbondata")
       .option("tableName", "t3")
@@ -78,7 +79,8 @@ object DataUpdateDeleteExample {
     df = spark.sparkContext.parallelize(1 to 10)
       .map(x => (x, new java.sql.Date(sdf.parse("2017-07-" + (x % 20 + 1)).getTime),
         "usa", "bbb" + x, "phone" + 100 * x, "ASD" + (1000 * x - x), 25000 + x))
-      .toDF("t5_id", "t5_date", "t5_country", "t5_name", "t5_phonetype", "t5_serialname", "t5_salary")
+      .toDF("t5_id", "t5_date", "t5_country", "t5_name",
+          "t5_phonetype", "t5_serialname", "t5_salary")
     df.write
       .format("carbondata")
       .option("tableName", "t5")
