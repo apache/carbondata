@@ -1378,8 +1378,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_INCLUDE_100
   test("Comp_VMALL_DICTIONARY_INCLUDE_100", Include) {
 
-    checkAnswer(s"""select min(Latest_DAY), max(Latest_DAY+ 10) Total from Comp_VMALL_DICTIONARY_INCLUDE group by  channelsId order by Total""",
-      s"""select min(Latest_DAY), max(Latest_DAY+ 10) Total from Comp_VMALL_DICTIONARY_INCLUDE_hive group by  channelsId order by Total""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_INCLUDE_100")
+    checkAnswer(s"""select min(Latest_DAY) d, max(Latest_DAY+ 10) Total from Comp_VMALL_DICTIONARY_INCLUDE group by  channelsId order by Total,d""",
+      s"""select min(Latest_DAY) d, max(Latest_DAY+ 10) Total from Comp_VMALL_DICTIONARY_INCLUDE_hive group by  channelsId order by Total,d""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_INCLUDE_100")
 
   }
 
@@ -3488,8 +3488,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_INCLUDE_369
   test("Comp_VMALL_DICTIONARY_INCLUDE_369", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE where  deviceInformationId  != '100075' order by imei """,
-      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE_hive where  deviceInformationId  != '100075' order by imei """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_INCLUDE_369")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE where  deviceInformationId  != '100075' order by imei,deviceInformationId,MAC,deviceColor """,
+      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE_hive where  deviceInformationId  != '100075' order by imei,deviceInformationId,MAC,deviceColor """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_INCLUDE_369")
 
   }
 
@@ -3497,8 +3497,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_INCLUDE_370
   test("Comp_VMALL_DICTIONARY_INCLUDE_370", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE where  contractNumber  not like '9223372047700' order by  deviceInformationId """,
-      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE_hive where  contractNumber  not like '9223372047700' order by  deviceInformationId """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_INCLUDE_370")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE where  contractNumber  not like '9223372047700' order by  imei,deviceInformationId,MAC,deviceColor """,
+      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE_hive where  contractNumber  not like '9223372047700' order by  imei,deviceInformationId,MAC,deviceColor """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_INCLUDE_370")
 
   }
 
@@ -3506,8 +3506,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_INCLUDE_371
   test("Comp_VMALL_DICTIONARY_INCLUDE_371", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE where  Latest_DAY  not like '1234567890123480.0000000000' order by deviceInformationId """,
-      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE_hive where  Latest_DAY  not like '1234567890123480.0000000000' order by deviceInformationId """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_INCLUDE_371")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE where  Latest_DAY  not like '1234567890123480.0000000000' order by imei,deviceInformationId,MAC,deviceColor """,
+      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE_hive where  Latest_DAY  not like '1234567890123480.0000000000' order by imei,deviceInformationId,MAC,deviceColor """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_INCLUDE_371")
 
   }
 
@@ -3515,8 +3515,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_INCLUDE_372
   test("Comp_VMALL_DICTIONARY_INCLUDE_372", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE where  gamePointId  not like '2.27852521808948E36' order by imei""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE_hive where  gamePointId  not like '2.27852521808948E36' order by imei""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_INCLUDE_372")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE where  gamePointId  not like '2.27852521808948E36' order by imei,deviceInformationId,MAC,deviceColor""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE_hive where  gamePointId  not like '2.27852521808948E36' order by imei,deviceInformationId,MAC,deviceColor""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_INCLUDE_372")
 
   }
 
@@ -3524,8 +3524,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_INCLUDE_373
   test("Comp_VMALL_DICTIONARY_INCLUDE_373", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE where  productionDate  not like cast('2015-09-18 12:07:28.0' as timestamp) order by deviceInformationId""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE_hive where  productionDate  not like cast('2015-09-18 12:07:28.0' as timestamp) order by deviceInformationId""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_INCLUDE_373")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE where  productionDate  not like cast('2015-09-18 12:07:28.0' as timestamp) order by imei,deviceInformationId,MAC,deviceColor""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE_hive where  productionDate  not like cast('2015-09-18 12:07:28.0' as timestamp) order by imei,deviceInformationId,MAC,deviceColor""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_INCLUDE_373")
 
   }
 
@@ -3533,8 +3533,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_INCLUDE_374
   test("Comp_VMALL_DICTIONARY_INCLUDE_374", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE where  deviceInformationId  not like '100075' order by imei """,
-      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE_hive where  deviceInformationId  not like '100075' order by imei """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_INCLUDE_374")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE where  deviceInformationId  not like '100075' order by imei,deviceInformationId,MAC,deviceColor """,
+      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_INCLUDE_hive where  deviceInformationId  not like '100075' order by imei,deviceInformationId,MAC,deviceColor """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_INCLUDE_374")
 
   }
 
@@ -3865,8 +3865,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_EXCLUDE_024
   test("Comp_VMALL_DICTIONARY_EXCLUDE_024", Include) {
 
-    checkAnswer(s"""select Latest_day  from Comp_VMALL_DICTIONARY_EXCLUDE where imei IS NOT NULL order by imei""",
-      s"""select Latest_day  from Comp_VMALL_DICTIONARY_EXCLUDE_hive where imei IS NOT NULL order by imei""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_024")
+    checkAnswer(s"""select Latest_day  from Comp_VMALL_DICTIONARY_EXCLUDE where imei IS NOT NULL order by Latest_day""",
+      s"""select Latest_day  from Comp_VMALL_DICTIONARY_EXCLUDE_hive where imei IS NOT NULL order by Latest_day""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_024")
 
   }
 
@@ -4524,8 +4524,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_EXCLUDE_100
   test("Comp_VMALL_DICTIONARY_EXCLUDE_100", Include) {
 
-    checkAnswer(s"""select min(Latest_DAY), max(Latest_DAY+ 10) Total from Comp_VMALL_DICTIONARY_EXCLUDE group by  channelsId order by Total""",
-      s"""select min(Latest_DAY), max(Latest_DAY+ 10) Total from Comp_VMALL_DICTIONARY_EXCLUDE_hive group by  channelsId order by Total""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_100")
+    checkAnswer(s"""select min(Latest_DAY) d, max(Latest_DAY+ 10) Total from Comp_VMALL_DICTIONARY_EXCLUDE group by  channelsId order by Total,d""",
+      s"""select min(Latest_DAY) d, max(Latest_DAY+ 10) Total from Comp_VMALL_DICTIONARY_EXCLUDE_hive group by  channelsId order by Total,d""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_100")
 
   }
 
@@ -6606,8 +6606,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_EXCLUDE_366
   test("Comp_VMALL_DICTIONARY_EXCLUDE_366", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  Latest_DAY  != '1234567890123480.0000000000' order by deviceInformationId """,
-      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  Latest_DAY  != '1234567890123480.0000000000' order by deviceInformationId """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_366")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  Latest_DAY  != '1234567890123480.0000000000' order by imei,deviceInformationId,MAC,deviceColor """,
+      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  Latest_DAY  != '1234567890123480.0000000000' order by imei,deviceInformationId,MAC,deviceColor """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_366")
 
   }
 
@@ -6615,8 +6615,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_EXCLUDE_367
   test("Comp_VMALL_DICTIONARY_EXCLUDE_367", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  gamePointId  != '2.27852521808948E36' order by imei """,
-      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  gamePointId  != '2.27852521808948E36' order by imei """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_367")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  gamePointId  != '2.27852521808948E36' order by imei,deviceInformationId,MAC,deviceColor """,
+      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  gamePointId  != '2.27852521808948E36' order by imei,deviceInformationId,MAC,deviceColor """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_367")
 
   }
 
@@ -6624,8 +6624,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_EXCLUDE_368
   test("Comp_VMALL_DICTIONARY_EXCLUDE_368", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  productionDate  != '2015-09-18 12:07:28.0' order by imei""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  productionDate  != '2015-09-18 12:07:28.0' order by imei""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_368")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  productionDate  != '2015-09-18 12:07:28.0' order by imei,deviceInformationId,MAC,deviceColor""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  productionDate  != '2015-09-18 12:07:28.0' order by imei,deviceInformationId,MAC,deviceColor""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_368")
 
   }
 
@@ -6633,8 +6633,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_EXCLUDE_369
   test("Comp_VMALL_DICTIONARY_EXCLUDE_369", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  deviceInformationId  != '100075' order by imei """,
-      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  deviceInformationId  != '100075' order by imei """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_369")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  deviceInformationId  != '100075' order by imei,deviceInformationId,MAC,deviceColor """,
+      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  deviceInformationId  != '100075' order by imei,deviceInformationId,MAC,deviceColor """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_369")
 
   }
 
@@ -6642,8 +6642,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_EXCLUDE_370
   test("Comp_VMALL_DICTIONARY_EXCLUDE_370", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  contractNumber  not like '9223372047700' order by  deviceInformationId """,
-      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  contractNumber  not like '9223372047700' order by  deviceInformationId """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_370")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  contractNumber  not like '9223372047700' order by  imei,deviceInformationId,MAC,deviceColor """,
+      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  contractNumber  not like '9223372047700' order by  imei,deviceInformationId,MAC,deviceColor """, "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_370")
 
   }
 
@@ -6651,8 +6651,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_EXCLUDE_371
   test("Comp_VMALL_DICTIONARY_EXCLUDE_371", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  Latest_DAY  not like '1234567890123480.0000000000' order by deviceInformationId""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  Latest_DAY  not like '1234567890123480.0000000000' order by deviceInformationId""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_371")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  Latest_DAY  not like '1234567890123480.0000000000' order by imei,deviceInformationId,MAC,deviceColor""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  Latest_DAY  not like '1234567890123480.0000000000' order by imei,deviceInformationId,MAC,deviceColor""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_371")
 
   }
 
@@ -6660,8 +6660,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_EXCLUDE_372
   test("Comp_VMALL_DICTIONARY_EXCLUDE_372", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  gamePointId  not like '2.27852521808948E36' order by imei""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  gamePointId  not like '2.27852521808948E36' order by imei""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_372")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  gamePointId  not like '2.27852521808948E36' order by imei,deviceInformationId,MAC,deviceColor""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  gamePointId  not like '2.27852521808948E36' order by imei,deviceInformationId,MAC,deviceColor""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_372")
 
   }
 
@@ -6669,8 +6669,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_EXCLUDE_373
   test("Comp_VMALL_DICTIONARY_EXCLUDE_373", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  productionDate  not like cast('2015-09-18 12:07:28.0' as timestamp) order by deviceInformationId""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  productionDate  not like cast('2015-09-18 12:07:28.0' as timestamp) order by deviceInformationId""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_373")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  productionDate  not like cast('2015-09-18 12:07:28.0' as timestamp) order by imei,deviceInformationId,MAC,deviceColor""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  productionDate  not like cast('2015-09-18 12:07:28.0' as timestamp) order by imei,deviceInformationId,MAC,deviceColor""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_373")
 
   }
 
@@ -6678,8 +6678,8 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   //Comp_VMALL_DICTIONARY_EXCLUDE_374
   test("Comp_VMALL_DICTIONARY_EXCLUDE_374", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  deviceInformationId  not like '100075' order by imei""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  deviceInformationId  not like '100075' order by imei""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_374")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE where  deviceInformationId  not like '100075' order by imei,deviceInformationId,MAC,deviceColor""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from Comp_VMALL_DICTIONARY_EXCLUDE_hive where  deviceInformationId  not like '100075' order by imei,deviceInformationId,MAC,deviceColor""", "QueriesCompactionTestCase_Comp_VMALL_DICTIONARY_EXCLUDE_374")
 
   }
 

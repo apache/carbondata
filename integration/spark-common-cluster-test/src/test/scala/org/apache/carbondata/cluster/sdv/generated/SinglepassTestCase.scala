@@ -583,31 +583,33 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
 
    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/singlepass/data/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1','SINGLE_Pass'='true')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
-      Seq(Row(2007)), "singlepassTestCase_PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_071")
+      Seq(Row(2013)), "singlepassTestCase_PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_071")
      sql(s"""drop table uniqdata""").collect
   }
 
 
   //Verifying load data with single Pass false and BAD_RECORDS_ACTION= ='REDIRECT'
   test("PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_072", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
 
 
    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/singlepass/data/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1','SINGLE_Pass'='false')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
-      Seq(Row(2007)), "singlepassTestCase_PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_072")
+      Seq(Row(2013)), "singlepassTestCase_PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_072")
      sql(s"""drop table uniqdata""").collect
   }
 
 
   //Verifying load data with single Pass true and BAD_RECORDS_ACTION= ='IGNORE'
   test("PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_073", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
 
 
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/singlepass/data/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='IGNORE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1','SINGLE_Pass'='true')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
-      Seq(Row(2007)), "singlepassTestCase_PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_073")
+      Seq(Row(2013)), "singlepassTestCase_PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_073")
      sql(s"""drop table uniqdata""").collect
   }
 
@@ -620,13 +622,14 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
 
    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/singlepass/data/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='IGNORE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1','SINGLE_Pass'='false')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
-      Seq(Row(2007)), "singlepassTestCase_PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_074")
+      Seq(Row(2013)), "singlepassTestCase_PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_074")
      sql(s"""drop table uniqdata""").collect
   }
 
 
   //Verifying load data with single Pass true and BAD_RECORDS_ACTION= ='FORCE'
   test("PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_075", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
 
 
@@ -639,6 +642,7 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verifying load data with single Pass false and BAD_RECORDS_ACTION= ='FORCE'
   test("PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_076", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
 
 
@@ -651,6 +655,7 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verifying load data with single Pass false and 'BAD_RECORDS_LOGGER_ENABLE'='TRUE',
   test("PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_077", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
 
 
@@ -663,6 +668,7 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verifying load data with single Pass false and 'BAD_RECORDS_LOGGER_ENABLE'='FALSE',
   test("PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_078", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
 
 
@@ -675,6 +681,7 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verifying load data with single Pass true and 'BAD_RECORDS_LOGGER_ENABLE'='TRUE',
   test("PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_079", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
 
 
@@ -687,6 +694,7 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verifying load data with single Pass true, NO_INVERTED_INDEX, and dictionary_exclude
   test("PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_080", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String, DOB timestamp) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('NO_INVERTED_INDEX'='CUST_NAME','dictionary_exclude'='CUST_NAME')""").collect
    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/singlepass/data/10_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,DOB','SINGLE_Pass'='true')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
@@ -697,6 +705,7 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verifying load data with single Pass true, NO_INVERTED_INDEX and dictionary_include a measure
   test("PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_081", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String, DOB timestamp) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='CUST_ID','NO_INVERTED_INDEX'='CUST_ID')""").collect
    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/singlepass/data/10_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,DOB','SINGLE_Pass'='true')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
@@ -707,6 +716,7 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verifying load data with single pass=false and column dictionary path
   test("PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_084", Include) {
+    dropTable("uniqdata")
     try {
       sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String, DOB timestamp) STORED BY 'org.apache.carbondata.format'""")
 
@@ -727,6 +737,7 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verifying load data with single pass=true and column dictionary path
   test("PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_085", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String, DOB timestamp) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/singlepass/data/10_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FAIL','FILEHEADER'='CUST_ID,CUST_NAME,DOB','SINGLE_PASS'='true','COLUMNDICT'='CUST_NAME:$resourcesPath/Data/singlepass/data/cust_name.txt')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
@@ -737,6 +748,7 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verifying single pass false with all dimensions as dictionary_exclude and dictionary_include
   test("PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_088", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String, DOB timestamp) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='CUST_NAME','DICTIONARY_INCLUDE'='CUST_ID')""").collect
    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/singlepass/data/10_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FAIL','FILEHEADER'='CUST_ID,CUST_NAME,DOB','SINGLE_PASS'='false')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",
@@ -747,6 +759,7 @@ class SinglepassTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verifying single pass true with all dimensions as dictionary_exclude and dictionary_include
   test("PTS-TOR_AR-SparkCarbon-spark2.1-Loading-004-01-01-01_001-TC_089", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE if not exists uniqdata (CUST_ID int,CUST_NAME String, DOB timestamp) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='CUST_NAME','DICTIONARY_INCLUDE'='CUST_ID')""").collect
    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/singlepass/data/10_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FAIL','FILEHEADER'='CUST_ID,CUST_NAME,DOB','SINGLE_PASS'='false')""").collect
     checkAnswer(s"""select count(*) from uniqdata""",

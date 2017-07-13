@@ -182,7 +182,7 @@ class DataLoadingV3TestCase extends QueryTest with BeforeAndAfterAll {
   test("PTS_TOR-Productize-New-Features-V3_01_Query_01_022", Include) {
 
     checkAnswer(s"""select CUST_ID from 3lakh_uniqdata limit 10""",
-      Seq(Row(8999),Row("null"),Row("null"),Row("null"),Row("null"),Row("null"),Row("null"),Row("null"),Row("null"),Row("null")), "DataLoadingV3TestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_022")
+      Seq(Row(8999),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null)), "DataLoadingV3TestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_022")
 
   }
 
@@ -254,7 +254,8 @@ class DataLoadingV3TestCase extends QueryTest with BeforeAndAfterAll {
   test("PTS_TOR-Productize-New-Features-V3_01_Query_01_030", Include) {
 
     checkAnswer(s"""select substring(CUST_NAME,1,11),count(*) from 3lakh_uniqdata group by substring(CUST_NAME,1,11) having count(*) > 1""",
-      Seq(Row("CUST_NAME_4,10000","CUST_NAME_4,10000"),Row("CUST_NAME_1,100000","CUST_NAME_1,100000"),Row("CUST_NAME_8,10000","CUST_NAME_8,10000"),Row("CUST_NAME_6,10000","CUST_NAME_6,10000"),Row("CUST_NAME_2,110000","CUST_NAME_2,110000"),Row("CUST_NAME_5,10000","CUST_NAME_5,10000"),Row("CUST_NAME_7,10000","CUST_NAME_7,10000"),Row("CUST_NAME_9,10000","CUST_NAME_9,10000"),Row(",11",",11"),Row("CUST_NAME_3,30623","CUST_NAME_3,30623")), "DataLoadingV3TestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_030")
+      Seq(Row("CUST_NAME_4",10000),Row("CUST_NAME_1",100000),Row("CUST_NAME_8",10000),Row("CUST_NAME_6",10000),Row("CUST_NAME_2"),
+        Row("CUST_NAME_5",10000),Row("CUST_NAME_7",10000),Row("CUST_NAME_9",10000),Row("",11),Row("CUST_NAME_3",30623)), "DataLoadingV3TestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_030")
 
   }
 
@@ -263,7 +264,8 @@ class DataLoadingV3TestCase extends QueryTest with BeforeAndAfterAll {
   test("PTS_TOR-Productize-New-Features-V3_01_Query_01_031", Include) {
 
     checkAnswer(s"""select substring(CUST_NAME,1,11),count(*) from 3lakh_uniqdata where  cust_id between 59000 and 160000 group by substring(CUST_NAME,1,11) having count(*) > 1""",
-      Seq(Row("CUST_NAME_1,51001","CUST_NAME_1,51001"),Row("CUST_NAME_8,10000","CUST_NAME_8,10000"),Row("CUST_NAME_6,10000","CUST_NAME_6,10000"),Row("CUST_NAME_5,10000","CUST_NAME_5,10000"),Row("CUST_NAME_7,10000","CUST_NAME_7,10000"),Row("CUST_NAME_9,10000","CUST_NAME_9,10000")), "DataLoadingV3TestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_031")
+      Seq(Row("CUST_NAME_1",51001),Row("CUST_NAME_8",10000),Row("CUST_NAME_6",10000),Row("CUST_NAME_5",10000),
+        Row("CUST_NAME_7",10000),Row("CUST_NAME_9",10000)), "DataLoadingV3TestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_031")
 
   }
 
@@ -273,7 +275,8 @@ class DataLoadingV3TestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""CREATE TABLE 3lakh_uniqdata2 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128','include_dictionary'='BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,CUST_ID')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/3Lakh.csv' into table 3lakh_uniqdata2 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select a.cust_id, b.cust_name from 3lakh_uniqdata a, 3lakh_uniqdata2 b where a.cust_id = b.cust_id and a.cust_name = b.cust_name and a.cust_id in (29000, 59000, 69000,15000,250000, 310000)""",
-      Seq(Row("29000,CUST_NAME_20000","29000,CUST_NAME_20000"),Row("250000,CUST_NAME_241000","250000,CUST_NAME_241000"),Row("310000,CUST_NAME_301000","310000,CUST_NAME_301000"),Row("59000,CUST_NAME_50000","59000,CUST_NAME_50000"),Row("69000,CUST_NAME_60000","69000,CUST_NAME_60000")), "DataLoadingV3TestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_032")
+      Seq(Row(29000,"CUST_NAME_20000"),Row(250000,"CUST_NAME_241000"),Row(310000,"CUST_NAME_301000"),
+        Row(59000,"CUST_NAME_50000"),Row(69000,"CUST_NAME_60000")), "DataLoadingV3TestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_032")
 
   }
 

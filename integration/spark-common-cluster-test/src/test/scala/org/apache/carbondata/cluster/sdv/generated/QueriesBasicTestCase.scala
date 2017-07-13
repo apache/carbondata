@@ -3285,8 +3285,8 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   //UNIQDATA_DEFAULT_MultiBitSet_TC_004
   test("UNIQDATA_DEFAULT_MultiBitSet_TC_004", Include) {
 
-    checkAnswer(s"""select DOB,DOJ,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2 from uniqdata where DECIMAL_COLUMN1>=12345678901.1234 and DECIMAL_COLUMN1<=12345679301.12344 and DECIMAL_COLUMN2>=22348957.1234 and Double_COLUMN1>=11267489.7976 and Double_COLUMN1<=1.12345674897976E10 and Double_COLUMN2>=-1123224567489.7976 and Double_COLUMN2<= -4.8E-4 and dob>='1970-01-02 01:00:03' and dob<= '1971-02-05 01:00:03' and doj>='1970-01-02 02:00:03' and doj<='1971-02-05 02:00:03'""",
-      s"""select DOB,DOJ,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2 from uniqdata_hive where DECIMAL_COLUMN1>=12345678901.1234 and DECIMAL_COLUMN1<=12345679301.12344 and DECIMAL_COLUMN2>=22348957.1234 and Double_COLUMN1>=11267489.7976 and Double_COLUMN1<=1.12345674897976E10 and Double_COLUMN2>=-1123224567489.7976 and Double_COLUMN2<= -4.8E-4 and dob>='1970-01-02 01:00:03' and dob<= '1971-02-05 01:00:03' and doj>='1970-01-02 02:00:03' and doj<='1971-02-05 02:00:03'""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_MultiBitSet_TC_004")
+    checkAnswer(s"""select DOB,DOJ,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2 from uniqdata where DECIMAL_COLUMN1>=12345678901.1234 and DECIMAL_COLUMN1<=12345679301.12344 and DECIMAL_COLUMN2>=22348957.1234 and Double_COLUMN1>=11267489.7976 and Double_COLUMN1<=1.12345674897976E10 and Double_COLUMN2>=-1123224567489.7976 and Double_COLUMN2<= -4.8E-4 and dob>='1970-01-02 01:00:03' and dob<= '1971-02-05 01:00:03' and doj>='1970-01-02 02:00:03' and doj<='1971-02-05 02:00:03' order by DOB,DOJ,DECIMAL_COLUMN1,DECIMAL_COLUMN2""",
+      s"""select DOB,DOJ,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2 from uniqdata_hive where DECIMAL_COLUMN1>=12345678901.1234 and DECIMAL_COLUMN1<=12345679301.12344 and DECIMAL_COLUMN2>=22348957.1234 and Double_COLUMN1>=11267489.7976 and Double_COLUMN1<=1.12345674897976E10 and Double_COLUMN2>=-1123224567489.7976 and Double_COLUMN2<= -4.8E-4 and dob>='1970-01-02 01:00:03' and dob<= '1971-02-05 01:00:03' and doj>='1970-01-02 02:00:03' and doj<='1971-02-05 02:00:03' order by DOB,DOJ,DECIMAL_COLUMN1,DECIMAL_COLUMN2""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_MultiBitSet_TC_004")
 
   }
 
@@ -3303,8 +3303,8 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   //UNIQDATA_DEFAULT_MultiBitSet_TC_006
   test("UNIQDATA_DEFAULT_MultiBitSet_TC_006", Include) {
 
-    checkAnswer(s"""select distinct dob,DECIMAL_COLUMN1,Double_COLUMN1 from uniqdata where  DECIMAL_COLUMN1<DECIMAL_COLUMN2 and Double_COLUMN1>Double_COLUMN2  and day(dob)=day(doj)""",
-      s"""select distinct dob,DECIMAL_COLUMN1,Double_COLUMN1 from uniqdata_hive where  DECIMAL_COLUMN1<DECIMAL_COLUMN2 and Double_COLUMN1>Double_COLUMN2  and day(dob)=day(doj)""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_MultiBitSet_TC_006")
+    checkAnswer(s"""select DECIMAL_COLUMN1,Double_COLUMN1,distinct dob from uniqdata where  DECIMAL_COLUMN1<DECIMAL_COLUMN2 and Double_COLUMN1>Double_COLUMN2  and day(dob)=day(doj) order by DECIMAL_COLUMN1,Double_COLUMN1""",
+      s"""select DECIMAL_COLUMN1,Double_COLUMN1,distinct dob from uniqdata_hive where  DECIMAL_COLUMN1<DECIMAL_COLUMN2 and Double_COLUMN1>Double_COLUMN2  and day(dob)=day(doj) order by DECIMAL_COLUMN1,Double_COLUMN1""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_MultiBitSet_TC_006")
 
   }
 
@@ -3360,9 +3360,9 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   test("UNIQDATA_DEFAULT_MultiBitSet_TC_012", Include) {
 
     checkAnswer(s"""select dob,DECIMAL_COLUMN1,Double_COLUMN1 from uniqdata where doj>='1968-02-26 02:00:03' and doj<='1973-02-26 02:00:03' and DECIMAL_COLUMN2>=22348957.1234 and Double_COLUMN1>=11267489.7976  and
-  Double_COLUMN2>=-1123224567489.7976 and Double_COLUMN2<=-3457489.7976""",
+  Double_COLUMN2>=-1123224567489.7976 and Double_COLUMN2<=-3457489.7976 order by dob,DECIMAL_COLUMN1,Double_COLUMN1""",
       s"""select dob,DECIMAL_COLUMN1,Double_COLUMN1 from uniqdata_hive where doj>='1968-02-26 02:00:03' and doj<='1973-02-26 02:00:03' and DECIMAL_COLUMN2>=22348957.1234 and Double_COLUMN1>=11267489.7976  and
-  Double_COLUMN2>=-1123224567489.7976 and Double_COLUMN2<=-3457489.7976""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_MultiBitSet_TC_012")
+  Double_COLUMN2>=-1123224567489.7976 and Double_COLUMN2<=-3457489.7976 order by dob,DECIMAL_COLUMN1,Double_COLUMN1""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_MultiBitSet_TC_012")
 
   }
 
@@ -3371,9 +3371,9 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   test("UNIQDATA_DEFAULT_MultiBitSet_TC_013", Include) {
 
     checkAnswer(s"""select cust_id,integer_column1,BIGINT_COLUMN1,BIGINT_COLUMN2,ACTIVE_EMUI_VERSION,CUST_NAME,DOB,DOJ,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2 from uniqdata where cust_id rlike 9 and
-  BIGINT_COLUMN1 rlike 12 and ACTIVE_EMUI_VERSION rlike 'ACTIVE' and CUST_NAME rlike 'CUST' and DOB rlike '19' and DECIMAL_COLUMN1 rlike 1234 and Double_COLUMN1 >=1111 and integer_column1 is not null and BIGINT_COLUMN2 is not null and CUST_NAME is not null and DOJ is not null and  DECIMAL_COLUMN2 is not null and Double_COLUMN2 is not null""",
+  BIGINT_COLUMN1 rlike 12 and ACTIVE_EMUI_VERSION rlike 'ACTIVE' and CUST_NAME rlike 'CUST' and DOB rlike '19' and DECIMAL_COLUMN1 rlike 1234 and Double_COLUMN1 >=1111 and integer_column1 is not null and BIGINT_COLUMN2 is not null and CUST_NAME is not null and DOJ is not null and  DECIMAL_COLUMN2 is not null and Double_COLUMN2 is not null order by cust_id,integer_column1,BIGINT_COLUMN1,BIGINT_COLUMN2""",
       s"""select cust_id,integer_column1,BIGINT_COLUMN1,BIGINT_COLUMN2,ACTIVE_EMUI_VERSION,CUST_NAME,DOB,DOJ,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2 from uniqdata_hive where cust_id rlike 9 and
-  BIGINT_COLUMN1 rlike 12 and ACTIVE_EMUI_VERSION rlike 'ACTIVE' and CUST_NAME rlike 'CUST' and DOB rlike '19' and DECIMAL_COLUMN1 rlike 1234 and Double_COLUMN1 >=1111 and integer_column1 is not null and BIGINT_COLUMN2 is not null and CUST_NAME is not null and DOJ is not null and  DECIMAL_COLUMN2 is not null and Double_COLUMN2 is not null""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_MultiBitSet_TC_013")
+  BIGINT_COLUMN1 rlike 12 and ACTIVE_EMUI_VERSION rlike 'ACTIVE' and CUST_NAME rlike 'CUST' and DOB rlike '19' and DECIMAL_COLUMN1 rlike 1234 and Double_COLUMN1 >=1111 and integer_column1 is not null and BIGINT_COLUMN2 is not null and CUST_NAME is not null and DOJ is not null and  DECIMAL_COLUMN2 is not null and Double_COLUMN2 is not null order by cust_id,integer_column1,BIGINT_COLUMN1,BIGINT_COLUMN2""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_MultiBitSet_TC_013")
 
   }
 
@@ -3566,9 +3566,9 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   //UNIQDATA_DEFAULT_MultiBitSet_TC_038
   test("UNIQDATA_DEFAULT_MultiBitSet_TC_038", Include) {
 
-    checkAnswer(s"""select CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1 from uniqdata where  ACTIVE_EMUI_VERSION rlike 'ACTIVE' and dob between '1970-10-15 01:00:03' and '1971-04-29 01:00:03' and doj between '1970-10-15 02:00:03' and '1971-04-29 02:00:03' and cust_name like 'CUST%'
+    checkAnswer(s"""select CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1 from uniqdata where  ACTIVE_EMUI_VERSION rlike 'ACTIVE' and dob between '1970-10-15 01:00:03' and '1971-04-29 01:00:03' and doj between '1970-10-15 02:00:03' and '1971-04-29 02:00:03' and cust_name like 'CUST%' order by CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB
   """,
-      s"""select CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1 from uniqdata_hive where  ACTIVE_EMUI_VERSION rlike 'ACTIVE' and dob between '1970-10-15 01:00:03' and '1971-04-29 01:00:03' and doj between '1970-10-15 02:00:03' and '1971-04-29 02:00:03' and cust_name like 'CUST%'
+      s"""select CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1 from uniqdata_hive where  ACTIVE_EMUI_VERSION rlike 'ACTIVE' and dob between '1970-10-15 01:00:03' and '1971-04-29 01:00:03' and doj between '1970-10-15 02:00:03' and '1971-04-29 02:00:03' and cust_name like 'CUST%' order by CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB
   """, "QueriesBasicTestCase_UNIQDATA_DEFAULT_MultiBitSet_TC_038")
 
   }

@@ -75,7 +75,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Load multiple CSV from folder into table , Multiple level of folders using external columndict
-  test("AR-Develop-Feature-columndict-001_PTS001_TC006", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC006", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data1' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect
      sql(s"""drop table if exists t3""").collect
@@ -83,7 +83,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Load using CSV file with different extension (.dat, .xls, .doc,.txt) and without extension from external dictionary
-  test("AR-Develop-Feature-columndict-001_PTS001_TC007", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC007", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.dat' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/data.dictionary', 'SINGLE_PASS'='true')""").collect
      sql(s"""drop table if exists t3""").collect
@@ -91,7 +91,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Load using CSV file with different extension (.dat, .xls, .doc,.txt) and without extension from external dictionary
-  test("AR-Develop-Feature-columndict-001_PTS001_TC008", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC008", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.dat' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect
      sql(s"""drop table if exists t3""").collect
@@ -107,7 +107,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Load using MAXCOLUMNS during loading with external columndict
-  test("AR-Develop-Feature-columndict-001_PTS001_TC010", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC010", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.dat' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data/columndict/country.csv','maxcolumns'='8', 'SINGLE_PASS'='true')""").collect
      sql(s"""drop table if exists t3""").collect
@@ -115,7 +115,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Bad records logging after load using external all_dictionary_path
-  test("AR-Develop-Feature-columndict-001_PTS001_TC011", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC011", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/data.dictionary','BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE', 'SINGLE_PASS'='true')""").collect
      sql(s"""drop table if exists t3""").collect
@@ -123,7 +123,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Bad records logging after load using external columndict
-  test("AR-Develop-Feature-columndict-001_PTS001_TC012", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC012", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'=
   'country:$resourcesPath/Data/columndict/country.csv','BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='FORCE', 'SINGLE_PASS'='true')""").collect
@@ -144,7 +144,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Incremental Load using external dictionary
-  test("AR-Develop-Feature-columndict-001_PTS001_TC014", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC014", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect
@@ -156,7 +156,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Load using external dictionary for table without table properties
-  test("AR-Develop-Feature-columndict-001_PTS001_TC015", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC015", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/data.dictionary', 'SINGLE_PASS'='true')""").collect
      sql(s"""drop table if exists t3""").collect
@@ -164,7 +164,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Load using external dictionary for table without table properties
-  test("AR-Develop-Feature-columndict-001_PTS001_TC016", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC016", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect
      sql(s"""drop table if exists t3""").collect
@@ -172,7 +172,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Load using external all_dictionary_path for table with table properties(DICTIONARY_EXCLUDE, DICTIONARY_INCLUDE, BLOCKSIZE)
-  test("AR-Develop-Feature-columndict-001_PTS001_TC017", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC017", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB','DICTIONARY_INCLUDE'='salary','DICTIONARY_EXCLUDE'='phonetype')""").collect
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/data.dictionary', 'SINGLE_PASS'='true')""").collect
      sql(s"""drop table if exists t3""").collect
@@ -188,7 +188,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Load using external all_dictionary_path for measure and table properties(DICTIONARY_EXCLUDE, DICTIONARY_INCLUDE, BLOCKSIZE)
-  test("AR-Develop-Feature-columndict-001_PTS001_TC019", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC019", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB','DICTIONARY_INCLUDE'='salary','DICTIONARY_EXCLUDE'='country')""").collect
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='salary:$resourcesPath/Data/columndict/salary.csv', 'SINGLE_PASS'='true')""").collect
      sql(s"""drop table if exists t3""").collect
@@ -209,7 +209,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Columndict parameter name validation
-  test("AR-Develop-Feature-columndict-001_PTS001_TC021", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC021", Include) {
     try {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB','DICTIONARY_EXCLUDE'='country')""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='countries:$resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect
@@ -235,7 +235,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Check for data validation in csv(empty/null/wrong data) for all_dictionary_path
-  test("AR-Develop-Feature-columndict-001_PTS001_TC023", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC023", Include) {
     try {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
       sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/inValidData.csv' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/inValidData.dictionary', 'SINGLE_PASS'='true')""").collect
@@ -357,7 +357,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check count for all_dictionary_path
-  test("AR-Develop-Feature-columndict-001_PTS001_TC033", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC033", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/data.dictionary', 'SINGLE_PASS'='true')""").collect
     sql(s"""select count(*) from t3""").collect
@@ -367,7 +367,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check sum for all_dictionary_path
-  test("AR-Develop-Feature-columndict-001_PTS001_TC034", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC034", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/data.dictionary', 'SINGLE_PASS'='true')""").collect
     sql(s"""select sum(salary) from t3""").collect
@@ -387,7 +387,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check != for all_dictionary_path
-  test("AR-Develop-Feature-columndict-001_PTS001_TC036", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC036", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/data.dictionary', 'SINGLE_PASS'='true')""").collect
     sql(s"""select ID,name from t3 where ID != 9""").collect
@@ -397,7 +397,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check between for all_dictionary_path
-  test("AR-Develop-Feature-columndict-001_PTS001_TC037", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC037", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/data.dictionary', 'SINGLE_PASS'='true')""").collect
     sql(s"""select ID,name from t3 where id between 2 and 9""").collect
@@ -407,7 +407,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check like for all_dictionary_path
-  test("AR-Develop-Feature-columndict-001_PTS001_TC038", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC038", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/data.dictionary', 'SINGLE_PASS'='true')""").collect
     sql(s"""select ID,name from t3 where id Like '9%'""").collect
@@ -417,7 +417,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check group by for all_dictionary_path
-  test("AR-Develop-Feature-columndict-001_PTS001_TC039", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC039", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/data.dictionary', 'SINGLE_PASS'='true')""").collect
     sql(s"""select ID,name from t3 where id > 3 group by id,name having id = 2""").collect
@@ -427,7 +427,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check sort by for all_dictionary_path
-  test("AR-Develop-Feature-columndict-001_PTS001_TC040", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC040", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('ALL_DICTIONARY_PATH'='$resourcesPath/Data/columndict/data.dictionary', 'SINGLE_PASS'='true')""").collect
     sql(s"""select ID,name from t3 where id > 4 sort by name desc""").collect
@@ -437,7 +437,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check limit for columndict
-  test("AR-Develop-Feature-columndict-001_PTS001_TC041", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC041", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data//columndict/country.csv', 'SINGLE_PASS'='true')""").collect
     sql(s"""select ID,name from t3 limit 100""").collect
@@ -447,7 +447,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check count for columndict
-  test("AR-Develop-Feature-columndict-001_PTS001_TC042", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC042", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data//columndict/country.csv', 'SINGLE_PASS'='true')""").collect
     sql(s"""select count(*) from t3""").collect
@@ -457,7 +457,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check sum for columndict
-  test("AR-Develop-Feature-columndict-001_PTS001_TC043", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC043", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data//columndict/country.csv', 'SINGLE_PASS'='true')""").collect
     sql(s"""select sum(salary) from t3""").collect
@@ -467,7 +467,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check >= for columndict
-  test("AR-Develop-Feature-columndict-001_PTS001_TC044", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC044", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data//columndict/country.csv', 'SINGLE_PASS'='true')""").collect
     sql(s"""select ID,name from t3 where ID >=5""").collect
@@ -477,7 +477,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check != for columndict
-  test("AR-Develop-Feature-columndict-001_PTS001_TC045", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC045", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data//columndict/country.csv', 'SINGLE_PASS'='true')""").collect
     sql(s"""select ID,name from t3 where ID != 9""").collect
@@ -487,7 +487,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check between for columndict
-  test("AR-Develop-Feature-columndict-001_PTS001_TC046", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC046", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data//columndict/country.csv', 'SINGLE_PASS'='true')""").collect
     sql(s"""select ID,name from t3 where id between 2 and 9""").collect
@@ -497,7 +497,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check like for columndict
-  test("AR-Develop-Feature-columndict-001_PTS001_TC047", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC047", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data//columndict/country.csv', 'SINGLE_PASS'='true')""").collect
     sql(s"""select ID,name from t3 where id Like '9%'""").collect
@@ -507,7 +507,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check group by for columndict
-  test("AR-Develop-Feature-columndict-001_PTS001_TC048", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC048", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data//columndict/country.csv', 'SINGLE_PASS'='true')""").collect
     sql(s"""select ID,name from t3 where id > 3 group by id,name having id = 2""").collect
@@ -517,7 +517,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check sort by for columndict
-  test("AR-Develop-Feature-columndict-001_PTS001_TC049", Include) {
+  ignore("AR-Develop-Feature-columndict-001_PTS001_TC049", Include) {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data//columndict/country.csv', 'SINGLE_PASS'='true')""").collect
     sql(s"""select ID,name from t3 where id > 4 sort by name desc""").collect

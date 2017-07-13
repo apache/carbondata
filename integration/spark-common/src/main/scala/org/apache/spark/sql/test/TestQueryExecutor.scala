@@ -85,7 +85,7 @@ object TestQueryExecutor {
     val carbonFile = FileFactory.
       getCarbonFile(s"$hdfsUrl/store", FileFactory.getFileType(s"$hdfsUrl/store"))
     FileFactory.deleteAllCarbonFilesOfDir(carbonFile)
-    s"$hdfsUrl/store"
+    s"$hdfsUrl/store_" + System.nanoTime()
   } else {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
       CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL)
@@ -95,7 +95,7 @@ object TestQueryExecutor {
     val carbonFile = FileFactory.
       getCarbonFile(s"$hdfsUrl/warehouse", FileFactory.getFileType(s"$hdfsUrl/warehouse"))
     FileFactory.deleteAllCarbonFilesOfDir(carbonFile)
-    s"$hdfsUrl/warehouse"
+    s"$hdfsUrl/warehouse_" + System.nanoTime()
   } else {
     s"$integrationPath/spark-common/target/warehouse"
   }

@@ -137,7 +137,7 @@
         <version>1.0</version>
         <!-- Note config is repeated in surefire config -->
         <configuration>
-          <suites>org.apache.carbondata.cluster.sdv.suite.SDVSuites</suites>
+          <suites>${suite.name}</suites>
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
           <junitxml>.</junitxml>
           <filereports>CarbonTestSuite.txt</filereports>

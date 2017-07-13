@@ -18,6 +18,7 @@
 package org.apache.spark.sql.common.util
 
 import java.io.{FileInputStream, ObjectInputStream, ObjectOutputStream}
+import java.math
 import java.math.RoundingMode
 import java.util.{Locale, TimeZone}
 
@@ -138,6 +139,8 @@ object QueryTest {
     }
   }
 
+  import java.text.DecimalFormat
+
   /**
    * Runs the plan and makes sure the answer matches the expected result.
    * If there was exception during the execution or the contents of the DataFrame does not
@@ -158,9 +161,6 @@ object QueryTest {
         Row.fromSeq(s.toSeq.map {
           case d: java.math.BigDecimal => BigDecimal(d)
           case b: Array[Byte] => b.toSeq
-//          case d:Double =>
-//            val bd = new java.math.BigDecimal(d).setScale(8, RoundingMode.HALF_EVEN)
-//            bd.doubleValue()
           case o => o
         })
       }
