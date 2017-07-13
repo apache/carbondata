@@ -20,6 +20,7 @@ package org.apache.carbondata.core.datastore.page.encoding;
 import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
 import org.apache.carbondata.core.memory.MemoryException;
 
 /**
@@ -37,6 +38,12 @@ public interface ColumnPageCodec {
    * encode a column page and return the encoded data
    */
   EncodedColumnPage encode(ColumnPage input) throws MemoryException, IOException;
+
+  /**
+   * encode complex column page and return the coded data
+   * TODO: remove this interface after complex column page is unified with column page
+   */
+  EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input);
 
   /**
    * decode byte array from offset to a column page
