@@ -50,7 +50,7 @@ object DataUpdateDeleteExample {
     // Create table, 6 dimensions, 1 measure
     cc.sql("""
            CREATE TABLE IF NOT EXISTS t3
-           (ID Int, date Date, country String,
+           (id Int, date Date, country String,
            name String, phonetype String, serialname char(10), salary Int)
            STORED BY 'carbondata'
            """)
@@ -59,20 +59,21 @@ object DataUpdateDeleteExample {
            LOAD DATA LOCAL INPATH '$testData' INTO TABLE t3
            """)
 
-    // use code to create table t5 and insert data
+    // Specify date format based on raw data
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+
+    // Simulate data and write to table t5
     var fields = Seq[StructField]()
-    fields = fields :+ DataTypes.createStructField("ID", DataTypes.IntegerType, false)
-    fields = fields :+ DataTypes.createStructField("date", DataTypes.DateType, false)
-    fields = fields :+ DataTypes.createStructField("country", DataTypes.StringType, false)
-    fields = fields :+ DataTypes.createStructField("name", DataTypes.StringType, false)
-    fields = fields :+ DataTypes.createStructField("phonetype", DataTypes.StringType, false)
-    fields = fields :+ DataTypes.createStructField("serialname", DataTypes.StringType, false)
-    fields = fields :+ DataTypes.createStructField("salary", DataTypes.IntegerType, false)
+    fields = fields :+ DataTypes.createStructField("t5_id", DataTypes.IntegerType, false)
+    fields = fields :+ DataTypes.createStructField("t5_date", DataTypes.DateType, false)
+    fields = fields :+ DataTypes.createStructField("t5_country", DataTypes.StringType, false)
+    fields = fields :+ DataTypes.createStructField("t5_name", DataTypes.StringType, false)
+    fields = fields :+ DataTypes.createStructField("t5_phonetype", DataTypes.StringType, false)
+    fields = fields :+ DataTypes.createStructField("t5_serialname", DataTypes.StringType, false)
+    fields = fields :+ DataTypes.createStructField("t5_salary", DataTypes.IntegerType, false)
     var schema = StructType(fields)
     var sdf = new SimpleDateFormat("yyyy-MM-dd")
-    // create table data
     var data = cc.sparkContext.parallelize(1 to 10).map { x =>
       val day = x % 20 + 1
       var dateStr = ""
@@ -100,80 +101,80 @@ object DataUpdateDeleteExample {
       .option("compress", "true")
       .mode(SaveMode.Overwrite)
       .save()
-    // Query data again after the above data insert
     cc.sql("""
-           SELECT * FROM t5 ORDER BY ID
+           SELECT * FROM t5 ORDER BY t5_id
            """).show()
 
     // 1.Update data with simple SET
     cc.sql("""
-           SELECT * FROM t3 ORDER BY ID
+           SELECT * FROM t3 ORDER BY t3.id
            """).show()
 
     // Update data where salary < 15003
     val dateStr = "2018-08-08"
     cc.sql(s"""
-           UPDATE t3 SET (date) = ('$dateStr') WHERE t3.salary < 15003
+           UPDATE t3 SET (t3.date, t3.country) = ('$dateStr', 'india') WHERE t3.salary < 15003
            """).show()
+    // Query data again after the above update
     cc.sql("""
-           UPDATE t3 SET (t3.country) = ('india') WHERE t3.salary < 15003
+           SELECT * FROM t3 ORDER BY t3.id
            """).show()
+
     cc.sql("""
            UPDATE t3 SET (t3.salary) = (t3.salary + 9) WHERE t3.name = 'aaa1'
            """).show()
-
     // Query data again after the above update
     cc.sql("""
-           SELECT * FROM t3 ORDER BY ID
+           SELECT * FROM t3 ORDER BY t3.id
            """).show()
 
     // 2.Update data with subquery result SET
     cc.sql("""
          UPDATE t3
-         SET (t3.country, t3.name) = (SELECT u.country, u.name FROM t5 u WHERE u.id = 5)
+         SET (t3.country, t3.name) = (SELECT t5_country, t5_name FROM t5 WHERE t5_id = 5)
          WHERE t3.id < 5""").show()
     cc.sql("""
          UPDATE t3
          SET (t3.date, t3.serialname, t3.salary) =
-         (SELECT '2099-09-09', u.serialname, '9999' FROM t5 u WHERE u.id = 5)
+         (SELECT '2099-09-09', t5_serialname, '9999' FROM t5  WHERE t5_id = 5)
          WHERE t3.id < 5""").show()
 
     // Query data again after the above update
     cc.sql("""
-           SELECT * FROM t3 ORDER BY ID
+           SELECT * FROM t3 ORDER BY t3.id
            """).show()
 
     // 3.Update data with join query result SET
     cc.sql("""
          UPDATE t3
          SET (t3.country, t3.salary) =
-         (SELECT u.country, f.salary FROM t5 u FULL JOIN t5 f
-         WHERE u.id = 8 and f.id=6) WHERE t3.id >6""").show()
+         (SELECT t5_country, t5_salary FROM t5 FULL JOIN t3 u
+         WHERE u.id = t5_id and t5_id=6) WHERE t3.id >6""").show()
 
     // Query data again after the above update
     cc.sql("""
-           SELECT * FROM t3 ORDER BY ID
+           SELECT * FROM t3 ORDER BY t3.id
            """).show()
 
     // 4.Delete data where salary > 15005
     cc.sql("""
-           DELETE FROM t3 WHERE salary > 15005
+           DELETE FROM t3 WHERE t3.salary > 15005
            """).show()
 
     // Query data again after delete data
     cc.sql("""
-           SELECT * FROM t3 ORDER BY ID
+           SELECT * FROM t3 ORDER BY t3.id
            """).show()
 
     // 5.Delete data WHERE id in (1, 2, $key)
     var key = 3
     cc.sql(s"""
-           DELETE FROM t3 WHERE id in (1, 2, $key)
+           DELETE FROM t3 WHERE t3.id in (1, 2, $key)
            """).show()
 
     // Query data again after delete data
     cc.sql("""
-           SELECT * FROM t3 ORDER BY ID
+           SELECT * FROM t3 ORDER BY t3.id
            """).show()
 
     // Drop table

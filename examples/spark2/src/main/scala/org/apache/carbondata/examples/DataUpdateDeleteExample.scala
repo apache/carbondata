@@ -60,12 +60,12 @@ object DataUpdateDeleteExample {
     spark.sql("DROP TABLE IF EXISTS t3")
     spark.sql("DROP TABLE IF EXISTS t5")
 
-    // use code to create table t5 and insert data
+     // Simulate data and write to table t3 and t5
     var sdf = new SimpleDateFormat("yyyy-MM-dd")
     var df = spark.sparkContext.parallelize(1 to 10)
       .map(x => (x, new java.sql.Date(sdf.parse("2015-07-" + (x % 10 + 10)).getTime),
         "china", "aaa" + x, "phone" + 555 * x, "ASD" + (60000 + x), 14999 + x))
-      .toDF("ID", "date", "country", "name", "phonetype", "serialname", "salary")
+      .toDF("t3_id", "t3_date", "t3_country", "t3_name", "t3_phonetype", "t3_serialname", "t3_salary")
     df.write
       .format("carbondata")
       .option("tableName", "t3")
@@ -74,11 +74,10 @@ object DataUpdateDeleteExample {
       .mode(SaveMode.Overwrite)
       .save()
 
-    sdf = new SimpleDateFormat("yyyy-MM-dd")
     df = spark.sparkContext.parallelize(1 to 10)
       .map(x => (x, new java.sql.Date(sdf.parse("2017-07-" + (x % 20 + 1)).getTime),
         "usa", "bbb" + x, "phone" + 100 * x, "ASD" + (1000 * x - x), 25000 + x))
-      .toDF("ID", "date", "country", "name", "phonetype", "serialname", "salary")
+      .toDF("t5_id", "t5_date", "t5_country", "t5_name", "t5_phonetype", "t5_serialname", "t5_salary")
     df.write
       .format("carbondata")
       .option("tableName", "t5")
@@ -86,81 +85,79 @@ object DataUpdateDeleteExample {
       .option("compress", "true")
       .mode(SaveMode.Overwrite)
       .save()
-
-    // Query data again after the above data insert
     spark.sql("""
-           SELECT * FROM t5 ORDER BY ID
+           SELECT * FROM t3 ORDER BY t3_id
+           """).show()
+    spark.sql("""
+           SELECT * FROM t5 ORDER BY t5_id
            """).show()
 
     // 1.Update data with simple SET
-    spark.sql("""
-           SELECT * FROM t3 ORDER BY ID
-           """).show()
-
     // Update data where salary < 15003
     val dateStr = "2018-08-08"
     spark.sql(s"""
-           UPDATE t3 SET (date) = ('$dateStr') WHERE t3.salary < 15003
+           UPDATE t3 SET (t3_date, t3_country) = ('$dateStr', 'india') WHERE t3_salary < 15003
            """).show()
-    spark.sql("""
-           UPDATE t3 SET (t3.country) = ('india') WHERE t3.salary < 15003
-           """).show()
-    spark.sql("""
-           UPDATE t3 SET (t3.salary) = (t3.salary + 9) WHERE t3.name = 'aaa1'
-           """).show()
-
     // Query data again after the above update
     spark.sql("""
-           SELECT * FROM t3 ORDER BY ID
+           SELECT * FROM t3 ORDER BY t3_id
+           """).show()
+
+    spark.sql("""
+           UPDATE t3 SET (t3_salary) = (t3_salary + 9) WHERE t3_name = 'aaa1'
+           """).show()
+    // Query data again after the above update
+    spark.sql("""
+           SELECT * FROM t3 ORDER BY t3_id
            """).show()
 
     // 2.Update data with subquery result SET
     spark.sql("""
          UPDATE t3
-         SET (t3.country, t3.name) = (SELECT u.country, u.name FROM t5 u WHERE u.id = 5)
-         WHERE t3.id < 5""").show()
+         SET (t3_country, t3_name) = (SELECT t5_country, t5_name FROM t5 WHERE t5_id = 5)
+         WHERE t3_id < 5""").show()
     spark.sql("""
          UPDATE t3
-         SET (t3.date, t3.serialname, t3.salary) =
-         (SELECT '2099-09-09', u.serialname, '9999' FROM t5 u WHERE u.id = 5)
-         WHERE t3.id < 5""").show()
+         SET (t3_date, t3_serialname, t3_salary) =
+         (SELECT '2099-09-09', t5_serialname, '9999' FROM t5 WHERE t5_id = 5)
+         WHERE t3_id < 5""").show()
 
     // Query data again after the above update
     spark.sql("""
-           SELECT * FROM t3 ORDER BY ID
+           SELECT * FROM t3 ORDER BY t3_id
            """).show()
 
     // 3.Update data with join query result SET
     spark.sql("""
          UPDATE t3
-         SET (t3.country, t3.salary) =
-         (SELECT u.country, f.salary FROM t5 u FULL JOIN t5 f
-         WHERE u.id = 8 and f.id=6) WHERE t3.id >6""").show()
+         SET (t3_country, t3_salary) =
+         (SELECT t5_country, t5_salary FROM t5 FULL JOIN t3 u
+         WHERE u.t3_id = t5_id and t5_id=6) WHERE t3_id >6""").show()
 
     // Query data again after the above update
     spark.sql("""
-           SELECT * FROM t3 ORDER BY ID
+           SELECT * FROM t3 ORDER BY t3_id
            """).show()
 
     // 4.Delete data where salary > 15005
     spark.sql("""
-           DELETE FROM t3 WHERE salary > 15005
+           DELETE FROM t3 WHERE t3_salary > 15005
            """).show()
 
     // Query data again after delete data
     spark.sql("""
-           SELECT * FROM t3 ORDER BY ID
+           SELECT * FROM t3 ORDER BY t3_id
            """).show()
 
     // 5.Delete data WHERE id in (1, 2, $key)
     var key = 3
     spark.sql(s"""
-           DELETE FROM t3 WHERE id in (1, 2, $key)
+           DELETE FROM t3 WHERE t3_id in (1, 2, $key)
            """).show()
 
     // Query data again after delete data
     spark.sql("""
-           SELECT * FROM t3 ORDER BY ID
+           SELECT * FROM t3 ORDER BY t3_id
            """).show()
 
     // Drop table
