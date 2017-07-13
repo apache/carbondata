@@ -90,12 +90,10 @@ public class UnsafeMemoryManager {
     if (memoryUsed + memoryRequested <= totalMemory) {
       MemoryBlock allocate = allocator.allocate(memoryRequested);
       memoryUsed += allocate.size();
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(
-            "Working Memory block (" + allocate + ") is created with size " + allocate.size()
-                + ". Total memory used " + memoryUsed + "Bytes, left " + (totalMemory - memoryUsed)
-                + "Bytes");
-      }
+      LOGGER.info(
+          "Working Memory block (" + allocate + ") is created with size " + allocate.size()
+              + ". Total memory used " + memoryUsed + "Bytes, left " + (totalMemory - memoryUsed)
+              + "Bytes");
       Set<MemoryBlock> listOfMemoryBlock = taskIdToMemoryBlockMap.get(taskId);
       if (null == listOfMemoryBlock) {
         listOfMemoryBlock = new HashSet<>();
@@ -112,11 +110,9 @@ public class UnsafeMemoryManager {
     allocator.free(memoryBlock);
     memoryUsed -= memoryBlock.size();
     memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug(
-          "Freeing memory of size: " + memoryBlock.size() + ": Current available memory is: " + (
-              totalMemory - memoryUsed));
-    }
+    LOGGER.debug(
+        "Freeing memory of size: " + memoryBlock.size() + ": Current available memory is: " + (
+            totalMemory - memoryUsed));
   }
 
   public void freeMemoryAll(long taskId) {

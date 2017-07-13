@@ -44,6 +44,7 @@ import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.DataMapRowImpl;
 import org.apache.carbondata.core.indexstore.schema.DataMapSchema;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
@@ -110,7 +111,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
       if (unsafeMemoryDMStore != null) {
         unsafeMemoryDMStore.finishWriting();
       }
-    } catch (IOException e) {
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
@@ -156,11 +157,11 @@ public class BlockletDataMap implements DataMap, Cacheable {
         DataOutput dataOutput = new DataOutputStream(stream);
         blockletInfo.write(dataOutput);
         serializedData = stream.toByteArray();
-      } catch (IOException e) {
+        row.setByteArray(serializedData, ordinal);
+        unsafeMemoryDMStore.addIndexRowToUnsafe(row);
+      } catch (Exception e) {
         throw new RuntimeException(e);
       }
-      row.setByteArray(serializedData, ordinal);
-      unsafeMemoryDMStore.addIndexRowToUnsafe(row);
     }
   }
 
@@ -176,7 +177,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
     return minRow;
   }
 
-  private void createSchema(SegmentProperties segmentProperties) {
+  private void createSchema(SegmentProperties segmentProperties) throws MemoryException {
     List<DataMapSchema> indexSchemas = new ArrayList<>();
 
     // Index key
