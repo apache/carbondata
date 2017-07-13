@@ -17,41 +17,32 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
-import java.io.IOException;
-
+import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.util.CarbonProperties;
 
-/**
- *  Codec for a column page data, implementation should not keep state across pages,
- *  caller may use the same object to apply multiple pages.
- */
-public interface ColumnPageCodec {
+public abstract class IndexStorageCodec implements ColumnPageCodec {
+  protected ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
+  protected Compressor compressor;
+  protected boolean isSort;
+  protected boolean isInvertedIndex;
 
-  /**
-   * Codec name will be stored in BlockletHeader (DataChunk3)
-   */
-  String getName();
+  IndexStorageCodec(boolean isSort, boolean isInvertedIndex, Compressor compressor) {
+    this.isSort = isSort;
+    this.isInvertedIndex = isInvertedIndex;
+    this.compressor = compressor;
+  }
 
-  /**
-   * encode a column page and return the encoded data
-   */
-  EncodedColumnPage encode(ColumnPage input) throws MemoryException, IOException;
+  @Override
+  public EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input) {
+    throw new UnsupportedOperationException("internal error");
+  }
 
-  /**
-   * encode complex column page and return the coded data
-   * TODO: remove this interface after complex column page is unified with column page
-   */
-  EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input);
-
-  /**
-   * decode byte array from offset to a column page
-   * @param input encoded byte array
-   * @param offset startoffset of the input to decode
-   * @param length length of data to decode
-   * @return decoded data
-   */
-  ColumnPage decode(byte[] input, int offset, int length) throws MemoryException;
-
+  @Override
+  public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
+    throw new UnsupportedOperationException("internal error");
+  }
 }

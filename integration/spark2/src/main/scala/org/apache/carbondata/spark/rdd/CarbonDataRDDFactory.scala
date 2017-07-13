@@ -706,22 +706,21 @@ object CarbonDataRDDFactory {
         }
       }
       // create new segment folder  in carbon store
-      if (!updateModel.isDefined) {
+      if (updateModel.isEmpty) {
         CarbonLoaderUtil.checkAndCreateCarbonDataLocation(storePath,
           carbonLoadModel.getSegmentId, carbonTable)
       }
       var loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
       var errorMessage: String = "DataLoad failure"
       var executorMessage: String = ""
-      val configuration = DataLoadProcessBuilder.createConfiguration(carbonLoadModel)
-      val sortScope = CarbonDataProcessorUtil.getSortScope(configuration)
+      val isSortTable = carbonTable.getNumberOfSortColumns > 0
+      val sortScope = CarbonDataProcessorUtil.getSortScope(carbonLoadModel.getSortScope)
       try {
         if (updateModel.isDefined) {
           loadDataFrameForUpdate()
         } else if (carbonTable.getPartitionInfo(carbonTable.getFactTableName) != null) {
           loadDataForPartitionTable()
-        } else if (configuration.isSortTable &&
-            sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
+        } else if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
           LOGGER.audit("Using global sort for loading.")
           status = DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkContext,
             dataFrame, carbonLoadModel)

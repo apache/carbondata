@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
 import org.apache.carbondata.core.datastore.page.PrimitiveCodec;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
@@ -55,6 +56,11 @@ public class DirectCompressCodec implements ColumnPageCodec {
     return new EncodedMeasurePage(input.getPageSize(), result,
         CodecMetaFactory.createMeta(stats, stats.getDataType()),
         ((SimpleStatsResult)input.getStatistics()).getNullBits());
+  }
+
+  @Override
+  public EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input) {
+    throw new UnsupportedOperationException("internal error");
   }
 
   @Override

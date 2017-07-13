@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
@@ -125,16 +126,46 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
     }
   }
 
-  @Override ColumnPageCodec newCodecForFloatingType(SimpleStatsResult stats) {
+  @Override
+  ColumnPageCodec newCodecForFloatingType(SimpleStatsResult stats) {
     return DirectCompressCodec.newInstance(stats, compressor);
   }
 
   // for decimal, currently it is a very basic implementation
-  @Override ColumnPageCodec newCodecForDecimalType(SimpleStatsResult stats) {
+  @Override
+  ColumnPageCodec newCodecForDecimalType(SimpleStatsResult stats) {
     return DirectCompressCodec.newInstance(stats, compressor);
   }
 
-  @Override ColumnPageCodec newCodecForByteArrayType(SimpleStatsResult stats) {
+  @Override
+  ColumnPageCodec newCodecForByteArrayType(SimpleStatsResult stats) {
     return DirectCompressCodec.newInstance(stats, compressor);
+  }
+
+  @Override
+  public ColumnPageCodec newCodec(TableSpec.DimensionSpec dimensionSpec) {
+    Compressor compressor = CompressorFactory.getInstance().getCompressor();
+    switch (dimensionSpec.getDimensionType()) {
+      case GLOBAL_DICTIONARY:
+        return new DictDimensionIndexCodec(
+            dimensionSpec.isInSortColumns(),
+            dimensionSpec.isInSortColumns() && dimensionSpec.isDoInvertedIndex(),
+            compressor);
+      case DIRECT_DICTIONARY:
+        return new DirectDictDimensionIndexCodec(
+            dimensionSpec.isInSortColumns(),
+            dimensionSpec.isInSortColumns() && dimensionSpec.isDoInvertedIndex(),
+            compressor);
+      case PLAIN_VALUE:
+        return new HighCardDictDimensionIndexCodec(
+            dimensionSpec.isInSortColumns(),
+            dimensionSpec.isInSortColumns() && dimensionSpec.isDoInvertedIndex(),
+            compressor);
+      case COMPLEX:
+        return new ComplexDimensionIndexCodec(false, false, compressor);
+      default:
+        throw new RuntimeException("unsupported dimension type: " +
+            dimensionSpec.getDimensionType());
+    }
   }
 }

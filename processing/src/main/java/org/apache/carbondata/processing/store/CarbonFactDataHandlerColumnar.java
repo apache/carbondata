@@ -56,7 +56,6 @@ import org.apache.carbondata.processing.store.file.FileManager;
 import org.apache.carbondata.processing.store.file.IFileManagerComposite;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
  * Fact data handler class to handle the fact data
@@ -173,9 +172,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE));
     if (isAggKeyBlock) {
       int[] dimLens = model.getSegmentProperties().getDimColumnsCardinality();
-      for (int i = 0; i < model.getTableSpec().getDimensionSpec().getNumSimpleDimensions(); i++) {
-        if (CarbonDataProcessorUtil
-            .isRleApplicableForColumn(model.getTableSpec().getDimensionSpec().getType(i))) {
+      for (int i = 0; i < model.getTableSpec().getNumSimpleDimensions(); i++) {
+        if (model.getSegmentProperties().getDimensions().get(i).isGlobalDictionaryEncoding()) {
           this.rleEncodingForDictDimension[i] = true;
         }
       }

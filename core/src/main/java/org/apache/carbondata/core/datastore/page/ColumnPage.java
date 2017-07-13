@@ -183,6 +183,9 @@ public abstract class ColumnPage {
         case DECIMAL:
           instance = newDecimalPage(new byte[pageSize][], scale, precision);
           break;
+        case BYTE_ARRAY:
+          instance = new SafeVarLengthColumnPage(dataType, pageSize);
+          break;
         default:
           throw new RuntimeException("Unsupported data dataType: " + dataType);
       }
