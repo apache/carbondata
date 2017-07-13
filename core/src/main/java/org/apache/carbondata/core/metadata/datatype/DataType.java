@@ -69,6 +69,9 @@ public enum DataType {
   }
 
   public int getSizeBits() {
+    if (this == SHORT_INT) {
+      throw new UnsupportedOperationException("Should not call this from datatype " + SHORT_INT);
+    }
     return (int) (Math.log(getSizeInBytes()) / Math.log(2));
   }
 
