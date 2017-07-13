@@ -23,7 +23,6 @@ import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
 
-
 // Represent a complex column page, e.g. Array, Struct type column
 public class ComplexColumnPage {
 
@@ -77,4 +76,7 @@ public class ComplexColumnPage {
     return depth;
   }
 
+  public int getPageSize() {
+    return pageSize;
+  }
 }

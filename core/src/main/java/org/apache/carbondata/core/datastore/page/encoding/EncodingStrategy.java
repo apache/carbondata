@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
@@ -30,7 +31,7 @@ public abstract class EncodingStrategy {
   /**
    * create codec based on the page data type and statistics
    */
-  public ColumnPageCodec createCodec(SimpleStatsResult stats) {
+  public ColumnPageCodec newCodec(SimpleStatsResult stats) {
     switch (stats.getDataType()) {
       case BYTE:
       case SHORT:
@@ -53,7 +54,7 @@ public abstract class EncodingStrategy {
   /**
    * create codec based on the page data type and statistics contained by ValueEncoderMeta
    */
-  public ColumnPageCodec createCodec(ValueEncoderMeta meta) {
+  public ColumnPageCodec newCodec(ValueEncoderMeta meta) {
     if (meta instanceof ColumnPageCodecMeta) {
       ColumnPageCodecMeta codecMeta = (ColumnPageCodecMeta) meta;
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(codecMeta);
@@ -107,5 +108,8 @@ public abstract class EncodingStrategy {
 
   // for byte array
   abstract ColumnPageCodec newCodecForByteArrayType(SimpleStatsResult stats);
+
+  // for dimension column
+  public abstract ColumnPageCodec newCodec(TableSpec.DimensionSpec dimensionSpec);
 
 }

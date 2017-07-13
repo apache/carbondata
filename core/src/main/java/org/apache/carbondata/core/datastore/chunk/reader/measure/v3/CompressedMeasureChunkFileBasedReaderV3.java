@@ -232,7 +232,7 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
 
     ColumnPageCodecMeta meta = new ColumnPageCodecMeta();
     meta.deserialize(encodedMeta);
-    ColumnPageCodec codec = strategy.createCodec(meta);
+    ColumnPageCodec codec = strategy.newCodec(meta);
     byte[] rawData = measureRawColumnChunk.getRawData().array();
     return codec.decode(rawData, copyPoint, measureColumnChunk.data_page_length);
   }

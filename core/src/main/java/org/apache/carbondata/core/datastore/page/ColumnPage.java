@@ -103,18 +103,6 @@ public abstract class ColumnPage {
     }
   }
 
-  public static ColumnPage newVarLengthPath(DataType dataType, int pageSize) {
-    if (unsafe) {
-      try {
-        return new UnsafeVarLengthColumnPage(dataType, pageSize);
-      } catch (MemoryException e) {
-        throw new RuntimeException(e);
-      }
-    } else {
-      return new SafeVarLengthColumnPage(dataType, pageSize);
-    }
-  }
-
   /**
    * Create a new page of dataType and number of row = pageSize
    */
@@ -163,6 +151,9 @@ public abstract class ColumnPage {
           break;
         case DECIMAL:
           instance = newDecimalPage(new byte[pageSize][]);
+          break;
+        case BYTE_ARRAY:
+          instance = new SafeVarLengthColumnPage(dataType, pageSize);
           break;
         default:
           throw new RuntimeException("Unsupported data dataType: " + dataType);
