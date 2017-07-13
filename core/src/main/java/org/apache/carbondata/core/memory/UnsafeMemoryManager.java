@@ -101,11 +101,9 @@ public class UnsafeMemoryManager {
     if (memoryUsed + memoryRequested <= totalMemory) {
       MemoryBlock allocate = allocator.allocate(memoryRequested);
       memoryUsed += allocate.size();
-      if (LOGGER.isDebugEnabled()) {
-        set.add(allocate);
-        LOGGER.error("Memory block (" + allocate + ") is created with size "  + allocate.size() +
-            ". Total memory used " + memoryUsed + "Bytes, left " + getAvailableMemory() + "Bytes");
-      }
+      set.add(allocate);
+      LOGGER.info("Memory block (" + allocate + ") is created with size "  + allocate.size() +
+          ". Total memory used " + memoryUsed + "Bytes, left " + getAvailableMemory() + "Bytes");
       return allocate;
     }
     return null;
@@ -115,11 +113,9 @@ public class UnsafeMemoryManager {
     allocator.free(memoryBlock);
     memoryUsed -= memoryBlock.size();
     memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
-    if (LOGGER.isDebugEnabled()) {
-      set.remove(memoryBlock);
-      LOGGER.error("Memory block (" + memoryBlock + ") released. Total memory used " + memoryUsed +
-          "Bytes, left " + getAvailableMemory() + "Bytes. Total allocated block: " + set.size());
-    }
+    set.remove(memoryBlock);
+    LOGGER.info("Memory block (" + memoryBlock + ") released. Total memory used " + memoryUsed +
+        "Bytes, left " + getAvailableMemory() + "Bytes. Total allocated block: " + set.size());
   }
 
   private synchronized long getAvailableMemory() {
