@@ -60,7 +60,7 @@ object DataUpdateDeleteExample {
     spark.sql("DROP TABLE IF EXISTS t3")
     spark.sql("DROP TABLE IF EXISTS t5")
 
-     // Simulate data and write to table t3 and t5
+     // Simulate data and write to table t3
     var sdf = new SimpleDateFormat("yyyy-MM-dd")
     var df = spark.sparkContext.parallelize(1 to 10)
       .map(x => (x, new java.sql.Date(sdf.parse("2015-07-" + (x % 10 + 10)).getTime),
@@ -74,6 +74,7 @@ object DataUpdateDeleteExample {
       .mode(SaveMode.Overwrite)
       .save()
 
+    // Simulate data and write to table t5
     df = spark.sparkContext.parallelize(1 to 10)
       .map(x => (x, new java.sql.Date(sdf.parse("2017-07-" + (x % 20 + 1)).getTime),
         "usa", "bbb" + x, "phone" + 100 * x, "ASD" + (1000 * x - x), 25000 + x))
