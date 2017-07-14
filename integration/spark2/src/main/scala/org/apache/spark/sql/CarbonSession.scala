@@ -65,7 +65,7 @@ object CarbonSession {
 
     def getOrCreateCarbonSession(): SparkSession = {
       getOrCreateCarbonSession(
-        new File(CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL).getCanonicalPath,
+        null,
         new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
     }
 
@@ -145,9 +145,14 @@ object CarbonSession {
           }
           sc
         }
-
-        CarbonProperties.getInstance()
-          .addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
+        val carbonProperties = CarbonProperties.getInstance()
+        if (storePath != null) {
+          carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
+          // In case if it is in carbon.properties for backward compatible
+        } else if (carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION) == null) {
+          carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION,
+            sparkContext.conf.get("spark.sql.warehouse.dir"))
+        }
         session = new CarbonSession(sparkContext)
         options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
         SparkSession.setDefaultSession(session)

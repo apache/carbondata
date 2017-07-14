@@ -57,8 +57,8 @@ object CarbonThriftServer {
                   "Using default Value and proceeding")
         Thread.sleep(30000)
     }
-
-    val cc = new CarbonContext(sc, args.head)
+    val storePath = if (args.length > 0) args.head else null
+    val cc = new CarbonContext(sc, storePath)
 
     HiveThriftServer2.startWithContext(cc)
   }

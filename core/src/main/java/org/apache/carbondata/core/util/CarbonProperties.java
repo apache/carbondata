@@ -83,10 +83,6 @@ public final class CarbonProperties {
     } catch (IllegalAccessException e) {
       LOGGER.error("Illelagal access to declared field" + e.getMessage());
     }
-    if (null == carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION)) {
-      carbonProperties.setProperty(CarbonCommonConstants.STORE_LOCATION,
-          CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    }
 
     validateBlockletSize();
     validateNumCores();

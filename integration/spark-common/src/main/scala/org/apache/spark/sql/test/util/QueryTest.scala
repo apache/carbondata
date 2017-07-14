@@ -28,6 +28,9 @@ import org.apache.spark.sql.test.TestQueryExecutor
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 class QueryTest extends PlanTest {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -86,7 +89,8 @@ class QueryTest extends PlanTest {
 
   val sqlContext: SQLContext = TestQueryExecutor.INSTANCE.sqlContext
 
-  val storeLocation = TestQueryExecutor.storeLocation
+  lazy val storeLocation = CarbonProperties.getInstance().
+    getProperty(CarbonCommonConstants.STORE_LOCATION)
   val resourcesPath = TestQueryExecutor.resourcesPath
   val integrationPath = TestQueryExecutor.integrationPath
 }

@@ -29,11 +29,13 @@ public class TableMeta implements Serializable {
   public CarbonTableIdentifier carbonTableIdentifier;
   public String storePath;
   public CarbonTable carbonTable;
+  public String tablePath;
 
-  public TableMeta(CarbonTableIdentifier carbonTableIdentifier, String storePath,
+  public TableMeta(CarbonTableIdentifier carbonTableIdentifier, String storePath, String tablePath,
       CarbonTable carbonTable) {
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.storePath = storePath;
+    this.tablePath = tablePath;
     this.carbonTable = carbonTable;
   }
 
