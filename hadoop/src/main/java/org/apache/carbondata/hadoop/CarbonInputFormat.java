@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.hadoop;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -112,7 +114,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   public static void setTableInfo(Configuration configuration, TableInfo tableInfo)
       throws IOException {
     if (null != tableInfo) {
-      configuration.set(TABLE_INFO, ObjectSerializationUtil.convertObjectToString(tableInfo));
+      configuration.set(TABLE_INFO, ObjectSerializationUtil.encodeToString(tableInfo.serialize()));
     }
   }
 
@@ -121,7 +123,16 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    */
   private TableInfo getTableInfo(Configuration configuration) throws IOException {
     String tableInfoStr = configuration.get(TABLE_INFO);
-    return (TableInfo) ObjectSerializationUtil.convertStringToObject(tableInfoStr);
+    if (tableInfoStr == null) {
+      return null;
+    } else {
+      TableInfo output = new TableInfo();
+      output.readFields(
+          new DataInputStream(
+              new ByteArrayInputStream(
+                  ObjectSerializationUtil.decodeStringToBytes(tableInfoStr))));
+      return output;
+    }
   }
 
   /**
