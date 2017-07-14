@@ -146,31 +146,31 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
 
   test("show partition table: hash table") {
     // EqualTo
-    checkAnswer(sql("show partitions hashTable"), Seq(Row("empno=HASH_NUMBER(3)")))
+    checkAnswer(sql("show partitions hashTable"), Seq(Row("empno = HASH_NUMBER(3)")))
 
   }
 
   test("show partition table: range partition") {
     // EqualTo
-    checkAnswer(sql("show partitions rangeTable"), Seq(Row("doj=default"),
-      Row("doj<01-01-2010"), Row("01-01-2010<=doj<01-01-2015")))
+    checkAnswer(sql("show partitions rangeTable"), Seq(Row("0, doj = DEFAULT"),
+      Row("1, doj < 01-01-2010"), Row("2, 01-01-2010 <= doj < 01-01-2015")))
   }
 
   test("show partition table: list partition") {
     // EqualTo
-    checkAnswer(sql("show partitions listTable"), Seq(Row("workgroupcategory=default"),
-      Row("workgroupcategory=0"), Row("workgroupcategory=1"), Row("workgroupcategory=2, 3")))
+    checkAnswer(sql("show partitions listTable"), Seq(Row("0, workgroupcategory = DEFAULT"),
+      Row("1, workgroupcategory = 0"), Row("2, workgroupcategory = 1"), Row("3, workgroupcategory = 2, 3")))
 
   }
   test("show partition table: not default db") {
     // EqualTo
-    checkAnswer(sql("show partitions partitionDB.hashTable"), Seq(Row("empno=HASH_NUMBER(3)")))
+    checkAnswer(sql("show partitions partitionDB.hashTable"), Seq(Row("empno = HASH_NUMBER(3)")))
     // EqualTo
-    checkAnswer(sql("show partitions partitionDB.rangeTable"), Seq(Row("doj=default"),
-      Row("doj<01-01-2010"), Row("01-01-2010<=doj<01-01-2015")))
+    checkAnswer(sql("show partitions partitionDB.rangeTable"), Seq(Row("0, doj = DEFAULT"),
+      Row("1, doj < 01-01-2010"), Row("2, 01-01-2010 <= doj < 01-01-2015")))
     // EqualTo
-    checkAnswer(sql("show partitions partitionDB.listTable"), Seq(Row("workgroupcategory=default"),
-      Row("workgroupcategory=0"), Row("workgroupcategory=1"), Row("workgroupcategory=2, 3")))
+    checkAnswer(sql("show partitions partitionDB.listTable"), Seq(Row("0, workgroupcategory = DEFAULT"),
+      Row("1, workgroupcategory = 0"), Row("2, workgroupcategory = 1"), Row("3, workgroupcategory = 2, 3")))
 
   }
 
