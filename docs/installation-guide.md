@@ -182,9 +182,10 @@ hdfs://<host_name>:port/user/hive/warehouse/carbon.store
 
 ```
      cd $SPARK_HOME
-     ./bin/beeline jdbc:hive2://<thriftserver_host>:port
+     ./sbin/start-thriftserver.sh
+     ./bin/beeline -u jdbc:hive2://<thriftserver_host>:port
 
      Example
-     ./bin/beeline jdbc:hive2://10.10.10.10:10000
+     ./bin/beeline -u jdbc:hive2://10.10.10.10:10000
 ```
 
