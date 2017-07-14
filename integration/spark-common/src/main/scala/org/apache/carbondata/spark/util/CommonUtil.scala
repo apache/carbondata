@@ -587,42 +587,45 @@ object CommonUtil {
     var result = Seq.newBuilder[Row]
     partitionType match {
       case PartitionType.RANGE =>
-        result.+=(RowFactory.create(columnName + "=default"))
-        var rangeInfo = partitionInfo.getRangeInfo
-        var size = rangeInfo.size() - 1
+        result.+=(RowFactory.create("0" + ", " + columnName + " = DEFAULT"))
+        val rangeInfo = partitionInfo.getRangeInfo
+        val size = rangeInfo.size() - 1
         for (index <- 0 to size) {
           if (index == 0) {
-            result.+=(RowFactory.create(columnName + "<" + rangeInfo.get(index)))
+            val id = partitionInfo.getPartitionId(index + 1).toString
+            val desc = columnName + " < " + rangeInfo.get(index)
+            result.+=(RowFactory.create(id + ", " + desc))
           } else {
-            result.+=(RowFactory.create(rangeInfo.get(index - 1) + "<=" +
-              columnName + "<" + rangeInfo.get(index)))
+            val id = partitionInfo.getPartitionId(index + 1).toString
+            val desc = rangeInfo.get(index - 1) + " <= " + columnName + " < " + rangeInfo.get(index)
+            result.+=(RowFactory.create(id + ", " + desc))
           }
         }
       case PartitionType.RANGE_INTERVAL =>
-        result.+=(RowFactory.create(columnName + "="))
+        result.+=(RowFactory.create(columnName + " = "))
       case PartitionType.LIST =>
-        result.+=(RowFactory.create(columnName + "=default"))
-        var listInfo = partitionInfo.getListInfo
+        result.+=(RowFactory.create("0" + ", " + columnName + " = DEFAULT"))
+        val listInfo = partitionInfo.getListInfo
         listInfo.asScala.foreach {
           f =>
-            result.+=(RowFactory.create(columnName + "=" +
-              f.toArray().mkString(", ")))
+            val id = partitionInfo.getPartitionId(listInfo.indexOf(f) + 1).toString
+            val desc = columnName + " = " + f.toArray().mkString(", ")
+            result.+=(RowFactory.create(id + ", " + desc))
         }
       case PartitionType.HASH =>
-        var hashNumber = partitionInfo.getNumPartitions
-        result.+=(RowFactory.create(columnName + "=HASH_NUMBER(" + hashNumber.toString() + ")"))
+        val hashNumber = partitionInfo.getNumPartitions
+        result.+=(RowFactory.create(columnName + " = HASH_NUMBER(" + hashNumber.toString() + ")"))
       case others =>
-        result.+=(RowFactory.create(columnName + "="))
+        result.+=(RowFactory.create(columnName + " = "))
     }
-    result.result()
+    val rows = result.result()
+    rows
   }
 
-  def partitionInfoOutput: Seq[Attribute] = {
-    Seq(
-      AttributeReference("partition", StringType, nullable = false,
-        new MetadataBuilder().putString("comment", "partitions info").build())()
-    )
-  }
+  def partitionInfoOutput: Seq[Attribute] = Seq(
+    AttributeReference("Partition(Id, DESC)", StringType, false,
+      new MetadataBuilder().putString("comment", "partition").build())()
+  )
 
   /**
    * Method to clear the memory for a task
