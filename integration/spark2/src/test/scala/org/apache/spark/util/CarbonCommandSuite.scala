@@ -43,31 +43,31 @@ class CarbonCommandSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   test("show segment") {
-    ShowSegments.main(Array(s"${CarbonUtil.getCarbonStorePath}", "carbon_table"))
+    ShowSegments.main(Array(s"${TestQueryExecutor.storeLocation}", "carbon_table"))
   }
 
   test("delete segment by id") {
-    DeleteSegmentById.main(Array(s"${CarbonUtil.getCarbonStorePath}", "carbon_table", "0"))
-    assert(!CarbonStore.isSegmentValid("default", "carbon_table", "0"))
+    DeleteSegmentById.main(Array(s"${TestQueryExecutor.storeLocation}", "carbon_table", "0"))
+    assert(!CarbonStore.isSegmentValid("default", "carbon_table",TestQueryExecutor.storeLocation,  "0"))
   }
 
   test("delete segment by date") {
     createAndLoadTestTable("carbon_table2", "csv_table")
     val time = new Timestamp(new Date().getTime)
-    DeleteSegmentByDate.main(Array(s"${CarbonUtil.getCarbonStorePath}", "carbon_table2", time.toString))
-    assert(!CarbonStore.isSegmentValid("default", "carbon_table2", "0"))
+    DeleteSegmentByDate.main(Array(s"${TestQueryExecutor.storeLocation}", "carbon_table2", time.toString))
+    assert(!CarbonStore.isSegmentValid("default", "carbon_table2", TestQueryExecutor.storeLocation, "0"))
     dropTable("carbon_table2")
   }
 
   test("clean files") {
     val table = "carbon_table3"
     createAndLoadTestTable(table, "csv_table")
-    ShowSegments.main(Array(s"${CarbonUtil.getCarbonStorePath}", table))
-    DeleteSegmentById.main(Array(s"${CarbonUtil.getCarbonStorePath}", table, "0"))
-    ShowSegments.main(Array(s"${CarbonUtil.getCarbonStorePath}", table))
-    CleanFiles.main(Array(s"${CarbonUtil.getCarbonStorePath}", table))
-    ShowSegments.main(Array(s"${CarbonUtil.getCarbonStorePath}", table))
-    val tablePath = s"${CarbonUtil.getCarbonStorePath}${File.separator}default${File.separator}$table"
+    ShowSegments.main(Array(s"${TestQueryExecutor.storeLocation}", table))
+    DeleteSegmentById.main(Array(s"${TestQueryExecutor.storeLocation}", table, "0"))
+    ShowSegments.main(Array(s"${TestQueryExecutor.storeLocation}", table))
+    CleanFiles.main(Array(s"${TestQueryExecutor.storeLocation}", table))
+    ShowSegments.main(Array(s"${TestQueryExecutor.storeLocation}", table))
+    val tablePath = s"${TestQueryExecutor.storeLocation}${File.separator}default${File.separator}$table"
     val f = new File(s"$tablePath/Fact/Part0")
     assert(f.isDirectory)
 

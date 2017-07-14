@@ -730,15 +730,6 @@ public final class CarbonUtil {
         .startsWith("file://") || lowerPath.startsWith(ALLUXIO_PREFIX);
   }
 
-  public static String getCarbonStorePath() {
-    CarbonProperties prop = CarbonProperties.getInstance();
-    if (null == prop) {
-      return null;
-    }
-    return prop.getProperty(CarbonCommonConstants.STORE_LOCATION,
-        CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-  }
-
   /**
    * This method will check the existence of a file at a given path
    */

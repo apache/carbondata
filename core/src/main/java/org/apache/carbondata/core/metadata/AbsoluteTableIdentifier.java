@@ -68,9 +68,9 @@ public class AbsoluteTableIdentifier implements Serializable {
     return carbonTableIdentifier;
   }
 
-  public static AbsoluteTableIdentifier from(String dbName, String tableName) {
+  public static AbsoluteTableIdentifier from(String storePath, String dbName, String tableName) {
     CarbonTableIdentifier identifier = new CarbonTableIdentifier(dbName, tableName, "");
-    return new AbsoluteTableIdentifier(CarbonUtil.getCarbonStorePath(), identifier);
+    return new AbsoluteTableIdentifier(storePath, identifier);
   }
 
   /**

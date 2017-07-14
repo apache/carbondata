@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata.schema;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -32,7 +33,8 @@ public class BucketingInfo implements Serializable {
   private int numberOfBuckets;
 
   public BucketingInfo(List<ColumnSchema> listOfColumns, int numberOfBuckets) {
-    this.listOfColumns = listOfColumns;
+    this.listOfColumns = new ArrayList<>();
+    this.listOfColumns.addAll(listOfColumns);
     this.numberOfBuckets = numberOfBuckets;
   }
 

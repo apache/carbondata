@@ -73,7 +73,7 @@ public final class CarbonCommonConstants {
   /**
    * default location of the carbon member, hierarchy and fact files
    */
-  public static final String STORE_LOCATION_DEFAULT_VAL = "../carbon.store";
+//  public static final String STORE_LOCATION_DEFAULT_VAL = "../carbon.store";
   /**
    * CARDINALITY_INCREMENT_DEFAULT_VALUE
    */

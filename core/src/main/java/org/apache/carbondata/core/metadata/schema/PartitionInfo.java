@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.metadata.schema;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
@@ -48,7 +49,8 @@ public class PartitionInfo implements Serializable {
   private int numPartitions;
 
   public PartitionInfo(List<ColumnSchema> columnSchemaList, PartitionType partitionType) {
-    this.columnSchemaList = columnSchemaList;
+    this.columnSchemaList = new ArrayList<>();
+    this.columnSchemaList.addAll(columnSchemaList);
     this.partitionType = partitionType;
   }
 
@@ -57,7 +59,8 @@ public class PartitionInfo implements Serializable {
   }
 
   public void setColumnSchemaList(List<ColumnSchema> columnSchemaList) {
-    this.columnSchemaList = columnSchemaList;
+    this.columnSchemaList = new ArrayList<>();
+    this.columnSchemaList.addAll(columnSchemaList);
   }
 
   public PartitionType getPartitionType() {
@@ -73,7 +76,8 @@ public class PartitionInfo implements Serializable {
   }
 
   public void setRangeInfo(List<String> rangeInfo) {
-    this.rangeInfo = rangeInfo;
+    this.rangeInfo = new ArrayList<>();
+    this.rangeInfo.addAll(rangeInfo);
   }
 
   public List<String> getRangeInfo() {
@@ -81,7 +85,8 @@ public class PartitionInfo implements Serializable {
   }
 
   public void setListInfo(List<List<String>> listInfo) {
-    this.listInfo = listInfo;
+    this.listInfo = new ArrayList<>();
+    this.listInfo.addAll(listInfo);
   }
 
   public List<List<String>> getListInfo() {
