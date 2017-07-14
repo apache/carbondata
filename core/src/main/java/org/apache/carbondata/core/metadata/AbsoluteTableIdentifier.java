@@ -21,7 +21,6 @@ import java.io.Serializable;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * identifier which will have store path and carbon table identifier
@@ -68,9 +67,9 @@ public class AbsoluteTableIdentifier implements Serializable {
     return carbonTableIdentifier;
   }
 
-  public static AbsoluteTableIdentifier from(String dbName, String tableName) {
+  public static AbsoluteTableIdentifier from(String storePath, String dbName, String tableName) {
     CarbonTableIdentifier identifier = new CarbonTableIdentifier(dbName, tableName, "");
-    return new AbsoluteTableIdentifier(CarbonUtil.getCarbonStorePath(), identifier);
+    return new AbsoluteTableIdentifier(storePath, identifier);
   }
 
   /**

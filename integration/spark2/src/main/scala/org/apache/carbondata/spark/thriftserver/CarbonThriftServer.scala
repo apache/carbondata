@@ -53,9 +53,9 @@ object CarbonThriftServer {
       System.setProperty("carbon.properties.filepath", sparkConf.get("carbon.properties.filepath"))
     }
 
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION, args.head)
+    val storePath = if (args.length > 0) args.head else null
 
-    val spark = builder.getOrCreateCarbonSession(args.head)
+    val spark = builder.getOrCreateCarbonSession(storePath)
     val warmUpTime = CarbonProperties.getInstance().getProperty("carbon.spark.warmUpTime", "5000")
     try {
       Thread.sleep(Integer.parseInt(warmUpTime))

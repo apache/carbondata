@@ -94,16 +94,17 @@ class CarbonSessionCatalog(
   private def refreshRelationFromCache(name: TableIdentifier,
       alias: Option[String],
       carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation): LogicalPlan = {
-    carbonEnv.carbonMetastore.checkSchemasModifiedTimeAndReloadTables
+    carbonEnv.carbonMetastore.
+      checkSchemasModifiedTimeAndReloadTables(CarbonEnv.getInstance(sparkSession).storePath)
     carbonEnv.carbonMetastore
-      .getTableFromMetadata(carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
+      .getTableFromMetadataCache(carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
         carbonDatasourceHadoopRelation.carbonTable.getFactTableName) match {
       case tableMeta: TableMeta =>
         if (tableMeta.carbonTable.getTableLastUpdatedTime !=
             carbonDatasourceHadoopRelation.carbonTable.getTableLastUpdatedTime) {
           refreshTable(name)
         }
-      case _ => refreshTable(name)
+      case _ =>
     }
     super.lookupRelation(name, alias)
   }

@@ -730,15 +730,6 @@ public final class CarbonUtil {
         .startsWith("file://") || lowerPath.startsWith(ALLUXIO_PREFIX);
   }
 
-  public static String getCarbonStorePath() {
-    CarbonProperties prop = CarbonProperties.getInstance();
-    if (null == prop) {
-      return null;
-    }
-    return prop.getProperty(CarbonCommonConstants.STORE_LOCATION,
-        CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-  }
-
   /**
    * This method will check the existence of a file at a given path
    */
@@ -1797,6 +1788,25 @@ public final class CarbonUtil {
     }
     TableInfo tableInfo = gson.fromJson(builder.toString(), TableInfo.class);
     return tableInfo;
+  }
+
+  /**
+   * Removes schema from properties
+   * @param properties
+   * @return
+   */
+  public static Map<String, String> removeSchemaFromMap(Map<String, String> properties) {
+    Map<String, String> newMap = new HashMap<>();
+    newMap.putAll(properties);
+    String partsNo = newMap.get("carbonSchemaPartsNo");
+    if (partsNo == null) {
+      return newMap;
+    }
+    int no = Integer.parseInt(partsNo);
+    for (int i = 0; i < no; i++) {
+      newMap.remove("carbonSchema" + i);
+    }
+    return newMap;
   }
 
   /**
