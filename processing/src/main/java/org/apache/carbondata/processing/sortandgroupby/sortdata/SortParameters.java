@@ -30,6 +30,8 @@ import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.schema.metadata.SortObserver;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class SortParameters implements Serializable {
 
   private static final LogService LOGGER =
@@ -37,7 +39,7 @@ public class SortParameters implements Serializable {
   /**
    * tempFileLocation
    */
-  private String tempFileLocation;
+  private String[] tempFileLocation;
   /**
    * sortBufferSize
    */
@@ -156,11 +158,11 @@ public class SortParameters implements Serializable {
     return parameters;
   }
 
-  public String getTempFileLocation() {
+  public String[] getTempFileLocation() {
     return tempFileLocation;
   }
 
-  public void setTempFileLocation(String tempFileLocation) {
+  public void setTempFileLocation(String[] tempFileLocation) {
     this.tempFileLocation = tempFileLocation;
   }
 
@@ -407,13 +409,18 @@ public class SortParameters implements Serializable {
 
     LOGGER.info("File Buffer Size: " + parameters.getFileBufferSize());
 
-    String carbonDataDirectoryPath = CarbonDataProcessorUtil
+    String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), configuration.getTaskNo(),
             configuration.getPartitionId(), configuration.getSegmentId(), false);
-    parameters.setTempFileLocation(
-        carbonDataDirectoryPath + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
-    LOGGER.info("temp file location" + parameters.getTempFileLocation());
+    String[] sortTempDirs = new String[carbonDataDirectoryPath.length];
+    for (int i = 0; i < carbonDataDirectoryPath.length; i++) {
+      sortTempDirs[i] = carbonDataDirectoryPath[i] + File.separator
+          + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
+    }
+
+    parameters.setTempFileLocation(sortTempDirs);
+    LOGGER.info("temp file location: " + StringUtils.join(parameters.getTempFileLocation(), ","));
 
     int numberOfCores;
     try {
@@ -528,12 +535,16 @@ public class SortParameters implements Serializable {
 
     LOGGER.info("File Buffer Size: " + parameters.getFileBufferSize());
 
-    String carbonDataDirectoryPath = CarbonDataProcessorUtil
+    String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(databaseName, tableName, taskNo, partitionID, segmentId,
             isCompactionFlow);
-    parameters.setTempFileLocation(
-        carbonDataDirectoryPath + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
-    LOGGER.info("temp file location" + parameters.getTempFileLocation());
+    String[] sortTempDirs = new String[carbonDataDirectoryPath.length];
+    for (int i = 0; i < carbonDataDirectoryPath.length; i++) {
+      sortTempDirs[i] = carbonDataDirectoryPath[i] + File.separator
+          + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
+    }
+    parameters.setTempFileLocation(sortTempDirs);
+    LOGGER.info("temp file location: " + StringUtils.join(parameters.getTempFileLocation(), ","));
 
     int numberOfCores;
     try {

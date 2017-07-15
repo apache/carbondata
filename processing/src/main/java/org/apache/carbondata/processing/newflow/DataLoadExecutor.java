@@ -33,7 +33,7 @@ public class DataLoadExecutor {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataLoadExecutor.class.getName());
 
-  public void execute(CarbonLoadModel loadModel, String storeLocation,
+  public void execute(CarbonLoadModel loadModel, String[] storeLocation,
       CarbonIterator<Object[]>[] inputIterators) throws Exception {
     AbstractDataLoadProcessorStep loadProcessorStep = null;
     try {

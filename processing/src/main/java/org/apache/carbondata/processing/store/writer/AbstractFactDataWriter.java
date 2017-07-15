@@ -28,7 +28,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -59,7 +61,6 @@ import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.NodeHolder;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileWriter;
 import org.apache.carbondata.format.BlockIndex;
@@ -128,7 +129,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * executorService
    */
   private List<Future<Void>> executorServiceSubmitList;
-  private CarbonTablePath carbonTablePath;
   /**
    * data block size for one carbon data file
    */
@@ -179,8 +179,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
         dataWriterVo.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + dataWriterVo
             .getTableName());
-    carbonTablePath = CarbonStorePath.getCarbonTablePath(dataWriterVo.getStoreLocation(),
-        carbonTable.getCarbonTableIdentifier());
     //TODO: We should delete the levelmetadata file after reading here.
     // so only data loading flow will need to read from cardinality file.
     if (null == this.localCardinality) {
@@ -288,14 +286,20 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     // update the filename with new new sequence
     // increment the file sequence counter
     initFileCount();
-    this.carbonDataFileName = carbonTablePath
+
+    //each time we initialize writer, we choose a local temp location randomly
+    String[] tempFileLocations = dataWriterVo.getStoreLocation();
+    String chosenTempLocation = tempFileLocations[new Random().nextInt(tempFileLocations.length)];
+    LOGGER.info("Randomly choose factdata temp location: " + chosenTempLocation);
+
+    this.carbonDataFileName = CarbonTablePath
         .getCarbonDataFileName(fileCount, dataWriterVo.getCarbonDataFileAttributes().getTaskId(),
             dataWriterVo.getBucketNumber(), dataWriterVo.getTaskExtension(),
             "" + dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
     String actualFileNameVal = carbonDataFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-    FileData fileData = new FileData(actualFileNameVal, dataWriterVo.getStoreLocation());
+    FileData fileData = new FileData(actualFileNameVal, chosenTempLocation);
     dataWriterVo.getFileManager().add(fileData);
-    this.carbonDataFileTempPath = dataWriterVo.getStoreLocation() + File.separator
+    this.carbonDataFileTempPath = chosenTempLocation + File.separator
         + carbonDataFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     this.fileCount++;
     try {
@@ -310,7 +314,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
 
   private int initFileCount() {
     int fileInitialCount = 0;
-    File[] dataFiles = new File(dataWriterVo.getStoreLocation()).listFiles(new FileFilter() {
+    FileFilter fileFilter = new FileFilter() {
       @Override public boolean accept(File pathVal) {
         if (!pathVal.isDirectory() && pathVal.getName().startsWith(dataWriterVo.getTableName())
             && pathVal.getName().contains(CarbonCommonConstants.FACT_FILE_EXT)) {
@@ -318,9 +322,26 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
         }
         return false;
       }
-    });
+    };
+
+    List<File> dataFileList = new ArrayList<File>();
+    for (String tempLoc : dataWriterVo.getStoreLocation()) {
+      File[] subFiles = new File(tempLoc).listFiles(fileFilter);
+      if (null != subFiles && subFiles.length > 0) {
+        dataFileList.addAll(Arrays.asList(subFiles));
+      }
+    }
+
+    File[] dataFiles = new File[dataFileList.size()];
+    dataFileList.toArray(dataFiles);
     if (dataFiles != null && dataFiles.length > 0) {
-      Arrays.sort(dataFiles);
+      // since files are in different directory, we should only compare the file name
+      // and ignore the directory
+      Arrays.sort(dataFiles, new Comparator<File>() {
+        @Override public int compare(File o1, File o2) {
+          return o1.getName().compareTo(o2.getName());
+        }
+      });
       String dataFileName = dataFiles[dataFiles.length - 1].getName();
       try {
         fileInitialCount = Integer
@@ -439,7 +460,12 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
         .getIndexHeader(localCardinality, thriftColumnSchemaList, dataWriterVo.getBucketNumber());
     // get the block index info thrift
     List<BlockIndex> blockIndexThrift = CarbonMetadataUtil.getBlockIndexInfo(blockIndexInfoList);
-    String fileName = dataWriterVo.getStoreLocation() + File.separator + carbonTablePath
+    // randomly choose a temp location for index file
+    String[] tempLocations = dataWriterVo.getStoreLocation();
+    String chosenTempLocation = tempLocations[new Random().nextInt(tempLocations.length)];
+    LOGGER.info("Randomly choose index file location: " + chosenTempLocation);
+
+    String fileName = chosenTempLocation + File.separator + CarbonTablePath
         .getCarbonIndexFileName(dataWriterVo.getCarbonDataFileAttributes().getTaskId(),
             dataWriterVo.getBucketNumber(), dataWriterVo.getTaskExtension(),
             "" + dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
