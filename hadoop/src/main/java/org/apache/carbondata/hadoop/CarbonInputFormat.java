@@ -125,10 +125,16 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    */
   private TableInfo getTableInfo(Configuration configuration) throws IOException {
     String tableInfoStr = configuration.get(TABLE_INFO);
-    TableInfo output = new TableInfo();
-    output.readFields(new DataInputStream(
-        new ByteArrayInputStream(ObjectSerializationUtil.decodeStringToBytes(tableInfoStr))));
-    return output;
+    if (tableInfoStr == null) {
+      return null;
+    } else {
+      TableInfo output = new TableInfo();
+      output.readFields(
+          new DataInputStream(
+              new ByteArrayInputStream(
+                  ObjectSerializationUtil.decodeStringToBytes(tableInfoStr))));
+      return output;
+    }
   }
 
   /**
