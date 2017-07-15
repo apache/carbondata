@@ -21,7 +21,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -105,8 +104,7 @@ public class TableSchema implements Serializable, Writable {
    * @param listOfColumns the listOfColumns to set
    */
   public void setListOfColumns(List<ColumnSchema> listOfColumns) {
-    this.listOfColumns = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    this.listOfColumns.addAll(listOfColumns);
+    this.listOfColumns = listOfColumns;
   }
 
   /**
@@ -185,8 +183,7 @@ public class TableSchema implements Serializable, Writable {
    * @param tableProperties
    */
   public void setTableProperties(Map<String, String> tableProperties) {
-    this.tableProperties = new HashMap<>();
-    this.tableProperties.putAll(tableProperties);
+    this.tableProperties = tableProperties;
   }
 
   public BucketingInfo getBucketingInfo() {

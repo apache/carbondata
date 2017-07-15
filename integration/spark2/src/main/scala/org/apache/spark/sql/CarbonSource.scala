@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql
 
+import java.util
+
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
@@ -234,22 +236,37 @@ object CarbonSource {
     val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val storageFormat = tableDesc.storage
     val properties = storageFormat.properties
-    if (metaStore.isReadFromHiveMetaStore && !properties.contains("carbonSchemaPartsNo")) {
+    if (!properties.contains("carbonSchemaPartsNo")) {
       val dbName: String = properties.getOrElse("dbName",
         CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
       val tableName: String = properties.getOrElse("tableName", "").toLowerCase
       val model = createTableInfoFromParams(properties, tableDesc.schema, dbName, tableName)
       val tableInfo: TableInfo = TableNewProcessor(model)
-      val (tablePath, carbonSchemaString) =
-      metaStore.createTableFromThrift(tableInfo, dbName, tableName)(sparkSession)
-      val map = CarbonUtil.convertToMultiStringMap(tableInfo)
+      val (tablePath, _) =
+        metaStore.generateTableSchemaString(tableInfo, dbName, tableName)
+      metaStore.saveToDisk(tableInfo)
+      val map = if (metaStore.isReadFromHiveMetaStore) {
+        CarbonUtil.convertToMultiStringMap(tableInfo)
+      } else {
+        new java.util.HashMap[String, String]()
+      }
       properties.foreach(e => map.put(e._1, e._2))
       map.put("tablePath", tablePath)
       // updating params
       val updatedFormat = storageFormat.copy(properties = map.asScala.toMap)
       tableDesc.copy(storage = updatedFormat)
     } else {
-      tableDesc
+      val tableInfo = CarbonUtil.convertGsonToTableInfo(properties.asJava)
+      if (!metaStore.isReadFromHiveMetaStore) {
+        // save to disk
+        metaStore.saveToDisk(tableInfo)
+        // remove schema string from map as we don't store carbon schema to hive metastore
+        val map = CarbonUtil.removeSchemaFromMap(properties.asJava)
+        val updatedFormat = storageFormat.copy(properties = map.asScala.toMap)
+        tableDesc.copy(storage = updatedFormat)
+      } else {
+        tableDesc
+      }
     }
   }
 }

@@ -103,56 +103,6 @@ class CarbonHiveMetaStore(conf: RuntimeConfig, storePath: String)
     }
   }
 
-  override def tableExists(tableIdentifier: TableIdentifier)
-    (sparkSession: SparkSession): Boolean = {
-    try {
-      lookupRelation(tableIdentifier)(sparkSession)
-    } catch {
-      case e: Exception =>
-        return false
-    }
-    true
-  }
-
-  override def loadMetadata(metadataPath: String,
-      queryId: String): MetaData = {
-    MetaData(new ArrayBuffer[TableMeta])
-  }
-
-
-  /**
-   *
-   * Prepare Thrift Schema from wrapper TableInfo and write to Schema file.
-   * Load CarbonTable from wrapper tableInfo
-   *
-   */
-  override def createTableFromThrift(tableInfo: TableInfo, dbName: String,
-      tableName: String)(sparkSession: SparkSession): (String, String) = {
-    val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName,
-      tableInfo.getFactTable.getTableId)
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier)
-    val schemaMetadataPath =
-      CarbonTablePath.getFolderContainingFile(carbonTablePath.getSchemaFilePath)
-    tableInfo.setMetaDataFilepath(schemaMetadataPath)
-    tableInfo.setStorePath(storePath)
-    val schemaEvolutionEntry = new schema.SchemaEvolutionEntry
-    schemaEvolutionEntry.setTimeStamp(tableInfo.getLastUpdatedTime)
-    tableInfo.getFactTable.getSchemaEvalution.getSchemaEvolutionEntryList.add(schemaEvolutionEntry)
-    removeTableFromMetadata(dbName, tableName)
-    CarbonMetadata.getInstance().loadTableMetadata(tableInfo)
-    (carbonTablePath.getPath, CarbonUtil.convertToMultiGsonStrings(tableInfo, " ", "", ","))
-  }
-
-  /**
-   * This method will remove the table meta from catalog metadata array
-   *
-   * @param dbName
-   * @param tableName
-   */
-  override def removeTableFromMetadata(dbName: String,
-      tableName: String): Unit = {
-    // do nothing
-  }
 
   override def isTablePathExists(tableIdentifier: TableIdentifier)
     (sparkSession: SparkSession): Boolean = {
@@ -168,6 +118,8 @@ class CarbonHiveMetaStore(conf: RuntimeConfig, storePath: String)
       // clear driver B-tree and dictionary cache
       ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
     }
+    checkSchemasModifiedTimeAndReloadTables
+    removeTableFromMetadata(dbName, tableName)
     CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
     // discard cached table info in cachedDataSourceTables
     sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
@@ -273,4 +225,6 @@ class CarbonHiveMetaStore(conf: RuntimeConfig, storePath: String)
       sparkSession,
       schemaConverter)
   }
+
+
 }

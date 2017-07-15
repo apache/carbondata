@@ -68,8 +68,6 @@ trait CarbonMetaStore {
 
   def tableExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean
 
-  def loadMetadata(metadataPath: String, queryId: String): MetaData
-
   /**
    * This method will overwrite the existing schema and update it with the given details
    *
@@ -99,14 +97,19 @@ trait CarbonMetaStore {
     (sparkSession: SparkSession): String
 
   /**
-   *
-   * Prepare Thrift Schema from wrapper TableInfo and write to Schema file.
-   * Load CarbonTable from wrapper tableInfo
-   *
+   * Prepare Thrift Schema from wrapper TableInfo and write to disk
    */
-  def createTableFromThrift(tableInfo: table.TableInfo,
-      dbName: String,
-      tableName: String)(sparkSession: SparkSession): (String, String)
+  def saveToDisk(tableInfo: table.TableInfo)
+
+  /**
+   * Generates schema string to save it in hive metastore
+   * @param tableInfo
+   * @param dbName
+   * @param tableName
+   * @return
+   */
+  def generateTableSchemaString(tableInfo: table.TableInfo,
+      dbName: String, tableName: String): (String, String)
 
   /**
    * This method will remove the table meta from catalog metadata array

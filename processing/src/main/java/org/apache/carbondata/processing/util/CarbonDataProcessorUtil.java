@@ -175,7 +175,7 @@ public final class CarbonDataProcessorUtil {
         getTempStoreLocationKey(databaseName, tableName, taskId, isCompactionFlow);
     String baseStorePath = CarbonProperties.getInstance().getProperty(tempLocationKey);
     if (baseStorePath == null) {
-      throw new RuntimeException("Locatio not set for the key "+tempLocationKey);
+      LOGGER.warn("Location not set for the key "+tempLocationKey);
     }
     CarbonTable carbonTable = CarbonMetadata.getInstance()
         .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);

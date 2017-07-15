@@ -220,8 +220,7 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
     } else {
       // Add Database to catalog and persist
       val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      val (tablePath, carbonSchemaString) =
-        catalog.createTableFromThrift(tableInfo, dbName, tbName)(sparkSession)
+      val (tablePath, carbonSchemaString) =catalog.generateTableSchemaString(tableInfo, dbName, tbName)
       if (createDSTable) {
         try {
           val fields = new Array[Field](cm.dimCols.size + cm.msrCols.size)

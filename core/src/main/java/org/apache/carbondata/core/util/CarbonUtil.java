@@ -1791,6 +1791,25 @@ public final class CarbonUtil {
   }
 
   /**
+   * Removes schema from properties
+   * @param properties
+   * @return
+   */
+  public static Map<String, String> removeSchemaFromMap(Map<String, String> properties) {
+    Map<String, String> newMap = new HashMap<>();
+    newMap.putAll(properties);
+    String partsNo = newMap.get("carbonSchemaPartsNo");
+    if (partsNo == null) {
+      return newMap;
+    }
+    int no = Integer.parseInt(partsNo);
+    for (int i = 0; i < no; i++) {
+      newMap.remove("carbonSchema" + i);
+    }
+    return newMap;
+  }
+
+  /**
    * This method will read the schema file from a given path
    *
    * @param schemaFilePath

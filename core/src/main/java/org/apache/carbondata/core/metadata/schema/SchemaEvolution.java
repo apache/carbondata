@@ -17,7 +17,6 @@
 package org.apache.carbondata.core.metadata.schema;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -46,8 +45,7 @@ public class SchemaEvolution implements Serializable {
    * @param schemaEvolutionEntryList the schemaEvolutionEntryList to set
    */
   public void setSchemaEvolutionEntryList(List<SchemaEvolutionEntry> schemaEvolutionEntryList) {
-    this.schemaEvolutionEntryList = new ArrayList<>();
-    this.schemaEvolutionEntryList.addAll(schemaEvolutionEntryList);
+    this.schemaEvolutionEntryList = schemaEvolutionEntryList;
   }
 
 }
