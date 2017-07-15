@@ -29,8 +29,8 @@ import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.hive.{CarbonMetastore, CarbonRelation}
-import org.apache.spark.util.FileUtils
+import org.apache.spark.sql.hive.{CarbonMetastore, CarbonRelation, CarbonSessionState}
+import org.apache.spark.util.{AlterTableUtil, FileUtils}
 import org.codehaus.jackson.map.ObjectMapper
 
 import org.apache.carbondata.api.CarbonStore
@@ -194,11 +194,43 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
           val fields = new Array[Field](cm.dimCols.size + cm.msrCols.size)
           cm.dimCols.foreach(f => fields(f.schemaOrdinal) = f)
           cm.msrCols.foreach(f => fields(f.schemaOrdinal) = f)
-          sparkSession.sql(
-            s"""CREATE TABLE $dbName.$tbName
-                |(${ fields.map(f => f.rawSchema).mkString(",") })
-                |USING org.apache.spark.sql.CarbonSource""".stripMargin +
-            s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath "$tablePath") """)
+          val useCompatibleSchema = sparkSession.sparkContext.conf
+            .getBoolean(CarbonCommonConstants.SPARK_SCHEMA_HIVE_COMPATIBILITY_ENABLE, false)
+          if (useCompatibleSchema) {
+            val tableIdentifier = TableIdentifier(tbName, Some(dbName))
+            val tableSchema = CarbonEnv.getInstance(sparkSession).carbonMetastore
+              .lookupRelation(tableIdentifier)(sparkSession).schema.json
+            val schemaParts = AlterTableUtil.prepareSchemaJsonForAlterTable(
+              sparkSession.sparkContext.conf, tableSchema)
+            sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
+              .runSqlHive(
+                s"""CREATE EXTERNAL TABLE $dbName.$tbName
+                   |(${fields.map(f => f.rawSchema).mkString(",")})
+                   |ROW FORMAT SERDE
+                   |  'org.apache.carbondata.hive.CarbonHiveSerDe'
+                   |WITH SERDEPROPERTIES (
+                   |  'dbName'='$dbName',
+                   |  'path'='$tablePath',
+                   |  'tableName'='$tbName',
+                   |  'tablePath'='$tablePath'
+                   |)
+                   |STORED AS INPUTFORMAT
+                   |  'org.apache.carbondata.hive.MapredCarbonInputFormat'
+                   |OUTPUTFORMAT
+                   |  'org.apache.carbondata.hive.MapredCarbonOutputFormat'
+                   |LOCATION
+                   |  '$tablePath'
+                   |TBLPROPERTIES (
+                   |  'spark.sql.sources.provider'='org.apache.spark.sql.CarbonSource',
+                   |  ${schemaParts}
+                   |)""".stripMargin)
+          } else {
+            sparkSession.sql(
+              s"""CREATE TABLE $dbName.$tbName
+                 |(${ fields.map(f => f.rawSchema).mkString(",") })
+                 |USING org.apache.spark.sql.CarbonSource""".stripMargin +
+                s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath "$tablePath") """)
+          }
         } catch {
           case e: Exception =>
             val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))

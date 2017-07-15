@@ -31,6 +31,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
+import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
@@ -96,11 +97,25 @@ private[sql] case class AlterTableAddColumns(
       schemaEvolutionEntry.setAdded(newCols.toList.asJava)
       val thriftTable = schemaConverter
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
+      val sessionState = sparkSession.sessionState.asInstanceOf[CarbonSessionState]
       AlterTableUtil
         .updateSchemaInfo(carbonTable,
           schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
-          thriftTable)(sparkSession,
-          sparkSession.sessionState.asInstanceOf[CarbonSessionState])
+          thriftTable)(sparkSession, sessionState)
+      val useCompatibleSchema = sparkSession.sparkContext.conf
+        .getBoolean(CarbonCommonConstants.SPARK_SCHEMA_HIVE_COMPATIBILITY_ENABLE, false)
+      if (useCompatibleSchema) {
+        val alterTableSql = s"ALTER TABLE $dbName.$tableName " +
+          s"ADD COLUMNS(${newCols.map { c =>
+            if (c.getDataType.toString == DataType.DECIMAL.toString) {
+              s"${c.getColumnName} ${c.getDataType.getName}(${c.getPrecision}, ${c.getScale})"
+            } else {
+              s"${c.getColumnName} ${c.getDataType.getName}"
+            }
+          }.mkString(",")})"
+        LOGGER.info("Execute in hive: " + alterTableSql)
+        sessionState.metadataHive.runSqlHive(alterTableSql)
+      }
       LOGGER.info(s"Alter table for add columns is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for add columns is successful for table $dbName.$tableName")
     } catch {
@@ -202,10 +217,11 @@ private[sql] case class AlterTableRenameTable(alterTableRenameModel: AlterTableR
           carbonTable.getStorePath)(sparkSession)
       CarbonEnv.getInstance(sparkSession).carbonMetastore
         .removeTableFromMetadata(oldDatabaseName, oldTableName)
-      sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
+      val sessionState = sparkSession.sessionState.asInstanceOf[CarbonSessionState]
+      sessionState.metadataHive
         .runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$oldTableName RENAME TO $oldDatabaseName.$newTableName")
-      sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
+      sessionState.metadataHive
         .runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$newTableName SET SERDEPROPERTIES" +
           s"('tableName'='$newTableName', " +

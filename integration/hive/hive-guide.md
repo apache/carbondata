@@ -41,7 +41,10 @@ mvn -DskipTests -Pspark-2.1 -Phadoop-2.7.2 clean package
 $HADOOP_HOME/bin/hadoop fs -put sample.csv <hdfs store path>/sample.csv
 ```
 
+
+Please set spark.carbon.hive.schema.compatibility.enable=true in spark-defaults.conf
 * Start Spark shell by running the following command in the Spark directory
+
 
 ```
 ./bin/spark-shell --jars <carbondata assembly jar path>
@@ -50,7 +53,7 @@ $HADOOP_HOME/bin/hadoop fs -put sample.csv <hdfs store path>/sample.csv
 ```
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.CarbonSession._
-val rootPath = "hdfs:////user/hadoop/carbon"
+val rootPath = "hdfs://mycluster//user/hadoop/carbon"
 val storeLocation = s"$rootPath/store"
 val warehouse = s"$rootPath/warehouse"
 val metastoredb = s"$rootPath/metastore_db"
@@ -81,6 +84,9 @@ export HADOOP_OPTS="-Dorg.xerial.snappy.lib.path=/Library/Java/Extensions -Dorg.
 $HIVE_HOME/bin/hive
 
 ### Initialize schema in hive
+If you already set spark.carbon.hive.schema.compatibility.enable=true in spark-defaults.conf, please skip this secion.
+For some tables which already exists, we need to alter schema in Hive.
+
 ```
 create table in hive:
 CREATE TABLE IF NOT EXISTS hive_carbon(id int, name string, scale decimal, country string, salary double) row format delimited fields terminated by ',' stored as textfile;
