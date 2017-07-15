@@ -75,6 +75,7 @@ import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import com.google.gson.Gson;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.spark.SparkConf;
 import org.apache.spark.util.Utils;
 
@@ -213,23 +214,25 @@ public final class CarbonLoaderUtil {
     String tempLocationKey = CarbonDataProcessorUtil
         .getTempStoreLocationKey(databaseName, tableName, loadModel.getTaskNo(), isCompactionFlow);
     // form local store location
-    final String localStoreLocation = CarbonProperties.getInstance()
+    final String localStoreLocations = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
     // submit local folder clean up in another thread so that main thread execution is not blocked
     ExecutorService localFolderDeletionService = Executors.newFixedThreadPool(1);
     try {
       localFolderDeletionService.submit(new Callable<Void>() {
         @Override public Void call() throws Exception {
-          try {
-            long startTime = System.currentTimeMillis();
-            File file = new File(localStoreLocation);
-            CarbonUtil.deleteFoldersAndFiles(file);
-            LOGGER.info(
-                "Deleted the local store location" + localStoreLocation + " : TIme taken: " + (
-                    System.currentTimeMillis() - startTime));
-          } catch (IOException | InterruptedException e) {
-            LOGGER.error(e, "Failed to delete local data load folder location");
+          long startTime = System.currentTimeMillis();
+          String[] locArray = StringUtils.split(localStoreLocations, File.pathSeparator);
+          for (String loc : locArray) {
+            try {
+              CarbonUtil.deleteFoldersAndFiles(new File(loc));
+            } catch (IOException | InterruptedException e) {
+              LOGGER.error(e,
+                  "Failed to delete local data load folder location: " + loc);
+            }
           }
+          LOGGER.info("Deleted the local store location: " + localStoreLocations
+                + " : Time taken: " + (System.currentTimeMillis() - startTime));
           return null;
         }
       });

@@ -892,6 +892,15 @@ public final class CarbonProperties {
   }
 
   /**
+   * Returns whether to use multi temp dirs
+   * @return boolean
+   */
+  public boolean isUseMultiTempDir() {
+    String value = getProperty(CarbonCommonConstants.CARBON_USING_MULTI_TEMP_DIR, "false");
+    return value.equalsIgnoreCase("true");
+  }
+
+  /**
    * returns true if carbon property
    * @param key
    * @return

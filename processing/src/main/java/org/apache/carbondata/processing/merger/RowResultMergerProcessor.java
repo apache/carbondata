@@ -57,12 +57,15 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
       LogServiceFactory.getLogService(RowResultMergerProcessor.class.getName());
 
   public RowResultMergerProcessor(String databaseName,
-      String tableName, SegmentProperties segProp, String tempStoreLocation,
+      String tableName, SegmentProperties segProp, String[] tempStoreLocation,
       CarbonLoadModel loadModel, CompactionType compactionType) {
     this.segprop = segProp;
-    if (!new File(tempStoreLocation).mkdirs()) {
-      LOGGER.error("Error while new File(tempStoreLocation).mkdirs() ");
+    for (String temLoc : tempStoreLocation) {
+      if (!new File(temLoc).mkdirs()) {
+        LOGGER.error("Error while new File(tempStoreLocation).mkdirs() ");
+      }
     }
+
     CarbonTable carbonTable = CarbonMetadata.getInstance()
             .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel

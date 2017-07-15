@@ -20,6 +20,9 @@ package org.apache.carbondata.processing.store;
 import java.io.File;
 import java.io.FileFilter;
 import java.util.AbstractQueue;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -92,7 +95,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   /**
    * tempFileLocation
    */
-  private String tempFileLocation;
+  private String[] tempFileLocation;
 
   private DataType[] measureDataType;
 
@@ -104,7 +107,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
 
   private boolean[] isNoDictionarySortColumn;
 
-  public SingleThreadFinalSortFilesMerger(String tempFileLocation, String tableName,
+  public SingleThreadFinalSortFilesMerger(String[] tempFileLocation, String tableName,
       int dimensionCount, int complexDimensionCount, int measureCount, int noDictionaryCount,
       DataType[] type, boolean[] isNoDictionaryColumn, boolean[] isNoDictionarySortColumn) {
     this.tempFileLocation = tempFileLocation;
@@ -124,19 +127,35 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    * @throws CarbonSortKeyAndGroupByException
    */
   public void startFinalMerge() throws CarbonDataWriterException {
-    // get all the merged files
-    File file = new File(tempFileLocation);
+    List<File> filesToMerge = getFilesToMergeSort();
+    if (filesToMerge.size() == 0)
+    {
+      LOGGER.info("No file to merge in final merge stage");
+      return;
+    }
 
-    File[] fileList = file.listFiles(new FileFilter() {
+    startSorting(filesToMerge);
+  }
+
+  private List<File> getFilesToMergeSort() {
+    FileFilter fileFilter = new FileFilter() {
       public boolean accept(File pathname) {
         return pathname.getName().startsWith(tableName);
       }
-    });
+    };
 
-    if (null == fileList || fileList.length == 0) {
-      return;
+    // get all the merged files
+    List<File> files = new ArrayList<File>(tempFileLocation.length);
+    for (String tempLoc : tempFileLocation)
+    {
+      File[] subFiles = new File(tempLoc).listFiles(fileFilter);
+      if (null != subFiles && subFiles.length > 0)
+      {
+        files.addAll(Arrays.asList(subFiles));
+      }
     }
-    startSorting(fileList);
+
+    return files;
   }
 
   /**
@@ -147,8 +166,8 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    *
    * @throws CarbonSortKeyAndGroupByException
    */
-  private void startSorting(File[] files) throws CarbonDataWriterException {
-    this.fileCounter = files.length;
+  private void startSorting(List<File> files) throws CarbonDataWriterException {
+    this.fileCounter = files.size();
     if (fileCounter == 0) {
       LOGGER.info("No files to merge sort");
       return;
@@ -162,7 +181,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
     LOGGER.info("File Buffer Size: " + this.fileBufferSize);
 
     // create record holder heap
-    createRecordHolderQueue(files);
+    createRecordHolderQueue();
 
     // iterate over file list and create chunk holder and add to heap
     LOGGER.info("Started adding first record from each file");
@@ -215,12 +234,10 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   /**
    * This method will be used to create the heap which will be used to hold
    * the chunk of data
-   *
-   * @param listFiles list of temp files
    */
-  private void createRecordHolderQueue(File[] listFiles) {
+  private void createRecordHolderQueue() {
     // creating record holder heap
-    this.recordHolderHeapLocal = new PriorityQueue<SortTempFileChunkHolder>(listFiles.length);
+    this.recordHolderHeapLocal = new PriorityQueue<SortTempFileChunkHolder>(fileCounter);
   }
 
   /**

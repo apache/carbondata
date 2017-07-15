@@ -413,7 +413,7 @@ public class StoreCreator {
 
     CSVRecordReaderIterator readerIterator = new CSVRecordReaderIterator(recordReader, blockDetails, hadoopAttemptContext);
     new DataLoadExecutor().execute(loadModel,
-        storeLocation,
+        new String[] {storeLocation},
         new CarbonIterator[]{readerIterator});
 
     info.setDatabaseName(databaseName);

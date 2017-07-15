@@ -1308,6 +1308,18 @@ public final class CarbonCommonConstants {
   public static final String CARBON_LEASE_RECOVERY_RETRY_INTERVAL =
       "carbon.lease.recovery.retry.interval";
 
+  /**
+   * whether to use multi directories when loading data,
+   * the main purpose is to avoid single-disk-hot-spot
+   */
+  @CarbonProperty
+  public static final String CARBON_USING_MULTI_TEMP_DIR = "carbon.using.multi.temp.dir";
+
+  /**
+   * default value for multi temp dir
+   */
+  public static final String CARBON_SUING_MULTI_TEMP_DIR_DEFAULT = "false";
+
   private CarbonCommonConstants() {
   }
 }
