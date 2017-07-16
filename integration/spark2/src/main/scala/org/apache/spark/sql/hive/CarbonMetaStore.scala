@@ -22,7 +22,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
-import org.apache.carbondata.core.metadata.schema.table
+import org.apache.carbondata.core.metadata.schema
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -50,17 +50,6 @@ trait CarbonMetaStore {
       absIdentifier: AbsoluteTableIdentifier,
       sparkSession: SparkSession): CarbonRelation
 
-  /**
-   * Get table meta
-   * TODO remove it if possible
-   * @param database
-   * @param tableName
-   * @param readStore
-   * @return
-   */
-  def getTableFromMetadata(database: String,
-      tableName: String,
-      readStore: Boolean = false): Option[TableMeta]
 
   def tableExists(
     table: String,
@@ -88,28 +77,26 @@ trait CarbonMetaStore {
    *
    * @param carbonTableIdentifier
    * @param thriftTableInfo
-   * @param carbonStorePath
+   * @param tablePath
    * @param sparkSession
    */
   def revertTableSchema(carbonTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
-      carbonStorePath: String)
+      tablePath: String)
     (sparkSession: SparkSession): String
 
   /**
    * Prepare Thrift Schema from wrapper TableInfo and write to disk
    */
-  def saveToDisk(tableInfo: table.TableInfo)
+  def saveToDisk(tableInfo: schema.table.TableInfo, tablePath: String)
 
   /**
    * Generates schema string to save it in hive metastore
    * @param tableInfo
-   * @param dbName
-   * @param tableName
    * @return
    */
-  def generateTableSchemaString(tableInfo: table.TableInfo,
-      dbName: String, tableName: String): (String, String)
+  def generateTableSchemaString(tableInfo: schema.table.TableInfo,
+      tablePath: String): String
 
   /**
    * This method will remove the table meta from catalog metadata array
@@ -120,24 +107,24 @@ trait CarbonMetaStore {
   def removeTableFromMetadata(dbName: String, tableName: String): Unit
 
   def updateMetadataByThriftTable(schemaFilePath: String,
-      tableInfo: TableInfo, dbName: String, tableName: String, storePath: String): Unit
+      tableInfo: TableInfo, dbName: String, tableName: String, tablePath: String): Unit
 
   def isTablePathExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean
 
-  def dropTable(tableStorePath: String, tableIdentifier: TableIdentifier)
+  def dropTable(tablePath: String, tableIdentifier: TableIdentifier)
     (sparkSession: SparkSession)
 
-  def updateAndTouchSchemasUpdatedTime(databaseName: String, tableName: String)
+  def updateAndTouchSchemasUpdatedTime(basePath: String)
 
-  def checkSchemasModifiedTimeAndReloadTables()
+  def checkSchemasModifiedTimeAndReloadTables(storePath: String)
 
   def isReadFromHiveMetaStore : Boolean
 
   def listAllTables(sparkSession: SparkSession): Seq[CarbonTable]
 
-  def storePath: String
-
   def getThriftTableInfo(tablePath: CarbonTablePath)(sparkSession: SparkSession): TableInfo
+
+  def getTableFromMetadataCache(database: String, tableName: String): Option[TableMeta]
 
 }
 
@@ -146,12 +133,12 @@ trait CarbonMetaStore {
  */
 object CarbonMetaStoreFactory {
 
-  def createCarbonMetaStore(conf: RuntimeConfig, storePath: String): CarbonMetaStore = {
+  def createCarbonMetaStore(conf: RuntimeConfig): CarbonMetaStore = {
     val readSchemaFromHiveMetaStore = readSchemaFromHive(conf)
     if (readSchemaFromHiveMetaStore) {
-      new CarbonHiveMetaStore(conf, storePath)
+      new CarbonHiveMetaStore(conf)
     } else {
-      new CarbonFileMetastore(conf, storePath)
+      new CarbonFileMetastore(conf)
     }
   }
 

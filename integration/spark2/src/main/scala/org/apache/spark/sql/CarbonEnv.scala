@@ -40,6 +40,8 @@ class CarbonEnv {
 
   var carbonSessionInfo: CarbonSessionInfo = _
 
+  var storePath: String = _
+
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   // set readsupport class global so that the executor can get it.
@@ -61,10 +63,14 @@ class CarbonEnv {
       // add session params after adding DefaultCarbonParams
       config.addDefaultCarbonSessionParams()
       carbonMetastore = {
-        val storePath =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
+        val properties = CarbonProperties.getInstance()
+        storePath = properties.getProperty(CarbonCommonConstants.STORE_LOCATION)
+        if (storePath == null) {
+          storePath = sparkSession.conf.get("spark.sql.warehouse.dir")
+          properties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
+        }
         LOGGER.info(s"carbon env initial: $storePath")
-        CarbonMetaStoreFactory.createCarbonMetaStore(sparkSession.conf, storePath)
+        CarbonMetaStoreFactory.createCarbonMetaStore(sparkSession.conf)
       }
       CarbonProperties.getInstance.addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
       initialized = true

@@ -148,7 +148,7 @@ object CarbonSession {
         val carbonProperties = CarbonProperties.getInstance()
         if (storePath != null) {
           carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
-          //In case if it is in carbon.properties for backward compatible
+          // In case if it is in carbon.properties for backward compatible
         } else if (carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION) == null) {
           carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION,
             sparkContext.conf.get("spark.sql.warehouse.dir"))

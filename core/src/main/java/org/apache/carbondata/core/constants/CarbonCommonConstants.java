@@ -71,10 +71,6 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String SORT_SIZE = "carbon.sort.size";
   /**
-   * default location of the carbon member, hierarchy and fact files
-   */
-//  public static final String STORE_LOCATION_DEFAULT_VAL = "../carbon.store";
-  /**
    * CARDINALITY_INCREMENT_DEFAULT_VALUE
    */
   public static final int CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL = 10;

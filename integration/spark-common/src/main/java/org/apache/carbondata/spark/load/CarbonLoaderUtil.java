@@ -215,7 +215,7 @@ public final class CarbonLoaderUtil {
     // form local store location
     final String localStoreLocation = CarbonProperties.getInstance().getProperty(tempLocationKey);
     if (localStoreLocation == null) {
-      throw new RuntimeException("Store location not set for the key "+tempLocationKey);
+      throw new RuntimeException("Store location not set for the key " + tempLocationKey);
     }
     // submit local folder clean up in another thread so that main thread execution is not blocked
     ExecutorService localFolderDeletionService = Executors.newFixedThreadPool(1);

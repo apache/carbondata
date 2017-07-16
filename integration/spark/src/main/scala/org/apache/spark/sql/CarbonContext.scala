@@ -69,8 +69,8 @@ class CarbonContext(
     val carbonProperties = CarbonProperties.getInstance()
     if (storePath != null) {
       carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
-      //In case if it is in carbon.properties for backward compatible
-    } else if(carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION) == null) {
+      // In case if it is in carbon.properties for backward compatible
+    } else if (carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION) == null) {
       carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION,
         conf.getConfString("spark.sql.warehouse.dir"))
     }

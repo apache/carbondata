@@ -41,8 +41,8 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
         CarbonDropTableCommand(true, tableName.database, tableName.table).run(sparkSession)
       }
     }
-    CarbonUtil.dropDatabaseDirectory(dbName.toLowerCase, CarbonEnv.getInstance(sparkSession)
-      .carbonMetastore.storePath)
+    CarbonUtil.dropDatabaseDirectory(dbName.toLowerCase,
+      CarbonEnv.getInstance(sparkSession).storePath)
     rows
   }
 }

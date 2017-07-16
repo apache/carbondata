@@ -136,8 +136,9 @@ object AlterTableUtil {
         carbonTable.getCarbonTableIdentifier,
         thriftTable,
         schemaEvolutionEntry,
-        carbonTable.getStorePath)(sparkSession)
+        carbonTable.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
     val tableIdentifier = TableIdentifier(tableName, Some(dbName))
+    sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
     val schema = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(tableIdentifier)(sparkSession).schema.json
     val schemaParts = prepareSchemaJsonForAlterTable(sparkSession.sparkContext.getConf, schema)
@@ -206,7 +207,8 @@ object AlterTableUtil {
           .renameForce(carbonTablePath.getParent.toString + CarbonCommonConstants.FILE_SEPARATOR +
                        oldTableIdentifier.table)
         val tableIdentifier = new CarbonTableIdentifier(database, oldTableIdentifier.table, tableId)
-        metastore.revertTableSchema(tableIdentifier, tableInfo, storePath)(sparkSession)
+        metastore.revertTableSchema(tableIdentifier,
+          tableInfo, carbonTablePath.getPath)(sparkSession)
         metastore.removeTableFromMetadata(database, newTableName)
       }
     }
@@ -238,7 +240,7 @@ object AlterTableUtil {
       thriftTable.fact_table.table_columns.removeAll(addedSchemas)
       metastore
         .revertTableSchema(carbonTable.getCarbonTableIdentifier,
-          thriftTable, carbonTable.getStorePath)(sparkSession)
+          thriftTable, carbonTable.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
     }
   }
 
@@ -273,7 +275,7 @@ object AlterTableUtil {
       }
       metastore
         .revertTableSchema(carbonTable.getCarbonTableIdentifier,
-          thriftTable, carbonTable.getStorePath)(sparkSession)
+          thriftTable, carbonTable.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
     }
   }
 
@@ -311,7 +313,7 @@ object AlterTableUtil {
       }
       metastore
         .revertTableSchema(carbonTable.getCarbonTableIdentifier,
-          thriftTable, carbonTable.getStorePath)(sparkSession)
+          thriftTable, carbonTable.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
     }
   }
 
