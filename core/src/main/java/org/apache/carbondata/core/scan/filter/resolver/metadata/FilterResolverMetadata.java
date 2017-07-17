@@ -19,12 +19,14 @@ package org.apache.carbondata.core.scan.filter.resolver.metadata;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 
 public class FilterResolverMetadata {
   private AbsoluteTableIdentifier tableIdentifier;
   private Expression expression;
   private ColumnExpression columnExpression;
   private boolean isIncludeFilter;
+  private TableProvider tableProvider;
 
   public AbsoluteTableIdentifier getTableIdentifier() {
     return tableIdentifier;
@@ -32,6 +34,14 @@ public class FilterResolverMetadata {
 
   public void setTableIdentifier(AbsoluteTableIdentifier tableIdentifier) {
     this.tableIdentifier = tableIdentifier;
+  }
+
+  public void setTableProvider(TableProvider tableProvider) {
+    this.tableProvider = tableProvider;
+  }
+
+  public TableProvider getTableProvider() {
+    return tableProvider;
   }
 
   public Expression getExpression() {

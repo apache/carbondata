@@ -32,6 +32,7 @@ import org.apache.carbondata.core.scan.expression.conditional.ConditionalExpress
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.expression.logical.RangeExpression;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -64,10 +65,11 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    *
    * @throws FilterUnsupportedException
    */
-  @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
+  @Override public void resolve(TableProvider tableProvider)
       throws FilterUnsupportedException, IOException {
     FilterResolverMetadata metadata = new FilterResolverMetadata();
-    metadata.setTableIdentifier(absoluteTableIdentifier);
+    metadata.setTableIdentifier(tableProvider.getCarbonTable().getAbsoluteTableIdentifier());
+    metadata.setTableProvider(tableProvider);
     if ((!isExpressionResolve) && exp instanceof BinaryConditionalExpression) {
       BinaryConditionalExpression binaryConditionalExpression = (BinaryConditionalExpression) exp;
       Expression leftExp = binaryConditionalExpression.getLeft();
@@ -148,7 +150,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
               || columnList.get(0).getDimension().getDataType()
               == org.apache.carbondata.core.metadata.datatype.DataType.ARRAY)) {
         dimColResolvedFilterInfo.setFilterValues(FilterUtil
-            .getFilterListForAllValues(absoluteTableIdentifier, exp, columnList.get(0),
+            .getFilterListForAllValues(tableProvider, exp, columnList.get(0),
                 isIncludeFilter));
 
         dimColResolvedFilterInfo.setColumnIndex(columnList.get(0).getDimension().getOrdinal());

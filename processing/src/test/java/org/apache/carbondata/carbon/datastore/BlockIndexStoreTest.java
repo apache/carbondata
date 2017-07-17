@@ -39,10 +39,13 @@ import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.StoreCreator;
 
 import junit.framework.TestCase;
+import mockit.Mock;
+import mockit.MockUp;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -67,6 +70,7 @@ public class BlockIndexStoreTest extends TestCase {
         addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
     CacheProvider cacheProvider = CacheProvider.getInstance();
     cache = (BlockIndexStore) cacheProvider.createCache(CacheType.EXECUTOR_BTREE, "");
+
   }
   
   @AfterClass public void tearDown() {
@@ -83,14 +87,15 @@ public class BlockIndexStoreTest extends TestCase {
     TableBlockInfo info =
         new TableBlockInfo(file.getAbsolutePath(), 0, "0", new String[] { "loclhost" },
             file.length(), ColumnarFormatVersion.V1, null);
-    CarbonTableIdentifier carbonTableIdentifier =
-            new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");
-    AbsoluteTableIdentifier absoluteTableIdentifier =
+    final CarbonTableIdentifier carbonTableIdentifier =
+        new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");
+    final AbsoluteTableIdentifier absoluteTableIdentifier =
         new AbsoluteTableIdentifier("/src/test/resources", carbonTableIdentifier);
     try {
 
       List<TableBlockUniqueIdentifier> tableBlockInfoList =
-          getTableBlockUniqueIdentifierList(Arrays.asList(new TableBlockInfo[] { info }), absoluteTableIdentifier);
+          getTableBlockUniqueIdentifierList(Arrays.asList(new TableBlockInfo[] { info }),
+              StoreCreator.getTableProvider());
       List<AbstractIndex> loadAndGetBlocks = cache.getAll(tableBlockInfoList);
       assertTrue(loadAndGetBlocks.size() == 1);
     } catch (Exception e) {
@@ -102,10 +107,11 @@ public class BlockIndexStoreTest extends TestCase {
   }
 
   private List<TableBlockUniqueIdentifier> getTableBlockUniqueIdentifierList(List<TableBlockInfo> tableBlockInfos,
-      AbsoluteTableIdentifier absoluteTableIdentifier) {
+      TableProvider tableProvider) {
     List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers = new ArrayList<>();
     for (TableBlockInfo tableBlockInfo : tableBlockInfos) {
-      tableBlockUniqueIdentifiers.add(new TableBlockUniqueIdentifier(absoluteTableIdentifier, tableBlockInfo));
+      tableBlockUniqueIdentifiers.add(new TableBlockUniqueIdentifier(tableProvider.getCarbonTable().getAbsoluteTableIdentifier(),
+          tableBlockInfo,tableProvider));
     }
     return tableBlockUniqueIdentifiers;
   }
@@ -132,9 +138,9 @@ public class BlockIndexStoreTest extends TestCase {
         new TableBlockInfo(file.getAbsolutePath(), 0, "1", new String[] { "loclhost" },
             file.length(), ColumnarFormatVersion.V1, null);
 
-    CarbonTableIdentifier carbonTableIdentifier =
+    final CarbonTableIdentifier carbonTableIdentifier =
             new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");
-    AbsoluteTableIdentifier absoluteTableIdentifier =
+    final AbsoluteTableIdentifier absoluteTableIdentifier =
         new AbsoluteTableIdentifier("/src/test/resources", carbonTableIdentifier);
     ExecutorService executor = Executors.newFixedThreadPool(3);
     executor.submit(new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info, info1 }),
@@ -157,7 +163,7 @@ public class BlockIndexStoreTest extends TestCase {
         Arrays.asList(new TableBlockInfo[] { info, info1, info2, info3, info4 });
     try {
       List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
-          getTableBlockUniqueIdentifierList(tableBlockInfos, absoluteTableIdentifier);
+          getTableBlockUniqueIdentifierList(tableBlockInfos, StoreCreator.getTableProvider());
       List<AbstractIndex> loadAndGetBlocks = cache.getAll(tableBlockUniqueIdentifiers);
       assertTrue(loadAndGetBlocks.size() == 5);
     } catch (Exception e) {
@@ -203,9 +209,9 @@ public class BlockIndexStoreTest extends TestCase {
         new TableBlockInfo(file.getAbsolutePath(), 0, "3", new String[] { "loclhost" },
             file.length(), ColumnarFormatVersion.V1, null);
 
-    CarbonTableIdentifier carbonTableIdentifier =
+    final CarbonTableIdentifier carbonTableIdentifier =
             new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");
-    AbsoluteTableIdentifier absoluteTableIdentifier =
+    final AbsoluteTableIdentifier absoluteTableIdentifier =
         new AbsoluteTableIdentifier("/src/test/resources", carbonTableIdentifier);
     ExecutorService executor = Executors.newFixedThreadPool(3);
     executor.submit(new BlockLoaderThread(Arrays.asList(new TableBlockInfo[] { info, info1 }),
@@ -229,7 +235,7 @@ public class BlockIndexStoreTest extends TestCase {
         .asList(new TableBlockInfo[] { info, info1, info2, info3, info4, info5, info6, info7 });
     try {
       List<TableBlockUniqueIdentifier> blockUniqueIdentifierList =
-          getTableBlockUniqueIdentifierList(tableBlockInfos, absoluteTableIdentifier);
+          getTableBlockUniqueIdentifierList(tableBlockInfos, StoreCreator.getTableProvider());
       List<AbstractIndex> loadAndGetBlocks = cache.getAll(blockUniqueIdentifierList);
       assertTrue(loadAndGetBlocks.size() == 8);
     } catch (Exception e) {
@@ -254,7 +260,7 @@ public class BlockIndexStoreTest extends TestCase {
 
     @Override public Void call() throws Exception {
       List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifierList =
-          getTableBlockUniqueIdentifierList(tableBlockInfoList, absoluteTableIdentifier);
+          getTableBlockUniqueIdentifierList(tableBlockInfoList, StoreCreator.getTableProvider());
       cache.getAll(tableBlockUniqueIdentifierList);
       return null;
     }

@@ -56,6 +56,7 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
     columnIdentifiers = new String[] { "name", "place" };
     deleteStorePath();
     prepareDataSet();
+    prepareTableProvider();
     createDictionaryCacheObject();
   }
 

@@ -44,7 +44,8 @@ public class RangeDirectDictionaryVisitor extends CustomTypeDictionaryVisitor
    * @throws FilterUnsupportedException
    */
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
-      FilterResolverMetadata metadata) throws FilterUnsupportedException {
+      FilterResolverMetadata metadata)
+      throws FilterUnsupportedException {
     DimColumnFilterInfo resolvedFilterObject = null;
     List<ExpressionResult> listOfExpressionResults = new ArrayList<ExpressionResult>(20);
     List<String> evaluateResultListFinal = new ArrayList<String>();

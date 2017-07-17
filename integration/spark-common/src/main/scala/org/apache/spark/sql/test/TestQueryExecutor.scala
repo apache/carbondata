@@ -40,8 +40,9 @@ object TestQueryExecutor {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  val projectPath = new File(this.getClass.getResource("/").getPath + "../../../..")
+  var projectPath = new File(this.getClass.getResource("/").getPath + "../../../..")
     .getCanonicalPath
+  projectPath = projectPath.replace("\\", "/")
   LOGGER.info(s"project path: $projectPath")
   val integrationPath = s"$projectPath/integration"
   val resourcesPath = s"$integrationPath/spark-common-test/src/test/resources"

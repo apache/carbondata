@@ -31,8 +31,11 @@ import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.DataField;
@@ -67,10 +70,14 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
     this.carbonDimension = (CarbonDimension) dataField.getColumn();
     this.nullFormat = nullFormat;
     this.isEmptyBadRecord = isEmptyBadRecord;
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+        carbonTableIdentifier.getDatabaseName() + CarbonCommonConstants.UNDERSCORE
+            + carbonTableIdentifier.getTableName());
+    SingleTableProvider tableProvider = new SingleTableProvider(carbonTable);
     DictionaryColumnUniqueIdentifier identifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
-            dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType());
-
+            dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType(),
+            tableProvider);
     // if use one pass, use DictionaryServerClientDictionary
     if (useOnePass) {
       if (CarbonUtil.isFileExistsForGivenColumn(storePath, identifier)) {

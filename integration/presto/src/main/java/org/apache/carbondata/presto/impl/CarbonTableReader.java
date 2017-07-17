@@ -44,6 +44,8 @@ import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.service.impl.PathFactory;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
@@ -368,8 +370,9 @@ public class CarbonTableReader {
 
     // get filter for segment
     CarbonInputFormatUtil.processFilterExpression(filters, tableCacheModel.carbonTable);
-    FilterResolverIntf filterInterface = CarbonInputFormatUtil
-        .resolveFilter(filters, tableCacheModel.carbonTable.getAbsoluteTableIdentifier());
+    TableProvider tableProvider = new SingleTableProvider(tableCacheModel.carbonTable);
+    FilterResolverIntf filterInterface =
+        CarbonInputFormatUtil.resolveFilter(filters, tableProvider);
 
     IUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
     List<CarbonLocalInputSplit> result = new ArrayList<>();

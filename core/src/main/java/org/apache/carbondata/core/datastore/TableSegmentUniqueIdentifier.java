@@ -24,6 +24,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 
 /**
  * Class holds the absoluteTableIdentifier and segmentId to uniquely identify a segment
@@ -33,6 +35,8 @@ public class TableSegmentUniqueIdentifier {
    * table fully qualified identifier
    */
   private AbsoluteTableIdentifier absoluteTableIdentifier;
+
+  private TableProvider tableProvider;
 
   /**
    * segment to tableBlockInfo map
@@ -51,6 +55,18 @@ public class TableSegmentUniqueIdentifier {
       String segmentId) {
     this.absoluteTableIdentifier = absoluteTableIdentifier;
     this.segmentId = segmentId;
+  }
+
+  /**
+   * Constructor to initialize the class instance
+   * @param absoluteTableIdentifier
+   * @param segmentId
+   */
+  public TableSegmentUniqueIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier,
+      String segmentId, TableProvider tableProvider) {
+    this.absoluteTableIdentifier = absoluteTableIdentifier;
+    this.segmentId = segmentId;
+    this.tableProvider = tableProvider;
   }
 
   public TableSegmentUniqueIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier,
@@ -87,6 +103,14 @@ public class TableSegmentUniqueIdentifier {
   public void setSegmentToTableBlocksInfos(
       Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos) {
     this.segmentToTableBlocksInfos = segmentToTableBlocksInfos;
+  }
+
+  public void setTableProvider(SingleTableProvider tableProvider) {
+    this.tableProvider = tableProvider;
+  }
+
+  public TableProvider getTableProvider() {
+    return tableProvider;
   }
 
   public String getSegmentId() {

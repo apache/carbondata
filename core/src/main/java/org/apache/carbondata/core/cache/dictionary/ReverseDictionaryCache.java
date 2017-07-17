@@ -32,6 +32,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ObjectSizeCalculator;
 
@@ -82,7 +83,8 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
    */
   @Override public Dictionary get(DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier)
       throws IOException {
-    return getDictionary(dictionaryColumnUniqueIdentifier);
+    return getDictionary(dictionaryColumnUniqueIdentifier,
+        dictionaryColumnUniqueIdentifier.getTableProvider());
   }
 
   /**
@@ -95,8 +97,7 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
    * @throws IOException in case memory is not sufficient to load dictionary into memory
    */
   @Override public List<Dictionary> getAll(
-      List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers)
-      throws IOException {
+      List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers) throws IOException {
     boolean exceptionOccurredInDictionaryLoading = false;
     String exceptionMessage = "";
     List<Dictionary> reverseDictionaryObjectList =
@@ -107,7 +108,7 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
     for (final DictionaryColumnUniqueIdentifier uniqueIdent : dictionaryColumnUniqueIdentifiers) {
       taskSubmitList.add(executorService.submit(new Callable<Dictionary>() {
         @Override public Dictionary call() throws IOException {
-          return getDictionary(uniqueIdent);
+          return getDictionary(uniqueIdent, uniqueIdent.getTableProvider());
         }
       }));
     }
@@ -179,8 +180,8 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
    * @throws IOException in case memory is not sufficient to load dictionary into memory
    */
   private Dictionary getDictionary(
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier)
-      throws IOException {
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
+      TableProvider tableProvider) throws IOException {
     Dictionary reverseDictionary = null;
     // dictionary is only for primitive data type
     assert (!dictionaryColumnUniqueIdentifier.getDataType().isComplexType());
@@ -188,7 +189,8 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
     ColumnReverseDictionaryInfo columnReverseDictionaryInfo =
         getColumnReverseDictionaryInfo(dictionaryColumnUniqueIdentifier, columnIdentifier);
     // do not load sort index file for reverse dictionary
-    checkAndLoadDictionaryData(dictionaryColumnUniqueIdentifier, columnReverseDictionaryInfo,
+    checkAndLoadDictionaryData(tableProvider, dictionaryColumnUniqueIdentifier,
+        columnReverseDictionaryInfo,
         getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
             CacheType.REVERSE_DICTIONARY), false);
     reverseDictionary = new ReverseDictionary(columnReverseDictionaryInfo);

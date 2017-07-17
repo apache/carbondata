@@ -36,12 +36,12 @@ public interface FilterProcessor {
    * expression tree which is been passed.
    *
    * @param expressionTree  , filter expression tree
-   * @param tableIdentifier ,contains carbon store informations.
+   * @param tableProvider ,contains carbon store informations.
    * @return
    * @throws FilterUnsupportedException
    */
   FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException, IOException;
+      TableProvider tableProvider) throws FilterUnsupportedException, IOException;
 
   /**
    * This API is exposed inorder to get the required block reference node

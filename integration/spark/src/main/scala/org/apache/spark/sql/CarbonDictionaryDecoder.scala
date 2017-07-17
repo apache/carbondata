@@ -35,6 +35,7 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnIdent
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.scan.filter.SingleTableProvider
 import org.apache.carbondata.core.stats._
 import org.apache.carbondata.core.util.{CarbonTimeStatisticsFactory, DataTypeUtil}
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
@@ -160,7 +161,10 @@ case class CarbonDictionaryDecoder(
       val queryId = sqlContext.getConf("queryId", System.nanoTime() + "")
       val absoluteTableIdentifiers = relations.map { relation =>
         val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
-        (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
+        val tableProvider = new SingleTableProvider(carbonTable)
+        (carbonTable.getFactTableName, new AbsoluteTableIdentifier(carbonTable.getStorePath,
+          carbonTable.getCarbonTableIdentifier,
+          tableProvider))
       }.toMap
 
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder(queryId)
@@ -224,7 +228,7 @@ case class CarbonDictionaryDecoder(
       if (dictionaryId._2 != null) {
         new DictionaryColumnUniqueIdentifier(
           atiMap(dictionaryId._1).getCarbonTableIdentifier,
-          dictionaryId._2, dictionaryId._3)
+          dictionaryId._2, dictionaryId._3, atiMap(dictionaryId._1).getTableProvider)
       } else {
         null
       }

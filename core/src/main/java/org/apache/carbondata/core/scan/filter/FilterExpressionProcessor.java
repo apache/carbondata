@@ -76,13 +76,13 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * filter expression tree which is been passed in Expression instance.
    *
    * @param expressionTree  , filter expression tree
-   * @param tableIdentifier ,contains carbon store informations
+   * @param tableProvider ,contains carbon store informations
    * @return a filter resolver tree
    */
   public FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException, IOException {
-    if (null != expressionTree && null != tableIdentifier) {
-      return getFilterResolvertree(expressionTree, tableIdentifier);
+      TableProvider tableProvider) throws FilterUnsupportedException, IOException {
+    if (null != expressionTree && null != tableProvider) {
+      return getFilterResolvertree(expressionTree, tableProvider);
     }
     return null;
   }
@@ -298,10 +298,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @return FilterResolverIntf type.
    */
   private FilterResolverIntf getFilterResolvertree(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException, IOException {
+      TableProvider tableProvider) throws FilterUnsupportedException, IOException {
     FilterResolverIntf filterEvaluatorTree =
-        createFilterResolverTree(expressionTree, tableIdentifier);
-    traverseAndResolveTree(filterEvaluatorTree, tableIdentifier);
+        createFilterResolverTree(expressionTree, tableProvider);
+    traverseAndResolveTree(filterEvaluatorTree, tableProvider);
     return filterEvaluatorTree;
   }
 
@@ -312,16 +312,16 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * expression.
    *
    * @param filterResolverTree
-   * @param tableIdentifier
+   * @param tableProvider
    */
   private void traverseAndResolveTree(FilterResolverIntf filterResolverTree,
-      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException, IOException {
+      TableProvider tableProvider) throws FilterUnsupportedException, IOException {
     if (null == filterResolverTree) {
       return;
     }
-    traverseAndResolveTree(filterResolverTree.getLeft(), tableIdentifier);
-    filterResolverTree.resolve(tableIdentifier);
-    traverseAndResolveTree(filterResolverTree.getRight(), tableIdentifier);
+    traverseAndResolveTree(filterResolverTree.getLeft(), tableProvider);
+    filterResolverTree.resolve(tableProvider);
+    traverseAndResolveTree(filterResolverTree.getRight(), tableProvider);
   }
 
   /**
@@ -330,54 +330,55 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * in this algorithm based on the expression instance the resolvers will created
    *
    * @param expressionTree
-   * @param tableIdentifier
+   * @param tableProvider
    * @return
    */
   private FilterResolverIntf createFilterResolverTree(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) {
+      TableProvider tableProvider) {
     ExpressionType filterExpressionType = expressionTree.getFilterExpressionType();
     BinaryExpression currentExpression = null;
     switch (filterExpressionType) {
       case OR:
         currentExpression = (BinaryExpression) expressionTree;
         return new LogicalFilterResolverImpl(
-            createFilterResolverTree(currentExpression.getLeft(), tableIdentifier),
-            createFilterResolverTree(currentExpression.getRight(), tableIdentifier),
+            createFilterResolverTree(currentExpression.getLeft(), tableProvider),
+            createFilterResolverTree(currentExpression.getRight(), tableProvider),
             currentExpression);
       case AND:
         currentExpression = (BinaryExpression) expressionTree;
         return new LogicalFilterResolverImpl(
-            createFilterResolverTree(currentExpression.getLeft(), tableIdentifier),
-            createFilterResolverTree(currentExpression.getRight(), tableIdentifier),
+            createFilterResolverTree(currentExpression.getLeft(), tableProvider),
+            createFilterResolverTree(currentExpression.getRight(), tableProvider),
             currentExpression);
       case RANGE:
-        return getFilterResolverBasedOnExpressionType(ExpressionType.RANGE, true,
-            expressionTree, tableIdentifier, expressionTree);
+        return getFilterResolverBasedOnExpressionType(ExpressionType.RANGE, true, expressionTree,
+            tableProvider.getCarbonTable().getAbsoluteTableIdentifier(), expressionTree);
       case EQUALS:
       case IN:
         return getFilterResolverBasedOnExpressionType(ExpressionType.EQUALS,
             ((BinaryConditionalExpression) expressionTree).isNull, expressionTree,
-            tableIdentifier, expressionTree);
+            tableProvider.getCarbonTable().getAbsoluteTableIdentifier(), expressionTree);
       case GREATERTHAN:
       case GREATERTHAN_EQUALTO:
       case LESSTHAN:
       case LESSTHAN_EQUALTO:
         return getFilterResolverBasedOnExpressionType(ExpressionType.EQUALS, true, expressionTree,
-            tableIdentifier, expressionTree);
+            tableProvider.getCarbonTable().getAbsoluteTableIdentifier(), expressionTree);
 
       case NOT_EQUALS:
       case NOT_IN:
         return getFilterResolverBasedOnExpressionType(ExpressionType.NOT_EQUALS, false,
-            expressionTree, tableIdentifier, expressionTree);
+            expressionTree, tableProvider.getCarbonTable().getAbsoluteTableIdentifier(),
+            expressionTree);
       case FALSE:
-        return getFilterResolverBasedOnExpressionType(ExpressionType.FALSE, false,
-            expressionTree, tableIdentifier, expressionTree);
+        return getFilterResolverBasedOnExpressionType(ExpressionType.FALSE, false, expressionTree,
+            tableProvider.getCarbonTable().getAbsoluteTableIdentifier(), expressionTree);
       case TRUE:
-        return getFilterResolverBasedOnExpressionType(ExpressionType.TRUE, false,
-            expressionTree, tableIdentifier, expressionTree);
+        return getFilterResolverBasedOnExpressionType(ExpressionType.TRUE, false, expressionTree,
+            tableProvider.getCarbonTable().getAbsoluteTableIdentifier(), expressionTree);
       default:
         return getFilterResolverBasedOnExpressionType(ExpressionType.UNKNOWN, false, expressionTree,
-            tableIdentifier, expressionTree);
+            tableProvider.getCarbonTable().getAbsoluteTableIdentifier(), expressionTree);
     }
   }
 

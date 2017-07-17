@@ -22,6 +22,7 @@ import java.io.Serializable;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 
 /**
  * dictionary column identifier which includes table identifier and column identifier
@@ -33,6 +34,7 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
    */
   private CarbonTableIdentifier carbonTableIdentifier;
 
+  private TableProvider tableProvider;
   /**
    * unique column id
    */
@@ -61,6 +63,28 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
   }
 
   /**
+   * Will be used in case of reverse dictionary cache which will be used
+   * in case of data loading.
+   *
+   * @param carbonTableIdentifier
+   * @param columnIdentifier
+   * @param tableProvider
+   */
+  public DictionaryColumnUniqueIdentifier(CarbonTableIdentifier carbonTableIdentifier,
+      ColumnIdentifier columnIdentifier, TableProvider tableProvider) {
+    if (carbonTableIdentifier == null) {
+      throw new IllegalArgumentException("carbonTableIdentifier is null");
+    }
+    if (columnIdentifier == null) {
+      throw new IllegalArgumentException("columnIdentifier is null");
+    }
+    this.carbonTableIdentifier = carbonTableIdentifier;
+    this.columnIdentifier = columnIdentifier;
+    this.dataType = columnIdentifier.getDataType();
+    this.tableProvider = tableProvider;
+  }
+
+  /**
    * Will be used in case of forward dictionary cache in case
    * of query execution.
    *
@@ -74,6 +98,13 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
     this.dataType = dataType;
   }
 
+  public DictionaryColumnUniqueIdentifier(CarbonTableIdentifier carbonTableIdentifier,
+      ColumnIdentifier columnIdentifier, DataType dataType, TableProvider tableProvider) {
+    this(carbonTableIdentifier, columnIdentifier);
+    this.dataType = dataType;
+    this.tableProvider = tableProvider;
+  }
+
   public DataType getDataType() {
     return dataType;
   }
@@ -83,6 +114,10 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
    */
   public CarbonTableIdentifier getCarbonTableIdentifier() {
     return carbonTableIdentifier;
+  }
+
+  public TableProvider getTableProvider() {
+    return tableProvider;
   }
 
   /**

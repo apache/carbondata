@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.presto;
 
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.presto.impl.CarbonTableCacheModel;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
 import com.facebook.presto.spi.ColumnHandle;
@@ -240,8 +242,9 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
 
     // todo set into QueryModel
     CarbonInputFormatUtil.processFilterExpression(finalFilters, carbonTable);
+    TableProvider tableProvider = new SingleTableProvider(carbonTable);
     queryModel.setFilterExpressionResolverTree(
-        CarbonInputFormatUtil.resolveFilter(finalFilters, queryModel.getAbsoluteTableIdentifier()));
+        CarbonInputFormatUtil.resolveFilter(finalFilters, tableProvider));
   }
 
   public static DataType Spi2CarbondataTypeMapper(CarbondataColumnHandle carbondataColumnHandle) {

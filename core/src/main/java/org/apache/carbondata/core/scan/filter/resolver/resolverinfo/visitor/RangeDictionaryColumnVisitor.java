@@ -42,11 +42,12 @@ public class RangeDictionaryColumnVisitor extends DictionaryColumnVisitor
    * @throws FilterUnsupportedException
    */
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
-      FilterResolverMetadata metadata) throws FilterUnsupportedException, IOException {
+      FilterResolverMetadata metadata)
+      throws FilterUnsupportedException, IOException {
     DimColumnFilterInfo resolvedFilterObject = null;
     List<String> evaluateResultListFinal;
     resolvedFilterObject = FilterUtil
-        .getFilterListForAllValues(metadata.getTableIdentifier(), metadata.getExpression(),
+        .getFilterListForAllValues(metadata.getTableProvider(), metadata.getExpression(),
             metadata.getColumnExpression(), metadata.isIncludeFilter());
 
     if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {

@@ -37,9 +37,13 @@ import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.dictionary.DictionaryServerClientDictionary;
@@ -124,9 +128,13 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     this.parentname = parentname;
     this.columnId = columnId;
     this.carbonDimension = carbonDimension;
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+        carbonTableIdentifier.getDatabaseName() + CarbonCommonConstants.UNDERSCORE
+            + carbonTableIdentifier.getTableName());
+    TableProvider tableProvider = new SingleTableProvider(carbonTable);
     DictionaryColumnUniqueIdentifier identifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
-            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType());
+            carbonDimension.getColumnIdentifier(), tableProvider);
     try {
       if (carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         dictionaryGenerator = new DirectDictionary(DirectDictionaryKeyGeneratorFactory
