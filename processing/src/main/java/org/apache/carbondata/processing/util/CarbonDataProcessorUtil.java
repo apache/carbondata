@@ -58,6 +58,7 @@ import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.sort.SortScopeOptions;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public final class CarbonDataProcessorUtil {
   private static final LogService LOGGER =
@@ -169,19 +170,28 @@ public final class CarbonDataProcessorUtil {
    * @param segmentId
    * @return
    */
-  public static String getLocalDataFolderLocation(String databaseName, String tableName,
+  public static String[] getLocalDataFolderLocation(String databaseName, String tableName,
       String taskId, String partitionId, String segmentId, boolean isCompactionFlow) {
     String tempLocationKey =
         getTempStoreLocationKey(databaseName, tableName, taskId, isCompactionFlow);
-    String baseStorePath = CarbonProperties.getInstance()
+    String baseTempStorePath = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
+
+    String[] baseTmpStorePathArray = StringUtils.split(baseTempStorePath, File.pathSeparator);
+    String[] localDataFolderLocArray = new String[baseTmpStorePathArray.length];
+
     CarbonTable carbonTable = CarbonMetadata.getInstance()
         .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTable.getCarbonTableIdentifier());
-    String carbonDataDirectoryPath =
-        carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId + "");
-    return carbonDataDirectoryPath + File.separator + taskId;
+    for (int i = 0 ; i < baseTmpStorePathArray.length; i++) {
+      String tmpStore = baseTmpStorePathArray[i];
+      CarbonTablePath carbonTablePath =
+          CarbonStorePath.getCarbonTablePath(tmpStore, carbonTable.getCarbonTableIdentifier());
+      String carbonDataDirectoryPath =
+          carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId + "");
+
+      localDataFolderLocArray[i] = carbonDataDirectoryPath + File.separator + taskId;
+    }
+    return localDataFolderLocArray;
   }
 
   /**
