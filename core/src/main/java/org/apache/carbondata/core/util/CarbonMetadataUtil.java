@@ -470,9 +470,7 @@ public class CarbonMetadataUtil {
     encoderMeta.setMaxValue(stats.getMax(index));
     encoderMeta.setMinValue(stats.getMin(index));
     encoderMeta.setDataTypeSelected(stats.getDataTypeSelected(index));
-    encoderMeta.setDecimal(stats.getDecimal(index));
     encoderMeta.setType(getTypeInChar(stats.getDataType(index)));
-    encoderMeta.setUniqueValue(stats.getNonExistValue(index));
     return encoderMeta;
   }
 

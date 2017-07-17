@@ -31,15 +31,6 @@ public class ColumnPageStatsVO {
   /** min and max value of the measures */
   private Object min, max;
 
-  /**
-   * the unique value is the non-exist value in the row,
-   * and will be used as storage key for null values of measures
-   */
-  private Object nonExistValue;
-
-  /** decimal count of the measures */
-  private int decimal;
-
   private int scale;
 
   private int precision;
@@ -52,28 +43,22 @@ public class ColumnPageStatsVO {
       case LONG:
         max = Long.MIN_VALUE;
         min = Long.MAX_VALUE;
-        nonExistValue = Long.MIN_VALUE;
         break;
       case DOUBLE:
         max = Double.MIN_VALUE;
         min = Double.MAX_VALUE;
-        nonExistValue = Double.MIN_VALUE;
         break;
       case DECIMAL:
         max = new BigDecimal(Double.MIN_VALUE);
         min = new BigDecimal(Double.MAX_VALUE);
-        nonExistValue = new BigDecimal(Double.MIN_VALUE);
         break;
     }
-    decimal = 0;
   }
 
   public static ColumnPageStatsVO copyFrom(ValueEncoderMeta meta, int scale, int precision) {
     ColumnPageStatsVO instance = new ColumnPageStatsVO(meta.getType());
     instance.min = meta.getMinValue();
     instance.max = meta.getMaxValue();
-    instance.decimal = meta.getDecimal();
-    instance.nonExistValue = meta.getUniqueValue();
     instance.scale = scale;
     instance.precision = precision;
     return instance;
@@ -87,30 +72,20 @@ public class ColumnPageStatsVO {
       case SHORT:
         max = ((long) max > ((Short) value).longValue()) ? max : ((Short) value).longValue();
         min = ((long) min < ((Short) value).longValue()) ? min : ((Short) value).longValue();
-        nonExistValue = (long) min - 1;
         break;
       case INT:
         max = ((long) max > ((Integer) value).longValue()) ? max : ((Integer) value).longValue();
         min = ((long) min  < ((Integer) value).longValue()) ? min : ((Integer) value).longValue();
-        nonExistValue = (long) min - 1;
         break;
       case LONG:
         max = ((long) max > (long) value) ? max : value;
         min = ((long) min < (long) value) ? min : value;
-        nonExistValue = (long) min - 1;
         break;
       case DOUBLE:
         max = ((double) max > (double) value) ? max : value;
         min = ((double) min < (double) value) ? min : value;
-        int num = Math.abs(getDecimalCount((double) value));
-        decimal = decimal > num ? decimal : num;
-        nonExistValue = (double) min - 1;
         break;
       case DECIMAL:
-        BigDecimal decimalValue = (BigDecimal) value;
-        decimal = decimalValue.scale();
-        BigDecimal val = (BigDecimal) min;
-        nonExistValue = (val.subtract(new BigDecimal(1.0)));
         break;
       case ARRAY:
       case STRUCT:
@@ -123,42 +98,25 @@ public class ColumnPageStatsVO {
       case SHORT:
         max = ((long) max > 0) ? max : 0L;
         min = ((long) min < 0) ? min : 0L;
-        nonExistValue = (long) min - 1;
         break;
       case INT:
         max = ((long) max > 0) ? max : 0L;
         min = ((long) min  < 0) ? min : 0L;
-        nonExistValue = (long) min - 1;
         break;
       case LONG:
         max = ((long) max > 0) ? max : 0L;
         min = ((long) min < 0) ? min : 0L;
-        nonExistValue = (long) min - 1;
         break;
       case DOUBLE:
         max = ((double) max > 0d) ? max : 0d;
         min = ((double) min < 0d) ? min : 0d;
-        int num = getDecimalCount(0d);
-        decimal = decimal > num ? decimal : num;
-        nonExistValue = (double) min - 1;
         break;
       case DECIMAL:
-        BigDecimal decimalValue = BigDecimal.ZERO;
-        decimal = decimalValue.scale();
-        BigDecimal val = (BigDecimal) min;
-        nonExistValue = (val.subtract(new BigDecimal(1.0)));
         break;
       case ARRAY:
       case STRUCT:
         // for complex type column, writer is not going to use stats, so, do nothing
     }
-  }
-
-  /**
-   * return no of digit after decimal
-   */
-  private int getDecimalCount(double value) {
-    return BigDecimal.valueOf(value).scale();
   }
 
   /**
@@ -209,14 +167,6 @@ public class ColumnPageStatsVO {
     return max;
   }
 
-  public Object nonExistValue() {
-    return nonExistValue;
-  }
-
-  public int getDecimal() {
-    return decimal;
-  }
-
   public DataType getDataType() {
     return dataType;
   }
@@ -231,6 +181,6 @@ public class ColumnPageStatsVO {
 
   @Override
   public String toString() {
-    return String.format("min: %s, max: %s, decimal: %s ", min, max, decimal);
+    return String.format("min: %s, max: %s", min, max);
   }
 }
