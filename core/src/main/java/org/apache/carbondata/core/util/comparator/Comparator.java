@@ -46,7 +46,7 @@ public final class Comparator {
 
 class ByteArraySerializableComparator implements SerializableComparator {
   @Override public int compare(Object key1, Object key2) {
-    return ByteUtil.compare((byte[]) key1, (byte[]) key2);
+    return ByteUtil.compare(key1.toString().getBytes(), key2.toString().getBytes());
   }
 }
 
