@@ -860,7 +860,7 @@ public class CarbonMetadataUtil {
         buffer.putChar(valueEncoderMeta.getTypeInChar());
         buffer.putLong((Long) valueEncoderMeta.getMaxValue());
         buffer.putLong((Long) valueEncoderMeta.getMinValue());
-        buffer.putLong((Long) valueEncoderMeta.getUniqueValue());
+        buffer.putLong(0L);  // unique value, not used
         break;
       case DOUBLE:
         buffer = ByteBuffer.allocate(
@@ -869,14 +869,14 @@ public class CarbonMetadataUtil {
         buffer.putChar(valueEncoderMeta.getTypeInChar());
         buffer.putDouble((Double) valueEncoderMeta.getMaxValue());
         buffer.putDouble((Double) valueEncoderMeta.getMinValue());
-        buffer.putDouble((Double) valueEncoderMeta.getUniqueValue());
+        buffer.putDouble(0d); // unique value, not used
         break;
       case DECIMAL:
         buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + 3);
         buffer.putChar(valueEncoderMeta.getTypeInChar());
         break;
     }
-    buffer.putInt(valueEncoderMeta.getDecimal());
+    buffer.putInt(0); // decimal point, not used
     buffer.put(valueEncoderMeta.getDataTypeSelected());
     buffer.flip();
     return buffer.array();
