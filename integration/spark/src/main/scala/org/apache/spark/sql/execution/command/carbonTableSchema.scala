@@ -40,7 +40,8 @@ import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.dictionary.server.DictionaryServer
+import org.apache.carbondata.core.dictionary.server.{DictionaryServer, NonSecureDictionaryServer}
+import org.apache.carbondata.core.dictionary.service.NonSecureDictionaryServiceProvider
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.encoder.Encoding
@@ -148,7 +149,7 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
           carbonLoadModel,
           relation.tableMeta.storePath,
           storeLocation
-        )
+      )
     } catch {
       case e: Exception =>
         if (null != e.getMessage) {
@@ -578,9 +579,13 @@ case class LoadTable(
               !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
           }
           val server: Option[DictionaryServer] = if (createDictionary) {
-            val dictionaryServer = DictionaryServer
+            val dictionaryServer = NonSecureDictionaryServer
               .getInstance(dictionaryServerPort.toInt)
             carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
+            carbonLoadModel.setDictionaryServerHost(dictionaryServer.getHost)
+            carbonLoadModel.setDictionaryServerSecure(false);
+            carbonLoadModel.setDictionaryServiceProvider(
+              new NonSecureDictionaryServiceProvider(dictionaryServer.getPort))
             sqlContext.sparkContext.addSparkListener(new SparkListener() {
               override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
                 dictionaryServer.shutdown()

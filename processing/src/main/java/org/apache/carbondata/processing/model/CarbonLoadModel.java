@@ -21,9 +21,11 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.carbondata.core.dictionary.service.DictionaryServiceProvider;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
+
 
 public class CarbonLoadModel implements Serializable {
 
@@ -144,6 +146,20 @@ public class CarbonLoadModel implements Serializable {
    */
   private int dictionaryServerPort;
 
+  /**
+   * dictionary server communication Secret Key.
+   */
+  private String dictionaryServerSecretKey;
+
+  /**
+   * dictionary service provider.
+   */
+  private DictionaryServiceProvider dictionaryServiceProvider;
+
+  /**
+   * Dictionary Secure or not.
+   */
+  private Boolean dictionaryServerSecure;
   /**
    * Pre fetch data from csv reader
    */
@@ -326,6 +342,15 @@ public class CarbonLoadModel implements Serializable {
     this.colDictFilePath = colDictFilePath;
   }
 
+
+  public DictionaryServiceProvider getDictionaryServiceProvider() {
+    return dictionaryServiceProvider;
+  }
+
+  public void setDictionaryServiceProvider(DictionaryServiceProvider dictionaryServiceProvider) {
+    this.dictionaryServiceProvider = dictionaryServiceProvider;
+  }
+
   /**
    * get copy with partition
    *
@@ -363,6 +388,9 @@ public class CarbonLoadModel implements Serializable {
     copy.useOnePass = useOnePass;
     copy.dictionaryServerHost = dictionaryServerHost;
     copy.dictionaryServerPort = dictionaryServerPort;
+    copy.dictionaryServerSecretKey = dictionaryServerSecretKey;
+    copy.dictionaryServerSecure = dictionaryServerSecure;
+    copy.dictionaryServiceProvider = dictionaryServiceProvider;
     copy.preFetch = preFetch;
     copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
     copy.sortScope = sortScope;
@@ -413,6 +441,9 @@ public class CarbonLoadModel implements Serializable {
     copy.useOnePass = useOnePass;
     copy.dictionaryServerHost = dictionaryServerHost;
     copy.dictionaryServerPort = dictionaryServerPort;
+    copy.dictionaryServerSecretKey = dictionaryServerSecretKey;
+    copy.dictionaryServiceProvider = dictionaryServiceProvider;
+    copy.dictionaryServerSecure = dictionaryServerSecure;
     copy.preFetch = preFetch;
     copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
     copy.sortScope = sortScope;
@@ -465,6 +496,9 @@ public class CarbonLoadModel implements Serializable {
     copyObj.useOnePass = useOnePass;
     copyObj.dictionaryServerHost = dictionaryServerHost;
     copyObj.dictionaryServerPort = dictionaryServerPort;
+    copyObj.dictionaryServerSecretKey = dictionaryServerSecretKey;
+    copyObj.dictionaryServiceProvider = dictionaryServiceProvider;
+    copyObj.dictionaryServerSecure = dictionaryServerSecure;
     copyObj.preFetch = preFetch;
     copyObj.isEmptyDataBadRecord = isEmptyDataBadRecord;
     copyObj.sortScope = sortScope;
@@ -715,6 +749,22 @@ public class CarbonLoadModel implements Serializable {
     this.dictionaryServerPort = dictionaryServerPort;
   }
 
+  public String getDictionaryServerSecretKey() {
+    return dictionaryServerSecretKey;
+  }
+
+  public void setDictionaryServerSecretKey(String dictionaryServerSecretKey) {
+    this.dictionaryServerSecretKey = dictionaryServerSecretKey;
+  }
+
+  public Boolean getDictionaryServerSecure() {
+    return dictionaryServerSecure;
+  }
+
+  public void setDictionaryServerSecure(Boolean dictionaryServerSecure) {
+    this.dictionaryServerSecure = dictionaryServerSecure;
+  }
+
   public String getDictionaryServerHost() {
     return dictionaryServerHost;
   }
@@ -778,4 +828,5 @@ public class CarbonLoadModel implements Serializable {
   public void setBadRecordsLocation(String badRecordsLocation) {
     this.badRecordsLocation = badRecordsLocation;
   }
+
 }

@@ -36,6 +36,7 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
+import org.apache.carbondata.core.dictionary.service.DictionaryOnePassService;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
@@ -119,16 +120,21 @@ public class RowConverterImpl implements RowConverter {
       if (executorService == null) {
         executorService = Executors.newCachedThreadPool();
       }
-      Future<DictionaryClient> result = executorService.submit(new Callable<DictionaryClient>() {
-        @Override
-        public DictionaryClient call() throws Exception {
-          Thread.currentThread().setName("Dictionary client");
-          DictionaryClient dictionaryClient = new DictionaryClient();
-          dictionaryClient.startClient(configuration.getDictionaryServerHost(),
-              configuration.getDictionaryServerPort());
-          return dictionaryClient;
-        }
-      });
+      DictionaryOnePassService
+          .setDictionaryServiceProvider(configuration.getDictionaryServiceProvider());
+
+      Future<DictionaryClient> result =
+          executorService.submit(new Callable<DictionaryClient>() {
+            @Override public DictionaryClient call() throws Exception {
+              Thread.currentThread().setName("Dictionary client");
+              DictionaryClient client =
+                  DictionaryOnePassService.getDictionayProvider().getDictionaryClient();
+              client.startClient(configuration.getDictionaryServerSecretKey(),
+                  configuration.getDictionaryServerHost(), configuration.getDictionaryServerPort());
+              return client;
+            }
+          });
+
 
       try {
         // wait for client initialization finished, or will raise null pointer exception

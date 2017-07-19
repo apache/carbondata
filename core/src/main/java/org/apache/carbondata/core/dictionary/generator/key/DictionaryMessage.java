@@ -50,7 +50,32 @@ public class DictionaryMessage {
    */
   private DictionaryMessageType type;
 
-  public void readData(ByteBuf byteBuf) {
+  public void readSkipLength(ByteBuf byteBuf) {
+
+    byte[] tableBytes = new byte[byteBuf.readInt()];
+    byteBuf.readBytes(tableBytes);
+    tableUniqueName = new String(tableBytes);
+
+    byte[] colBytes = new byte[byteBuf.readInt()];
+    byteBuf.readBytes(colBytes);
+    columnName = new String(colBytes);
+
+    byte typeByte = byteBuf.readByte();
+    type = getKeyType(typeByte);
+
+    byte dataType = byteBuf.readByte();
+    if (dataType == 0) {
+      dictionaryValue = byteBuf.readInt();
+    } else {
+      byte[] dataBytes = new byte[byteBuf.readInt()];
+      byteBuf.readBytes(dataBytes);
+      data = new String(dataBytes);
+    }
+  }
+
+  public void readFullLength(ByteBuf byteBuf) {
+
+    short shtr = byteBuf.readShort();
     byte[] tableBytes = new byte[byteBuf.readInt()];
     byteBuf.readBytes(tableBytes);
     tableUniqueName = new String(tableBytes);
@@ -102,6 +127,7 @@ public class DictionaryMessage {
     // packets before proceeding to process the message.Based on the length it waits.
     byteBuf.setShort(startIndex, endIndex - startIndex - 2);
   }
+
 
   private DictionaryMessageType getKeyType(byte type) {
     switch (type) {

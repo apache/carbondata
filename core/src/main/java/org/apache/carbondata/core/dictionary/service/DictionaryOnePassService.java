@@ -15,15 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.dictionary.client;
+package org.apache.carbondata.core.dictionary.service;
 
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
+public class DictionaryOnePassService {
+  private static DictionaryServiceProvider dictionaryServiceProvider = null;
 
-public interface DictionaryClient {
+  public static void setDictionaryServiceProvider(DictionaryServiceProvider dictionaryServiceProv) {
+    dictionaryServiceProvider = dictionaryServiceProv;
+  }
 
-  public void startClient(String secretKey, String address, int port);
-
-  public void shutDown();
-
-  public DictionaryMessage getDictionary(DictionaryMessage key);
+  public static synchronized DictionaryServiceProvider getDictionayProvider() {
+    return dictionaryServiceProvider;
+  }
 }

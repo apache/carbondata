@@ -29,11 +29,11 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 /**
  * Handler for Dictionary server.
  */
-@ChannelHandler.Sharable
-public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
+@ChannelHandler.Sharable public class NonSecureDictionaryServerHandler
+    extends ChannelInboundHandlerAdapter {
 
   private static final LogService LOGGER =
-          LogServiceFactory.getLogService(DictionaryServerHandler.class.getName());
+      LogServiceFactory.getLogService(NonSecureDictionaryServerHandler.class.getName());
 
   /**
    * dictionary generator
@@ -56,7 +56,7 @@ public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
     try {
       ByteBuf data = (ByteBuf) msg;
       DictionaryMessage key = new DictionaryMessage();
-      key.readData(data);
+      key.readSkipLength(data);
       data.release();
       int outPut = processMessage(key);
       key.setDictionaryValue(outPut);
@@ -91,14 +91,14 @@ public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
    */
   public int processMessage(DictionaryMessage key) throws Exception {
     switch (key.getType()) {
-      case DICT_GENERATION :
+      case DICT_GENERATION:
         return generatorForServer.generateKey(key);
-      case TABLE_INTIALIZATION :
+      case TABLE_INTIALIZATION:
         generatorForServer.initializeGeneratorForTable(key);
         return 0;
-      case SIZE :
+      case SIZE:
         return generatorForServer.size(key);
-      case WRITE_DICTIONARY :
+      case WRITE_DICTIONARY:
         generatorForServer.writeDictionaryData();
         return 0;
       case WRITE_TABLE_DICTIONARY:
