@@ -1313,7 +1313,7 @@ public final class CarbonCommonConstants {
    * the main purpose is to avoid single-disk-hot-spot
    */
   @CarbonProperty
-  public static final String CARBON_USING_MULTI_TEMP_DIR = "carbon.using.multi.temp.dir";
+  public static final String CARBON_USING_MULTI_TEMP_DIR = "carbon.use.multiple.temp.dir";
 
   /**
    * default value for multi temp dir
