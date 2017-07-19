@@ -32,99 +32,71 @@ class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hivetable")
   }
 
-  test("test drop column and insert into hive table") {
-    beforeAll
+  test("test drop column and insert into hive table") ({
+    def test_drop_and_insert() = {
+      beforeAll
+      sql(
+        "CREATE TABLE dropcolumntest(intField int,stringField string,charField string," +
+        "timestampField timestamp,decimalField decimal(6,2)) STORED BY 'carbondata'")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE dropcolumntest"
+          + s" options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+      sql("Alter table dropcolumntest drop columns(charField)")
+      sql(
+        "CREATE TABLE hivetable(intField int,stringField string,timestampField timestamp," +
+        "decimalField decimal(6,2)) stored as parquet")
+      sql("insert into table hivetable select * from dropcolumntest")
+      checkAnswer(sql("select * from hivetable"), sql("select * from dropcolumntest"))
+      afterAll
+    }
     sqlContext.setConf("carbon.enable.vector.reader", "true")
-    sql(
-      "CREATE TABLE dropcolumntest(intField int,stringField string,charField string," +
-      "timestampField timestamp,decimalField decimal(6,2)) STORED BY 'carbondata'")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE dropcolumntest" +
-        s" options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
-    sql("Alter table dropcolumntest drop columns(charField)")
-    sql(
-      "CREATE TABLE hivetable(intField int,stringField string,timestampField timestamp," +
-      "decimalField decimal(6,2)) stored as parquet")
-    sql("insert into table hivetable select * from dropcolumntest")
-    checkAnswer(sql("select * from hivetable"), sql("select * from dropcolumntest"))
-    afterAll
-
-    beforeAll
+    test_drop_and_insert()
     sqlContext.setConf("carbon.enable.vector.reader", "false")
-    sql(
-      "CREATE TABLE dropcolumntest(intField int,stringField string,charField string," +
-      "timestampField timestamp,decimalField decimal(6,2)) STORED BY 'carbondata'")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE dropcolumntest" +
-        s" options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
-    sql("Alter table dropcolumntest drop columns(charField)")
-    sql(
-      "CREATE TABLE hivetable(intField int,stringField string,timestampField timestamp," +
-      "decimalField decimal(6,2)) stored as parquet")
-    sql("insert into table hivetable select * from dropcolumntest")
-    checkAnswer(sql("select * from hivetable"), sql("select * from dropcolumntest"))
-    afterAll
-  }
+    test_drop_and_insert()
+  })
 
-  test("test drop column and load data") {
-    beforeAll
+  test("test drop column and load data") ({
+    def test_drop_and_load() = {
+      beforeAll
+      sql(
+        "CREATE TABLE dropcolumntest(intField int,stringField string,charField string," +
+        "timestampField timestamp,decimalField decimal(6,2)) STORED BY 'carbondata'")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE dropcolumntest"
+          + s" options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+      sql("Alter table dropcolumntest drop columns(charField)")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE dropcolumntest"
+          + s" options('FILEHEADER'='intField,stringField,timestampField,decimalField')")
+      checkAnswer(sql("select count(*) from dropcolumntest"), Row(2))
+      afterAll
+    }
     sqlContext.setConf("carbon.enable.vector.reader", "true")
-    sql(
-      "CREATE TABLE dropcolumntest(intField int,stringField string,charField string," +
-      "timestampField timestamp,decimalField decimal(6,2)) STORED BY 'carbondata'")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE dropcolumntest" +
-        s" options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
-    sql("Alter table dropcolumntest drop columns(charField)")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE dropcolumntest" +
-        s" options('FILEHEADER'='intField,stringField,timestampField,decimalField')")
-    checkAnswer(sql("select count(*) from dropcolumntest"), Row(2))
-    afterAll
-    
-    beforeAll
+    test_drop_and_load
     sqlContext.setConf("carbon.enable.vector.reader", "false")
-    sql(
-      "CREATE TABLE dropcolumntest(intField int,stringField string,charField string," +
-      "timestampField timestamp,decimalField decimal(6,2)) STORED BY 'carbondata'")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE dropcolumntest" +
-        s" options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
-    sql("Alter table dropcolumntest drop columns(charField)")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE dropcolumntest" +
-        s" options('FILEHEADER'='intField,stringField,timestampField,decimalField')")
-    checkAnswer(sql("select count(*) from dropcolumntest"), Row(2))
-    afterAll
-  }
+    test_drop_and_load
 
-  test("test drop column and compaction") {
-    beforeAll
+  })
+
+  test("test drop column and compaction") ({
+    def test_drop_and_compaction() = {
+      beforeAll
+      sql(
+        "CREATE TABLE dropcolumntest(intField int,stringField string,charField string," +
+        "timestampField timestamp,decimalField decimal(6,2)) STORED BY 'carbondata'")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE dropcolumntest"
+          + s" options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+      sql("Alter table dropcolumntest drop columns(charField)")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE dropcolumntest"
+          + s" options('FILEHEADER'='intField,stringField,timestampField,decimalField')")
+      sql("alter table dropcolumntest compact 'major'")
+      checkExistence(sql("show segments for table dropcolumntest"), true, "0Compacted")
+      checkExistence(sql("show segments for table dropcolumntest"), true, "1Compacted")
+      checkExistence(sql("show segments for table dropcolumntest"), true, "0.1Success")
+      afterAll
+    }
     sqlContext.setConf("carbon.enable.vector.reader", "true")
-    sql(
-      "CREATE TABLE dropcolumntest(intField int,stringField string,charField string," +
-      "timestampField timestamp,decimalField decimal(6,2)) STORED BY 'carbondata'")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE dropcolumntest" +
-        s" options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
-    sql("Alter table dropcolumntest drop columns(charField)")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE dropcolumntest" +
-        s" options('FILEHEADER'='intField,stringField,timestampField,decimalField')")
-    sql("alter table dropcolumntest compact 'major'")
-    checkExistence(sql("show segments for table dropcolumntest"), true, "0Compacted")
-    checkExistence(sql("show segments for table dropcolumntest"), true, "1Compacted")
-    checkExistence(sql("show segments for table dropcolumntest"), true, "0.1Success")
-    afterAll
-
-    beforeAll
+    test_drop_and_compaction()
     sqlContext.setConf("carbon.enable.vector.reader", "false")
-    sql(
-      "CREATE TABLE dropcolumntest(intField int,stringField string,charField string," +
-      "timestampField timestamp,decimalField decimal(6,2)) STORED BY 'carbondata'")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE dropcolumntest" +
-        s" options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
-    sql("Alter table dropcolumntest drop columns(charField)")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE dropcolumntest" +
-        s" options('FILEHEADER'='intField,stringField,timestampField,decimalField')")
-    sql("alter table dropcolumntest compact 'major'")
-    checkExistence(sql("show segments for table dropcolumntest"), true, "0Compacted")
-    checkExistence(sql("show segments for table dropcolumntest"), true, "1Compacted")
-    checkExistence(sql("show segments for table dropcolumntest"), true, "0.1Success")
-    afterAll
-  }
+    test_drop_and_compaction()
+  })
 
   override def afterAll {
     sql("DROP TABLE IF EXISTS dropcolumntest")

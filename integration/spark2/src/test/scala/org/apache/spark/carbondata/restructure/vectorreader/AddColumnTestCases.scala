@@ -80,25 +80,22 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select charField from addcolumntest where charField = 'abc'"), Row("abc"))
   }
 
-  test("test add dictionary column and test greaterthan/lessthan filter on new column") {
+  test("test add dictionary column and test greaterthan/lessthan filter on new column") ({
+    def test_add_and_filter() = {
+      sql(
+        "Alter table addcolumntest add columns(intnewField int) TBLPROPERTIES" +
+          "('DICTIONARY_INCLUDE'='intnewField', 'DEFAULT.VALUE.intNewField'='5')")
+      checkAnswer(sql("select charField from addcolumntest where intnewField > 2"),
+        Seq(Row("abc"), Row("def")))
+      checkAnswer(sql("select charField from addcolumntest where intnewField < 2"), Seq())
+    }
     sqlContext.setConf("carbon.enable.vector.reader", "true")
-    sql(
-      "Alter table addcolumntest add columns(intnewField int) TBLPROPERTIES" +
-      "('DICTIONARY_INCLUDE'='intnewField', 'DEFAULT.VALUE.intNewField'='5')")
-    checkAnswer(sql("select charField from addcolumntest where intnewField > 2"),
-      Seq(Row("abc"), Row("def")))
-    checkAnswer(sql("select charField from addcolumntest where intnewField < 2"), Seq())
-
+    test_add_and_filter()
     afterAll
     beforeAll
     sqlContext.setConf("carbon.enable.vector.reader", "false")
-    sql(
-      "Alter table addcolumntest add columns(intnewField int) TBLPROPERTIES" +
-      "('DICTIONARY_INCLUDE'='intnewField', 'DEFAULT.VALUE.intNewField'='5')")
-    checkAnswer(sql("select charField from addcolumntest where intnewField > 2"),
-      Seq(Row("abc"), Row("def")))
-    checkAnswer(sql("select charField from addcolumntest where intnewField < 2"), Seq())
-  }
+    test_add_and_filter
+  })
 
   test("test add msr column and check aggregate") {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
@@ -144,89 +141,61 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select charField from addcolumntest"), Seq(Row("abc"), Row("def")))
   }
 
-  test("test add and drop column with data loading") {
+  test("test add and drop column with data loading") ({
+    def test_add_drop_load() = {
+      sql("DROP TABLE IF EXISTS carbon_table")
+      sql(
+        "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+        "timestamp,decimalField decimal(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
+        "('DICTIONARY_EXCLUDE'='charField')")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+          s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+      sql("Alter table carbon_table drop columns(timestampField)")
+      sql("select * from carbon_table").collect
+      sql("Alter table carbon_table add columns(timestampField timestamp)")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data5.csv' INTO TABLE carbon_table " +
+          s"options('FILEHEADER'='intField,stringField,charField,decimalField,timestampField')")
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
     sqlContext.setConf("carbon.enable.vector.reader", "true")
-    sql("DROP TABLE IF EXISTS carbon_table")
-    sql(
-      "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
-      "timestamp,decimalField decimal(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='charField')")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
-        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
-    sql("Alter table carbon_table drop columns(timestampField)")
-    sql("select * from carbon_table").collect
-    sql("Alter table carbon_table add columns(timestampField timestamp)")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data5.csv' INTO TABLE carbon_table " +
-        s"options('FILEHEADER'='intField,stringField,charField,decimalField,timestampField')")
-    sql("DROP TABLE IF EXISTS carbon_table")
-
+    test_add_drop_load()
     afterAll
     beforeAll
     sqlContext.setConf("carbon.enable.vector.reader", "false")
-    sql("DROP TABLE IF EXISTS carbon_table")
-    sql(
-      "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
-      "timestamp,decimalField decimal(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='charField')")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
-        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
-    sql("Alter table carbon_table drop columns(timestampField)")
-    sql("select * from carbon_table").collect
-    sql("Alter table carbon_table add columns(timestampField timestamp)")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data5.csv' INTO TABLE carbon_table " +
-        s"options('FILEHEADER'='intField,stringField,charField,decimalField,timestampField')")
-    sql("DROP TABLE IF EXISTS carbon_table")
-  }
+    test_add_drop_load()
+  })
 
-  test("test add/drop and change datatype") {
+  test("test add/drop and change datatype") ({
+    def test_add_drop_change() = {
+      sql("DROP TABLE IF EXISTS carbon_table")
+      sql(
+        "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+        "timestamp,decimalField decimal(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
+        "('DICTIONARY_EXCLUDE'='charField')")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+          s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+      sql("Alter table carbon_table drop columns(charField)")
+      sql("select * from carbon_table").collect
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE carbon_table " +
+          s"options('FILEHEADER'='intField,stringField,timestampField,decimalField')")
+      sql(
+        "Alter table carbon_table add columns(charField string) TBLPROPERTIES" +
+        "('DICTIONARY_EXCLUDE'='charField')")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data2.csv' INTO TABLE carbon_table " +
+          s"options('FILEHEADER'='intField,stringField,timestampField,decimalField,charField')")
+      sql("select * from carbon_table").collect
+      sql("ALTER TABLE carbon_table CHANGE decimalField decimalField decimal(22,6)")
+      sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data3.csv' INTO TABLE carbon_table " +
+          s"options('FILEHEADER'='intField,stringField,timestampField,decimalField,charField')")
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
     sqlContext.setConf("carbon.enable.vector.reader", "true")
-    sql("DROP TABLE IF EXISTS carbon_table")
-    sql(
-      "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
-      "timestamp,decimalField decimal(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='charField')")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
-        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
-    sql("Alter table carbon_table drop columns(charField)")
-    sql("select * from carbon_table").collect
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE carbon_table " +
-        s"options('FILEHEADER'='intField,stringField,timestampField,decimalField')")
-    sql(
-      "Alter table carbon_table add columns(charField string) TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='charField')")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data2.csv' INTO TABLE carbon_table " +
-        s"options('FILEHEADER'='intField,stringField,timestampField,decimalField,charField')")
-    sql("select * from carbon_table").collect
-    sql("ALTER TABLE carbon_table CHANGE decimalField decimalField decimal(22,6)")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data3.csv' INTO TABLE carbon_table " +
-        s"options('FILEHEADER'='intField,stringField,timestampField,decimalField,charField')")
-    sql("DROP TABLE IF EXISTS carbon_table")
- 
+    test_add_drop_change
     afterAll
-    beforeAll   
+    beforeAll
     sqlContext.setConf("carbon.enable.vector.reader", "false")
-    sql("DROP TABLE IF EXISTS carbon_table")
-    sql(
-      "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
-      "timestamp,decimalField decimal(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='charField')")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
-        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
-    sql("Alter table carbon_table drop columns(charField)")
-    sql("select * from carbon_table").collect
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE carbon_table " +
-        s"options('FILEHEADER'='intField,stringField,timestampField,decimalField')")
-    sql(
-      "Alter table carbon_table add columns(charField string) TBLPROPERTIES" +
-      "('DICTIONARY_EXCLUDE'='charField')")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data2.csv' INTO TABLE carbon_table " +
-        s"options('FILEHEADER'='intField,stringField,timestampField,decimalField,charField')")
-    sql("select * from carbon_table").collect
-    sql("ALTER TABLE carbon_table CHANGE decimalField decimalField decimal(22,6)")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data3.csv' INTO TABLE carbon_table " +
-        s"options('FILEHEADER'='intField,stringField,timestampField,decimalField,charField')")
-    sql("DROP TABLE IF EXISTS carbon_table")
-  }
+    test_add_drop_change
+  })
 
 
   test("test add column compaction") {
