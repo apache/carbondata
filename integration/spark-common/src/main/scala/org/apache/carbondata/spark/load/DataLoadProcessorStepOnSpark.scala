@@ -204,7 +204,7 @@ object DataLoadProcessorStepOnSpark {
         dataWriter.close()
       }
       // clean up the folders and files created locally for data load operation
-      CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false)
+      CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false, false)
     }
   }
 

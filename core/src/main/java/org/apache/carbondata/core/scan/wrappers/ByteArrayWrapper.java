@@ -16,13 +16,15 @@
  */
 package org.apache.carbondata.core.scan.wrappers;
 
+import java.io.Serializable;
+
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 
 /**
  * This class will store the dimension column data when query is executed
  * This can be used as a key for aggregation
  */
-public class ByteArrayWrapper implements Comparable<ByteArrayWrapper> {
+public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializable {
 
   /**
    * to store key which is generated using

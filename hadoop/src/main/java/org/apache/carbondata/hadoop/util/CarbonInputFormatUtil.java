@@ -85,6 +85,14 @@ public class CarbonInputFormatUtil {
     return carbonInputFormat;
   }
 
+  public static <V> CarbonInputFormat<V> createCarbonInputFormat(AbsoluteTableIdentifier identifier,
+      List<String> partitionId, Job job) throws IOException {
+    CarbonInputFormat<V> carbonInputFormat = new CarbonInputFormat<>();
+    carbonInputFormat.setPartitionIdList(job.getConfiguration(), partitionId);
+    FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
+    return carbonInputFormat;
+  }
+
   private static void addQueryMeasure(CarbonQueryPlan plan, int order, CarbonMeasure measure) {
     QueryMeasure queryMeasure = new QueryMeasure(measure.getColName());
     queryMeasure.setQueryOrder(order);

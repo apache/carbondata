@@ -91,7 +91,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     String[] storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()), partitionId,
-            configuration.getSegmentId() + "", false);
+            configuration.getSegmentId() + "", false, false);
     CarbonDataProcessorUtil.createLocations(storeLocation);
     return storeLocation;
   }

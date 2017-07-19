@@ -310,6 +310,10 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String NUM_CORES_COMPACTING = "carbon.number.of.cores.while.compacting";
   /**
+   * Number of cores to be used while alter partition
+   */
+  public static final String NUM_CORES_ALT_PARTITION = "carbon.number.of.cores.while.altPartition";
+  /**
    * Number of cores to be used for block sort
    */
   @CarbonProperty
@@ -969,6 +973,11 @@ public final class CarbonCommonConstants {
    * Indicates compaction
    */
   public static String COMPACTION_KEY_WORD = "COMPACTION";
+
+  /**
+   * Indicates alter partition
+   */
+  public static String ALTER_PARTITION_KEY_WORD = "ALTER_PARTITION";
 
   /**
    * hdfs temporary directory key

@@ -17,8 +17,10 @@
 
 package org.apache.spark.sql.execution.command
 
+import java.text.SimpleDateFormat
+
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.language.implicitConversions
 
 import org.apache.commons.lang3.StringUtils
@@ -30,23 +32,26 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.util.FileUtils
+import org.apache.spark.util.{AlterTableUtil, FileUtils, PartitionUtils}
 import org.codehaus.jackson.map.ObjectMapper
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
-import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.format
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
@@ -179,6 +184,161 @@ case class AlterTableCompaction(alterTableModel: AlterTableModel) extends Runnab
           sys.error("Exception in compaction. Please check logs for more info.")
         }
     }
+    Seq.empty
+  }
+}
+
+/**
+ * Command for Alter Table Add & Split partition
+ * Add is a special case of Splitting the default partition (part0)
+ * @param alterTableSplitPartitionModel
+ */
+case class AlterTableSplitPartition(alterTableSplitPartitionModel: AlterTableSplitPartitionModel)
+  extends RunnableCommand {
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+
+  def run(sparkSession: SparkSession): Seq[Row] = {
+
+    val tableName = alterTableSplitPartitionModel.tableName
+    val dbName = alterTableSplitPartitionModel.databaseName
+      .getOrElse(sparkSession.catalog.currentDatabase)
+    val splitInfo = alterTableSplitPartitionModel.splitInfo
+    val partitionId = Integer.parseInt(alterTableSplitPartitionModel.partitionId)
+    val timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+    val dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+
+    val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
+      LockUsage.COMPACTION_LOCK,
+      LockUsage.DELETE_SEGMENT_LOCK,
+      LockUsage.DROP_TABLE_LOCK,
+      LockUsage.CLEAN_FILES_LOCK,
+      LockUsage.ALTER_PARTITION_LOCK)
+    var locks = List.empty[ICarbonLock]
+    try {
+      locks = AlterTableUtil.validateTableAndAcquireLock(dbName, tableName,
+        locksToBeAcquired)(sparkSession)
+      val carbonMetastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val relation = carbonMetastore.lookupRelation(Option(dbName), tableName)(sparkSession)
+        .asInstanceOf[CarbonRelation]
+      val carbonTableIdentifier = relation.tableMeta.carbonTableIdentifier
+      val storePath = relation.tableMeta.storePath
+      if (relation == null) {
+        sys.error(s"Table $dbName.$tableName does not exist")
+      }
+      carbonMetastore.checkSchemasModifiedTimeAndReloadTables(storePath)
+      if (null == CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)) {
+        LOGGER.error(s"Alter table failed. table not found: $dbName.$tableName")
+        sys.error(s"Alter table failed. table not found: $dbName.$tableName")
+      }
+      val carbonLoadModel = new CarbonLoadModel()
+
+      val table = relation.tableMeta.carbonTable
+      val partitionInfo = table.getPartitionInfo(tableName)
+      val partitionIdList = partitionInfo.getPartitionIds.asScala
+      // keep a copy of partitionIdList before update partitionInfo.
+      // will be used in partition data scan
+      val oldPartitionIdList: ArrayBuffer[Int] = new ArrayBuffer[Int]()
+      for (i: Integer <- partitionIdList) {
+        oldPartitionIdList.append(i)
+      }
+
+      if (partitionInfo == null) {
+        sys.error(s"Table $tableName is not a partition table.")
+      }
+      if (partitionInfo.getPartitionType == PartitionType.HASH) {
+        sys.error(s"Hash partition table cannot be added or split!")
+      }
+      /**
+       * verify the add/split information and update the partitionInfo:
+       *  1. update rangeInfo/listInfo
+       *  2. update partitionIds
+       */
+      val columnDataType = partitionInfo.getColumnSchemaList.get(0).getDataType
+      val index = partitionIdList.indexOf(partitionId)
+      if (partitionInfo.getPartitionType == PartitionType.RANGE) {
+        val rangeInfo = partitionInfo.getRangeInfo.asScala.toList
+        val newRangeInfo = partitionId match {
+          case 0 => rangeInfo ++ splitInfo
+          case _ => rangeInfo.take(index - 1) ++ splitInfo ++
+                    rangeInfo.takeRight(rangeInfo.size - index)
+        }
+        CommonUtil.validateRangeInfo(newRangeInfo, columnDataType,
+          timestampFormatter, dateFormatter)
+        partitionInfo.setRangeInfo(newRangeInfo.asJava)
+      } else if (partitionInfo.getPartitionType == PartitionType.LIST) {
+        val originList = partitionInfo.getListInfo.asScala.map(_.asScala.toList).toList
+        if (partitionId != 0) {
+          val targetListInfo = partitionInfo.getListInfo.get(index - 1)
+          CommonUtil.validateSplitListInfo(targetListInfo.asScala.toList, splitInfo, originList)
+        } else {
+          CommonUtil.validateAddListInfo(splitInfo, originList)
+        }
+        val addListInfo = PartitionUtils.getListInfo(splitInfo.mkString(","))
+        val newListInfo = partitionId match {
+          case 0 => originList ++ addListInfo
+          case _ => originList.take(index - 1) ++ addListInfo ++
+                    originList.takeRight(originList.size - index)
+        }
+        partitionInfo.setListInfo(newListInfo.map(_.asJava).asJava)
+      }
+
+      if (partitionId == 0) {
+        partitionInfo.addPartition(splitInfo.size)
+      } else {
+        partitionInfo.splitPartition(index, splitInfo.size)
+      }
+
+      //carbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.toArray)
+      val dataLoadSchema = new CarbonDataLoadSchema(table)
+
+      carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
+      carbonLoadModel.setTableName(carbonTableIdentifier.getTableName)
+      carbonLoadModel.setDatabaseName(carbonTableIdentifier.getDatabaseName)
+      carbonLoadModel.setStorePath(storePath)
+
+      val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier)
+      val schemaFilePath = carbonTablePath.getSchemaFilePath
+      // read TableInfo
+      val tableInfo = carbonMetastore.getThriftTableInfo(carbonTablePath)(sparkSession)
+
+
+      val schemaConverter = new ThriftWrapperSchemaConverterImpl()
+      val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(tableInfo,
+        dbName, tableName, storePath)
+      val tableSchema = wrapperTableInfo.getFactTable
+
+      CarbonDataRDDFactory.alterTableSplitPartition(sparkSession.sqlContext,
+        partitionId.toString,
+        carbonLoadModel,
+        relation.tableMeta.storePath,
+        oldPartitionIdList.toList
+      )
+      tableSchema.setPartitionInfo(partitionInfo)
+      wrapperTableInfo.setFactTable(tableSchema)
+      wrapperTableInfo.setLastUpdatedTime(System.currentTimeMillis())
+      val thriftTable =
+        schemaConverter.fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
+      carbonMetastore.updateMetadataByThriftTable(schemaFilePath, thriftTable,
+        dbName, tableName, storePath)
+      CarbonUtil.writeThriftTableToSchemaFile(schemaFilePath, thriftTable)
+      // update the schema modified time
+      carbonMetastore.updateAndTouchSchemasUpdatedTime(storePath)
+      sparkSession.catalog.refreshTable(tableName)
+      LOGGER.info(s"Alter table add/split partition is successful for table $dbName.$tableName")
+      LOGGER.audit(s"Alter table add/split partition is successful for table $dbName.$tableName")
+    } catch {
+      case e: Exception =>
+        sys.error(s"Add Partition failed. Please check logs for more info. ${ e.getMessage } ")
+    } finally {
+      CacheProvider.getInstance().dropAllCache()
+      AlterTableUtil.releaseLocks(locks)
+      LOGGER.info("Locks released after alter table add/split partition action.")
+    }
+
     Seq.empty
   }
 }

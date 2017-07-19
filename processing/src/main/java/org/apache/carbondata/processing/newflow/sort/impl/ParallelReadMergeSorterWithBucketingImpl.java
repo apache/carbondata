@@ -137,7 +137,7 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
     String[] storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(sortParameters.getDatabaseName(), sortParameters.getTableName(),
             String.valueOf(sortParameters.getTaskNo()), bucketId,
-            sortParameters.getSegmentId() + "", false);
+            sortParameters.getSegmentId() + "", false, false);
     // Set the data file location
     String[] dataFolderLocation = CarbonDataProcessorUtil.arrayAppend(storeLocation, File.separator,
         CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
@@ -188,7 +188,7 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
     String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(parameters.getDatabaseName(),
             parameters.getTableName(), parameters.getTaskNo(),
-            parameters.getPartitionID(), parameters.getSegmentId(), false);
+            parameters.getPartitionID(), parameters.getSegmentId(), false, false);
     String[] tmpLocs = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath, File.separator,
         CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     parameters.setTempFileLocation(tmpLocs);

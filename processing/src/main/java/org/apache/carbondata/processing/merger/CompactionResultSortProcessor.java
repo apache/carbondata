@@ -402,7 +402,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   private void initTempStoreLocation() {
     tempStoreLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(carbonLoadModel.getDatabaseName(), tableName,
-            carbonLoadModel.getTaskNo(), carbonLoadModel.getPartitionId(), segmentId, true);
+            carbonLoadModel.getTaskNo(), carbonLoadModel.getPartitionId(), segmentId,
+            true, false);
   }
 
   /**

@@ -126,6 +126,14 @@ case class CompactionCallableModel(storePath: String,
     sqlContext: SQLContext,
     compactionType: CompactionType)
 
+case class SplitPartitionCallableModel(storePath: String,
+    carbonLoadModel: CarbonLoadModel,
+    segmentId: String,
+    partitionId: String,
+    oldPartitionIdList: List[Int],
+    carbonTable: CarbonTable,
+    sqlContext: SQLContext)
+
 case class DataTypeInfo(dataType: String, precision: Int = 0, scale: Int = 0)
 
 case class AlterTableDataTypeChangeModel(dataTypeInfo: DataTypeInfo,
@@ -150,6 +158,15 @@ case class AlterTableAddColumnsModel(
 case class AlterTableDropColumnModel(databaseName: Option[String],
     tableName: String,
     columns: List[String])
+
+case class AlterTableDropPartitionModel(databaseName: Option[String],
+    tableName: String,
+    partitionId: String)
+
+case class AlterTableSplitPartitionModel(databaseName: Option[String],
+    tableName: String,
+    partitionId: String,
+    splitInfo: List[String])
 
 class AlterTableColumnSchemaGenerator(
     alterTableModel: AlterTableAddColumnsModel,

@@ -63,13 +63,37 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
   protected lazy val startCommand: Parser[LogicalPlan] =
-    loadManagement| showLoads | alterTable | restructure | updateTable | deleteRecords
+    loadManagement|showLoads|alterTable|restructure|updateTable|deleteRecords|alterPartition
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
 
   protected lazy val restructure: Parser[LogicalPlan] =
     alterTableModifyDataType | alterTableDropColumn | alterTableAddColumns
+
+  protected lazy val alterPartition: Parser[LogicalPlan] =
+    alterAddPartition | alterSplitPartition
+
+  protected lazy val alterAddPartition: Parser[LogicalPlan] =
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (ADD ~> PARTITION ~>
+      "(" ~> repsep(stringLit, ",") <~ ")") <~ opt(";") ^^ {
+      case dbName ~ table ~ addInfo =>
+        val alterTableAddPartitionModel =
+          AlterTableSplitPartitionModel(dbName, table, "0", addInfo)
+        AlterTableSplitPartition(alterTableAddPartitionModel)
+    }
+
+  protected lazy val alterSplitPartition: Parser[LogicalPlan] =
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (SPLIT ~> PARTITION ~>
+       "(" ~> numericLit <~ ")") ~ (INTO ~> "(" ~> repsep(stringLit, ",") <~ ")") <~ opt(";") ^^ {
+      case dbName ~ table ~ partitionId ~ splitInfo =>
+        val alterTableSplitPartitionModel =
+          AlterTableSplitPartitionModel(dbName, table, partitionId, splitInfo)
+        if (partitionId == 0) {
+          sys.error("Please use [Alter Table Add Partition] statement to split default partition!")
+        }
+        AlterTableSplitPartition(alterTableSplitPartitionModel)
+    }
 
   protected lazy val alterTable: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (COMPACT ~ stringLit) <~ opt(";")  ^^ {
