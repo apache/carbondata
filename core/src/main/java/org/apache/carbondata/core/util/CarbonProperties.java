@@ -896,8 +896,16 @@ public final class CarbonProperties {
    * @return boolean
    */
   public boolean isUseMultiTempDir() {
-    String value = getProperty(CarbonCommonConstants.CARBON_USING_MULTI_TEMP_DIR, "false");
-    return value.equalsIgnoreCase("true");
+    String usingMultiDirStr = getProperty(CarbonCommonConstants.CARBON_USING_MULTI_TEMP_DIR,
+        CarbonCommonConstants.CARBON_USING_MULTI_TEMP_DIR_DEFAULT);
+    boolean validateBoolean = CarbonUtil.validateBoolean(usingMultiDirStr);
+    if (!validateBoolean) {
+      LOGGER.info("The using multi temp dir value \"" + usingMultiDirStr
+          + "\" is invalid. Using the default value \""
+          + CarbonCommonConstants.CARBON_USING_MULTI_TEMP_DIR_DEFAULT);
+      usingMultiDirStr = CarbonCommonConstants.CARBON_USING_MULTI_TEMP_DIR_DEFAULT;
+    }
+    return usingMultiDirStr.equalsIgnoreCase("true");
   }
 
   /**

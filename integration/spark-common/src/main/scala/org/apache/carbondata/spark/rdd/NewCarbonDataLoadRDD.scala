@@ -149,7 +149,6 @@ class SparkPartitionLoader(model: CarbonLoadModel,
 
     val isCarbonUseMultiDir = CarbonProperties.getInstance().isUseMultiTempDir
 
-
     if (isCarbonUseLocalDir) {
       val yarnStoreLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
 

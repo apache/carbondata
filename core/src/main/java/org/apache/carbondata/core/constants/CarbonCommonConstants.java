@@ -1318,7 +1318,7 @@ public final class CarbonCommonConstants {
   /**
    * default value for multi temp dir
    */
-  public static final String CARBON_SUING_MULTI_TEMP_DIR_DEFAULT = "false";
+  public static final String CARBON_USING_MULTI_TEMP_DIR_DEFAULT = "false";
 
   private CarbonCommonConstants() {
   }
