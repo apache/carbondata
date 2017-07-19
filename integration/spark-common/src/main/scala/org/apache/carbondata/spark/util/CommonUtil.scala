@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.util
 
+
 import java.text.SimpleDateFormat
 import java.util
 
@@ -35,6 +36,7 @@ import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
@@ -615,8 +617,21 @@ object CommonUtil {
     result.result()
   }
 
-  def partitionInfoOutput: Seq[Attribute] = Seq(
-    AttributeReference("partition", StringType, nullable = false,
-      new MetadataBuilder().putString("comment", "partitions info").build())()
-  )
+  def partitionInfoOutput: Seq[Attribute] = {
+    Seq(
+      AttributeReference("partition", StringType, nullable = false,
+        new MetadataBuilder().putString("comment", "partitions info").build())()
+    )
+  }
+
+  /**
+   * Method to clear the memory for a task
+   * if present
+   */
+  def clearUnsafeMemory(taskId: Long) {
+    UnsafeMemoryManager.
+      INSTANCE.freeMemoryAll(taskId)
+    UnsafeSortMemoryManager.
+      INSTANCE.freeMemoryAll(taskId)
+  }
 }

@@ -42,7 +42,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
 import org.apache.carbondata.processing.csvload.BlockDetails
 import org.apache.carbondata.processing.csvload.CSVInputFormat
 import org.apache.carbondata.processing.csvload.CSVRecordReaderIterator
@@ -240,7 +240,11 @@ class NewCarbonDataLoadRDD[K, V](
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()
-        new DataLoadExecutor().execute(model,
+        val executor = new DataLoadExecutor()
+        // in case of success, failure or cancelation clear memory and stop execution
+        context.addTaskCompletionListener { context => executor.close()
+          CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
+        executor.execute(model,
           loader.storeLocation,
           recordReaders)
       } catch {
@@ -327,7 +331,6 @@ class NewCarbonDataLoadRDD[K, V](
           }
         }
       }
-
       /**
        * generate blocks id
        *
@@ -423,7 +426,6 @@ class NewDataFrameLoaderRDD[K, V](
           recordReaders += new LazyRddIterator(serializer, serializeBytes, value.partition,
               carbonLoadModel, context)
         }
-
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
           null,
@@ -431,7 +433,11 @@ class NewDataFrameLoaderRDD[K, V](
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()
-        new DataLoadExecutor().execute(model, loader.storeLocation, recordReaders.toArray)
+        val executor = new DataLoadExecutor
+        // in case of success, failure or cancelation clear memory and stop execution
+        context.addTaskCompletionListener { context => executor.close()
+          CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
+        executor.execute(model, loader.storeLocation, recordReaders.toArray)
       } catch {
         case e: BadRecordFoundException =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
@@ -606,7 +612,6 @@ class PartitionTableDataLoaderRDD[K, V](
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         carbonLoadModel.setTaskNo(String.valueOf(partitionInfo.getPartitionId(theSplit.index)))
         carbonLoadModel.setPreFetch(false)
-
         val recordReaders = Array[CarbonIterator[Array[AnyRef]]] {
           new NewRddIterator(firstParent[Row].iterator(theSplit, context), carbonLoadModel, context)
         }
@@ -618,7 +623,11 @@ class PartitionTableDataLoaderRDD[K, V](
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()
-        new DataLoadExecutor().execute(model, loader.storeLocation, recordReaders)
+        val executor = new DataLoadExecutor
+        // in case of success, failure or cancelation clear memory and stop execution
+        context.addTaskCompletionListener { context => executor.close()
+          CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
+        executor.execute(model, loader.storeLocation, recordReaders)
       } catch {
         case e: BadRecordFoundException =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
@@ -642,7 +651,6 @@ class PartitionTableDataLoaderRDD[K, V](
         }
       }
       var finished = false
-
       override def hasNext: Boolean = !finished
 
       override def next(): (K, V) = {

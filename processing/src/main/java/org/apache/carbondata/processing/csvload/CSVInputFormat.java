@@ -304,6 +304,9 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
         if (boundedInputStream != null) {
           boundedInputStream.close();
         }
+        if (null != csvParser) {
+          csvParser.stopParsing();
+        }
       } finally {
         reader = null;
         boundedInputStream = null;
