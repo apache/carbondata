@@ -119,10 +119,10 @@ public class CarbonMetadataUtilTest {
     blockletInfoList.add(blockletInfo);
 
     ValueEncoderMeta meta = CodecMetaFactory.createMeta();
-    meta.setDecimalPoint(5);
+    meta.setDecimal(5);
     meta.setMinValue(objMinArr);
     meta.setMaxValue(objMaxArr);
-    meta.setSrcDataType(ColumnPageCodecMeta.DOUBLE_MEASURE);
+    meta.setType(ColumnPageCodecMeta.DOUBLE_MEASURE);
 
     List<Encoding> encoders = new ArrayList<>();
     encoders.add(Encoding.INVERTED_INDEX);
@@ -205,8 +205,8 @@ public class CarbonMetadataUtilTest {
       metas[i] = CodecMetaFactory.createMeta();
       metas[i].setMinValue(objMinArr[i]);
       metas[i].setMaxValue(objMaxArr[i]);
-      metas[i].setDecimalPoint(objDecimal[i]);
-      metas[i].setSrcDataType(ColumnPageCodecMeta.BIG_INT_MEASURE);
+      metas[i].setDecimal(objDecimal[i]);
+      metas[i].setType(ColumnPageCodecMeta.BIG_INT_MEASURE);
     }
 
     BlockletInfoColumnar blockletInfoColumnar = new BlockletInfoColumnar();

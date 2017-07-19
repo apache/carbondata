@@ -1397,6 +1397,66 @@ public final class CarbonUtil {
     return meta;
   }
 
+  public static ValueEncoderMeta deserializeEncoderMetaV3(byte[] encodeMeta) {
+    ByteBuffer buffer = ByteBuffer.wrap(encodeMeta);
+    char measureType = buffer.getChar();
+    ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
+    valueEncoderMeta.setType(measureType);
+    switch (measureType) {
+      case CarbonCommonConstants.DOUBLE_MEASURE:
+        valueEncoderMeta.setMaxValue(buffer.getDouble());
+        valueEncoderMeta.setMinValue(buffer.getDouble());
+        valueEncoderMeta.setUniqueValue(buffer.getDouble());
+        break;
+      case CarbonCommonConstants.BIG_DECIMAL_MEASURE:
+        valueEncoderMeta.setMaxValue(0.0);
+        valueEncoderMeta.setMinValue(0.0);
+        valueEncoderMeta.setUniqueValue(0.0);
+        break;
+      case CarbonCommonConstants.BIG_INT_MEASURE:
+        valueEncoderMeta.setMaxValue(buffer.getLong());
+        valueEncoderMeta.setMinValue(buffer.getLong());
+        valueEncoderMeta.setUniqueValue(buffer.getLong());
+        break;
+      default:
+        throw new IllegalArgumentException("invalid measure type");
+    }
+    valueEncoderMeta.setDecimal(buffer.getInt());
+    valueEncoderMeta.setDataTypeSelected(buffer.get());
+    return valueEncoderMeta;
+  }
+
+  public static byte[] serializeEncodeMetaUsingByteBuffer(ValueEncoderMeta valueEncoderMeta) {
+    ByteBuffer buffer = null;
+    switch (valueEncoderMeta.getType()) {
+      case LONG:
+        buffer = ByteBuffer.allocate(
+            (CarbonCommonConstants.LONG_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
+                + 3);
+        buffer.putChar(valueEncoderMeta.getTypeInChar());
+        buffer.putLong((Long) valueEncoderMeta.getMaxValue());
+        buffer.putLong((Long) valueEncoderMeta.getMinValue());
+        buffer.putLong(0L); // unique value, not used
+        break;
+      case DOUBLE:
+        buffer = ByteBuffer.allocate(
+            (CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
+                + 3);
+        buffer.putChar(valueEncoderMeta.getTypeInChar());
+        buffer.putDouble((Double) valueEncoderMeta.getMaxValue());
+        buffer.putDouble((Double) valueEncoderMeta.getMinValue());
+        buffer.putDouble(0d); // unique value, not used
+        break;
+      case DECIMAL:
+        buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + 3);
+        buffer.putChar(valueEncoderMeta.getTypeInChar());
+        break;
+    }
+    buffer.putInt(0); // decimal point, not used
+    buffer.put(valueEncoderMeta.getDataTypeSelected());
+    buffer.flip();
+    return buffer.array();
+  }
 
   /**
    * Below method will be used to convert indexes in range
@@ -1667,6 +1727,48 @@ public final class CarbonUtil {
    */
   public static boolean isValidBadStorePath(String badRecordsLocation) {
     return !(null == badRecordsLocation || badRecordsLocation.length() == 0);
+  }
+
+  public static byte[] getMaxValueAsBytes(ValueEncoderMeta meta) {
+    ByteBuffer b;
+    switch (meta.getType()) {
+      case LONG:
+        b = ByteBuffer.allocate(8);
+        b.putLong((long) meta.getMaxValue());
+        b.flip();
+        return b.array();
+      case DOUBLE:
+        b = ByteBuffer.allocate(8);
+        b.putDouble((double) meta.getMaxValue());
+        b.flip();
+        return b.array();
+      case DECIMAL:
+      case BYTE_ARRAY:
+        return new byte[8];
+      default:
+        throw new IllegalArgumentException("Invalid data type: " + meta.getType());
+    }
+  }
+
+  public static byte[] getMinValueAsBytes(ValueEncoderMeta meta) {
+    ByteBuffer b;
+    switch (meta.getType()) {
+      case LONG:
+        b = ByteBuffer.allocate(8);
+        b.putLong((long) meta.getMinValue());
+        b.flip();
+        return b.array();
+      case DOUBLE:
+        b = ByteBuffer.allocate(8);
+        b.putDouble((double) meta.getMinValue());
+        b.flip();
+        return b.array();
+      case DECIMAL:
+      case BYTE_ARRAY:
+        return new byte[8];
+      default:
+        throw new IllegalArgumentException("Invalid data type: " + meta.getType());
+    }
   }
 }
 

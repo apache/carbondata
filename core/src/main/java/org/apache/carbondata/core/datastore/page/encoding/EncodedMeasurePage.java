@@ -25,8 +25,10 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
+import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.BlockletMinMaxIndex;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.Encoding;
@@ -65,10 +67,17 @@ public class EncodedMeasurePage extends EncodedColumnPage {
     presenceMeta.setPresent_bit_stream(compressor.compressByte(nullBitSet.toByteArray()));
     dataChunk.setPresence(presenceMeta);
     List<ByteBuffer> encoderMetaList = new ArrayList<ByteBuffer>();
-    encoderMetaList.add(ByteBuffer.wrap(metaData.serialize()));
+    if (metaData instanceof ColumnPageCodecMeta) {
+      ColumnPageCodecMeta meta = (ColumnPageCodecMeta) metaData;
+      encoderMetaList.add(ByteBuffer.wrap(meta.serialize()));
+      dataChunk.min_max.addToMax_values(ByteBuffer.wrap(meta.getMaxAsBytes()));
+      dataChunk.min_max.addToMin_values(ByteBuffer.wrap(meta.getMinAsBytes()));
+    } else {
+      encoderMetaList.add(ByteBuffer.wrap(CarbonUtil.serializeEncodeMetaUsingByteBuffer(metaData)));
+      dataChunk.min_max.addToMax_values(ByteBuffer.wrap(CarbonUtil.getMaxValueAsBytes(metaData)));
+      dataChunk.min_max.addToMin_values(ByteBuffer.wrap(CarbonUtil.getMinValueAsBytes(metaData)));
+    }
     dataChunk.setEncoder_meta(encoderMetaList);
-    dataChunk.min_max.addToMax_values(ByteBuffer.wrap(metaData.getMaxAsBytes()));
-    dataChunk.min_max.addToMin_values(ByteBuffer.wrap(metaData.getMinAsBytes()));
     return dataChunk;
   }
 

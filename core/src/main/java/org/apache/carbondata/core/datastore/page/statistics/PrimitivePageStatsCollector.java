@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.datastore.page.statistics;
 
 import java.math.BigDecimal;
-import java.nio.ByteBuffer;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
@@ -73,7 +72,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       case DOUBLE:
         instance.minDouble = (double) meta.getMinValue();
         instance.maxDouble = (double) meta.getMaxValue();
-        instance.decimal = meta.getDecimalPoint();
+        instance.decimal = meta.getDecimal();
         break;
     }
     return instance;
@@ -81,9 +80,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   public static PrimitivePageStatsCollector newInstance(ValueEncoderMeta meta) {
     PrimitivePageStatsCollector instance =
-        new PrimitivePageStatsCollector(meta.getSrcDataType(), 0);
+        new PrimitivePageStatsCollector(meta.getType(), 0);
     // set min max from meta
-    switch (meta.getSrcDataType()) {
+    switch (meta.getType()) {
       case BYTE:
         instance.minByte = (byte) meta.getMinValue();
         instance.maxByte = (byte) meta.getMaxValue();
@@ -103,7 +102,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       case DOUBLE:
         instance.minDouble = (double) meta.getMinValue();
         instance.maxDouble = (double) meta.getMaxValue();
-        instance.decimal = meta.getDecimalPoint();
+        instance.decimal = meta.getDecimal();
         break;
     }
     return instance;
@@ -241,45 +240,6 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         return String.format("min: %s, max: %s, decimal: %s ", minDouble, maxDouble, decimal);
     }
     return super.toString();
-  }
-
-  /**
-   * convert value to byte array
-   */
-  private byte[] getValueAsBytes(Object value) {
-    ByteBuffer b;
-    switch (dataType) {
-      case BYTE:
-        b = ByteBuffer.allocate(8);
-        b.putLong((byte) value);
-        b.flip();
-        return b.array();
-      case SHORT:
-        b = ByteBuffer.allocate(8);
-        b.putLong((short) value);
-        b.flip();
-        return b.array();
-      case INT:
-        b = ByteBuffer.allocate(8);
-        b.putLong((int) value);
-        b.flip();
-        return b.array();
-      case LONG:
-        b = ByteBuffer.allocate(8);
-        b.putLong((long) value);
-        b.flip();
-        return b.array();
-      case DOUBLE:
-        b = ByteBuffer.allocate(8);
-        b.putDouble((double) value);
-        b.flip();
-        return b.array();
-      case DECIMAL:
-      case BYTE_ARRAY:
-        return new byte[8];
-      default:
-        throw new IllegalArgumentException("Invalid data type: " + dataType);
-    }
   }
 
   @Override

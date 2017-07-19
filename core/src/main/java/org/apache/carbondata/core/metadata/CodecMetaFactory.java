@@ -17,9 +17,13 @@
 
 package org.apache.carbondata.core.metadata;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonProperties;
+
+import static org.apache.carbondata.core.metadata.datatype.DataType.*;
+import static org.apache.carbondata.core.metadata.datatype.DataType.LONG;
 
 public class CodecMetaFactory {
 
@@ -30,7 +34,7 @@ public class CodecMetaFactory {
     switch (version) {
       case V1:
       case V2:
-        return ValueEncoderMeta.newInstance();
+        return new ValueEncoderMeta();
       case V3:
         return ColumnPageCodecMeta.newInstance();
       default:
@@ -42,11 +46,44 @@ public class CodecMetaFactory {
     switch (version) {
       case V1:
       case V2:
-        return ValueEncoderMeta.newInstance(stats, targetDataType);
+        ValueEncoderMeta meta = new ValueEncoderMeta();
+        switch (stats.getDataType()) {
+          case SHORT:
+            meta.setMaxValue((long)(short) stats.getMax());
+            meta.setMinValue((long)(short) stats.getMin());
+            break;
+          case INT:
+            meta.setMaxValue((long)(int) stats.getMax());
+            meta.setMinValue((long)(int) stats.getMin());
+            break;
+          default:
+            meta.setMaxValue(stats.getMax());
+            meta.setMinValue(stats.getMin());
+            break;
+        }
+        meta.setDecimal(stats.getDecimalPoint());
+        meta.setType(converType(stats.getDataType()));
+        return meta;
       case V3:
         return ColumnPageCodecMeta.newInstance(stats, targetDataType);
       default:
         throw new UnsupportedOperationException("unsupported version: " + version);
+    }
+  }
+
+  public static char converType(DataType type) {
+    switch (type) {
+      case BYTE:
+      case SHORT:
+      case INT:
+      case LONG:
+        return CarbonCommonConstants.BIG_INT_MEASURE;
+      case DOUBLE:
+        return CarbonCommonConstants.DOUBLE_MEASURE;
+      case DECIMAL:
+        return CarbonCommonConstants.BIG_DECIMAL_MEASURE;
+      default:
+        throw new RuntimeException("Unexpected type: " + type);
     }
   }
 

@@ -76,7 +76,7 @@ public abstract class EncodingStrategy {
       }
     } else {
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(meta);
-      switch (meta.getSrcDataType()) {
+      switch (meta.getType()) {
         case BYTE:
         case SHORT:
         case INT:

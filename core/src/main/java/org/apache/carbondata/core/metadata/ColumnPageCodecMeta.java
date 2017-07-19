@@ -52,10 +52,11 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
     ColumnPageCodecMeta meta = new ColumnPageCodecMeta();
     meta.srcDataType = stats.getDataType();
     meta.targetDataType = targetDataType;
-    meta.maxValue = stats.getMax();
-    meta.minValue = stats.getMin();
-    meta.decimal = stats.getDecimalPoint();
     meta.nullBitSet = stats.getNullBits();
+    meta.setType(CodecMetaFactory.converType(stats.getDataType()));
+    meta.setMaxValue(stats.getMax());
+    meta.setMinValue(stats.getMin());
+    meta.setDecimal(stats.getDecimalPoint());
     return meta;
   }
 
@@ -63,7 +64,6 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
     return targetDataType;
   }
 
-  @Override
   public void setSrcDataType(char type) {
     switch (type) {
       case BYTE_VALUE_MEASURE:
@@ -116,12 +116,10 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
     this.nullBitSet = nullBitSet;
   }
 
-  @Override
   public DataType getSrcDataType() {
     return srcDataType;
   }
 
-  @Override
   public byte[] serialize() {
     ByteBuffer buffer = null;
     switch (srcDataType) {
@@ -130,8 +128,8 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
             (CarbonCommonConstants.LONG_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
                 + 3);
         buffer.putChar(getSrcDataTypeInChar());
-        buffer.put((byte) maxValue);
-        buffer.put((byte) minValue);
+        buffer.put((byte) getMaxValue());
+        buffer.put((byte) getMinValue());
         buffer.putLong((Long) 0L); // unique value is obsoleted, maintain for compatibility
         break;
       case SHORT:
@@ -139,8 +137,8 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
             (CarbonCommonConstants.LONG_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
                 + 3);
         buffer.putChar(getSrcDataTypeInChar());
-        buffer.putShort((short) maxValue);
-        buffer.putShort((short) minValue);
+        buffer.putShort((short) getMaxValue());
+        buffer.putShort((short) getMinValue());
         buffer.putLong((Long) 0L); // unique value is obsoleted, maintain for compatibility
         break;
       case INT:
@@ -148,8 +146,8 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
             (CarbonCommonConstants.LONG_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
                 + 3);
         buffer.putChar(getSrcDataTypeInChar());
-        buffer.putInt((int) maxValue);
-        buffer.putInt((int) minValue);
+        buffer.putInt((int) getMaxValue());
+        buffer.putInt((int) getMinValue());
         buffer.putLong((Long) 0L); // unique value is obsoleted, maintain for compatibility
         break;
       case LONG:
@@ -157,8 +155,8 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
             (CarbonCommonConstants.LONG_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
                 + 3);
         buffer.putChar(getSrcDataTypeInChar());
-        buffer.putLong((Long) maxValue);
-        buffer.putLong((Long) minValue);
+        buffer.putLong((Long) getMaxValue());
+        buffer.putLong((Long) getMinValue());
         buffer.putLong((Long) 0L); // unique value is obsoleted, maintain for compatibility
         break;
       case DOUBLE:
@@ -166,8 +164,8 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
             (CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
                 + 3);
         buffer.putChar(getSrcDataTypeInChar());
-        buffer.putDouble((Double) maxValue);
-        buffer.putDouble((Double) minValue);
+        buffer.putDouble((Double) getMaxValue());
+        buffer.putDouble((Double) getMinValue());
         buffer.putDouble((Double) 0d); // unique value is obsoleted, maintain for compatibility
         break;
       case DECIMAL:
@@ -175,13 +173,12 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
         buffer.putChar(getSrcDataTypeInChar());
         break;
     }
-    buffer.putInt(decimal);
+    buffer.putInt(getDecimal());
     buffer.put(getDataTypeSelected());
     buffer.flip();
     return buffer.array();
   }
 
-  @Override
   public void deserialize(byte[] encodeMeta) {
     ByteBuffer buffer = ByteBuffer.wrap(encodeMeta);
     char srcDataType = buffer.getChar();
@@ -219,18 +216,16 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
       default:
         throw new IllegalArgumentException("invalid measure type");
     }
-    this.setDecimalPoint(buffer.getInt());
+    this.setDecimal(buffer.getInt());
     buffer.get(); // for selectedDataType, obsoleted
   }
 
-  @Override
   public byte[] getMaxAsBytes() {
-    return getValueAsBytes(maxValue);
+    return getValueAsBytes(getMaxValue());
   }
 
-  @Override
   public byte[] getMinAsBytes() {
-    return getValueAsBytes(minValue);
+    return getValueAsBytes(getMinValue());
   }
 
   /**

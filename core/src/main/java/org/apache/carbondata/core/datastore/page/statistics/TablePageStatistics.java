@@ -23,7 +23,9 @@ import java.util.BitSet;
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedDimensionPage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
+import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 // Statistics of dimension and measure column in a TablePage
 public class TablePageStatistics {
@@ -81,8 +83,14 @@ public class TablePageStatistics {
   private void updateMeasureMinMax(EncodedMeasurePage[] measures) {
     for (int i = 0; i < measures.length; i++) {
       ValueEncoderMeta meta = measures[i].getMetaData();
-      measureMaxValue[i] = meta.getMaxAsBytes();
-      measureMinValue[i] = meta.getMinAsBytes();
+      if (meta instanceof ColumnPageCodecMeta) {
+        ColumnPageCodecMeta metadata = (ColumnPageCodecMeta) meta;
+        measureMaxValue[i] = metadata.getMaxAsBytes();
+        measureMinValue[i] = metadata.getMinAsBytes();
+      } else {
+        measureMaxValue[i] = CarbonUtil.getMaxValueAsBytes(meta);
+        measureMinValue[i] = CarbonUtil.getMinValueAsBytes(meta);
+      }
       nullBitSet[i] = measures[i].getNullBitSet();
     }
   }

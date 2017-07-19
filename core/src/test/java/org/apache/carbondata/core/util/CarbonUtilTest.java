@@ -740,7 +740,7 @@ public class CarbonUtilTest {
     valueEncoderMeta.setMaxValue(5.0);
     valueEncoderMeta.setMinValue(1.0);
     valueEncoderMeta.setUniqueValue(2.0);
-    valueEncoderMeta.setSrcDataType('n');
+    valueEncoderMeta.setType('n');
     valueEncoderMeta.setDataTypeSelected((byte) 'v');
     valueEncoderMetas.add(valueEncoderMeta);
     dataChunk.setValueEncoderMeta(valueEncoderMetas);
