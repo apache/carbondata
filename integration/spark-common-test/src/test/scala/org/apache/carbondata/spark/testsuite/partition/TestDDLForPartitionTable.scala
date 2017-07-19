@@ -354,6 +354,81 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     assert(exception_test_range_decimal.getMessage.contains("Invalid partition definition"))
   }
 
+  test("test range info for overlapping values") {
+    // test for int type
+    intercept[Exception] {
+      sql(
+        "create table range_int(a string, b int) PARTITIONED BY (c int) stored by 'carbondata' " +
+        "tblproperties ('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='1,3,2,7')")
+    }
+    // test for String type
+    intercept[Exception] {
+      sql(
+        "create table range_string(a string, b int) PARTITIONED BY (c string) stored by " +
+        "'carbondata' tblproperties ('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,xyz,def,pqr')")
+    }
+    // test for long type
+    intercept[Exception] {
+      sql(
+        "create table range_long(a string, b int) PARTITIONED BY (c long) stored by " +
+        "'carbondata' tblproperties ('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='21474836471," +
+        "2147483649,214748764712,11474836471')")
+    }
+    // test for float type
+    intercept[Exception] {
+      sql(
+        "create table range_float(a string, b int) PARTITIONED BY (c float) stored by " +
+        "'carbondata' tblproperties ('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='214.23f,219.12f,211" +
+        ".2f,236.23f')")
+    }
+    // test for double type
+    intercept[Exception] {
+      sql(
+        "create table range_double(a string, b int) PARTITIONED BY (c double) stored by " +
+        "'carbondata' tblproperties ('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='1200.24,1800.24,1600" +
+        ".24,2200.24')")
+    }
+    // test for byte type
+    intercept[Exception] {
+      sql(
+        "create table range_byte(a string, b int) PARTITIONED BY (c byte) stored by " +
+        "'carbondata' tblproperties ('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='84,90,87,112')")
+    }
+    // test for short type
+    intercept[Exception] {
+      sql(
+        "create table range_short(a string, b int) PARTITIONED BY (c short) stored by " +
+        "'carbondata' tblproperties ('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='1014,1019,1017,2110')")
+    }
+    // test for boolean type
+    intercept[Exception] {
+      sql(
+        "create table range_boolean(a string, b int) PARTITIONED BY (c boolean) stored by " +
+        "'carbondata' tblproperties ('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='true,false')")
+    }
+    // test for decimal type
+    intercept[Exception] {
+      sql(
+        "create table range_decimal(a string, b int) PARTITIONED BY (c decimal(7,2)) stored by " +
+        "'carbondata' tblproperties ('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='1014.27,1019.27,1017" +
+        ".27,2110.27')")
+    }
+    // test for date type
+    intercept[Exception] {
+      sql(
+        "create table range_date(a string, b int) PARTITIONED BY (c date) stored by " +
+        "'carbondata' tblproperties ('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='2000-01-01," +
+        "2004-01-01,2002-01-01,2008-01-01')")
+    }
+    // test for timestamp type
+    intercept[Exception] {
+      sql(
+        "create table range_timestamp(a string, b int) PARTITIONED BY (c timestamp) stored by " +
+        "'carbondata' tblproperties ('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='01-01-2000 00:00:00," +
+        "01-01-2004 00:00:00,01-01-2002 00:00:00,01-01-2008 00:00:00')")
+    }
+  }
+
   override def afterAll = {
     dropTable
     CarbonProperties.getInstance()
@@ -384,6 +459,17 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test_range_date")
     sql("DROP TABLE IF EXISTS test_range_timestamp")
     sql("DROP TABLE IF EXISTS test_range_decimal")
+    sql("drop table if exists range_int")
+    sql("drop table if exists range_string")
+    sql("drop table if exists range_long")
+    sql("drop table if exists range_float")
+    sql("drop table if exists range_double")
+    sql("drop table if exists range_byte")
+    sql("drop table if exists range_short")
+    sql("drop table if exists range_boolean")
+    sql("drop table if exists range_decimal")
+    sql("drop table if exists range_date")
+    sql("drop table if exists range_timestamp")
   }
 
 }
