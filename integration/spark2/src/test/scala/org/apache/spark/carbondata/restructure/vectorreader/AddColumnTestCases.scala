@@ -17,11 +17,13 @@
 
 package org.apache.spark.carbondata.restructure.vectorreader
 
+import java.io.{File, FileOutputStream, FileWriter}
 import java.math.{BigDecimal, RoundingMode}
 import java.sql.{Date, Timestamp}
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.Spark2QueryTest
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -29,7 +31,6 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS addcolumntest")
     sql("drop table if exists hivetable")
     sql(
@@ -42,26 +43,55 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       "('DICTIONARY_EXCLUDE'='charField', 'DEFAULT.VALUE.charfield'='def')")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE addcolumntest " +
         s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("CREATE TABLE hivetable stored as parquet select * from addcolumntest")
   }
 
   test("test like query on new column") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
+    checkAnswer(sql("select charField from addcolumntest where charField like 'd%'"), Row("def"))
+
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
     checkAnswer(sql("select charField from addcolumntest where charField like 'd%'"), Row("def"))
   }
 
   test("test is not null filter on new column") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
+    checkAnswer(sql("select charField from addcolumntest where charField is not null"),
+      Seq(Row("abc"), Row("def")))
+
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
     checkAnswer(sql("select charField from addcolumntest where charField is not null"),
       Seq(Row("abc"), Row("def")))
   }
 
   test("test is null filter on new column") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
+    checkAnswer(sql("select charField from addcolumntest where charField is null"), Seq())
+
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
     checkAnswer(sql("select charField from addcolumntest where charField is null"), Seq())
   }
 
   test("test equals filter on new column") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
+    checkAnswer(sql("select charField from addcolumntest where charField = 'abc'"), Row("abc"))
+
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
     checkAnswer(sql("select charField from addcolumntest where charField = 'abc'"), Row("abc"))
   }
 
   test("test add dictionary column and test greaterthan/lessthan filter on new column") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
+    sql(
+      "Alter table addcolumntest add columns(intnewField int) TBLPROPERTIES" +
+      "('DICTIONARY_INCLUDE'='intnewField', 'DEFAULT.VALUE.intNewField'='5')")
+    checkAnswer(sql("select charField from addcolumntest where intnewField > 2"),
+      Seq(Row("abc"), Row("def")))
+    checkAnswer(sql("select charField from addcolumntest where intnewField < 2"), Seq())
+
+    afterAll
+    beforeAll
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
     sql(
       "Alter table addcolumntest add columns(intnewField int) TBLPROPERTIES" +
       "('DICTIONARY_INCLUDE'='intnewField', 'DEFAULT.VALUE.intNewField'='5')")
@@ -71,14 +101,42 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test add msr column and check aggregate") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql(
       "alter table addcolumntest add columns(msrField DECIMAL(5,2))TBLPROPERTIES ('DEFAULT.VALUE" +
       ".msrfield'= '123.45')")
     checkAnswer(sql("select sum(msrField) from addcolumntest"),
       Row(new BigDecimal("246.90").setScale(2, RoundingMode.HALF_UP)))
+
+    afterAll
+    beforeAll
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
+    sql(
+      "alter table addcolumntest add columns(msrField decimal(5,2))TBLPROPERTIES ('DEFAULT.VALUE" +
+      ".msrfield'= '123.45')")
+    checkAnswer(sql("select sum(msrField) from addcolumntest"),
+      Row(new BigDecimal("246.90").setScale(2, RoundingMode.HALF_UP)))
+  }
+
+  test("test join on new column") {
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
+    checkAnswer(sql(
+      "select t1.charField, t2.charField from addcolumntest t1, hivetable t2 where t1.charField =" +
+      " t2.charField"),
+      Seq(Row("abc", "abc"), Row("def", "def")))
   }
 
   test("test compaction after adding new column") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
+    sql("Alter table addcolumntest compact 'major'")
+    checkExistence(sql("show segments for table addcolumntest"), true, "0Compacted")
+    checkExistence(sql("show segments for table addcolumntest"), true, "1Compacted")
+    checkExistence(sql("show segments for table addcolumntest"), true, "0.1Success")
+    checkAnswer(sql("select charField from addcolumntest"), Seq(Row("abc"), Row("def")))
+
+    afterAll
+    beforeAll
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
     sql("Alter table addcolumntest compact 'major'")
     checkExistence(sql("show segments for table addcolumntest"), true, "0Compacted")
     checkExistence(sql("show segments for table addcolumntest"), true, "1Compacted")
@@ -87,6 +145,24 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test add and drop column with data loading") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql(
+      "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+      "timestamp,decimalField decimal(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("Alter table carbon_table drop columns(timestampField)")
+    sql("select * from carbon_table").collect
+    sql("Alter table carbon_table add columns(timestampField timestamp)")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data5.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,decimalField,timestampField')")
+    sql("DROP TABLE IF EXISTS carbon_table")
+
+    afterAll
+    beforeAll
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
     sql("DROP TABLE IF EXISTS carbon_table")
     sql(
       "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
@@ -103,6 +179,32 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test add/drop and change datatype") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql(
+      "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+      "timestamp,decimalField decimal(6,2))STORED BY 'carbondata' TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("Alter table carbon_table drop columns(charField)")
+    sql("select * from carbon_table").collect
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,timestampField,decimalField')")
+    sql(
+      "Alter table carbon_table add columns(charField string) TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data2.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,timestampField,decimalField,charField')")
+    sql("select * from carbon_table").collect
+    sql("ALTER TABLE carbon_table CHANGE decimalField decimalField decimal(22,6)")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data3.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,timestampField,decimalField,charField')")
+    sql("DROP TABLE IF EXISTS carbon_table")
+ 
+    afterAll
+    beforeAll   
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
     sql("DROP TABLE IF EXISTS carbon_table")
     sql(
       "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
@@ -126,7 +228,109 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table")
   }
 
+
+  test("test add column compaction") {
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql(
+      "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+      "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("Alter table carbon_table add columns(decimalField decimal(6,2))")
+
+    sql("Alter table carbon_table compact 'minor'")
+
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+  test("test to add column with char datatype") {
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql(
+      "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+      "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("Alter table carbon_table add columns(newfield char(10)) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='char')")
+    checkAnswer(sql("select distinct(newfield) from carbon_table"),Row("char"))
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+  test("test to check if exception is thrown with wrong char syntax") {
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
+    intercept[Exception] {
+      sql("DROP TABLE IF EXISTS carbon_table")
+      sql(
+        "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+
+        "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+        "('DICTIONARY_EXCLUDE'='charField')")
+      sql(
+        "Alter table carbon_table add columns(newfield char) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
+  }
+
+  test("test to add column with varchar datatype") {
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql(
+      "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+      "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+      "('DICTIONARY_EXCLUDE'='charField')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table " +
+        s"options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql("Alter table carbon_table add columns(newfield varchar(10)) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='char')")
+    checkAnswer(sql("select distinct(newfield) from carbon_table"),Row("char"))
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+  test("test to check if exception is thrown with wrong varchar syntax") {
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
+    intercept[Exception] {
+      sql("DROP TABLE IF EXISTS carbon_table")
+      sql(
+        "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+
+        "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+        "('DICTIONARY_EXCLUDE'='charField')")
+      sql(
+        "Alter table carbon_table add columns(newfield varchar) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
+  }
+
+  test("test to check if exception is thrown if table is locked for updation") {
+    sqlContext.setConf("carbon.enable.vector.reader", "false")
+    intercept[Exception] {
+      sql("DROP TABLE IF EXISTS carbon_table")
+      sql(
+        "CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField " +
+        "timestamp)STORED BY 'carbondata' TBLPROPERTIES" +
+        "('DICTIONARY_EXCLUDE'='charField')")
+      val lockFilePath = s"${ TestQueryExecutor.storeLocation }/default/carbon_table/meta.lock"
+      new File(lockFilePath).createNewFile()
+      sql(
+        "Alter table carbon_table add columns(newfield string) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
+      new FileOutputStream(lockFilePath).getChannel.lock()
+      sql(
+        "Alter table carbon_table drop columns(newfield)")
+      new File(lockFilePath).delete()
+      sql("DROP TABLE IF EXISTS carbon_table")
+    }
+  }
+
   test("test to check if select * works for new added column") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_new")
     sql(
       "CREATE TABLE carbon_new(intField int,stringField string,charField string,timestampField " +
@@ -148,6 +352,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test to check data if all columns are provided in select") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_new")
     sql(
       "CREATE TABLE carbon_new(intField int,stringField string,charField string,timestampField " +
@@ -165,6 +370,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test to check data if new column query order is different from schema order") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_new")
     sql(
       "CREATE TABLE carbon_new(intField int,stringField string,charField string,timestampField " +
@@ -187,6 +393,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test to check if vector result collector is able to fetch large amount of data") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_new")
     sql(
       """CREATE TABLE carbon_new (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB
@@ -207,6 +414,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test for checking newly added measure column for is null condition") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_measure_is_null")
     sql("CREATE TABLE carbon_measure_is_null (CUST_ID int,CUST_NAME String) STORED BY 'carbondata'")
     sql(
@@ -227,6 +435,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_measure_is_null")
   }
   test("test to check if intField returns correct result") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_table")
     sql("CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField timestamp, decimalField decimal(6,2)) STORED BY 'carbondata'")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
@@ -249,6 +458,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test to check if doubleField returns correct result") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_table")
     sql("CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField timestamp, decimalField decimal(6,2)) STORED BY 'carbondata'")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
@@ -260,6 +470,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test to check if decimalField returns correct result") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_table")
     sql("CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField timestamp, decimalField decimal(6,2)) STORED BY 'carbondata'")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
@@ -272,6 +483,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
 
   test("test for checking newly added dictionary column for is null condition") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_dictionary_is_null")
     sql(
       "CREATE TABLE carbon_dictionary_is_null (CUST_ID int,CUST_NAME String) STORED BY " +
@@ -298,6 +510,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test add column for new decimal column filter query") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS alter_decimal_filter")
     sql(
       "create table alter_decimal_filter (n1 string, n2 int, n3 decimal(3,2)) stored by " +
@@ -313,6 +526,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test add column with date") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_table")
     sql("CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField timestamp, decimalField decimal(6,2)) STORED BY 'carbondata'")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
@@ -324,6 +538,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test add column with timestamp") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_table")
     sql("CREATE TABLE carbon_table(intField int,stringField string,charField string,timestampField timestamp, decimalField decimal(6,2)) STORED BY 'carbondata'")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
@@ -335,6 +550,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test compaction with all dictionary columns") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS alter_dict")
     sql("CREATE TABLE alter_dict(stringField string,charField string) STORED BY 'carbondata'")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' INTO TABLE alter_dict options('FILEHEADER'='stringField,charField')")
@@ -348,6 +564,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test sort_columns for add columns") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS alter_sort_columns")
     sql(
       "CREATE TABLE alter_sort_columns(stringField string,charField string) STORED BY 'carbondata'")
@@ -360,6 +577,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test compaction with all no dictionary columns") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS alter_no_dict")
     sql("CREATE TABLE alter_no_dict(stringField string,charField string) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_EXCLUDE'='stringField,charField')")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data7.csv' INTO TABLE alter_no_dict options('FILEHEADER'='stringField,charField')")
@@ -373,7 +591,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("no inverted index load and alter table") {
-
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("drop table if exists indexAlter")
     sql(
       """
