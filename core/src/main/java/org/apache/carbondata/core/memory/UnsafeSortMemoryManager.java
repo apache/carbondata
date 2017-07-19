@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.carbondata.core.memory;
 
 import java.util.HashMap;
@@ -29,33 +28,65 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
- * Manages memory for instance.
+ * Memory manager to keep track of
+ * all memory for storing the sorted data
  */
-public class UnsafeMemoryManager {
+public class UnsafeSortMemoryManager {
 
+  /**
+   * logger
+   */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnsafeMemoryManager.class.getName());
+      LogServiceFactory.getLogService(UnsafeSortMemoryManager.class.getName());
 
+  /**
+   * offheap is enabled
+   */
   private static boolean offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
           CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
-  private static Map<Long,Set<MemoryBlock>> taskIdToMemoryBlockMap;
+
+  /**
+   * map to keep taskid to memory blocks
+   */
+  private static Map<Long, Set<MemoryBlock>> taskIdToMemoryBlockMap;
+
+  /**
+   * singleton instance
+   */
+  public static final UnsafeSortMemoryManager INSTANCE;
+
+  /**
+   * total memory available for sort data storage
+   */
+  private long totalMemory;
+
+  /**
+   * current memory used
+   */
+  private long memoryUsed;
+
+  /**
+   * current memory allocator
+   */
+  private MemoryAllocator allocator;
+
   static {
     long size;
     try {
       size = Long.parseLong(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
-              CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT));
+          .getProperty(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB,
+              CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT));
     } catch (Exception e) {
       size = Long.parseLong(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT);
-      LOGGER.info("Wrong memory size given, "
+      LOGGER.info("Wrong memory size given, " + "so setting default value to " + size);
+    }
+    if (size < 1024) {
+      size = 1024;
+      LOGGER.info("It is not recommended to keep unsafe memory size less than 1024MB, "
           + "so setting default value to " + size);
     }
-    if (size < 512) {
-      size = 512;
-      LOGGER.info("It is not recommended to keep unsafe memory size less than 512MB, "
-          + "so setting default value to " + size);
-    }
+
     long takenSize = size * 1024 * 1024;
     MemoryAllocator allocator;
     if (offHeap) {
@@ -67,49 +98,45 @@ public class UnsafeMemoryManager {
       }
       allocator = MemoryAllocator.HEAP;
     }
-    INSTANCE = new UnsafeMemoryManager(takenSize, allocator);
+    INSTANCE = new UnsafeSortMemoryManager(takenSize, allocator);
     taskIdToMemoryBlockMap = new HashMap<>();
   }
 
-  public static final UnsafeMemoryManager INSTANCE;
-
-  private long totalMemory;
-
-  private long memoryUsed;
-
-  private MemoryAllocator allocator;
-
-  private UnsafeMemoryManager(long totalMemory, MemoryAllocator allocator) {
+  private UnsafeSortMemoryManager(long totalMemory, MemoryAllocator allocator) {
     this.totalMemory = totalMemory;
     this.allocator = allocator;
-    LOGGER
-        .info("Working Memory manager is created with size " + totalMemory + " with " + allocator);
+    LOGGER.info("Sort Memory manager is created with size " + totalMemory + " with " + allocator);
   }
 
-  private synchronized MemoryBlock allocateMemory(long taskId, long memoryRequested) {
-    if (memoryUsed + memoryRequested <= totalMemory) {
-      MemoryBlock allocate = allocator.allocate(memoryRequested);
-      memoryUsed += allocate.size();
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(
-            "Working Memory block (" + allocate + ") is created with size " + allocate.size()
-                + ". Total memory used " + memoryUsed + "Bytes, left " + (totalMemory - memoryUsed)
-                + "Bytes");
-      }
-      Set<MemoryBlock> listOfMemoryBlock = taskIdToMemoryBlockMap.get(taskId);
-      if (null == listOfMemoryBlock) {
-        listOfMemoryBlock = new HashSet<>();
-        taskIdToMemoryBlockMap.put(taskId, listOfMemoryBlock);
-      }
-      listOfMemoryBlock.add(allocate);
-      return allocate;
+  /**
+   * Below method will be used to check whether memory required is
+   * available or not
+   *
+   * @param required
+   * @return if memory available
+   */
+  public synchronized boolean isMemoryAvailable(long required) {
+    return memoryUsed + required < totalMemory;
+  }
+
+  /**
+   * Below method will be used to allocate dummy memory
+   * this will be used to allocate first and then used when u need
+   *
+   * @param size
+   */
+  public synchronized void allocateDummyMemory(long size) {
+    memoryUsed += size;
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Working Memory block (" + size + ") is created with size " + size
+          + ". Total memory used " + memoryUsed + "Bytes, left " + (totalMemory - memoryUsed)
+          + "Bytes");
     }
-    return null;
   }
 
-  public synchronized void freeMemory(long taskId,MemoryBlock memoryBlock) {
-    taskIdToMemoryBlockMap.get(taskId).remove(memoryBlock);
+  public synchronized void freeMemory(long taskId, MemoryBlock memoryBlock) {
     allocator.free(memoryBlock);
+    taskIdToMemoryBlockMap.get(taskId).remove(memoryBlock);
     memoryUsed -= memoryBlock.size();
     memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
     if (LOGGER.isDebugEnabled()) {
@@ -119,6 +146,12 @@ public class UnsafeMemoryManager {
     }
   }
 
+  /**
+   * Below method will be used to free all the
+   * memory occupied for a task, this will be useful
+   * when in case of task failure we need to clear all the memory occupied
+   * @param taskId
+   */
   public void freeMemoryAll(long taskId) {
     Set<MemoryBlock> memoryBlockSet = null;
     synchronized (INSTANCE) {
@@ -145,12 +178,23 @@ public class UnsafeMemoryManager {
     }
   }
 
-  public synchronized boolean isMemoryAvailable() {
-    return memoryUsed > totalMemory;
-  }
-
-  public long getUsableMemory() {
-    return totalMemory;
+  /**
+   * Before calling this method caller should call allocateMemoryDummy
+   * This method will be used to allocate the memory, this can be used
+   * when caller wants to allocate memory first and used it anytime
+   * @param taskId
+   * @param memoryRequested
+   * @return memory block
+   */
+  public synchronized MemoryBlock allocateMemoryLazy(long taskId, long memoryRequested) {
+    MemoryBlock allocate = allocator.allocate(memoryRequested);
+    Set<MemoryBlock> listOfMemoryBlock = taskIdToMemoryBlockMap.get(taskId);
+    if (null == listOfMemoryBlock) {
+      listOfMemoryBlock = new HashSet<>();
+      taskIdToMemoryBlockMap.put(taskId, listOfMemoryBlock);
+    }
+    listOfMemoryBlock.add(allocate);
+    return allocate;
   }
 
   /**
@@ -159,11 +203,11 @@ public class UnsafeMemoryManager {
   public static MemoryBlock allocateMemoryWithRetry(long taskId, long size) throws MemoryException {
     MemoryBlock baseBlock = null;
     int tries = 0;
-    while (tries < 300) {
+    while (tries < 100) {
       baseBlock = INSTANCE.allocateMemory(taskId, size);
       if (baseBlock == null) {
         try {
-          Thread.sleep(500);
+          Thread.sleep(50);
         } catch (InterruptedException e) {
           throw new MemoryException(e);
         }
@@ -176,6 +220,27 @@ public class UnsafeMemoryManager {
       throw new MemoryException("Not enough memory");
     }
     return baseBlock;
+  }
+
+  private synchronized MemoryBlock allocateMemory(long taskId, long memoryRequested) {
+    if (memoryUsed + memoryRequested <= totalMemory) {
+      MemoryBlock allocate = allocator.allocate(memoryRequested);
+      memoryUsed += allocate.size();
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug(
+            "Working Memory block (" + allocate.size() + ") is created with size " + allocate.size()
+                + ". Total memory used " + memoryUsed + "Bytes, left " + (totalMemory - memoryUsed)
+                + "Bytes");
+      }
+      Set<MemoryBlock> listOfMemoryBlock = taskIdToMemoryBlockMap.get(taskId);
+      if (null == listOfMemoryBlock) {
+        listOfMemoryBlock = new HashSet<>();
+        taskIdToMemoryBlockMap.put(taskId, listOfMemoryBlock);
+      }
+      listOfMemoryBlock.add(allocate);
+      return allocate;
+    }
+    return null;
   }
 
   public static boolean isOffHeap() {
