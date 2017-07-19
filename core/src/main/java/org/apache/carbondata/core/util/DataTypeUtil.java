@@ -39,7 +39,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
-import org.apache.spark.unsafe.types.UTF8String;
+
 
 public final class DataTypeUtil {
 
@@ -82,6 +82,11 @@ public final class DataTypeUtil {
     dataTypeDisplayNames.put(DataType.SHORT.toString(), DataType.SHORT.getName());
     dataTypeDisplayNames.put(DataType.STRING.toString(), DataType.STRING.getName());
   }
+
+  /**
+   * DataType converter for different computing engines
+   */
+  private static DataTypeConverter converter;
 
   /**
    * This method will convert a given value to its specific type
@@ -295,7 +300,6 @@ public final class DataTypeUtil {
             LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
             return null;
           }
-
         case TIMESTAMP:
           if (data.isEmpty()) {
             return null;
@@ -311,10 +315,9 @@ public final class DataTypeUtil {
           if (data.isEmpty()) {
             return null;
           }
-          java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data);
-          return org.apache.spark.sql.types.Decimal.apply(javaDecVal);
+          return getDataTypeConverter().convertToDecimal(data);
         default:
-          return UTF8String.fromString(data);
+          return getDataTypeConverter().convertFromStringToUTF8String(data);
       }
     } catch (NumberFormatException ex) {
       LOGGER.error("Problem while converting data type" + data);
@@ -359,7 +362,7 @@ public final class DataTypeUtil {
     try {
       switch (actualDataType) {
         case STRING:
-          return UTF8String.fromBytes(dataInBytes);
+          return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
         case BOOLEAN:
           return ByteUtil.toBoolean(dataInBytes);
         case SHORT:
@@ -454,38 +457,15 @@ public final class DataTypeUtil {
           if (dimension.getColumnSchema().getScale() > javaDecVal.scale()) {
             javaDecVal = javaDecVal.setScale(dimension.getColumnSchema().getScale());
           }
-          return org.apache.spark.sql.types.Decimal.apply(javaDecVal);
+          return getDataTypeConverter().convertToDecimal(javaDecVal);
         default:
-          return UTF8String.fromBytes(dataInBytes);
+          return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
       }
     } catch (NumberFormatException ex) {
       String data = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
       LOGGER.error("Problem while converting data type" + data);
       return null;
     }
-  }
-
-  public static Object getMeasureDataBasedOnDataType(Object data, DataType dataType) {
-
-    if (null == data) {
-      return null;
-    }
-    try {
-      switch (dataType) {
-        case DOUBLE:
-          return data;
-        case LONG:
-          return data;
-        case DECIMAL:
-          return org.apache.spark.sql.types.Decimal.apply((java.math.BigDecimal) data);
-        default:
-          return data;
-      }
-    } catch (NumberFormatException ex) {
-      LOGGER.error("Problem while converting data type" + data);
-      return null;
-    }
-
   }
 
   /**
@@ -673,7 +653,7 @@ public final class DataTypeUtil {
           java.math.BigDecimal javaDecVal = new java.math.BigDecimal(parsedValue);
           return bigDecimalToByte(javaDecVal);
         default:
-          return UTF8String.fromString(data).getBytes();
+          return getDataTypeConverter().convertFromStringToByte(data);
       }
     } catch (NumberFormatException ex) {
       LOGGER.error("Problem while converting data type" + data);
@@ -724,4 +704,20 @@ public final class DataTypeUtil {
     }
     return null;
   }
+
+  /**
+   * set the data type converter as per computing engine
+   * @param converterLocal
+   */
+  public static void setDataTypeConverter(DataTypeConverter converterLocal) {
+    converter = converterLocal;
+  }
+
+  public static DataTypeConverter getDataTypeConverter() {
+    if (converter == null) {
+      converter = new DataTypeConverterImp();
+    }
+    return converter;
+  }
+
 }

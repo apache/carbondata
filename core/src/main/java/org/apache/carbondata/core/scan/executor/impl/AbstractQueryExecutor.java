@@ -62,6 +62,7 @@ import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -262,7 +263,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     IndexKey startIndexKey = null;
     IndexKey endIndexKey = null;
     if (null != queryModel.getFilterExpressionResolverTree()) {
-      // loading the filter executer tree for filter evaluation
+      // loading the filter executor tree for filter evaluation
       blockExecutionInfo.setFilterExecuterTree(FilterUtil
           .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), segmentProperties,
               blockExecutionInfo.getComlexDimensionInfoMap()));
@@ -383,6 +384,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .toArray(new QueryDimension[queryModel.getQueryDimension().size()]));
     blockExecutionInfo.setActualQueryMeasures(queryModel.getQueryMeasures()
         .toArray(new QueryMeasure[queryModel.getQueryMeasures().size()]));
+    DataTypeUtil.setDataTypeConverter(queryModel.getConverter());
     return blockExecutionInfo;
   }
 

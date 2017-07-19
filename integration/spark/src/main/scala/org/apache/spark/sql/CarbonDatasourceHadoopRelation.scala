@@ -37,6 +37,7 @@ import org.apache.spark.util.SerializableConfiguration
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
+import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, SchemaReader}
@@ -44,6 +45,7 @@ import org.apache.carbondata.processing.merger.TableMeta
 import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
 import org.apache.carbondata.spark.rdd.CarbonRDD
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
+import org.apache.carbondata.spark.util.SparkDataTypeConverterImp
 
 private[sql] case class CarbonDatasourceHadoopRelation(
   sqlContext: SQLContext,
@@ -134,6 +136,8 @@ class CarbonHadoopFSRDD[V: ClassTag](
     val hadoopAttemptContext = newTaskAttemptContext(conf.value, attemptId)
     val job: Job = new Job(hadoopAttemptContext.getConfiguration)
     val format = CarbonInputFormatUtil.createCarbonInputFormat(identifier, job)
+    CarbonInputFormat.setDataTypeConverter(hadoopAttemptContext.getConfiguration,
+      new SparkDataTypeConverterImp)
     hadoopAttemptContext.getConfiguration.set(FileInputFormat.INPUT_DIR, identifier.getTablePath)
     val reader =
       format.createRecordReader(split.asInstanceOf[CarbonHadoopFSPartition].carbonSplit.value,
