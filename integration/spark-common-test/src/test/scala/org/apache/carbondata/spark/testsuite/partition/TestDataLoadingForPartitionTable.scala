@@ -59,11 +59,11 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE originMultiLoads OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
   }
 
-  def validateDataFiles(tableUniqueName: String, sgementId: String, partitions: Seq[Int]): Unit = {
+  def validateDataFiles(tableUniqueName: String, segmentId: String, partitions: Seq[Int]): Unit = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
     val tablePath = new CarbonTablePath(carbonTable.getStorePath, carbonTable.getDatabaseName,
       carbonTable.getFactTableName)
-    val segmentDir = tablePath.getCarbonDataDirectoryPath("0", sgementId)
+    val segmentDir = tablePath.getCarbonDataDirectoryPath("0", segmentId)
     val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
     val dataFiles = carbonFile.listFiles(new CarbonFileFilter() {
       override def accept(file: CarbonFile): Boolean = {

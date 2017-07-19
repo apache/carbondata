@@ -209,12 +209,12 @@ public final class CarbonLoaderUtil {
    * @param loadModel
    */
   public static void deleteLocalDataLoadFolderLocation(CarbonLoadModel loadModel,
-      boolean isCompactionFlow) {
+      boolean isCompactionFlow, boolean isAltPartitionFlow) {
     String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
     String tempLocationKey = CarbonDataProcessorUtil
         .getTempStoreLocationKey(databaseName, tableName, loadModel.getSegmentId(),
-            loadModel.getTaskNo(), isCompactionFlow);
+            loadModel.getTaskNo(), isCompactionFlow, isAltPartitionFlow);
     // form local store location
     final String localStoreLocations = CarbonProperties.getInstance().getProperty(tempLocationKey);
     if (localStoreLocations == null) {
