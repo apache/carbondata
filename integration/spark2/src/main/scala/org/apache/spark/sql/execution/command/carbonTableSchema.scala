@@ -503,21 +503,7 @@ case class LoadTable(
     val carbonProperty: CarbonProperties = CarbonProperties.getInstance()
     carbonProperty.addProperty("zookeeper.enable.lock", "false")
     val optionsFinal = getFinalOptions(carbonProperty)
-    val carbonLock = CarbonLockFactory
-        .getCarbonLockObj(relation.tableMeta.carbonTable.getAbsoluteTableIdentifier
-            .getCarbonTableIdentifier,
-          LockUsage.METADATA_LOCK
-        )
     try {
-      // take lock only in case of normal data load.
-      if (updateModel.isEmpty) {
-        if (carbonLock.lockWithRetries()) {
-          LOGGER.info("Successfully able to get the table metadata file lock")
-        } else {
-          sys.error("Table is locked for updation. Please try after some time")
-        }
-      }
-
       val factPath = if (dataFrame.isDefined) {
         ""
       } else {
@@ -655,9 +641,8 @@ case class LoadTable(
         carbonLoadModel.setMaxColumns(validatedMaxColumns.toString)
         GlobalDictionaryUtil.updateTableMetadataFunc = LoadTable.updateTableMetadata
         val storePath = relation.tableMeta.storePath
-        if (null == carbonLoadModel.getLoadMetadataDetails) {
-          CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
-        }
+        // add the start entry for the new load in the table status file
+        CommonUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, storePath)
         if (carbonLoadModel.getLoadMetadataDetails.isEmpty && carbonLoadModel.getUseOnePass &&
             StringUtils.isEmpty(column_dict) && StringUtils.isEmpty(all_dictionary_path)) {
           LOGGER.info(s"Cannot use single_pass=true for $dbName.$tableName during the first load")
@@ -805,14 +790,6 @@ case class LoadTable(
       case mce: MalformedCarbonCommandException =>
         LOGGER.audit(s"Dataload failed for $dbName.$tableName. " + mce.getMessage)
         throw mce
-    } finally {
-      if (carbonLock != null) {
-        if (carbonLock.unlock()) {
-          LOGGER.info("Table MetaData Unlocked Successfully after data load")
-        } else {
-          LOGGER.error("Unable to unlock Table MetaData")
-        }
-      }
     }
     Seq.empty
   }

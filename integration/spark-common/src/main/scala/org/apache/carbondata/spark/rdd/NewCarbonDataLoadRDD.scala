@@ -120,7 +120,6 @@ class CarbonTableSplitPartition(rddId: Int, val idx: Int, @transient val tableSp
 class SparkPartitionLoader(model: CarbonLoadModel,
     splitIndex: Int,
     storePath: String,
-    loadCount: String,
     loadMetadataDetails: LoadMetadataDetails) {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -169,7 +168,6 @@ class NewCarbonDataLoadRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    loadCount: Integer,
     blocksGroupBy: Array[(String, Array[BlockDetails])],
     isTableSplitPartition: Boolean)
   extends CarbonRDD[(K, V)](sc, Nil) {
@@ -228,7 +226,6 @@ class NewCarbonDataLoadRDD[K, V](
         loadMetadataDetails.setPartitionCount(partitionID)
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
 
-        carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         val preFetch = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
           .USE_PREFETCH_WHILE_LOADING, CarbonCommonConstants.USE_PREFETCH_WHILE_LOADING_DEFAULT)
         carbonLoadModel.setPreFetch(preFetch.toBoolean)
@@ -236,7 +233,6 @@ class NewCarbonDataLoadRDD[K, V](
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
           null,
-          String.valueOf(loadCount),
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()
@@ -387,7 +383,6 @@ class NewDataFrameLoaderRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    loadCount: Integer,
     prev: DataLoadCoalescedRDD[Row]) extends CarbonRDD[(K, V)](prev) {
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
@@ -405,7 +400,6 @@ class NewDataFrameLoaderRDD[K, V](
         loadMetadataDetails.setPartitionCount(partitionID)
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
         carbonLoadModel.setPartitionId(partitionID)
-        carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         carbonLoadModel.setPreFetch(false)
 
@@ -425,7 +419,6 @@ class NewDataFrameLoaderRDD[K, V](
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
           null,
-          String.valueOf(loadCount),
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()
@@ -580,7 +573,6 @@ class PartitionTableDataLoaderRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    loadCount: Integer,
     prev: RDD[Row]) extends CarbonRDD[(K, V)](prev) {
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
@@ -597,7 +589,6 @@ class PartitionTableDataLoaderRDD[K, V](
         loadMetadataDetails.setPartitionCount(partitionID)
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
         carbonLoadModel.setPartitionId(partitionID)
-        carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         carbonLoadModel.setPreFetch(false)
 
@@ -608,7 +599,6 @@ class PartitionTableDataLoaderRDD[K, V](
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
           null,
-          String.valueOf(loadCount),
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()

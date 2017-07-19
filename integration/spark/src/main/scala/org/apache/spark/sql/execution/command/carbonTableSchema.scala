@@ -561,9 +561,8 @@ case class LoadTable(
         val dictFolderPath = carbonTablePath.getMetadataDirectoryPath
         val dimensions = carbonTable.getDimensionByTableName(
           carbonTable.getFactTableName).asScala.toArray
-        if (null == carbonLoadModel.getLoadMetadataDetails) {
-          CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
-        }
+        // add the start entry for the new load in the table status file
+        CommonUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, storePath)
         if (carbonLoadModel.getLoadMetadataDetails.isEmpty && carbonLoadModel.getUseOnePass &&
             StringUtils.isEmpty(columnDict) && StringUtils.isEmpty(allDictionaryPath)) {
           LOGGER.info(s"Cannot use single_pass=true for $dbName.$tableName during the first load")
