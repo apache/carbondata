@@ -36,12 +36,14 @@ import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.row.LoadStatusType
 import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.scan.partition.PartitionUtil
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.comparator.Comparator
 import org.apache.carbondata.processing.csvload.CSVInputFormat
@@ -49,6 +51,7 @@ import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
 object CommonUtil {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -442,6 +445,30 @@ object CommonUtil {
         .substring(0, propertyValueString.trim.toLowerCase.lastIndexOf("m")).trim
     }
     parsedPropertyValueString
+  }
+
+  def readAndUpdateLoadProgressInTableMeta(model: CarbonLoadModel,
+      storePath: String,
+      insertOverwrite: Boolean = false): Unit = {
+    val newLoadMetaEntry = new LoadMetadataDetails
+    val status: String = if (insertOverwrite) {
+      LoadStatusType.INSERT_OVERWRITE.getMessage
+    } else {
+      LoadStatusType.IN_PROGRESS.getMessage
+    }
+    // reading the start time of data load.
+    val loadStartTime = CarbonUpdateUtil.readCurrentTime
+    model.setFactTimeStamp(loadStartTime)
+    CarbonLoaderUtil
+      .populateNewLoadMetaEntry(newLoadMetaEntry, status, model.getFactTimeStamp, false)
+    val entryAdded: Boolean = CarbonLoaderUtil.recordLoadMetadata(newLoadMetaEntry, model, true)
+    if (!entryAdded) {
+      sys
+        .error(s"Failed to add entry in table status for ${ model.getDatabaseName }.${
+          model
+            .getTableName
+        }")
+    }
   }
 
   def readLoadMetadataDetails(model: CarbonLoadModel, storePath: String): Unit = {
