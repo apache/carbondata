@@ -1264,6 +1264,14 @@ public final class CarbonCommonConstants {
 
   public static final String ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT = "false";
 
+  /**
+   * There is more often that in production uses different drivers for load and queries. So in case
+   * of load driver user should set this property to enable loader specific clean up.
+   */
+  public static final String DATA_MANAGEMENT_DRIVER = "spark.carbon.datamanagement.driver";
+
+  public static final String DATA_MANAGEMENT_DRIVER_DEFAULT = "false";
+
   private CarbonCommonConstants() {
   }
 }

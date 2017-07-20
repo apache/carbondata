@@ -58,7 +58,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t4")
       """)
     LoadTable(Some("default"), "t4", s"$resourcesPath/source.csv", Nil,
-      Map()).run(sqlContext.sparkSession)
+      Map(), false).run(sqlContext.sparkSession)
     val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_t4")
     if (table != null && table.getBucketingInfo("t4") != null) {
       assert(true)
@@ -78,7 +78,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t10")
       """)
     LoadTable(Some("default"), "t10", s"$resourcesPath/source.csv", Nil,
-      Map(("use_kettle", "false"))).run(sqlContext.sparkSession)
+      Map(("use_kettle", "false")), false).run(sqlContext.sparkSession)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
     val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_t10")
     if (table != null && table.getBucketingInfo("t10") != null) {
@@ -115,7 +115,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            OPTIONS("tableName"="t5")
       """)
     LoadTable(Some("default"), "t5", s"$resourcesPath/source.csv", Nil,
-      Map()).run(sqlContext.sparkSession)
+      Map(), false).run(sqlContext.sparkSession)
 
     val plan = sql(
       """
@@ -140,7 +140,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t6")
       """)
     LoadTable(Some("default"), "t6", s"$resourcesPath/source.csv", Nil,
-      Map()).run(sqlContext.sparkSession)
+      Map(), false).run(sqlContext.sparkSession)
 
     val plan = sql(
       """
@@ -165,7 +165,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t7")
       """)
     LoadTable(Some("default"), "t7", s"$resourcesPath/source.csv", Nil,
-      Map()).run(sqlContext.sparkSession)
+      Map(), false).run(sqlContext.sparkSession)
 
     sql("DROP TABLE IF EXISTS bucketed_parquet_table")
     sql("select * from t7").write
@@ -196,7 +196,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t8")
       """)
     LoadTable(Some("default"), "t8", s"$resourcesPath/source.csv", Nil,
-      Map()).run(sqlContext.sparkSession)
+      Map(), false).run(sqlContext.sparkSession)
 
     sql("DROP TABLE IF EXISTS parquet_table")
     sql("select * from t8").write

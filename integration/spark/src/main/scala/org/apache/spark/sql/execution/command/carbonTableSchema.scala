@@ -311,7 +311,7 @@ object LoadTable {
 }
 
 private[sql] case class LoadTableByInsert(relation: CarbonDatasourceRelation,
-                                          child: LogicalPlan) extends RunnableCommand {
+    child: LogicalPlan, isOverwriteExist: Boolean) extends RunnableCommand {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   def run(sqlContext: SQLContext): Seq[Row] = {
     val df = new DataFrame(sqlContext, child)
@@ -322,7 +322,7 @@ private[sql] case class LoadTableByInsert(relation: CarbonDatasourceRelation,
       null,
       Seq(),
       scala.collection.immutable.Map("fileheader" -> header),
-      false,
+      isOverwriteExist,
       null,
       Some(df)).run(sqlContext)
     // updating relation metadata. This is in case of auto detect high cardinality
@@ -337,7 +337,7 @@ case class LoadTable(
     factPathFromUser: String,
     dimFilesPath: Seq[DataLoadTableFileMapping],
     options: scala.collection.immutable.Map[String, String],
-    isOverwriteExist: Boolean = false,
+    isOverwriteExist: Boolean,
     var inputSqlString: String = null,
     dataFrame: Option[DataFrame] = None,
     updateModel: Option[UpdateTableModel] = None) extends RunnableCommand {
@@ -360,9 +360,6 @@ case class LoadTable(
     }
 
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
-    if (isOverwriteExist) {
-      sys.error(s"Overwrite is not supported for carbon table with $dbName.$tableName")
-    }
     if (null == CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)) {
       logError(s"Data loading failed. table not found: $dbName.$tableName")
       LOGGER.audit(s"Data loading failed. table not found: $dbName.$tableName")
@@ -562,7 +559,11 @@ case class LoadTable(
         val dimensions = carbonTable.getDimensionByTableName(
           carbonTable.getFactTableName).asScala.toArray
         // add the start entry for the new load in the table status file
-        CommonUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, storePath)
+        CommonUtil.
+          readAndUpdateLoadProgressInTableMeta(carbonLoadModel, storePath, isOverwriteExist)
+        if (isOverwriteExist) {
+          LOGGER.info(s"Overwrite is in progress for carbon table with $dbName.$tableName")
+        }
         if (carbonLoadModel.getLoadMetadataDetails.isEmpty && carbonLoadModel.getUseOnePass &&
             StringUtils.isEmpty(columnDict) && StringUtils.isEmpty(allDictionaryPath)) {
           LOGGER.info(s"Cannot use single_pass=true for $dbName.$tableName during the first load")
@@ -622,6 +623,7 @@ case class LoadTable(
             columnar,
             partitionStatus,
             server,
+            isOverwriteExist,
             dataFrame,
             updateModel)
         } else {
@@ -667,6 +669,7 @@ case class LoadTable(
             columnar,
             partitionStatus,
             None,
+            isOverwriteExist,
             loadDataFrame,
             updateModel)
         }
@@ -973,8 +976,8 @@ private[sql] case class CleanFiles(
       getDB.getDatabaseName(databaseNameOp, sqlContext),
       tableName,
       sqlContext.asInstanceOf[CarbonContext].storePath,
-      carbonTable
-    )
+      carbonTable,
+      false)
     Seq.empty
   }
 }

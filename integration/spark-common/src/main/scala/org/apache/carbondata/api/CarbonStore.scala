@@ -79,10 +79,10 @@ object CarbonStore {
       dbName: String,
       tableName: String,
       storePath: String,
-      carbonTable: CarbonTable): Unit = {
+      carbonTable: CarbonTable, forceTableClean: Boolean): Unit = {
     LOGGER.audit(s"The clean files request has been received for $dbName.$tableName")
     try {
-      DataManagementFunc.cleanFiles(dbName, tableName, storePath, carbonTable)
+      DataManagementFunc.cleanFiles(dbName, tableName, storePath, carbonTable, forceTableClean)
       LOGGER.audit(s"Clean files operation is success for $dbName.$tableName.")
     } catch {
       case ex: Exception =>
