@@ -151,7 +151,7 @@ object DataLoadProcessorStepOnSpark {
     var model: CarbonLoadModel = null
     var tableName: String = null
     var rowConverter: RowConverterImpl = null
-
+    var dataWriter: DataWriterProcessorStepImpl = null
     try {
       model = modelBroadcast.value.getCopyWithTaskNo(index.toString)
       val storeLocation = getTempStoreLocation(index)
@@ -166,7 +166,7 @@ object DataLoadProcessorStepOnSpark {
       rowConverter.initialize()
       conf.setCardinalityFinder(rowConverter)
 
-      val dataWriter = new DataWriterProcessorStepImpl(conf)
+      dataWriter = new DataWriterProcessorStepImpl(conf)
 
       val dataHandlerModel = dataWriter.getDataHandlerModel(0)
       var dataHandler: CarbonFactHandler = null
@@ -197,6 +197,11 @@ object DataLoadProcessorStepOnSpark {
     } finally {
       if (rowConverter != null) {
         rowConverter.finish()
+      }
+      // close the dataWriter once the write in done success or fail. if not closed then thread to
+      // to prints the rows processed in each step for every 10 seconds will never exit.
+      if(null != dataWriter) {
+        dataWriter.close()
       }
       // clean up the folders and files created locally for data load operation
       CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false)
