@@ -130,6 +130,18 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     dropTable(table)
   }
 
+  test("clean files with force clean option") {
+    val table = "carbon_table4"
+    dropTable(table)
+    createAndLoadTestTable(table, "csv_table")
+    CleanFiles.main(Array(s"${location}", table, "true"))
+    val tablePath = s"${location}${File.separator}default${File.separator}$table"
+    val f = new File(tablePath)
+    assert(!f.exists())
+
+    dropTable(table)
+  }
+
   protected def dropTable(tableName: String): Unit ={
     sql(s"DROP TABLE IF EXISTS $tableName")
   }

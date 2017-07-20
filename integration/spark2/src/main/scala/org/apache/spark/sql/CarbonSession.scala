@@ -28,6 +28,7 @@ import org.apache.spark.util.Utils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * Session implementation for {org.apache.spark.sql.SparkSession}
@@ -156,7 +157,8 @@ object CarbonSession {
         session = new CarbonSession(sparkContext)
         options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
         SparkSession.setDefaultSession(session)
-
+        CommonUtil.cleanInProgressSegments(
+          carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION), sparkContext)
         // Register a successfully instantiated context to the singleton. This should be at the
         // end of the class definition so that the singleton is updated only if there is no
         // exception in the construction of the instance.

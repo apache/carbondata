@@ -351,6 +351,7 @@ object CarbonDataRDDFactory {
       columnar: Boolean,
       partitionStatus: String = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS,
       result: Option[DictionaryServer],
+      overwriteTable: Boolean,
       dataFrame: Option[DataFrame] = None,
       updateModel: Option[UpdateTableModel] = None): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
@@ -915,7 +916,7 @@ object CarbonDataRDDFactory {
               carbonLoadModel.getFactTimeStamp,
               true)
           val status = CarbonLoaderUtil.recordLoadMetadata(metadataDetails,
-            carbonLoadModel, false)
+            carbonLoadModel, false, overwriteTable)
           if (!status) {
             val errorMessage = "Dataload failed due to failure in table status updation."
             LOGGER.audit("Data load is failed for " +

@@ -369,6 +369,20 @@ public final class FileFactory {
     return path.delete();
   }
 
+  public static boolean deleteAllCarbonFilesOfDir(CarbonFile path) {
+    if (!path.exists()) {
+      return true;
+    }
+    if (!path.isDirectory()) {
+      return path.delete();
+    }
+    CarbonFile[] files = path.listFiles();
+    for (int i = 0; i < files.length; i++) {
+      deleteAllCarbonFilesOfDir(files[i]);
+    }
+    return path.delete();
+  }
+
   public static boolean mkdirs(String filePath, FileType fileType) throws IOException {
     filePath = filePath.replace("\\", "/");
     switch (fileType) {
