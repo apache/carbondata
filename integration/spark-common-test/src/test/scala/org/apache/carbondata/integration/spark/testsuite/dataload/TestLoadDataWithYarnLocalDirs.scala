@@ -39,10 +39,6 @@ class TestLoadDataWithYarnLocalDirs extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbontable_yarnLocalDirs")
     sql("CREATE TABLE carbontable_yarnLocalDirs (id int, name String) " +
         "STORED BY 'org.apache.carbondata.format'")
-    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/datawithblanklines.csv' INTO TABLE" +
-        " carbontable OPTIONS('DELIMITER'= ',')")
-
-    sql("drop table if exists carbontable_yarnLocalDirs_multipleTempDirs")
   }
 
   private def getMockedYarnLocalDirs = {
@@ -64,7 +60,7 @@ class TestLoadDataWithYarnLocalDirs extends QueryTest with BeforeAndAfterAll {
   }
 
   private def cleanUpYarnLocalDir = {
-    getMockedYarnLocalDirs.split(",")
+    initYarnLocalDir
       .foreach(dir => CarbonUtil.deleteFoldersAndFiles(new File(dir)))
   }
 
@@ -98,5 +94,7 @@ class TestLoadDataWithYarnLocalDirs extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     sql("drop table if exists carbontable_yarnLocalDirs")
+    
+    cleanUpYarnLocalDir
   }
 }
