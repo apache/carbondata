@@ -254,7 +254,7 @@ class DataLoadingV3TestCase extends QueryTest with BeforeAndAfterAll {
   test("PTS_TOR-Productize-New-Features-V3_01_Query_01_030", Include) {
 
     checkAnswer(s"""select substring(CUST_NAME,1,11),count(*) from 3lakh_uniqdata group by substring(CUST_NAME,1,11) having count(*) > 1""",
-      Seq(Row("CUST_NAME_4",10000),Row("CUST_NAME_1",100000),Row("CUST_NAME_8",10000),Row("CUST_NAME_6",10000),Row("CUST_NAME_2"),
+      Seq(Row("CUST_NAME_4",10000),Row("CUST_NAME_1",100000),Row("CUST_NAME_8",10000),Row("CUST_NAME_6",10000),Row("CUST_NAME_2", 110000),
         Row("CUST_NAME_5",10000),Row("CUST_NAME_7",10000),Row("CUST_NAME_9",10000),Row("",11),Row("CUST_NAME_3",30623)), "DataLoadingV3TestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_030")
 
   }

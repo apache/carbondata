@@ -99,6 +99,7 @@ Data/InsertData/WithoutHeader.csv
 Data/uniqdata/1lac_UniqData.csv
 Data/batchsort/data.csv
 Data/3Lakh.csv
+Data/1lakh.csv
 Data/noinverted.csv
 Data/partition/2000_UniqData_partition.csv
 Data/100_VMALL_1_Day_DATA_2015-09-15.csv

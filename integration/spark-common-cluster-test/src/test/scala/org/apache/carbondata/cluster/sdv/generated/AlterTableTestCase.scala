@@ -1004,7 +1004,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""insert into test1 select 'xx',1""").collect
    sql(s"""insert into test1 select 'xx',12""").collect
    sql(s"""alter table test1 rename to test2""").collect
-   sql(s"""delete segment 0 from table test2""").collect
+   sql(s"""delete from table test2 where segment.id in (0)""").collect
     checkAnswer(s"""Select * from test2""",
       Seq(Row("xx",12)), "AlterTableTestCase_ARID_DeleteSeg_001_02")
      sql(s"""drop table if exists test2""").collect

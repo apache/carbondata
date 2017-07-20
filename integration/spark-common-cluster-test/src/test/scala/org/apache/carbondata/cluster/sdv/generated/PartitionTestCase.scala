@@ -43,7 +43,7 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Verify table is created with Partition
-  test("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC002", Include) {
+  ignore("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC002", Include) {
      sql(s"""drop table if exists uniqdata""").collect
     sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY (DOJ timestamp)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='LIST','LIST_INFO'='3')""").collect
      sql(s"""drop table if exists uniqdata""").collect
@@ -111,7 +111,7 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Verify table is created if Partition type is 'range' and RANGE_INFO Is provided
-  test("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC008", Include) {
+  ignore("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC008", Include) {
      sql(s"""drop table if exists uniqdata""").collect
     sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY (DOJ timestamp)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='20160302,20150302')""").collect
      sql(s"""drop table if exists uniqdata""").collect
@@ -248,7 +248,7 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Verify data load with range partition with limit 1
-  test("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC019", Include) {
+  ignore("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC019", Include) {
      sql(s"""CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int, DOJ timestamp) PARTITIONED BY (CUST_ID int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='0,5,10,29')""").collect
 
    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/partition/2000_UniqData_partition.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'BAD_RECORDS_ACTION'='FORCE','QUOTECHAR'='"','FILEHEADER'='CUST_NAME,ACTIVE_EMUI_VERSION,DOB,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,DOJ,CUST_ID')""").collect
@@ -260,6 +260,7 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verify data load with range partition
   test("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC020", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int, DOJ timestamp) PARTITIONED BY (CUST_ID int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='0,5,10,29')""").collect
 
    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/partition/2000_UniqData_partition.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'BAD_RECORDS_ACTION'='FORCE','QUOTECHAR'='"','FILEHEADER'='CUST_NAME,ACTIVE_EMUI_VERSION,DOB,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,DOJ,CUST_ID')""").collect
@@ -270,7 +271,7 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Verify data load with hash partition with limit 1
-  test("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC021", Include) {
+  ignore("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC021", Include) {
      sql(s"""drop table if exists uniqdata""").collect
    sql(s"""CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int, DOJ timestamp) PARTITIONED BY (CUST_ID int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='5')""").collect
 
@@ -283,6 +284,7 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verify data load with hash partition
   test("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC022", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int, DOJ timestamp) PARTITIONED BY (CUST_ID int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='5')""").collect
 
    sql(s"""LOAD DATA INPATH  ''$resourcesPath/Data/partition/2000_UniqData_partition.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','FILEHEADER'='CUST_NAME,ACTIVE_EMUI_VERSION,DOB,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,DOJ,CUST_ID')""").collect
@@ -294,6 +296,7 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verify data load with List partition after compaction
   test("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC023", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int, DOJ timestamp) PARTITIONED BY (CUST_ID int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='0,1')""").collect
 
    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/partition/2000_UniqData_partition.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'BAD_RECORDS_ACTION'='FORCE','QUOTECHAR'='"','FILEHEADER'='CUST_NAME,ACTIVE_EMUI_VERSION,DOB,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,DOJ,CUST_ID')""").collect
@@ -313,6 +316,7 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verify data load with Range partition after compaction
   test("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC024", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int, DOJ timestamp) PARTITIONED BY (CUST_ID int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='Range', 'RANGE_INFO'='0,5,10,30')""").collect
 
    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/partition/2000_UniqData_partition.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'BAD_RECORDS_ACTION'='FORCE','QUOTECHAR'='"','FILEHEADER'='CUST_NAME,ACTIVE_EMUI_VERSION,DOB,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,DOJ,CUST_ID')""").collect
@@ -332,6 +336,7 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Verify data load with Hash partition after compaction
   test("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC025", Include) {
+    dropTable("uniqdata")
      sql(s"""CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int, DOJ timestamp) PARTITIONED BY (CUST_ID int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='5')""").collect
 
    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/partition/2000_UniqData_partition.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'BAD_RECORDS_ACTION'='FORCE','QUOTECHAR'='"','FILEHEADER'='CUST_NAME,ACTIVE_EMUI_VERSION,DOB,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,DOJ,CUST_ID')""").collect
@@ -421,7 +426,7 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Verify insert is successful on HASH partition
-  test("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC032", Include) {
+  ignore("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC032", Include) {
      sql(s"""drop table if exists uniqdata""").collect
 
    sql(s"""CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int, DOJ timestamp) PARTITIONED BY (CUST_ID int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='HASH', 'NUM_PARTITIONS'='10')""").collect
@@ -473,7 +478,7 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Verify date with > filter condition and range partition
-  test("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC036", Include) {
+  ignore("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC036", Include) {
      sql(s"""drop table if exists uniqdata""").collect
 
    sql(s"""CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int, DOJ timestamp) PARTITIONED BY (CUST_ID int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='1,0,3,4')""").collect
@@ -485,7 +490,7 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Verify date with = filter condition and list partition
-  test("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC037", Include) {
+  ignore("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC037", Include) {
      sql(s"""drop table if exists uniqdata""").collect
 
    sql(s"""CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int, DOJ timestamp) PARTITIONED BY (CUST_ID int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='1,0,3,4')""").collect
@@ -497,7 +502,7 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Verify date with = value not in list_info and list partition
-  test("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC038", Include) {
+  ignore("SR-DataSight-Carbon-Partition-Local-sort-PTS001_TC038", Include) {
      sql(s"""drop table if exists uniqdata""").collect
 
    sql(s"""CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int, DOJ timestamp) PARTITIONED BY (CUST_ID int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='1,0,3,4')""").collect

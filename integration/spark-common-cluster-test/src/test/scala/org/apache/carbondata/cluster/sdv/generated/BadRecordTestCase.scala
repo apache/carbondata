@@ -68,7 +68,7 @@ class BadRecordTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/test4.csv' into table badrecordtest4 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE','BAD_RECORDS_LOGGER_ENABLE'='TRUE')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/test4.csv' into table badrecordtest4 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE','BAD_RECORDS_LOGGER_ENABLE'='TRUE')""").collect
     checkAnswer(s"""select count(*) from badrecordtest4""",
-      Seq(Row(4)), "BadRecordTestCase_AR-Develop-Feature-BadRecords-001_PTS004_TC001")
+      Seq(Row(6)), "BadRecordTestCase_AR-Develop-Feature-BadRecords-001_PTS004_TC001")
      sql(s"""drop table if exists badrecordtest4""").collect
   }
 
@@ -88,9 +88,12 @@ class BadRecordTestCase extends QueryTest with BeforeAndAfterAll {
   test("AR-Develop-Feature-BadRecords-001_PTS006_TC001", Include) {
     sql(s"""drop table if exists abadrecordtest1""").collect
      sql(s"""CREATE TABLE abadrecordtest1 (ID int,CUST_ID int,cust_name string) STORED BY 'org.apache.carbondata.format'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/test6.csv' into table abadrecordtest1 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'="'",'is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE','BAD_RECORDS_LOGGER_ENABLE'='TRUE')""").collect
-    checkAnswer(s"""select count(*) from abadrecordtest1""",
-      Seq(Row(3)), "BadRecordTestCase_AR-Develop-Feature-BadRecords-001_PTS006_TC001")
+    intercept[Exception] {
+      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/test6.csv' into table abadrecordtest1 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'="'",'is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE','BAD_RECORDS_LOGGER_ENABLE'='TRUE')""").collect
+      checkAnswer(
+        s"""select count(*) from abadrecordtest1""",
+        Seq(Row(3)), "BadRecordTestCase_AR-Develop-Feature-BadRecords-001_PTS006_TC001")
+    }
      sql(s"""drop table if exists abadrecordtest1""").collect
   }
 
@@ -98,11 +101,14 @@ class BadRecordTestCase extends QueryTest with BeforeAndAfterAll {
   //create the table and load the data with parameters BAD_RECORDS_ACTION=FAIL/FORCE/REDIRECT/IGNORE,BAD_RECORD_LOGGER_ENABLE=true/false and IS_EMPTY_DATA_BAD_RECORD=false/true column value with separator (/ , \ ,!,\001)
   test("AR-Develop-Feature-BadRecords-001_PTS007_TC001", Include) {
      sql(s"""CREATE TABLE badrecordtest6 (ID int,CUST_ID int,cust_name string) STORED BY 'org.apache.carbondata.format'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/qoute1.csv' into table badrecordtest6 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='/','is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE')""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/qoute3.csv' into table badrecordtest6 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='\','is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE')""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/qoute4.csv' into table badrecordtest6 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='!','is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE')""").collect
-    checkAnswer(s"""select count(*) from badrecordtest6""",
-      Seq(Row(3)), "BadRecordTestCase_AR-Develop-Feature-BadRecords-001_PTS007_TC001")
+    intercept[Exception] {
+      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/qoute1.csv' into table badrecordtest6 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='/','is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE')""").collect
+      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/qoute3.csv' into table badrecordtest6 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='\','is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE')""").collect
+      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/qoute4.csv' into table badrecordtest6 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='!','is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE')""").collect
+      checkAnswer(
+        s"""select count(*) from badrecordtest6""",
+        Seq(Row(3)), "BadRecordTestCase_AR-Develop-Feature-BadRecords-001_PTS007_TC001")
+    }
      sql(s"""drop table if exists badrecordtest6""").collect
   }
 
@@ -172,7 +178,7 @@ class BadRecordTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""CREATE TABLE badrecordtest16 (ID int,CUST_ID int,cust_name string) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/insuffcient.csv' into table badrecordtest16 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE')""").collect
     checkAnswer(s"""select count(*) from badrecordTest16""",
-      Seq(Row(1)), "BadRecordTestCase_AR-Develop-Feature-BadRecords-001_PTS022_TC001")
+      Seq(Row(2)), "BadRecordTestCase_AR-Develop-Feature-BadRecords-001_PTS022_TC001")
      sql(s"""drop table if exists badrecordTest16""").collect
   }
 

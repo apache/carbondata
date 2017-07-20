@@ -141,13 +141,14 @@
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
           <junitxml>.</junitxml>
           <filereports>CarbonTestSuite.txt</filereports>
-          <argLine>-ea -Xmx8g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m
+          <argLine>-ea -Xmx6g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m
           </argLine>
           <stderr />
           <environmentVariables>
           </environmentVariables>
           <systemProperties>
             <java.awt.headless>true</java.awt.headless>
+            <user.timezone>GMT</user.timezone>
             <spark.master.url>${spark.master.url}</spark.master.url>
             <hdfs.url>${hdfs.url}</hdfs.url>
           </systemProperties>

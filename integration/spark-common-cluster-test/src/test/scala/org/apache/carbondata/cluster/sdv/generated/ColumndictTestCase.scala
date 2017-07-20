@@ -225,7 +225,7 @@ class ColumndictTestCase extends QueryTest with BeforeAndAfterAll {
   test("AR-Develop-Feature-columndict-001_PTS001_TC022", Include) {
     try {
      sql(s"""CREATE TABLE IF NOT EXISTS t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
-      sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='salary:/columndictionary/country.csv', 'SINGLE_PASS'='true')""").collect
+      sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/columndict/data.csv' into table t3 options('COLUMNDICT'='salary:$resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect
       assert(false)
     } catch {
       case _ => assert(true)

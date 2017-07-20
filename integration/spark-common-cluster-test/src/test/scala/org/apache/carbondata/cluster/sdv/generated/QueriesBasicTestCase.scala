@@ -114,7 +114,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("UNIQDATA_DeleteLoad1_3", Include) {
-    sql(s"""DELETE SEGMENT 1,3 FROM TABLE uniqdata""").collect
+    sql(s"""delete from table uniqdata where segment.id in (1,3)""").collect
   }
 
 
@@ -11446,8 +11446,8 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   //TC_739
   test("TC_739", Include) {
 
-    checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.gamePointId AS gamePointId, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity FROM ( SELECT AMSize, ActiveCountry, Activecity, gamePointId FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation INNER JOIN ( SELECT AMSize, ActiveCountry, Activecity, gamePointId FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.gamePointId = Carbon_automation1.gamePointId ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
-      s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.gamePointId AS gamePointId, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity FROM ( SELECT AMSize, ActiveCountry, Activecity, gamePointId FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive INNER JOIN ( SELECT AMSize, ActiveCountry, Activecity, gamePointId FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.gamePointId = Carbon_automation_hive1.gamePointId ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_739")
+    checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.gamePointId AS gamePointId, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity FROM ( SELECT AMSize, ActiveCountry, Activecity, gamePointId FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation INNER JOIN ( SELECT AMSize, ActiveCountry, Activecity, gamePointId FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.gamePointId = Carbon_automation1.gamePointId ORDER BY Carbon_automation.gamePointId,Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
+      s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.gamePointId AS gamePointId, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity FROM ( SELECT AMSize, ActiveCountry, Activecity, gamePointId FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive INNER JOIN ( SELECT AMSize, ActiveCountry, Activecity, gamePointId FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.gamePointId = Carbon_automation_hive1.gamePointId ORDER BY Carbon_automation_hive.gamePointId,Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_739")
 
   }
 

@@ -23,6 +23,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.io.IOUtils
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonUtil
 
@@ -31,16 +32,22 @@ import org.apache.carbondata.core.util.CarbonUtil
  */
 object ResourceRegisterAndCopier {
 
-  val link = "https://raw.githubusercontent.com/ravipesala/incubator-carbondata/sdv-test_data/integration/spark-common-test/src/test/resources"
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  def copyResourcesifNotExists(hdfsPath: String, resourcePath: String, dataFilesPath: String): Unit = {
+  val link = "https://raw.githubusercontent" +
+             ".com/ravipesala/incubator-carbondata/sdv-test_data/integration/spark-common-test" +
+             "/src/test/resources"
+
+  def copyResourcesifNotExists(hdfsPath: String,
+      resourcePath: String,
+      dataFilesPath: String): Unit = {
     val fileType = FileFactory.getFileType(hdfsPath)
     val file = FileFactory.getCarbonFile(hdfsPath, fileType)
     if (!file.exists()) {
       sys.error(s"""Provided path $hdfsPath does not exist""")
     }
     val resources = readDataFiles(dataFilesPath)
-    resources.foreach {file =>
+    resources.foreach { file =>
       val hdfsDataPath = hdfsPath + "/" + file
       val rsFile = FileFactory.getCarbonFile(hdfsDataPath, fileType)
       if (!rsFile.exists()) {
@@ -68,7 +75,7 @@ object ResourceRegisterAndCopier {
 
   def copyLocalFile(dst: String,
       src: String): Unit = {
-    println(s"Copying file : $src to  $dst")
+    LOGGER.info(s"Copying file : $src to  $dst")
     if (FileFactory.isFileExist(src, FileFactory.getFileType(src))) {
       val dataOutputStream = FileFactory.getDataOutputStream(dst,
         FileFactory.getFileType(dst))
@@ -83,19 +90,19 @@ object ResourceRegisterAndCopier {
   def downloadFile(relativeLink: String, fileToDownLoad: String, targetFile: String): Unit = {
     import java.io.FileOutputStream
     val link = relativeLink + "/" + fileToDownLoad
-    println(s"Downloading file $link")
+    LOGGER.info(s"Downloading file $link")
     val url = new URL(link)
     val c = url.openConnection
     c.setRequestProperty("User-Agent",
-        "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705; .NET CLR 1.1.4322;" +
-        " .NET CLR 1.2.30703)")
+      "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705; .NET CLR 1.1.4322;" +
+      " .NET CLR 1.2.30703)")
 
     var input = c.getInputStream
     val buffer = new Array[Byte](4096)
     var n = input.read(buffer)
 
     val output = new FileOutputStream(new File(targetFile))
-    while ( n != -1)  {
+    while (n != -1) {
       output.write(buffer, 0, n)
       n = input.read(buffer)
     }
