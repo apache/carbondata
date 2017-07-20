@@ -78,4 +78,16 @@ class CarbonCommandSuite extends QueryTest with BeforeAndAfterAll {
     assert(f.list().length == 0)
     dropTable(table)
   }
+
+  test("clean files with force clean option") {
+    val table = "carbon_table4"
+    dropTable(table)
+    createAndLoadTestTable(table, "csv_table")
+    CleanFiles.main(Array(s"${location}", table, "true"))
+    val tablePath = s"${location}${File.separator}default${File.separator}$table"
+    val f = new File(tablePath)
+    assert(!f.exists())
+
+    dropTable(table)
+  }
 }

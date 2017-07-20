@@ -346,7 +346,9 @@ object LoadTable {
 
 }
 
-case class LoadTableByInsert(relation: CarbonDatasourceHadoopRelation, child: LogicalPlan)
+case class LoadTableByInsert(relation: CarbonDatasourceHadoopRelation,
+    child: LogicalPlan,
+    overwrite: Boolean)
   extends RunnableCommand with DataProcessCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
@@ -362,7 +364,7 @@ case class LoadTableByInsert(relation: CarbonDatasourceHadoopRelation, child: Lo
       null,
       Seq(),
       scala.collection.immutable.Map("fileheader" -> header),
-      isOverwriteExist = false,
+      overwrite,
       null,
       Some(df)).run(sparkSession)
     // updating relation metadata. This is in case of auto detect high cardinality
@@ -378,7 +380,7 @@ case class LoadTable(
     factPathFromUser: String,
     dimFilesPath: Seq[DataLoadTableFileMapping],
     options: scala.collection.immutable.Map[String, String],
-    isOverwriteExist: Boolean = false,
+    isOverwriteTable: Boolean,
     var inputSqlString: String = null,
     dataFrame: Option[DataFrame] = None,
     updateModel: Option[UpdateTableModel] = None) extends RunnableCommand with DataProcessCommand {
@@ -485,9 +487,6 @@ case class LoadTable(
     }
 
     val dbName = databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
-    if (isOverwriteExist) {
-      sys.error(s"Overwrite is not supported for carbon table with $dbName.$tableName")
-    }
 
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
         .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
@@ -642,7 +641,11 @@ case class LoadTable(
         GlobalDictionaryUtil.updateTableMetadataFunc = LoadTable.updateTableMetadata
         val storePath = relation.tableMeta.storePath
         // add the start entry for the new load in the table status file
-        CommonUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, storePath)
+        CommonUtil.
+          readAndUpdateLoadProgressInTableMeta(carbonLoadModel, storePath, isOverwriteTable)
+        if (isOverwriteTable) {
+          LOGGER.info(s"Overwrite of carbon table with $dbName.$tableName is in progress")
+        }
         if (carbonLoadModel.getLoadMetadataDetails.isEmpty && carbonLoadModel.getUseOnePass &&
             StringUtils.isEmpty(column_dict) && StringUtils.isEmpty(all_dictionary_path)) {
           LOGGER.info(s"Cannot use single_pass=true for $dbName.$tableName during the first load")
@@ -718,6 +721,7 @@ case class LoadTable(
             columnar,
             partitionStatus,
             server,
+            isOverwriteTable,
             dataFrame,
             updateModel)
         } else {
@@ -757,6 +761,7 @@ case class LoadTable(
             columnar,
             partitionStatus,
             None,
+            isOverwriteTable,
             loadDataFrame,
             updateModel)
         }
@@ -797,7 +802,8 @@ case class LoadTable(
 
 case class CleanFiles(
     databaseNameOp: Option[String],
-    tableName: String) extends RunnableCommand with DataProcessCommand {
+    tableName: String, forceTableClean: Boolean = false)
+  extends RunnableCommand with DataProcessCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     processData(sparkSession)
@@ -805,16 +811,25 @@ case class CleanFiles(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
-    val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
-    val relation = catalog
+    if (forceTableClean) {
+      CarbonStore.cleanFiles(
+        getDB.getDatabaseName(databaseNameOp, sparkSession),
+        tableName,
+        CarbonEnv.getInstance(sparkSession).storePath,
+        null,
+        forceTableClean)
+    } else {
+      val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val relation = catalog
         .lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation]
-    val carbonTable = relation.tableMeta.carbonTable
-    CarbonStore.cleanFiles(
-      getDB.getDatabaseName(databaseNameOp, sparkSession),
-      tableName,
-      relation.asInstanceOf[CarbonRelation].tableMeta.storePath,
-      carbonTable
-    )
+      val carbonTable = relation.tableMeta.carbonTable
+      CarbonStore.cleanFiles(
+        getDB.getDatabaseName(databaseNameOp, sparkSession),
+        tableName,
+        relation.asInstanceOf[CarbonRelation].tableMeta.storePath,
+        carbonTable,
+        forceTableClean)
+    }
     Seq.empty
   }
 }
