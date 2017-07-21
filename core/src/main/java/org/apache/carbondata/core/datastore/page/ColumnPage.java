@@ -109,7 +109,7 @@ public abstract class ColumnPage {
   }
 
   private static ColumnPage createPage(DataType dataType, int pageSize, int scale, int precision) {
-    if (dataType.equals(BYTE_ARRAY) | dataType.equals(DECIMAL)) {
+    if (dataType.equals(BYTE_ARRAY) || dataType.equals(DECIMAL)) {
       return createVarLengthPage(dataType, pageSize, scale, precision);
     } else {
       return createFixLengthPage(dataType, pageSize, scale, precision);

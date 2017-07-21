@@ -34,6 +34,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.datastore.row.LoadStatusType;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
@@ -526,7 +527,9 @@ public class SegmentStatusManager {
               + "as the segment has been compacted.");
           continue;
         }
-        if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())) {
+        if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())
+            && !LoadStatusType.IN_PROGRESS.getMessage().equals(loadMetadata.getLoadStatus())
+            && !LoadStatusType.INSERT_OVERWRITE.getMessage().equals(loadMetadata.getLoadStatus())) {
           loadFound = true;
           updateSegmentMetadataDetails(loadMetadata);
           LOG.info("Info: " +

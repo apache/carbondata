@@ -29,7 +29,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
  */
 public final class DecimalConverterFactory {
 
-  public static DecimalConverterFactory INSTANCE = new DecimalConverterFactory();
+  public static final DecimalConverterFactory INSTANCE = new DecimalConverterFactory();
 
   private int[] minBytesForPrecision = minBytesForPrecision();
 

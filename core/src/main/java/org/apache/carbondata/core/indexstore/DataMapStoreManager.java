@@ -86,7 +86,7 @@ public class DataMapStoreManager {
     } catch (Exception e) {
       LOGGER.error(e);
     }
-    dataMap.init(identifier, dataMapName);
+    // TODO: Initialize a data map by calling init method on the data map
     map.put(dataMapName, dataMap);
     return dataMap;
   }

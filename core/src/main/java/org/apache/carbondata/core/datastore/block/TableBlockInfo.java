@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.datastore.block;
 
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -221,8 +222,10 @@ public class TableBlockInfo implements Distributable, Serializable {
     // offset of
     // the file
     if (CarbonTablePath.isCarbonDataFile(filePath)) {
-      int compare = ByteUtil.compare(DataFileUtil.getTaskNo(filePath).getBytes(),
-          DataFileUtil.getTaskNo(((TableBlockInfo) other).filePath).getBytes());
+      int compare = ByteUtil.compare(DataFileUtil.getTaskNo(filePath)
+              .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
+          DataFileUtil.getTaskNo(((TableBlockInfo) other).filePath)
+              .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       if (compare != 0) {
         return compare;
       }

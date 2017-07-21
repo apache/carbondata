@@ -30,6 +30,6 @@ public class FilterOptimizerImpl implements FilterOptimizer {
   }
 
   @Override public Expression optimizeFilter() {
-    return this.optimizeFilter();
+    return filterExpression;
   }
 }
