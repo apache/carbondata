@@ -24,7 +24,7 @@ import org.scalatest.BeforeAndAfterAll
  * Test Class for detailed query on multiple datatypes
  */
 
-class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
+class AllQueriesSpark2TestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("CREATE TABLE alldatatypestable (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")

@@ -27,6 +27,7 @@ import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 import static org.apache.carbondata.core.metadata.datatype.DataType.BYTE;
 
@@ -41,6 +42,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   // base offset of memoryBlock
   private long baseOffset;
+
+  private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
   private static final int byteBits = BYTE.getSizeBits();
   private static final int shortBits = DataType.SHORT.getSizeBits();
@@ -59,13 +62,13 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
       case FLOAT:
       case DOUBLE:
         int size = pageSize << dataType.getSizeBits();
-        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(size);
+        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
         baseAddress = memoryBlock.getBaseObject();
         baseOffset = memoryBlock.getBaseOffset();
         break;
       case SHORT_INT:
         size = pageSize * 3;
-        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(size);
+        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
         baseAddress = memoryBlock.getBaseObject();
         baseOffset = memoryBlock.getBaseOffset();
         break;
@@ -302,7 +305,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   public void freeMemory() {
     if (memoryBlock != null) {
-      UnsafeMemoryManager.INSTANCE.freeMemory(memoryBlock);
+      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
       memoryBlock = null;
       baseAddress = null;
       baseOffset = 0;
@@ -360,13 +363,14 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
       // use raw compression and copy to byte[]
       int inputSize = pageSize * dataType.getSizeInBytes();
       int compressedMaxSize = compressor.maxCompressedLength(inputSize);
-      MemoryBlock compressed = UnsafeMemoryManager.allocateMemoryWithRetry(compressedMaxSize);
+      MemoryBlock compressed =
+          UnsafeMemoryManager.allocateMemoryWithRetry(taskId, compressedMaxSize);
       long outSize = compressor.rawCompress(baseOffset, inputSize, compressed.getBaseOffset());
       assert outSize < Integer.MAX_VALUE;
       byte[] output = new byte[(int) outSize];
       CarbonUnsafe.unsafe.copyMemory(compressed.getBaseObject(), compressed.getBaseOffset(), output,
           CarbonUnsafe.BYTE_ARRAY_OFFSET, outSize);
-      UnsafeMemoryManager.INSTANCE.freeMemory(compressed);
+      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, compressed);
       return output;
     } else {
       return super.compress(compressor);

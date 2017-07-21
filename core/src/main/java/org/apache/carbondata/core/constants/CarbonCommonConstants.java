@@ -1184,9 +1184,11 @@ public final class CarbonCommonConstants {
   public static final String OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT = "64";
   @CarbonProperty
   public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB = "sort.inmemory.size.inmb";
-
   public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT = "1024";
 
+  @CarbonProperty
+  public static final String UNSAFE_WORKING_MEMORY_IN_MB = "carbon.unsafe.working.memory.in.mb";
+  public static final String UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT = "512";
   /**
    * Sorts the data in batches and writes the batch data to store with index file.
    */

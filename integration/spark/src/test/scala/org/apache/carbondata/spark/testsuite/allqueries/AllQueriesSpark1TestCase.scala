@@ -28,7 +28,7 @@ import org.apache.carbondata.core.util.CarbonProperties
   * Test Class for all query on multiple datatypes
   *
   */
-class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
+class AllQueriesSpark1TestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     clean
