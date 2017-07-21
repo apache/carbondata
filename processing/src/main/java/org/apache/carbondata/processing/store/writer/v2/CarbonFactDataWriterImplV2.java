@@ -19,6 +19,7 @@ package org.apache.carbondata.processing.store.writer.v2;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -107,7 +108,8 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
     try {
       if (fileChannel.size() == 0) {
         ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
-        byte[] header = (CarbonCommonConstants.CARBON_DATA_VERSION_HEADER + version).getBytes();
+        byte[] header = (CarbonCommonConstants.CARBON_DATA_VERSION_HEADER + version).getBytes(
+            Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         ByteBuffer buffer = ByteBuffer.allocate(header.length);
         buffer.put(header);
         buffer.rewind();

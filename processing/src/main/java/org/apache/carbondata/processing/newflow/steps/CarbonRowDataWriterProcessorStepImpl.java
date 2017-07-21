@@ -84,6 +84,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   }
 
   @Override public void initialize() throws IOException {
+    super.initialize();
     child.initialize();
   }
 

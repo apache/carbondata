@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.datastore.SegmentTaskIndexStore;
-import org.apache.carbondata.core.mutate.UpdateVO;
 
 /**
  * SegmentTaskIndexWrapper class holds the  taskIdToTableSegmentMap
@@ -45,7 +44,6 @@ public class SegmentTaskIndexWrapper implements Cacheable {
   protected AtomicLong memorySize = new AtomicLong();
 
   private Long refreshedTimeStamp;
-  private UpdateVO invalidTaskKey;
   public SegmentTaskIndexWrapper(
       Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> taskIdToTableSegmentMap) {
     this.taskIdToTableSegmentMap = taskIdToTableSegmentMap;
@@ -126,21 +124,6 @@ public class SegmentTaskIndexWrapper implements Cacheable {
 
   public void setRefreshedTimeStamp(Long refreshedTimeStamp) {
     this.refreshedTimeStamp = refreshedTimeStamp;
-  }
-
-  public void removeEntryFromCacheAndRefresh(String taskId) {
-    AbstractIndex blockEntry = this.getTaskIdToTableSegmentMap().remove(taskId);
-    if (null != blockEntry) {
-      memorySize.set(memorySize.get() - blockEntry.getMemorySize());
-    }
-  }
-
-  public void setLastUpdateVO(UpdateVO invalidTaskKey) {
-    this.invalidTaskKey = invalidTaskKey;
-  }
-
-  public UpdateVO getInvalidTaskKey() {
-    return invalidTaskKey;
   }
 
 }

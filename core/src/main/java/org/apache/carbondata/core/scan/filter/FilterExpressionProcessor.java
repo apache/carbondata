@@ -131,11 +131,14 @@ public class FilterExpressionProcessor implements FilterProcessor {
       }
     }
     if (LOGGER.isDebugEnabled()) {
+      char delimiter = ',';
       LOGGER.debug(
-          "Successfully retrieved the start and end key" + "Dictionary Start Key: " + searchStartKey
-              .getDictionaryKeys() + "No Dictionary Start Key " + searchStartKey
-              .getNoDictionaryKeys() + "Dictionary End Key: " + searchEndKey.getDictionaryKeys()
-              + "No Dictionary End Key " + searchEndKey.getNoDictionaryKeys());
+          "Successfully retrieved the start and end key" + "Dictionary Start Key: " + joinByteArray(
+              searchStartKey.getDictionaryKeys(), delimiter) + "No Dictionary Start Key "
+              + joinByteArray(searchStartKey.getNoDictionaryKeys(), delimiter)
+              + "Dictionary End Key: " + joinByteArray(searchEndKey.getDictionaryKeys(), delimiter)
+              + "No Dictionary End Key " + joinByteArray(searchEndKey.getNoDictionaryKeys(),
+              delimiter));
     }
     long startTimeInMillis = System.currentTimeMillis();
     DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
@@ -157,6 +160,21 @@ public class FilterExpressionProcessor implements FilterProcessor {
         .size());
 
     return listOfDataBlocksToScan;
+  }
+
+  private String joinByteArray(byte[] bytes, char delimiter) {
+    String byteArrayAsString = "";
+    if (null != bytes) {
+      for (int i = 0; i < bytes.length; i++) {
+        byteArrayAsString = byteArrayAsString + delimiter + bytes[i];
+      }
+      if (byteArrayAsString.length() > 0) {
+        byteArrayAsString = byteArrayAsString.substring(1);
+      }
+    } else {
+      byteArrayAsString = null;
+    }
+    return byteArrayAsString;
   }
 
   /**
