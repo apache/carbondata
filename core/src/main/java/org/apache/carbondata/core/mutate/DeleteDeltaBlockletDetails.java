@@ -69,9 +69,11 @@ public class DeleteDeltaBlockletDetails implements Serializable {
     if (obj == null || !(obj instanceof DeleteDeltaBlockletDetails)) {
       return false;
     }
-
     DeleteDeltaBlockletDetails that = (DeleteDeltaBlockletDetails) obj;
-    return id.equals(that.id) && pageId == that.pageId;
+    if (null == pageId || null == that.pageId) {
+      return false;
+    }
+    return id.equals(that.id) && (pageId.intValue() == that.pageId.intValue());
   }
 
   @Override public int hashCode() {

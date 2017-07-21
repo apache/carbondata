@@ -20,6 +20,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -261,8 +262,10 @@ public class CarbonInputSplit extends FileSplit
     String filePath1 = this.getPath().getName();
     String filePath2 = other.getPath().getName();
     if (CarbonTablePath.isCarbonDataFile(filePath1)) {
-      byte[] firstTaskId = CarbonTablePath.DataFileUtil.getTaskNo(filePath1).getBytes();
-      byte[] otherTaskId = CarbonTablePath.DataFileUtil.getTaskNo(filePath2).getBytes();
+      byte[] firstTaskId = CarbonTablePath.DataFileUtil.getTaskNo(filePath1)
+          .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+      byte[] otherTaskId = CarbonTablePath.DataFileUtil.getTaskNo(filePath2)
+          .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
       int compare = ByteUtil.compare(firstTaskId, otherTaskId);
       if (compare != 0) {
         return compare;

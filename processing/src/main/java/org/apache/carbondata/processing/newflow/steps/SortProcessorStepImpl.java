@@ -49,6 +49,7 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   @Override
   public void initialize() throws IOException {
+    super.initialize();
     child.initialize();
     SortParameters sortParameters = SortParameters.createSortParameters(configuration);
     sorter = SorterFactory.createSorter(configuration, rowCounter);

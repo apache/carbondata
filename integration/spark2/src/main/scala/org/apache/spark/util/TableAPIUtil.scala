@@ -33,7 +33,7 @@ object TableAPIUtil {
 
   def parseSchemaName(tableName: String): (String, String) = {
     if (tableName.contains(".")) {
-      val parts = tableName.split(".")
+      val parts = tableName.split("\\.")
       (parts(0), parts(1))
     } else {
       ("default", tableName)

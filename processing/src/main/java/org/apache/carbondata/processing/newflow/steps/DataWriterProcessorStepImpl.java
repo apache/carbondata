@@ -62,6 +62,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
   }
 
   @Override public void initialize() throws IOException {
+    super.initialize();
     child.initialize();
   }
 

@@ -123,8 +123,8 @@ public class CarbonDictionarySortInfoPreparator {
     // for new distinct values
     Iterator<String> distinctValue = distinctValues.iterator();
     while (distinctValue.hasNext()) {
-      dictionarySortModels[surrogate - 1] =
-          createDictionarySortModel(surrogate, dataType, distinctValue.next().getBytes());
+      dictionarySortModels[surrogate - 1] = createDictionarySortModel(surrogate, dataType,
+          distinctValue.next().getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       surrogate++;
     }
     return dictionarySortModels;
