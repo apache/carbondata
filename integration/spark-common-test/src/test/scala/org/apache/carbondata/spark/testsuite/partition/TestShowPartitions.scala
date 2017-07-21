@@ -152,13 +152,13 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
 
   test("show partition table: range partition") {
     // EqualTo
-    checkAnswer(sql("show partitions rangeTable"), Seq(Row("doj=default"),
+    checkAnswer(sql("show partitions rangeTable"), Seq(Row("Default"),
       Row("doj<01-01-2010"), Row("01-01-2010<=doj<01-01-2015")))
   }
 
   test("show partition table: list partition") {
     // EqualTo
-    checkAnswer(sql("show partitions listTable"), Seq(Row("workgroupcategory=default"),
+    checkAnswer(sql("show partitions listTable"), Seq(Row("Default"),
       Row("workgroupcategory=0"), Row("workgroupcategory=1"), Row("workgroupcategory=2, 3")))
 
   }
@@ -166,10 +166,10 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
     // EqualTo
     checkAnswer(sql("show partitions partitionDB.hashTable"), Seq(Row("empno=HASH_NUMBER(3)")))
     // EqualTo
-    checkAnswer(sql("show partitions partitionDB.rangeTable"), Seq(Row("doj=default"),
+    checkAnswer(sql("show partitions partitionDB.rangeTable"), Seq(Row("Default"),
       Row("doj<01-01-2010"), Row("01-01-2010<=doj<01-01-2015")))
     // EqualTo
-    checkAnswer(sql("show partitions partitionDB.listTable"), Seq(Row("workgroupcategory=default"),
+    checkAnswer(sql("show partitions partitionDB.listTable"), Seq(Row("Default"),
       Row("workgroupcategory=0"), Row("workgroupcategory=1"), Row("workgroupcategory=2, 3")))
 
   }
