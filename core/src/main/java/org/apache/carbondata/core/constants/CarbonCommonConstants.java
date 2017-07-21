@@ -176,9 +176,15 @@ public final class CarbonCommonConstants {
   public static final String MEMBER_DEFAULT_VAL = "@NU#LL$!";
 
   /**
+   * default charset to be used for reading and writing
+   */
+  public static final String DEFAULT_CHARSET = "UTF-8";
+
+  /**
    * MEMBER_DEFAULT_VAL_ARRAY
    */
-  public static final byte[] MEMBER_DEFAULT_VAL_ARRAY = MEMBER_DEFAULT_VAL.getBytes();
+  public static final byte[] MEMBER_DEFAULT_VAL_ARRAY =
+      MEMBER_DEFAULT_VAL.getBytes(Charset.forName(DEFAULT_CHARSET));
 
   /**
    * Bytes for string 0, it is used in codegen in case of null values.
@@ -770,11 +776,6 @@ public final class CarbonCommonConstants {
    * xxhash algorithm property for hashmap. Default value false
    */
   public static final String ENABLE_XXHASH_DEFAULT = "true";
-
-  /**
-   * default charset to be used for reading and writing
-   */
-  public static final String DEFAULT_CHARSET = "UTF-8";
 
   /**
    * default charset class to be used for reading and writing

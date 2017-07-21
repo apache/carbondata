@@ -145,7 +145,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
     for (ExpressionResult result : listOfExpressionResults) {
       try {
         if (result.getString() == null) {
-          filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL.getBytes());
+          filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
           continue;
         }
         filterValuesList.add(DataTypeUtil

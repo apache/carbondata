@@ -21,6 +21,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -304,7 +305,8 @@ public abstract class AbstractScannedResult {
               j :
               rowMapping[pageCounter][j]);
         }
-        vector.putBytes(vectorOffset++, data.getBytes());
+        vector.putBytes(vectorOffset++,
+            data.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       }
     }
   }
@@ -394,7 +396,8 @@ public abstract class AbstractScannedResult {
     int position = 0;
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
       noDictionaryColumnsKeys[position++] = new String(
-          dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId));
+          dimensionDataChunks[noDictionaryColumnBlockIndexes[i]][pageCounter].getChunkData(rowId),
+          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     }
     return noDictionaryColumnsKeys;
   }
