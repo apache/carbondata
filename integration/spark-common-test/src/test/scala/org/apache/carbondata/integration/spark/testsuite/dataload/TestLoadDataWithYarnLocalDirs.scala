@@ -37,7 +37,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 class TestLoadDataWithYarnLocalDirs extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("drop table if exists carbontable_yarnLocalDirs")
-    sql("CREATE TABLE carbontable_yarnLocalDirs (id int, name String) " +
+    sql("CREATE TABLE carbontable_yarnLocalDirs (id int, name string, city string, age int) " +
         "STORED BY 'org.apache.carbondata.format'")
   }
 
@@ -81,13 +81,13 @@ class TestLoadDataWithYarnLocalDirs extends QueryTest with BeforeAndAfterAll {
 
     enableMultipleDir
 
-    sql(s"LOAD DATA LOCAL INPATH '${resourcesPath}/multi_dir/data.csv' INTO TABLE " +
-        "carbontable_yarnLocalDirs OPTIONS('DELIMITER'= ',','FILEHEADER'='id,name')")
+    sql(s"LOAD DATA LOCAL INPATH '${resourcesPath}/sample.csv' INTO TABLE " +
+        "carbontable_yarnLocalDirs OPTIONS('DELIMITER'= ',')")
 
     disableMultipleDir
 
     checkAnswer(sql("select id from carbontable_yarnLocalDirs"),
-      Seq(Row(1), Row(2), Row(3), Row(4), Row(5), Row(6), Row(7), Row(8), Row(9), Row(10)))
+      Seq(Row(1), Row(2), Row(3), Row(3)))
 
     cleanUpYarnLocalDir
   }
