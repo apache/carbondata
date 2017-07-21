@@ -85,15 +85,15 @@ private[sql] case class ShowCarbonPartitionsCommand(
       .lookupRelation(tableIdentifier)(sparkSession).
       asInstanceOf[CarbonRelation]
     val carbonTable = relation.tableMeta.carbonTable
-    var tableName = carbonTable.getFactTableName
-    var partitionInfo = carbonTable.getPartitionInfo(
+    val tableName = carbonTable.getFactTableName
+    val partitionInfo = carbonTable.getPartitionInfo(
       carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
     if (partitionInfo == null) {
       throw new AnalysisException(
         s"SHOW PARTITIONS is not allowed on a table that is not partitioned: $tableName")
     }
-    var partitionType = partitionInfo.getPartitionType
-    var columnName = partitionInfo.getColumnSchemaList.get(0).getColumnName
+    val partitionType = partitionInfo.getPartitionType
+    val columnName = partitionInfo.getColumnSchemaList.get(0).getColumnName
     LOGGER.info("partition column name:" + columnName)
     CommonUtil.getPartitionInfo(columnName, partitionType, partitionInfo)
   }

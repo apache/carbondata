@@ -23,6 +23,7 @@ import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.apache.spark.sql.SparkSession
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -38,7 +39,7 @@ object CarbonPartitionExample {
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     import org.apache.spark.sql.CarbonSession._
 
     val spark = SparkSession
@@ -123,7 +124,7 @@ object CarbonPartitionExample {
     try {
       spark.sql(s"DROP TABLE IF EXISTS partitionDB.t9")
     } catch {
-      case ex: NoSuchDatabaseException => print(ex.getMessage())
+      case ex: NoSuchDatabaseException => LOGGER.error(ex.getMessage())
     }
     spark.sql(s"DROP DATABASE IF EXISTS partitionDB")
     spark.sql(s"CREATE DATABASE partitionDB")
@@ -144,15 +145,15 @@ object CarbonPartitionExample {
 
     // show partitions
     try {
-      spark.sql("""SHOW PARTITIONS t0""").show()
+      spark.sql("""SHOW PARTITIONS t0""").show(100, false)
     } catch {
-      case ex: AnalysisException => print(ex.getMessage())
+      case ex: AnalysisException => LOGGER.error(ex.getMessage())
     }
-    spark.sql("""SHOW PARTITIONS t1""").show()
-    spark.sql("""SHOW PARTITIONS t3""").show()
-    spark.sql("""SHOW PARTITIONS t5""").show()
-    spark.sql("""SHOW PARTITIONS t7""").show()
-    spark.sql("""SHOW PARTITIONS partitionDB.t9""").show()
+    spark.sql("""SHOW PARTITIONS t1""").show(100, false)
+    spark.sql("""SHOW PARTITIONS t3""").show(100, false)
+    spark.sql("""SHOW PARTITIONS t5""").show(100, false)
+    spark.sql("""SHOW PARTITIONS t7""").show(100, false)
+    spark.sql("""SHOW PARTITIONS partitionDB.t9""").show(100, false)
 
     // drop table
     spark.sql("DROP TABLE IF EXISTS t0")
