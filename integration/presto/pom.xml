@@ -228,6 +228,33 @@
             <skip>true</skip>
           </configuration>
         </plugin>
+        <plugin>
+          <groupId>org.scala-tools</groupId>
+          <artifactId>maven-scala-plugin</artifactId>
+          <version>2.15.2</version>
+          <executions>
+            <execution>
+              <id>compile</id>
+              <goals>
+                <goal>compile</goal>
+              </goals>
+              <phase>compile</phase>
+            </execution>
+            <execution>
+              <id>testCompile</id>
+              <goals>
+                <goal>testCompile</goal>
+              </goals>
+              <phase>test</phase>
+            </execution>
+            <execution>
+              <phase>process-resources</phase>
+              <goals>
+                <goal>compile</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
     </build>
 </project>
