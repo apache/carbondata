@@ -29,43 +29,43 @@ class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("DROP TABLE IF EXISTS dropcolumntest")
-    sql("drop table if exists hivetable")
+    sql("DROP TABLE IF EXISTS hivetable")
   }
 
-  test("test drop column and insert into hive table") ({
+  test("test drop column and insert into hive table") {
     def test_drop_and_insert() = {
       beforeAll
       sql(
-        "CREATE TABLE dropcolumntest(intField int,stringField string,charField string," +
-        "timestampField timestamp,decimalField decimal(6,2)) STORED BY 'carbondata'")
+        "CREATE TABLE dropcolumntest(intField INT,stringField STRING,charField STRING," +
+        "timestampField TIMESTAMP,decimalField DECIMAL(6,2)) STORED BY 'carbondata'")
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE dropcolumntest"
-          + s" options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
-      sql("Alter table dropcolumntest drop columns(charField)")
+          + s" OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+      sql("ALTER TABLE dropcolumntest DROP COLUMNS(charField)")
       sql(
-        "CREATE TABLE hivetable(intField int,stringField string,timestampField timestamp," +
-        "decimalField decimal(6,2)) stored as parquet")
-      sql("insert into table hivetable select * from dropcolumntest")
-      checkAnswer(sql("select * from hivetable"), sql("select * from dropcolumntest"))
+        "CREATE TABLE hivetable(intField INT,stringField STRING,timestampField TIMESTAMP," +
+        "decimalField DECIMAL(6,2)) STORED AS PARQUET")
+      sql("INSERT INTO TABLE hivetable SELECT * FROM dropcolumntest")
+      checkAnswer(sql("SELECT * FROM hivetable"), sql("SELECT * FROM dropcolumntest"))
       afterAll
     }
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     test_drop_and_insert()
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     test_drop_and_insert()
-  })
+  }
 
-  test("test drop column and load data") ({
+  test("test drop column and load data") {
     def test_drop_and_load() = {
       beforeAll
       sql(
-        "CREATE TABLE dropcolumntest(intField int,stringField string,charField string," +
-        "timestampField timestamp,decimalField decimal(6,2)) STORED BY 'carbondata'")
+        "CREATE TABLE dropcolumntest(intField INT,stringField STRING,charField STRING," +
+        "timestampField TIMESTAMP,decimalField DECIMAL(6,2)) STORED BY 'carbondata'")
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE dropcolumntest"
-          + s" options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
-      sql("Alter table dropcolumntest drop columns(charField)")
+          + s" OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+      sql("ALTER TABLE dropcolumntest DROP COLUMNS(charField)")
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE dropcolumntest"
-          + s" options('FILEHEADER'='intField,stringField,timestampField,decimalField')")
-      checkAnswer(sql("select count(*) from dropcolumntest"), Row(2))
+          + s" OPTIONS('FILEHEADER'='intField,stringField,timestampField,decimalField')")
+      checkAnswer(sql("SELECT count(*) FROM dropcolumntest"), Row(2))
       afterAll
     }
     sqlContext.setConf("carbon.enable.vector.reader", "true")
@@ -73,34 +73,34 @@ class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     test_drop_and_load
 
-  })
+  }
 
-  test("test drop column and compaction") ({
+  test("test drop column and compaction") {
     def test_drop_and_compaction() = {
       beforeAll
       sql(
-        "CREATE TABLE dropcolumntest(intField int,stringField string,charField string," +
-        "timestampField timestamp,decimalField decimal(6,2)) STORED BY 'carbondata'")
+        "CREATE TABLE dropcolumntest(intField INT,stringField STRING,charField STRING," +
+        "timestampField TIMESTAMP,decimalField DECIMAL(6,2)) STORED BY 'carbondata'")
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE dropcolumntest"
-          + s" options('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
-      sql("Alter table dropcolumntest drop columns(charField)")
+          + s" OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+      sql("ALTER TABLE dropcolumntest DROP COLUMNS(charField)")
       sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data4.csv' INTO TABLE dropcolumntest"
-          + s" options('FILEHEADER'='intField,stringField,timestampField,decimalField')")
-      sql("alter table dropcolumntest compact 'major'")
-      checkExistence(sql("show segments for table dropcolumntest"), true, "0Compacted")
-      checkExistence(sql("show segments for table dropcolumntest"), true, "1Compacted")
-      checkExistence(sql("show segments for table dropcolumntest"), true, "0.1Success")
+          + s" OPTIONS('FILEHEADER'='intField,stringField,timestampField,decimalField')")
+      sql("ALTER TABLE dropcolumntest COMPACT 'major'")
+      checkExistence(sql("SHOW SEGMENTS FOR TABLE dropcolumntest"), true, "0Compacted")
+      checkExistence(sql("SHOW SEGMENTS FOR TABLE dropcolumntest"), true, "1Compacted")
+      checkExistence(sql("SHOW SEGMENTS FOR TABLE dropcolumntest"), true, "0.1Success")
       afterAll
     }
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     test_drop_and_compaction()
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     test_drop_and_compaction()
-  })
+  }
 
   override def afterAll {
     sql("DROP TABLE IF EXISTS dropcolumntest")
-    sql("drop table if exists hivetable")
+    sql("DROP TABLE IF EXISTS hivetable")
     sqlContext.setConf("carbon.enable.vector.reader", "false")
   }
 }
