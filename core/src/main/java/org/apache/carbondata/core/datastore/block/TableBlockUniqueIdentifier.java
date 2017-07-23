@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.block;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 
 /**
  * Class : Holds the info to uniquely identify a blocks
@@ -29,6 +30,8 @@ public class TableBlockUniqueIdentifier {
    * table fully qualified name
    */
   private AbsoluteTableIdentifier absoluteTableIdentifier;
+
+  private TableProvider tableProvider;
 
   /**
    * table block info
@@ -41,12 +44,27 @@ public class TableBlockUniqueIdentifier {
     this.tableBlockInfo = tableBlockInfo;
   }
 
+  public TableBlockUniqueIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier,
+      TableBlockInfo tableBlockInfo, TableProvider tableProvider) {
+    this.absoluteTableIdentifier = absoluteTableIdentifier;
+    this.tableBlockInfo = tableBlockInfo;
+    this.tableProvider = tableProvider;
+  }
+
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
     return absoluteTableIdentifier;
   }
 
   public void setAbsoluteTableIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier) {
     this.absoluteTableIdentifier = absoluteTableIdentifier;
+  }
+
+  public TableProvider getTableProvider() {
+    return tableProvider;
+  }
+
+  public void setTableProvider(TableProvider tableProvider) {
+    this.tableProvider = tableProvider;
   }
 
   public TableBlockInfo getTableBlockInfo() {

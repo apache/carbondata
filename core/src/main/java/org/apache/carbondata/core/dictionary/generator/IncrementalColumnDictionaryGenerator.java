@@ -38,6 +38,8 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.DictionaryService;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -113,20 +115,21 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
     // initialize params
     CarbonMetadata metadata = CarbonMetadata.getInstance();
     CarbonTable carbonTable = metadata.getCarbonTable(tableUniqueName);
+    TableProvider tableProvider = new SingleTableProvider(carbonTable);
     CarbonTableIdentifier tableIdentifier = carbonTable.getCarbonTableIdentifier();
     ColumnIdentifier columnIdentifier = dimension.getColumnIdentifier();
     String storePath = carbonTable.getStorePath();
     DictionaryService dictionaryService = CarbonCommonFactory.getDictionaryService();
     // create dictionary cache from dictionary File
     DictionaryColumnUniqueIdentifier identifier =
-            new DictionaryColumnUniqueIdentifier(tableIdentifier, columnIdentifier,
-                    columnIdentifier.getDataType());
+        new DictionaryColumnUniqueIdentifier(tableIdentifier, columnIdentifier,
+            columnIdentifier.getDataType(), tableProvider);
     Boolean isDictExists = CarbonUtil.isFileExistsForGivenColumn(storePath, identifier);
     Dictionary dictionary = null;
     long t1 = System.currentTimeMillis();
     if (isDictExists) {
-      Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache = CacheProvider.getInstance()
-              .createCache(CacheType.REVERSE_DICTIONARY, storePath);
+      Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache =
+          CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY, storePath);
       dictionary = dictCache.get(identifier);
     }
     long dictCacheTime = System.currentTimeMillis() - t1;

@@ -27,6 +27,8 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.iterator.ChunkRowIterator;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -72,8 +74,9 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     }
     List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
     queryModel.setTableBlockInfos(tableBlockInfoList);
+    TableProvider tableProvider = new SingleTableProvider(queryModel.getTable());
     readSupport.initialize(queryModel.getProjectionColumns(),
-        queryModel.getAbsoluteTableIdentifier());
+        tableProvider.getCarbonTable().getAbsoluteTableIdentifier());
     try {
       carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
     } catch (QueryExecutionException e) {

@@ -55,6 +55,8 @@ import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
@@ -113,6 +115,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         CarbonTimeStatisticsFactory.createExecutorRecorder(queryModel.getQueryId());
     queryModel.setStatisticsRecorder(queryProperties.queryStatisticsRecorder);
     QueryUtil.resolveQueryModel(queryModel);
+    TableProvider tableProvider = new SingleTableProvider(queryModel.getTable());
     QueryStatistic queryStatistic = new QueryStatistic();
     // sort the block info
     // so block will be loaded in sorted order this will be required for
@@ -128,7 +131,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         queryModel.getAbsoluteTableIdentifier());
     List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
         prepareTableBlockUniqueIdentifier(queryModel.getTableBlockInfos(),
-            queryModel.getAbsoluteTableIdentifier());
+            queryModel.getAbsoluteTableIdentifier(), tableProvider);
     cache.removeTableBlocksIfHorizontalCompactionDone(queryModel);
     queryProperties.dataBlocks = cache.getAll(tableBlockUniqueIdentifiers);
     queryStatistic
@@ -165,7 +168,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // which will be used to get column actual data
     queryProperties.columnToDictionayMapping = QueryUtil
         .getDimensionDictionaryDetail(queryModel.getQueryDimension(),
-            queryProperties.complexFilterDimension, queryModel.getAbsoluteTableIdentifier());
+            queryProperties.complexFilterDimension, tableProvider);
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_DICTIONARY, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
@@ -173,12 +176,13 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   }
 
   private List<TableBlockUniqueIdentifier> prepareTableBlockUniqueIdentifier(
-      List<TableBlockInfo> tableBlockInfos, AbsoluteTableIdentifier absoluteTableIdentifier) {
+      List<TableBlockInfo> tableBlockInfos, AbsoluteTableIdentifier absoluteTableIdentifier,
+      TableProvider tableProvider) {
     List<TableBlockUniqueIdentifier> tableBlockUniqueIdentifiers =
         new ArrayList<>(tableBlockInfos.size());
     for (TableBlockInfo blockInfo : tableBlockInfos) {
       tableBlockUniqueIdentifiers
-          .add(new TableBlockUniqueIdentifier(absoluteTableIdentifier, blockInfo));
+          .add(new TableBlockUniqueIdentifier(absoluteTableIdentifier, blockInfo, tableProvider));
     }
     return tableBlockUniqueIdentifiers;
   }

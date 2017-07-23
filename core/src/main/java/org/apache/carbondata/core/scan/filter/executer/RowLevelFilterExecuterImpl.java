@@ -226,8 +226,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    */
   private void createRow(BlocksChunkHolder blockChunkHolder, RowIntf row, int pageIndex, int index)
       throws IOException {
-    Object[] record = new Object[dimColEvaluatorInfoList.size() + msrColEvalutorInfoList.size()];
     String memberString;
+    Object[] record = new Object[dimColEvaluatorInfoList.size() + msrColEvalutorInfoList.size()];
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = dimColEvaluatorInfoList.get(i);
       // if filter dimension is not present in the current add its default value
@@ -415,7 +415,6 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     String memberString;
     Dictionary forwardDictionary = FilterUtil
         .getForwardDictionaryCache(tableIdentifier, dimColumnEvaluatorInfo.getDimension());
-
     memberString = forwardDictionary.getDictionaryValueForKey(dictionaryValue);
     if (null != memberString) {
       if (memberString.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {

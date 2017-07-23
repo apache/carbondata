@@ -30,9 +30,13 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.carbondata.core.cache.Cache;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -40,6 +44,9 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriterImpl;
+
+import mockit.Mock;
+import mockit.MockUp;
 
 public class AbstractDictionaryCacheTest {
 
@@ -62,6 +69,8 @@ public class AbstractDictionaryCacheTest {
   protected List<String> dataSet3;
 
   protected String[] columnIdentifiers;
+
+  protected TableProvider tableProvider;
 
   /**
    * this method will delete the folders recursively
@@ -90,6 +99,20 @@ public class AbstractDictionaryCacheTest {
     dataSet3 = Arrays.asList(new String[] { "b", "c", "a", "d" });
   }
 
+  protected void prepareTableProvider() {
+    CarbonTable carbonTable=new CarbonTable();
+    final AbsoluteTableIdentifier absoluteTableIdentifier=new AbsoluteTableIdentifier(carbonStorePath,carbonTableIdentifier);
+    new MockUp<CarbonTable>() {
+      @Mock public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
+        return absoluteTableIdentifier;
+      }
+      @Mock public CarbonTableIdentifier getCarbonTableIdentifier() {
+        return carbonTableIdentifier;
+      }
+    };
+    tableProvider = new SingleTableProvider(carbonTable);
+  }
+
   /**
    * This method will remove the column identifiers from lru cache
    */
@@ -103,9 +126,9 @@ public class AbstractDictionaryCacheTest {
 
   protected DictionaryColumnUniqueIdentifier createDictionaryColumnUniqueIdentifier(
       String columnId) {
-	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, DataType.STRING);
+    ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, DataType.STRING);
     return new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
-        DataType.STRING);
+        DataType.STRING, tableProvider);
   }
 
   /**

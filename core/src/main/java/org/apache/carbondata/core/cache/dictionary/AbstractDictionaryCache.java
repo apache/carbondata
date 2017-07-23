@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReader;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.DictionaryService;
 import org.apache.carbondata.core.service.PathService;
@@ -155,10 +156,11 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
    * @return
    */
   private CarbonFile getDictionaryMetaCarbonFile(
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) throws IOException {
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
+      TableProvider tableProvider) throws IOException {
     PathService pathService = CarbonCommonFactory.getPathService();
     CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
-        dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
+        tableProvider.getCarbonTable().getCarbonTableIdentifier());
     String dictionaryFilePath = carbonTablePath.getDictionaryMetaFilePath(
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
     FileFactory.FileType fileType = FileFactory.getFileType(dictionaryFilePath);
@@ -187,13 +189,13 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
    * @throws IOException                    in case memory is not sufficient to load dictionary
    *                                        into memory
    */
-  protected void checkAndLoadDictionaryData(
+  protected void checkAndLoadDictionaryData(TableProvider tableProvider,
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
-      DictionaryInfo dictionaryInfo, String lruCacheKey, boolean loadSortIndex)
-      throws IOException {
+      DictionaryInfo dictionaryInfo, String lruCacheKey, boolean loadSortIndex) throws IOException {
     // read last segm
     // ent dictionary meta chunk entry to get the end offset of file
-    CarbonFile carbonFile = getDictionaryMetaCarbonFile(dictionaryColumnUniqueIdentifier);
+    CarbonFile carbonFile =
+        getDictionaryMetaCarbonFile(dictionaryColumnUniqueIdentifier, tableProvider);
     boolean dictionaryMetaFileModified =
         isDictionaryMetaFileModified(carbonFile, dictionaryInfo.getFileTimeStamp(),
             dictionaryInfo.getDictionaryMetaFileLength());
@@ -201,7 +203,8 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
     // meta file
     if (dictionaryMetaFileModified) {
       synchronized (dictionaryInfo) {
-        carbonFile = getDictionaryMetaCarbonFile(dictionaryColumnUniqueIdentifier);
+        carbonFile =
+            getDictionaryMetaCarbonFile(dictionaryColumnUniqueIdentifier, tableProvider);
         dictionaryMetaFileModified =
             isDictionaryMetaFileModified(carbonFile, dictionaryInfo.getFileTimeStamp(),
                 dictionaryInfo.getDictionaryMetaFileLength());

@@ -45,7 +45,8 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
    *                                       filter models.
    */
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
-      FilterResolverMetadata metadata) throws FilterUnsupportedException {
+      FilterResolverMetadata metadata)
+      throws FilterUnsupportedException {
     DimColumnFilterInfo resolvedFilterObject = null;
 
     List<String> evaluateResultListFinal;

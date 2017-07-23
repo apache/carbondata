@@ -21,6 +21,7 @@ import java.io.Serializable;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
@@ -47,11 +48,22 @@ public class AbsoluteTableIdentifier implements Serializable {
    */
   private CarbonTableIdentifier carbonTableIdentifier;
 
+  private TableProvider tableProvider;
+
   public AbsoluteTableIdentifier(String storePath, CarbonTableIdentifier carbonTableIdentifier) {
     //TODO this should be moved to common place where path handling will be handled
     this.storePath = FileFactory.getUpdatedFilePath(storePath);
     isLocalPath = storePath.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX);
     this.carbonTableIdentifier = carbonTableIdentifier;
+  }
+
+  public AbsoluteTableIdentifier(String storePath, CarbonTableIdentifier carbonTableIdentifier,
+      TableProvider tableProvider) {
+    //TODO this should be moved to common place where path handling will be handled
+    this.storePath = FileFactory.getUpdatedFilePath(storePath);
+    isLocalPath = storePath.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX);
+    this.carbonTableIdentifier = carbonTableIdentifier;
+    this.tableProvider = tableProvider;
   }
 
   /**
@@ -66,6 +78,13 @@ public class AbsoluteTableIdentifier implements Serializable {
    */
   public CarbonTableIdentifier getCarbonTableIdentifier() {
     return carbonTableIdentifier;
+  }
+
+  /**
+   * @return the tableProvider
+   */
+  public TableProvider getTableProvider() {
+    return tableProvider;
   }
 
   public static AbsoluteTableIdentifier from(String dbName, String tableName) {

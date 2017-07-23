@@ -42,7 +42,8 @@ public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
    * @throws FilterUnsupportedException
    */
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
-      FilterResolverMetadata metadata) throws FilterUnsupportedException, IOException {
+      FilterResolverMetadata metadata)
+      throws FilterUnsupportedException, IOException {
     DimColumnFilterInfo resolvedFilterObject = null;
     List<String> evaluateResultListFinal;
     try {
@@ -51,7 +52,7 @@ public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
       throw new FilterUnsupportedException(e);
     }
     resolvedFilterObject = FilterUtil
-        .getFilterValues(metadata.getTableIdentifier(), metadata.getColumnExpression(),
+        .getFilterValues(metadata.getTableProvider(), metadata.getColumnExpression(),
             evaluateResultListFinal, metadata.isIncludeFilter());
     if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
       // Adding default surrogate key of null member inorder to not display the same while

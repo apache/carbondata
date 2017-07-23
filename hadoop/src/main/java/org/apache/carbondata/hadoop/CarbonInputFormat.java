@@ -44,6 +44,8 @@ import org.apache.carbondata.core.mutate.data.BlockMappingVO;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.core.scan.model.QueryModel;
@@ -268,7 +270,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       if (null == carbonTable) {
         throw new IOException("Missing/Corrupt schema file for table.");
       }
-
+      TableProvider tableProvider = new SingleTableProvider(carbonTable);
       CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
       BitSet matchedPartitions = null;
       PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName());
@@ -286,7 +288,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         }
       }
 
-      FilterResolverIntf filterInterface = CarbonInputFormatUtil.resolveFilter(filter, identifier);
+      FilterResolverIntf filterInterface =
+          CarbonInputFormatUtil.resolveFilter(filter, tableProvider);
 
       // do block filtering and get split
       List<InputSplit> splits = getSplits(job, filterInterface, matchedPartitions, cacheClient,
@@ -633,19 +636,20 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * Get the row count of the Block and mapping of segment and Block count.
    * @param job
-   * @param absoluteTableIdentifier
+   * @param tableProvider
    * @return
    * @throws IOException
    * @throws KeyGenException
    */
-  public BlockMappingVO getBlockRowCount(JobContext job,
-      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException, KeyGenException {
-    CacheClient cacheClient = new CacheClient(absoluteTableIdentifier.getStorePath());
+  public BlockMappingVO getBlockRowCount(JobContext job, TableProvider tableProvider)
+      throws IOException, KeyGenException {
+    CacheClient cacheClient = new CacheClient(tableProvider.getCarbonTable().getStorePath());
     try {
-      SegmentUpdateStatusManager updateStatusManager =
-          new SegmentUpdateStatusManager(absoluteTableIdentifier);
+      SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(
+          tableProvider.getCarbonTable().getAbsoluteTableIdentifier());
       SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegments =
-          new SegmentStatusManager(absoluteTableIdentifier).getValidAndInvalidSegments();
+          new SegmentStatusManager(tableProvider.getCarbonTable().getAbsoluteTableIdentifier())
+              .getValidAndInvalidSegments();
       Map<String, Long> blockRowCountMapping =
           new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
       Map<String, Long> segmentAndBlockCountMapping =
@@ -654,8 +658,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       for (String eachValidSeg : validAndInvalidSegments.getValidSegments()) {
         long countOfBlocksInSeg = 0;
         Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> taskAbstractIndexMap =
-            getSegmentAbstractIndexs(job, absoluteTableIdentifier, eachValidSeg, cacheClient,
-                updateStatusManager);
+            getSegmentAbstractIndexs(job,
+                tableProvider.getCarbonTable().getAbsoluteTableIdentifier(), eachValidSeg,
+                cacheClient, updateStatusManager);
         for (Map.Entry<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> taskMap :
             taskAbstractIndexMap
             .entrySet()) {
@@ -738,8 +743,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
+    TableProvider tableProvider = new SingleTableProvider(carbonTable);
     CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
-    FilterResolverIntf filterIntf =  CarbonInputFormatUtil.resolveFilter(filter, identifier);
+    FilterResolverIntf filterIntf = CarbonInputFormatUtil.resolveFilter(filter, tableProvider);
     queryModel.setFilterExpressionResolverTree(filterIntf);
 
     // update the file level index store if there are invalid segment

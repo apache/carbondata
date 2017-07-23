@@ -59,6 +59,7 @@ public class ReverseDictionaryCacheTest extends AbstractDictionaryCacheTest {
     columnIdentifiers = new String[] { "name", "place" };
     deleteStorePath();
     prepareDataSet();
+    prepareTableProvider();
     createDictionaryCacheObject();
   }
 
@@ -271,6 +272,7 @@ public class ReverseDictionaryCacheTest extends AbstractDictionaryCacheTest {
   protected DictionaryColumnUniqueIdentifier createDictionaryColumnUniqueIdentifier(
 	      String columnId) {
 	    ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, DataType.DOUBLE);
-    return new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier);
-	  }
+    return new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
+        tableProvider);
+  }
 }

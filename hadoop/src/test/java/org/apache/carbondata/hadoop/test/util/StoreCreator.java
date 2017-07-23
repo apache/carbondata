@@ -60,6 +60,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -116,6 +118,10 @@ public class StoreCreator {
     return absoluteTableIdentifier;
   }
 
+  public static TableProvider getTableProvider() throws IOException{
+    return new SingleTableProvider(createTable());
+  }
+
   /**
    * Create store without any restructure
    */
@@ -130,7 +136,7 @@ public class StoreCreator {
           absoluteTableIdentifier.getStorePath());
 
       CarbonTable table = createTable();
-      writeDictionary(factFilePath, table);
+      writeDictionary(factFilePath, table, getTableProvider());
       CarbonDataLoadSchema schema = new CarbonDataLoadSchema(table);
       CarbonLoadModel loadModel = new CarbonLoadModel();
       String partitionId = "0";
@@ -300,7 +306,8 @@ public class StoreCreator {
     return CarbonMetadata.getInstance().getCarbonTable(tableInfo.getTableUniqueName());
   }
 
-  private static void writeDictionary(String factFilePath, CarbonTable table) throws Exception {
+  private static void writeDictionary(String factFilePath, CarbonTable table,
+      TableProvider tableProvider) throws Exception {
     BufferedReader reader = new BufferedReader(new FileReader(factFilePath));
     String header = reader.readLine();
     String[] split = header.split(",");
@@ -336,9 +343,8 @@ public class StoreCreator {
       writer.commit();
       Dictionary dict = (Dictionary) dictCache.get(
           new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier.getCarbonTableIdentifier(),
-        		  columnIdentifier, dims.get(i).getDataType()));
-      CarbonDictionarySortInfoPreparator preparator =
-          new CarbonDictionarySortInfoPreparator();
+              columnIdentifier, dims.get(i).getDataType(), tableProvider));
+      CarbonDictionarySortInfoPreparator preparator = new CarbonDictionarySortInfoPreparator();
       List<String> newDistinctValues = new ArrayList<String>();
       CarbonDictionarySortInfo dictionarySortInfo =
           preparator.getDictionarySortInfo(newDistinctValues, dict, dims.get(i).getDataType());

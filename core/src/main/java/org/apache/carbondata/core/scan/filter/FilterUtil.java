@@ -398,21 +398,21 @@ public final class FilterUtil {
    * Method will prepare the  dimfilterinfo instance by resolving the filter
    * expression value to its respective surrogates.
    *
-   * @param tableIdentifier
+   * @param tableProvider
    * @param columnExpression
    * @param evaluateResultList
    * @param isIncludeFilter
    * @return
    * @throws IOException
    */
-  public static DimColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
+  public static DimColumnFilterInfo getFilterValues(TableProvider tableProvider,
       ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter)
       throws IOException {
     Dictionary forwardDictionary = null;
     try {
       // Reading the dictionary value from cache.
       forwardDictionary =
-          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
+          getForwardDictionaryCache(tableProvider, columnExpression.getDimension());
       return getFilterValues(columnExpression, evaluateResultList, forwardDictionary,
           isIncludeFilter);
     } finally {
@@ -464,7 +464,7 @@ public final class FilterUtil {
    * This method will get all the members of column from the forward dictionary
    * cache, this method will be basically used in row level filter resolver.
    *
-   * @param tableIdentifier
+   * @param tableProvider
    * @param expression
    * @param columnExpression
    * @param isIncludeFilter
@@ -473,7 +473,7 @@ public final class FilterUtil {
    * @throws IOException
    */
   public static DimColumnFilterInfo getFilterListForAllValues(
-      AbsoluteTableIdentifier tableIdentifier, Expression expression,
+      TableProvider tableProvider, Expression expression,
       final ColumnExpression columnExpression, boolean isIncludeFilter)
       throws IOException, FilterUnsupportedException {
     Dictionary forwardDictionary = null;
@@ -481,7 +481,7 @@ public final class FilterUtil {
     DictionaryChunksWrapper dictionaryWrapper = null;
     try {
       forwardDictionary =
-          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
+          getForwardDictionaryCache(tableProvider, columnExpression.getDimension());
       dictionaryWrapper = forwardDictionary.getDictionaryChunks();
       while (dictionaryWrapper.hasNext()) {
         byte[] columnVal = dictionaryWrapper.next();
@@ -989,6 +989,24 @@ public final class FilterUtil {
       return dimCarinality[carbonDimension.getKeyOrdinal()];
     }
     return -1;
+  }
+
+  /**
+   * @param tableProvider
+   * @param carbonDimension
+   * @return
+   */
+  public static Dictionary getForwardDictionaryCache(TableProvider tableProvider,
+      CarbonDimension carbonDimension) throws IOException {
+    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
+        new DictionaryColumnUniqueIdentifier(
+            tableProvider.getCarbonTable().getCarbonTableIdentifier(),
+            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType(),tableProvider);
+    CacheProvider cacheProvider = CacheProvider.getInstance();
+    Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
+        .createCache(CacheType.FORWARD_DICTIONARY, tableProvider.getCarbonTable().getStorePath());
+    // get the forward dictionary object
+    return forwardDictionaryCache.get(dictionaryColumnUniqueIdentifier);
   }
 
   /**

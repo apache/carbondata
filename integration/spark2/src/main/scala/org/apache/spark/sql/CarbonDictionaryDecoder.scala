@@ -38,6 +38,7 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnIdent
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.scan.filter.SingleTableProvider
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonRDD
@@ -70,9 +71,11 @@ case class CarbonDictionaryDecoder(
       val storePath = CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath
       val absoluteTableIdentifiers = relations.map { relation =>
         val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
-        (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
+        val tableProvider = new SingleTableProvider(carbonTable)
+        (carbonTable.getFactTableName, new AbsoluteTableIdentifier(carbonTable.getStorePath,
+          carbonTable.getCarbonTableIdentifier,
+          tableProvider))
       }.toMap
-
       if (CarbonDictionaryDecoder.isRequiredToDecode(getDictionaryColumnIds)) {
         val dataTypes = child.output.map { attr => attr.dataType }
         child.execute().mapPartitions { iter =>
@@ -247,7 +250,7 @@ case class CarbonDictionaryDecoder(
         try {
           cache.get(new DictionaryColumnUniqueIdentifier(
             atiMap(f._1).getCarbonTableIdentifier,
-            f._2, f._3.getDataType))
+            f._2, f._3.getDataType, atiMap(f._1).getTableProvider))
         } catch {
           case _: Throwable => null
         }

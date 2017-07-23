@@ -33,6 +33,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ObjectSizeCalculator;
 
@@ -76,7 +77,8 @@ public class ForwardDictionaryCache<K extends
    */
   @Override public Dictionary get(DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier)
       throws IOException {
-    return getDictionary(dictionaryColumnUniqueIdentifier);
+    return getDictionary(dictionaryColumnUniqueIdentifier,
+        dictionaryColumnUniqueIdentifier.getTableProvider());
   }
 
   /**
@@ -119,7 +121,7 @@ public class ForwardDictionaryCache<K extends
           }
           Dictionary dictionary = null;
           synchronized (lockObject) {
-            dictionary = getDictionary(uniqueIdent);
+            dictionary = getDictionary(uniqueIdent, uniqueIdent.getTableProvider());
           }
           return dictionary;
         }
@@ -192,7 +194,8 @@ public class ForwardDictionaryCache<K extends
    * @throws IOException in case memory is not sufficient to load dictionary into memory
    */
   private Dictionary getDictionary(
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) throws IOException {
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
+      TableProvider tableProvider) throws IOException {
     Dictionary forwardDictionary = null;
     // dictionary is only for primitive data type
     assert (!dictionaryColumnUniqueIdentifier.getDataType().isComplexType());
@@ -200,7 +203,8 @@ public class ForwardDictionaryCache<K extends
     ColumnDictionaryInfo columnDictionaryInfo =
         getColumnDictionaryInfo(dictionaryColumnUniqueIdentifier, columnIdentifier);
     // load sort index file in case of forward dictionary
-    checkAndLoadDictionaryData(dictionaryColumnUniqueIdentifier, columnDictionaryInfo,
+    checkAndLoadDictionaryData(tableProvider, dictionaryColumnUniqueIdentifier,
+        columnDictionaryInfo,
         getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
             CacheType.FORWARD_DICTIONARY), true);
     forwardDictionary = new ForwardDictionary(columnDictionaryInfo);
