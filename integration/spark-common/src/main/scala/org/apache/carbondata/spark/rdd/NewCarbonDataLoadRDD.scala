@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.spark.rdd
 
-import java.io.{IOException, ObjectInputStream, ObjectOutputStream}
+import java.io.{File, IOException, ObjectInputStream, ObjectOutputStream}
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
@@ -124,7 +124,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
     loadMetadataDetails: LoadMetadataDetails) {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  var storeLocation: String = ""
+  var storeLocation: Array[String] = Array[String]()
 
   def initialize(): Unit = {
     val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
@@ -144,22 +144,33 @@ class SparkPartitionLoader(model: CarbonLoadModel,
 
     // this property is used to determine whether temp location for carbon is inside
     // container temp dir or is yarn application directory.
-    val carbonUseLocalDir = CarbonProperties.getInstance()
-      .getProperty("carbon.use.local.dir", "false")
-    if (carbonUseLocalDir.equalsIgnoreCase("true")) {
-      val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
-      if (null != storeLocations && storeLocations.nonEmpty) {
-        storeLocation = storeLocations(Random.nextInt(storeLocations.length))
-      }
-      if (storeLocation == null) {
-        storeLocation = System.getProperty("java.io.tmpdir")
+    val isCarbonUseLocalDir = CarbonProperties.getInstance()
+      .getProperty("carbon.use.local.dir", "false").equalsIgnoreCase("true")
+
+    val isCarbonUseMultiDir = CarbonProperties.getInstance().isUseMultiTempDir
+
+    if (isCarbonUseLocalDir) {
+      val yarnStoreLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+
+      if (!isCarbonUseMultiDir && null != yarnStoreLocations && yarnStoreLocations.nonEmpty) {
+        // use single dir
+        storeLocation = storeLocation :+
+            (yarnStoreLocations(Random.nextInt(yarnStoreLocations.length)) + tmpLocationSuffix)
+        if (storeLocation == null || storeLocation.isEmpty) {
+          storeLocation = storeLocation :+
+              (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
+        }
+      } else {
+        // use all the yarn dirs
+        storeLocation = yarnStoreLocations.map(_ + tmpLocationSuffix)
       }
     } else {
-      storeLocation = System.getProperty("java.io.tmpdir")
+      storeLocation = storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
     }
-    storeLocation = storeLocation + '/' + System.nanoTime() + '/' + splitIndex
+    LOGGER.info("Temp location for loading data: " + storeLocation.mkString(","))
   }
 
+  private def tmpLocationSuffix = File.separator + System.nanoTime() + File.separator + splitIndex
 }
 
 /**
