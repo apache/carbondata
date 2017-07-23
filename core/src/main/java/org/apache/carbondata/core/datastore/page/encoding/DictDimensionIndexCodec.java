@@ -25,7 +25,6 @@ import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.ByteUtil;
 
@@ -63,8 +62,4 @@ public class DictDimensionIndexCodec extends IndexStorageCodec {
         DimensionType.GLOBAL_DICTIONARY);
   }
 
-  @Override
-  public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
-    return null;
-  }
 }

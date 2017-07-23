@@ -58,8 +58,7 @@ public class TableSpec {
         if (dimension.isComplex()) {
           DimensionSpec spec = new DimensionSpec(DimensionType.COMPLEX, dimension);
           dimensionSpec[dimIndex++] = spec;
-        } else if (dimension.getDataType() == DataType.TIMESTAMP ||
-            dimension.getDataType() == DataType.DATE) {
+        } else if (dimension.isDirectDictionaryEncoding()) {
           DimensionSpec spec = new DimensionSpec(DimensionType.DIRECT_DICTIONARY, dimension);
           dimensionSpec[dimIndex++] = spec;
         } else if (dimension.isGlobalDictionaryEncoding()) {

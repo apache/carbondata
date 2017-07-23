@@ -18,7 +18,9 @@
 package org.apache.carbondata.core.datastore.page.encoding;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.CarbonProperties;
 
@@ -36,6 +38,11 @@ public abstract class IndexStorageCodec implements ColumnPageCodec {
 
   @Override
   public EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
     throw new UnsupportedOperationException("internal error");
   }
 }

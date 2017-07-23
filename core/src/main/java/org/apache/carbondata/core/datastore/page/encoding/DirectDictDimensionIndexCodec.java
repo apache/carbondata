@@ -63,8 +63,4 @@ public class DirectDictDimensionIndexCodec extends IndexStorageCodec {
         DimensionType.GLOBAL_DICTIONARY);
   }
 
-  @Override
-  public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
-    return null;
-  }
 }

@@ -63,8 +63,4 @@ public class HighCardDictDimensionIndexCodec  extends IndexStorageCodec {
         DimensionType.PLAIN_VALUE);
   }
 
-  @Override
-  public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
-    return null;
-  }
 }

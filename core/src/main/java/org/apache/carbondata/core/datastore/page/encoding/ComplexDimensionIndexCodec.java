@@ -71,8 +71,4 @@ public class ComplexDimensionIndexCodec extends IndexStorageCodec {
         DimensionType.COMPLEX);
   }
 
-  @Override
-  public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
-    return null;
-  }
 }
