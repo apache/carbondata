@@ -101,6 +101,14 @@ The following DDL operations are supported in CarbonData :
 
    - All dimensions except complex datatype columns are part of multi dimensional key(MDK). This behavior can be overridden by using TBLPROPERTIES. If the user wants to keep any column (except columns of complex datatype) in multi dimensional key then he can keep the columns either in DICTIONARY_EXCLUDE or DICTIONARY_INCLUDE.
 
+   - **Sort Columns Configuration**
+
+      It is used to specify the  multi dimensional key(MDK) columns. By default MDK is composed of all dimension columns except complex datatype column. 
+
+```
+       TBLPROPERTIES ('SORT_COLUMNS'='column1, column3')
+```
+
 ### Example:
 ```
     CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
@@ -115,7 +123,8 @@ The following DDL operations are supported in CarbonData :
       STORED BY 'carbondata'
       TBLPROPERTIES ('DICTIONARY_EXCLUDE'='storeCity',
                      'DICTIONARY_INCLUDE'='productNumber',
-                     'NO_INVERTED_INDEX'='productBatch')
+                     'NO_INVERTED_INDEX'='productBatch',
+                     'SORT_COLUMNS'='productName,storeCity')
 ```
 
 ## SHOW TABLE
