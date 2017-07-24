@@ -39,6 +39,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
+import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.service.{CarbonCommonFactory, PathService}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
@@ -376,9 +377,11 @@ class CarbonGlobalDictionaryGenerateRDD(
             valuesBuffer ++= distinctValueList.values
             rowCount += distinctValueList.rowCount
             // check high cardinality
+            val primDims = model.primDimensions(split.index)
             if (model.isFirstLoad && model.highCardIdentifyEnable
                 && !model.isComplexes(split.index)
-                && model.primDimensions(split.index).isColumnar) {
+                && primDims.isColumnar
+                && (primDims.getDataType == DataType.STRING || primDims.isSortColumn)) {
               isHighCardinalityColumn = GlobalDictionaryUtil.isHighCardinalityColumn(
                 valuesBuffer.size, model)
               if (isHighCardinalityColumn) {
