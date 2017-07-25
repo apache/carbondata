@@ -64,9 +64,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()), partitionId,
             configuration.getSegmentId() + "", false);
-    for (String loc : storeLocation) {
-      new File(loc).mkdirs();
-    }
+    CarbonDataProcessorUtil.createLocations(storeLocation);
     return storeLocation;
   }
 

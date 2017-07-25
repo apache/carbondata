@@ -139,11 +139,8 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
             String.valueOf(sortParameters.getTaskNo()), bucketId,
             sortParameters.getSegmentId() + "", false);
     // Set the data file location
-    String[] dataFolderLocation = new String[storeLocation.length];
-    for (int i = 0; i < storeLocation.length; i++) {
-      dataFolderLocation[i] = storeLocation[i] + File.separator
-          + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
-    }
+    String[] dataFolderLocation = CarbonDataProcessorUtil.arrayAppend(storeLocation, File.separator,
+        CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     return new SingleThreadFinalSortFilesMerger(dataFolderLocation, sortParameters.getTableName(),
             sortParameters.getDimColCount(), sortParameters.getComplexDimColCount(),
             sortParameters.getMeasureColCount(), sortParameters.getNoDictionaryCount(),
@@ -192,12 +189,8 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
         .getLocalDataFolderLocation(parameters.getDatabaseName(),
             parameters.getTableName(), parameters.getTaskNo(),
             parameters.getPartitionID(), parameters.getSegmentId(), false);
-    String[] tmpLocs = new String[carbonDataDirectoryPath.length];
-    for (int i = 0; i < carbonDataDirectoryPath.length; i++)
-    {
-      tmpLocs[i] = carbonDataDirectoryPath[i] + File.separator
-          + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
-    }
+    String[] tmpLocs = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath, File.separator,
+        CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     parameters.setTempFileLocation(tmpLocs);
   }
 

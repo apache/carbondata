@@ -137,11 +137,7 @@ public class UnsafeSortDataRows {
     deleteSortLocationIfExists();
 
     // create new sort temp directory
-    for (String tmpLoc : parameters.getTempFileLocation()) {
-      if (!new File(tmpLoc).mkdirs()) {
-        LOGGER.info("Sort Temp Location Already Exists: " + tmpLoc);
-      }
-    }
+    CarbonDataProcessorUtil.createLocations(parameters.getTempFileLocation());
     this.dataSorterAndWriterExecutorService =
         Executors.newFixedThreadPool(parameters.getNumberOfCores());
     semaphore = new Semaphore(parameters.getNumberOfCores());
@@ -309,9 +305,7 @@ public class UnsafeSortDataRows {
    * This method will be used to delete sort temp location is it is exites
    */
   public void deleteSortLocationIfExists() {
-    for (String loc : parameters.getTempFileLocation()) {
-      CarbonDataProcessorUtil.deleteSortLocationIfExists(loc);
-    }
+    CarbonDataProcessorUtil.deleteSortLocationIfExists(parameters.getTempFileLocation());
   }
 
   /**

@@ -74,11 +74,8 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
             String.valueOf(sortParameters.getTaskNo()), sortParameters.getPartitionID(),
             sortParameters.getSegmentId() + "", false);
     // Set the data file location
-    String[] dataFolderLocations = new String[storeLocations.length];
-    for (int i = 0; i < storeLocations.length; i++) {
-      dataFolderLocations[i] = storeLocations[i]  + File.separator
-          + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
-    }
+    String[] dataFolderLocations = CarbonDataProcessorUtil.arrayAppend(storeLocations,
+        File.separator, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     finalMerger =
         new SingleThreadFinalSortFilesMerger(dataFolderLocations, sortParameters.getTableName(),
             sortParameters.getDimColCount(),

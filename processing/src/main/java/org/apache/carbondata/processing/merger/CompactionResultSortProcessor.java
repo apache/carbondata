@@ -369,11 +369,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
           noDictionarySortColumnMapping, 0, noDictionarySortColumnMapping.length);
     }
 
-    String[] sortTempFileLocation = new String[tempStoreLocation.length];
-    for (int i = 0; i < tempStoreLocation.length; i++) {
-      sortTempFileLocation[i] = tempStoreLocation[i] + CarbonCommonConstants.FILE_SEPARATOR
-          + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
-    }
+    String[] sortTempFileLocation = CarbonDataProcessorUtil.arrayAppend(tempStoreLocation,
+        CarbonCommonConstants.FILE_SEPARATOR, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     finalMerger =
         new SingleThreadFinalSortFilesMerger(sortTempFileLocation, tableName, dimensionColumnCount,
             segmentProperties.getComplexDimensions().size(), measureCount, noDictionaryCount,

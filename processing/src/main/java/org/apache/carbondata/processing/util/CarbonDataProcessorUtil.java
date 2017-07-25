@@ -146,20 +146,30 @@ public final class CarbonDataProcessorUtil {
   /**
    * This method will be used to delete sort temp location is it is exites
    */
-  public static void deleteSortLocationIfExists(String tempFileLocation) {
-    // create new temp file location where this class
-    //will write all the temp files
-    File file = new File(tempFileLocation);
-
-    if (file.exists()) {
-      try {
-        CarbonUtil.deleteFoldersAndFiles(file);
-      } catch (IOException | InterruptedException e) {
-        LOGGER.error(e);
+  public static void deleteSortLocationIfExists(String[] locations) {
+    for (String loc : locations) {
+      File file = new File(loc);
+      if (file.exists()) {
+        try {
+          CarbonUtil.deleteFoldersAndFiles(file);
+        } catch (IOException | InterruptedException e) {
+          LOGGER.error(e, "Failed to delete " + loc);
+        }
       }
     }
   }
 
+  /**
+   * This method will be used to create dirs
+   * @param locations locations to create
+   */
+  public static void createLocations(String[] locations) {
+    for (String loc : locations) {
+      if(new File(loc).mkdirs()) {
+        LOGGER.warn("Error occurs while creating dirs: " + loc);
+      }
+    }
+  }
   /**
    * This method will form the local data folder store location
    *
@@ -552,4 +562,22 @@ public final class CarbonDataProcessorUtil {
     return false;
   }
 
+  /**
+   * This method will return an array whose element with be appended with the `append` strings
+   * @param inputArr  inputArr
+   * @param append strings to append
+   * @return result
+   */
+  public static String[] arrayAppend(String[] inputArr, String... append) {
+    String[] outArr = new String[inputArr.length];
+    StringBuffer sb = new StringBuffer();
+    for (String str : append) {
+      sb.append(str);
+    }
+    String appendStr = sb.toString();
+    for (int i = 0; i < inputArr.length; i++) {
+      outArr[i] = inputArr[i] + appendStr;
+    }
+    return outArr;
+  }
 }
