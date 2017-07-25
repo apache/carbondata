@@ -37,7 +37,7 @@ public class DataLoadExecutor {
 
   private boolean isClosed;
 
-  public void execute(CarbonLoadModel loadModel, String storeLocation,
+  public void execute(CarbonLoadModel loadModel, String[] storeLocation,
       CarbonIterator<Object[]>[] inputIterators) throws Exception {
     try {
       loadProcessorStep =
