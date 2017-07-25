@@ -137,11 +137,7 @@ public final class DataLoadProcessBuilder {
 
   public static CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel,
       String[] storeLocation) {
-    for (String s : storeLocation) {
-      if (!new File(s).mkdirs()) {
-        LOGGER.error("Error while creating the temp store path: " + s);
-      }
-    }
+    CarbonDataProcessorUtil.createLocations(storeLocation);
 
     String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
