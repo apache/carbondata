@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.processing.newflow.steps;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
@@ -88,12 +87,12 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     child.initialize();
   }
 
-  private String getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
-    String storeLocation = CarbonDataProcessorUtil
+  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
+    String[] storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()), partitionId,
             configuration.getSegmentId() + "", false);
-    new File(storeLocation).mkdirs();
+    CarbonDataProcessorUtil.createLocations(storeLocation);
     return storeLocation;
   }
 
@@ -147,9 +146,10 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   }
 
   private void doExecute(Iterator<CarbonRowBatch> iterator, int partitionId, int iteratorIndex) {
-    String storeLocation = getStoreLocation(tableIdentifier, String.valueOf(partitionId));
+    String[] storeLocation = getStoreLocation(tableIdentifier, String.valueOf(partitionId));
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
-        .createCarbonFactDataHandlerModel(configuration, storeLocation, partitionId, iteratorIndex);
+        .createCarbonFactDataHandlerModel(configuration, storeLocation, partitionId,
+            iteratorIndex);
     CarbonFactHandler dataHandler = null;
     boolean rowsNotExist = true;
     while (iterator.hasNext()) {

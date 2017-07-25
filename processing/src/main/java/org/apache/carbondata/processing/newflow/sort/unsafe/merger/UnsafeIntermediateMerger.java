@@ -19,6 +19,7 @@ package org.apache.carbondata.processing.newflow.sort.unsafe.merger;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -106,8 +107,12 @@ public class UnsafeIntermediateMerger {
    * @param intermediateFiles
    */
   private void startIntermediateMerging(File[] intermediateFiles) {
+    //pick a temp location randomly
+    String[] tempFileLocations = parameters.getTempFileLocation();
+    String targetLocation = tempFileLocations[new Random().nextInt(tempFileLocations.length)];
+
     File file = new File(
-        parameters.getTempFileLocation() + File.separator + parameters.getTableName() + System
+        targetLocation + File.separator + parameters.getTableName() + System
             .nanoTime() + CarbonCommonConstants.MERGERD_EXTENSION);
     UnsafeIntermediateFileMerger merger =
         new UnsafeIntermediateFileMerger(parameters, intermediateFiles, file);

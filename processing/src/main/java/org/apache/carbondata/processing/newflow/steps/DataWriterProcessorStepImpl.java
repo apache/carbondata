@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.processing.newflow.steps;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -66,19 +65,19 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     child.initialize();
   }
 
-  private String getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
-    String storeLocation = CarbonDataProcessorUtil
+  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
+    String[] storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()), partitionId,
             configuration.getSegmentId() + "", false);
-    new File(storeLocation).mkdirs();
+    CarbonDataProcessorUtil.createLocations(storeLocation);
     return storeLocation;
   }
 
   public CarbonFactDataHandlerModel getDataHandlerModel(int partitionId) {
     CarbonTableIdentifier tableIdentifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
-    String storeLocation = getStoreLocation(tableIdentifier, String.valueOf(partitionId));
+    String[] storeLocation = getStoreLocation(tableIdentifier, String.valueOf(partitionId));
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
         .createCarbonFactDataHandlerModel(configuration, storeLocation, partitionId, 0);
     return model;
@@ -95,7 +94,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
               System.currentTimeMillis());
       int i = 0;
       for (Iterator<CarbonRowBatch> iterator : iterators) {
-        String storeLocation = getStoreLocation(tableIdentifier, String.valueOf(i));
+        String[] storeLocation = getStoreLocation(tableIdentifier, String.valueOf(i));
+
         CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
             .createCarbonFactDataHandlerModel(configuration, storeLocation, i, 0);
         CarbonFactHandler dataHandler = null;
