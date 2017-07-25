@@ -221,12 +221,16 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
     }
 
     private void setTempLocation(SortParameters parameters) {
-      String carbonDataDirectoryPath = CarbonDataProcessorUtil
+      String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
           .getLocalDataFolderLocation(parameters.getDatabaseName(),
             parameters.getTableName(), parameters.getTaskNo(), batchCount + "",
             parameters.getSegmentId(), false);
-      parameters.setTempFileLocation(
-          carbonDataDirectoryPath + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
+      String[] tempDirs = new String[carbonDataDirectoryPath.length];
+      for (int i = 0; i < carbonDataDirectoryPath.length; i++) {
+        tempDirs[i] = carbonDataDirectoryPath[i] + File.separator
+            + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
+      }
+      parameters.setTempFileLocation(tempDirs);
     }
 
     @Override public UnsafeSingleThreadFinalSortFilesMerger next() {

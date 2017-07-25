@@ -22,6 +22,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -136,8 +137,10 @@ public class UnsafeSortDataRows {
     deleteSortLocationIfExists();
 
     // create new sort temp directory
-    if (!new File(parameters.getTempFileLocation()).mkdirs()) {
-      LOGGER.info("Sort Temp Location Already Exists");
+    for (String tmpLoc : parameters.getTempFileLocation()) {
+      if (!new File(tmpLoc).mkdirs()) {
+        LOGGER.info("Sort Temp Location Already Exists: " + tmpLoc);
+      }
     }
     this.dataSorterAndWriterExecutorService =
         Executors.newFixedThreadPool(parameters.getNumberOfCores());
@@ -306,7 +309,9 @@ public class UnsafeSortDataRows {
    * This method will be used to delete sort temp location is it is exites
    */
   public void deleteSortLocationIfExists() {
-    CarbonDataProcessorUtil.deleteSortLocationIfExists(parameters.getTempFileLocation());
+    for (String loc : parameters.getTempFileLocation()) {
+      CarbonDataProcessorUtil.deleteSortLocationIfExists(loc);
+    }
   }
 
   /**
@@ -365,9 +370,12 @@ public class UnsafeSortDataRows {
         }
         if (page.isSaveToDisk()) {
           // create a new file every time
+          // create a new file and pick a temp directory randomly every time
+          String tmpDir = parameters.getTempFileLocation()[
+              new Random().nextInt(parameters.getTempFileLocation().length)];
           File sortTempFile = new File(
-              parameters.getTempFileLocation() + File.separator + parameters.getTableName() + System
-                  .nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
+              tmpDir + File.separator + parameters.getTableName()
+                  + System.nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
           writeData(page, sortTempFile);
           LOGGER.info("Time taken to sort row page with size" + page.getBuffer().getActualSize()
               + " and write is: " + (System.currentTimeMillis() - startTime));
