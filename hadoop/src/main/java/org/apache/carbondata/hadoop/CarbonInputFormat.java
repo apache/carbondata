@@ -368,8 +368,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     Boolean  isIUDTable = false;
 
     AbsoluteTableIdentifier absoluteTableIdentifier =
-              getCarbonTable(job.getConfiguration()).getAbsoluteTableIdentifier();
-    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
+            getOrCreateCarbonTable(job.getConfiguration()).getAbsoluteTableIdentifier();
+    SegmentUpdateStatusManager updateStatusManager =
+            new SegmentUpdateStatusManager(absoluteTableIdentifier);
 
     isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
 

@@ -27,7 +27,6 @@ import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.test.TestQueryExecutor
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 

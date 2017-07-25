@@ -105,7 +105,7 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     // read the schema file to get the absoluteTableIdentifier having the correct table id
     // persisted in the schema
     CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
-    setCarbonTable(configuration, carbonTable);
+    setTableInfo(configuration, carbonTable.getTableInfo());
   }
 
   private static CarbonTable getCarbonTable(Configuration configuration, String path)
