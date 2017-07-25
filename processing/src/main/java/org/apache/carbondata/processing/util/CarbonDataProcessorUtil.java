@@ -165,7 +165,7 @@ public final class CarbonDataProcessorUtil {
    */
   public static void createLocations(String[] locations) {
     for (String loc : locations) {
-      if(new File(loc).mkdirs()) {
+      if (new File(loc).mkdirs()) {
         LOGGER.warn("Error occurs while creating dirs: " + loc);
       }
     }
