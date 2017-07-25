@@ -88,12 +88,15 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     child.initialize();
   }
 
-  private String getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
-    String storeLocation = CarbonDataProcessorUtil
+  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
+    String[] storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()), partitionId,
             configuration.getSegmentId() + "", false);
-    new File(storeLocation).mkdirs();
+    for (String loc : storeLocation)
+    {
+      new File(loc).mkdirs();
+    }
     return storeLocation;
   }
 
@@ -111,9 +114,11 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       isNoDictionaryDimensionColumn =
           CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
       measureDataType = configuration.getMeasureDataType();
+      //choose a tmp location randomly
+      String[] storeLocation = getStoreLocation(tableIdentifier, String.valueOf(0));
       CarbonFactDataHandlerModel dataHandlerModel = CarbonFactDataHandlerModel
           .createCarbonFactDataHandlerModel(configuration,
-              getStoreLocation(tableIdentifier, String.valueOf(0)), 0, 0);
+              storeLocation, 0, 0);
       measureCount = dataHandlerModel.getMeasureCount();
       outputLength = measureCount + (this.noDictWithComplextCount > 0 ? 1 : 0) + 1;
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
@@ -147,9 +152,10 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   }
 
   private void doExecute(Iterator<CarbonRowBatch> iterator, int partitionId, int iteratorIndex) {
-    String storeLocation = getStoreLocation(tableIdentifier, String.valueOf(partitionId));
+    String[] storeLocation = getStoreLocation(tableIdentifier, String.valueOf(partitionId));
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
-        .createCarbonFactDataHandlerModel(configuration, storeLocation, partitionId, iteratorIndex);
+        .createCarbonFactDataHandlerModel(configuration, storeLocation, partitionId,
+            iteratorIndex);
     CarbonFactHandler dataHandler = null;
     boolean rowsNotExist = true;
     while (iterator.hasNext()) {

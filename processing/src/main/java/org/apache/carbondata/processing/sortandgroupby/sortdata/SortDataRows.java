@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -101,8 +102,10 @@ public class SortDataRows {
     deleteSortLocationIfExists();
 
     // create new sort temp directory
-    if (!new File(parameters.getTempFileLocation()).mkdirs()) {
-      LOGGER.info("Sort Temp Location Already Exists");
+    for (String loc : parameters.getTempFileLocation()) {
+      if (!new File(loc).mkdirs()) {
+        LOGGER.info("Sort Temp Location Already Exists: " + loc);
+      }
     }
     this.dataSorterAndWriterExecutorService =
         Executors.newFixedThreadPool(parameters.getNumberOfCores());
@@ -204,9 +207,11 @@ public class SortDataRows {
       }
       recordHolderList = toSort;
 
-      // create new file
+      // create new file and choose folder randomly
+      String[] tmpLocation = parameters.getTempFileLocation();
+      String locationChosen = tmpLocation[new Random().nextInt(tmpLocation.length)];
       File file = new File(
-          parameters.getTempFileLocation() + File.separator + parameters.getTableName() +
+          locationChosen + File.separator + parameters.getTableName() +
               System.nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
       writeDataTofile(recordHolderList, this.entryCount, file);
 
@@ -347,7 +352,9 @@ public class SortDataRows {
    * @throws CarbonSortKeyAndGroupByException
    */
   public void deleteSortLocationIfExists() throws CarbonSortKeyAndGroupByException {
-    CarbonDataProcessorUtil.deleteSortLocationIfExists(parameters.getTempFileLocation());
+    for (String loc : parameters.getTempFileLocation()) {
+      CarbonDataProcessorUtil.deleteSortLocationIfExists(loc);
+    }
   }
 
   /**
@@ -406,9 +413,11 @@ public class SortDataRows {
               new NewRowComparatorForNormalDims(parameters.getNumberOfSortColumns()));
         }
 
-        // create a new file every time
+        // create a new file and choose folder randomly every time
+        String[] tmpFileLocation = parameters.getTempFileLocation();
+        String locationChosen = tmpFileLocation[new Random().nextInt(tmpFileLocation.length)];
         File sortTempFile = new File(
-            parameters.getTempFileLocation() + File.separator + parameters.getTableName() + System
+            locationChosen + File.separator + parameters.getTableName() + System
                 .nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
         writeDataTofile(recordHolderArray, recordHolderArray.length, sortTempFile);
         // add sort temp filename to and arrayList. When the list size reaches 20 then

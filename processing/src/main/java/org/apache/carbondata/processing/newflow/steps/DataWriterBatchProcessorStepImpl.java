@@ -59,12 +59,14 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
     child.initialize();
   }
 
-  private String getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
-    String storeLocation = CarbonDataProcessorUtil
+  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
+    String[] storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()), partitionId,
             configuration.getSegmentId() + "", false);
-    new File(storeLocation).mkdirs();
+    for (String loc : storeLocation) {
+      new File(loc).mkdirs();
+    }
     return storeLocation;
   }
 
@@ -79,7 +81,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
               System.currentTimeMillis());
       int i = 0;
       for (Iterator<CarbonRowBatch> iterator : iterators) {
-        String storeLocation = getStoreLocation(tableIdentifier, String.valueOf(i));
+        String[] storeLocation = getStoreLocation(tableIdentifier, String.valueOf(i));
         int k = 0;
         while (iterator.hasNext()) {
           CarbonRowBatch next = iterator.next();
