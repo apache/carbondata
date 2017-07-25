@@ -40,6 +40,7 @@ import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
  * This is the Merger class responsible for the merging of the segments.
@@ -60,11 +61,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
       String tableName, SegmentProperties segProp, String[] tempStoreLocation,
       CarbonLoadModel loadModel, CompactionType compactionType) {
     this.segprop = segProp;
-    for (String temLoc : tempStoreLocation) {
-      if (!new File(temLoc).mkdirs()) {
-        LOGGER.error("Error while new File(tempStoreLocation).mkdirs() ");
-      }
-    }
+    CarbonDataProcessorUtil.createLocations(tempStoreLocation);
 
     CarbonTable carbonTable = CarbonMetadata.getInstance()
             .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);

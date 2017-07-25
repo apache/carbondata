@@ -93,10 +93,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()), partitionId,
             configuration.getSegmentId() + "", false);
-    for (String loc : storeLocation)
-    {
-      new File(loc).mkdirs();
-    }
+    CarbonDataProcessorUtil.createLocations(storeLocation);
     return storeLocation;
   }
 
@@ -114,11 +111,9 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       isNoDictionaryDimensionColumn =
           CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
       measureDataType = configuration.getMeasureDataType();
-      //choose a tmp location randomly
-      String[] storeLocation = getStoreLocation(tableIdentifier, String.valueOf(0));
       CarbonFactDataHandlerModel dataHandlerModel = CarbonFactDataHandlerModel
           .createCarbonFactDataHandlerModel(configuration,
-              storeLocation, 0, 0);
+              getStoreLocation(tableIdentifier, String.valueOf(0)), 0, 0);
       measureCount = dataHandlerModel.getMeasureCount();
       outputLength = measureCount + (this.noDictWithComplextCount > 0 ? 1 : 0) + 1;
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()

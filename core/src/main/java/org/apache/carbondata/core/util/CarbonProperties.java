@@ -855,13 +855,13 @@ public final class CarbonProperties {
    * @return boolean
    */
   public boolean isUseMultiTempDir() {
-    String usingMultiDirStr = getProperty(CarbonCommonConstants.CARBON_USING_MULTI_TEMP_DIR,
+    String usingMultiDirStr = getProperty(CarbonCommonConstants.CARBON_USE_MULTI_TEMP_DIR,
         CarbonCommonConstants.CARBON_USING_MULTI_TEMP_DIR_DEFAULT);
     boolean validateBoolean = CarbonUtil.validateBoolean(usingMultiDirStr);
     if (!validateBoolean) {
-      LOGGER.info("The using multi temp dir value \"" + usingMultiDirStr
-          + "\" is invalid. Using the default value \""
-          + CarbonCommonConstants.CARBON_USING_MULTI_TEMP_DIR_DEFAULT);
+      LOGGER.info("The carbon.use.multiple.temp.dir configuration value is invalid."
+          + "Configured value: \"" + usingMultiDirStr + "\"."
+          + "Data Load will not use multiple temp directories.");
       usingMultiDirStr = CarbonCommonConstants.CARBON_USING_MULTI_TEMP_DIR_DEFAULT;
     }
     return usingMultiDirStr.equalsIgnoreCase("true");

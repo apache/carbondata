@@ -102,11 +102,7 @@ public class SortDataRows {
     deleteSortLocationIfExists();
 
     // create new sort temp directory
-    for (String loc : parameters.getTempFileLocation()) {
-      if (!new File(loc).mkdirs()) {
-        LOGGER.info("Sort Temp Location Already Exists: " + loc);
-      }
-    }
+    CarbonDataProcessorUtil.createLocations(parameters.getTempFileLocation());
     this.dataSorterAndWriterExecutorService =
         Executors.newFixedThreadPool(parameters.getNumberOfCores());
     semaphore = new Semaphore(parameters.getNumberOfCores());
@@ -352,9 +348,7 @@ public class SortDataRows {
    * @throws CarbonSortKeyAndGroupByException
    */
   public void deleteSortLocationIfExists() throws CarbonSortKeyAndGroupByException {
-    for (String loc : parameters.getTempFileLocation()) {
-      CarbonDataProcessorUtil.deleteSortLocationIfExists(loc);
-    }
+    CarbonDataProcessorUtil.deleteSortLocationIfExists(parameters.getTempFileLocation());
   }
 
   /**
