@@ -103,7 +103,7 @@ The following DDL operations are supported in CarbonData :
 
    - **Sort Columns Configuration**
 
-      It is used to specify the  multi dimensional key(MDK) columns. By default MDK is composed of all dimension columns except complex datatype column. 
+     "SORT_COLUMN" property is for users to specify which columns belong to the MDK index. If user don't specify "SORT_COLUMN" property, by default MDK index be built by using all dimension columns except complex datatype column. 
 
 ```
        TBLPROPERTIES ('SORT_COLUMNS'='column1, column3')

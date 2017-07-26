@@ -36,7 +36,6 @@ object CarbonSortColumnsExample {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true")
 
     import org.apache.spark.sql.CarbonSession._
     val spark = SparkSession
@@ -71,7 +70,7 @@ object CarbonSortColumnsExample {
          | TBLPROPERTIES('SORT_COLUMNS'='')
        """.stripMargin)
 
-    // Create table with sort columns
+    // Create table with sort columns, currently sort_column don't support "float,double,decimal"
     spark.sql(
       s"""
          | CREATE TABLE sort_columns_table(
