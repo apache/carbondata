@@ -203,6 +203,7 @@ excessive memory usage.
 |carbon.number.of.cores.block.sort|Default: 7 | If you have huge memory and cpus, increase it as you will|
 |carbon.merge.sort.reader.thread|Default: 3 |Specifies the number of cores used for temp file merging during data loading in CarbonData.|
 |carbon.merge.sort.prefetch|Default: true | You may want set this value to false if you have not enough memory|
+| carbon.load.batch.sort.size.inmb | 0.45 * sort.inmemory.size.inmb | Size of data in mb to be processed in batch. By default it is the 45 percent size of sort.inmemory.size.inmb. User can configure the size on his wish but it is recommendable to keep it less then 45 percent of sort.inmemory.size.inmb otherwise it may start spilling the intermediate temp data to disk, so it may slow down the loading process. |  |
 
 
 For example, if there are  10 million records ,and i have only 16 cores ,64GB memory, will be loaded to CarbonData table.

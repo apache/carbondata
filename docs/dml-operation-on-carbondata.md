@@ -146,9 +146,51 @@ You can use the following options to load data:
    * If this option is set to TRUE then data loading will take less time.
 
    * If this option is set to some invalid value other than TRUE or FALSE then it uses the default value.
-   
+
    * If this option is set to TRUE, then high.cardinality.identify.enable property will be disabled during data load.
-   
+
+
+- **SORT_SCOPE:**  This property can have four possible values :
+
+    * BATCH_SORT : The sorting scope is smaller and more index tree will be created,thus loading is faster but query maybe slower.
+
+    * LOCAL_SORT : The sorting scope is bigger and one index tree per data node will be created, thus loading is slower but query is faster.
+
+    * GLOBAL_SORT : The sorting scope is bigger and one index tree per task will be created, thus loading is slower but query is faster.
+
+    * NO_SORT     : Feasible if we want to load our data in unsorted manner.
+
+     For BATCH_SORT:
+
+     ```
+     OPTIONS ('SORT_SCOPE'='BATCH_SORT')
+     ```
+     You can also specify the sort size option for sort scope.
+
+     ```
+     OPTIONS('SORT_SCOPE'='BATCH_SORT', 'batch_sort_size_inmb'='7')
+     ```
+
+    NOTE:
+
+    * batch_sort_size_inmb : Size of data in MB to be processed in batch. By default it is the 45 percent size of sort.inmemory.size.inmb(Memory size in MB available for in-memory sort).
+
+    For GLOBAL_SORT :
+
+     ```
+     OPTIONS ('SORT_SCOPE'= GLOBAL_SORT ')
+     ```
+     You can also specify the number of partitions to use when shuffling data for sort. If it is not configured, or configured less than 1, then it uses the number of map tasks as reduce tasks. It is recommended that each reduce task deal with 512MB - 1GB data.
+
+     ```
+     OPTIONS( 'SORT_SCOPE'='GLOBAL_SORT', 'GLOBAL_SORT_PARTITIONS'='2')
+     ```
+
+     NOTE:
+
+     * Increasing number of partitions might require increasing spark.driver.maxResultSize as sampling data collected at driver increases with increasing partitions.
+     * Increasing number of partitions might increase the number of Btree.
+
 ### Example:
 
 ```
@@ -342,7 +384,7 @@ SET (column_name1, column_name2,) =
 | sourceColumn | The source table column values to be updated in destination table. |
 | sourceTable | The table from which the records are updated into destination Carbon table. |
 
-NOTE: This functionality is currently not supported in Spark 2.x and will support soon.  
+NOTE: This functionality is currently not supported in Spark 2.x and will support soon.
 
 ### Usage Guidelines
 The following conditions must be met for successful updation :
@@ -417,7 +459,7 @@ DELETE FROM table_name [WHERE expression];
 |--------------|-----------------------------------------------------------------------|
 | table_name | The name of the Carbon table in which you want to perform the delete. |
 
-NOTE: This functionality is currently not supported in Spark 2.x and will support soon.  
+NOTE: This functionality is currently not supported in Spark 2.x and will support soon.
 
 ### Examples
 
