@@ -104,27 +104,33 @@ public class CarbondataPageSource implements ConnectorPageSource {
             output.appendNull();
           } else {
             Type type = types.get(column);
-            Class<?> javaType = type.getJavaType();
-            if (javaType == boolean.class) {
-              type.writeBoolean(output, cursor.getBoolean(column));
-            } else if (javaType == long.class) {
-              type.writeLong(output, cursor.getLong(column));
-            } else if (javaType == double.class) {
-              type.writeDouble(output, cursor.getDouble(column));
-            } else if (javaType == Slice.class) {
-              Slice slice = cursor.getSlice(column);
-              if(type instanceof  DecimalType)
-              {
-                if (isShortDecimal(type)) {
-                  type.writeLong(output, parseLong((DecimalType) type, slice, 0, slice.length()));
+
+            String base = type.getTypeSignature().getBase();
+            switch(base) {
+              case "varchar":
+              case "decimal": Slice slice = cursor.getSlice(column);
+                if(type instanceof  DecimalType) {
+                  if (isShortDecimal(type)) {
+                    type.writeLong(output, parseLong((DecimalType) type, slice, 0, slice.length()));
+                  } else {
+                    type.writeSlice(output, parseSlice((DecimalType) type, slice, 0, slice.length()));
+                  }
                 } else {
-                  type.writeSlice(output, parseSlice((DecimalType) type, slice, 0, slice.length()));
+                  type.writeSlice(output, slice, 0, slice.length());
                 }
-              } else {
-                type.writeSlice(output, slice, 0, slice.length());
-              }
-            } else {
-              type.writeObject(output, cursor.getObject(column));
+                break;
+              case "boolean": type.writeBoolean(output, cursor.getBoolean(column));
+                break;
+              case "smallint":
+              case "integer":
+              case "bigint":
+              case "long":
+              case "date":
+              case "timestamp":  type.writeLong(output, cursor.getLong(column));
+                break;
+              case "double": type.writeDouble(output, cursor.getDouble(column));
+                break;
+              default: type.writeObject(output, cursor.getObject(column));
             }
           }
         }
@@ -138,7 +144,7 @@ public class CarbondataPageSource implements ConnectorPageSource {
     Page page = pageBuilder.build();
     pageBuilder.reset();
     return page;
- }
+  }
 
   @Override public long getSystemMemoryUsage() {
     return cursor.getSystemMemoryUsage() + pageBuilder.getSizeInBytes();
