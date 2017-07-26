@@ -32,4 +32,8 @@ public interface SimpleStatsResult {
   int getDecimalPoint();
 
   DataType getDataType();
+
+  int getScale();
+
+  int getPrecision();
 }

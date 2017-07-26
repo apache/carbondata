@@ -18,6 +18,7 @@ package org.apache.carbondata.core.datastore.chunk.reader.measure.v3;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
@@ -226,13 +227,22 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
 
   protected ColumnPage decodeMeasure(MeasureRawColumnChunk measureRawColumnChunk,
       DataChunk2 measureColumnChunk, int copyPoint) throws MemoryException {
+    List<ByteBuffer> encoder_meta = measureColumnChunk.getEncoder_meta();
     // for measure, it should have only one ValueEncoderMeta
-    assert (measureColumnChunk.getEncoder_meta().size() == 1);
-    byte[] encodedMeta = measureColumnChunk.getEncoder_meta().get(0).array();
+    assert (encoder_meta.size() > 0);
+    byte[] encodedMeta = encoder_meta.get(0).array();
+
+    int scale = -1;
+    int precision = -1;
+    if (encoder_meta.size() > 1) {
+      ByteBuffer decimalInfo = encoder_meta.get(1);
+      scale = decimalInfo.getInt();
+      precision = decimalInfo.getInt();
+    }
 
     ColumnPageCodecMeta meta = new ColumnPageCodecMeta();
     meta.deserialize(encodedMeta);
-    ColumnPageCodec codec = strategy.newCodec(meta);
+    ColumnPageCodec codec = strategy.newCodec(meta, scale, precision);
     byte[] rawData = measureRawColumnChunk.getRawData().array();
     return codec.decode(rawData, copyPoint, measureColumnChunk.data_page_length);
   }

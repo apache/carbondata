@@ -102,6 +102,14 @@ public class VarLengthPageStatsCollector implements ColumnPageStatsCollector {
       @Override public DataType getDataType() {
         return null;
       }
+
+      @Override public int getScale() {
+        return 0;
+      }
+
+      @Override public int getPrecision() {
+        return 0;
+      }
     };
   }
 }

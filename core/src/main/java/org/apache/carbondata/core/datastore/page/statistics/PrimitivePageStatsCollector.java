@@ -32,6 +32,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   private int minInt, maxInt;
   private long minLong, maxLong;
   private double minDouble, maxDouble;
+  private int scale, precision;
 
   // scale of the double value
   private int decimal;
@@ -40,17 +41,19 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   private BitSet nullBitSet;
 
   // this is for encode flow
-  public static PrimitivePageStatsCollector newInstance(DataType dataType, int pageSize) {
+  public static PrimitivePageStatsCollector newInstance(DataType dataType, int pageSize, int
+      scale, int precision) {
     switch (dataType) {
       default:
-        return new PrimitivePageStatsCollector(dataType, pageSize);
+        return new PrimitivePageStatsCollector(dataType, pageSize, scale, precision);
     }
   }
 
   // this is for decode flow, we do not need to create nullBits, so passing 0 as pageSize
   public static PrimitivePageStatsCollector newInstance(ColumnPageCodecMeta meta) {
     PrimitivePageStatsCollector instance =
-        new PrimitivePageStatsCollector(meta.getSrcDataType(), 0);
+        new PrimitivePageStatsCollector(meta.getSrcDataType(), 0, meta.getScale(),
+            meta.getPrecision());
     // set min max from meta
     switch (meta.getSrcDataType()) {
       case BYTE:
@@ -74,13 +77,20 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         instance.maxDouble = (double) meta.getMaxValue();
         instance.decimal = meta.getDecimal();
         break;
+      case DECIMAL:
+        instance.minLong = (long) meta.getMinValue();
+        instance.maxLong = (long) meta.getMaxValue();
+        instance.decimal = meta.getDecimal();
+        instance.scale = meta.getScale();
+        instance.precision = meta.getPrecision();
+        break;
     }
     return instance;
   }
 
   public static PrimitivePageStatsCollector newInstance(ValueEncoderMeta meta) {
     PrimitivePageStatsCollector instance =
-        new PrimitivePageStatsCollector(meta.getType(), 0);
+        new PrimitivePageStatsCollector(meta.getType(), 0, meta.getScale(), meta.getPrecision());
     // set min max from meta
     switch (meta.getType()) {
       case BYTE:
@@ -104,11 +114,18 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         instance.maxDouble = (double) meta.getMaxValue();
         instance.decimal = meta.getDecimal();
         break;
+      case DECIMAL:
+        instance.minDouble = (double) meta.getMinValue();
+        instance.maxDouble = (double) meta.getMaxValue();
+        instance.decimal = meta.getDecimal();
+        instance.scale = meta.getScale();
+        instance.precision = meta.getPrecision();
+        break;
     }
     return instance;
   }
 
-  private PrimitivePageStatsCollector(DataType dataType, int pageSize) {
+  private PrimitivePageStatsCollector(DataType dataType, int pageSize, int scale, int precision) {
     this.dataType = dataType;
     this.nullBitSet = new BitSet(pageSize);
     switch (dataType) {
@@ -134,6 +151,11 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         decimal = 0;
         break;
       case DECIMAL:
+        minLong = Long.MAX_VALUE;
+        maxLong = Long.MIN_VALUE;
+        decimal = scale;
+        this.scale = scale;
+        this.precision = precision;
     }
   }
 
@@ -255,6 +277,8 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         return minLong;
       case DOUBLE:
         return minDouble;
+      case DECIMAL:
+        return minLong;
     }
     return null;
   }
@@ -272,6 +296,8 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         return maxLong;
       case DOUBLE:
         return maxDouble;
+      case DECIMAL:
+        return maxLong;
     }
     return null;
   }
@@ -289,6 +315,14 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   @Override
   public DataType getDataType() {
     return dataType;
+  }
+
+  @Override public int getScale() {
+    return scale;
+  }
+
+  @Override public int getPrecision() {
+    return precision;
   }
 
 }

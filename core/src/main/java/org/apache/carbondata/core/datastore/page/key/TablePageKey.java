@@ -68,12 +68,12 @@ public class TablePageKey {
       currentNoDictionaryKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
     }
     if (rowId == 0) {
-      startKey = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
+      startKey = WriteStepRowUtil.getMdk(row, mdkGenerator);
       noDictStartKey = currentNoDictionaryKey;
     }
     noDictEndKey = currentNoDictionaryKey;
     if (rowId == pageSize - 1) {
-      endKey = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
+      endKey = WriteStepRowUtil.getMdk(row, mdkGenerator);
       finalizeKeys();
     }
   }

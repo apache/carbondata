@@ -17,7 +17,6 @@
 package org.apache.carbondata.core.datastore.chunk.reader.measure;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.BitSet;
 import java.util.List;
 

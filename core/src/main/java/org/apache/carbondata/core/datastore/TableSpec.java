@@ -75,7 +75,8 @@ public class TableSpec {
   private void addMeasures(List<CarbonMeasure> measures) {
     for (int i = 0; i < measures.size(); i++) {
       CarbonMeasure measure = measures.get(i);
-      measureSpec[i] = new MeasureSpec(measure.getColName(), measure.getDataType());
+      measureSpec[i] = new MeasureSpec(measure.getColName(), measure.getDataType(), measure
+          .getScale(), measure.getPrecision());
     }
   }
 
@@ -95,20 +96,14 @@ public class TableSpec {
     return dimensionSpec.length;
   }
 
-    public int getScale(int index) {
-      assert (index >= 0 && index < precision.length);
-      return scale[index];
-    }
+  /**
+   * return number of measures
+   */
+  public int getNumMeasures() {
+    return measureSpec.length;
+  }
 
-    public int getPrecision(int index) {
-      assert (index >= 0 && index < precision.length);
-      return precision[index];
-    }/**
-     * return number of measures
-     */
-    public int getNumMeasures() {
-      return measureSpec.length;
-    }public class ColumnSpec {
+  public class ColumnSpec {
     // field name of this column
     private String fieldName;
 
@@ -162,8 +157,21 @@ public class TableSpec {
 
   public class MeasureSpec extends ColumnSpec {
 
-    MeasureSpec(String fieldName, DataType dataType) {
+    private int scale;
+    private int precision;
+
+    MeasureSpec(String fieldName, DataType dataType, int scale, int precision) {
       super(fieldName, dataType);
+      this.scale = scale;
+      this.precision = precision;
+    }
+
+    public int getScale() {
+      return scale;
+    }
+
+    public int getPrecision() {
+      return precision;
     }
   }
 }

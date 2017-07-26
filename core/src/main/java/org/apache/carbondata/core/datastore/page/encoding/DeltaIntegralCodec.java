@@ -87,7 +87,8 @@ public class DeltaIntegralCodec extends AdaptiveCompressionCodec {
 
   @Override
   public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
-    ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
+    ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length,
+        stats.getScale(), stats.getPrecision());
     return LazyColumnPage.newPage(page, codec);
   }
 

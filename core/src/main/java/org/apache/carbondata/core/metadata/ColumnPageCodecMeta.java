@@ -57,6 +57,8 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
     meta.setMaxValue(stats.getMax());
     meta.setMinValue(stats.getMin());
     meta.setDecimal(stats.getDecimalPoint());
+    meta.setScale(stats.getScale());
+    meta.setPrecision(stats.getPrecision());
     return meta;
   }
 
@@ -169,8 +171,17 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
         buffer.putDouble((Double) 0d); // unique value is obsoleted, maintain for compatibility
         break;
       case DECIMAL:
-        buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + 3);
+        buffer = ByteBuffer.allocate(
+            (CarbonCommonConstants.LONG_SIZE_IN_BYTE * 3) + (CarbonCommonConstants
+                .INT_SIZE_IN_BYTE * 3)
+                + 3);
         buffer.putChar(getSrcDataTypeInChar());
+        buffer.putLong((Long) getMaxValue());
+        buffer.putLong((Long) getMinValue());
+        buffer.putLong((Long) 0L); // unique value is obsoleted, maintain for compatibility
+        buffer.putInt(getScale());
+        buffer.putInt(getPrecision());
+
         break;
     }
     buffer.putInt(getDecimal());
@@ -190,8 +201,11 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
         buffer.getDouble(); // for non exist value which is obsoleted, it is backward compatibility;
         break;
       case BIG_DECIMAL_MEASURE:
-        this.setMaxValue(0.0);
-        this.setMinValue(0.0);
+        this.setMaxValue(buffer.getLong());
+        this.setMinValue(buffer.getLong());
+        buffer.getLong();
+        this.setScale(buffer.getInt());
+        this.setPrecision(buffer.getInt());
         break;
       case BYTE_VALUE_MEASURE:
         this.setMaxValue(buffer.get());

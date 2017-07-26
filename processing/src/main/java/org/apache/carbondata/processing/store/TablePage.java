@@ -47,7 +47,6 @@ import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.spark.sql.types.Decimal;
 
@@ -82,13 +81,13 @@ public class TablePage {
     int numDictDimension = model.getMDKeyGenerator().getDimCount();
     dictDimensionPages = new ColumnPage[numDictDimension];
     for (int i = 0; i < dictDimensionPages.length; i++) {
-      ColumnPage page = ColumnPage.newPage(DataType.BYTE_ARRAY, pageSize);
+      ColumnPage page = ColumnPage.newPage(DataType.BYTE_ARRAY, pageSize, -1, -1);
       page.setStatsCollector(VarLengthPageStatsCollector.newInstance());
       dictDimensionPages[i] = page;
     }
     noDictDimensionPages = new ColumnPage[model.getNoDictionaryCount()];
     for (int i = 0; i < noDictDimensionPages.length; i++) {
-      ColumnPage page = ColumnPage.newPage(DataType.BYTE_ARRAY, pageSize);
+      ColumnPage page = ColumnPage.newPage(DataType.BYTE_ARRAY, pageSize, -1, -1);
       page.setStatsCollector(VarLengthPageStatsCollector.newInstance());
       noDictDimensionPages[i] = page;
     }
@@ -100,11 +99,12 @@ public class TablePage {
     }
     measurePage = new ColumnPage[model.getMeasureCount()];
     DataType[] dataTypes = model.getMeasureDataType();
-    TableSpec.MeasureSpec measureSpec = model.getTableSpec().getMeasureSpec();
     for (int i = 0; i < measurePage.length; i++) {
+      TableSpec.MeasureSpec measureSpec = model.getTableSpec().getMeasureSpec(i);
       ColumnPage page = ColumnPage
-          .newPage(dataTypes[i], pageSize, measureSpec.getScale(i), measureSpec.getPrecision(i));
-      page.setStatsCollector(PrimitivePageStatsCollector.newInstance(dataTypes[i], pageSize));
+          .newPage(dataTypes[i], pageSize, measureSpec.getScale(), measureSpec.getPrecision());
+      page.setStatsCollector(PrimitivePageStatsCollector.newInstance(dataTypes[i], pageSize,
+          measureSpec.getScale(), measureSpec.getPrecision()));
       measurePage[i] = page;
     }
     boolean hasNoDictionary = noDictDimensionPages.length > 0;

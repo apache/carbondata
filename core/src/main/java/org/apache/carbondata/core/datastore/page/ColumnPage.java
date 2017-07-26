@@ -59,8 +59,6 @@ public abstract class ColumnPage {
     this.pageSize = pageSize;
     this.scale = scale;
     this.precision = precision;
-    this.stats = new ColumnPageStatsVO(dataType);
-    this.nullBitSet = new BitSet(pageSize);
     if (dataType == DECIMAL) {
       decimalConverter = DecimalConverterFactory.INSTANCE.getDecimalConverter(precision, scale);
     }
@@ -184,7 +182,7 @@ public abstract class ColumnPage {
           instance = newDecimalPage(new byte[pageSize][], scale, precision);
           break;
         case BYTE_ARRAY:
-          instance = new SafeVarLengthColumnPage(dataType, pageSize);
+          instance = new SafeVarLengthColumnPage(dataType, pageSize, scale, precision);
           break;
         default:
           throw new RuntimeException("Unsupported data dataType: " + dataType);
@@ -328,6 +326,7 @@ public abstract class ColumnPage {
         break;
       case DECIMAL:
         putDecimal(rowId, (BigDecimal) value);
+        statsCollector.update(((BigDecimal) value).unscaledValue().longValue());
         break;
       case BYTE_ARRAY:
         putBytes(rowId, (byte[]) value);

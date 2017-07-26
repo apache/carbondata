@@ -76,7 +76,7 @@ public abstract class EncodingStrategy {
           throw new RuntimeException("unsupported data type: " + stats.getDataType());
       }
     } else {
-      SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(meta, scale, precision);
+      SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(meta);
       switch (meta.getType()) {
         case BYTE:
         case SHORT:
