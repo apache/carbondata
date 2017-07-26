@@ -187,7 +187,10 @@ public final class CarbonDataProcessorUtil {
     String baseTempStorePath = CarbonProperties.getInstance()
         .getProperty(tempLocationKey);
     if (baseTempStorePath == null) {
-      LOGGER.warn("Location not set for the key " + tempLocationKey);
+      LOGGER.warn("Location not set for the key " + tempLocationKey
+          + ". This will occur during a global-sort loading,"
+          + " in this case local dirs will be chosen by spark");
+      baseTempStorePath = "./store.location";
     }
 
     String[] baseTmpStorePathArray = StringUtils.split(baseTempStorePath, File.pathSeparator);
