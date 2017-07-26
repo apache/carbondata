@@ -280,7 +280,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       if (null != partitionInfo) {
         Partitioner partitioner = PartitionUtil.getPartitioner(partitionInfo);
         matchedPartitions = new FilterExpressionProcessor()
-            .getFilteredPartitions(filter, partitionInfo, partitioner);
+            .getFilteredPartitions(filter, partitionInfo);
         if (matchedPartitions.cardinality() == 0) {
           // no partition is required
           return new ArrayList<InputSplit>();

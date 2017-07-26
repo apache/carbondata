@@ -35,6 +35,10 @@ public class DataMapRowImpl extends DataMapRow {
     return (byte[]) data[ordinal];
   }
 
+  @Override public int getLengthInBytes(int ordinal) {
+    return ((byte[]) data[ordinal]).length;
+  }
+
   @Override public DataMapRow getRow(int ordinal) {
     return (DataMapRow) data[ordinal];
   }

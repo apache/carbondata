@@ -55,6 +55,31 @@ public class UnsafeDataMapRow extends DataMapRow {
     return data;
   }
 
+  @Override public int getLengthInBytes(int ordinal) {
+    int length;
+    int position = getPosition(ordinal);
+    switch (schemas[ordinal].getSchemaType()) {
+      case VARIABLE:
+        length = unsafe.getShort(block.getBaseObject(), block.getBaseOffset() + pointer + position);
+        break;
+      default:
+        length = schemas[ordinal].getLength();
+    }
+    return length;
+  }
+
+  private int getLengthInBytes(int ordinal, int position) {
+    int length;
+    switch (schemas[ordinal].getSchemaType()) {
+      case VARIABLE:
+        length = unsafe.getShort(block.getBaseObject(), block.getBaseOffset() + pointer + position);
+        break;
+      default:
+        length = schemas[ordinal].getLength();
+    }
+    return length;
+  }
+
   @Override public DataMapRow getRow(int ordinal) {
     DataMapSchema[] childSchemas =
         ((DataMapSchema.StructDataMapSchema) schemas[ordinal]).getChildSchemas();
@@ -123,10 +148,23 @@ public class UnsafeDataMapRow extends DataMapRow {
     throw new UnsupportedOperationException("Not supported to set on unsafe row");
   }
 
+  private int getSizeInBytes(int ordinal, int position) {
+    switch (schemas[ordinal].getSchemaType()) {
+      case FIXED:
+        return schemas[ordinal].getLength();
+      case VARIABLE:
+        return getLengthInBytes(ordinal, position) + 2;
+      case STRUCT:
+        return getRow(ordinal).getTotalSizeInBytes();
+      default:
+        throw new UnsupportedOperationException("wrong type");
+    }
+  }
+
   private int getPosition(int ordinal) {
     int position = 0;
     for (int i = 0; i < ordinal; i++) {
-      position += getSizeInBytes(i);
+      position += getSizeInBytes(i, position);
     }
     return position;
   }
