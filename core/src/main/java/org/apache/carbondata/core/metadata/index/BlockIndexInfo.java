@@ -43,6 +43,10 @@ public class BlockIndexInfo {
    * to store min max and start and end key
    */
   private BlockletIndex blockletIndex;
+  /**
+   * no of blocklet within a block
+   */
+  private int numberOfBlocklet;
 
   /**
    * Constructor
@@ -51,13 +55,15 @@ public class BlockIndexInfo {
    * @param fileName      full qualified name
    * @param offset        offset of the metadata in data file
    * @param blockletIndex block let index
+   * @param numberOfBlocklet number of blocklet
    */
   public BlockIndexInfo(long numberOfRows, String fileName, long offset,
-      BlockletIndex blockletIndex) {
+      BlockletIndex blockletIndex, int numberOfBlocklet) {
     this.numberOfRows = numberOfRows;
     this.fileName = fileName;
     this.offset = offset;
     this.blockletIndex = blockletIndex;
+    this.numberOfBlocklet = numberOfBlocklet;
   }
 
   /**
@@ -86,5 +92,13 @@ public class BlockIndexInfo {
    */
   public BlockletIndex getBlockletIndex() {
     return blockletIndex;
+  }
+
+  /**
+   *
+   * @return the number of blocklet
+   */
+  public int getNumberOfBlocklet() {
+    return numberOfBlocklet;
   }
 }

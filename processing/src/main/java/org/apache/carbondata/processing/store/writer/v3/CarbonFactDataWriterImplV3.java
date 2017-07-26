@@ -259,7 +259,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
       long currentPosition = channel.size();
       // get thrift file footer instance
       FileFooter3 convertFileMeta = CarbonMetadataUtil
-          .convertFileFooterVersion3(blockletMetadata, blockletIndex, localCardinality,
+          .convertFileFooterVersion3(blockletMetadata, blockletIndexList, localCardinality,
               thriftColumnSchemaList.size());
       // fill the carbon index details
       fillBlockIndexInfoDetails(convertFileMeta.getNum_rows(), carbonDataFileName, currentPosition);
@@ -452,7 +452,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     } catch (IOException e) {
       throw new CarbonDataWriterException("Problem while writing the data", e);
     }
-    blockletIndex.add(CarbonMetadataUtil
+    blockletIndexList.add(CarbonMetadataUtil
         .getBlockletIndex(nodeHolderList, dataWriterVo.getSegmentProperties().getMeasures()));
     BlockletInfo3 blockletInfo3 =
         new BlockletInfo3(numberOfRows, currentDataChunksOffset, currentDataChunksLength,
@@ -469,19 +469,19 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
    */
   protected void fillBlockIndexInfoDetails(long numberOfRows, String carbonDataFileName,
       long currentPosition) {
-    byte[][] currentMinValue = new byte[blockletIndex.get(0).min_max_index.max_values.size()][];
-    byte[][] currentMaxValue = new byte[blockletIndex.get(0).min_max_index.max_values.size()][];
+    byte[][] currentMinValue = new byte[blockletIndexList.get(0).min_max_index.max_values.size()][];
+    byte[][] currentMaxValue = new byte[blockletIndexList.get(0).min_max_index.max_values.size()][];
     for (int i = 0; i < currentMaxValue.length; i++) {
-      currentMinValue[i] = blockletIndex.get(0).min_max_index.getMin_values().get(i).array();
-      currentMaxValue[i] = blockletIndex.get(0).min_max_index.getMax_values().get(i).array();
+      currentMinValue[i] = blockletIndexList.get(0).min_max_index.getMin_values().get(i).array();
+      currentMaxValue[i] = blockletIndexList.get(0).min_max_index.getMax_values().get(i).array();
     }
     byte[] minValue = null;
     byte[] maxValue = null;
     int measureStartIndex = currentMinValue.length - dataWriterVo.getMeasureCount();
-    for (int i = 1; i < blockletIndex.size(); i++) {
+    for (int i = 1; i < blockletIndexList.size(); i++) {
       for (int j = 0; j < measureStartIndex; j++) {
-        minValue = blockletIndex.get(i).min_max_index.getMin_values().get(j).array();
-        maxValue = blockletIndex.get(i).min_max_index.getMax_values().get(j).array();
+        minValue = blockletIndexList.get(i).min_max_index.getMin_values().get(j).array();
+        maxValue = blockletIndexList.get(i).min_max_index.getMax_values().get(j).array();
         if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMinValue[j], minValue) > 0) {
           currentMinValue[j] = minValue.clone();
         }
@@ -491,8 +491,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
       }
       int measureIndex = 0;
       for (int j = measureStartIndex; j < currentMinValue.length; j++) {
-        minValue = blockletIndex.get(i).min_max_index.getMin_values().get(j).array();
-        maxValue = blockletIndex.get(i).min_max_index.getMax_values().get(j).array();
+        minValue = blockletIndexList.get(i).min_max_index.getMin_values().get(j).array();
+        maxValue = blockletIndexList.get(i).min_max_index.getMax_values().get(j).array();
 
         if (CarbonMetadataUtil.compareMeasureData(currentMinValue[j], minValue,
             dataWriterVo.getSegmentProperties().getMeasures().get(measureIndex).getDataType())
@@ -508,15 +508,16 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
       }
     }
     BlockletBTreeIndex btree =
-        new BlockletBTreeIndex(blockletIndex.get(0).b_tree_index.getStart_key(),
-            blockletIndex.get(blockletIndex.size() - 1).b_tree_index.getEnd_key());
+        new BlockletBTreeIndex(blockletIndexList.get(0).b_tree_index.getStart_key(),
+            blockletIndexList.get(blockletIndexList.size() - 1).b_tree_index.getEnd_key());
     BlockletMinMaxIndex minmax = new BlockletMinMaxIndex();
     minmax.setMinValues(currentMinValue);
     minmax.setMaxValues(currentMaxValue);
     org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex blockletIndex =
         new org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex(btree, minmax);
     BlockIndexInfo blockIndexInfo =
-        new BlockIndexInfo(numberOfRows, carbonDataFileName, currentPosition, blockletIndex);
+        new BlockIndexInfo(numberOfRows, carbonDataFileName, currentPosition, blockletIndex,
+            blockletIndexList.size());
     blockIndexInfoList.add(blockIndexInfo);
   }
 

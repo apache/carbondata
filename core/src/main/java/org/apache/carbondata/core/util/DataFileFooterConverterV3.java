@@ -28,6 +28,7 @@ import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonFooterReaderV3;
 import org.apache.carbondata.core.reader.CarbonHeaderReader;
+import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.format.FileHeader;
 
@@ -143,5 +144,14 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     return numberOfDimensionColumns;
   }
 
+  /**
+   * the methods returns the number of Blocklet in a block
+   *
+   * @param readBlockIndexInfo
+   * @return
+   */
+  @Override protected int getBlockletSize(BlockIndex readBlockIndexInfo) {
+    return readBlockIndexInfo.getNum_blocklet();
+  }
 }
 

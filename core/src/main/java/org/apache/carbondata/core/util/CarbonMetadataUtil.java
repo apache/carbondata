@@ -654,6 +654,7 @@ public class CarbonMetadataUtil {
       blockIndex.setOffset(blockIndexInfo.getOffset());
       blockIndex.setFile_name(blockIndexInfo.getFileName());
       blockIndex.setBlock_index(getBlockletIndex(blockIndexInfo.getBlockletIndex()));
+      blockIndex.setNum_blocklet(blockIndexInfo.getNumberOfBlocklet());
       thriftBlockIndexList.add(blockIndex);
     }
     return thriftBlockIndexList;

@@ -128,16 +128,20 @@ public abstract class AbstractDataFileFooterConverter {
    * @return
    */
   protected int getBlockletSize(BlockIndex readBlockIndexInfo) {
-    long num_rows = readBlockIndexInfo.getNum_rows();
-    int blockletSize = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
-    int remainder = (int) (num_rows % blockletSize);
-    int noOfBlockLet = (int) (num_rows / blockletSize);
-    // there could be some blocklets which will not
-    // contain the total records equal to the blockletSize
-    if (remainder > 0) {
-      noOfBlockLet = noOfBlockLet + 1;
+    int noOfBlockLet = readBlockIndexInfo.getNum_blocklet();
+    // to maintain the backward compatibility for V1 and V2 format
+    if (noOfBlockLet == 0) {
+      long num_rows = readBlockIndexInfo.getNum_rows();
+      int blockletSize = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+              CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
+      int remainder = (int) (num_rows % blockletSize);
+      noOfBlockLet = (int) (num_rows / blockletSize);
+      // there could be some blocklets which will not
+      // contain the total records equal to the blockletSize
+      if (remainder > 0) {
+        noOfBlockLet = noOfBlockLet + 1;
+      }
     }
     return noOfBlockLet;
   }
