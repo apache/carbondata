@@ -99,5 +99,19 @@ carbondata files.
   ```
   Replace the hostname, port and schema name with your own.
 
+### Running Presto Example
+
+Please follow the steps given below in the sequential order to run the presto example with CarbonData
+
+* Execute the following class : CarbonDataFactory
+
+  (located at examples/spark2/src/main/scala/org/apache/carbondata/examples/CarbonDataFactory.scala )
+
+* Execute the example by running : PrestoClientRunner
+
+  (located at integration/presto/src/main/scala/org/apache/carbondata/presto/PrestoClientRunner.scala )
+
+
+
 
 
