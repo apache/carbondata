@@ -70,7 +70,9 @@ object CarbonSortColumnsExample {
          | TBLPROPERTIES('SORT_COLUMNS'='')
        """.stripMargin)
 
-    // Create table with sort columns, currently sort_column don't support "float,double,decimal"
+    // Create table with sort columns
+    // Currently sort_column don't support "FLOAD, DOUBLE, DECIMAL"
+    // but can support other numeric type(like: INT, LONG) 
     spark.sql(
       s"""
          | CREATE TABLE sort_columns_table(
