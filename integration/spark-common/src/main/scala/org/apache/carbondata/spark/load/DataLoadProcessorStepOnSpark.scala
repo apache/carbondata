@@ -154,7 +154,7 @@ object DataLoadProcessorStepOnSpark {
 
     try {
       model = modelBroadcast.value.getCopyWithTaskNo(index.toString)
-      val storeLocation = getTempStoreLocation(index)
+      val storeLocation = Array(getTempStoreLocation(index))
       val conf = DataLoadProcessBuilder.createConfiguration(model, storeLocation)
 
       tableName = model.getTableName

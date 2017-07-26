@@ -304,7 +304,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   public void initialise() throws CarbonDataWriterException {
     fileManager = new FileManager();
-    fileManager.setName(new File(model.getStoreLocation()).getName());
+    // todo: the fileManager seems to be useless, remove it later
+    fileManager.setName(new File(model.getStoreLocation()[0]).getName());
     setWritingConfiguration();
   }
 

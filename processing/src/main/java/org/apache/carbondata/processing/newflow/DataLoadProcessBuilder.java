@@ -47,6 +47,8 @@ import org.apache.carbondata.processing.newflow.steps.InputProcessorStepImpl;
 import org.apache.carbondata.processing.newflow.steps.SortProcessorStepImpl;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * It builds the pipe line of steps for loading data to carbon.
  */
@@ -55,7 +57,7 @@ public final class DataLoadProcessBuilder {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataLoadProcessBuilder.class.getName());
 
-  public AbstractDataLoadProcessorStep build(CarbonLoadModel loadModel, String storeLocation,
+  public AbstractDataLoadProcessorStep build(CarbonLoadModel loadModel, String[] storeLocation,
       CarbonIterator[] inputIterators) throws Exception {
     CarbonDataLoadConfiguration configuration = createConfiguration(loadModel, storeLocation);
     SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
@@ -134,17 +136,16 @@ public final class DataLoadProcessBuilder {
   }
 
   public static CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel,
-      String storeLocation) {
-    if (!new File(storeLocation).mkdirs()) {
-      LOGGER.error("Error while creating the temp store path: " + storeLocation);
-    }
+      String[] storeLocation) {
+    CarbonDataProcessorUtil.createLocations(storeLocation);
 
     String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
     String tempLocationKey = CarbonDataProcessorUtil
         .getTempStoreLocationKey(databaseName, tableName, loadModel.getSegmentId(),
             loadModel.getTaskNo(), false);
-    CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation);
+    CarbonProperties.getInstance().addProperty(tempLocationKey,
+        StringUtils.join(storeLocation, File.pathSeparator));
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, loadModel.getStorePath());
 
