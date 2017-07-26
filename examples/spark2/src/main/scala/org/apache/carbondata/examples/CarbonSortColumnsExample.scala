@@ -72,7 +72,7 @@ object CarbonSortColumnsExample {
 
     // Create table with sort columns
     // Currently sort_column don't support "FLOAD, DOUBLE, DECIMAL"
-    // but can support other numeric type(like: INT, LONG) 
+    // but can support other numeric type(like: INT, LONG)
     spark.sql(
       s"""
          | CREATE TABLE sort_columns_table(
