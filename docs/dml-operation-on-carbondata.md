@@ -268,7 +268,7 @@ SHOW SEGMENTS FOR Table [db_name.]table_name LIMIT number_of_segments
 After you retrieve the segment ID of the segment that you want to delete, execute the following command to delete the selected segment.
 
 ```
-DELETE FROM TABLE [db_name.]table_name WERE SEGMENT.ID IN (segment_id1, segments_id2, ....)
+DELETE FROM TABLE [db_name.]table_name WHERE SEGMENT.ID IN (segment_id1, segments_id2, ....)
 ```
 
 ### Parameter Description
