@@ -160,7 +160,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
         dataHandler.closeHandler();
       } catch (CarbonDataWriterException e) {
         LOGGER.error(e, e.getMessage());
-        throw new CarbonDataLoadingException(e.getMessage());
+        throw new CarbonDataLoadingException(e.getMessage(), e);
       } catch (Exception e) {
         LOGGER.error(e, e.getMessage());
         throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage());
