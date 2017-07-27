@@ -307,6 +307,25 @@ public class CarbonInputSplit extends FileSplit
     return 0;
   }
 
+  /**
+   * equals override to fulfill the compareTo contract
+   * @param obj
+   * @return
+   */
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (!(obj instanceof CarbonInputSplit)) {
+      return false;
+    }
+    CarbonInputSplit other = (CarbonInputSplit) obj;
+    return this.compareTo(other) == 0;
+  }
+
   @Override public String getBlockPath() {
     return getPath().getName();
   }

@@ -597,10 +597,8 @@ public class CarbonMetadataUtil {
 
       listOfNodeInfo.get(i).setStartKey(bTreeIndexList.getStart_key());
       listOfNodeInfo.get(i).setEndKey(bTreeIndexList.getEnd_key());
-      byte[][] min = new byte[minMaxIndexList.getMin_values().size()][];
       byte[][] max = new byte[minMaxIndexList.getMax_values().size()][];
       for (int j = 0; j < minMaxIndexList.getMax_valuesSize(); j++) {
-        min[j] = minMaxIndexList.getMin_values().get(j).array();
         max[j] = minMaxIndexList.getMax_values().get(j).array();
       }
       listOfNodeInfo.get(i).setColumnMaxData(max);

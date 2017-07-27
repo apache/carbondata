@@ -31,7 +31,9 @@ import org.apache.hadoop.fs.RemoteIterator;
  */
 public class Blocklet implements Serializable {
 
-  private Path path;
+  private static final long serialVersionUID = 7483063116325388460L;
+
+  private String path;
 
   private String segmentId;
 

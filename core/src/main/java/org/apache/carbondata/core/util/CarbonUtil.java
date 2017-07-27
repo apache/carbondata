@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -723,6 +724,9 @@ public final class CarbonUtil {
   }
 
   private static boolean checkIfPrefixExists(String path) {
+    if (null == path) {
+      return false;
+    }
     final String lowerPath = path.toLowerCase();
     return lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) || lowerPath
         .startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) || lowerPath
@@ -1067,7 +1071,7 @@ public final class CarbonUtil {
   public static byte[] packByteBufferIntoSingleByteArray(ByteBuffer[] byteBufferArr) {
     // for empty array means there is no data to remove dictionary.
     if (null == byteBufferArr || byteBufferArr.length == 0) {
-      return null;
+      return new byte[0];
     }
     int noOfCol = byteBufferArr.length;
     short offsetLen = (short) (noOfCol * 2);
@@ -1691,7 +1695,7 @@ public final class CarbonUtil {
     if (sortScope == null) {
       return false;
     }
-    switch (sortScope.toUpperCase()) {
+    switch (sortScope.toUpperCase(Locale.ENGLISH)) {
       case "BATCH_SORT":
         return true;
       case "LOCAL_SORT":
