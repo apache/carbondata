@@ -84,7 +84,7 @@ public class DictionaryClient {
   /**
    * shutdown dictionary client
    */
-  public void shutDown() {
+  public void shutdown() {
     workerGroup.shutdownGracefully();
     try {
       workerGroup.terminationFuture().sync();

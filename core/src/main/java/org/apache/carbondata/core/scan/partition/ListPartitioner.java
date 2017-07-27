@@ -31,6 +31,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
  */
 public class ListPartitioner implements Partitioner {
 
+  private static final long serialVersionUID = 7510031224032317118L;
   private SimpleDateFormat timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
           CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));

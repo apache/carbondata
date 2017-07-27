@@ -310,6 +310,8 @@ public class SortDataRows {
                 stream.writeInt(bigDecimalInBytes.length);
                 stream.write(bigDecimalInBytes);
                 break;
+              default:
+                throw new RuntimeException("Unsupported data type: " + type[mesCount].getName());
             }
           } else {
             stream.write((byte) 0);

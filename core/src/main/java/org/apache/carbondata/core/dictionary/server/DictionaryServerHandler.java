@@ -98,9 +98,6 @@ public class DictionaryServerHandler extends ChannelInboundHandlerAdapter {
         return 0;
       case SIZE :
         return generatorForServer.size(key);
-      case WRITE_DICTIONARY :
-        generatorForServer.writeDictionaryData();
-        return 0;
       case WRITE_TABLE_DICTIONARY:
         generatorForServer.writeTableDictionaryData(key.getTableUniqueName());
         return 0;

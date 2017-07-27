@@ -27,6 +27,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
  */
 public class DataField implements Serializable {
 
+  private static final long serialVersionUID = -6459671311757046958L;
+
   public DataField(CarbonColumn column) {
     this.column = column;
   }

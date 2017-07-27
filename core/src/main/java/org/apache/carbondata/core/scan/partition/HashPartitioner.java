@@ -22,6 +22,7 @@ package org.apache.carbondata.core.scan.partition;
  */
 public class HashPartitioner implements Partitioner {
 
+  private static final long serialVersionUID = -6944753141066207033L;
   private int numPartitions = 0;
 
   public HashPartitioner(int numPartitions) {

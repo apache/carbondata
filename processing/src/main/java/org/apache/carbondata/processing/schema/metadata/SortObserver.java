@@ -20,6 +20,8 @@ package org.apache.carbondata.processing.schema.metadata;
 import java.io.Serializable;
 
 public class SortObserver implements Serializable {
+
+  private static final long serialVersionUID = 115073338205895924L;
   /**
    * is failed
    */

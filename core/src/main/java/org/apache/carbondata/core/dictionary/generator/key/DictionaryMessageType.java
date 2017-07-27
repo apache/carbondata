@@ -24,8 +24,7 @@ public enum DictionaryMessageType {
   DICT_GENERATION((byte) 1),
   TABLE_INTIALIZATION((byte) 2),
   SIZE((byte) 3),
-  WRITE_DICTIONARY((byte) 4),
-  WRITE_TABLE_DICTIONARY((byte) 5);
+  WRITE_TABLE_DICTIONARY((byte) 4);
 
   final byte type;
 

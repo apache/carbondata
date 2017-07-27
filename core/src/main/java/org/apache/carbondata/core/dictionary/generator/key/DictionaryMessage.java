@@ -116,7 +116,7 @@ public class DictionaryMessage {
       case 3:
         return DictionaryMessageType.SIZE;
       case 4:
-        return DictionaryMessageType.WRITE_DICTIONARY;
+        return DictionaryMessageType.WRITE_TABLE_DICTIONARY;
       default:
         return DictionaryMessageType.DICT_GENERATION;
     }

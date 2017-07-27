@@ -19,7 +19,6 @@ package org.apache.carbondata.core.scan.filter.resolver.resolverinfo.visitor;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
@@ -28,8 +27,7 @@ import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
-public class RangeDictionaryColumnVisitor extends DictionaryColumnVisitor
-    implements ResolvedFilterInfoVisitorIntf {
+public class RangeDictionaryColumnVisitor extends DictionaryColumnVisitor {
   /**
    * This Visitor method is used to populate the visitableObj with direct dictionary filter details
    * where the filters values will be resolve using dictionary cache.
@@ -44,12 +42,11 @@ public class RangeDictionaryColumnVisitor extends DictionaryColumnVisitor
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException, IOException {
     DimColumnFilterInfo resolvedFilterObject = null;
-    List<String> evaluateResultListFinal;
     resolvedFilterObject = FilterUtil
         .getFilterListForAllValues(metadata.getTableIdentifier(), metadata.getExpression(),
             metadata.getColumnExpression(), metadata.isIncludeFilter());
 
-    if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
+    if (!metadata.isIncludeFilter()) {
       // Adding default surrogate key of null member inorder to not display the same while
       // displaying the report as per hive compatibility.
       resolvedFilterObject.getFilterList()

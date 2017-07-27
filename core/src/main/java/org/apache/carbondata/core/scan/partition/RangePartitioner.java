@@ -33,6 +33,7 @@ import org.apache.carbondata.core.util.comparator.SerializableComparator;
  */
 public class RangePartitioner implements Partitioner {
 
+  private static final long serialVersionUID = -8654667328010689447L;
   private int numPartitions;
   private Object[] bounds;
   private SerializableComparator comparator;

@@ -39,6 +39,8 @@ public class SessionParams implements Serializable {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CacheProvider.class.getName());
 
+  private static final long serialVersionUID = -2189873569139905726L;
+
   private Map<String, String> sProps;
 
   public SessionParams() {

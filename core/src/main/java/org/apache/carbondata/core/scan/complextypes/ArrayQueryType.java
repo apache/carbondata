@@ -30,8 +30,6 @@ import org.apache.spark.sql.types.*;
 
 public class ArrayQueryType extends ComplexQueryType implements GenericQueryType {
 
-  private GenericQueryType children;
-
   public ArrayQueryType(String name, String parentname, int blockIndex) {
     super(name, parentname, blockIndex);
   }

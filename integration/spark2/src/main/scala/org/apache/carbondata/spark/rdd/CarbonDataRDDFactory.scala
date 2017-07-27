@@ -908,7 +908,7 @@ object CarbonDataRDDFactory {
         }
         val metadataDetails = status(0)._2._1
         if (!isAgg) {
-          writeDictionary(carbonLoadModel, result, false)
+          writeDictionary(carbonLoadModel, result)
           CarbonLoaderUtil
             .populateNewLoadMetaEntry(metadataDetails,
               loadStatus,
@@ -1062,7 +1062,7 @@ object CarbonDataRDDFactory {
   }
 
   private def writeDictionary(carbonLoadModel: CarbonLoadModel,
-      result: Option[DictionaryServer], writeAll: Boolean) = {
+      result: Option[DictionaryServer]) = {
     // write dictionary file
     val uniqueTableName: String = s"${ carbonLoadModel.getDatabaseName }_${
       carbonLoadModel.getTableName
@@ -1070,11 +1070,7 @@ object CarbonDataRDDFactory {
     result match {
       case Some(server) =>
         try {
-          if (writeAll) {
-            server.writeDictionary()
-          } else {
-            server.writeTableDictionary(uniqueTableName)
-          }
+          server.writeTableDictionary(uniqueTableName)
         } catch {
           case _: Exception =>
             LOGGER.error(s"Error while writing dictionary file for $uniqueTableName")
