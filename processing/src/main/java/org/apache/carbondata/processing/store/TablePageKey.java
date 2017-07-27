@@ -54,17 +54,16 @@ public class TablePageKey {
 
   /** update all keys based on the input row */
   void update(int rowId, CarbonRow row) throws KeyGenException {
-    byte[] currentMDKey = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
     if (model.getNoDictionaryCount() > 0 || model.getComplexIndexMap().size() > 0) {
       currentNoDictionaryKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
     }
     if (rowId == 0) {
-      startKey = currentMDKey;
+      startKey = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
       noDictStartKey = currentNoDictionaryKey;
     }
-    endKey = currentMDKey;
     noDictEndKey = currentNoDictionaryKey;
     if (rowId == pageSize - 1) {
+      endKey = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
       finalizeKeys();
     }
   }
