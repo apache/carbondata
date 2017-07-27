@@ -62,6 +62,8 @@ public abstract class DataMapRow {
 
   public abstract double getDouble(int ordinal);
 
+  public abstract int getLengthInBytes(int ordinal);
+
   public int getTotalSizeInBytes() {
     int len = 0;
     for (int i = 0; i < schemas.length; i++) {
@@ -75,7 +77,7 @@ public abstract class DataMapRow {
       case FIXED:
         return schemas[ordinal].getLength();
       case VARIABLE:
-        return getByteArray(ordinal).length + 2;
+        return getLengthInBytes(ordinal) + 2;
       case STRUCT:
         return getRow(ordinal).getTotalSizeInBytes();
       default:

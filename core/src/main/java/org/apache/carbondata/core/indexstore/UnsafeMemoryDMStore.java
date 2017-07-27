@@ -19,9 +19,10 @@ package org.apache.carbondata.core.indexstore;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.UnsafeDataMapRow;
 import org.apache.carbondata.core.indexstore.schema.DataMapSchema;
-import org.apache.carbondata.core.memory.MemoryAllocator;
-import org.apache.carbondata.core.memory.MemoryAllocatorFactory;
 import org.apache.carbondata.core.memory.MemoryBlock;
+import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.memory.UnsafeMemoryManager;
+import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 import static org.apache.carbondata.core.memory.CarbonUnsafe.BYTE_ARRAY_OFFSET;
 import static org.apache.carbondata.core.memory.CarbonUnsafe.unsafe;
@@ -39,8 +40,6 @@ public class UnsafeMemoryDMStore {
 
   private int runningLength;
 
-  private MemoryAllocator memoryAllocator;
-
   private boolean isMemoryFreed;
 
   private DataMapSchema[] schema;
@@ -49,11 +48,13 @@ public class UnsafeMemoryDMStore {
 
   private int rowCount;
 
-  public UnsafeMemoryDMStore(DataMapSchema[] schema) {
+  private final long taskId = null != ThreadLocalTaskInfo.getCarbonTaskInfo() ?
+      ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId() : System.nanoTime();
+
+  public UnsafeMemoryDMStore(DataMapSchema[] schema) throws MemoryException {
     this.schema = schema;
-    this.memoryAllocator = MemoryAllocatorFactory.INSATANCE.getMemoryAllocator();
     this.allocatedSize = capacity;
-    this.memoryBlock = memoryAllocator.allocate(allocatedSize);
+    this.memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, allocatedSize);
     this.pointers = new int[1000];
   }
 
@@ -63,13 +64,13 @@ public class UnsafeMemoryDMStore {
    *
    * @param rowSize
    */
-  private void ensureSize(int rowSize) {
+  private void ensureSize(int rowSize) throws MemoryException {
     if (runningLength + rowSize >= allocatedSize) {
       MemoryBlock allocate =
-          MemoryAllocatorFactory.INSATANCE.getMemoryAllocator().allocate(allocatedSize + capacity);
+          UnsafeMemoryManager.allocateMemoryWithRetry(taskId, allocatedSize + capacity);
       unsafe.copyMemory(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset(),
           allocate.getBaseObject(), allocate.getBaseOffset(), runningLength);
-      memoryAllocator.free(memoryBlock);
+      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
       allocatedSize = allocatedSize + capacity;
       memoryBlock = allocate;
     }
@@ -86,7 +87,7 @@ public class UnsafeMemoryDMStore {
    * @param indexRow
    * @return
    */
-  public void addIndexRowToUnsafe(DataMapRow indexRow) {
+  public void addIndexRowToUnsafe(DataMapRow indexRow) throws MemoryException {
     // First calculate the required memory to keep the row in unsafe
     int rowSize = indexRow.getTotalSizeInBytes();
     // Check whether allocated memory is sufficient or not.
@@ -168,13 +169,13 @@ public class UnsafeMemoryDMStore {
     return new UnsafeDataMapRow(schema, memoryBlock, pointers[index]);
   }
 
-  public void finishWriting() {
+  public void finishWriting() throws MemoryException {
     if (runningLength < allocatedSize) {
       MemoryBlock allocate =
-          MemoryAllocatorFactory.INSATANCE.getMemoryAllocator().allocate(runningLength);
+          UnsafeMemoryManager.allocateMemoryWithRetry(taskId, runningLength);
       unsafe.copyMemory(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset(),
           allocate.getBaseObject(), allocate.getBaseOffset(), runningLength);
-      memoryAllocator.free(memoryBlock);
+      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
       memoryBlock = allocate;
     }
     // Compact pointers.
@@ -187,7 +188,7 @@ public class UnsafeMemoryDMStore {
 
   public void freeMemory() {
     if (!isMemoryFreed) {
-      memoryAllocator.free(memoryBlock);
+      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
       isMemoryFreed = true;
     }
   }
