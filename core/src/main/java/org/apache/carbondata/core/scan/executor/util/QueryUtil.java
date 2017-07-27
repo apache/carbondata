@@ -45,6 +45,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.complextypes.ArrayQueryType;
@@ -775,7 +776,6 @@ public class QueryUtil {
         new StructQueryType(dimension.getColName(), dimension.getColName(),
             dimensionToBlockIndexMap.get(dimension.getOrdinal()));
     complexTypeMap.put(dimension.getOrdinal(), parentQueryType);
-    parentBlockIndex =
         fillChildrenDetails(eachComplexColumnValueSize, columnIdToDictionaryMap, parentBlockIndex,
             dimension, parentQueryType);
   }
@@ -842,7 +842,8 @@ public class QueryUtil {
       if (((ColumnExpression) expression).isDimension()) {
         filterDimensions.add(((ColumnExpression) expression).getDimension());
       } else {
-        filterMeasure.add((CarbonMeasure) ((ColumnExpression) expression).getCarbonColumn());
+        CarbonColumn carbonColumn = ((ColumnExpression) expression).getCarbonColumn();
+        filterMeasure.add((CarbonMeasure) carbonColumn);
       }
       return;
     } else if (null != expression) {

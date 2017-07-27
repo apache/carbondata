@@ -67,6 +67,19 @@ public class CarbonInputSplitTaskInfo implements Distributable {
     return taskId.compareTo(((CarbonInputSplitTaskInfo) o).getTaskId());
   }
 
+  @Override public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+
+    CarbonInputSplitTaskInfo that = (CarbonInputSplitTaskInfo) obj;
+
+    return taskId != null ? taskId.compareTo(that.taskId) == 0 : that.taskId == null;
+  }
+
+  @Override public int hashCode() {
+    return taskId != null ? taskId.hashCode() : 0;
+  }
+
   /**
    * Finding which node has the maximum number of blocks for it.
    *

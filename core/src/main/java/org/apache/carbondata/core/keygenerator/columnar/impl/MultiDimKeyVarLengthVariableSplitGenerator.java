@@ -109,30 +109,6 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
     for (int j = 0; j < dimBlockSet.length; j++) {
       dimBlockArray[j] = convertToArray(dimBlockSet[j]);
     }
-
-    int[][] splitDimArrayLocalIndexes = new int[splitDimArray.length][];
-    for (int j = 0; j < splitDimArrayLocalIndexes.length; j++) {
-      splitDimArrayLocalIndexes[j] = splitDimArray[j].length > 0 ?
-          new int[] { 0, splitDimArray[j][1] - splitDimArray[j][0] } :
-          new int[0];
-    }
-
-    int[][][] byteRangesForDims = new int[byteRangesForKeys.length][][];
-    for (int j = 0; j < byteRangesForKeys.length; j++) {
-      if (dimBlockArray[j].length > 1) {
-        int[] bArray1 = splitDimArrayLocalIndexes[dimBlockArray[j][0]];
-        byteRangesForDims[j] = new int[2][2];
-        byteRangesForDims[j][0] =
-            new int[] { bArray1[bArray1.length - 1], bArray1[bArray1.length - 1] };
-        byteRangesForDims[j][1] = new int[] { 0,
-            (byteRangesForKeys[j][byteRangesForKeys[j].length - 1] - byteRangesForKeys[j][0]) - 1 };
-      } else {
-        byteRangesForDims[j] = new int[1][1];
-        int[] bArray1 = splitDimArray[dimBlockArray[j][0]];
-        byteRangesForDims[j][0] = new int[] { byteRangesForKeys[j][0] - bArray1[0],
-            byteRangesForKeys[j][1] - bArray1[0] };
-      }
-    }
     blockKeySize = new int[splitDimArray.length];
 
     for (int j = 0; j < blockKeySize.length; j++) {
