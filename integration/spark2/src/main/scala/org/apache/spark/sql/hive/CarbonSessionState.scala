@@ -80,7 +80,8 @@ class CarbonSessionCatalog(
    */
   override def lookupRelation(name: TableIdentifier,
       alias: Option[String]): LogicalPlan = {
-    super.lookupRelation(name, alias) match {
+    val rtnRelation = super.lookupRelation(name, alias)
+    rtnRelation match {
       case SubqueryAlias(_,
           LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _),
           _) =>
@@ -89,11 +90,13 @@ class CarbonSessionCatalog(
         refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
       case relation => relation
     }
+
+    rtnRelation
   }
 
   private def refreshRelationFromCache(name: TableIdentifier,
       alias: Option[String],
-      carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation): LogicalPlan = {
+      carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation): Unit = {
     carbonEnv.carbonMetastore.
       checkSchemasModifiedTimeAndReloadTables(CarbonEnv.getInstance(sparkSession).storePath)
     carbonEnv.carbonMetastore
@@ -106,7 +109,6 @@ class CarbonSessionCatalog(
         }
       case _ =>
     }
-    super.lookupRelation(name, alias)
   }
 }
 
