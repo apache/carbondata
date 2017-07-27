@@ -26,7 +26,7 @@ import org.apache.spark.unsafe.types.UTF8String;
 /**
  * Convert java data type to spark data type
  */
-public final class SparkDataTypeConverterImp implements DataTypeConverter, Serializable {
+public final class SparkDataTypeConverterImpl implements DataTypeConverter, Serializable {
 
   private static final long serialVersionUID = -4379212832935070583L;
 

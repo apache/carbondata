@@ -19,7 +19,7 @@ package org.apache.carbondata.core.util;
 
 import java.io.Serializable;
 
-public class DataTypeConverterImp implements DataTypeConverter, Serializable {
+public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
 
   private static final long serialVersionUID = -1718154403432354200L;
 

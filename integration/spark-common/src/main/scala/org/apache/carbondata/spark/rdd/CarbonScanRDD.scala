@@ -41,7 +41,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFa
 import org.apache.carbondata.hadoop._
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
-import org.apache.carbondata.spark.util.SparkDataTypeConverterImp
+import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
 
 /**
  * This RDD is used to perform query on CarbonData file. Before sending tasks to scan
@@ -255,7 +255,7 @@ class CarbonScanRDD(
   private def prepareInputFormatForExecutor(conf: Configuration): CarbonTableInputFormat[Object] = {
     CarbonTableInputFormat.setCarbonReadSupport(conf, readSupport)
     CarbonTableInputFormat.setTableInfo(conf, tableInfo)
-    CarbonInputFormat.setDataTypeConverter(conf, new SparkDataTypeConverterImp)
+    CarbonInputFormat.setDataTypeConverter(conf, new SparkDataTypeConverterImpl)
     createInputFormat(conf)
   }
 

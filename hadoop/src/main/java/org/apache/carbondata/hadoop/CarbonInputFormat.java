@@ -65,7 +65,7 @@ import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeConverter;
-import org.apache.carbondata.core.util.DataTypeConverterImp;
+import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
@@ -164,7 +164,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       throws IOException {
     String converter = configuration.get(CARBON_CONVERTER);
     if (converter == null) {
-      return new DataTypeConverterImp();
+      return new DataTypeConverterImpl();
     }
     return (DataTypeConverter) ObjectSerializationUtil.convertStringToObject(converter);
   }

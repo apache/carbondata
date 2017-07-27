@@ -41,7 +41,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.{CarbonRDD, CarbonRDDWithTableInfo}
-import org.apache.carbondata.spark.util.SparkDataTypeConverterImp
+import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
 
 /**
  * It decodes the data.

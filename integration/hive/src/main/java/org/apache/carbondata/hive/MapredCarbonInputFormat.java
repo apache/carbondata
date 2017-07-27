@@ -27,7 +27,7 @@ import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.util.DataTypeConverterImp;
+import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.hadoop.CarbonInputFormat;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
@@ -129,7 +129,7 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
         identifier.getCarbonTableIdentifier().getTableName());
     CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(carbonTable, projection);
     QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable,
-        new DataTypeConverterImp());
+        new DataTypeConverterImpl());
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
     CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);

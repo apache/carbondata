@@ -696,7 +696,7 @@ public final class DataTypeUtil {
 
   public static DataTypeConverter getDataTypeConverter() {
     if (converter == null) {
-      converter = new DataTypeConverterImp();
+      converter = new DataTypeConverterImpl();
     }
     return converter;
   }
