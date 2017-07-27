@@ -46,7 +46,7 @@ import org.apache.carbondata.processing.merger.TableMeta
 import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
 import org.apache.carbondata.spark.rdd.CarbonRDD
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
-import org.apache.carbondata.spark.util.SparkDataTypeConverterImp
+import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
 
 private[sql] case class CarbonDatasourceHadoopRelation(
   sqlContext: SQLContext,
@@ -140,7 +140,7 @@ class CarbonHadoopFSRDD[V: ClassTag](
     val job: Job = new Job(hadoopAttemptContext.getConfiguration)
     val format = CarbonInputFormatUtil.createCarbonInputFormat(identifier, job)
     CarbonInputFormat.setDataTypeConverter(hadoopAttemptContext.getConfiguration,
-      new SparkDataTypeConverterImp)
+      new SparkDataTypeConverterImpl)
     hadoopAttemptContext.getConfiguration.set(FileInputFormat.INPUT_DIR, identifier.getTablePath)
     val reader =
       format.createRecordReader(split.asInstanceOf[CarbonHadoopFSPartition].carbonSplit.value,
