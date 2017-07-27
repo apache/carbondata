@@ -14,23 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.indexstore;
-
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
+package org.apache.carbondata.core.indexstore.schema;
 
 /**
- * Datamap type
+ * Types of filters of select query
  */
-public enum DataMapType {
-  BLOCKLET(BlockletDataMapFactory.class);
-
-  private Class<? extends DataMapFactory> classObject;
-
-  DataMapType(Class<? extends DataMapFactory> classObject) {
-    this.classObject = classObject;
-  }
-
-  public Class<? extends DataMapFactory> getClassObject() {
-    return classObject;
-  }
+public enum FilterType {
+  EQUALTO, GREATER_THAN, LESS_THAN, GREATER_THAN_EQUAL, LESS_THAN_EQUAL, LIKE
 }

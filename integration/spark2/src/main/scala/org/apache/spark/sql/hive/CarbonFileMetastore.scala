@@ -141,7 +141,7 @@ class CarbonFileMetastore(conf: RuntimeConfig) extends CarbonMetaStore {
   def getTableFromMetadataCache(database: String, tableName: String): Option[TableMeta] = {
     metadata.tablesMeta
       .find(c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
-                 c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))
+        c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))
   }
 
   def tableExists(
@@ -216,8 +216,8 @@ class CarbonFileMetastore(conf: RuntimeConfig) extends CarbonMetaStore {
     }
     val wrapperTableInfo = schemaConverter
       .fromExternalToWrapperTableInfo(thriftTableInfo,
-          newTableIdentifier.getDatabaseName,
-          newTableIdentifier.getTableName,
+        newTableIdentifier.getDatabaseName,
+        newTableIdentifier.getTableName,
         absoluteTableIdentifier.getStorePath)
     val identifier =
       new CarbonTableIdentifier(newTableIdentifier.getDatabaseName,
@@ -228,8 +228,8 @@ class CarbonFileMetastore(conf: RuntimeConfig) extends CarbonMetaStore {
       identifier)
     addTableCache(wrapperTableInfo,
       AbsoluteTableIdentifier.from(absoluteTableIdentifier.getStorePath,
-      newTableIdentifier.getDatabaseName,
-      newTableIdentifier.getTableName))
+        newTableIdentifier.getDatabaseName,
+        newTableIdentifier.getTableName))
     path
   }
 
@@ -492,4 +492,3 @@ class CarbonFileMetastore(conf: RuntimeConfig) extends CarbonMetaStore {
     CarbonUtil.readSchemaFile(tableMetadataFile)
   }
 }
-

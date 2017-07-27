@@ -236,7 +236,7 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
                |(${ fields.map(f => f.rawSchema).mkString(",") })
                |USING org.apache.spark.sql.CarbonSource""".stripMargin +
                 s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath """.stripMargin +
-                s""""$tablePath" $carbonSchemaString) """)
+                s""""$tablePath"$carbonSchemaString) """)
         } catch {
           case e: Exception =>
             val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
@@ -750,7 +750,7 @@ case class LoadTable(
             (dataFrame, dataFrame)
           }
 
-          GlobalDictionaryUtil.generateGlobalDictionary(
+            GlobalDictionaryUtil.generateGlobalDictionary(
                 sparkSession.sqlContext,
                 carbonLoadModel,
                 relation.tableMeta.storePath,
