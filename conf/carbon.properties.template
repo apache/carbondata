@@ -44,7 +44,7 @@ carbon.enableXXHash=true
 #carbon.merge.sort.prefetch=true
 ######## Alter Partition Configuration ########
 #Number of cores to be used while alter partition
-carbon.number.of.cores.while.altPartition=2
+carbon.number.of.cores.while.alterPartition=2
 ######## Compaction Configuration ########
 #Number of cores to be used while compacting
 carbon.number.of.cores.while.compacting=2

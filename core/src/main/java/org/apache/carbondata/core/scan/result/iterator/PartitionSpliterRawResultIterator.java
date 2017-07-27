@@ -21,23 +21,18 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.scan.result.BatchResult;
 
-
 public class PartitionSpliterRawResultIterator extends CarbonIterator<Object[]> {
 
   private CarbonIterator<BatchResult> iterator;
   private BatchResult batch;
   private int counter;
 
-  /**
-   * LOGGER
-   */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(PartitionSpliterRawResultIterator.class.getName());
 
   public PartitionSpliterRawResultIterator(CarbonIterator<BatchResult> iterator) {
     this.iterator = iterator;
   }
-
 
   @Override public boolean hasNext() {
     if (null == batch || checkBatchEnd(batch)) {
@@ -49,11 +44,7 @@ public class PartitionSpliterRawResultIterator extends CarbonIterator<Object[]> 
       }
     }
 
-    if (!checkBatchEnd(batch)) {
-      return true;
-    } else {
-      return false;
-    }
+    return !checkBatchEnd(batch);
   }
 
   @Override public Object[] next() {
@@ -61,22 +52,12 @@ public class PartitionSpliterRawResultIterator extends CarbonIterator<Object[]> 
       batch = iterator.next();
     }
     if (!checkBatchEnd(batch)) {
-      try {
-        return batch.getRawRow(counter++);
-      } catch (Exception e) {
-        LOGGER.error(e.getMessage());
-        return null;
-      }
+      return batch.getRawRow(counter++);
     } else {
       batch = iterator.next();
       counter = 0;
     }
-    try {
-      return batch.getRawRow(counter++);
-    } catch (Exception e) {
-      LOGGER.error(e.getMessage());
-      return null;
-    }
+    return batch.getRawRow(counter++);
   }
 
   /**
@@ -85,11 +66,7 @@ public class PartitionSpliterRawResultIterator extends CarbonIterator<Object[]> 
    * @return
    */
   private boolean checkBatchEnd(BatchResult batch) {
-    if (counter < batch.getSize()) {
-      return false;
-    } else {
-      return true;
-    }
+    return !(counter < batch.getSize());
   }
 
 }

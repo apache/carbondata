@@ -445,7 +445,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
     isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
 
-    //for each segment fetch blocks matching filter in Driver BTree
+    // for each segment fetch blocks matching filter in Driver BTree
     for (String segmentNo : getSegmentsToAccess(job)) {
       List<DataRefNode> dataRefNodes = getDataBlocksOfSegment(job, filterExpressionProcessor,
           absoluteTableIdentifier, filterResolver, matchedPartitions, segmentNo,
@@ -511,9 +511,10 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
             segmentIndexMap.entrySet()) {
           SegmentTaskIndexStore.TaskBucketHolder taskHolder = entry.getKey();
           int partitionId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskHolder.taskNo);
-          //oldPartitionIdList is only used in alter table partition command because it change
-          //partition info first and then read data.
-          //for other normal query should use newest partitionIdList
+
+          // OldPartitionIdList is only used in alter table partition command because it change
+          // partition info first and then read data.
+          // For other normal query should use newest partitionIdList
           if (partitionInfo != null) {
             if (oldPartitionIdList != null) {
               partitionIndex = oldPartitionIdList.indexOf(partitionId);
