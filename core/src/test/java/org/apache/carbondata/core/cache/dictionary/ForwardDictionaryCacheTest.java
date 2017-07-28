@@ -32,6 +32,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriterImpl;
 import org.junit.After;
@@ -209,6 +210,10 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
    */
   private void writeSortIndexFile(List<String> data, String columnId) throws IOException {
 	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, null);
+    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
+        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
+            columnIdentifier.getDataType(),
+            CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier));
     Map<String, Integer> dataToSurrogateKeyMap = new HashMap<>(data.size());
     int surrogateKey = 0;
     List<Integer> invertedIndexList = new ArrayList<>(data.size());
@@ -228,7 +233,7 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
       invertedIndexList.add(invertedIndexArray[i]);
     }
     CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
-        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, columnIdentifier,
+        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, dictionaryColumnUniqueIdentifier,
             carbonStorePath);
     try {
       dictionarySortIndexWriter.writeSortIndex(sortedIndexList);

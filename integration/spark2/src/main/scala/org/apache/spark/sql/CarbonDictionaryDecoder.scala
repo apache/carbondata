@@ -39,6 +39,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.{CarbonRDD, CarbonRDDWithTableInfo}
 import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
@@ -248,7 +249,8 @@ case class CarbonDictionaryDecoder(
         try {
           cache.get(new DictionaryColumnUniqueIdentifier(
             atiMap(f._1).getCarbonTableIdentifier,
-            f._2, f._3.getDataType))
+            f._2, f._3.getDataType,
+            CarbonStorePath.getCarbonTablePath(atiMap(f._1))))
         } catch {
           case _: Throwable => null
         }
@@ -268,7 +270,8 @@ case class CarbonDictionaryDecoder(
           try {
             val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
               atiMap(tableName).getCarbonTableIdentifier,
-              columnIdentifier, carbonDimension.getDataType)
+              columnIdentifier, carbonDimension.getDataType,
+              CarbonStorePath.getCarbonTablePath(atiMap(tableName)))
             allDictIdentifiers += dictionaryColumnUniqueIdentifier;
             new ForwardDictionaryWrapper(
               storePath,
@@ -566,7 +569,8 @@ class CarbonDecoderRDD(
         try {
           cache.get(new DictionaryColumnUniqueIdentifier(
             atiMap(f._1).getCarbonTableIdentifier,
-            f._2, f._3.getDataType))
+            f._2, f._3.getDataType,
+            CarbonStorePath.getCarbonTablePath(atiMap(f._1))))
         } catch {
           case _: Throwable => null
         }

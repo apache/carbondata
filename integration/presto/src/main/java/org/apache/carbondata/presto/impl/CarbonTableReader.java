@@ -61,6 +61,8 @@ import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.service.impl.PathFactory;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
@@ -298,8 +300,8 @@ public class CarbonTableReader {
           new CarbonTableIdentifier(table.getSchemaName(), table.getTableName(),
               UUID.randomUUID().toString());
         // get the store path of the table.
-      cache.carbonTablePath =
-          PathFactory.getInstance().getCarbonTablePath(storePath, cache.carbonTableIdentifier);
+      cache.carbonTablePath = PathFactory.getInstance()
+          .getCarbonTablePath(storePath, cache.carbonTableIdentifier, null);
         // cache the table
       cc.put(table, cache);
 
@@ -385,10 +387,13 @@ public class CarbonTableReader {
       cacheClient.getSegmentAccessClient().invalidateAll(invalidSegmentsIds);
     }
 
+    TableProvider tableProvider = new SingleTableProvider(tableCacheModel.carbonTable);
+
     // get filter for segment
     CarbonInputFormatUtil.processFilterExpression(filters, tableCacheModel.carbonTable);
     FilterResolverIntf filterInterface = CarbonInputFormatUtil
-        .resolveFilter(filters, tableCacheModel.carbonTable.getAbsoluteTableIdentifier());
+        .resolveFilter(filters, tableCacheModel.carbonTable.getAbsoluteTableIdentifier(),
+            tableProvider);
 
     IUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
     List<CarbonLocalInputSplit> result = new ArrayList<>();

@@ -35,8 +35,8 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnIdent
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
-import org.apache.carbondata.core.stats._
 import org.apache.carbondata.core.util.{CarbonTimeStatisticsFactory, DataTypeUtil}
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 /**
@@ -224,7 +224,8 @@ case class CarbonDictionaryDecoder(
       if (dictionaryId._2 != null) {
         new DictionaryColumnUniqueIdentifier(
           atiMap(dictionaryId._1).getCarbonTableIdentifier,
-          dictionaryId._2, dictionaryId._3)
+          dictionaryId._2, dictionaryId._3,
+          CarbonStorePath.getCarbonTablePath(atiMap(dictionaryId._1)))
       } else {
         null
       }

@@ -33,6 +33,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
 
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
@@ -88,7 +89,8 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
         dataTypes[i] = carbonColumns[i].getDataType();
         dictionaries[i] = forwardDictionaryCache.get(
             new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier.getCarbonTableIdentifier(),
-                carbonColumns[i].getColumnIdentifier(), dataTypes[i]));
+                carbonColumns[i].getColumnIdentifier(), dataTypes[i],
+                CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)));
       } else {
         dataTypes[i] = carbonColumns[i].getDataType();
       }

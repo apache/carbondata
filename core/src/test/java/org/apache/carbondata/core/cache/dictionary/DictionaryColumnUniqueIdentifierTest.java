@@ -47,13 +47,13 @@ public class DictionaryColumnUniqueIdentifierTest {
     ColumnIdentifier columnIdentifier2 = new ColumnIdentifier("1", properties, DataType.INT);
     dictionaryColumnUniqueIdentifier1 =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier1, columnIdentifier,
-            DataType.MAP);
+            DataType.MAP, null);
     dictionaryColumnUniqueIdentifier2 =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier2, columnIdentifier2,
-            DataType.MAP);
+            DataType.MAP, null);
     dictionaryColumnUniqueIdentifier3 =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier2, columnIdentifier,
-            DataType.MAP);
+            DataType.MAP, null);
   }
 
   @Test public void testToGetDataType() {

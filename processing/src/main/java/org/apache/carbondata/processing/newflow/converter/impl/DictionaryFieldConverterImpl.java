@@ -35,6 +35,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.newflow.dictionary.DictionaryServerClientDictionary;
@@ -69,7 +70,8 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
     this.isEmptyBadRecord = isEmptyBadRecord;
     DictionaryColumnUniqueIdentifier identifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
-            dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType());
+            dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType(),
+            CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier));
 
     // if use one pass, use DictionaryServerClientDictionary
     if (useOnePass) {

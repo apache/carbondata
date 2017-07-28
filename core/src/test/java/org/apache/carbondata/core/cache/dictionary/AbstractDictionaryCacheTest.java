@@ -105,7 +105,8 @@ public class AbstractDictionaryCacheTest {
       String columnId) {
 	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, DataType.STRING);
     return new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
-        DataType.STRING);
+        DataType.STRING,
+        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier));
   }
 
   /**
@@ -126,8 +127,12 @@ public class AbstractDictionaryCacheTest {
   protected void prepareWriterAndWriteData(List<String> data, String columnId)
       throws IOException {
 	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, null);
+    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
+        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
+            columnIdentifier.getDataType(),
+            CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier));
     CarbonDictionaryWriter carbonDictionaryWriter =
-        new CarbonDictionaryWriterImpl(carbonStorePath, carbonTableIdentifier, columnIdentifier);
+        new CarbonDictionaryWriterImpl(carbonStorePath, carbonTableIdentifier, dictionaryColumnUniqueIdentifier);
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
     CarbonUtil.checkAndCreateFolder(carbonTablePath.getMetadataDirectoryPath());
