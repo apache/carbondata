@@ -127,6 +127,20 @@ The following DDL operations are supported in CarbonData :
                      'SORT_COLUMNS'='productName,storeCity')
 ```
 
+   - **SORT_COLUMNS**
+
+    This table property specifies the order of the sort column.
+
+```
+    TBLPROPERTIES('SORT_COLUMNS'='column1, column3')
+```
+
+   NOTE:
+
+   - If this property is not specified, then by default SORT_COLUMNS consist of all dimension (exclude Complex Column).
+
+   - If this property is specified but with empty argument, then the table will be loaded without sort. For example, ('SORT_COLUMNS'='')
+
 ## SHOW TABLE
 
   This command can be used to list all the tables in current database or all the tables of a specific database.
