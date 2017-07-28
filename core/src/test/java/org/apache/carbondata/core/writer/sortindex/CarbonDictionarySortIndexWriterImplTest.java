@@ -22,11 +22,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReader;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReaderImpl;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriterImpl;
 
@@ -53,12 +55,14 @@ public class CarbonDictionarySortIndexWriterImplTest {
     carbonTableIdentifier =
         new CarbonTableIdentifier("testSchema", "carbon", UUID.randomUUID().toString());
     columnIdentifier = new ColumnIdentifier("Name", null, null);
+    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier, columnIdentifier.getDataType(),
+        CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier));
     dictionaryWriter =
-        new CarbonDictionaryWriterImpl(storePath, carbonTableIdentifier, columnIdentifier);
+        new CarbonDictionaryWriterImpl(storePath, carbonTableIdentifier, dictionaryColumnUniqueIdentifier);
     dictionarySortIndexWriter =
-        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, columnIdentifier, storePath);
+        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, dictionaryColumnUniqueIdentifier, storePath);
     carbonDictionarySortIndexReader =
-        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, columnIdentifier, storePath);
+        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, dictionaryColumnUniqueIdentifier, storePath);
   }
 
   /**

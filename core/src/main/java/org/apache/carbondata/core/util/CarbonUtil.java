@@ -1576,7 +1576,8 @@ public final class CarbonUtil {
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     PathService pathService = CarbonCommonFactory.getPathService();
     CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
-        dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
+        dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
+        dictionaryColumnUniqueIdentifier);
 
     String dictionaryFilePath = carbonTablePath.getDictionaryFilePath(
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());

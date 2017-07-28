@@ -44,22 +44,21 @@ public class RangeDictionaryColumnVisitor extends DictionaryColumnVisitor
    */
   public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException, IOException {
-    if (visitableObj instanceof DimColumnResolvedFilterInfo) {
-      DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
-      ColumnFilterInfo resolvedFilterObject = null;
-      List<String> evaluateResultListFinal;
-      resolvedFilterObject = FilterUtil
-          .getFilterListForAllValues(metadata.getTableIdentifier(), metadata.getExpression(),
-              metadata.getColumnExpression(), metadata.isIncludeFilter());
+    DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
+    ColumnFilterInfo resolvedFilterObject = null;
+    List<String> evaluateResultListFinal;
+    resolvedFilterObject = FilterUtil
+        .getFilterListForAllValues(metadata.getTableIdentifier(), metadata.getExpression(),
+            metadata.getColumnExpression(), metadata.isIncludeFilter(),
+            metadata.getTableProvider());
 
-      if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
-        // Adding default surrogate key of null member inorder to not display the same while
-        // displaying the report as per hive compatibility.
-        resolvedFilterObject.getFilterList()
-            .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
-        Collections.sort(resolvedFilterObject.getFilterList());
-      }
-      resolveDimension.setFilterValues(resolvedFilterObject);
+    if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
+      // Adding default surrogate key of null member inorder to not display the same while
+      // displaying the report as per hive compatibility.
+      resolvedFilterObject.getFilterList()
+          .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
+      Collections.sort(resolvedFilterObject.getFilterList());
     }
+    resolveDimension.setFilterValues(resolvedFilterObject);
   }
 }

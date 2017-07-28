@@ -26,6 +26,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
 import org.apache.carbondata.core.scan.filter.intf.FilterOptimizerBasic;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
@@ -131,11 +132,12 @@ public class CarbonInputFormatUtil {
    * @return
    */
   public static FilterResolverIntf resolveFilter(Expression filterExpression,
-      AbsoluteTableIdentifier absoluteTableIdentifier) {
+      AbsoluteTableIdentifier absoluteTableIdentifier, TableProvider tableProvider) {
     try {
       FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
       //get resolved filter
-      return filterExpressionProcessor.getFilterResolver(filterExpression, absoluteTableIdentifier);
+      return filterExpressionProcessor
+          .getFilterResolver(filterExpression, absoluteTableIdentifier, tableProvider);
     } catch (Exception e) {
       throw new RuntimeException("Error while resolving filter expression", e);
     }

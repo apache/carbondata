@@ -55,6 +55,7 @@ import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -96,6 +97,8 @@ import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.comparator.Comparator;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 public final class FilterUtil {
   private static final LogService LOGGER =
@@ -498,13 +501,15 @@ public final class FilterUtil {
    * @throws IOException
    */
   public static ColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
-      ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter)
+      ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter,
+      TableProvider tableProvider)
       throws IOException {
     Dictionary forwardDictionary = null;
     try {
       // Reading the dictionary value from cache.
       forwardDictionary =
-          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
+          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension(),
+              tableProvider);
       return getFilterValues(columnExpression, evaluateResultList, forwardDictionary,
           isIncludeFilter);
     } finally {
@@ -566,14 +571,15 @@ public final class FilterUtil {
    */
   public static ColumnFilterInfo getFilterListForAllValues(
       AbsoluteTableIdentifier tableIdentifier, Expression expression,
-      final ColumnExpression columnExpression, boolean isIncludeFilter)
+      final ColumnExpression columnExpression, boolean isIncludeFilter, TableProvider tableProvider)
       throws IOException, FilterUnsupportedException {
     Dictionary forwardDictionary = null;
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
     DictionaryChunksWrapper dictionaryWrapper = null;
     try {
       forwardDictionary =
-          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
+          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension(),
+              tableProvider);
       dictionaryWrapper = forwardDictionary.getDictionaryChunks();
       while (dictionaryWrapper.hasNext()) {
         byte[] columnVal = dictionaryWrapper.next();
@@ -1090,9 +1096,24 @@ public final class FilterUtil {
    */
   public static Dictionary getForwardDictionaryCache(AbsoluteTableIdentifier tableIdentifier,
       CarbonDimension carbonDimension) throws IOException {
+    return getForwardDictionaryCache(tableIdentifier, carbonDimension, null);
+  }
+
+  /**
+   * @param tableIdentifier
+   * @param carbonDimension
+   * @param tableProvider
+   * @return
+   */
+  public static Dictionary getForwardDictionaryCache(AbsoluteTableIdentifier tableIdentifier,
+      CarbonDimension carbonDimension, TableProvider tableProvider) throws IOException {
+    CarbonTable carbonTable =
+        tableProvider.getCarbonTable(tableIdentifier.getCarbonTableIdentifier());
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(tableIdentifier.getCarbonTableIdentifier(),
-            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType());
+            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType(), carbonTablePath);
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache =
         cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, tableIdentifier.getStorePath());

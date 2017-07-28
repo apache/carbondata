@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.service.impl;
 
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
@@ -31,10 +32,16 @@ public class PathFactory implements PathService {
   /**
    * @param storeLocation
    * @param tableIdentifier
+   * @param
    * @return store path related to tables
    */
-  @Override public CarbonTablePath getCarbonTablePath(
-      String storeLocation, CarbonTableIdentifier tableIdentifier) {
+  @Override public CarbonTablePath getCarbonTablePath(String storeLocation,
+      CarbonTableIdentifier tableIdentifier,
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+    if (null != dictionaryColumnUniqueIdentifier && null != dictionaryColumnUniqueIdentifier
+        .getCarbonTablePath()) {
+      return dictionaryColumnUniqueIdentifier.getCarbonTablePath();
+    }
     return CarbonStorePath.getCarbonTablePath(storeLocation, tableIdentifier);
   }
 

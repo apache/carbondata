@@ -14,23 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.service;
+package org.apache.carbondata.core.scan.filter;
 
-import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
+import java.io.IOException;
+
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
-/**
- * Create helper to get path details
- */
-public interface PathService {
+public class SingleTableProvider implements TableProvider {
 
-  /**
-   * @param storeLocation
-   * @param tableIdentifier
-   * @param dictionaryColumnUniqueIdentifier
-   * @return store path related to tables
-   */
-  CarbonTablePath getCarbonTablePath(String storeLocation, CarbonTableIdentifier tableIdentifier,
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier);
+  private CarbonTable carbonTable;
+
+  public SingleTableProvider(CarbonTable carbonTable) {
+    this.carbonTable = carbonTable;
+  }
+
+  @Override public CarbonTable getCarbonTable(CarbonTableIdentifier carbonTableIdentifier)
+      throws IOException {
+    if (carbonTable.getCarbonTableIdentifier().equals(carbonTableIdentifier)) {
+      return carbonTable;
+    } else {
+      throw new IOException("Carbon table does not exist with identifier " + carbonTableIdentifier);
+    }
+  }
 }

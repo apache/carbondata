@@ -21,9 +21,9 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReader;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
@@ -48,7 +48,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
   /**
    * column name
    */
-  protected ColumnIdentifier columnIdentifier;
+  protected DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier;
 
   /**
    * store location
@@ -77,14 +77,16 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
   private ThriftReader dictionarySortIndexThriftReader;
 
   /**
-   * @param carbonTableIdentifier Carbon Table identifier holding the database name and table name
-   * @param columnIdentifier      column name
-   * @param carbonStorePath       carbon store path
+   * @param carbonTableIdentifier            Carbon Table identifier holding the database name
+   *                                         and table name
+   * @param dictionaryColumnUniqueIdentifier column name
+   * @param carbonStorePath                  carbon store path
    */
   public CarbonDictionarySortIndexReaderImpl(final CarbonTableIdentifier carbonTableIdentifier,
-      final ColumnIdentifier columnIdentifier, final String carbonStorePath) {
+      final DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
+      final String carbonStorePath) {
     this.carbonTableIdentifier = carbonTableIdentifier;
-    this.columnIdentifier = columnIdentifier;
+    this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
     this.carbonStorePath = carbonStorePath;
   }
 
@@ -151,21 +153,23 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
 
   protected void initPath() {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath =
-        pathService.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+    CarbonTablePath carbonTablePath = pathService
+        .getCarbonTablePath(carbonStorePath, carbonTableIdentifier,
+            dictionaryColumnUniqueIdentifier);
     try {
       CarbonDictionaryColumnMetaChunk chunkMetaObjectForLastSegmentEntry =
           getChunkMetaObjectForLastSegmentEntry();
       long dictOffset = chunkMetaObjectForLastSegmentEntry.getEnd_offset();
-      this.sortIndexFilePath =
-          carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId(), dictOffset);
+      this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(
+          dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(), dictOffset);
       if (!FileFactory
           .isFileExist(this.sortIndexFilePath, FileFactory.getFileType(this.sortIndexFilePath))) {
-        this.sortIndexFilePath =
-            carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId());
+        this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(
+            dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
       }
     } catch (IOException e) {
-      this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId());
+      this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(
+          dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
     }
 
   }
@@ -193,7 +197,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
    */
   protected CarbonDictionaryMetadataReader getDictionaryMetadataReader() {
     return new CarbonDictionaryMetadataReaderImpl(carbonStorePath, carbonTableIdentifier,
-        columnIdentifier);
+        dictionaryColumnUniqueIdentifier);
   }
 
   /**

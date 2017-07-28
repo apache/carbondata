@@ -54,6 +54,8 @@ import org.apache.carbondata.core.mutate.data.BlockMappingVO;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.core.scan.model.QueryModel;
@@ -348,6 +350,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       // process and resolve the expression
       Expression filter = getFilterPredicates(job.getConfiguration());
       CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
+      TableProvider tableProvider = new SingleTableProvider(carbonTable);
       CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
       BitSet matchedPartitions = null;
       PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName());
@@ -365,7 +368,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         }
       }
 
-      FilterResolverIntf filterInterface = CarbonInputFormatUtil.resolveFilter(filter, identifier);
+      FilterResolverIntf filterInterface = CarbonInputFormatUtil
+          .resolveFilter(filter, carbonTable.getAbsoluteTableIdentifier(), tableProvider);
 
       // do block filtering and get split
       List<InputSplit> splits = getSplits(job, filterInterface, matchedPartitions, cacheClient,
@@ -794,6 +798,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       throws IOException {
     Configuration configuration = taskAttemptContext.getConfiguration();
     CarbonTable carbonTable = getOrCreateCarbonTable(configuration);
+    TableProvider tableProvider = new SingleTableProvider(carbonTable);
     // getting the table absoluteTableIdentifier from the carbonTable
     // to avoid unnecessary deserialization
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
@@ -807,7 +812,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
     CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
-    FilterResolverIntf filterIntf =  CarbonInputFormatUtil.resolveFilter(filter, identifier);
+    FilterResolverIntf filterIntf = CarbonInputFormatUtil
+        .resolveFilter(filter, carbonTable.getAbsoluteTableIdentifier(), tableProvider);
     queryModel.setFilterExpressionResolverTree(filterIntf);
 
     // update the file level index store if there are invalid segment

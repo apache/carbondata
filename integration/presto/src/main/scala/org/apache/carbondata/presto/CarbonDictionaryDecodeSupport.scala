@@ -22,7 +22,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
-
+import org.apache.carbondata.core.util.path.CarbonStorePath
 
 class CarbonDictionaryDecodeReaderSupport[T] {
 
@@ -38,7 +38,8 @@ class CarbonDictionaryDecodeReaderSupport[T] {
       val dict: Dictionary = forwardDictionaryCache
         .get(new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier.getCarbonTableIdentifier,
           carbonColumn.getColumnIdentifier,
-          carbonColumn.getDataType))
+          carbonColumn.getColumnIdentifier.getDataType,
+          CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)))
       (carbonColumn.getDataType, dict, index)
     }
   }

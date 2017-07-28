@@ -39,7 +39,7 @@ import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.dictionary.Dictionary
+import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
@@ -169,9 +169,15 @@ object GlobalDictionaryUtil {
       columnIndex: Int,
       iter: Iterator[String]): Unit = {
     val dictService = CarbonCommonFactory.getDictionaryService
-    val writer: CarbonDictionaryWriter = dictService.getDictionaryWriter(
+    val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
+        DictionaryColumnUniqueIdentifier(
       model.table,
       model.columnIdentifier(columnIndex),
+      model.columnIdentifier(columnIndex).getDataType,
+      CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table))
+    val writer: CarbonDictionaryWriter = dictService.getDictionaryWriter(
+      model.table,
+      dictionaryColumnUniqueIdentifier,
       model.hdfsLocation
     )
     try {
@@ -207,10 +213,16 @@ object GlobalDictionaryUtil {
     val dictMap = new HashMap[String, HashSet[String]]
     val dictService = CarbonCommonFactory.getDictionaryService
     for (i <- model.primDimensions.indices) {
+      val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
+          DictionaryColumnUniqueIdentifier(
+            model.table,
+            model.columnIdentifier(i),
+            model.columnIdentifier(i).getDataType,
+            CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table))
       val set = new HashSet[String]
       if (model.dictFileExists(i)) {
         val reader: CarbonDictionaryReader = dictService.getDictionaryReader(model.table,
-          model.columnIdentifier(i), model.hdfsLocation
+          dictionaryColumnUniqueIdentifier, model.hdfsLocation
         )
         val values = reader.read
         if (values != null) {
@@ -835,6 +847,12 @@ object GlobalDictionaryUtil {
       val columnIdentifier = new ColumnIdentifier(columnSchema.getColumnUniqueId,
         null,
         columnSchema.getDataType)
+      val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
+          DictionaryColumnUniqueIdentifier(
+            tableIdentifier,
+            columnIdentifier,
+            columnIdentifier.getDataType,
+            carbonTablePath)
       val parsedValue = DataTypeUtil.normalizeColumnValueForItsDataType(defaultValue, columnSchema)
       val valuesBuffer = new mutable.HashSet[String]
       if (null != parsedValue) {
@@ -843,7 +861,7 @@ object GlobalDictionaryUtil {
       val dictWriteTask = new DictionaryWriterTask(valuesBuffer,
         dictionary,
         tableIdentifier,
-        columnIdentifier,
+        dictionaryColumnUniqueIdentifier,
         storePath,
         columnSchema,
         false
@@ -855,7 +873,7 @@ object GlobalDictionaryUtil {
 
       if (distinctValues.size() > 0) {
         val sortIndexWriteTask = new SortIndexWriterTask(tableIdentifier,
-          columnIdentifier,
+          dictionaryColumnUniqueIdentifier,
           columnSchema.getDataType,
           storePath,
           dictionary,

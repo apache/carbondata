@@ -34,7 +34,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.dictionary.Dictionary
+import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
@@ -42,7 +42,7 @@ import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentif
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.service.{CarbonCommonFactory, PathService}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
-import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.tasks.{DictionaryWriterTask, SortIndexWriterTask}
@@ -341,9 +341,16 @@ class CarbonGlobalDictionaryGenerateRDD(
       var dictionaryForDistinctValueLookUp: Dictionary = _
       var dictionaryForSortIndexWriting: Dictionary = _
       var dictionaryForDistinctValueLookUpCleared: Boolean = false
+      val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
+          DictionaryColumnUniqueIdentifier(
+        model.table,
+        model.columnIdentifier(split.index),
+        model.columnIdentifier(split.index).getDataType,
+        CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table))
       val pathService: PathService = CarbonCommonFactory.getPathService
       val carbonTablePath: CarbonTablePath =
-        pathService.getCarbonTablePath(model.hdfsLocation, model.table)
+        pathService
+          .getCarbonTablePath(model.hdfsLocation, model.table, dictionaryColumnUniqueIdentifier)
       if (StringUtils.isNotBlank(model.hdfsTempLocation)) {
         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
           model.hdfsTempLocation)
@@ -402,7 +409,7 @@ class CarbonGlobalDictionaryGenerateRDD(
         val dictWriteTask = new DictionaryWriterTask(valuesBuffer,
           dictionaryForDistinctValueLookUp,
           model.table,
-          model.columnIdentifier(split.index),
+          dictionaryColumnUniqueIdentifier,
           model.hdfsLocation,
           model.primDimensions(split.index).getColumnSchema,
           isDictFileExists
@@ -414,7 +421,7 @@ class CarbonGlobalDictionaryGenerateRDD(
         // if new data came than rewrite sort index file
         if (distinctValues.size() > 0) {
           val sortIndexWriteTask = new SortIndexWriterTask(model.table,
-            model.columnIdentifier(split.index),
+            dictionaryColumnUniqueIdentifier,
             model.primDimensions(split.index).getDataType,
             model.hdfsLocation,
             dictionaryForDistinctValueLookUp,

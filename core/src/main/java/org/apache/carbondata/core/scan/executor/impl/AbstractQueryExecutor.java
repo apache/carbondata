@@ -50,6 +50,7 @@ import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
@@ -58,6 +59,8 @@ import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
@@ -181,12 +184,16 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     QueryUtil.getAllFilterDimensions(queryModel.getFilterExpressionResolverTree(),
         queryProperties.complexFilterDimension, queryProperties.filterMeasures);
 
+    CarbonTable carbonTable = queryModel.getTable();
+    TableProvider tableProvider = new SingleTableProvider(carbonTable);
+
     queryStatistic = new QueryStatistic();
     // dictionary column unique column id to dictionary mapping
     // which will be used to get column actual data
     queryProperties.columnToDictionayMapping = QueryUtil
         .getDimensionDictionaryDetail(queryModel.getQueryDimension(),
-            queryProperties.complexFilterDimension, queryModel.getAbsoluteTableIdentifier());
+            queryProperties.complexFilterDimension, queryModel.getAbsoluteTableIdentifier(),
+            tableProvider);
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_DICTIONARY, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);

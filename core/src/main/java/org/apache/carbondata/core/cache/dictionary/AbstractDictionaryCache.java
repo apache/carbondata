@@ -93,7 +93,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
     DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
     CarbonDictionaryMetadataReader columnMetadataReaderImpl = dictService
         .getDictionaryMetadataReader(dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-            dictionaryColumnUniqueIdentifier.getColumnIdentifier(), carbonStorePath);
+            dictionaryColumnUniqueIdentifier, carbonStorePath);
 
     CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk = null;
     // read metadata file
@@ -121,7 +121,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
     CarbonDictionaryMetadataReader columnMetadataReaderImpl = dictService
             .getDictionaryMetadataReader(
                     dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-                    dictionaryColumnUniqueIdentifier.getColumnIdentifier(), carbonStorePath);
+                    dictionaryColumnUniqueIdentifier, carbonStorePath);
 
     CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk = null;
     // read metadata file
@@ -158,7 +158,8 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) throws IOException {
     PathService pathService = CarbonCommonFactory.getPathService();
     CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
-        dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
+        dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
+        dictionaryColumnUniqueIdentifier);
     String dictionaryFilePath = carbonTablePath.getDictionaryMetaFilePath(
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
     FileFactory.FileType fileType = FileFactory.getFileType(dictionaryFilePath);
@@ -280,7 +281,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
       throws IOException {
     DictionaryCacheLoader dictionaryCacheLoader =
         new DictionaryCacheLoaderImpl(dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-            carbonStorePath);
+            carbonStorePath, dictionaryColumnUniqueIdentifier);
     dictionaryCacheLoader
         .load(dictionaryInfo, dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
             dictionaryChunkStartOffset, dictionaryChunkEndOffset, loadSortIndex);
