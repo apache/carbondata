@@ -17,6 +17,7 @@
 package org.apache.carbondata.processing.sortandgroupby.sortdata;
 
 import java.io.File;
+import java.util.Random;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -84,8 +85,10 @@ public class SortIntermediateFileMerger {
    * @param intermediateFiles
    */
   private void startIntermediateMerging(File[] intermediateFiles) {
+    int index = new Random().nextInt(parameters.getTempFileLocation().length);
+    String chosenTempDir = parameters.getTempFileLocation()[index];
     File file = new File(
-        parameters.getTempFileLocation() + File.separator + parameters.getTableName() + System
+        chosenTempDir + File.separator + parameters.getTableName() + System
             .nanoTime() + CarbonCommonConstants.MERGERD_EXTENSION);
     IntermediateFileMerger merger = new IntermediateFileMerger(parameters, intermediateFiles, file);
     executorService.submit(merger);
