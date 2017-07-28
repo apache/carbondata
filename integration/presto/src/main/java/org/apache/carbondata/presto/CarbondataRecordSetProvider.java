@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.presto;
 
+import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.presto.impl.CarbonTableCacheModel;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
 import com.facebook.presto.spi.ColumnHandle;
@@ -102,7 +103,8 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
     CarbonTable targetTable = tableCacheModel.carbonTable;
     CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(targetTable, targetCols);
     QueryModel queryModel =
-        QueryModel.createModel(targetTable.getAbsoluteTableIdentifier(), queryPlan, targetTable);
+        QueryModel.createModel(targetTable.getAbsoluteTableIdentifier(),
+            queryPlan, targetTable, new DataTypeConverterImpl());
 
     // Push down filter
     fillFilter2QueryModel(queryModel, carbondataSplit.getConstraints(), targetTable);
