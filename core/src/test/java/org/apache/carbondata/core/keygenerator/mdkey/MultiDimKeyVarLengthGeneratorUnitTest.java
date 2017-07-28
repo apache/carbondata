@@ -34,23 +34,6 @@ public class MultiDimKeyVarLengthGeneratorUnitTest {
     multiDimKeyVarLengthGenerator = new MultiDimKeyVarLengthGenerator(lens);
   }
 
-  @Test public void testGetSubKeyArray() throws Exception {
-    byte[] key = new byte[] { 1, 102, 20 };
-    int index = 1;
-    int size = 2;
-    long[] expected = new long[] { 0, 1 };
-    long[] result = multiDimKeyVarLengthGenerator.getSubKeyArray(key, index, size);
-    assertThat(result, is(equalTo(expected)));
-  }
-
-  @Test public void testGetSubKeyArrayWithIndexIsLessThanZeroAndSizeIsZero() throws Exception {
-    byte[] key = new byte[] { 1, 102, 20 };
-    int index = -1;
-    int size = 0;
-    long[] result = multiDimKeyVarLengthGenerator.getSubKeyArray(key, index, size);
-    assertNull(result);
-  }
-
   @Test public void testEqualsWithSameInstance() throws Exception {
     int[] lens = new int[] { 1, 2, 3 };
     MultiDimKeyVarLengthGenerator multiDimKeyVarLengthGenerator1 =

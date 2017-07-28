@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -322,7 +323,8 @@ public final class FilterUtil {
    * @return
    */
   public static boolean checkIfDataTypeNotTimeStamp(Expression expression) {
-    if (expression.getFilterExpressionType() == ExpressionType.LITERAL) {
+    if (expression.getFilterExpressionType() == ExpressionType.LITERAL
+        && expression instanceof LiteralExpression) {
       DataType dataType = ((LiteralExpression) expression).getLiteralExpDataType();
       if (!(dataType == DataType.TIMESTAMP || dataType == DataType.DATE)) {
         return true;
@@ -1288,7 +1290,9 @@ public final class FilterUtil {
         default:
           return -1;
       }
-    } catch (Exception e) {
+    } catch (ParseException e) {
+      return -1;
+    } catch (NumberFormatException e) {
       return -1;
     }
   }
@@ -1361,8 +1365,7 @@ public final class FilterUtil {
     if (segmentProperties.getNumberOfNoDictSortColumns() == 0) {
       listOfStartKeyByteArray = new ArrayList<byte[]>();
       listOfEndKeyByteArray = new ArrayList<byte[]>();
-    } else if (segmentProperties.getNumberOfNoDictSortColumns() < listOfStartKeyByteArray
-        .size()) {
+    } else {
       while (segmentProperties.getNumberOfNoDictSortColumns() < listOfStartKeyByteArray.size()) {
         listOfStartKeyByteArray.remove(listOfStartKeyByteArray.size() - 1);
         listOfEndKeyByteArray.remove(listOfEndKeyByteArray.size() - 1);
@@ -1428,7 +1431,9 @@ public final class FilterUtil {
         default:
           return filterMember1.compareTo(filterMember2);
       }
-    } catch (Exception e) {
+    } catch (ParseException e) {
+      return -1;
+    } catch (NumberFormatException e) {
       return -1;
     }
   }

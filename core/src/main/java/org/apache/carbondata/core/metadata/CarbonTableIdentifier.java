@@ -25,6 +25,8 @@ import java.io.Serializable;
  */
 public class CarbonTableIdentifier implements Serializable {
 
+  private static final long serialVersionUID = -0L;
+
   /**
    * database name
    */
