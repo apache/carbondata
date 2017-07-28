@@ -357,11 +357,6 @@ public class FilterExpressionProcessor implements FilterProcessor {
     BinaryExpression currentExpression = null;
     switch (filterExpressionType) {
       case OR:
-        currentExpression = (BinaryExpression) expressionTree;
-        return new LogicalFilterResolverImpl(
-            createFilterResolverTree(currentExpression.getLeft(), tableIdentifier),
-            createFilterResolverTree(currentExpression.getRight(), tableIdentifier),
-            currentExpression);
       case AND:
         currentExpression = (BinaryExpression) expressionTree;
         return new LogicalFilterResolverImpl(

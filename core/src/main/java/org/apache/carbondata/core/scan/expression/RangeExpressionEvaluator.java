@@ -120,8 +120,8 @@ public class RangeExpressionEvaluator {
 
         for (FilterModificationNode exp : filterExp) {
           if ((exp.getExpType() == GREATERTHAN) || (exp.getExpType() == GREATERTHAN_EQUALTO)) {
-            if ((null == endMax) || ((null != endMax) && (checkLiteralValue(exp.getCurrentExp(),
-                endMax.getCurrentExp())))) {
+            if ((null == endMax) || checkLiteralValue(exp.getCurrentExp(),
+                endMax.getCurrentExp())) {
               if (null == startMin) {
                 startMin = exp;
               } else {
@@ -141,8 +141,8 @@ public class RangeExpressionEvaluator {
             }
           }
           if ((exp.getExpType() == LESSTHAN) || (exp.getExpType() == LESSTHAN_EQUALTO)) {
-            if ((null == startMin) || ((null != startMin) && (checkLiteralValue(exp.getCurrentExp(),
-                startMin.getCurrentExp())))) {
+            if ((null == startMin) || checkLiteralValue(exp.getCurrentExp(),
+                startMin.getCurrentExp())) {
               if (null == endMax) {
                 endMax = exp;
               } else {
@@ -411,10 +411,10 @@ public class RangeExpressionEvaluator {
       ExpressionType srcExpType = getExpressionType(this.getSrcNode());
       ExpressionType tarExpType = getExpressionType(currentNode);
 
-      if ((null != srcColumnName) && (null != tarColumnName) && (srcColumnName == tarColumnName)
-          && (srcExpType != ExpressionType.FALSE) && (tarExpType != ExpressionType.FALSE) && (
-          (matchExpType(srcExpType, tarExpType)) && checkLiteralValue(this.getSrcNode(),
-              currentNode))) {
+      if ((null != srcColumnName) && (null != tarColumnName) && (srcColumnName
+          .equals(tarColumnName)) && (srcExpType != ExpressionType.FALSE) && (tarExpType
+          != ExpressionType.FALSE) && ((matchExpType(srcExpType, tarExpType)) && checkLiteralValue(
+          this.getSrcNode(), currentNode))) {
         this.setTarNode(currentNode);
         this.setTarParentNode(parentNode);
         return parentNode;

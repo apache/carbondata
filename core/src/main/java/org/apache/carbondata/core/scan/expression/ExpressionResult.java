@@ -187,7 +187,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             }
             return parser.format(new Timestamp((long) value));
           } else if (value instanceof Integer) {
-            return parser.format(new java.sql.Date((int)value));
+            return parser.format(new java.sql.Date((long)value));
           }
           return value.toString();
         default:
@@ -308,7 +308,6 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         case LONG:
           return new BigDecimal((long) value);
         case DOUBLE:
-          return new BigDecimal(value.toString());
         case DECIMAL:
           return new BigDecimal(value.toString());
         case DATE:
@@ -546,7 +545,9 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         default:
           return this.getString().compareTo(o.getString());
       }
-    } catch (Exception e) {
+    } catch (ParseException e) {
+      return -1;
+    } catch (FilterIllegalMemberException e) {
       return -1;
     }
   }

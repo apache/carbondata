@@ -29,6 +29,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
  */
 public class PartitionInfo implements Serializable {
 
+  private static final long serialVersionUID = -0L;
+
   private List<ColumnSchema> columnSchemaList;
 
   private PartitionType partitionType;

@@ -66,16 +66,6 @@ public class MultiDimKeyVarLengthGenerator extends AbstractKeyGenerator {
     return bits.getByteSize();
   }
 
-  @Override public long[] getSubKeyArray(byte[] key, int index, int size) {
-    if (index < 0 || size == 0) {
-      return null;
-    }
-    long[] keys = bits.getKeyArray(key, 0);
-    long[] rtn = new long[size];
-    System.arraycopy(keys, index, rtn, 0, size);
-    return rtn;
-  }
-
   @Override public int[] getKeyByteOffsets(int index) {
     return byteRangesForKeys[index];
   }

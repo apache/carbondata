@@ -52,7 +52,7 @@ public class CarbonLockFactory {
    */
   public static ICarbonLock getCarbonLockObj(CarbonTableIdentifier tableIdentifier,
       String lockFile) {
-    switch (lockTypeConfigured.toUpperCase()) {
+    switch (lockTypeConfigured) {
       case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
         return new LocalFileLock(tableIdentifier, lockFile);
 
@@ -74,7 +74,7 @@ public class CarbonLockFactory {
    * @return carbon lock
    */
   public static ICarbonLock getCarbonLockObj(String locFileLocation, String lockFile) {
-    switch (lockTypeConfigured.toUpperCase()) {
+    switch (lockTypeConfigured) {
       case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
         return new LocalFileLock(locFileLocation, lockFile);
 
@@ -94,7 +94,8 @@ public class CarbonLockFactory {
    */
   private static void getLockTypeConfigured() {
     lockTypeConfigured = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT);
+        .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT)
+        .toUpperCase();
     LOGGER.info("Configured lock type is: " + lockTypeConfigured);
   }
 
