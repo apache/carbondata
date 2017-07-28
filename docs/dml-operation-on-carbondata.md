@@ -148,21 +148,65 @@ You can use the following options to load data:
    * If this option is set to some invalid value other than TRUE or FALSE then it uses the default value.
    
    * If this option is set to TRUE, then high.cardinality.identify.enable property will be disabled during data load.
-   
+
   ### Example:
 
-```
-LOAD DATA local inpath '/opt/rawdata/data.csv' INTO table carbontable
-options('DELIMITER'=',', 'QUOTECHAR'='"','COMMENTCHAR'='#',
-'FILEHEADER'='empno,empname,designation,doj,workgroupcategory,
- workgroupcategoryname,deptno,deptname,projectcode,
- projectjoindate,projectenddate,attendance,utilization,salary',
-'MULTILINE'='true','ESCAPECHAR'='\','COMPLEX_DELIMITER_LEVEL_1'='$',
-'COMPLEX_DELIMITER_LEVEL_2'=':',
-'ALL_DICTIONARY_PATH'='/opt/alldictionary/data.dictionary',
-'SINGLE_PASS'='TRUE'
-)
-```
+   ```
+   LOAD DATA local inpath '/opt/rawdata/data.csv' INTO table carbontable
+   options('DELIMITER'=',', 'QUOTECHAR'='"','COMMENTCHAR'='#',
+   'FILEHEADER'='empno,empname,designation,doj,workgroupcategory,
+    workgroupcategoryname,deptno,deptname,projectcode,
+    projectjoindate,projectenddate,attendance,utilization,salary',
+   'MULTILINE'='true','ESCAPECHAR'='\','COMPLEX_DELIMITER_LEVEL_1'='$',
+   'COMPLEX_DELIMITER_LEVEL_2'=':',
+   'ALL_DICTIONARY_PATH'='/opt/alldictionary/data.dictionary',
+   'SINGLE_PASS'='TRUE'
+   )
+   ```
+
+- **SORT_SCOPE:** This property can have four possible values :
+
+    * BATCH_SORT : The sorting scope is smaller and more index tree will be created,thus loading is faster but query maybe slower.
+
+    * LOCAL_SORT : The sorting scope is bigger and one index tree per data node will be created, thus loading is slower but query is faster.
+
+    * GLOBAL_SORT : The sorting scope is bigger and one index tree per task will be created, thus loading is slower but query is faster.
+
+    * NO_SORT     : Feasible if we want to load our data in unsorted manner.
+
+    For BATCH_SORT:
+
+    ```
+    OPTIONS ('SORT_SCOPE'='BATCH_SORT')
+    ```
+
+    You can also specify the sort size option for sort scope.
+
+    ```
+    OPTIONS('SORT_SCOPE'='BATCH_SORT', 'batch_sort_size_inmb'='7')
+    ```
+
+    Note :
+
+    * batch_sort_size_inmb : Size of data in MB to be processed in batch. By default it is the 45 percent size of sort.inmemory.size.inmb(Memory size in MB available for in-memory sort).
+
+    For GLOBAL_SORT :
+
+    ```
+    OPTIONS ('SORT_SCOPE'= GLOBAL_SORT ')
+    ```
+
+    You can also specify the number of partitions to use when shuffling data for sort. If it is not configured, or configured less than 1, then it uses the number of map tasks as reduce tasks. It is recommended that each reduce task deal with 512MB - 1GB data.
+
+    ```
+    OPTIONS( 'SORT_SCOPE'='GLOBAL_SORT', 'GLOBAL_SORT_PARTITIONS'='2')
+    ```
+
+    Note :
+
+    * Increasing number of partitions might require increasing spark.driver.maxResultSize as sampling data collected at driver increases with increasing partitions.
+
+    * Increasing number of partitions might increase the number of Btree.
 
 - **BAD RECORDS HANDLING:** Methods of handling bad records are as follows:
 
