@@ -71,8 +71,8 @@ object CarbonSortColumnsExample {
        """.stripMargin)
 
     // Create table with sort columns
-    // Currently sort_column don't support "FLOAD, DOUBLE, DECIMAL"
-    // but can support other numeric type(like: INT, LONG)
+    // you can specify any columns to sort columns for building MDX index, remark: currently
+    // sort columns don't support "FLOAT, DOUBLE, DECIMAL"
     spark.sql(
       s"""
          | CREATE TABLE sort_columns_table(
