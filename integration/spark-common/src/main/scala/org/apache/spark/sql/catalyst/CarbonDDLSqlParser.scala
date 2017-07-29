@@ -253,13 +253,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     }
     val (dims, msrs, noDictionaryDims, sortKeyDims) = extractDimAndMsrFields(
       fields, tableProperties)
-    if (dims.isEmpty && !isAlterFlow) {
-      throw new MalformedCarbonCommandException(
-        s"Table ${dbName.getOrElse(CarbonCommonConstants.DATABASE_DEFAULT_NAME)}.$tableName " +
-        "can not be created without key columns. Please use DICTIONARY_INCLUDE or " +
-        "DICTIONARY_EXCLUDE to set at least one key column " +
-        "if all specified columns are numeric types")
-    }
 
     // column properties
     val colProps = extractColumnProperties(fields, tableProperties)
