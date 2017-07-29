@@ -254,7 +254,7 @@ class CarbonScanRDD(
 
   private def prepareInputFormatForExecutor(conf: Configuration): CarbonTableInputFormat[Object] = {
     CarbonTableInputFormat.setCarbonReadSupport(conf, readSupport)
-    CarbonTableInputFormat.setTableInfo(conf, TableInfo.deserialize(serializedTableInfo))
+    CarbonTableInputFormat.setTableInfo(conf, getTableInfo)
     CarbonTableInputFormat.setDataTypeConverter(conf, new SparkDataTypeConverterImpl)
     createInputFormat(conf)
   }
