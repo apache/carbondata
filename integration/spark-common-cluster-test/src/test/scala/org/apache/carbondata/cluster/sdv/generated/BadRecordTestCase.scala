@@ -87,14 +87,12 @@ class BadRecordTestCase extends QueryTest with BeforeAndAfterAll {
   //create table and Load history data with parameters BAD_RECORDS_ACTION=FAIL/FORCE/REDIRECT/IGNORE,BAD_RECORD_LOGGER_ENABLE=true/false and IS_EMPTY_DATA_BAD_RECORD=false/true  from CSV with' Delimiters , Quote characters '
   test("AR-Develop-Feature-BadRecords-001_PTS006_TC001", Include) {
     sql(s"""drop table if exists abadrecordtest1""").collect
-     sql(s"""CREATE TABLE abadrecordtest1 (ID int,CUST_ID int,cust_name string) STORED BY 'org.apache.carbondata.format'""").collect
-    intercept[Exception] {
-      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/test6.csv' into table abadrecordtest1 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'="'",'is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE','BAD_RECORDS_LOGGER_ENABLE'='TRUE')""").collect
+    sql(s"""CREATE TABLE abadrecordtest1 (ID int,CUST_ID int,cust_name string) STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/badrecord/test6.csv' into table abadrecordtest1 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'="'",'is_empty_data_bad_record'='false','BAD_RECORDS_ACTION'='IGNORE','BAD_RECORDS_LOGGER_ENABLE'='TRUE')""").collect
       checkAnswer(
         s"""select count(*) from abadrecordtest1""",
         Seq(Row(3)), "BadRecordTestCase_AR-Develop-Feature-BadRecords-001_PTS006_TC001")
-    }
-     sql(s"""drop table if exists abadrecordtest1""").collect
+    sql(s"""drop table if exists abadrecordtest1""").collect
   }
 
 

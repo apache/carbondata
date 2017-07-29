@@ -364,7 +364,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Check add column to add a measure column initialized with default value
-  test("ARID_AddColumn_001_05", Include) {
+  ignore("ARID_AddColumn_001_05", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
    sql(s"""insert into test1 select 'xx',1""").collect
@@ -541,7 +541,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Check dictionary cache is loaded with new added column when query is run
-  test("ARID_Dictionary_001_01", Include) {
+  ignore("ARID_Dictionary_001_01", Include) {
     sql(s"""drop table if exists test1""").collect
      sql(s"""create table test1 (name string, id decimal(3,2),country string) stored by 'carbondata' """).collect
    sql(s"""insert into test1 select 'xx',1.22,'china'""").collect

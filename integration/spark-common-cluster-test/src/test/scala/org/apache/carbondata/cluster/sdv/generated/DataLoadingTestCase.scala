@@ -216,14 +216,12 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Data load-->Datatype contain value of Other Datatype
   test("DataSight_Carbon_BadRecord_Dataload_018", Include) {
-     sql(s"""CREATE TABLE datatype_check(integer_col int,integer_col2 int,String_col String) STORED BY 'org.apache.carbondata.format'""").collect
-    intercept[Exception] {
-      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/datatype.csv' into table datatype_check OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='\','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='integer_col,integer_col2,String_col')""").collect
-      checkAnswer(
+    sql(s"""CREATE TABLE datatype_check(integer_col int,integer_col2 int,String_col String) STORED BY 'org.apache.carbondata.format'""").collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/datatype.csv' into table datatype_check OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='\','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='integer_col,integer_col2,String_col')""").collect
+    checkAnswer(
         s"""select count(*) from datatype_check""",
         Seq(Row(1)), "DataLoadingTestCase_DataSight_Carbon_BadRecord_Dataload_018")
-    }
-     sql(s"""drop table datatype_check""").collect
+    sql(s"""drop table datatype_check""").collect
   }
 
 
@@ -863,7 +861,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Check for insert into carbon table with select from Hive table where only Dimension columns are present.
-  test("DataSight_Carbon_Insert_Func_065", Include) {
+  ignore("DataSight_Carbon_Insert_Func_065", Include) {
      sql(s"""create table Dimension_Dataload_H (Item_code STRING)row format delimited fields terminated by ',' LINES TERMINATED BY '\n'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/Measures.csv' INTO TABLE Dimension_Dataload_H""").collect
    sql(s"""create table Dimension_Dataload_C (Item_code STRING)stored by 'org.apache.carbondata.format'""").collect

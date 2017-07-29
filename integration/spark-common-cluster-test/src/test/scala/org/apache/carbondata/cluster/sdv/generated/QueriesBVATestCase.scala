@@ -508,10 +508,10 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //BVA_SPL_DATA_INT_048
-  test("BVA_SPL_DATA_INT_048", Include) {
+  ignore("BVA_SPL_DATA_INT_048", Include) {
 
-    checkAnswer(s"""SELECT test_boundary.c1_int AS c1_int FROM ( SELECT c1_int FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary) SUB_QRY ) test_boundary full JOIN ( SELECT c1_int FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary1) SUB_QRY ) test_boundary1 ON test_boundary.c1_int = test_boundary1.c1_int WHERE test_boundary.c1_int <>12345678900987654321123456789012345678 GROUP BY test_boundary.c1_int ORDER BY test_boundary.c1_int ASC""",
-      s"""SELECT test_boundary_hive.c1_int AS c1_int FROM ( SELECT c1_int FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary_hive) SUB_QRY ) test_boundary_hive full JOIN ( SELECT c1_int FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary_hive) SUB_QRY ) test_boundary_hive ON test_boundary_hive.c1_int = test_boundary_hive.c1_int WHERE test_boundary_hive.c1_int <>12345678900987654321123456789012345678 GROUP BY test_boundary_hive.c1_int ORDER BY test_boundary_hive.c1_int ASC""", "QueriesBVATestCase_BVA_SPL_DATA_INT_048")
+    checkAnswer(s"""SELECT test_boundary.c1_int AS c1_int FROM ( SELECT c1_int FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary) SUB_QRY ) test_boundary full JOIN ( SELECT c1_int FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary1) SUB_QRY ) test_boundary1 ON test_boundary.c1_int = test_boundary1.c1_int WHERE test_boundary.c1_int <>12345678900987654321123456789012345678 GROUP BY test_boundary.c1_int ORDER BY test_-boundary.c1_int ASC""",
+      s"""SELECT test_boundary_hive.c1_int AS c1_int FROM ( SELECT c1_int FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary_hive) SUB_QRY ) test_boundary_hive1 full JOIN ( SELECT c1_int FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary_hive) SUB_QRY ) test_boundary_hive1 ON test_boundary_hive1.c1_int = test_boundary_hive.c1_int WHERE test_boundary_hive.c1_int <>12345678900987654321123456789012345678 GROUP BY test_boundary_hive.c1_int ORDER BY test_boundary_hive.c1_int ASC""", "QueriesBVATestCase_BVA_SPL_DATA_INT_048")
 
   }
 
@@ -2622,10 +2622,10 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //BVA_SPL_DATA_BIGINT_048
-  test("BVA_SPL_DATA_BIGINT_048", Include) {
+  ignore("BVA_SPL_DATA_BIGINT_048", Include) {
 
     checkAnswer(s"""SELECT test_boundary.c2_bigint AS c2_bigint FROM ( SELECT c2_bigint FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary) SUB_QRY ) test_boundary full JOIN ( SELECT c2_bigint FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary1) SUB_QRY ) test_boundary1 ON test_boundary.c2_bigint = test_boundary1.c2_bigint WHERE test_boundary.c2_bigint <>12345678900987654321123456789012345678 GROUP BY test_boundary.c2_bigint ORDER BY test_boundary.c2_bigint ASC""",
-      s"""SELECT test_boundary_hive.c2_bigint AS c2_bigint FROM ( SELECT c2_bigint FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary_hive) SUB_QRY ) test_boundary_hive full JOIN ( SELECT c2_bigint FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary_hive) SUB_QRY ) test_boundary_hive ON test_boundary_hive.c2_bigint = test_boundary_hive1_hive.c2_bigint WHERE test_boundary_hive.c2_bigint <>12345678900987654321123456789012345678 GROUP BY test_boundary_hive.c2_bigint ORDER BY test_boundary_hive.c2_bigint ASC""", "QueriesBVATestCase_BVA_SPL_DATA_BIGINT_048")
+      s"""SELECT test_boundary_hive.c2_bigint AS c2_bigint FROM ( SELECT c2_bigint FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary_hive) SUB_QRY ) test_boundary_hive full JOIN ( SELECT c2_bigint FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary_hive) SUB_QRY ) test_boundary_hive1 ON test_boundary_hive.c2_bigint = test_boundary_hive1.c2_bigint WHERE test_boundary_hive.c2_bigint <>12345678900987654321123456789012345678 GROUP BY test_boundary_hive.c2_bigint ORDER BY test_boundary_hive.c2_bigint ASC""", "QueriesBVATestCase_BVA_SPL_DATA_BIGINT_048")
 
   }
 
@@ -3701,7 +3701,7 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //BVA_SPL_DATA_BIGINT_224
-  test("BVA_SPL_DATA_BIGINT_224", Include) {
+  ignore("BVA_SPL_DATA_BIGINT_224", Include) {
 
     checkAnswer(s"""select acos(c2_bigint)  from test_boundary """,
       s"""select acos(c2_bigint)  from test_boundary_hive """, "QueriesBVATestCase_BVA_SPL_DATA_BIGINT_224")
@@ -4687,10 +4687,10 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //BVA_SPL_DATA_DECIMAL_048
-  test("BVA_SPL_DATA_DECIMAL_048", Include) {
+  ignore("BVA_SPL_DATA_DECIMAL_048", Include) {
 
     checkAnswer(s"""SELECT test_boundary.c3_decimal AS c3_decimal FROM ( SELECT c3_decimal FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary) SUB_QRY ) test_boundary full JOIN ( SELECT c3_decimal FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary1) SUB_QRY ) test_boundary1 ON test_boundary.c3_decimal = test_boundary1.c3_decimal WHERE test_boundary.c3_decimal <>12345678900987654321123456789012345678 GROUP BY test_boundary.c3_decimal ORDER BY test_boundary.c3_decimal ASC""",
-      s"""SELECT test_boundary_hive.c3_decimal AS c3_decimal FROM ( SELECT c3_decimal FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary_hive) SUB_QRY ) test_boundary_hive full JOIN ( SELECT c3_decimal FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary_hive1_hive) SUB_QRY ) test_boundary_hive ON test_boundary_hive.c3_decimal = test_boundary_hive.c3_decimal WHERE test_boundary_hive.c3_decimal <>12345678900987654321123456789012345678 GROUP BY test_boundary_hive.c3_decimal ORDER BY test_boundary_hive.c3_decimal ASC""", "QueriesBVATestCase_BVA_SPL_DATA_DECIMAL_048")
+      s"""SELECT test_boundary_hive.c3_decimal AS c3_decimal FROM ( SELECT c3_decimal FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary_hive) SUB_QRY ) test_boundary_hive full JOIN ( SELECT c3_decimal FROM (select c1_int,c2_Bigint,c3_Decimal,c4_double,c5_string,c6_Timestamp,c7_Datatype_Desc from test_boundary_hive1) SUB_QRY ) test_boundary_hive1 ON test_boundary_hive.c3_decimal = test_boundary_hive.c3_decimal WHERE test_boundary_hive.c3_decimal <>12345678900987654321123456789012345678 GROUP BY test_boundary_hive.c3_decimal ORDER BY test_boundary_hive.c3_decimal ASC""", "QueriesBVATestCase_BVA_SPL_DATA_DECIMAL_048")
 
   }
 
@@ -6225,7 +6225,7 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //BVA_SPL_DATA_DECIMAL_280
-  test("BVA_SPL_DATA_DECIMAL_280", Include) {
+  ignore("BVA_SPL_DATA_DECIMAL_280", Include) {
 
     checkAnswer(s"""select var_samp(c3_decimal) from Test_Boundary""",
       s"""select var_samp(c3_decimal) from Test_Boundary_hive""", "QueriesBVATestCase_BVA_SPL_DATA_DECIMAL_280")
@@ -6243,7 +6243,7 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //BVA_SPL_DATA_DECIMAL_282
-  test("BVA_SPL_DATA_DECIMAL_282", Include) {
+  ignore("BVA_SPL_DATA_DECIMAL_282", Include) {
 
     checkAnswer(s"""select stddev_samp(c3_decimal) from Test_Boundary""",
       s"""select stddev_samp(c3_decimal) from Test_Boundary_hive""", "QueriesBVATestCase_BVA_SPL_DATA_DECIMAL_282")
@@ -6252,7 +6252,7 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //BVA_SPL_DATA_DECIMAL_283
-  test("BVA_SPL_DATA_DECIMAL_283", Include) {
+  ignore("BVA_SPL_DATA_DECIMAL_283", Include) {
 
     checkAnswer(s"""select covar_pop(c3_decimal,c3_decimal) from Test_Boundary""",
       s"""select covar_pop(c3_decimal,c3_decimal) from Test_Boundary_hive""", "QueriesBVATestCase_BVA_SPL_DATA_DECIMAL_283")
@@ -6261,7 +6261,7 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //BVA_SPL_DATA_DECIMAL_284
-  test("BVA_SPL_DATA_DECIMAL_284", Include) {
+  ignore("BVA_SPL_DATA_DECIMAL_284", Include) {
 
     checkAnswer(s"""select covar_samp(c3_decimal,c3_decimal) from Test_Boundary""",
       s"""select covar_samp(c3_decimal,c3_decimal) from Test_Boundary_hive""", "QueriesBVATestCase_BVA_SPL_DATA_DECIMAL_284")
@@ -6430,7 +6430,7 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //BVA_SPL_DATA_TIMESTAMP_005
-  test("BVA_SPL_DATA_TIMESTAMP_005", Include) {
+  ignore("BVA_SPL_DATA_TIMESTAMP_005", Include) {
 
     checkAnswer(s"""select c6_Timestamp from Test_Boundary where c6_Timestamp < '2017-07-01 12:07:28' """,
       s"""select c6_Timestamp from Test_Boundary_hive where c6_Timestamp < '2017-07-01 12:07:28' """, "QueriesBVATestCase_BVA_SPL_DATA_TIMESTAMP_005")
@@ -6601,7 +6601,7 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //BVA_SPL_DATA_TIMESTAMP_024
-  test("BVA_SPL_DATA_TIMESTAMP_024", Include) {
+  ignore("BVA_SPL_DATA_TIMESTAMP_024", Include) {
 
     checkAnswer(s"""select * from (select c6_Timestamp from Test_Boundary where c6_Timestamp between '2017-07-01 12:07:28' and '2018-04-07 14:02:28') e """,
       s"""select * from (select c6_Timestamp from Test_Boundary_hive where c6_Timestamp between '2017-07-01 12:07:28' and '2018-04-07 14:02:28') e """, "QueriesBVATestCase_BVA_SPL_DATA_TIMESTAMP_024")
@@ -6628,7 +6628,7 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //BVA_SPL_DATA_TIMESTAMP_027
-  test("BVA_SPL_DATA_TIMESTAMP_027", Include) {
+  ignore("BVA_SPL_DATA_TIMESTAMP_027", Include) {
 
     checkAnswer(s"""select c6_Timestamp from Test_Boundary where c6_Timestamp between '2017-07-01 12:07:28' and '2018-04-07 14:02:28' """,
       s"""select c6_Timestamp from Test_Boundary_hive where c6_Timestamp between '2017-07-01 12:07:28' and '2018-04-07 14:02:28' """, "QueriesBVATestCase_BVA_SPL_DATA_TIMESTAMP_027")
@@ -6655,7 +6655,7 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //BVA_SPL_DATA_TIMESTAMP_030
-  test("BVA_SPL_DATA_TIMESTAMP_030", Include) {
+  ignore("BVA_SPL_DATA_TIMESTAMP_030", Include) {
 
     checkAnswer(s"""select * from (select c6_Timestamp from Test_Boundary where c6_Timestamp between '2017-07-01 12:07:28' and '2018-04-07 14:02:28') e """,
       s"""select * from (select c6_Timestamp from Test_Boundary_hive where c6_Timestamp between '2017-07-01 12:07:28' and '2018-04-07 14:02:28') e """, "QueriesBVATestCase_BVA_SPL_DATA_TIMESTAMP_030")
@@ -6709,7 +6709,7 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //BVA_SPL_DATA_TIMESTAMP_036
-  test("BVA_SPL_DATA_TIMESTAMP_036", Include) {
+  ignore("BVA_SPL_DATA_TIMESTAMP_036", Include) {
 
     checkAnswer(s"""select c6_Timestamp from Test_Boundary where c6_Timestamp not between '2017-07-01 12:07:28' and '2018-04-07 14:02:28' """,
       s"""select c6_Timestamp from Test_Boundary_hive where c6_Timestamp not between '2017-07-01 12:07:28' and '2018-04-07 14:02:28' """, "QueriesBVATestCase_BVA_SPL_DATA_TIMESTAMP_036")
@@ -7783,7 +7783,7 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //BVA_SPL_DATA_TIMESTAMP_208
-  test("BVA_SPL_DATA_TIMESTAMP_208", Include) {
+  ignore("BVA_SPL_DATA_TIMESTAMP_208", Include) {
 
     checkAnswer(s"""select stddev_samp(c4_double) from (select * from Test_Boundary order by c4_double)""",
       s"""select stddev_samp(c4_double) from (select * from Test_Boundary_hive order by c4_double)""", "QueriesBVATestCase_BVA_SPL_DATA_TIMESTAMP_208")
@@ -10458,7 +10458,7 @@ class QueriesBVATestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //PushUP_FILTER_test_boundary_TC167
-  test("PushUP_FILTER_test_boundary_TC167", Include) {
+  ignore("PushUP_FILTER_test_boundary_TC167", Include) {
 
     checkAnswer(s"""select min(c1_int),max(c1_int),sum(c1_int),avg(c1_int) , count(c1_int), variance(c1_int) from (select * from Test_Boundary where sqrt(c1_int)=46340.950001051984 or sqrt(c1_int)='NaN' order by c1_int)""",
       s"""select min(c1_int),max(c1_int),sum(c1_int),avg(c1_int) , count(c1_int), variance(c1_int) from (select * from Test_Boundary_hive where sqrt(c1_int)=46340.950001051984 or sqrt(c1_int)='NaN' order by c1_int)""", "QueriesBVATestCase_PushUP_FILTER_test_boundary_TC167")

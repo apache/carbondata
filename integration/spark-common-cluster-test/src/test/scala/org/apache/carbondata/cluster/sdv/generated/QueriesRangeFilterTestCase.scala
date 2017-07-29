@@ -479,7 +479,7 @@ test("Range_Filter_43", Include) {
        
 
 //Range_Filter_44
-test("Range_Filter_44", Include) {
+ignore("Range_Filter_44", Include) {
   
   checkAnswer(s"""select doj from directDictionaryTable where doj > '2016-03-14 15:00:09'""",
     s"""select doj from directDictionaryTable_hive where doj > '2016-03-14 15:00:09'""", "QueriesRangeFilterTestCase_Range_Filter_44")
@@ -488,7 +488,7 @@ test("Range_Filter_44", Include) {
        
 
 //Range_Filter_45
-test("Range_Filter_45", Include) {
+  ignore("Range_Filter_45", Include) {
   
   checkAnswer(s"""select doj from directDictionaryTable where doj > '2016-03-14 15:00:09' or doj > '2016-03-14 15:00:15'""",
     s"""select doj from directDictionaryTable_hive where doj > '2016-03-14 15:00:09' or doj > '2016-03-14 15:00:15'""", "QueriesRangeFilterTestCase_Range_Filter_45")
@@ -497,7 +497,7 @@ test("Range_Filter_45", Include) {
        
 
 //Range_Filter_46
-test("Range_Filter_46", Include) {
+  ignore("Range_Filter_46", Include) {
   
   checkAnswer(s"""select doj from directDictionaryTable where doj > '2016-03-14 15:00:09' or doj > '2016-03-14 15:00:15' and doj < '2016-03-14 15:00:13'""",
     s"""select doj from directDictionaryTable_hive where doj > '2016-03-14 15:00:09' or doj > '2016-03-14 15:00:15' and doj < '2016-03-14 15:00:13'""", "QueriesRangeFilterTestCase_Range_Filter_46")

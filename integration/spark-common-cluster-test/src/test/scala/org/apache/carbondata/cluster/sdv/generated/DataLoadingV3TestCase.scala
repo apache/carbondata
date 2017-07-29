@@ -301,7 +301,7 @@ class DataLoadingV3TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Check impact on load and query reading when larger value (1 lakh length) present in the column
-  test("PTS_TOR-Productize-New-Features-V3_01_Stress_01_001", Include) {
+  ignore("PTS_TOR-Productize-New-Features-V3_01_Stress_01_001", Include) {
      sql(s"""create table t_carbn1c (name string) stored by 'carbondata' TBLPROPERTIES('table_blocksize'='128','include_dictionary'='name')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/1lakh.csv' into table t_carbn1c OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='name')""").collect
     checkAnswer(s"""select count(*) from t_carbn1c""",
@@ -311,7 +311,7 @@ class DataLoadingV3TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Check impact on load and query reading when larger value (1 lakh length) present in the column when the column is measure
-  test("PTS_TOR-Productize-New-Features-V3_01_Stress_01_007", Include) {
+  ignore("PTS_TOR-Productize-New-Features-V3_01_Stress_01_007", Include) {
 
     checkAnswer(s"""select substring(name,1,10) from t_carbn1c""",
       Seq(Row("hellohowar")), "DataLoadingV3TestCase_PTS_TOR-Productize-New-Features-V3_01_Stress_01_007")

@@ -182,7 +182,7 @@ class V3offheapvectorTestCase extends QueryTest with BeforeAndAfterAll {
   test("PTS_TOR-Productize-New-Features-V3_01_Query_01_054", Include) {
 
     checkAnswer(s"""select CUST_ID from 3lakh_uniqdata limit 10""",
-      Seq(Row(8999),Row("null"),Row("null"),Row("null"),Row("null"),Row("null"),Row("null"),Row("null"),Row("null"),Row("null")), "V3offheapvectorTestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_054")
+      Seq(Row(8999),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null)), "V3offheapvectorTestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_054")
 
   }
 
@@ -254,7 +254,7 @@ class V3offheapvectorTestCase extends QueryTest with BeforeAndAfterAll {
   test("PTS_TOR-Productize-New-Features-V3_01_Query_01_062", Include) {
 
     checkAnswer(s"""select substring(CUST_NAME,1,11),count(*) from 3lakh_uniqdata group by substring(CUST_NAME,1,11) having count(*) > 1""",
-      Seq(Row("CUST_NAME_4,10000","CUST_NAME_4,10000"),Row("CUST_NAME_1,100000","CUST_NAME_1,100000"),Row("CUST_NAME_8,10000","CUST_NAME_8,10000"),Row("CUST_NAME_6,10000","CUST_NAME_6,10000"),Row("CUST_NAME_2,110000","CUST_NAME_2,110000"),Row("CUST_NAME_5,10000","CUST_NAME_5,10000"),Row("CUST_NAME_7,10000","CUST_NAME_7,10000"),Row("CUST_NAME_9,10000","CUST_NAME_9,10000"),Row(",11",",11"),Row("CUST_NAME_3,30623","CUST_NAME_3,30623")), "V3offheapvectorTestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_062")
+      Seq(Row("CUST_NAME_4",10000),Row("CUST_NAME_1",100000),Row("CUST_NAME_8",10000),Row("CUST_NAME_6",10000),Row("CUST_NAME_2",110000),Row("CUST_NAME_5",10000),Row("CUST_NAME_7",10000),Row("CUST_NAME_9",10000),Row("",11),Row("CUST_NAME_3",30623)), "V3offheapvectorTestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_062")
 
   }
 
@@ -263,7 +263,7 @@ class V3offheapvectorTestCase extends QueryTest with BeforeAndAfterAll {
   test("PTS_TOR-Productize-New-Features-V3_01_Query_01_063", Include) {
 
     checkAnswer(s"""select substring(CUST_NAME,1,11),count(*) from 3lakh_uniqdata where  cust_id between 59000 and 160000 group by substring(CUST_NAME,1,11) having count(*) > 1""",
-      Seq(Row("CUST_NAME_1,51001","CUST_NAME_1,51001"),Row("CUST_NAME_8,10000","CUST_NAME_8,10000"),Row("CUST_NAME_6,10000","CUST_NAME_6,10000"),Row("CUST_NAME_5,10000","CUST_NAME_5,10000"),Row("CUST_NAME_7,10000","CUST_NAME_7,10000"),Row("CUST_NAME_9,10000","CUST_NAME_9,10000")), "V3offheapvectorTestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_063")
+      Seq(Row("CUST_NAME_1",51001),Row("CUST_NAME_8",10000),Row("CUST_NAME_6",10000),Row("CUST_NAME_5",10000),Row("CUST_NAME_7",10000),Row("CUST_NAME_9",10000)), "V3offheapvectorTestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_063")
 
   }
 
@@ -288,7 +288,7 @@ class V3offheapvectorTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Check impact on load and query reading when larger value (1 lakh length) present in the column
-  test("PTS_TOR-Productize-New-Features-V3_01_Stress_01_008", Include) {
+  ignore("PTS_TOR-Productize-New-Features-V3_01_Stress_01_008", Include) {
      sql(s"""create table t_carbn1c (name string) stored by 'carbondata' TBLPROPERTIES('table_blocksize'='128','include_dictionary'='name')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/1lakh.csv' into table t_carbn1c OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='name')""").collect
     checkAnswer(s"""select count(*) from t_carbn1c""",
@@ -298,7 +298,7 @@ class V3offheapvectorTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Check impact on load and query reading when larger value (1 lakh length) present in the column when the column is measure
-  test("PTS_TOR-Productize-New-Features-V3_01_Stress_01_009", Include) {
+  ignore("PTS_TOR-Productize-New-Features-V3_01_Stress_01_009", Include) {
 
     checkAnswer(s"""select substring(name,1,10) from t_carbn1c""",
       Seq(Row("hellohowar")), "V3offheapvectorTestCase_PTS_TOR-Productize-New-Features-V3_01_Stress_01_009")
@@ -312,11 +312,11 @@ class V3offheapvectorTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""CREATE TABLE 3lakh_uniqdata2 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128','include_dictionary'='BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,CUST_ID')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/3Lakh.csv' into table 3lakh_uniqdata2 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select a.cust_id, b.cust_name from 3lakh_uniqdata a, 3lakh_uniqdata2 b where a.cust_id = b.cust_id and a.cust_name = b.cust_name and a.cust_id in (29000, 59000, 69000,15000,250000, 310000)""",
-      Seq(Row("29000,CUST_NAME_20000","29000,CUST_NAME_20000"),Row("250000,CUST_NAME_241000","250000,CUST_NAME_241000"),Row("310000,CUST_NAME_301000","310000,CUST_NAME_301000"),Row("59000,CUST_NAME_50000","59000,CUST_NAME_50000"),Row("69000,CUST_NAME_60000","69000,CUST_NAME_60000")), "V3offheapvectorTestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_064")
+      Seq(Row(29000,"CUST_NAME_20000"),Row(250000,"CUST_NAME_241000"),Row(310000,"CUST_NAME_301000"),Row(59000,"CUST_NAME_50000"),Row(69000,"CUST_NAME_60000")), "V3offheapvectorTestCase_PTS_TOR-Productize-New-Features-V3_01_Query_01_064")
      sql(s"""drop table 3lakh_uniqdata""").collect
-   sql(s"""drop table 3lakh_uniqdata2""").collect
-   sql(s"""drop table t_carbn1c""").collect
-   sql(s"""drop table 3lakh_uniqdata1""").collect
+   sql(s"""drop table if exists 3lakh_uniqdata2""").collect
+   sql(s"""drop table if exists t_carbn1c""").collect
+   sql(s"""drop table if exists 3lakh_uniqdata1""").collect
   }
 
   val prop = CarbonProperties.getInstance()
