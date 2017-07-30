@@ -713,13 +713,9 @@ object CommonUtil {
    * @param sparkContext
    */
   def cleanInProgressSegments(storePath: String, sparkContext: SparkContext): Unit = {
-    val prop = CarbonProperties.getInstance().
-      getProperty(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER)
-    if (prop != null) {
-      sparkContext.getConf.set(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER, prop)
-    }
-    val loaderDriver = sparkContext.getConf.get(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER,
-      CarbonCommonConstants.DATA_MANAGEMENT_DRIVER_DEFAULT).toBoolean
+    val loaderDriver = CarbonProperties.getInstance().
+      getProperty(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER,
+        CarbonCommonConstants.DATA_MANAGEMENT_DRIVER_DEFAULT).toBoolean
     if (!loaderDriver) {
       return
     }
