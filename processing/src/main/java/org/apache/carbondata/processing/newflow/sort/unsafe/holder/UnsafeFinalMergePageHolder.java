@@ -82,7 +82,7 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
 
   public void close() {
     for (int i = 0; i < rowPages.length; i++) {
-      rowPages[i].freeMemory();
+      rowPages[i].freeMemory(true);
     }
   }
 }

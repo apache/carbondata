@@ -46,7 +46,7 @@ import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.blockletindex.IndexWrapper;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
-import org.apache.carbondata.core.memory.UnsafeMemoryManager;
+import org.apache.carbondata.core.memory.CarbonUnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -543,7 +543,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     if (null != queryIterator) {
       queryIterator.close();
     }
-    UnsafeMemoryManager.INSTANCE.freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId());
+    CarbonUnsafeMemoryManager.INSTANCE.getUnsafeWorkingMemoryManager()
+        .freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId());
     if (null != queryProperties.executorService) {
       queryProperties.executorService.shutdown();
       try {

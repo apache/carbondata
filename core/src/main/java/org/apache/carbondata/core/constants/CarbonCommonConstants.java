@@ -1140,23 +1140,33 @@ public final class CarbonCommonConstants {
    * to enable offheap sort
    */
   @CarbonProperty
+  @Deprecated
   public static final String ENABLE_OFFHEAP_SORT = "enable.offheap.sort";
-
-  /**
-   * to enable offheap sort
-   */
+  @Deprecated
   public static final String ENABLE_OFFHEAP_SORT_DEFAULT = "true";
+
+  @CarbonProperty
+  public static final String ENABLE_OFFHEAP = "enable.offheap";
+  public static final String ENABLE_OFFHEAP_DEFAULT = "true";
+
   @CarbonProperty
   public static final String ENABLE_INMEMORY_MERGE_SORT = "enable.inmemory.merge.sort";
-
   public static final String ENABLE_INMEMORY_MERGE_SORT_DEFAULT = "false";
+
   @CarbonProperty
   public static final String OFFHEAP_SORT_CHUNK_SIZE_IN_MB = "offheap.sort.chunk.size.inmb";
-
   public static final String OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT = "64";
+
   @CarbonProperty
+  @Deprecated
   public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB = "sort.inmemory.size.inmb";
+  @Deprecated
   public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT = "1024";
+
+  @CarbonProperty
+  public static final String IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB =
+      "carbon.sort.storage.inmemory.size.inmb";
+  public static final String IN_MEMORY_STORAGE_FOR_SORTED_DATA_IN_MB_DEFAULT = "512";
 
   @CarbonProperty
   public static final String UNSAFE_WORKING_MEMORY_IN_MB = "carbon.unsafe.working.memory.in.mb";

@@ -22,9 +22,9 @@ import java.math.BigDecimal;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
+import org.apache.carbondata.core.memory.CarbonUnsafeMemoryManager;
 import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
@@ -63,13 +63,15 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
       case FLOAT:
       case DOUBLE:
         int size = pageSize << dataType.getSizeBits();
-        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
+        memoryBlock = CarbonUnsafeMemoryManager.INSTANCE.getUnsafeWorkingMemoryManager()
+            .allocateMemoryWithRetry(taskId, size);
         baseAddress = memoryBlock.getBaseObject();
         baseOffset = memoryBlock.getBaseOffset();
         break;
       case SHORT_INT:
         size = pageSize * 3;
-        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
+        memoryBlock = CarbonUnsafeMemoryManager.INSTANCE.getUnsafeWorkingMemoryManager()
+            .allocateMemoryWithRetry(taskId, size);
         baseAddress = memoryBlock.getBaseObject();
         baseOffset = memoryBlock.getBaseOffset();
         break;
@@ -314,7 +316,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   public void freeMemory() {
     if (memoryBlock != null) {
-      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
+      CarbonUnsafeMemoryManager.INSTANCE.getUnsafeWorkingMemoryManager()
+          .freeMemory(taskId, memoryBlock);
       memoryBlock = null;
       baseAddress = null;
       baseOffset = 0;
@@ -368,18 +371,19 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public byte[] compress(Compressor compressor) throws MemoryException, IOException {
-    if (UnsafeMemoryManager.isOffHeap()) {
+    if (CarbonUnsafeMemoryManager.INSTANCE.getUnsafeWorkingMemoryManager().isOffHeap()) {
       // use raw compression and copy to byte[]
       int inputSize = pageSize * dataType.getSizeInBytes();
       int compressedMaxSize = compressor.maxCompressedLength(inputSize);
-      MemoryBlock compressed =
-          UnsafeMemoryManager.allocateMemoryWithRetry(taskId, compressedMaxSize);
+      MemoryBlock compressed = CarbonUnsafeMemoryManager.INSTANCE.getUnsafeWorkingMemoryManager()
+          .allocateMemoryWithRetry(taskId, compressedMaxSize);
       long outSize = compressor.rawCompress(baseOffset, inputSize, compressed.getBaseOffset());
       assert outSize < Integer.MAX_VALUE;
       byte[] output = new byte[(int) outSize];
       CarbonUnsafe.unsafe.copyMemory(compressed.getBaseObject(), compressed.getBaseOffset(), output,
           CarbonUnsafe.BYTE_ARRAY_OFFSET, outSize);
-      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, compressed);
+      CarbonUnsafeMemoryManager.INSTANCE.getUnsafeWorkingMemoryManager()
+          .freeMemory(taskId, compressed);
       return output;
     } else {
       return super.compress(compressor);
