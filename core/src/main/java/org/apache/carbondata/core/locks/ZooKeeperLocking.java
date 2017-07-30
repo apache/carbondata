@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.locks;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.List;
 
@@ -70,8 +69,8 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   private String lockTypeFolder;
 
   public ZooKeeperLocking(CarbonTableIdentifier tableIdentifier, String lockFile) {
-    this(tableIdentifier.getDatabaseName() + File.separator + tableIdentifier.getTableName(),
-        lockFile);
+    this(tableIdentifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier
+        .getTableName(), lockFile);
   }
 
   public static void initialize() {
@@ -129,7 +128,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   private void createRecursivly(String path) throws KeeperException, InterruptedException {
     try {
       if (zk.exists(path, true) == null && path.length() > 0) {
-        String temp = path.substring(0, path.lastIndexOf(File.separator));
+        String temp = path.substring(0, path.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
         createRecursivly(temp);
         zk.create(path, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
       } else {

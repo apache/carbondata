@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.core.metadata;
 
-import java.io.File;
 import java.io.Serializable;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -99,8 +98,9 @@ public class AbsoluteTableIdentifier implements Serializable {
   }
 
   public String getTablePath() {
-    return getStorePath() + File.separator + getCarbonTableIdentifier().getDatabaseName() +
-        File.separator + getCarbonTableIdentifier().getTableName();
+    return getStorePath() + CarbonCommonConstants.FILE_SEPARATOR + getCarbonTableIdentifier()
+        .getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + getCarbonTableIdentifier()
+        .getTableName();
   }
 
   public String appendWithLocalPrefix(String path) {

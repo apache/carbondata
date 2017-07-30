@@ -180,7 +180,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     if (!closed) {
       if (null != badRecordLogger) {
         badRecordLogger.closeStreams();
-        renameBadRecord(configuration);
+        renameBadRecord(badRecordLogger, configuration);
       }
       super.close();
       if (converters != null) {
@@ -195,21 +195,26 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
       configuration, RowConverter converter) {
     if (badRecordLogger != null) {
       badRecordLogger.closeStreams();
-      renameBadRecord(configuration);
+      renameBadRecord(badRecordLogger, configuration);
     }
     if (converter != null) {
       converter.finish();
     }
   }
 
-  private static void renameBadRecord(CarbonDataLoadConfiguration configuration) {
-    // rename the bad record in progress to normal
-    CarbonTableIdentifier identifier =
-        configuration.getTableIdentifier().getCarbonTableIdentifier();
-    CarbonDataProcessorUtil.renameBadRecordsFromInProgressToNormal(configuration,
-        identifier.getDatabaseName() + File.separator + identifier.getTableName()
-            + File.separator + configuration.getSegmentId() + File.separator + configuration
-            .getTaskNo());
+  private static void renameBadRecord(BadRecordsLogger badRecordLogger,
+      CarbonDataLoadConfiguration configuration) {
+    // rename operation should be performed only in case either bad reccords loggers is enabled
+    // or bad records redirect is enabled
+    if (badRecordLogger.isBadRecordLoggerEnable() || badRecordLogger.isBadRecordsLogRedirect()) {
+      // rename the bad record in progress to normal
+      CarbonTableIdentifier identifier =
+          configuration.getTableIdentifier().getCarbonTableIdentifier();
+      CarbonDataProcessorUtil.renameBadRecordsFromInProgressToNormal(configuration,
+          identifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + identifier
+              .getTableName() + CarbonCommonConstants.FILE_SEPARATOR + configuration.getSegmentId()
+              + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo());
+    }
   }
 
   @Override protected String getStepName() {

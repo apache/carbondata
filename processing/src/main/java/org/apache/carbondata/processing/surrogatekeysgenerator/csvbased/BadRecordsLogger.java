@@ -259,6 +259,14 @@ public class BadRecordsLogger {
     return isDataLoadFail;
   }
 
+  public boolean isBadRecordLoggerEnable() {
+    return badRecordLoggerEnable;
+  }
+
+  public boolean isBadRecordsLogRedirect() {
+    return badRecordsLogRedirect;
+  }
+
   /**
    * closeStreams void
    */
