@@ -17,10 +17,13 @@
 
 package org.apache.spark.sql.test
 
-import org.apache.spark.sql.{DataFrame, SparkSession, SQLContext}
+import org.apache.spark.SparkConf
+import org.apache.spark.sql._
+import org.apache.spark.sql.test.TestQueryExecutor.integrationPath
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
@@ -32,27 +35,41 @@ class Spark2TestQueryExecutor extends TestQueryExecutorRegister {
   override def sql(sqlText: String): DataFrame = Spark2TestQueryExecutor.spark.sql(sqlText)
 
   override def sqlContext: SQLContext = Spark2TestQueryExecutor.spark.sqlContext
+
+  override def stop(): Unit = Spark2TestQueryExecutor.spark.stop()
 }
 
 object Spark2TestQueryExecutor {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   LOGGER.info("use TestQueryExecutorImplV2")
   CarbonProperties.getInstance()
-    .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
     .addProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
       System.getProperty("java.io.tmpdir"))
-    .addProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL)
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
 
 
   import org.apache.spark.sql.CarbonSession._
+
+  val conf = new SparkConf()
+  if (!TestQueryExecutor.masterUrl.startsWith("local")) {
+    conf.setJars(TestQueryExecutor.jars).
+      set("spark.driver.memory", "4g").
+      set("spark.executor.memory", "8g").
+      set("spark.executor.cores", "4").
+      set("spark.cores.max", "8")
+    FileFactory.getConfiguration.
+      set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER")
+  }
+  val metastoredb = s"$integrationPath/spark-common-cluster-test/target"
   val spark = SparkSession
-    .builder()
-    .master("local[2]")
+    .builder().config(conf)
+    .master(TestQueryExecutor.masterUrl)
     .appName("Spark2TestQueryExecutor")
     .enableHiveSupport()
     .config("spark.sql.warehouse.dir", TestQueryExecutor.warehouse)
+    .config("spark.sql.crossJoin.enabled", "true")
     .getOrCreateCarbonSession(null, TestQueryExecutor.metastoredb)
+  FileFactory.getConfiguration.
+    set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER")
   spark.sparkContext.setLogLevel("ERROR")
-
 }

@@ -119,7 +119,7 @@ public final class DataMapStoreManager {
       int i = 0;
       for (TableDataMap tableDataMap: tableDataMaps) {
         if (tableDataMap != null && dataMapName.equals(tableDataMap.getDataMapName())) {
-          tableDataMap.clear(new ArrayList<String>());
+          tableDataMap.clear();
           tableDataMaps.remove(i);
           break;
         }

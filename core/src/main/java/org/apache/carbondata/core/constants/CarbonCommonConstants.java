@@ -1166,8 +1166,6 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String LOAD_SORT_SCOPE = "carbon.load.sort.scope";
-  @CarbonProperty
-  public static final String LOAD_USE_BATCH_SORT = "carbon.load.use.batch.sort";
 
   /**
    * If set to BATCH_SORT, the sorting scope is smaller and more index tree will be created,
