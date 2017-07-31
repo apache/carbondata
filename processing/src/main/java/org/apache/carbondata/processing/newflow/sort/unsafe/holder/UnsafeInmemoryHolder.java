@@ -77,6 +77,6 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
   }
 
   public void close() {
-    rowPage.freeMemory();
+    rowPage.freeMemory(true);
   }
 }

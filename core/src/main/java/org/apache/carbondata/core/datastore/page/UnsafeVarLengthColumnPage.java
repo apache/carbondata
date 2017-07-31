@@ -20,9 +20,9 @@ package org.apache.carbondata.core.datastore.page;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.memory.CarbonUnsafe;
+import org.apache.carbondata.core.memory.CarbonUnsafeMemoryManager;
 import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
@@ -58,7 +58,8 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
       throws MemoryException {
     super(dataType, pageSize, scale, precision);
     capacity = (int) (pageSize * DEFAULT_ROW_SIZE * FACTOR);
-    memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
+    memoryBlock = CarbonUnsafeMemoryManager.INSTANCE.getUnsafeWorkingMemoryManager()
+        .allocateMemoryWithRetry(taskId, (long) (capacity));
     baseAddress = memoryBlock.getBaseObject();
     baseOffset = memoryBlock.getBaseOffset();
   }
@@ -73,7 +74,8 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
       int scale, int precision) throws MemoryException {
     super(dataType, pageSize, scale, precision);
     this.capacity = capacity;
-    memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long)(capacity));
+    memoryBlock = CarbonUnsafeMemoryManager.INSTANCE.getUnsafeWorkingMemoryManager()
+        .allocateMemoryWithRetry(taskId, (long) (capacity));
     baseAddress = memoryBlock.getBaseObject();
     baseOffset = memoryBlock.getBaseOffset();
   }
@@ -81,7 +83,8 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
   @Override
   public void freeMemory() {
     if (memoryBlock != null) {
-      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
+      CarbonUnsafeMemoryManager.INSTANCE.getUnsafeWorkingMemoryManager()
+          .freeMemory(taskId, memoryBlock);
       memoryBlock = null;
       baseAddress = null;
       baseOffset = 0;
@@ -94,10 +97,12 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
   private void ensureMemory(int requestSize) throws MemoryException {
     if (totalLength + requestSize > capacity) {
       int newSize = 2 * capacity;
-      MemoryBlock newBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, newSize);
+      MemoryBlock newBlock = CarbonUnsafeMemoryManager.INSTANCE.getUnsafeWorkingMemoryManager()
+          .allocateMemoryWithRetry(taskId, newSize);
       CarbonUnsafe.unsafe.copyMemory(baseAddress, baseOffset,
           newBlock.getBaseObject(), newBlock.getBaseOffset(), capacity);
-      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
+      CarbonUnsafeMemoryManager.INSTANCE.getUnsafeWorkingMemoryManager()
+          .freeMemory(taskId, memoryBlock);
       memoryBlock = newBlock;
       baseAddress = newBlock.getBaseObject();
       baseOffset = newBlock.getBaseOffset();

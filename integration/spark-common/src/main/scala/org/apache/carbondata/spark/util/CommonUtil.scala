@@ -38,7 +38,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.row.LoadStatusType
-import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
+import org.apache.carbondata.core.memory.CarbonUnsafeMemoryManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
@@ -663,10 +663,7 @@ object CommonUtil {
    * if present
    */
   def clearUnsafeMemory(taskId: Long) {
-    UnsafeMemoryManager.
-      INSTANCE.freeMemoryAll(taskId)
-    UnsafeSortMemoryManager.
-      INSTANCE.freeMemoryAll(taskId)
+    CarbonUnsafeMemoryManager.INSTANCE.freeAllMemoryForTask(taskId)
   }
 
   /**

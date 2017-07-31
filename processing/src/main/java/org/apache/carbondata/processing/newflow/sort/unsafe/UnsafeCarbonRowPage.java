@@ -23,12 +23,12 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 
 import org.apache.carbondata.core.memory.CarbonUnsafe;
+import org.apache.carbondata.core.memory.CarbonUnsafeMemoryManager;
 import org.apache.carbondata.core.memory.IntPointerBuffer;
 import org.apache.carbondata.core.memory.MemoryBlock;
-import org.apache.carbondata.core.memory.UnsafeMemoryManager;
-import org.apache.carbondata.core.memory.UnsafeSortMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 /**
  * It can keep the data of prescribed size data in offheap/onheap memory and returns it when needed
@@ -63,7 +63,7 @@ public class UnsafeCarbonRowPage {
 
   public UnsafeCarbonRowPage(boolean[] noDictionaryDimensionMapping,
       boolean[] noDictionarySortColumnMapping, int dimensionSize, int measureSize, DataType[] type,
-      MemoryBlock memoryBlock, boolean saveToDisk, long taskId) {
+      MemoryBlock memoryBlock, boolean saveToDisk) {
     this.noDictionaryDimensionMapping = noDictionaryDimensionMapping;
     this.noDictionarySortColumnMapping = noDictionarySortColumnMapping;
     this.dimensionSize = dimensionSize;
@@ -71,8 +71,8 @@ public class UnsafeCarbonRowPage {
     this.measureDataType = type;
     this.saveToDisk = saveToDisk;
     this.nullSetWords = new long[((measureSize - 1) >> 6) + 1];
-    this.taskId = taskId;
-    buffer = new IntPointerBuffer(this.taskId);
+    this.taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
+    buffer = new IntPointerBuffer();
     this.dataBlock = memoryBlock;
     // TODO Only using 98% of space for safe side.May be we can have different logic.
     sizeToBeUsed = dataBlock.size() - (dataBlock.size() * 5) / 100;
@@ -331,13 +331,25 @@ public class UnsafeCarbonRowPage {
     }
   }
 
-  public void freeMemory() {
+  /**
+   * Below method will be used to free the memory block
+   * allocated for page
+   * @param freeSortmemory
+   */
+  public void freeMemory(boolean freeSortmemory) {
     switch (managerType) {
       case UNSAFE_MEMORY_MANAGER:
-        UnsafeMemoryManager.INSTANCE.freeMemory(taskId, dataBlock);
+        CarbonUnsafeMemoryManager.INSTANCE.getUnsafeWorkingMemoryManager()
+            .freeMemory(taskId, dataBlock);
+        // to clear memory which was allocated but not used
+        if (freeSortmemory && !saveToDisk) {
+          CarbonUnsafeMemoryManager.INSTANCE.getUnsafeSortStorgeManager()
+              .freeDummyAllocatedMemory(dataBlock.size());
+        }
         break;
       default:
-        UnsafeSortMemoryManager.INSTANCE.freeMemory(taskId, dataBlock);
+        CarbonUnsafeMemoryManager.INSTANCE.getUnsafeSortStorgeManager()
+            .freeMemory(taskId, dataBlock);
         buffer.freeMemory();
     }
   }
@@ -385,8 +397,15 @@ public class UnsafeCarbonRowPage {
     return noDictionarySortColumnMapping;
   }
 
-  public void setNewDataBlock(MemoryBlock newMemoryBlock) {
-    this.dataBlock = newMemoryBlock;
+  /**
+   * Below mehtod will be used to copy the memory block from working
+   * to storage
+   */
+  public void copyToSortStorage() {
+    CarbonUnsafeMemoryManager.INSTANCE.getUnsafeWorkingMemoryManager()
+        .removeMemoryBlockAndUpdateMemoryUsed(taskId, dataBlock);
+    CarbonUnsafeMemoryManager.INSTANCE.getUnsafeSortStorgeManager()
+        .allocateLazyWithMemoryBlock(taskId, dataBlock);
     this.managerType = MemoryManagerType.UNSAFE_SORT_MEMORY_MANAGER;
   }
 

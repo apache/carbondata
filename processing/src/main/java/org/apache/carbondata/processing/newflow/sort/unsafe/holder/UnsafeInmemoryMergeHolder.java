@@ -83,6 +83,6 @@ public class UnsafeInmemoryMergeHolder implements Comparable<UnsafeInmemoryMerge
   }
 
   public void close() {
-    rowPage.freeMemory();
+    rowPage.freeMemory(true);
   }
 }

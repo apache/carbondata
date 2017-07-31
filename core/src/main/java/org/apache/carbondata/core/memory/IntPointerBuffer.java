@@ -19,6 +19,7 @@ package org.apache.carbondata.core.memory;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 /**
  * Holds the pointers for rows.
@@ -38,11 +39,11 @@ public class IntPointerBuffer {
 
   private long taskId;
 
-  public IntPointerBuffer(long taskId) {
+  public IntPointerBuffer() {
     // TODO can be configurable, it is initial size and it can grow automatically.
     this.length = 100000;
     pointerBlock = new int[length];
-    this.taskId = taskId;
+    this.taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
   }
 
   public IntPointerBuffer(int length) {
@@ -75,8 +76,8 @@ public class IntPointerBuffer {
 
   public void loadToUnsafe() {
     try {
-      pointerMemoryBlock =
-          UnsafeSortMemoryManager.allocateMemoryWithRetry(this.taskId, pointerBlock.length * 4);
+      pointerMemoryBlock = CarbonUnsafeMemoryManager.INSTANCE.getUnsafeSortStorgeManager()
+          .allocateMemoryWithRetry(this.taskId, pointerBlock.length * 4);
       for (int i = 0; i < pointerBlock.length; i++) {
         CarbonUnsafe.unsafe
             .putInt(pointerMemoryBlock.getBaseObject(), pointerMemoryBlock.getBaseOffset() + i * 4,
@@ -110,7 +111,8 @@ public class IntPointerBuffer {
   public void freeMemory() {
     pointerBlock = null;
     if (pointerMemoryBlock != null) {
-      UnsafeSortMemoryManager.INSTANCE.freeMemory(this.taskId, pointerMemoryBlock);
+      CarbonUnsafeMemoryManager.INSTANCE.getUnsafeSortStorgeManager()
+          .freeMemory(this.taskId, pointerMemoryBlock);
     }
   }
 }
