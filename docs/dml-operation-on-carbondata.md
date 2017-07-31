@@ -164,6 +164,36 @@ options('DELIMITER'=',', 'QUOTECHAR'='"','COMMENTCHAR'='#',
 )
 ```
 
+- **BAD RECORDS HANDLING:** Methods of handling bad records are as follows:
+
+    * Load all of the data before dealing with the errors.
+
+    * Clean or delete bad records before loading data or stop the loading when bad records are found.
+
+    ```
+    OPTIONS('BAD_RECORDS_LOGGER_ENABLE'='true', 'BAD_RECORD_PATH'='hdfs://hacluster/tmp/carbon', 'BAD_RECORDS_ACTION'='REDIRECT', 'IS_EMPTY_DATA_BAD_RECORD'='false')
+    ```
+
+    NOTE:
+
+    * If the REDIRECT option is used, Carbon will add all bad records in to a separate CSV file. However, this file must not be used for subsequent data loading because the content may not exactly match the source record. You are advised to cleanse the original source record for further data ingestion. This option is used to remind you which records are bad records.
+
+    * In loaded data, if all records are bad records, the BAD_RECORDS_ACTION is invalid and the load operation fails.
+
+    * The maximum number of characters per column is 100000. If there are more than 100000 characters in a column, data loading will fail.
+
+### Example
+
+```
+LOAD DATA INPATH 'filepath.csv'
+INTO TABLE tablename
+OPTIONS('BAD_RECORDS_LOGGER_ENABLE'='true',
+'BAD_RECORD_PATH'='hdfs://hacluster/tmp/carbon',
+'BAD_RECORDS_ACTION'='REDIRECT',
+'IS_EMPTY_DATA_BAD_RECORD'='false');
+```
+
+To get details about bad record management options refer to [Configuration Paramters](configuration-parameters.md)
 
 ## INSERT DATA INTO A CARBONDATA TABLE
 
