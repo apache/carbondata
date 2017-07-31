@@ -81,34 +81,38 @@ class CarbonSessionCatalog(
   override def lookupRelation(name: TableIdentifier,
       alias: Option[String]): LogicalPlan = {
     val rtnRelation = super.lookupRelation(name, alias)
-    rtnRelation match {
-      case SubqueryAlias(_,
-          LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _),
-          _) =>
-        refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
+    var toRefreshRelation = false
+    rtnRelation foreach {
       case LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
-        refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
-      case relation => relation
+        toRefreshRelation = refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
+      case _ => 
     }
 
-    rtnRelation
+    if (toRefreshRelation) {
+      super.lookupRelation(name, alias)
+    } else {
+      rtnRelation
+    }
   }
 
   private def refreshRelationFromCache(name: TableIdentifier,
       alias: Option[String],
-      carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation): Unit = {
+      carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation): Boolean = {
+    var isRefreshed = false
     carbonEnv.carbonMetastore.
       checkSchemasModifiedTimeAndReloadTables(CarbonEnv.getInstance(sparkSession).storePath)
-    carbonEnv.carbonMetastore
+
+    val tableMeta = carbonEnv.carbonMetastore
       .getTableFromMetadataCache(carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
-        carbonDatasourceHadoopRelation.carbonTable.getFactTableName) match {
-      case tableMeta: TableMeta =>
-        if (tableMeta.carbonTable.getTableLastUpdatedTime !=
-            carbonDatasourceHadoopRelation.carbonTable.getTableLastUpdatedTime) {
-          refreshTable(name)
-        }
-      case _ =>
+        carbonDatasourceHadoopRelation.carbonTable.getFactTableName)
+    if (tableMeta.isDefined &&
+        tableMeta.get.carbonTable.getTableLastUpdatedTime !=
+          carbonDatasourceHadoopRelation.carbonTable.getTableLastUpdatedTime) {
+      refreshTable(name)
+      isRefreshed = true
+      logInfo(s"Schema changes have been detected for table: $name")
     }
+    isRefreshed
   }
 }
 
