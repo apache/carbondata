@@ -30,7 +30,7 @@ public final class CarbonLoadOptionConstants {
   public static final String CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE =
       "carbon.options.bad.records.logger.enable";
 
-  public static String CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE_DEFAULT = "false";
+  public static final String CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE_DEFAULT = "false";
   /**
    * property to pass the bad records action
    */

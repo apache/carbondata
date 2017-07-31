@@ -70,13 +70,6 @@ public class ServerDictionaryGenerator implements DictionaryGenerator<Integer, D
     return generator.size(key);
   }
 
-  public void writeDictionaryData() throws Exception {
-    for (String tableUniqueName: tableMap.keySet()) {
-      TableDictionaryGenerator generator = tableMap.get(tableUniqueName);
-      generator.writeDictionaryData(tableUniqueName);
-    }
-  }
-
   public void writeTableDictionaryData(String tableUniqueName) throws Exception {
     TableDictionaryGenerator generator = tableMap.get(tableUniqueName);
     if (generator != null) {

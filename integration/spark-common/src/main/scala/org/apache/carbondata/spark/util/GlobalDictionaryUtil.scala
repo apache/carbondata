@@ -682,7 +682,6 @@ object GlobalDictionaryUtil {
       val dimensions = carbonTable.getDimensionByTableName(
         carbonTable.getFactTableName).asScala.toArray
       // generate global dict from pre defined column dict file
-      carbonLoadModel.initPredefDictMap()
 
       val allDictionaryPath = carbonLoadModel.getAllDictPath
       if (StringUtils.isEmpty(allDictionaryPath)) {

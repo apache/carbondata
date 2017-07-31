@@ -158,7 +158,7 @@ public class DictionaryClientTest {
     Assert.assertEquals(10010, val.getDictionaryValue());
 
 
-    client.shutDown();
+    client.shutdown();
 
     // Shutdown the server
   }

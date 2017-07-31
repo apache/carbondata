@@ -187,7 +187,7 @@ public class ServerDictionaryGeneratorTest {
     serverDictionaryGenerator.generateKey(secondKey);
     File dictPath = new File(storePath + "/test/TestTable/Metadata/");
     System.out.print(dictPath.mkdirs());
-    serverDictionaryGenerator.writeDictionaryData();
+    serverDictionaryGenerator.writeTableDictionaryData(tableInfo.getTableUniqueName());
 
     File empDictionaryFile = new File(dictPath, empColumnSchema.getColumnName() + ".dict");
     assertTrue(empDictionaryFile.exists());

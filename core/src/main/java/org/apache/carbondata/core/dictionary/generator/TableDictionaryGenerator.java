@@ -16,14 +16,11 @@
  */
 package org.apache.carbondata.core.dictionary.generator;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -92,16 +89,14 @@ public class TableDictionaryGenerator
       numOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
     }
     long start = System.currentTimeMillis();
-    List<Future<Void>> taskSubmitList =
-            new ArrayList<>(columnMap.size());
     ExecutorService executorService = Executors.newFixedThreadPool(numOfCores);
     for (final DictionaryGenerator generator: columnMap.values()) {
-      taskSubmitList.add(executorService.submit(new Callable<Void>() {
+      executorService.submit(new Callable<Void>() {
         @Override public Void call() throws Exception {
           ((DictionaryWriter) (generator)).writeDictionaryData(tableName);
           return null;
         }
-      }));
+      });
     }
 
     try {

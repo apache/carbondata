@@ -45,12 +45,16 @@ public final class Comparator {
 }
 
 class ByteArraySerializableComparator implements SerializableComparator {
+  private static final long serialVersionUID = -3680897436238861399L;
+
   @Override public int compare(Object key1, Object key2) {
     return ByteUtil.compare((byte[]) key1, (byte[]) key2);
   }
 }
 
 class IntSerializableComparator implements SerializableComparator {
+  private static final long serialVersionUID = -1029467092543964840L;
+
   @Override public int compare(Object key1, Object key2) {
     if ((int) key1 < (int) key2) {
       return -1;
@@ -63,6 +67,9 @@ class IntSerializableComparator implements SerializableComparator {
 }
 
 class ShortSerializableComparator implements SerializableComparator {
+
+  private static final long serialVersionUID = -945330169899925489L;
+
   @Override public int compare(Object key1, Object key2) {
     if ((short) key1 < (short) key2) {
       return -1;
@@ -75,6 +82,9 @@ class ShortSerializableComparator implements SerializableComparator {
 }
 
 class DoubleSerializableComparator implements SerializableComparator {
+
+  private static final long serialVersionUID = 7655775272920522098L;
+
   @Override public int compare(Object key1, Object key2) {
     if ((double) key1 < (double) key2) {
       return -1;
@@ -87,6 +97,9 @@ class DoubleSerializableComparator implements SerializableComparator {
 }
 
 class LongSerializableComparator implements SerializableComparator {
+
+  private static final long serialVersionUID = -1538038536839712250L;
+
   @Override public int compare(Object key1, Object key2) {
     if ((long) key1 < (long) key2) {
       return -1;

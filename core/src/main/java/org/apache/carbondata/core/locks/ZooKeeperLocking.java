@@ -43,7 +43,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   /**
    * zk is the zookeeper client instance
    */
-  private static ZooKeeper zk;
+  private ZooKeeper zk;
 
   /**
    * zooKeeperLocation is the location in the zoo keeper file system where the locks will be

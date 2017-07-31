@@ -140,18 +140,6 @@ public class DictionaryServer {
     boss.shutdownGracefully();
   }
 
-
-
-  /**
-   * Write dictionary to the store.
-   * @throws Exception
-   */
-  public void writeDictionary() throws Exception {
-    DictionaryMessage key = new DictionaryMessage();
-    key.setType(DictionaryMessageType.WRITE_DICTIONARY);
-    dictionaryServerHandler.processMessage(key);
-  }
-
   /**
    *  Write Dictionary for one table.
    * @throws Exception

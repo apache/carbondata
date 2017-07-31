@@ -111,7 +111,7 @@ public class IntermediateFileMerger implements Callable<Void> {
       while (hasNext()) {
         writeDataTofile(next());
       }
-      if (mergerParameters.isSortFileCompressionEnabled() || mergerParameters.isPrefetch()) {
+      if (mergerParameters.isSortFileCompressionEnabled() || mergerParameters.isPreFetch()) {
         if (entryCount > 0) {
           if (entryCount < totalSize) {
             Object[][] temp = new Object[entryCount][];
@@ -158,7 +158,7 @@ public class IntermediateFileMerger implements Callable<Void> {
    * @throws CarbonSortKeyAndGroupByException
    */
   private void initialize() throws CarbonSortKeyAndGroupByException {
-    if (!mergerParameters.isSortFileCompressionEnabled() && !mergerParameters.isPrefetch()) {
+    if (!mergerParameters.isSortFileCompressionEnabled() && !mergerParameters.isPreFetch()) {
       try {
         this.stream = new DataOutputStream(
             new BufferedOutputStream(new FileOutputStream(outPutFile),
@@ -177,7 +177,7 @@ public class IntermediateFileMerger implements Callable<Void> {
               mergerParameters.getFileWriteBufferSize());
       writer.initiaize(outPutFile, totalNumberOfRecords);
 
-      if (mergerParameters.isPrefetch()) {
+      if (mergerParameters.isPreFetch()) {
         totalSize = mergerParameters.getBufferSize();
       } else {
         totalSize = mergerParameters.getSortTempFileNoOFRecordsInCompression();
@@ -304,7 +304,7 @@ public class IntermediateFileMerger implements Callable<Void> {
    * @throws CarbonSortKeyAndGroupByException problem while writing
    */
   private void writeDataTofile(Object[] row) throws CarbonSortKeyAndGroupByException {
-    if (mergerParameters.isSortFileCompressionEnabled() || mergerParameters.isPrefetch()) {
+    if (mergerParameters.isSortFileCompressionEnabled() || mergerParameters.isPreFetch()) {
       if (entryCount == 0) {
         records = new Object[totalSize][];
         records[entryCount++] = row;
@@ -358,6 +358,8 @@ public class IntermediateFileMerger implements Callable<Void> {
               stream.writeInt(bigDecimalInBytes.length);
               stream.write(bigDecimalInBytes);
               break;
+            default:
+              throw new RuntimeException("Unsupported data type: " + aggType[counter].getName());
           }
         } else {
           stream.write((byte) 0);

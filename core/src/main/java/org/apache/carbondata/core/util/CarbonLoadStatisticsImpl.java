@@ -386,8 +386,6 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
       printGenMdkStatisticsInfo(partitionID);
       printHostBlockMapInfo();
       printLoadSpeedInfo(partitionID);
-    } catch (Exception e) {
-      LOGGER.audit("Can't print Statistics Information");
     } finally {
       resetLoadStatistics();
     }

@@ -671,14 +671,12 @@ case class LoadTable(
             carbonTable.getFactTableName).asScala.toArray
           val colDictFilePath = carbonLoadModel.getColDictFilePath
           if (!StringUtils.isEmpty(colDictFilePath)) {
-            carbonLoadModel.initPredefDictMap()
             // generate predefined dictionary
             GlobalDictionaryUtil
                 .generatePredefinedColDictionary(colDictFilePath, carbonTableIdentifier,
                   dimensions, carbonLoadModel, sparkSession.sqlContext, storePath, dictFolderPath)
           }
           if (!StringUtils.isEmpty(all_dictionary_path)) {
-            carbonLoadModel.initPredefDictMap()
             GlobalDictionaryUtil
                 .generateDictionaryFromDictionaryFiles(sparkSession.sqlContext,
                   carbonLoadModel,

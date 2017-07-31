@@ -70,7 +70,7 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
         Double d1 = null;
         Double d2 = null;
         try {
-          d1 = new Double(memberValue);
+          d1 = Double.valueOf(memberValue);
         } catch (NumberFormatException e) {
           if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(o.memberValue)) {
             return -1;
@@ -78,7 +78,7 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
           return 1;
         }
         try {
-          d2 = new Double(o.memberValue);
+          d2 = Double.valueOf(o.memberValue);
         } catch (NumberFormatException e) {
           return -1;
         }

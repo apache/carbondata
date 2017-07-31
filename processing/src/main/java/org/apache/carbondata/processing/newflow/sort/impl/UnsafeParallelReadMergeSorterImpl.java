@@ -156,9 +156,9 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
       // check any more rows are present
       LOGGER.info("Record Processed For table: " + parameters.getTableName());
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-          .recordSortRowsStepTotalTime(parameters.getPartitionID(), System.currentTimeMillis());
+          .recordSortRowsStepTotalTime(parameters.getPartitionId(), System.currentTimeMillis());
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-          .recordDictionaryValuesTotalTime(parameters.getPartitionID(), System.currentTimeMillis());
+          .recordDictionaryValuesTotalTime(parameters.getPartitionId(), System.currentTimeMillis());
       return false;
     } catch (InterruptedException e) {
       throw new CarbonDataLoadingException(e);

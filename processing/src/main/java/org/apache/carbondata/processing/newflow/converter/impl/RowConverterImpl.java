@@ -178,7 +178,7 @@ public class RowConverterImpl implements RowConverter {
     if (configuration.getUseOnePass()) {
       for (DictionaryClient client : dictClients) {
         if (client != null) {
-          client.shutDown();
+          client.shutdown();
         }
       }
       if (null != logHolder) {

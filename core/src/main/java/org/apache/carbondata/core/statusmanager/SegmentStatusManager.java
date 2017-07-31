@@ -101,7 +101,6 @@ public class SegmentStatusManager {
 
     // @TODO: move reading LoadStatus file to separate class
     List<String> listOfValidSegments = new ArrayList<String>(10);
-    List<String> listOfValidUpdatedSegments = new ArrayList<String>(10);
     List<String> listOfInvalidSegments = new ArrayList<String>(10);
     CarbonTablePath carbonTablePath = CarbonStorePath
             .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
@@ -131,18 +130,7 @@ public class SegmentStatusManager {
               if (!listOfValidSegments.contains(loadMetadataDetails.getMergedLoadName())) {
                 listOfValidSegments.add(loadMetadataDetails.getMergedLoadName());
               }
-              // if merged load is updated then put it in updated list
-              if (CarbonCommonConstants.MARKED_FOR_UPDATE
-                      .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) {
-                listOfValidUpdatedSegments.add(loadMetadataDetails.getMergedLoadName());
-              }
               continue;
-            }
-
-            if (CarbonCommonConstants.MARKED_FOR_UPDATE
-                    .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) {
-
-              listOfValidUpdatedSegments.add(loadMetadataDetails.getLoadName());
             }
             listOfValidSegments.add(loadMetadataDetails.getLoadName());
           } else if ((CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
@@ -168,7 +156,7 @@ public class SegmentStatusManager {
         throw e;
       }
     }
-    return new ValidAndInvalidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments,
+    return new ValidAndInvalidSegmentsInfo(listOfValidSegments,
             listOfInvalidSegments);
   }
 
@@ -640,13 +628,11 @@ public class SegmentStatusManager {
 
   public static class ValidAndInvalidSegmentsInfo {
     private final List<String> listOfValidSegments;
-    private final List<String> listOfValidUpdatedSegments;
     private final List<String> listOfInvalidSegments;
 
     private ValidAndInvalidSegmentsInfo(List<String> listOfValidSegments,
-        List<String> listOfValidUpdatedSegments, List<String> listOfInvalidUpdatedSegments) {
+        List<String> listOfInvalidUpdatedSegments) {
       this.listOfValidSegments = listOfValidSegments;
-      this.listOfValidUpdatedSegments = listOfValidUpdatedSegments;
       this.listOfInvalidSegments = listOfInvalidUpdatedSegments;
     }
     public List<String> getInvalidSegments() {

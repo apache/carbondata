@@ -56,7 +56,7 @@ public class QueryModel implements Serializable {
    * this will hold the information about the dictionary dimension
    * which to
    */
-  public transient Map<String, Dictionary> columnToDictionaryMapping;
+  private transient Map<String, Dictionary> columnToDictionaryMapping;
   /**
    * list of dimension selected for in query
    */
@@ -94,7 +94,7 @@ public class QueryModel implements Serializable {
    */
   private CarbonTable table;
 
-  private QueryStatisticsRecorder statisticsRecorder;
+  private transient QueryStatisticsRecorder statisticsRecorder;
 
   private boolean vectorReader;
 
@@ -110,9 +110,9 @@ public class QueryModel implements Serializable {
       new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   public QueryModel() {
-    tableBlockInfos = new ArrayList<TableBlockInfo>();
-    queryDimension = new ArrayList<QueryDimension>();
-    queryMeasures = new ArrayList<QueryMeasure>();
+    tableBlockInfos = new ArrayList<>();
+    queryDimension = new ArrayList<>();
+    queryMeasures = new ArrayList<>();
     invalidSegmentIds = new ArrayList<>();
   }
 

@@ -42,7 +42,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   private ThreadLocal<SimpleDateFormat> simpleDateFormatLocal = new ThreadLocal<>();
 
   //Java TimeZone has no mention of thread safety. Use thread local instance to be safe.
-  private ThreadLocal<TimeZone> threadLocalLocalTimeZone = new ThreadLocal() {
+  private ThreadLocal<TimeZone> threadLocalLocalTimeZone = new ThreadLocal<TimeZone>() {
     @Override protected TimeZone initialValue() {
       return Calendar.getInstance().getTimeZone();
     }

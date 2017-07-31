@@ -59,7 +59,9 @@ public class DictionaryClientHandler extends ChannelInboundHandlerAdapter {
       DictionaryMessage key = new DictionaryMessage();
       key.readData(data);
       data.release();
-      responseMsgQueue.offer(key);
+      if (!responseMsgQueue.offer(key)) {
+        throw new Exception("Unable to insert value into the message queue");
+      }
     } catch (Exception e) {
       LOGGER.error(e);
       throw e;

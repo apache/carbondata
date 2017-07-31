@@ -21,9 +21,9 @@ import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelRangeFilterResolverImpl;
 
-public class RowLevelRangeTypeExecuterFacory {
+public class RowLevelRangeTypeExecuterFactory {
 
-  private RowLevelRangeTypeExecuterFacory() {
+  private RowLevelRangeTypeExecuterFactory() {
 
   }
 

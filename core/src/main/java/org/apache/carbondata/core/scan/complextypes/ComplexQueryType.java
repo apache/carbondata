@@ -24,6 +24,7 @@ import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 
 public class ComplexQueryType {
+
   protected GenericQueryType children;
 
   protected String name;

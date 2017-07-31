@@ -35,10 +35,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
  */
 
 public class DoubleArrayTrieDictionary {
-  public static final byte[] HEAD_MAGIC = new byte[]{
+  private static final byte[] HEAD_MAGIC = new byte[]{
       0x44, 0x41, 0x54, 0x54, 0x72, 0x69, 0x65, 0x44, 0x69, 0x63, 0x74
   }; // "DATTrieDict"
-  public static final int HEAD_LEN = HEAD_MAGIC.length;
+  private static final int HEAD_LEN = HEAD_MAGIC.length;
 
   private static final int INIT_CAPA_VALUE = 256;  // init len of double array
   private static final int BASE_ROOT_VALUE = 1;    // root base value of trie root
@@ -168,7 +168,7 @@ public class DoubleArrayTrieDictionary {
         return null;
       }
       if (check[cpos] == pos) {
-        children.add(new Integer(i));
+        children.add(i);
       }
     }
     return children;
@@ -227,9 +227,9 @@ public class DoubleArrayTrieDictionary {
   private int conflict(int start, int bKey) {
     int from = start;
     TreeSet<Integer> children = getChildren(from);
-    children.add(new Integer(bKey));
+    children.add(bKey);
     int newBasePos = findFreeRoom(children);
-    children.remove(new Integer(bKey));
+    children.remove(bKey);
 
     int oldBasePos = base[start];
     base[start] = newBasePos;

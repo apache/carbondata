@@ -58,7 +58,7 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
 
   private static final long sizeOfHashMapNode = ObjectSizeCalculator.estimate(new
       DictionaryByteArrayWrapper(new byte[0]), 16) +
-      ObjectSizeCalculator.estimate(new Integer(0), 16);
+      ObjectSizeCalculator.estimate(0, 16);
 
   private static final long byteArraySize = ObjectSizeCalculator.estimate(new byte[0], 16);
 

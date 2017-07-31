@@ -53,7 +53,7 @@ public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
     resolvedFilterObject = FilterUtil
         .getFilterValues(metadata.getTableIdentifier(), metadata.getColumnExpression(),
             evaluateResultListFinal, metadata.isIncludeFilter());
-    if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
+    if (!metadata.isIncludeFilter()) {
       // Adding default surrogate key of null member inorder to not display the same while
       // displaying the report as per hive compatibility.
       // first check of surrogate key for null value is already added then

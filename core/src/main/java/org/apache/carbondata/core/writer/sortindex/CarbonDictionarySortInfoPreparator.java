@@ -74,7 +74,6 @@ public class CarbonDictionarySortInfoPreparator {
       // which is a counter starting from 0
       sortIndexInverted[dictionarySortModel.getKey() - 1] = i + 1;
     }
-    dictionarySortModels = null;
     List<Integer> sortIndexList = convertToList(sortIndex);
     List<Integer> sortIndexInvertedList = convertToList(sortIndexInverted);
     return new CarbonDictionarySortInfo(sortIndexList, sortIndexInvertedList);

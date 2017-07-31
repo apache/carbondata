@@ -30,8 +30,7 @@ import org.apache.carbondata.core.scan.filter.DimColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
-public class RangeDirectDictionaryVisitor extends CustomTypeDictionaryVisitor
-    implements ResolvedFilterInfoVisitorIntf {
+public class RangeDirectDictionaryVisitor extends CustomTypeDictionaryVisitor {
 
   /**
    * This Visitor method is used to populate the visitableObj with direct dictionary filter details
@@ -45,8 +44,8 @@ public class RangeDirectDictionaryVisitor extends CustomTypeDictionaryVisitor
    */
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
-    DimColumnFilterInfo resolvedFilterObject = null;
-    List<ExpressionResult> listOfExpressionResults = new ArrayList<ExpressionResult>(20);
+    DimColumnFilterInfo resolvedFilterObject;
+    List<ExpressionResult> listOfExpressionResults;
     List<String> evaluateResultListFinal = new ArrayList<String>();
     try {
       listOfExpressionResults = ((RangeExpression) metadata.getExpression()).getLiterals();

@@ -30,8 +30,7 @@ import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
-public class RangeNoDictionaryTypeVisitor extends NoDictionaryTypeVisitor
-    implements ResolvedFilterInfoVisitorIntf {
+public class RangeNoDictionaryTypeVisitor extends NoDictionaryTypeVisitor {
   /**
    * Visitor Method will update the filter related details in visitableObj, For no dictionary
    * type columns the filter members will resolved directly, no need to look up in dictionary

@@ -168,6 +168,10 @@ public class CarbonLoadModel implements Serializable {
    */
   private String globalSortPartitions;
 
+  public CarbonLoadModel() {
+    predefDictMap = new HashMap<>();
+  }
+
   /**
    * get escape char
    *
@@ -240,10 +244,6 @@ public class CarbonLoadModel implements Serializable {
 
   public void setCsvHeaderColumns(String[] csvHeaderColumns) {
     this.csvHeaderColumns = csvHeaderColumns;
-  }
-
-  public void initPredefDictMap() {
-    predefDictMap = new HashMap<>();
   }
 
   public String getPredefDictFilePath(CarbonDimension dimension) {

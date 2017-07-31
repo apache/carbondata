@@ -175,9 +175,9 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
       // check any more rows are present
       LOGGER.info("Record Processed For table: " + parameters.getTableName());
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-          .recordSortRowsStepTotalTime(parameters.getPartitionID(), System.currentTimeMillis());
+          .recordSortRowsStepTotalTime(parameters.getPartitionId(), System.currentTimeMillis());
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-          .recordDictionaryValuesTotalTime(parameters.getPartitionID(), System.currentTimeMillis());
+          .recordDictionaryValuesTotalTime(parameters.getPartitionId(), System.currentTimeMillis());
       return false;
     } catch (CarbonSortKeyAndGroupByException e) {
       throw new CarbonDataLoadingException(e);
@@ -188,7 +188,7 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
     String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(parameters.getDatabaseName(),
             parameters.getTableName(), parameters.getTaskNo(),
-            parameters.getPartitionID(), parameters.getSegmentId(), false);
+            parameters.getPartitionId(), parameters.getSegmentId(), false);
     String[] tmpLocs = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath, File.separator,
         CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     parameters.setTempFileLocation(tmpLocs);
@@ -219,7 +219,6 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
       try {
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
-          int i = 0;
           while (batch.hasNext()) {
             CarbonRow row = batch.next();
             if (row != null) {
@@ -231,7 +230,7 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
             }
           }
         }
-      } catch (Exception e) {
+      } catch (CarbonSortKeyAndGroupByException e) {
         LOGGER.error(e);
         this.threadStatusObserver.notifyFailed(e);
         throw new CarbonDataLoadingException(e);
@@ -268,6 +267,9 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
     @Override public CarbonRowBatch next() {
       int counter = 0;
       CarbonRowBatch rowBatch = new CarbonRowBatch(batchSize);
+      if (finalMerger == null) {
+        throw new RuntimeException("Merger data iterator is not initialized");
+      }
       while (finalMerger.hasNext() && counter < batchSize) {
         rowBatch.addRow(new CarbonRow(finalMerger.next()));
         counter++;

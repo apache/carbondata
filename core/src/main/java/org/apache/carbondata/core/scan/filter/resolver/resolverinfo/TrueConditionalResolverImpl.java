@@ -26,6 +26,8 @@ import org.apache.carbondata.core.scan.filter.resolver.ConditionalFilterResolver
 
 public class TrueConditionalResolverImpl extends ConditionalFilterResolverImpl {
 
+  private static final long serialVersionUID = 4599541011924324041L;
+
   public TrueConditionalResolverImpl(Expression exp, boolean isExpressionResolve,
       boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier) {
 

@@ -225,7 +225,7 @@ public class SortDataRows {
   private void writeDataTofile(Object[][] recordHolderList, int entryCountLocal, File file)
       throws CarbonSortKeyAndGroupByException {
     // stream
-    if (parameters.isSortFileCompressionEnabled() || parameters.isPrefetch()) {
+    if (parameters.isSortFileCompressionEnabled() || parameters.isPreFetch()) {
       writeSortTempFile(recordHolderList, entryCountLocal, file);
       return;
     }
@@ -310,6 +310,8 @@ public class SortDataRows {
                 stream.writeInt(bigDecimalInBytes.length);
                 stream.write(bigDecimalInBytes);
                 break;
+              default:
+                throw new RuntimeException("Unsupported data type: " + type[mesCount].getName());
             }
           } else {
             stream.write((byte) 0);
@@ -332,7 +334,7 @@ public class SortDataRows {
             parameters.getMeasureColCount(), parameters.getNoDictionaryCount(),
             parameters.getFileWriteBufferSize());
 
-    if (parameters.isPrefetch() && !parameters.isSortFileCompressionEnabled()) {
+    if (parameters.isPreFetch() && !parameters.isSortFileCompressionEnabled()) {
       chunkWriter = new SortTempFileChunkWriter(writer, parameters.getBufferSize());
     } else {
       chunkWriter =

@@ -241,9 +241,7 @@ public final class CarbonLoaderUtil {
         }
       });
     } finally {
-      if (null != localFolderDeletionService) {
-        localFolderDeletionService.shutdown();
-      }
+      localFolderDeletionService.shutdown();
     }
 
   }

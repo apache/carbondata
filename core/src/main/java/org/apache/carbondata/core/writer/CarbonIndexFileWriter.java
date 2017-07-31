@@ -30,6 +30,10 @@ public class CarbonIndexFileWriter {
    */
   private ThriftWriter thriftWriter;
 
+  public CarbonIndexFileWriter(String filePath) {
+    thriftWriter = new ThriftWriter(filePath, true);
+  }
+
   /**
    * It writes thrift object to file
    *
@@ -42,12 +46,9 @@ public class CarbonIndexFileWriter {
   /**
    * Below method will be used to open the thrift writer
    *
-   * @param filePath file path where data need to be written
    * @throws IOException throws io exception in case of any failure
    */
-  public void openThriftWriter(String filePath) throws IOException {
-    // create thrift writer instance
-    thriftWriter = new ThriftWriter(filePath, true);
+  public void openThriftWriter() throws IOException {
     // open the file stream
     thriftWriter.open();
   }

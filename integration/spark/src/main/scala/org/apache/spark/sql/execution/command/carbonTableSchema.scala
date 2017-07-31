@@ -573,7 +573,6 @@ case class LoadTable(
         if (carbonLoadModel.getUseOnePass) {
           val colDictFilePath = carbonLoadModel.getColDictFilePath
           if (!StringUtils.isEmpty(colDictFilePath)) {
-            carbonLoadModel.initPredefDictMap()
             // generate predefined dictionary
             GlobalDictionaryUtil
               .generatePredefinedColDictionary(colDictFilePath, carbonTableIdentifier,
@@ -581,7 +580,6 @@ case class LoadTable(
           }
           val allDictPath: String = carbonLoadModel.getAllDictPath
           if(!StringUtils.isEmpty(allDictPath)) {
-            carbonLoadModel.initPredefDictMap()
             GlobalDictionaryUtil
               .generateDictionaryFromDictionaryFiles(sqlContext,
                 carbonLoadModel,
